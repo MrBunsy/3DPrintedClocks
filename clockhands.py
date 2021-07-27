@@ -15,15 +15,19 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
     '''
     #base_d = (fixing_d2 if fixing_d2 > fixing_d1 else fixing_d1)*3
     #nominal width of base and sticky out bits
-    width = length*0.22
-    end_d = length*0.05
+    width = length*0.3
+    end_d = width*0.25
 
     if hour:
         length = length*0.8
         if style is "simple":
             width = width*1.2
+    base_r = width/2
 
-    hand = cq.Workplane("XY").tag("base").circle(radius=width/2).extrude(thick)
+    if base_r < fixing_d1*0.9:
+        base_r = fixing_d1*1.5/2
+
+    hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(thick)
     #hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(thick)
 
     if style is "simple":
@@ -67,14 +71,20 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
         #cut bits out
         #roudn bit in centre of knobbly bit
         hand = hand.moveTo(0,centrehole_y).circle(centrehole_r).cutThruAll()
-        heartbase = length*0.15
+        heartbase = base_r + length*0.025#length*0.175
 
-        hearttop = length*0.4
+        hearttop = length*0.425
         heartheight = hearttop-heartbase
-        heartwidth=width*0.3
+        heartwidth=length*0.27*0.3#width*0.3
         #heart shape (definitely not a dick)
-        hand = hand.moveTo(0, heartbase).spline([(heartwidth*0.6,heartbase*0.9),(heartwidth*0.8,heartbase+heartheight*0.15),(heartwidth*0.6,heartbase+heartheight*0.4),(heartwidth*0.3,heartbase + heartheight/2)],includeCurrent=True).lineTo(heartwidth*0.5,heartbase + heartheight*0.75).lineTo(0,hearttop).mirrorY().cutThruAll()
-
+        #hand = hand.moveTo(0, heartbase).spline([(heartwidth*0.6,heartbase*0.9),(heartwidth*0.8,heartbase+heartheight*0.15),(heartwidth*0.6,heartbase+heartheight*0.4),(heartwidth*0.3,heartbase + heartheight/2)],includeCurrent=True).lineTo(heartwidth*0.5,heartbase + heartheight*0.75).lineTo(0,hearttop).mirrorY().cutThruAll()
+        hand = hand.moveTo(0, heartbase).spline(
+            [(heartwidth * 0.6, heartbase * 0.9), (heartwidth * 0.8, heartbase + heartheight * 0.15),
+             (heartwidth * 0.6, heartbase + heartheight * 0.4), (heartwidth * 0.3, heartbase + heartheight / 2)],
+            includeCurrent=True).lineTo(heartwidth * 0.5, heartbase + heartheight * 0.75).lineTo(0,
+                                                                                                hearttop).mirrorY()#.cutThruAll()
+        # return hand.extrude(thick*2)
+        hand = hand.cutThruAll()
     if fixing is "rectangle":
         hand = hand.moveTo(0,0).rect(fixing_d1,fixing_d2).cutThruAll()
     elif fixing is "circle":
@@ -92,13 +102,15 @@ smallcuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", fixing_d1=
 minisimple_min=clockhand(style="simple", thick=1)
 minisimple_hour=clockhand(style="simple",hour=True, fixing="circle", fixing_d1=4.15, thick=1)
 
-show_object(minicuckoo_min)
+# show_object(minicuckoo_min)
 # show_object(minicuckoo_hour)
 #show_object(smallcuckoo_min)
-# show_object(smallcuckoo_hour)
+show_object(smallcuckoo_hour)
 
 Path("out").mkdir(parents=True, exist_ok=True)
-# exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(minicuckoo_hour, "out/minicuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(minisimple_min, "out/minisimple_min.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(minicuckoo_hour, "out/minicuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(minisimple_min, "out/minisimple_min.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
