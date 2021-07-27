@@ -35,7 +35,7 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
     elif style is "cuckoo":
 
         centrehole_y = length * 0.6
-        centrehole_r = width*0.2
+        centrehole_r = width*0.15
 
 
         #hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).threePointArc((end_d *0.75, length/2),(end_d / 2, length)).radiusArc(
@@ -46,11 +46,11 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
         hand = hand.workplaneFromTagged("base").moveTo(width * 0.2, length * 0.3).lineTo(end_d / 2, length).threePointArc((0,length+end_d/2),(-end_d/2,length)).lineTo(-width * 0.2, length * 0.3).close().extrude(thick)
 
         #extra round bits towards the end of the hand
-        little_sticky_out_dist = width * 0.35
-        little_sticky_out_d = width*0.4
+        little_sticky_out_dist = width * 0.3
+        little_sticky_out_d = width*0.35
         little_sticky_out_y = centrehole_y - centrehole_r*0.4
-        little_sticky_out_d2 = width * 0.15
-        little_sticky_out_dist2 = width * 0.25
+        little_sticky_out_d2 = width * 0.125
+        little_sticky_out_dist2 = width * 0.2
         stickyoutblobs = hand.workplaneFromTagged("base")
         #the two smaller blobs, justcircles
         for angle_d in [45]:
@@ -114,9 +114,9 @@ show_object(smallcuckoo_min)
 # show_object(smallcuckoo_hour)
 
 Path("out").mkdir(parents=True, exist_ok=True)
-exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(minicuckoo_hour, "out/minicuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(minisimple_min, "out/minisimple_min.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(minicuckoo_hour, "out/minicuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(minisimple_min, "out/minisimple_min.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
