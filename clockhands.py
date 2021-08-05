@@ -9,7 +9,7 @@ if 'show_object' not in globals():
 
 
 
-def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,length=25, thick=1.6, hour=False):
+def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,length=25, thick=1.6, hour=False,fixing_offset=0):
     '''
     fixings: rectangle, square, circle
     '''
@@ -20,7 +20,7 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
 
     if hour:
         length = length*0.8
-        if style is "simple":
+        if style == "simple":
             width = width*1.2
     base_r = width/2
 
@@ -30,9 +30,9 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
     hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(thick)
     #hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(thick)
 
-    if style is "simple":
+    if style == "simple":
         hand = hand.workplaneFromTagged("base").moveTo(width*0.4,0).lineTo(end_d/2, length).radiusArc((-end_d/2,length),-end_d/2).lineTo(-width*0.4,0).close().extrude(thick)
-    elif style is "cuckoo":
+    elif style == "cuckoo":
 
         centrehole_y = length * 0.6
         centrehole_r = width*0.15
@@ -74,6 +74,11 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
             .line(0,length*0.005).spline([(petalend[0]*0.5,petalend[1]*0.95),(0,petalend[1]*0.8)], includeCurrent=True).mirrorY()
         # return hand
         hand = hand.extrude(thick)
+
+        #sticky out bottom bit for hour hand
+        if hour:
+            hand=hand.workplaneFromTagged("base").lineTo(width*0.4,0).lineTo(0,-width*0.9).mirrorY().extrude(thick)
+            # return hand
         #cut bits out
         #roudn bit in centre of knobbly bit
         hand = hand.moveTo(0,centrehole_y).circle(centrehole_r).cutThruAll()
@@ -91,9 +96,11 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
                                                                                                 hearttop).mirrorY()#.cutThruAll()
         # return hand.extrude(thick*2)
         hand = hand.cutThruAll()
-    if fixing is "rectangle":
+    if fixing_offset != 0:
+        hand = hand.workplaneFromTagged("base").transformed(rotate=(0,0,fixing_offset))
+    if fixing == "rectangle":
         hand = hand.moveTo(0,0).rect(fixing_d1,fixing_d2).cutThruAll()
-    elif fixing is "circle":
+    elif fixing == "circle":
         hand = hand.moveTo(0,0).circle(fixing_d1/2).cutThruAll()
 
 
@@ -108,9 +115,13 @@ smallcuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", fixing_d1=
 minisimple_min=clockhand(style="simple", thick=1)
 minisimple_hour=clockhand(style="simple",hour=True, fixing="circle", fixing_d1=4.15, thick=1)
 
+
+greencuckoo_min=clockhand(style="cuckoo", thick=1.4, length=30, fixing_d1=2.6, fixing_d2=2.6, fixing_offset=45)
+greencuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", thick=1.4, length=30, fixing_d1=4.4, fixing_d2=4.4)
+
 # show_object(minicuckoo_min)
 # show_object(minicuckoo_hour)
-show_object(smallcuckoo_min)
+show_object(greencuckoo_min)
 # show_object(smallcuckoo_hour)
 
 Path("out").mkdir(parents=True, exist_ok=True)
@@ -120,3 +131,5 @@ Path("out").mkdir(parents=True, exist_ok=True)
 # exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(greencuckoo_min, "out/greencuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(greencuckoo_hour, "out/greencuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
