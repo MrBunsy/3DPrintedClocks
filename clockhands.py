@@ -22,7 +22,11 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
         length = length*0.8
         if style == "simple":
             width = width*1.2
+        if style == "square":
+            width = width*1.75
     base_r = width/2
+    if style == "square":
+        base_r/=2
 
     if base_r < fixing_d1*0.9:
         base_r = fixing_d1*1.5/2
@@ -32,6 +36,9 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
 
     if style == "simple":
         hand = hand.workplaneFromTagged("base").moveTo(width*0.4,0).lineTo(end_d/2, length).radiusArc((-end_d/2,length),-end_d/2).lineTo(-width*0.4,0).close().extrude(thick)
+    elif style == "square":
+        handWidth = width*0.25
+        hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(handWidth,length).extrude(thick)
     elif style == "cuckoo":
 
         centrehole_y = length * 0.6
@@ -105,24 +112,39 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
 
 
     return hand
+if False:
+    minicuckoo_min=clockhand(style="cuckoo", thick=1)
+    minicuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", fixing_d1=4.15, thick=1)
 
-minicuckoo_min=clockhand(style="cuckoo", thick=1)
-minicuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", fixing_d1=4.15, thick=1)
+    smallcuckoo_min=clockhand(style="cuckoo", thick=1.2, length=33, fixing_d1=4.1, fixing_d2=4.1)
+    smallcuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", fixing_d1=6.8, thick=1.2, length=33)
 
-smallcuckoo_min=clockhand(style="cuckoo", thick=1.2, length=33, fixing_d1=4.1, fixing_d2=4.1)
-smallcuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", fixing_d1=6.8, thick=1.2, length=33)
-
-minisimple_min=clockhand(style="simple", thick=1)
-minisimple_hour=clockhand(style="simple",hour=True, fixing="circle", fixing_d1=4.15, thick=1)
+    minisimple_min=clockhand(style="simple", thick=1)
+    minisimple_hour=clockhand(style="simple",hour=True, fixing="circle", fixing_d1=4.15, thick=1)
 
 
-greencuckoo_min=clockhand(style="cuckoo", thick=1.4, length=30, fixing_d1=2.6, fixing_d2=2.6, fixing_offset=45)
-greencuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", thick=1.4, length=30, fixing_d1=4.4, fixing_d2=4.4)
+    greencuckoo_min=clockhand(style="cuckoo", thick=1.4, length=30, fixing_d1=2.6, fixing_d2=2.6, fixing_offset=45)
+    greencuckoo_hour=clockhand(style="cuckoo",hour=True, fixing="circle", thick=1.4, length=30, fixing_d1=4.4, fixing_d2=4.4)
+    exporters.export(greencuckoo_min, "out/greencuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+    exporters.export(greencuckoo_hour, "out/greencuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+
+#should be 1.6, but that was way too small. 2 was too big.
+smithsalarm_min = clockhand(style="square", thick = 2, fixing="circle", fixing_d1=1.8, length=35)
+#3.4 fits perfectly, but I need it to slide down a tiny bit further
+smithsalarm_hour = clockhand(style="square", hour=True, thick = 2, fixing="circle", fixing_d1=3.45, length=35)
+
+exporters.export(smithsalarm_min, "out/smithsalarm_min.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(smithsalarm_hour, "out/smithsalarm_hour.stl", tolerance=0.001, angularTolerance=0.01)
+
 
 # show_object(minicuckoo_min)
 # show_object(minicuckoo_hour)
-show_object(greencuckoo_min)
+#show_object(greencuckoo_min)
 # show_object(smallcuckoo_hour)
+
+#show_object(smithsalarm_min)
+#show_object(smithsalarm_hour)
+
 
 Path("out").mkdir(parents=True, exist_ok=True)
 # exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
@@ -131,5 +153,4 @@ Path("out").mkdir(parents=True, exist_ok=True)
 # exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(greencuckoo_min, "out/greencuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(greencuckoo_hour, "out/greencuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+

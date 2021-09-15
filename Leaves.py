@@ -16,32 +16,30 @@ def length(v1,v2=None):
         return math.sqrt(math.pow(v1[0],2) + math.pow(v1[1],2))
     return math.sqrt(math.pow(v1[0] - v2[0], 2) + math.pow(v1[1] - v2[1], 2))
 
-def maple(size=40, seed=1):
+def maple(size=40, seed=5):
     random.seed(seed)
-    points = random.randint(4,7)
+    points = random.randint(3,5)
     leaf = cq.Workplane("XY").tag("base")
-
-    startAngle = 0
-    currentPos = (size*0.5,0)
-    #leaf = leaf.moveTo(currentPos[0], currentPos[1])
+    print("points: {}".format(points))
 
     #(xPos, yPos, centreX for the angle that created this point, angle)
     tips = []
     inners = []
 
+    angleOffset = 2
+
     #generate points for tips of leaves and inner bits of leaves
     for i in range(points):
-        tipAngle = (i+1)*2*math.pi/(points*2)
-        innerAngle = i*2*math.pi/(points*2)
-
-
+        tipAngle = (i+1 + angleOffset)*2*math.pi/((points+angleOffset)*2)
+        innerAngle = (i + angleOffset)*2*math.pi/((points+angleOffset)*2)
 
         tipR = size*tipAngle/math.pi
-        innerR = size*(innerAngle)/math.pi*0.5
+        innerR = size*(innerAngle)/math.pi*(points-i+10)/(points+10)*0.85
         tipR*=random.uniform(0.8,1)
-        innerR*=random.uniform(0.7,1.1)
+        innerR*=random.uniform(0.7,1)
+        innerR = tipR*random.uniform(0.5,0.7)
 
-        centreX = -i*0.5*size/points
+        centreX = -i*0.3*size/points
         centreY = 0
 
         tipPos = (math.cos(tipAngle)*tipR + centreX, math.sin(tipAngle)*tipR + centreY, centreX, tipAngle)
@@ -54,12 +52,7 @@ def maple(size=40, seed=1):
 
     leaf.moveTo(inners[0][0], inners[0][1])
 
-    previousTip = None
-    # print("points:"+str(points))
     for i, tip in enumerate(tips):
-
-        # if previousTip is not None:
-        # print("i"+str(i))
         if i > 0:
             if False:
                 leaf = leaf.lineTo(inners[i][0],inners[i][1])
@@ -68,49 +61,23 @@ def maple(size=40, seed=1):
                 avgR = (length(inners[i-1], (centreX,0)) + length(tip, (tip[2], 0)))/2
                 avgAngle = (inners[i-1][3] + tip[3])/2 - (math.pi/points)*0.1
 
-                # mid = (math.cos(inners[i][3] + angleDiff)*avgR + centreX, math.sin(inners[i][3] + angleDiff)*avgR)
                 mid = (math.cos(avgAngle)*avgR + centreX, math.sin(avgAngle)*avgR)
-                # mid = ((inners[i][0] + tips[i-1][0])/2, (inners[i][1] + tips[i-1][1])/2)
                 leaf = leaf.spline([mid, (inners[i][0], inners[i][1])], includeCurrent=True)
 
 
         if False:
             leaf = leaf.lineTo(tip[0], tip[1])
-
         else:
             centreX = (inners[i][2] + tip[2]) / 2
             avgR = (length(inners[i], (centreX, 0)) + length(tip, (tip[2], 0))) / 2
-            avgAngle = (inners[i][3] + tip[3]) / 2 + (math.pi / points) * 0.1
 
-            # mid = (math.cos(inners[i][3] + angleDiff)*avgR + centreX, math.sin(inners[i][3] + angleDiff)*avgR)
+            sign = 1 if i >0 else 0
+
+            avgAngle = (inners[i][3] + tip[3]) / 2 + sign*(math.pi / points) * 0.1
+
             mid = (math.cos(avgAngle) * avgR + centreX, math.sin(avgAngle) * avgR)
-            # mid = ((inners[i][0] + tips[i-1][0])/2, (inners[i][1] + tips[i-1][1])/2)
             leaf = leaf.spline([mid, (tip[0], tip[1])], includeCurrent=True)
 
-
-        # previousTip = tip
-
-        # outDiff = math.pow(currentPos[0] - tipPos[0], 2) + math.pow(currentPos[1] - tipPos[1], 2)
-        # inDiff = math.pow(endPos[0] - tipPos[0], 2) + math.pow(endPos[1] - tipPos[1], 2)
-        # variation = 0.01
-        # outOffset = random.uniform(-variation,variation)*outDiff
-        # inOffset = random.uniform(-variation, variation) * inDiff
-        #
-        # # midOutPos = ((currentPos[0] + tipPos[0])/2 + outOffset, (currentPos[1] + tipPos[1])/2 + outOffset)
-        # # midInPos = ((endPos[0] + tipPos[0]) / 2 + inOffset, (tipPos[1] + endPos[1]) / 2 + inOffset)
-        #
-        # midR = (tipR + endR)/2
-        # offsetAngle = random.uniform(0,0.2)*(endAngle - tipAngle)
-        # midOutPos = (math.cos(tipAngle-offsetAngle)*midR, math.sin(tipAngle-offsetAngle)*midR)
-        # midInPos = (math.cos(tipAngle + offsetAngle) * midR, math.sin(tipAngle + offsetAngle) * midR)
-        #
-        # # leaf = leaf.lineTo(tipPos[0],tipPos[1])
-        # # leaf = leaf.lineTo(endPos[0], endPos[1])
-        #
-        # leaf = leaf.spline([midOutPos, tipPos], includeCurrent=True)
-        # leaf = leaf.spline([midInPos, endPos], includeCurrent=True)
-        #
-        # currentPos = endPos
 
     leaf = leaf.mirrorX()
     # return leaf
