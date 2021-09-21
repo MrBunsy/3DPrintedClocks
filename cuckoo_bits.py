@@ -30,13 +30,53 @@ def chain_plate():
     .circle(chain_d/2).cutThruAll())
 
 
+def pendulum_rod(length=110, max_length=170, hook_type="normal", fixing="simple"):
+    '''
 
+    :param length: aprox lenght from tip of rod to bob
+    :param max_length: max length bob could be adjusted down
+    :param hook_type: how the rod fixes to the pendulum leader ("normal" or "toy")
+    :param fixing: How the bob fixes to the rod. Simple is slide-friction fit, thread is an attempt at a mantle-style pendulum adjustment
+    :return:
+    '''
 
+    normal_hook_width = 6
+    hook_gap=1.5
+    rod_width = 10
+    rod_thick = 3.5
+    hook_thick = 2
+    hook_height=10
 
+    rod = cq.Workplane("XY").tag("base")
+
+    #lieing on its side, x is therefore thickness, z is width and y is height
+    #top centre of rod is at 0,0 fixing is +ve y, rest of rod is -ve y
+
+    if fixing == "simple":
+        #just a rectangular length
+        rod = rod.workplaneFromTagged("base").move(0,-max_length/2).box(rod_thick,max_length,rod_width)
+
+    if hook_type == "normal":
+        # rod = rod.faces(">Y").workplane().rect(hook_thick,normal_hook_width).extrude(hook_height)
+        # rod = rod.faces(">Y").workplane().transformed(offset=cq.Vector(0,0,-hook_thick/2),rotate=cq.Vector(0,130,0)).rect(hook_thick, normal_hook_width).extrude(hook_height/2)
+
+        hook_top_thick = hook_thick * 2 + hook_gap
+        rod = rod.workplaneFromTagged("base").transformed(offset=(0,0,(rod_width-normal_hook_width)/2-rod_width/2)).tag("hook_base").moveTo(0,hook_height/2).rect(hook_thick,hook_height).extrude(normal_hook_width)
+
+        rod = rod.workplaneFromTagged("hook_base").moveTo(-hook_top_thick/2+hook_thick/2,hook_height).circle(radius=hook_top_thick/2).extrude(normal_hook_width)
+
+        rod = rod.workplaneFromTagged("hook_base").moveTo(-hook_top_thick / 2 + hook_thick / 2, hook_height-hook_top_thick/4).rect(hook_top_thick,hook_top_thick/2).extrude(normal_hook_width)
+
+        rod = rod.workplaneFromTagged("hook_base").moveTo(-hook_top_thick/2+hook_thick/2,hook_height).circle(radius=hook_gap/2).cutThruAll()
+        rod = rod.workplaneFromTagged("hook_base").moveTo(-hook_top_thick / 2 + hook_thick / 2, hook_height - hook_top_thick / 4).rect(hook_gap, hook_top_thick / 2).cutThruAll()
+
+    return rod
 
 plate = chain_plate()
+rod = pendulum_rod()
 
+# show_object(plate)
+show_object(rod)
 
-show_object(plate)
-
-exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
