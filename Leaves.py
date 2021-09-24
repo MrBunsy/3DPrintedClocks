@@ -113,6 +113,33 @@ class LeafPoint():
     def __str__(self):
         return "centre: {}, r:{}, angle:{}".format(self.centre, self.r,round(180*self.angle/math.pi))
 
+def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2):
+    # shape = shape.lineTo(b[0],b[1])
+    shape.moveTo(a[0], a[1])
+
+    mid = np.divide(np.add(a,b),2)
+
+    midToCentre = np.subtract(centre, mid)
+
+    line = np.subtract(b,a)
+
+    length = np.linalg.norm(line)
+
+    n = np.cross(line, [0,0,1])
+    n = [n[0], n[1]]
+    dot = np.dot(midToCentre, n)
+    if dot < 0 and bendTowardsCentre:
+        n = np.multiply(n, -1)
+
+    #make unit vector
+    n = np.divide(n, np.linalg.norm(n))
+
+    bendPoint = np.add(mid, np.multiply(n, length*bendMultiplier))
+
+    shape = shape.spline([bendPoint, b], includeCurrent=True)
+
+    return shape
+
 def maple2(length = 70):
     '''
     [0,0] = bit of leaf that would attach to a stalk, tip pointing upwards (+ve y)
@@ -124,24 +151,24 @@ def maple2(length = 70):
 
     widePoints = 3
     tipPoints = 1
-    wideCentre = [0,length*0.2]
+    wideCentre = [0,length*0.1]
 
     #points at the wide bit of the leaf
     for i in range(widePoints):
-        r=length*0.45
+        r=length*0.6
         #from -pi/3 to +pi/3
         a = -math.pi/3 +  i*(2*math.pi/3)/(widePoints-1)
 
         points.append(LeafPoint(r,a, wideCentre))
 
-    tipCentre = [0, length*0.75]
+    tipCentre = [0, length*0.6]
     #points at the narrow bit of the leaf
     for i in range(tipPoints):
-        r=length*0.6
+        r=length*0.3
         #from pi*0.3 to pi*0.5
         a = math.pi*0.4 +  i*(math.pi*0.1)/(max(tipPoints-1,1))
 
-        points.append(LeafPoint(r,a, wideCentre))
+        points.append(LeafPoint(r,a, tipCentre))
 
     #currently at the tip so we can be symmetrical, but doesn't need to be if we stop symmetry
     points.append(LeafPoint(length*0.1,math.pi/2,[0,length*0.9]))
@@ -150,27 +177,42 @@ def maple2(length = 70):
         print(point)
 
     leaf = cq.Workplane("XY").tag("base")
+    # leaf = leaf.lineTo(points[1].getPos()[0], points[1].getPos()[1])
+    leaf = bendyLineBetween(leaf, points[0].getPos(), points[1].getPos(), [0,length*0.5], False)
 
-    for i in range(len(points)-1):
-        # leaf = leaf.lineTo(point.getPos()[0],point.getPos()[1])
-        start = points[i]
-        startVec = start.getPos()
-        end = points[i+1]
-        endVec = end.getPos()
+    for i in range(1,len(points)-1):
+        print(i)
+        if False:
+            leaf = leaf.lineTo(points[i+1].getPos()[0],points[i+1].getPos()[1])
+        else:
+            start = points[i]
+            startVec = start.getPos()
+            end = points[i+1]
+            endVec = end.getPos()
 
-        midVec = np.divide(np.add(startVec, endVec),2)
+            midVec = np.divide(np.add(startVec, endVec),2)
 
-        line = np.subtract(endVec, startVec)
-        dist = np.linalg.norm(line)
-        np.append(line, 0)
+            line = np.subtract(endVec, startVec)
+            dist = np.linalg.norm(line)
+            np.append(line, 0)
+            #better than cross product and guessing clockwise/anticlockwise, go from midVec in the direction of centre
+            # cross = np.cross(line, [0,0,1])
+            # crossVec = [cross[0], cross[1]]
+            #
+            # offsetPoint = np.add(midVec,np.multiply(crossVec,-0.1))
 
-        cross = np.cross(line, [0,0,1])
-        crossVec = [cross[0], cross[1]]
+            midToCentre = np.subtract(start.centre, midVec)
+            #make unit vector
+            midToCentre = np.divide(midToCentre, np.linalg.norm(midToCentre))
 
-        offsetPoint = np.add(midVec,np.multiply(crossVec,-0.2))
 
-        # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(end.getPos()[0],end.getPos()[1])
-        leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(offsetPoint[0], offsetPoint[1]).lineTo(end.getPos()[0],end.getPos()[1])
+            innerPoint = np.add(midVec,np.multiply(midToCentre, start.r*0.2))
+
+            leaf = bendyLineBetween(leaf, start.getPos(), innerPoint, start.centre, False)
+            leaf = bendyLineBetween(leaf, innerPoint, end.getPos(), start.centre, False)
+
+            # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(end.getPos()[0],end.getPos()[1])
+            # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(innerPoint[0], innerPoint[1]).lineTo(end.getPos()[0],end.getPos()[1])
 
     # leaf = leaf.lineTo(0,length)
 
