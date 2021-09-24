@@ -113,15 +113,20 @@ class LeafPoint():
     def __str__(self):
         return "centre: {}, r:{}, angle:{}".format(self.centre, self.r,round(180*self.angle/math.pi))
 
-def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2):
+def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2, nearerA=0.5):
     # shape = shape.lineTo(b[0],b[1])
     shape.moveTo(a[0], a[1])
 
-    mid = np.divide(np.add(a,b),2)
 
-    midToCentre = np.subtract(centre, mid)
 
     line = np.subtract(b,a)
+    line_length = np.linalg.norm(line)
+
+    line_unit = np.divide(line, line_length)
+
+    # mid = np.divide(np.add(a, b), 2)
+    mid = np.add(a, np.multiply(line_unit, line_length*nearerA))
+    midToCentre = np.subtract(centre, mid)
 
     length = np.linalg.norm(line)
 
@@ -156,19 +161,20 @@ def maple2(length = 70):
     #points at the wide bit of the leaf
     for i in range(widePoints):
         r=length*0.5
-        fromA = -math.pi*0.1
-        toA = math.pi*0.3
-        #from -pi/3 to +pi/3
+        fromA = -math.pi*0.05
+        toA = math.pi*0.2
+
         a = fromA +  i*(toA - fromA)/(widePoints-1)
 
         points.append(LeafPoint(r,a, wideCentre))
 
-    tipCentre = [0, length*0.6]
+    tipCentre = [0, length*0.75]
     #points at the narrow bit of the leaf
     for i in range(tipPoints):
         r=length*0.3
-        #from pi*0.3 to pi*0.5
-        a = math.pi*0.4 +  i*(math.pi*0.1)/(max(tipPoints-1,1))
+        fromA = -math.pi * 0.1
+        toA = math.pi * 0.2
+        a = fromA +  i*(toA - fromA)/(max(tipPoints-1,1))
 
         points.append(LeafPoint(r,a, tipCentre))
 
@@ -182,19 +188,21 @@ def maple2(length = 70):
     # leaf = leaf.lineTo(points[1].getPos()[0], points[1].getPos()[1])
     leaf = bendyLineBetween(leaf, points[0].getPos(), points[1].getPos(), [0,length*0.5], False)
 
+    leafCentre = [0,length/2]
+
     for i in range(1,len(points)-1):
         print(i)
         if False:
             leaf = leaf.lineTo(points[i+1].getPos()[0],points[i+1].getPos()[1])
         else:
             start = points[i]
-            startVec = start.getPos()
+            startPos = start.getPos()
             end = points[i+1]
-            endVec = end.getPos()
+            endPos = end.getPos()
 
-            midVec = np.divide(np.add(startVec, endVec),2)
+            midPos = np.divide(np.add(startPos, endPos),2)
 
-            line = np.subtract(endVec, startVec)
+            line = np.subtract(endPos, startPos)
             dist = np.linalg.norm(line)
             np.append(line, 0)
             #better than cross product and guessing clockwise/anticlockwise, go from midVec in the direction of centre
@@ -203,14 +211,18 @@ def maple2(length = 70):
             #
             # offsetPoint = np.add(midVec,np.multiply(crossVec,-0.1))
 
-            midToCentre = np.subtract(start.centre, midVec)
+            midToCentre = np.subtract(start.centre, midPos)
             #make unit vector
             midToCentre = np.divide(midToCentre, np.linalg.norm(midToCentre))
 
+            #innerpoint try instead be on a straightline from the first point to the centre of the leaf
+            innerPoint = np.add(midPos,np.multiply(midToCentre, start.r*0.2))
 
-            innerPoint = np.add(midVec,np.multiply(midToCentre, start.r*0.2))
+            pointToCentre = np.subtract(leafCentre, startPos)
 
-            leaf = bendyLineBetween(leaf, start.getPos(), innerPoint, start.centre, False)
+            innerPoint = np.add(startPos, np.multiply(pointToCentre, 0.3))
+
+            leaf = bendyLineBetween(leaf, start.getPos(), innerPoint, start.centre, True, 0.025)
             leaf = bendyLineBetween(leaf, innerPoint, end.getPos(), start.centre, False)
 
             # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(end.getPos()[0],end.getPos()[1])
@@ -219,9 +231,20 @@ def maple2(length = 70):
     # leaf = leaf.lineTo(0,length)
 
     leaf = leaf.mirrorY()
-    # leaf = leaf.extrude(10)
+    leaf = leaf.extrude(13)
 
-    return leaf
+    # return leaf
+
+    size = length
+    centreX = leafCentre[0]
+
+    bowl = cq.Workplane("XY").sphere(size * 2).translate((0, leafCentre[1], -length*1.85))
+    # return bowl
+    cube = cq.Workplane("XY").rect(size * 3, size * 3).extrude(size * 2)
+    mould = cube.cut(bowl)
+
+    # cut the top of the leaf into a rounded shape
+    return leaf.cut(mould)
 
 leaf = maple2()
 
