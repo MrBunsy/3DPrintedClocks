@@ -155,9 +155,11 @@ def maple2(length = 70):
 
     #points at the wide bit of the leaf
     for i in range(widePoints):
-        r=length*0.6
+        r=length*0.5
+        fromA = -math.pi*0.1
+        toA = math.pi*0.3
         #from -pi/3 to +pi/3
-        a = -math.pi/3 +  i*(2*math.pi/3)/(widePoints-1)
+        a = fromA +  i*(toA - fromA)/(widePoints-1)
 
         points.append(LeafPoint(r,a, wideCentre))
 
