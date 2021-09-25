@@ -156,13 +156,13 @@ def maple2(length = 70):
 
     widePoints = 3
     tipPoints = 1
-    wideCentre = [0,length*0.1]
+    wideCentre = [length*0.2,length*0.1]
 
     #points at the wide bit of the leaf
     for i in range(widePoints):
-        r=length*0.5
-        fromA = -math.pi*0.05
-        toA = math.pi*0.2
+        r=length*0.3
+        fromA = -math.pi*0.3
+        toA = math.pi*0.3
 
         a = fromA +  i*(toA - fromA)/(widePoints-1)
 
@@ -218,7 +218,7 @@ def maple2(length = 70):
             #innerpoint try instead be on a straightline from the first point to the centre of the leaf
             innerPoint = np.add(midPos,np.multiply(midToCentre, start.r*0.2))
 
-            pointToCentre = np.subtract(leafCentre, startPos)
+            pointToCentre = np.subtract(start.centre, startPos)
 
             innerPoint = np.add(startPos, np.multiply(pointToCentre, 0.3))
 
@@ -231,9 +231,10 @@ def maple2(length = 70):
     # leaf = leaf.lineTo(0,length)
 
     leaf = leaf.mirrorY()
+    return leaf
     leaf = leaf.extrude(13)
 
-    # return leaf
+
 
     size = length
     centreX = leafCentre[0]
