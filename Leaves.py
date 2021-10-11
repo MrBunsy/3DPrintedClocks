@@ -96,7 +96,7 @@ def maple(size=40, seed=5):
 
 class LeafPoint():
 
-    def __init__(self, r, angle, centre=None):
+    def __init__(self, r, angle, inwardness=0.2, centre=None, bendinessOut=0.2,bendinessIn=0.025):
         '''
         represents a centre vector and a point in vector coordinates from it
         :param centre:
@@ -106,6 +106,9 @@ class LeafPoint():
         self.centre=[0,0] if centre is None else centre
         self.r=r
         self.angle=angle
+        self.inwardness=inwardness
+        self.bendinessOut=bendinessOut
+        self.bendinessIn=bendinessIn
 
     def getPos(self):
         return [self.centre[0] + math.cos(self.angle)*self.r, self.centre[1] + math.sin(self.angle)*self.r]
@@ -152,21 +155,28 @@ def maple2(length = 70):
     :return:
     '''
 
-    points = [LeafPoint(length*0.1,-math.pi/2,[0,length*0.1])]
+    points = [LeafPoint(length*0.1,-math.pi/2,0.2,[0,length*0.1])]
 
     widePoints = 3
-    tipPoints = 1
-    wideCentre = [length*0.2,length*0.1]
+    tipPoints = 0
+    wideCentre = [0,length*(6/16)]
 
-    #points at the wide bit of the leaf
-    for i in range(widePoints):
-        r=length*0.3
-        fromA = -math.pi*0.3
-        toA = math.pi*0.3
+    points.append(LeafPoint(length*0.5, -math.pi*0.25, 0.25, wideCentre, 0.2))
+    points.append(LeafPoint(length * 0.5, 0, 0.4, wideCentre,0.1))
+    points.append(LeafPoint(length * (5.5/16), math.pi*0.1, 0.2, wideCentre, 0.1))
+    points.append(LeafPoint(length * (5.5 / 16), math.pi *0.25, 0.25, [0,length*(8/16)],0.1))
+    # currently at the tip so we can be symmetrical, but doesn't need to be if we stop symmetry
+    points.append(LeafPoint(length * 0.1, math.pi / 2, 0.2, [0, length * 0.9]))
 
-        a = fromA +  i*(toA - fromA)/(widePoints-1)
-
-        points.append(LeafPoint(r,a, wideCentre))
+    # #points at the wide bit of the leaf
+    # for i in range(widePoints):
+    #     r=length*0.5
+    #     fromA = -math.pi*0.3
+    #     toA = math.pi*0.3
+    #
+    #     a = fromA +  i*(toA - fromA)/(widePoints-1)
+    #
+    #     points.append(LeafPoint(r,a, wideCentre))
 
     tipCentre = [0, length*0.75]
     #points at the narrow bit of the leaf
@@ -176,10 +186,9 @@ def maple2(length = 70):
         toA = math.pi * 0.2
         a = fromA +  i*(toA - fromA)/(max(tipPoints-1,1))
 
-        points.append(LeafPoint(r,a, tipCentre))
+        points.append(LeafPoint(r,a, 0.2, tipCentre))
 
-    #currently at the tip so we can be symmetrical, but doesn't need to be if we stop symmetry
-    points.append(LeafPoint(length*0.1,math.pi/2,[0,length*0.9]))
+
 
     for point in points:
         print(point)
@@ -216,14 +225,14 @@ def maple2(length = 70):
             midToCentre = np.divide(midToCentre, np.linalg.norm(midToCentre))
 
             #innerpoint try instead be on a straightline from the first point to the centre of the leaf
-            innerPoint = np.add(midPos,np.multiply(midToCentre, start.r*0.2))
+            #innerPoint = np.add(midPos,np.multiply(midToCentre, start.r*start.inwardness))
 
             pointToCentre = np.subtract(start.centre, startPos)
 
-            innerPoint = np.add(startPos, np.multiply(pointToCentre, 0.3))
+            innerPoint = np.add(startPos, np.multiply(pointToCentre, start.inwardness))
 
-            leaf = bendyLineBetween(leaf, start.getPos(), innerPoint, start.centre, True, 0.025)
-            leaf = bendyLineBetween(leaf, innerPoint, end.getPos(), start.centre, False)
+            leaf = bendyLineBetween(leaf, start.getPos(), innerPoint, start.centre, True, start.bendinessIn)
+            leaf = bendyLineBetween(leaf, innerPoint, end.getPos(), start.centre, False, start.bendinessOut)
 
             # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(end.getPos()[0],end.getPos()[1])
             # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(innerPoint[0], innerPoint[1]).lineTo(end.getPos()[0],end.getPos()[1])
@@ -231,7 +240,7 @@ def maple2(length = 70):
     # leaf = leaf.lineTo(0,length)
 
     leaf = leaf.mirrorY()
-    return leaf
+    # return leaf
     leaf = leaf.extrude(13)
 
 
