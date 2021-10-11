@@ -239,10 +239,30 @@ def maple2(length = 70):
 
     # leaf = leaf.lineTo(0,length)
 
+    thick=(13/70)*length
+
+    #thick = thick*0.75
+
     leaf = leaf.mirrorY()
     # return leaf
-    leaf = leaf.extrude(13)
+    leaf = leaf.extrude(thick)
 
+
+    cutters=[]
+    angle = 0
+    for a in [40,60,80]:
+        cutter = cq.Workplane("XZ").moveTo(-thick*2,0).lineTo(0,-thick*2).lineTo(thick*2,0).close().twistExtrude(-length,a).rotate((0,0,0),(0,0,1),angle).translate([0,0,thick*2 + thick*0.5])
+        cutters.append(cutter)
+        angle+=15
+
+    allCutters = cutters[0]
+    for a in range(1,len(cutters)):
+        allCutters = allCutters.union(cutters[a])
+
+
+    allCutters = allCutters.union(allCutters.mirror(mirrorPlane="YZ"))
+    # return cutter
+    # return allCutters
 
 
     size = length
@@ -254,8 +274,15 @@ def maple2(length = 70):
     mould = cube.cut(bowl)
 
     # cut the top of the leaf into a rounded shape
-    return leaf.cut(mould)
+    leaf = leaf.cut(mould)
 
-leaf = maple2()
+    leaf = leaf.cut(allCutters)
+
+
+    return leaf
+
+leaf = maple2(70)
 
 show_object(leaf)
+
+# exporters.export(leaf, "out/cuckoo_pendulum_leaf.stl", tolerance=0.001, angularTolerance=0.01)
