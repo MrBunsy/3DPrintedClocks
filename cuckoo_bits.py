@@ -33,7 +33,7 @@ def chain_plate():
 rod_width = 10
 rod_thick = 3.5
 
-def pendulum_rod(length=110, max_length=170, hook_type="normal", fixing="simple"):
+def pendulum_rod(max_length=170, hook_type="normal", fixing="simple"):
     '''
 
     :param length: aprox lenght from tip of rod to bob
@@ -72,6 +72,20 @@ def pendulum_rod(length=110, max_length=170, hook_type="normal", fixing="simple"
 
         rod = rod.workplaneFromTagged("hook_base").moveTo(-hook_top_thick/2+hook_thick/2,hook_height).circle(radius=hook_gap/2).cutThruAll()
         rod = rod.workplaneFromTagged("hook_base").moveTo(-hook_top_thick / 2 + hook_thick / 2, hook_height - hook_top_thick / 4).rect(hook_gap, hook_top_thick / 2).cutThruAll()
+    elif hook_type == "toy":
+        hanger_depth = 4
+        hanger_width = 2
+        hanger_length = 20
+
+        extra_length = hanger_length*2.25
+
+        rod = rod.workplaneFromTagged("base").move(0, extra_length / 2).box(rod_thick, extra_length, rod_width)
+        rod = rod.faces(">X").workplane().move(extra_length / 2,0).rect(extra_length, rod_width).extrude(hanger_depth-rod_thick+2)
+
+        cutter = cq.Workplane("ZY").rect(hanger_width,hanger_length*2).extrude(-hanger_depth/2-10)
+        cutter = cutter.faces("<X").workplane().move(hanger_length/2).rect(hanger_length,hanger_width).extrude(10)
+        # return cutter
+        rod = rod.cut(cutter.translate([0,extra_length/2,0]))
 
     return rod
 
@@ -82,13 +96,14 @@ def pendulum_bob_fixing():
     :return:
     '''
 
-    width = rod_width*2
-    length = width*2
+    width = rod_width*1.6
+    length = rod_width*2*1.25
     thick = rod_thick*3
     back_thick = 2
 
     rod_thick_hole = rod_thick+1
 
+    #1.5 was too small for thick wire - but maybe paperclip would be fine?
     wire_hole_d = 1.5
 
     fixing = cq.Workplane("XY").tag("base")
@@ -107,10 +122,10 @@ def pendulum_bob_fixing():
 
     #why is 0,0 suddenly in the corner?
     # fixing = fixing.faces(">X").workplane().moveTo(0, (thick - rod_thick)/4).rect(wire_hole_d,wire_hole_d).cutThruAll()
-    fixing = fixing.faces(">X").workplane().moveTo(0, wire_z).circle(wire_hole_d*0.6).cutThruAll()
+    fixing = fixing.faces(">X").workplane().moveTo(0.01, wire_z).circle(wire_hole_d*0.6).cutThruAll()
     fixing = fixing.faces(">X").workplane().moveTo(-length,wire_z).circle(wire_hole_d * 0.6).cutThruAll()
 
-    slot = cq.Workplane("XY").box(length*0.8,width*0.8,thick)
+    slot = cq.Workplane("XY").box(100,width*0.8,thick)
     # return slot
 
     fixing = fixing.cut(slot)
@@ -121,12 +136,15 @@ def pendulum_bob_fixing():
 
 plate = chain_plate()
 rod = pendulum_rod()
+toyrod = pendulum_rod(max_length=150,hook_type="toy")
 fixing = pendulum_bob_fixing()
 
 # show_object(plate)
 # show_object(rod)
+# show_object(toyrod)
 show_object(fixing)
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toyrod, "out/cuckoo_toy_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
 exporters.export(fixing, "out/cuckoo_pendulum_fixing.stl", tolerance=0.001, angularTolerance=0.01)

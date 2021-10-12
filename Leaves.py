@@ -247,7 +247,7 @@ def maple2(length = 70):
     # return leaf
     leaf = leaf.extrude(thick)
 
-
+    #the cutters need work - they currently only function on a leaf of length 70
     cutters=[]
     angle = 0
     for a in [40,60,80]:
