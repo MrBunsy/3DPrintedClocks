@@ -116,7 +116,7 @@ class LeafPoint():
     def __str__(self):
         return "centre: {}, r:{}, angle:{}".format(self.centre, self.r,round(180*self.angle/math.pi))
 
-def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2, nearerA=0.5):
+def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2, nearerA=0.5, heightStart=0, heightMid=0, heightEnd=0):
     # shape = shape.lineTo(b[0],b[1])
     shape.moveTo(a[0], a[1])
 
@@ -144,29 +144,31 @@ def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2
 
     bendPoint = np.add(mid, np.multiply(n, length*bendMultiplier))
 
-    shape = shape.spline([bendPoint, b], includeCurrent=True)
+    shape = shape.spline([(a[0], a[1], heightStart),(bendPoint[0], bendPoint[1],heightMid), (b[0], b[1], heightEnd)])
 
     return shape
 
-def maple2(length = 70):
+def maple2(length = 70, shape=1, cuts=2):
     '''
     [0,0] = bit of leaf that would attach to a stalk, tip pointing upwards (+ve y)
     currently symetric around y axis
     :return:
     '''
+    points = []
 
-    points = [LeafPoint(length*0.1,-math.pi/2,0.2,[0,length*0.1])]
+    if shape == 1:
+        points = [LeafPoint(length*0.1,-math.pi/2,0.2,[0,length*0.1])]
 
-    widePoints = 3
-    tipPoints = 0
-    wideCentre = [0,length*(6/16)]
+        widePoints = 3
+        tipPoints = 0
+        wideCentre = [0,length*(6/16)]
 
-    points.append(LeafPoint(length*0.5, -math.pi*0.25, 0.25, wideCentre, 0.2))
-    points.append(LeafPoint(length * 0.5, 0, 0.4, wideCentre,0.1))
-    points.append(LeafPoint(length * (5.5/16), math.pi*0.1, 0.2, wideCentre, 0.1))
-    points.append(LeafPoint(length * (5.5 / 16), math.pi *0.25, 0.25, [0,length*(8/16)],0.1))
-    # currently at the tip so we can be symmetrical, but doesn't need to be if we stop symmetry
-    points.append(LeafPoint(length * 0.1, math.pi / 2, 0.2, [0, length * 0.9]))
+        points.append(LeafPoint(length*0.5, -math.pi*0.25, 0.25, wideCentre, 0.2))
+        points.append(LeafPoint(length * 0.5, 0, 0.4, wideCentre,0.1))
+        points.append(LeafPoint(length * (5.5/16), math.pi*0.1, 0.2, wideCentre, 0.1))
+        points.append(LeafPoint(length * (5.5 / 16), math.pi *0.25, 0.25, [0,length*(8/16)],0.1))
+        # currently at the tip so we can be symmetrical, but doesn't need to be if we stop symmetry
+        points.append(LeafPoint(length * 0.1, math.pi / 2, 0.2, [0, length * 0.9]))
 
     # #points at the wide bit of the leaf
     # for i in range(widePoints):
@@ -178,15 +180,15 @@ def maple2(length = 70):
     #
     #     points.append(LeafPoint(r,a, wideCentre))
 
-    tipCentre = [0, length*0.75]
-    #points at the narrow bit of the leaf
-    for i in range(tipPoints):
-        r=length*0.3
-        fromA = -math.pi * 0.1
-        toA = math.pi * 0.2
-        a = fromA +  i*(toA - fromA)/(max(tipPoints-1,1))
-
-        points.append(LeafPoint(r,a, 0.2, tipCentre))
+    # tipCentre = [0, length*0.75]
+    # #points at the narrow bit of the leaf
+    # for i in range(tipPoints):
+    #     r=length*0.3
+    #     fromA = -math.pi * 0.1
+    #     toA = math.pi * 0.2
+    #     a = fromA +  i*(toA - fromA)/(max(tipPoints-1,1))
+    #
+    #     points.append(LeafPoint(r,a, 0.2, tipCentre))
 
 
 
@@ -207,37 +209,14 @@ def maple2(length = 70):
             start = points[i]
             startPos = start.getPos()
             end = points[i+1]
-            endPos = end.getPos()
-
-            midPos = np.divide(np.add(startPos, endPos),2)
-
-            line = np.subtract(endPos, startPos)
-            dist = np.linalg.norm(line)
-            np.append(line, 0)
-            #better than cross product and guessing clockwise/anticlockwise, go from midVec in the direction of centre
-            # cross = np.cross(line, [0,0,1])
-            # crossVec = [cross[0], cross[1]]
-            #
-            # offsetPoint = np.add(midVec,np.multiply(crossVec,-0.1))
-
-            midToCentre = np.subtract(start.centre, midPos)
-            #make unit vector
-            midToCentre = np.divide(midToCentre, np.linalg.norm(midToCentre))
-
-            #innerpoint try instead be on a straightline from the first point to the centre of the leaf
-            #innerPoint = np.add(midPos,np.multiply(midToCentre, start.r*start.inwardness))
 
             pointToCentre = np.subtract(start.centre, startPos)
 
             innerPoint = np.add(startPos, np.multiply(pointToCentre, start.inwardness))
 
-            leaf = bendyLineBetween(leaf, start.getPos(), innerPoint, start.centre, True, start.bendinessIn)
+            leaf = bendyLineBetween(leaf, startPos, innerPoint, start.centre, True, start.bendinessIn)
             leaf = bendyLineBetween(leaf, innerPoint, end.getPos(), start.centre, False, start.bendinessOut)
 
-            # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(end.getPos()[0],end.getPos()[1])
-            # leaf = leaf.moveTo(start.getPos()[0],start.getPos()[1]).lineTo(innerPoint[0], innerPoint[1]).lineTo(end.getPos()[0],end.getPos()[1])
-
-    # leaf = leaf.lineTo(0,length)
 
     thick=(13/70)*length
 
@@ -247,20 +226,42 @@ def maple2(length = 70):
     # return leaf
     leaf = leaf.extrude(thick)
 
+    # return leaf
+
     #the cutters need work - they currently only function on a leaf of length 70
     cutters=[]
-    angle = 0
-    for a in [40,60,80]:
-        cutter = cq.Workplane("XZ").moveTo(-thick*2,0).lineTo(0,-thick*2).lineTo(thick*2,0).close().twistExtrude(-length,a).rotate((0,0,0),(0,0,1),angle).translate([0,0,thick*2 + thick*0.5])
-        cutters.append(cutter)
-        angle+=15
 
-    allCutters = cutters[0]
-    for a in range(1,len(cutters)):
-        allCutters = allCutters.union(cutters[a])
+    cutter = cq.Workplane("XZ").tag("base")
 
+    if cuts == 1:
+        angle = 0
+        for a in [40,60,80]:
+            cutter = cq.Workplane("XZ").moveTo(-thick*2,0).lineTo(0,-thick*2).lineTo(thick*2,0).close().twistExtrude(-length,a).rotate((0,0,0),(0,0,1),angle).translate([0,0,thick*2 + thick*0.5])
+            cutters.append(cutter)
+            angle+=15
+    elif cuts == 2:
 
-    allCutters = allCutters.union(allCutters.mirror(mirrorPlane="YZ"))
+        startHeight=thick*0.5
+        midHeight=thick*0.6
+        endHeight=thick*0.675
+
+        startPos=[0,length*0]
+
+        for point in points[1:-1]:
+            print(point.getPos())
+            cutter = cq.Workplane("XZ").transformed(offset=[0,0,-startPos[1]]).move(-thick * 1, thick * 2.5).lineTo(0, startHeight).lineTo(thick * 1, thick * 2.5).close()
+            # cutter = cutter.workplaneFromTagged("base").moveTo(-thick * 2, thick * 2.5).lineTo(0, startHeight).lineTo(thick * 2, thick * 2.5).close()
+
+            path = cq.Workplane("XY").moveTo(startPos[0],startPos[1]).spline([(startPos[0],startPos[1],startHeight),(length*0.1,length*0.5,midHeight), (length,length,endHeight)])
+
+            path = bendyLineBetween(cq.Workplane("XY"), startPos, point.getPos(), [0,length], True, 0.05, heightStart=startHeight, heightMid=midHeight, heightEnd=endHeight)
+            # return path
+            cutter = cutter.sweep(path)
+            cutters.append(cutter)
+            cutters.append(cutter.mirror("ZY"))
+        # return cutter
+
+    # return cutters
     # return cutter
     # return allCutters
 
@@ -276,13 +277,32 @@ def maple2(length = 70):
     # cut the top of the leaf into a rounded shape
     leaf = leaf.cut(mould)
 
-    leaf = leaf.cut(allCutters)
+    #cut some patterns out as well
+    # if len(cutters) > 1:
+    #     allCutters = cutters[0]
+    #     for a in range(1, len(cutters)):
+    #         allCutters = allCutters.union(cutters[a])
+    #
+    #     # allCutters = allCutters.union(allCutters.mirror(mirrorPlane="YZ"))
+    # elif len(cutters) == 1:
+    #     allCutters=cutters[0]
 
+    #for some reason the cutter isn't a shape, so fetch the shape from teh shape. Wish I understnd wtf was going on here
+    allCutters = cq.Compound.makeCompound([c.objects[0] for c in cutters])
+
+    # return allCutters
+    # return cutters
+    # for cutter in cutters:
+    #     leaf = leaf.cut(cutter)
+
+    leaf = leaf.cut(allCutters)
+    # leaf = leaf.union(allCutters)
+    # leaf = leaf.add(allCutters)
 
     return leaf
 
-leaf = maple2(70)
+leaf = maple2(55)
 
 show_object(leaf)
 
-# exporters.export(leaf, "out/cuckoo_pendulum_leaf.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(leaf, "out/cuckoo_pendulum_leaf2.stl", tolerance=0.001, angularTolerance=0.01)
