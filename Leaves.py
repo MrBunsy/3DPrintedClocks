@@ -148,7 +148,7 @@ def bendyLineBetween(shape,a,b,centre,bendTowardsCentre=True, bendMultiplier=0.2
 
     return shape
 
-def maple2(length = 70, shape=1, cuts=2):
+def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
     '''
     [0,0] = bit of leaf that would attach to a stalk, tip pointing upwards (+ve y)
     currently symetric around y axis
@@ -241,24 +241,30 @@ def maple2(length = 70, shape=1, cuts=2):
             angle+=15
     elif cuts == 2:
 
-        startHeight=thick*0.5
+        startHeight=thick*0.55
         midHeight=thick*0.6
         endHeight=thick*0.675
 
         startPos=[0,length*0]
 
-        for point in points[1:-1]:
+        for point in points:
+            # if point == points[-1]:
+            #     startPos=[0,length*0.1]
             print(point.getPos())
             cutter = cq.Workplane("XZ").transformed(offset=[0,0,-startPos[1]]).move(-thick * 1, thick * 2.5).lineTo(0, startHeight).lineTo(thick * 1, thick * 2.5).close()
             # cutter = cutter.workplaneFromTagged("base").moveTo(-thick * 2, thick * 2.5).lineTo(0, startHeight).lineTo(thick * 2, thick * 2.5).close()
 
-            path = cq.Workplane("XY").moveTo(startPos[0],startPos[1]).spline([(startPos[0],startPos[1],startHeight),(length*0.1,length*0.5,midHeight), (length,length,endHeight)])
+            # path = cq.Workplane("XY").moveTo(startPos[0],startPos[1]).spline([(startPos[0],startPos[1],startHeight),(length*0.1,length*0.5,midHeight), (length,length,endHeight)])
 
-            path = bendyLineBetween(cq.Workplane("XY"), startPos, point.getPos(), [0,length], True, 0.05, heightStart=startHeight, heightMid=midHeight, heightEnd=endHeight)
+            bend=0.05
+            if point == points[-1]:
+                bend=0
+            path = bendyLineBetween(cq.Workplane("XY"), startPos, point.getPos(), [0,length], True, bend, heightStart=startHeight, heightMid=midHeight, heightEnd=endHeight)
             # return path
             cutter = cutter.sweep(path)
             cutters.append(cutter)
-            cutters.append(cutter.mirror("ZY"))
+            if point != points[-1]:
+                cutters.append(cutter.mirror("ZY"))
         # return cutter
 
     # return cutters
@@ -299,10 +305,22 @@ def maple2(length = 70, shape=1, cuts=2):
     # leaf = leaf.union(allCutters)
     # leaf = leaf.add(allCutters)
 
+    if withHoleD > 0:
+        #punch a hole down the centre (lengthways)
+        hole = cq.Workplane("XZ").circle(withHoleD/2).extrude(length*4).translate([0,length*2,withHoleD])
+        leaf = leaf.cut(hole)
+
     return leaf
 
-leaf = maple2(55)
 
-show_object(leaf)
 
-# exporters.export(leaf, "out/cuckoo_pendulum_leaf2.stl", tolerance=0.001, angularTolerance=0.01)
+leaf = maple2(55,withHoleD=2.5)
+exporters.export(leaf, "out/cuckoo_pendulum_leaf_fortoy.stl", tolerance=0.001, angularTolerance=0.01)
+
+# if __name__ == "__main__":
+#
+#     leaf = maple2(55)
+#
+#     show_object(leaf)
+#
+#     exporters.export(leaf, "out/cuckoo_pendulum_leaf2.stl", tolerance=0.001, angularTolerance=0.01)
