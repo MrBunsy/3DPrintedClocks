@@ -307,15 +307,20 @@ def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
 
     if withHoleD > 0:
         #punch a hole down the centre (lengthways)
-        hole = cq.Workplane("XZ").circle(withHoleD/2).extrude(length*4).translate([0,length*2,withHoleD])
+        z = withHoleD
+        if withHoleD > 2.5:
+            z = withHoleD*0.75
+        hole = cq.Workplane("XZ").circle(withHoleD/2).extrude(length*4).translate([0,length*2,z])
         leaf = leaf.cut(hole)
 
     return leaf
 
 
 
-leaf = maple2(55,withHoleD=2.5)
-exporters.export(leaf, "out/cuckoo_pendulum_leaf_fortoy.stl", tolerance=0.001, angularTolerance=0.01)
+# leaf = maple2(55,withHoleD=2.5)
+leaf_small = maple2(45,withHoleD=3)
+
+exporters.export(leaf_small, "out/cuckoo_pendulum_leaf_fortoy_small.stl", tolerance=0.001, angularTolerance=0.01)
 
 # if __name__ == "__main__":
 #

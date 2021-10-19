@@ -134,17 +134,60 @@ def pendulum_bob_fixing():
 
     return fixing
 
+def cuckoo_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
+    '''
+    A back for the toy cuckoo , could be adapted easily for a back to a proper cuckoo
+    :param width:
+    :param length:
+    :param edge_thick:
+    :param inner_width:
+    :param hole_d:
+    :return:
+    '''
+
+    back = cq.Workplane("XY").rect(width,length).extrude(edge_thick)
+    # extra thick
+    # back = back.faces(">Z").workplane().rect(inner_width,length).extrude(edge_thick)
+
+    #hole to hang on wall
+    back = back.faces(">Z").workplane().moveTo(0,width/2-hole_d).circle(hole_d/2).cutThruAll()
+
+    return back
+
+class Whistle():
+
+    def __init__(self, total_length=70):
+        self.total_length=total_length
+        self.whistle_top_length=23
+        self.wall_thick=2
+        self.pipe_width=24
+
+    def getBody(self):
+        pipe = cq.Workplane("XY").rect(self.pipe_width, self.pipe_width).extrude(self.total_length - self.whistle_top_length)
+        pipe = pipe.faces(">Z").workplane().rect(self.pipe_width - self.wall_thick * 2, self.pipe_width - self.wall_thick * 2).cutThruAll()
+
+        return pipe
+
+    def getWhistleTop(self):
+        top=cq.Workplane("XY").rect(self.pipe_width, self.pipe_width).extrude(self.whistle_top_length)
+
+
 plate = chain_plate()
 rod = pendulum_rod()
 toyrod = pendulum_rod(max_length=150,hook_type="toy")
 fixing = pendulum_bob_fixing()
+whistle = Whistle()
+toyback = cuckoo_back()
 
 # show_object(plate)
 # show_object(rod)
 # show_object(toyrod)
-show_object(fixing)
+# show_object(fixing)
+# show_object(whistle.getBody())
+show_object(toyback)
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toyrod, "out/cuckoo_toy_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(fixing, "out/cuckoo_pendulum_fixing.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(fixing, "out/cuckoo_pendulum_fixing.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(toyback, "out/cuckoo_toy_back.stl", tolerance=0.001, angularTolerance=0.01)
