@@ -154,6 +154,40 @@ def cuckoo_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
 
     return back
 
+def dial(diameter=63, hole_d=7):
+    radius = diameter/2
+    inner_radius= radius*0.575
+    base_thick = 2
+    edge_thick=2
+    # dial = cq.Workplane("XY").circle(diameter/2).extrude(base_thick)
+    fontsize = diameter*0.13
+    fontY = -radius + fontsize*0.9
+    fontThick = 0.4
+    # dial.faces(">Z").workplane().tag("numbers_base")
+
+    circle = cq.Workplane("XY").circle(radius)
+    dial = cq.Workplane("XZ").moveTo(hole_d/2,0).lineTo(radius,0).line(0,base_thick*0.5).line(-edge_thick*0.5,base_thick).tangentArcPoint((radius-edge_thick,base_thick),relative=False).\
+        lineTo(inner_radius,base_thick).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
+        line(-base_thick*0.5,0).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).\
+        tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
+        tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True). \
+        tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True). \
+        lineTo(hole_d/2,base_thick*1.5).lineTo(hole_d/2,0).close().sweep(circle)
+
+    # dial = dial.add(profile)
+    numberscq = cq.Workplane("XY").transformed(offset=(0,0,base_thick)).tag("numbers_base")
+    numbers = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
+    # allNumbersObj=cq.Workplane("XY")
+    for i,num in enumerate(numbers):
+        #Trajan
+        #Times New Roman
+        #Cambria
+        angleRads = -i*(math.pi*2/12)-math.pi/2
+        fontAngleDegs = 360*angleRads/(math.pi*2)+90
+        numberscq = numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)).text(txt=num,fontsize=fontsize, distance=fontThick, cut=False, combine=True, font="Cambria", kind="bold")#.rotate(axisStartPoint=(0,0,0),axisEndPoint=(0,0,1),angleDegrees=i*360/12)
+    # dial = dial.add(numberscq)
+    return [dial, numberscq]
+
 class Whistle():
 
     def __init__(self, total_length=70):
@@ -172,22 +206,30 @@ class Whistle():
         top=cq.Workplane("XY").rect(self.pipe_width, self.pipe_width).extrude(self.whistle_top_length)
 
 
-plate = chain_plate()
-rod = pendulum_rod()
-toyrod = pendulum_rod(max_length=150,hook_type="toy")
-fixing = pendulum_bob_fixing()
-whistle = Whistle()
-toyback = cuckoo_back()
+# plate = chain_plate()
+# rod = pendulum_rod()
+# toyrod = pendulum_rod(max_length=150,hook_type="toy")
+# fixing = pendulum_bob_fixing()
+# whistle = Whistle()
+# toyback = cuckoo_back()
+toy_dial = dial()
+# dial_back=toy_dial[0]
+# dial_numbers=toy_dial[1]
 
 # show_object(plate)
 # show_object(rod)
 # show_object(toyrod)
 # show_object(fixing)
 # show_object(whistle.getBody())
-show_object(toyback)
+# show_object(toyback)
+show_object(toy_dial[0])
+show_object(toy_dial[1])
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toyrod, "out/cuckoo_toy_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(fixing, "out/cuckoo_pendulum_fixing.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(toyback, "out/cuckoo_toy_back.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toyback, "out/cuckoo_toy_back.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toy_dial, "out/cuckoo_toy_dial.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toy_dial[0], "out/cuckoo_toy_dial_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toy_dial[1], "out/cuckoo_toy_dial_white.stl")#, tolerance=0.001, angularTolerance=0.01)
