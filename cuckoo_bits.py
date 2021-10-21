@@ -154,6 +154,9 @@ def cuckoo_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
 
     return back
 
+# def roman_numerals(number, height, workplane):
+#
+
 def dial(diameter=63, hole_d=7):
     radius = diameter/2
     inner_radius= radius*0.575
@@ -170,8 +173,10 @@ def dial(diameter=63, hole_d=7):
         lineTo(inner_radius,base_thick).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
         line(-base_thick*0.5,0).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).\
         tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
-        tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True). \
-        tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True). \
+        tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * 0.75, -base_thick * 0.75), relative=True). \
+        tangentArcPoint((-base_thick * 0.75, base_thick * 0.75), relative=True).tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True). \
+        tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True). \
+        tangentArcPoint((-base_thick * 0.25, base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, base_thick * 0.25), relative=True). \
         lineTo(hole_d/2,base_thick*1.5).lineTo(hole_d/2,0).close().sweep(circle)
 
     # dial = dial.add(profile)
@@ -184,7 +189,9 @@ def dial(diameter=63, hole_d=7):
         #Cambria
         angleRads = -i*(math.pi*2/12)-math.pi/2
         fontAngleDegs = 360*angleRads/(math.pi*2)+90
-        numberscq = numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)).text(txt=num,fontsize=fontsize, distance=fontThick, cut=False, combine=True, font="Cambria", kind="bold")#.rotate(axisStartPoint=(0,0,0),axisEndPoint=(0,0,1),angleDegrees=i*360/12)
+        font="Cambria"
+        # font="Times New Roman"
+        numberscq = numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)).text(txt=num,fontsize=fontsize, distance=fontThick, cut=False, combine=True, font=font, kind="bold")#.rotate(axisStartPoint=(0,0,0),axisEndPoint=(0,0,1),angleDegrees=i*360/12)
     # dial = dial.add(numberscq)
     return [dial, numberscq]
 
