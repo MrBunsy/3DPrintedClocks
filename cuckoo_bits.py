@@ -154,8 +154,57 @@ def cuckoo_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
 
     return back
 
-# def roman_numerals(number, height, workplane):
-#
+def roman_numerals(number, height, workplane, thick=0.4):
+    width = height * 0.15
+    end_tip_height = width * 0.5
+    # the sticky out bits
+    diamond_width = width * 1.75
+    diamond_height = width * 0.75
+    v_top_width = width * 3
+    thin_width = width * 0.75
+    widths={}
+    widths["I"] = diamond_width*0.9
+    widths["V"] = (v_top_width-width + diamond_width)*0.9
+
+    #the height of the taper at top and bottom
+    # taperHeight=width*math.sqrt(2)/2
+    def make_i(workplane):
+
+
+        i = workplane.tag("numeral_base")
+        i = i.moveTo(0,-height/2).line(width/2,end_tip_height).line(0,height-end_tip_height*2).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).line(0,-(height-end_tip_height*2)).close().extrude(thick)
+        for j in range(3):
+            i = i.workplaneFromTagged("numeral_base").moveTo(0,-height/2+width/2-diamond_height/2 + j*(height/2-width/2)).line(diamond_width/2,diamond_height/2).line(-diamond_width/2,diamond_height/2).line(-diamond_width/2,-diamond_height/2).close().extrude(thick)
+
+        return i
+    def make_v(workplane):
+        v = workplane.tag("numeral_base")
+
+
+        #left stroke
+        v = v.moveTo(0,-height/2).line(width/2,end_tip_height).lineTo(-v_top_width/2+width,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(-width/2,-height/2+end_tip_height).close().extrude(thick)
+        #right stroke
+        v = v.workplaneFromTagged("numeral_base").moveTo(width/2,-height/2+end_tip_height).lineTo(v_top_width/2,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(v_top_width/2-thin_width,height/2-end_tip_height).lineTo(width/2-thin_width,-height/2+end_tip_height).close().extrude(thick)
+        return v
+    makes = {}
+    makes["I"]=make_i
+    makes["V"]=make_v
+
+    total_width=0
+    for char in number:
+        total_width+=widths[char]
+    # current_x=0
+    #start off to the left by half the total width and half the first char width
+    workplane=workplane.transformed(offset=(-total_width/2-widths[number[0]]/2,0))
+    for char in number:
+        thiswidth=widths[char]
+        # workplane.translate()
+        workplane = makes[char](workplane.transformed(offset=(thiswidth,0)))
+        # workplane=workplane.transformed(offset=(thiswidth/2,0))
+        # current_x+=thiswidth
+    print("totalwidth: {}".format(total_width))
+    # return make_i(workplane,height,thick)
+    return workplane
 
 def dial(diameter=63, hole_d=7):
     radius = diameter/2
@@ -219,9 +268,9 @@ class Whistle():
 # fixing = pendulum_bob_fixing()
 # whistle = Whistle()
 # toyback = cuckoo_back()
-toy_dial = dial()
-# dial_back=toy_dial[0]
-# dial_numbers=toy_dial[1]
+# toy_dial = dial()
+
+num = roman_numerals("VIII",10,cq.Workplane("XY"))
 
 # show_object(plate)
 # show_object(rod)
@@ -229,8 +278,9 @@ toy_dial = dial()
 # show_object(fixing)
 # show_object(whistle.getBody())
 # show_object(toyback)
-show_object(toy_dial[0])
-show_object(toy_dial[1])
+# show_object(toy_dial[0])
+# show_object(toy_dial[1])
+show_object(num)
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
