@@ -158,13 +158,16 @@ def roman_numerals(number, height, workplane, thick=0.4):
     width = height * 0.15
     end_tip_height = width * 0.5
     # the sticky out bits
-    diamond_width = width * 1.75
+    diamond_width = width * 2#1.75
     diamond_height = width * 0.75
-    v_top_width = width * 3
+    v_top_width = width * 2.5
     thin_width = width * 0.75
     widths={}
-    widths["I"] = diamond_width*0.9
+    widths["I"] = width + diamond_width*0.2
     widths["V"] = (v_top_width-width + diamond_width)*0.9
+
+    def add_diamond(workplane,pos):
+        return workplane.moveTo(pos[0],pos[1]).move(0,-diamond_height/2).line(diamond_width/2,diamond_height/2).line(-diamond_width/2,diamond_height/2).line(-diamond_width/2,-diamond_height/2).close().extrude(thick)
 
     #the height of the taper at top and bottom
     # taperHeight=width*math.sqrt(2)/2
@@ -174,9 +177,10 @@ def roman_numerals(number, height, workplane, thick=0.4):
         i = workplane.tag("numeral_base")
         i = i.moveTo(0,-height/2).line(width/2,end_tip_height).line(0,height-end_tip_height*2).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).line(0,-(height-end_tip_height*2)).close().extrude(thick)
         for j in range(3):
-            i = i.workplaneFromTagged("numeral_base").moveTo(0,-height/2+width/2-diamond_height/2 + j*(height/2-width/2)).line(diamond_width/2,diamond_height/2).line(-diamond_width/2,diamond_height/2).line(-diamond_width/2,-diamond_height/2).close().extrude(thick)
-
+            i = add_diamond(i.workplaneFromTagged("numeral_base"),(0,j*(height/2-end_tip_height)-height/2+end_tip_height))
         return i
+
+
     def make_v(workplane):
         v = workplane.tag("numeral_base")
 
@@ -185,6 +189,20 @@ def roman_numerals(number, height, workplane, thick=0.4):
         v = v.moveTo(0,-height/2).line(width/2,end_tip_height).lineTo(-v_top_width/2+width,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(-width/2,-height/2+end_tip_height).close().extrude(thick)
         #right stroke
         v = v.workplaneFromTagged("numeral_base").moveTo(width/2,-height/2+end_tip_height).lineTo(v_top_width/2,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(v_top_width/2-thin_width,height/2-end_tip_height).lineTo(width/2-thin_width,-height/2+end_tip_height).close().extrude(thick)
+
+        #diamonds
+        diamond_positions=[
+            #(0,-height/2+end_tip_height),
+                           (-v_top_width/2+width/2,height/2-end_tip_height),
+                           (v_top_width/2-width/2,height/2-end_tip_height),
+                           ((-v_top_width/2+width/2)*0.75,0),
+                           (-(-v_top_width/2+width/2)*0.75,0)]
+        for pos in diamond_positions:
+            v = add_diamond(v.workplaneFromTagged("numeral_base"), pos)
+        bottom_diamond_half_width = v_top_width/2-width/2+diamond_width/2
+        v = v.workplaneFromTagged("numeral_base").moveTo(0,-height/2+end_tip_height-diamond_height/2).line(bottom_diamond_half_width,diamond_height/2).line(-bottom_diamond_half_width,diamond_height/2)\
+        .line(-diamond_width/2,-diamond_height/2).line(diamond_width/2,-diamond_height/2).close().extrude(thick)
+
         return v
     makes = {}
     makes["I"]=make_i
@@ -195,11 +213,11 @@ def roman_numerals(number, height, workplane, thick=0.4):
         total_width+=widths[char]
     # current_x=0
     #start off to the left by half the total width and half the first char width
-    workplane=workplane.transformed(offset=(-total_width/2-widths[number[0]]/2,0))
+    # workplane=workplane.transformed(offset=(-total_width/2,0))
     for char in number:
         thiswidth=widths[char]
         # workplane.translate()
-        workplane = makes[char](workplane.transformed(offset=(thiswidth,0)))
+        workplane = makes[char](workplane.transformed(offset=(thiswidth/2,0))).translate((-thiswidth/2,0))
         # workplane=workplane.transformed(offset=(thiswidth/2,0))
         # current_x+=thiswidth
     print("totalwidth: {}".format(total_width))
