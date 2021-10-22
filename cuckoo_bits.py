@@ -165,6 +165,7 @@ def roman_numerals(number, height, workplane, thick=0.4):
     widths={}
     widths["I"] = width + diamond_width*0.2
     widths["V"] = (v_top_width-width + diamond_width)*0.9
+    widths["X"] = widths["V"]
 
     def add_diamond(workplane,pos):
         return workplane.moveTo(pos[0],pos[1]).move(0,-diamond_height/2).line(diamond_width/2,diamond_height/2).line(-diamond_width/2,diamond_height/2).line(-diamond_width/2,-diamond_height/2).close().extrude(thick)
@@ -204,9 +205,29 @@ def roman_numerals(number, height, workplane, thick=0.4):
         .line(-diamond_width/2,-diamond_height/2).line(diamond_width/2,-diamond_height/2).close().extrude(thick)
 
         return v
+
+    def make_x(workplane):
+        x = workplane.tag("numeral_base")
+        # thick stroke
+        x = x.moveTo(v_top_width/2-width/2, -height / 2).line(width / 2, end_tip_height).lineTo(-v_top_width / 2 + width, height / 2 - end_tip_height).line(-width / 2, end_tip_height).line(-width / 2, -end_tip_height).\
+            lineTo(v_top_width/2-width,-height / 2 + end_tip_height).close().extrude(thick)
+        # thin stroke
+        x = x.workplaneFromTagged("numeral_base").moveTo(-v_top_width/2+thin_width, -height / 2 + end_tip_height).lineTo(v_top_width / 2, height / 2 - end_tip_height).line(-width / 2, end_tip_height).line(-width / 2, -end_tip_height).\
+            lineTo(v_top_width / 2 - thin_width, height / 2 - end_tip_height).lineTo(-v_top_width/2, -height / 2 + end_tip_height).line(width/2,-end_tip_height).line(width/2,end_tip_height).close().extrude(thick)
+
+        diamond_positions=[(0,0), (v_top_width/2-width/2,height/2-end_tip_height)
+                           , ((v_top_width/2-width/2),-(height/2-end_tip_height))
+                           , (-(v_top_width/2-width/2),(height/2-end_tip_height))
+                           , (-(v_top_width/2-width/2),-(height/2-end_tip_height))]
+        for pos in diamond_positions:
+            x = add_diamond(x.workplaneFromTagged("numeral_base"), pos)
+
+        return x
+
     makes = {}
     makes["I"]=make_i
     makes["V"]=make_v
+    makes["X"]=make_x
 
     total_width=0
     for char in number:
@@ -258,7 +279,8 @@ def dial(diameter=63, hole_d=7):
         fontAngleDegs = 360*angleRads/(math.pi*2)+90
         font="Cambria"
         # font="Times New Roman"
-        numberscq = numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)).text(txt=num,fontsize=fontsize, distance=fontThick, cut=False, combine=True, font=font, kind="bold")#.rotate(axisStartPoint=(0,0,0),axisEndPoint=(0,0,1),angleDegrees=i*360/12)
+        # numberscq = numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)).text(txt=num,fontsize=fontsize, distance=fontThick, cut=False, combine=True, font=font, kind="bold")#.rotate(axisStartPoint=(0,0,0),axisEndPoint=(0,0,1),angleDegrees=i*360/12)
+        numberscq = roman_numerals(num, fontsize, numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)))
     # dial = dial.add(numberscq)
     return [dial, numberscq]
 
@@ -286,9 +308,9 @@ class Whistle():
 # fixing = pendulum_bob_fixing()
 # whistle = Whistle()
 # toyback = cuckoo_back()
-# toy_dial = dial()
+toy_dial = dial()
 
-num = roman_numerals("VIII",10,cq.Workplane("XY"))
+# num = roman_numerals("XII",10,cq.Workplane("XY"))
 
 # show_object(plate)
 # show_object(rod)
@@ -297,8 +319,8 @@ num = roman_numerals("VIII",10,cq.Workplane("XY"))
 # show_object(whistle.getBody())
 # show_object(toyback)
 # show_object(toy_dial[0])
-# show_object(toy_dial[1])
-show_object(num)
+show_object(toy_dial[1])
+# show_object(num)
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(rod, "out/cuckoo_pendulum_rod.stl", tolerance=0.001, angularTolerance=0.01)
