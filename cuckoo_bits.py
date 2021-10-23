@@ -247,30 +247,32 @@ def roman_numerals(number, height, workplane, thick=0.4):
     # return make_i(workplane,height,thick)
     return workplane
 
-def dial(diameter=63, hole_d=7):
+def dial(diameter=60, hole_d=7):
     radius = diameter/2
     inner_radius= radius*0.575
     base_thick = 2
     edge_thick=2
     # dial = cq.Workplane("XY").circle(diameter/2).extrude(base_thick)
     # fontsize = diameter*0.13
-    fontsize = ((radius - edge_thick) - inner_radius)*0.85
+    fontsize = ((radius - edge_thick) - inner_radius)*0.8
     #fontY = -radius + fontsize*0.9
     fontY = -((radius - edge_thick + inner_radius)/2 )
     fontThick = 0.4
     # dial.faces(">Z").workplane().tag("numbers_base")
-    thick_ridge=0.6
+    thick_ridge1 = 0.3
+    thick_ridge2=0.4
 
     circle = cq.Workplane("XY").circle(radius)
     dial = cq.Workplane("XZ").moveTo(hole_d/2,0).lineTo(radius,0).line(0,base_thick*0.5).line(-edge_thick*0.5,base_thick).tangentArcPoint((radius-edge_thick,base_thick),relative=False).\
         lineTo(inner_radius,base_thick).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
         line(-base_thick*0.5,0).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).\
         tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
-        tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * thick_ridge, -base_thick * thick_ridge), relative=True). \
-        tangentArcPoint((-base_thick * thick_ridge, base_thick * thick_ridge), relative=True).tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True). \
+        tangentArcPoint((-base_thick * thick_ridge1, -base_thick * thick_ridge1), relative=True).tangentArcPoint((-base_thick * thick_ridge2, -base_thick * thick_ridge2), relative=True). \
+        tangentArcPoint((-base_thick * thick_ridge2, base_thick * thick_ridge2), relative=True).tangentArcPoint((-base_thick * thick_ridge1, base_thick * thick_ridge1), relative=True). \
         tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True). \
         tangentArcPoint((-base_thick * 0.25, base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, base_thick * 0.25), relative=True). \
-        lineTo(hole_d/2,base_thick*1.5).lineTo(hole_d/2,0).close().sweep(circle)
+        tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True). \
+        lineTo(hole_d/2,base_thick*1).lineTo(hole_d/2,0).close().sweep(circle)
 
     # dial = dial.add(profile)
     numberscq_base = cq.Workplane("XY").transformed(offset=(0,0,base_thick)).tag("numbers_base")
