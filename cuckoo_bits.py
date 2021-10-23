@@ -2,6 +2,7 @@ import cadquery as cq
 from pathlib import Path
 from cadquery import exporters
 import math
+import sys
 
 if 'show_object' not in globals():
     def show_object(*args, **kwargs):
@@ -247,7 +248,7 @@ def roman_numerals(number, height, workplane, thick=0.4):
     # return make_i(workplane,height,thick)
     return workplane
 
-def dial(diameter=60, hole_d=7):
+def dial(diameter=60, hole_d=7, black=True):
     radius = diameter/2
     inner_radius= radius*0.575
     base_thick = 2
@@ -258,13 +259,14 @@ def dial(diameter=60, hole_d=7):
     #fontY = -radius + fontsize*0.9
     fontY = -((radius - edge_thick + inner_radius)/2 )
     fontThick = 0.4
+    blackThick = 0.4 if black else 0.001 #bodge of 0.001 because cadquery won't allow a line of length 0
     # dial.faces(">Z").workplane().tag("numbers_base")
     thick_ridge1 = 0.3
     thick_ridge2=0.4
 
     circle = cq.Workplane("XY").circle(radius)
     dial = cq.Workplane("XZ").moveTo(hole_d/2,0).lineTo(radius,0).line(0,base_thick*0.5).line(-edge_thick*0.5,base_thick).tangentArcPoint((radius-edge_thick,base_thick),relative=False).\
-        lineTo(inner_radius,base_thick).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
+        line(0,-blackThick).lineTo(inner_radius,base_thick-blackThick).line(0,blackThick).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
         line(-base_thick*0.5,0).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).\
         tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
         tangentArcPoint((-base_thick * thick_ridge1, -base_thick * thick_ridge1), relative=True).tangentArcPoint((-base_thick * thick_ridge2, -base_thick * thick_ridge2), relative=True). \
@@ -292,7 +294,7 @@ def dial(diameter=60, hole_d=7):
         # numcq = roman_numerals(num, fontsize, numberscq_base.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)))
 
         #.transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY, base_thick))
-        numcq = roman_numerals(num, fontsize,cq.Workplane("XY")).rotate((0,0,0),(0,0,1),fontAngleDegs).translate((math.cos(angleRads)*fontY,math.sin(angleRads)*fontY, base_thick))
+        numcq = roman_numerals(num, fontsize,cq.Workplane("XY"), fontThick).rotate((0,0,0),(0,0,1),fontAngleDegs).translate((math.cos(angleRads)*fontY,math.sin(angleRads)*fontY, base_thick))
         numberscqs.append(numcq)
         # numberscq_base = numberscq_base.add(numcq)
 
@@ -300,8 +302,15 @@ def dial(diameter=60, hole_d=7):
     for i in range(1,len(numberscqs)):
         numberscq_base = numberscq_base.add(numberscqs[i])
 
-    # dial = dial.add(numberscq)
-    return [dial, numberscq_base]
+
+
+    out =  [dial, numberscq_base]
+
+    if black:
+        blackDisc = cq.Workplane("XY").transformed(offset=(0,0,base_thick-blackThick)).circle(radius-edge_thick).extrude(blackThick).circle(inner_radius).cutThruAll()
+        out.append(blackDisc)
+
+    return out
 
 class Whistle():
 
@@ -328,6 +337,7 @@ class Whistle():
 # whistle = Whistle()
 # toyback = cuckoo_back()
 toy_dial = dial()
+toy_dial_brown=dial(black=False)
 
 # num = roman_numerals("VIIIX",10,cq.Workplane("XY"))
 
@@ -339,6 +349,8 @@ toy_dial = dial()
 # show_object(toyback)
 show_object(toy_dial[0])
 show_object(toy_dial[1])
+if len(toy_dial) > 2:
+    show_object(toy_dial[2])
 # show_object(num)
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
@@ -348,4 +360,7 @@ show_object(toy_dial[1])
 # exporters.export(toyback, "out/cuckoo_toy_back.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toy_dial, "out/cuckoo_toy_dial.stl", tolerance=0.001, angularTolerance=0.01)
 exporters.export(toy_dial[0], "out/cuckoo_toy_dial_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
+exporters.export(toy_dial_brown[0], "out/cuckoo_toy_dial_allbrown_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
 exporters.export(toy_dial[1], "out/cuckoo_toy_dial_white.stl")#, tolerance=0.001, angularTolerance=0.01)
+if len(toy_dial) > 2:
+    exporters.export(toy_dial[2], "out/cuckoo_toy_dial_black.stl")  # , tolerance=0.001, angularTolerance=0.01)
