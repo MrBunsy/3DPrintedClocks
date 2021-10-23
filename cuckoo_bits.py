@@ -158,13 +158,15 @@ def roman_numerals(number, height, workplane, thick=0.4):
     width = height * 0.15
     end_tip_height = width * 0.5
     # the sticky out bits
-    diamond_width = width * 2#1.75
-    diamond_height = width * 0.75
+    diamond_width = width * 2.5#2#1.75
+    diamond_height = width * 1#0.75
+    #instead of a point, end in a blunt bit this tall
+    # diamond_thinnest = diamond_height*0.1
     v_top_width = width * 2.5
     thin_width = width * 0.75
     widths={}
-    widths["I"] = width + diamond_width*0.2
-    widths["V"] = (v_top_width-width + diamond_width)*0.9
+    widths["I"] = width*1.35# + diamond_width*0.175#0.2
+    widths["V"] = (v_top_width-width + diamond_width)*0.8
     widths["X"] = widths["V"]
 
     def add_diamond(workplane,pos):
@@ -251,18 +253,21 @@ def dial(diameter=63, hole_d=7):
     base_thick = 2
     edge_thick=2
     # dial = cq.Workplane("XY").circle(diameter/2).extrude(base_thick)
-    fontsize = diameter*0.13
-    fontY = -radius + fontsize*0.9
+    # fontsize = diameter*0.13
+    fontsize = ((radius - edge_thick) - inner_radius)*0.85
+    #fontY = -radius + fontsize*0.9
+    fontY = -((radius - edge_thick + inner_radius)/2 )
     fontThick = 0.4
     # dial.faces(">Z").workplane().tag("numbers_base")
+    thick_ridge=0.6
 
     circle = cq.Workplane("XY").circle(radius)
     dial = cq.Workplane("XZ").moveTo(hole_d/2,0).lineTo(radius,0).line(0,base_thick*0.5).line(-edge_thick*0.5,base_thick).tangentArcPoint((radius-edge_thick,base_thick),relative=False).\
         lineTo(inner_radius,base_thick).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
         line(-base_thick*0.5,0).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,-base_thick*0.25),relative=True).\
         tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).tangentArcPoint((-base_thick*0.25,base_thick*0.25),relative=True).\
-        tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * 0.75, -base_thick * 0.75), relative=True). \
-        tangentArcPoint((-base_thick * 0.75, base_thick * 0.75), relative=True).tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True). \
+        tangentArcPoint((-base_thick * 0.5, -base_thick * 0.5), relative=True).tangentArcPoint((-base_thick * thick_ridge, -base_thick * thick_ridge), relative=True). \
+        tangentArcPoint((-base_thick * thick_ridge, base_thick * thick_ridge), relative=True).tangentArcPoint((-base_thick * 0.5, base_thick * 0.5), relative=True). \
         tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, -base_thick * 0.25), relative=True). \
         tangentArcPoint((-base_thick * 0.25, base_thick * 0.25), relative=True).tangentArcPoint((-base_thick * 0.25, base_thick * 0.25), relative=True). \
         lineTo(hole_d/2,base_thick*1.5).lineTo(hole_d/2,0).close().sweep(circle)
@@ -322,7 +327,7 @@ class Whistle():
 # toyback = cuckoo_back()
 toy_dial = dial()
 
-# num = roman_numerals("IIII",10,cq.Workplane("XY"))
+# num = roman_numerals("VIIIX",10,cq.Workplane("XY"))
 
 # show_object(plate)
 # show_object(rod)
@@ -340,5 +345,5 @@ show_object(toy_dial[1])
 # exporters.export(fixing, "out/cuckoo_pendulum_fixing.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toyback, "out/cuckoo_toy_back.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toy_dial, "out/cuckoo_toy_dial.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(toy_dial[0], "out/cuckoo_toy_dial_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
-# exporters.export(toy_dial[1], "out/cuckoo_toy_dial_white.stl")#, tolerance=0.001, angularTolerance=0.01)
+exporters.export(toy_dial[0], "out/cuckoo_toy_dial_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
+exporters.export(toy_dial[1], "out/cuckoo_toy_dial_white.stl")#, tolerance=0.001, angularTolerance=0.01)
