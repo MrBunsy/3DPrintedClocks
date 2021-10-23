@@ -268,7 +268,9 @@ def dial(diameter=63, hole_d=7):
         lineTo(hole_d/2,base_thick*1.5).lineTo(hole_d/2,0).close().sweep(circle)
 
     # dial = dial.add(profile)
-    numberscq = cq.Workplane("XY").transformed(offset=(0,0,base_thick)).tag("numbers_base")
+    numberscq_base = cq.Workplane("XY").transformed(offset=(0,0,base_thick)).tag("numbers_base")
+    # numberscq = cq.Workplane("XY")
+    numberscqs = []
     numbers = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
     # allNumbersObj=cq.Workplane("XY")
     for i,num in enumerate(numbers):
@@ -280,9 +282,19 @@ def dial(diameter=63, hole_d=7):
         font="Cambria"
         # font="Times New Roman"
         # numberscq = numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)).text(txt=num,fontsize=fontsize, distance=fontThick, cut=False, combine=True, font=font, kind="bold")#.rotate(axisStartPoint=(0,0,0),axisEndPoint=(0,0,1),angleDegrees=i*360/12)
-        numberscq = roman_numerals(num, fontsize, numberscq.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)))
+        # numcq = roman_numerals(num, fontsize, numberscq_base.workplaneFromTagged("numbers_base").transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY)))
+
+        #.transformed(rotate=(0,0,fontAngleDegs),offset=(math.cos(angleRads)*fontY,math.sin(angleRads)*fontY, base_thick))
+        numcq = roman_numerals(num, fontsize,cq.Workplane("XY")).rotate((0,0,0),(0,0,1),fontAngleDegs).translate((math.cos(angleRads)*fontY,math.sin(angleRads)*fontY, base_thick))
+        numberscqs.append(numcq)
+        # numberscq_base = numberscq_base.add(numcq)
+
+    numberscq_base = numberscqs[0]
+    for i in range(1,len(numberscqs)):
+        numberscq_base = numberscq_base.add(numberscqs[i])
+
     # dial = dial.add(numberscq)
-    return [dial, numberscq]
+    return [dial, numberscq_base]
 
 class Whistle():
 
@@ -310,7 +322,7 @@ class Whistle():
 # toyback = cuckoo_back()
 toy_dial = dial()
 
-# num = roman_numerals("XII",10,cq.Workplane("XY"))
+# num = roman_numerals("IIII",10,cq.Workplane("XY"))
 
 # show_object(plate)
 # show_object(rod)
@@ -318,7 +330,7 @@ toy_dial = dial()
 # show_object(fixing)
 # show_object(whistle.getBody())
 # show_object(toyback)
-# show_object(toy_dial[0])
+show_object(toy_dial[0])
 show_object(toy_dial[1])
 # show_object(num)
 
