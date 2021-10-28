@@ -166,7 +166,8 @@ def roman_numerals(number, height, workplane, thick=0.4):
     #instead of a point, end in a blunt bit this tall
     # diamond_thinnest = diamond_height*0.1
     v_top_width = width_for_calcs * 2.5
-    thin_width = width_for_calcs * 0.75
+    thin_width = width * 0.75
+    thick_width = width*1.1
     widths={}
     widths["I"] = width_for_calcs*1.35# + diamond_width*0.175#0.2
     widths["V"] = (v_top_width-width_for_calcs + diamond_width)*0.8
@@ -189,7 +190,7 @@ def roman_numerals(number, height, workplane, thick=0.4):
 
 
         #left stroke
-        v = v.moveTo(0,-height/2).line(width/2,end_tip_height).lineTo(-v_top_width/2+width,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(-width/2,-height/2+end_tip_height).close().extrude(thick)
+        v = v.moveTo(0,-height/2).line(thick_width/2,end_tip_height).lineTo(-v_top_width/2+thick_width,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(-width/2,-height/2+end_tip_height).close().extrude(thick)
         #right stroke
         v = v.workplaneFromTagged("numeral_base").moveTo(width/2,-height/2+end_tip_height).lineTo(v_top_width/2,height/2-end_tip_height).line(-width/2,end_tip_height).line(-width/2,-end_tip_height).lineTo(v_top_width/2-thin_width,height/2-end_tip_height).lineTo(width/2-thin_width,-height/2+end_tip_height).close().extrude(thick)
 
