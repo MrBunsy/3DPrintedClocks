@@ -98,10 +98,13 @@ class LeafPoint():
 
     def __init__(self, r, angle, inwardness=0.2, centre=None, bendinessOut=0.2,bendinessIn=0.025):
         '''
-        represents a centre vector and a point in vector coordinates from it
-        :param centre:
-        :param r:
-        :param angle:
+        represents a point on the outisde of a leaf
+        :param r: radius from centre
+        :param angle: angle from centre
+        :param inwardness: how far (as proportion of distance from this outer point to hte next) to put the 'inner point' towards to centre
+        :param centre: [x,y]
+        :param bendinessOut: how bendy the line should be from the new inner point to the next outer point
+        :param bendinessIn: how bendy the line should be from this outer point to the new inner point
         '''
         self.centre=[0,0] if centre is None else centre
         self.r=r
@@ -155,8 +158,10 @@ def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
     :return:
     '''
     points = []
+    symetric=True
 
     if shape == 1:
+        #intended to go on a pendulum - loosely styled off a small green pendulum I have
         points = [LeafPoint(length*0.1,-math.pi/2,0.2,[0,length*0.1])]
 
         widePoints = 3
@@ -169,6 +174,18 @@ def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
         points.append(LeafPoint(length * (5.5 / 16), math.pi *0.25, 0.25, [0,length*(8/16)],0.1))
         # currently at the tip so we can be symmetrical, but doesn't need to be if we stop symmetry
         points.append(LeafPoint(length * 0.1, math.pi / 2, 0.2, [0, length * 0.9]))
+    elif shape == 2:
+        topCentre=[0,length*3/14]
+        midCentre = [0, length * 4 / 14]
+        bottomCentre=[0,length*0.45]
+        '''intended to go on a top crown'''
+        points.append(LeafPoint(length*0.1,-math.pi/2,0.2,[0,length*0.1], 0.05))
+        points.append(LeafPoint(length*(6/14), -math.pi*0.25,0.3, topCentre,0.11,-0.1))
+        points.append(LeafPoint(length * (6 / 14), 0, 0.2, topCentre,0.15))
+        points.append(LeafPoint(length * (7 / 14), math.pi*0.1, 0.4, midCentre,0.1,-0.1))
+        points.append(LeafPoint(length * (4.5 / 14), 0, 0.2, bottomCentre,0.1))
+        points.append(LeafPoint(length * 0.25, math.pi * 0.1, 0.3, [0,length*0.65],0.1))
+        points.append(LeafPoint(length*0.5, math.pi * 0.5, 0.2, bottomCentre))
 
     # #points at the wide bit of the leaf
     # for i in range(widePoints):
@@ -197,7 +214,7 @@ def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
 
     leaf = cq.Workplane("XY").tag("base")
     # leaf = leaf.lineTo(points[1].getPos()[0], points[1].getPos()[1])
-    leaf = bendyLineBetween(leaf, points[0].getPos(), points[1].getPos(), [0,length*0.5], False)
+    leaf = bendyLineBetween(leaf, points[0].getPos(), points[1].getPos(), [0,length*0.5], False, points[0].bendinessOut)
 
     leafCentre = [0,length/2]
 
@@ -318,9 +335,10 @@ def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
 
 
 # leaf = maple2(55,withHoleD=2.5)
-leaf_small = maple2(45,withHoleD=3)
+# leaf_small = maple2(45,withHoleD=3)
+crown_leaf2 = maple2(60,2)
 
-exporters.export(leaf_small, "out/cuckoo_pendulum_leaf_fortoy_small.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(leaf_small, "out/cuckoo_pendulum_leaf_fortoy_small.stl", tolerance=0.001, angularTolerance=0.01)
 
 # if __name__ == "__main__":
 #

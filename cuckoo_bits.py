@@ -240,7 +240,7 @@ def roman_numerals(number, height, workplane, thick=0.4):
         workplane = makes[char](workplane.transformed(offset=(thiswidth/2,0))).translate((-thiswidth/2,0))
     return workplane
 
-def dial(diameter=60, hole_d=7, black=True):
+def dial(diameter=62, hole_d=7, black=True):
     radius = diameter/2
     inner_radius= radius*0.575
     base_thick = 2
@@ -294,12 +294,15 @@ def dial(diameter=60, hole_d=7, black=True):
     return out
 
 class Whistle():
-
+    '''
+    Very much based on teh whistle built in this thread https://mb.nawcc.org/threads/how-to-diy-a-wooden-whistle.97498/
+    '''
     def __init__(self, total_length=70):
         self.total_length=total_length
-        self.whistle_top_length=23
-        self.wall_thick=2
-        self.pipe_width=24
+        self.whistle_top_length=20
+        self.wall_thick=2.5
+        self.whistle_wall_thick=2
+        self.pipe_width=25
 
     def getBody(self):
         pipe = cq.Workplane("XY").rect(self.pipe_width, self.pipe_width).extrude(self.total_length - self.whistle_top_length)
@@ -308,17 +311,53 @@ class Whistle():
         return pipe
 
     def getWhistleTop(self):
-        top=cq.Workplane("XY").rect(self.pipe_width, self.pipe_width).extrude(self.whistle_top_length)
+        wedge_depth=3
+        hole_d=8
+        #0.025"
+        wedge_end_thick = 0.6
+        #~0.03"
+        airgap = 0.8
+        chamber_height=3
+        #building the whistle on its side, hoping the wedge shape can be printed side-on
+        #I drew this side-on so x is the height of the whistle and y is the width of the whistle.
+
+        #just to make the following bit less verbose
+        w = self.whistle_top_length
+        h=self.pipe_width
+        wall = self.whistle_wall_thick
+
+        top=cq.Workplane("XY").rect(w, h).extrude(wall)
+        #the wedge
+        top = top.faces(">Z").workplane().tag("whistle").moveTo(w/2,h/2).lineTo(-w/2+wall*2+chamber_height*2,h/2-wedge_depth+wedge_end_thick).\
+            line(0,-wedge_end_thick).lineTo(w/2,h/2-wedge_depth).close().extrude(h-wall*2)
+        #top cap
+        top = top.workplaneFromTagged("whistle").moveTo(-w/2+wall/2,0).rect(wall,h).extrude(h-wall*2)
+        #hole in top cap
+        #this seems to place us at wall height
+        top = top.faces("<X").workplane().moveTo(0,(self.pipe_width-wall*2)/2).circle(hole_d/2).cutThruAll()
+        #bit that forces the air over the wedge
+        top = top.workplaneFromTagged("whistle").moveTo(-w / 2 + wall, h/2).line(wall+chamber_height,0).line(0,-wedge_depth).line(-(wall+chamber_height),0).close().extrude(h-wall*2)
+        #top chamber and other wall
+        top = top.workplaneFromTagged("whistle").moveTo(w/2,-h/2).line(-w+wall,0).line(0,wall).line(chamber_height,0).lineTo(-w/2+wall+chamber_height,h/2-wedge_depth-airgap).line(wall,0).lineTo(-w/2+wall*2+chamber_height,-h/2+wall).\
+            lineTo(w/2,-h/2+wall).close().extrude(h-wall*2)
+
+        #and the final wall
+        top = top.faces(">Z").workplane().rect(w,h).extrude(wall)
+
+        return top
+
+
 
 
 # plate = chain_plate()
-# rod = pendulum_rod()
+rod = pendulum_rod()
 # toyrod = pendulum_rod(max_length=150,hook_type="toy")
 # fixing = pendulum_bob_fixing()
-# whistle = Whistle()
+whistle = Whistle()
+whistle_top=whistle.getWhistleTop()
 # toyback = cuckoo_back()
-toy_dial = dial()
-toy_dial_brown=dial(black=False)
+# toy_dial = dial()
+# toy_dial_brown=dial(black=False)
 
 # num = roman_numerals("VIIIX",10,cq.Workplane("XY"))
 
@@ -327,11 +366,12 @@ toy_dial_brown=dial(black=False)
 # show_object(toyrod)
 # show_object(fixing)
 # show_object(whistle.getBody())
+show_object(whistle_top)
 # show_object(toyback)
-show_object(toy_dial[0])
-show_object(toy_dial[1])
-if len(toy_dial) > 2:
-    show_object(toy_dial[2])
+# show_object(toy_dial[0])
+# show_object(toy_dial[1])
+# if len(toy_dial) > 2:
+#     show_object(toy_dial[2])
 # show_object(num)
 
 # exporters.export(plate, "out/cuckoo_chain_plate.stl", tolerance=0.001, angularTolerance=0.01)
@@ -340,8 +380,10 @@ if len(toy_dial) > 2:
 # exporters.export(fixing, "out/cuckoo_pendulum_fixing.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toyback, "out/cuckoo_toy_back.stl", tolerance=0.001, angularTolerance=0.01)
 # exporters.export(toy_dial, "out/cuckoo_toy_dial.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(toy_dial[0], "out/cuckoo_toy_dial_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
-exporters.export(toy_dial_brown[0], "out/cuckoo_toy_dial_allbrown_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
-exporters.export(toy_dial[1], "out/cuckoo_toy_dial_white.stl")#, tolerance=0.001, angularTolerance=0.01)
-if len(toy_dial) > 2:
-    exporters.export(toy_dial[2], "out/cuckoo_toy_dial_black.stl")  # , tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toy_dial[0], "out/cuckoo_toy_dial_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toy_dial_brown[0], "out/cuckoo_toy_dial_allbrown_brown.stl")#, tolerance=0.001, angularTolerance=0.01)
+# exporters.export(toy_dial[1], "out/cuckoo_toy_dial_white.stl")#, tolerance=0.001, angularTolerance=0.01)
+# if len(toy_dial) > 2:
+#     exporters.export(toy_dial[2], "out/cuckoo_toy_dial_black.stl")  # , tolerance=0.001, angularTolerance=0.01)
+
+exporters.export(whistle_top, "out/whistle_top.stl")
