@@ -300,19 +300,61 @@ class Whistle():
     def __init__(self, total_length=70):
         self.total_length=total_length
         self.whistle_top_length=20
-        self.wall_thick=2.5
+        self.body_length = self.total_length - self.whistle_top_length
+
         self.whistle_wall_thick=2
+        self.wall_thick = 3
         self.pipe_width=25
+        #taken by generating a trend line from all the commercial sizes of bellows I could find.
+        #completely over the top I expect
+        self.bellow_length=0.25*total_length + 25
+        self.bellow_width = 0.1*total_length + 25
+        self.hole_d = 8
+        #print("bellow width: {} length: {}".format(self.bellow_width,self.bellow_length))
+
+
+    def getBellowBase(self):
+        thick = 3.5
+
+        base = cq.Workplane("XY").line(self.bellow_width,0).line(0,self.bellow_length).line(-self.bellow_width,0).close().extrude(thick)
+        #hole for the whistle
+        base = base.faces(">Z").workplane().moveTo(self.pipe_width/2,self.pipe_width/2).circle(self.hole_d/2).cutThruAll()
+        return base
+
+    def getBellowTop(self):
+        thick = 9.5
+        coin_d = 23
+        coin_thick = 3.2
+
+        top = cq.Workplane("XY").tag("base").line(self.bellow_width, 0).line(0, self.bellow_length).line(-self.bellow_width, 0).close().extrude(thick)
+
+        gap = (self.bellow_width-coin_d)/2
+
+        top = top.faces(">Z").workplane().moveTo(self.bellow_width/2, gap+coin_d/2).circle(coin_d/2).cutThruAll()
+
+        top = top.workplaneFromTagged("base").line(self.bellow_width, 0).line(0, self.bellow_length).line(-self.bellow_width, 0).close().extrude(thick-coin_thick)
+
+        return top
+
+    def getWholeWhistle(self, withBase=False):
+        whistle = self.getWhistleTop()
+        whistle = whistle.faces(">X").workplane().moveTo(0,-self.pipe_width/2+self.whistle_wall_thick).rect(self.pipe_width,self.pipe_width).rect(self.pipe_width-self.wall_thick*2,self.pipe_width-self.wall_thick*2).extrude(self.body_length)
+
+        if withBase:
+            whistle = whistle.faces(">X").workplane().moveTo(0,-self.pipe_width/2+self.whistle_wall_thick).rect(self.pipe_width,self.pipe_width).extrude(self.whistle_wall_thick)
+        return whistle
 
     def getBody(self):
         pipe = cq.Workplane("XY").rect(self.pipe_width, self.pipe_width).extrude(self.total_length - self.whistle_top_length)
         pipe = pipe.faces(">Z").workplane().rect(self.pipe_width - self.wall_thick * 2, self.pipe_width - self.wall_thick * 2).cutThruAll()
 
+        #in a pair of old wooden whistles, the differnce in sizes appears to be: 16x21 inner size, height of 4mm
+
         return pipe
 
     def getWhistleTop(self):
         wedge_depth=3
-        hole_d=8
+        hole_d=self.hole_d
         #0.025"
         wedge_end_thick = 0.6
         #~0.03"
@@ -353,8 +395,12 @@ class Whistle():
 rod = pendulum_rod()
 # toyrod = pendulum_rod(max_length=150,hook_type="toy")
 # fixing = pendulum_bob_fixing()
-whistle = Whistle()
-whistle_top=whistle.getWhistleTop()
+whistleObj = Whistle()
+whistle=whistleObj.getWholeWhistle()
+whistle_full = whistleObj.getWholeWhistle(True)
+bellow_base = whistleObj.getBellowBase()
+bellow_top = whistleObj.getBellowTop()
+# whistle_top=whistle.getWhistleTop()
 # toyback = cuckoo_back()
 # toy_dial = dial()
 # toy_dial_brown=dial(black=False)
@@ -366,7 +412,11 @@ whistle_top=whistle.getWhistleTop()
 # show_object(toyrod)
 # show_object(fixing)
 # show_object(whistle.getBody())
-show_object(whistle_top)
+# show_object(whistle_top)
+# show_object(whistle)
+show_object(whistle_full)
+# show_object(bellow_base)
+# show_object(bellow_top)
 # show_object(toyback)
 # show_object(toy_dial[0])
 # show_object(toy_dial[1])
@@ -386,4 +436,8 @@ show_object(whistle_top)
 # if len(toy_dial) > 2:
 #     exporters.export(toy_dial[2], "out/cuckoo_toy_dial_black.stl")  # , tolerance=0.001, angularTolerance=0.01)
 
-exporters.export(whistle_top, "out/whistle_top.stl")
+# exporters.export(whistle_top, "out/whistle_top.stl")
+exporters.export(whistle, "out/whistle.stl")
+exporters.export(whistle_full, "out/whistle_full.stl")
+exporters.export(bellow_base, "out/bellow_base.stl")
+exporters.export(bellow_top, "out/bellow_top.stl")
