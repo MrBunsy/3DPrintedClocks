@@ -305,7 +305,7 @@ class Whistle():
         self.whistle_top_length=20
         self.body_length = self.total_length - self.whistle_top_length
 
-        self.whistle_wall_thick=2
+        self.whistle_wall_thick=3
         self.wall_thick = 3
         self.pipe_width=22
         #taken by generating a trend line from all the commercial sizes of bellows I could find.
@@ -316,7 +316,7 @@ class Whistle():
 
         self.bellow_offset=5
 
-        self.highPitchedShorter=5
+        self.highPitchedShorter=10
 
         #print("bellow width: {} length: {}".format(self.bellow_width,self.bellow_length))
 
@@ -371,6 +371,7 @@ class Whistle():
         # if highPitched:
         #     text = "High (1st)"
 
+        #TODO - rotate text for left whistle?
         text = "Left (2nd)"
         if highPitched:
             text = "Right (1st)"
@@ -394,7 +395,7 @@ class Whistle():
         #0.025"
         wedge_end_thick = 0.6
         #~0.03" the bit that focuses the air onto the wedge
-        airgap = 0.6
+        airgap = 0.5
         #first internal chamber - before the wedge
         chamber_height=3
         exit_gap = 2.3
