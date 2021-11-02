@@ -315,10 +315,12 @@ class Whistle():
         self.hole_d = 8
 
         self.bellow_offset=5
-
+        self.bellowTopThick = 9.5
+        self.bellowBottomThick = 3.5
+        self.bellow_fabric_extra=7
         self.highPitchedShorter=10
 
-        #print("bellow width: {} length: {}".format(self.bellow_width,self.bellow_length))
+        print("bellow width: {} length: {}".format(self.bellow_width,self.bellow_length))
 
         #TODO - the bellows need to be slightly from the edge, otherwise they'll get caught on teh side of the case!
         #offsetting the hole in the bellow base should be fine
@@ -326,7 +328,7 @@ class Whistle():
         #TODO measure how much shorter the main chamber needs to be for the second whistle and then both can be printed
 
     def getBellowBase(self):
-        thick = 3.5
+        thick = self.bellowBottomThick
 
         base = cq.Workplane("XY").line(self.bellow_width,0).line(0,self.bellow_length).line(-self.bellow_width,0).close().extrude(thick)
         #hole for the whistle
@@ -334,7 +336,7 @@ class Whistle():
         return base
 
     def getBellowTop(self):
-        thick = 9.5
+        thick = self.bellowTopThick
         coin_d = 23
         coin_thick = 3.2
 
@@ -395,7 +397,7 @@ class Whistle():
         #0.025"
         wedge_end_thick = 0.6
         #~0.03" the bit that focuses the air onto the wedge
-        airgap = 0.5
+        airgap = 0.2#0.4
         #first internal chamber - before the wedge
         chamber_height=3
         exit_gap = 2.3
@@ -422,11 +424,42 @@ class Whistle():
         top = top.workplaneFromTagged("whistle").moveTo(w/2,-h/2).line(-w+wall,0).line(0,wall).line(chamber_height,0).lineTo(-w/2+wall+chamber_height,h/2-wedge_depth-airgap).line(wall,0).lineTo(-w/2+wall*2+chamber_height,-h/2+wall).\
             lineTo(w/2,-h/2+wall).close().extrude(h-wall*2)
 
-        #and the final wall (comment this out to see inside the whistle)
-        top = top.faces(">Z").workplane().rect(w,h).extrude(wall)
+        # and the final wall (comment this out to see inside the whistle)
+        top = top.faces(">Z").workplane().tag("pretweak").rect(w, h).extrude(wall)
+        fudge = 0.5
+
+        #add a ledge so it's easier to line up the bellows
+        top = top.faces("<X").workplane().move(0,self.wall_thick-self.pipe_width/2).move(-self.pipe_width/2+self.bellow_offset/2-fudge/2,0).rect(self.bellow_offset-0.5,self.pipe_width).extrude(0.2)
+
+        # top = top.workplaneFromTagged("pretweak")
+
 
         return top
 
+    def getBellowsTemplate(self):
+
+        #to improve - make height tiny bit shorter than width of the square in the middle
+        #make top and bottom overlap exactly same size as the bellow thickenss to make lining up for gluing easier
+        #consider how much extra to allow for overlap on the hinge - do I want rounded?
+
+        #tip of the triangle
+        # angle = math.asin((self.bellow_width/2)/self.bellow_length)
+        # extra_y = self.bellow_fabric_extra*math.cos(angle)
+        # extra_top_x = self.bellow_fabric_extra*math.sin(angle)
+        tip_x = math.sqrt(math.pow(self.bellow_length,2) - math.pow(self.bellow_width/2,2)) + self.bellow_width/2
+        print("x :{}".format(tip_x))
+        # #could work this out properly...
+        # extra_x = self.bellow_fabric_extra*3
+
+        # template = cq.Workplane("XY").moveTo(-self.bellow_width/2-extra_top_x,self.bellow_width/2 + extra_y).line(self.bellow_width+extra_top_x*2,0).lineTo(tip_x)
+
+        template = cq.Workplane("XY").moveTo(-self.bellow_width / 2, self.bellow_width / 2 + self.bellow_fabric_extra).line(self.bellow_width, 0).lineTo(tip_x + self.bellow_width * 0.33, 0).\
+            lineTo(self.bellow_width / 2, -self.bellow_width / 2 - self.bellow_fabric_extra).line(-self.bellow_width, 0).lineTo(-tip_x - self.bellow_width * 0.4, 0).close().moveTo(0, 0).rect(self.bellow_width, self.bellow_width).extrude(1)
+
+        # template = cq.Workplane("XY").moveTo(-self.bellow_width / 2, self.bellow_width / 2 + self.bellow_fabric_extra).line(self.bellow_width,0).lineTo(tip_x+self.bellow_width*0.33,self.bellow_fabric_extra*0.75).tangentArcPoint([tip_x+self.bellow_width*0.33,-self.bellow_fabric_extra*0.75],relative=False).\
+        #     lineTo(self.bellow_width/2,-self.bellow_width/2-self.bellow_fabric_extra).line(-self.bellow_width,0).lineTo(-tip_x-self.bellow_width*0.4,0).close().moveTo(0,0).rect(self.bellow_width,self.bellow_width).extrude(1)
+
+        return template
 
 # if __name__ == "__main__":
 #
@@ -441,6 +474,7 @@ whistle_full_low = whistleObj.getWholeWhistle(True,False)
 whistle_full_high = whistleObj.getWholeWhistle(True,True)
 bellow_base = whistleObj.getBellowBase()
 bellow_top = whistleObj.getBellowTop()
+bellow_template = whistleObj.getBellowsTemplate()
 # whistle_top=whistle.getWhistleTop()
 #     # toyback = cuckoo_back()
 #     # toy_dial = dial()
@@ -455,7 +489,8 @@ bellow_top = whistleObj.getBellowTop()
 #     # show_object(whistle.getBody())
 #     show_object(whistle_top)
 #     # show_object(whistle)
-show_object(whistle_full_high)
+# show_object(whistle_full_high)
+show_object(bellow_template)
 #     # show_object(bellow_base)
 #     # show_object(bellow_top)
 #     # show_object(toyback)
@@ -482,5 +517,6 @@ show_object(whistle_full_high)
 #     exporters.export(whistle_top, "out/whistle_top.stl")
 exporters.export(whistle_full_low, "../out/whistle_full_low.stl")
 exporters.export(whistle_full_high, "../out/whistle_full_high.stl")
+exporters.export(bellow_template, "../out/bellows_template.stl")
 #     exporters.export(bellow_base, "out/bellow_base.stl")
 #     exporters.export(bellow_top, "out/bellow_top.stl")
