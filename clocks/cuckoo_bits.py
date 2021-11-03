@@ -377,9 +377,10 @@ class Whistle():
         text = "Left (2nd)"
         if highPitched:
             text = "Right (1st)"
+        textoffset = self.highPitchedShorter if highPitched else self.wall_thick/2
 
         #.moveTo(self.highPitchedShorter, self.wall_thick/2).move(-self.total_length/2,-self.pipe_width/2)
-        whistle = whistle.faces("<Y").workplane().transformed(offset=[self.highPitchedShorter-self.total_length/2,self.wall_thick*1.5-self.pipe_width/2]).text(txt=text, fontsize=self.pipe_width*0.6,distance=0.2,cut=False,combine=True)
+        whistle = whistle.faces("<Y").workplane().transformed(offset=[textoffset-self.total_length/2,self.wall_thick*1.5-self.pipe_width/2]).text(txt=text, fontsize=self.pipe_width*0.6,distance=0.2,cut=False,combine=True)
         # whistle = cq.Workplane("XY").text(txt=text, fontsize=self.pipe_width*0.6,distance=0.2)
         return whistle
 
@@ -397,7 +398,11 @@ class Whistle():
         #0.025"
         wedge_end_thick = 0.6
         #~0.03" the bit that focuses the air onto the wedge
-        airgap = 0.2#0.4
+        #0.8 was too big - needs lots of airflow to whistle
+        #0.2 is too small - needs a lot of weight to make a noise
+        #0.6 works but I think the whistle is too short
+        #0.4 sounds promising but needs testing in a clock
+        airgap = 0.4#0.4
         #first internal chamber - before the wedge
         chamber_height=3
         exit_gap = 2.3
@@ -490,7 +495,8 @@ bellow_template = whistleObj.getBellowsTemplate()
 #     show_object(whistle_top)
 #     # show_object(whistle)
 # show_object(whistle_full_high)
-show_object(bellow_template)
+show_object(whistle_full_low)
+# show_object(bellow_template)
 #     # show_object(bellow_base)
 #     # show_object(bellow_top)
 #     # show_object(toyback)
