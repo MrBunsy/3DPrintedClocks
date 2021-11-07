@@ -332,7 +332,19 @@ def maple2(length = 70, shape=1, cuts=2, withHoleD=0):
 
     return leaf
 
+class CustomLeafPoint:
+    def __init__(self, pos, bendInwards=False,bendyness=0.2):
+        self.pos=pos
+        self.bendInwards=bendInwards
+        self.bendyness=bendyness
 
+def customLeaf(length=70):
+    '''
+    Leaf with predefined points
+    (0,0) is always the bit where the leaf would join a stem
+    '''
+
+    leftPoints = []
 
 # leaf = maple2(55,withHoleD=2.5)
 # leaf_small = maple2(45,withHoleD=3)

@@ -135,7 +135,7 @@ def pendulum_bob_fixing():
 
     return fixing
 
-def cuckoo_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
+def toy_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
     '''
     A back for the toy cuckoo , could be adapted easily for a back to a proper cuckoo
     :param width:
@@ -154,6 +154,27 @@ def cuckoo_back(width=88,length=120, edge_thick=2.2,inner_width=82,hole_d=10):
     back = back.faces(">Z").workplane().moveTo(0,width/2-hole_d).circle(hole_d/2).cutThruAll()
 
     return back
+
+def back(width=110, height=114.75, lip_thick=1.9,thick=7.5,hole_d=20,hole_y=45,gongholder_width=13,gongholder_height=29.8,gongholder_d=2):
+
+    lip_length=2.25
+    #gong stuff very specific for now
+    gong_pos=[-hole_d/2-gongholder_width/2,hole_y-height/2]
+    gong_bit_width=0.8
+    # back = cq.Workplane("XY").rect(width, height).extrude(thick).moveTo(0, -height / 2 + hole_y).circle(hole_d / 2). \
+    #     moveTo(gong_pos[0], gong_pos[1]).move(-gongholder_width / 2, gongholder_height / 2).rect(gong_bit_width, 2).move(gongholder_width, 0). \
+    #     rect(gong_bit_width, 2).move(0, -gongholder_height).rect(gong_bit_width, 1.8).move(-gongholder_width, 0).rect(gong_bit_width, 1.8)  # .cutThruAll()
+    back = cq.Workplane("XY").rect(width,height).extrude(thick).moveTo(0,-height/2+hole_y).circle(hole_d/2).cutThruAll()
+        # .\
+    back= back.moveTo(gong_pos[0]-gongholder_width/2,gong_pos[1]+gongholder_height/2).rect(gong_bit_width,2).cutThruAll()#
+    back = back.moveTo(gong_pos[0]+gongholder_width/2,gong_pos[1]+gongholder_height/2).rect(gong_bit_width,2).cutThruAll()
+    back = back.moveTo(gong_pos[0]+gongholder_width/2,gong_pos[1]-gongholder_height/2).rect(gong_bit_width,1.8).cutThruAll()
+    back = back.moveTo(gong_pos[0]-gongholder_width/2,gong_pos[1]-gongholder_height/2).rect(gong_bit_width,1.8).cutThruAll()#.cutThruAll()
+
+    back = back.faces("<Y").workplane().move(0,lip_thick/2).rect(width,lip_thick).extrude(lip_length)
+
+    return back
+
 
 def roman_numerals(number, height, workplane, thick=0.4):
     width = height * 0.1
@@ -472,14 +493,19 @@ class Whistle():
 #     rod = pendulum_rod()
 #     # toyrod = pendulum_rod(max_length=150,hook_type="toy")
 #     # fixing = pendulum_bob_fixing()
-whistleObj = Whistle()
-whistle=whistleObj.getWholeWhistle()
-whistle_top=whistleObj.getWhistleTop()
-whistle_full_low = whistleObj.getWholeWhistle(True,False)
-whistle_full_high = whistleObj.getWholeWhistle(True,True)
-bellow_base = whistleObj.getBellowBase()
-bellow_top = whistleObj.getBellowTop()
-bellow_template = whistleObj.getBellowsTemplate()
+# whistleObj = Whistle()
+# whistle=whistleObj.getWholeWhistle()
+# whistle_top=whistleObj.getWhistleTop()
+# whistle_full_low = whistleObj.getWholeWhistle(True,False)
+# whistle_full_high = whistleObj.getWholeWhistle(True,True)
+# bellow_base = whistleObj.getBellowBase()
+# bellow_top = whistleObj.getBellowTop()
+# bellow_template = whistleObj.getBellowsTemplate()
+
+backObj = back()
+
+show_object(backObj)
+
 # whistle_top=whistle.getWhistleTop()
 #     # toyback = cuckoo_back()
 #     # toy_dial = dial()
@@ -495,7 +521,7 @@ bellow_template = whistleObj.getBellowsTemplate()
 #     show_object(whistle_top)
 #     # show_object(whistle)
 # show_object(whistle_full_high)
-show_object(whistle_full_low)
+# show_object(whistle_full_low)
 # show_object(bellow_template)
 #     # show_object(bellow_base)
 #     # show_object(bellow_top)
@@ -521,8 +547,10 @@ show_object(whistle_full_low)
 #     # exporters.export(whistle_top, "out/whistle_top.stl")
 #     exporters.export(whistle, "out/whistle.stl")
 #     exporters.export(whistle_top, "out/whistle_top.stl")
-exporters.export(whistle_full_low, "../out/whistle_full_low.stl")
-exporters.export(whistle_full_high, "../out/whistle_full_high.stl")
-exporters.export(bellow_template, "../out/bellows_template.stl")
+# exporters.export(whistle_full_low, "../out/whistle_full_low.stl")
+# exporters.export(whistle_full_high, "../out/whistle_full_high.stl")
+# exporters.export(bellow_template, "../out/bellows_template.stl")
 #     exporters.export(bellow_base, "out/bellow_base.stl")
 #     exporters.export(bellow_top, "out/bellow_top.stl")
+
+exporters.export(backObj, "../out/back.stl")
