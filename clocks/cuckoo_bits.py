@@ -159,7 +159,7 @@ def back(width=110, height=114.75, lip_thick=1.9,thick=7.5,hole_d=20,hole_y=45,g
 
     lip_length=2.25
     #gong stuff very specific for now
-    gong_pos=[-hole_d/2-gongholder_width/2,hole_y-height/2]
+    gong_pos=[hole_d/2+gongholder_width/2,hole_y-height/2]
     gong_bit_width=0.8
     # back = cq.Workplane("XY").rect(width, height).extrude(thick).moveTo(0, -height / 2 + hole_y).circle(hole_d / 2). \
     #     moveTo(gong_pos[0], gong_pos[1]).move(-gongholder_width / 2, gongholder_height / 2).rect(gong_bit_width, 2).move(gongholder_width, 0). \
