@@ -372,7 +372,7 @@ class CustomLeafPoint:
         #from the previous point, +ve is bending outwards, -ve bending inwards
         self.bendyness=bendyness
 
-def customLeaf(length=70, thick=10, shape="bowl"):
+def customLeaf(length=70, thick=10, shape="bowl", cut=True):
     '''
     shape wobble or bowl
 
@@ -445,70 +445,107 @@ def customLeaf(length=70, thick=10, shape="bowl"):
     startHeight = thick * 0.85
     midHeight = thick * 0.7
     endHeight = thick * 1
+    if cut:
+        startPos = [0, length * 0.1]
+        cutters=[]
 
-    startPos = [0, length * 0.1]
-    cutters=[]
+        skip = 2
+        # offset = 1
 
-    skip = 2
-    # offset = 1
-
-    for i in range(0,len(points[:]),skip):
-        point = points[i]
-        cutter = cq.Workplane("XZ").transformed(offset=(0, 0, -startPos[1])).move(-thick * 0.5, thick * 2.5).lineTo(0, startHeight).lineTo(thick * 0.5, thick * 2.5).close()
-        # return cutter
-        bend = 0.05
-        if  i < (len(points)/2) -1:#/skip:
-            bend = -0.05
-
-        # bend = 0
-        try:
-            # path = cq.Workplane("XY").moveTo(startPos[0],startPos[1]).lineTo(point.pos[0]*length, point.pos[1]*length)
-            endPoint = np.multiply(point.pos, length)
-            #
-            # halfPoint = np.add(startPos, np.multiply(np.subtract(endPoint, startPos),0.5))
-            # path = cq.Workplane("XY").spline([(startPos[0],startPos[1], startHeight), (halfPoint[0],halfPoint[1], midHeight), (endPoint[0], endPoint[1], endHeight)])
-            path = bendyLineBetween2(cq.Workplane("XY"),startPos, endPoint, bendMultiplier=bend, startZ=startHeight, midZ=midHeight, endZ=endHeight)
-
-            # path = bendyLineBetween(cq.Workplane("XY"), startPos, [point.pos[0]*length, points.pos[1]*length], [0, length], True, bend, heightStart=startHeight, heightMid=midHeight, heightEnd=endHeight)
-            # # return path
-            cutter = cutter.sweep(path)
+        for i in range(0,len(points[:]),skip):
+            point = points[i]
+            cutter = cq.Workplane("XZ").transformed(offset=(0, 0, -startPos[1])).move(-thick * 0.5, thick * 2.5).lineTo(0, startHeight).lineTo(thick * 0.5, thick * 2.5).close()
             # return cutter
-            cutters.append(cutter)
-            # if point != points[-1]:
-            #     cutters.append(cutter.mirror("ZY"))
-            # return cutter
-        except:
-            '''
-            '''
-            print("failed")
+            bend = 0.05
+            if  i < (len(points)/2) -1:#/skip:
+                bend = -0.05
 
-    # for some reason the cutter isn't a shape, so fetch the shape from teh shape. Wish I understnd wtf was going on here
-    # allCutters = cq.Compound.makeCompound([c.objects[0] for c in cutters])
-    allCutters=cutters[0]
+            # bend = 0
+            try:
+                # path = cq.Workplane("XY").moveTo(startPos[0],startPos[1]).lineTo(point.pos[0]*length, point.pos[1]*length)
+                endPoint = np.multiply(point.pos, length)
+                #
+                # halfPoint = np.add(startPos, np.multiply(np.subtract(endPoint, startPos),0.5))
+                # path = cq.Workplane("XY").spline([(startPos[0],startPos[1], startHeight), (halfPoint[0],halfPoint[1], midHeight), (endPoint[0], endPoint[1], endHeight)])
+                path = bendyLineBetween2(cq.Workplane("XY"),startPos, endPoint, bendMultiplier=bend, startZ=startHeight, midZ=midHeight, endZ=endHeight)
 
-    for c in cutters[1:]:
-        allCutters.add(c)
+                # path = bendyLineBetween(cq.Workplane("XY"), startPos, [point.pos[0]*length, points.pos[1]*length], [0, length], True, bend, heightStart=startHeight, heightMid=midHeight, heightEnd=endHeight)
+                # # return path
+                cutter = cutter.sweep(path)
+                # return cutter
+                cutters.append(cutter)
+                # if point != points[-1]:
+                #     cutters.append(cutter.mirror("ZY"))
+                # return cutter
+            except:
+                '''
+                '''
+                print("failed")
 
-    # return allCutters
-    # return cutters
-    # for cutter in cutters:
-    #     leaf = leaf.cut(cutter)
+        # for some reason the cutter isn't a shape, so fetch the shape from teh shape. Wish I understnd wtf was going on here
+        # allCutters = cq.Compound.makeCompound([c.objects[0] for c in cutters])
+        allCutters=cutters[0]
 
-    leaf = leaf.cut(allCutters)
-    # leaf = leaf.cut(cutters[0])
+        for c in cutters[1:]:
+            allCutters.add(c)
+
+        # return allCutters
+        # return cutters
+        # for cutter in cutters:
+        #     leaf = leaf.cut(cutter)
+
+        leaf = leaf.cut(allCutters)
+        # leaf = leaf.cut(cutters[0])
 
 
     return leaf
+
+
+def toyPendulumBob(diameter=30, thick=7.5, withHoleD=1):
+    '''
+    a leaf on a circle
+    '''
+
+    inner_thick=thick*0.75
+    thick_diff = thick-inner_thick
+
+    # bob=cq.Workplane("XY")
+    # bob=bob.circle(diameter/2).extrude(inner_thick)
+    r = diameter/2
+    circle = cq.Workplane("XY").circle(r)
+    bob = cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).line(0, inner_thick).tangentArcPoint((r - thick_diff, thick), relative=False).\
+        tangentArcPoint((r - thick_diff*2, inner_thick), relative=False).lineTo(0,inner_thick).close().sweep(circle)
+
+    leafLength=diameter*0.5
+
+    leaf = customLeaf(length=leafLength, thick=3, cut=False).translate([0,-leafLength*0.4,inner_thick])
+
+    bob = bob.add(leaf)
+
+
+    if withHoleD > 0:
+        #punch a hole down the centre (lengthways)
+        z = thick/2
+        if z < withHoleD:
+            z = withHoleD*0.75
+        hole = cq.Workplane("XZ").circle(withHoleD/2).extrude(diameter*4).translate([0,diameter*2,z])
+        bob = bob.cut(hole)
+
+    return bob
 
 
 # leaf = maple2(55,withHoleD=2.5)
 # leaf_small = maple2(45,withHoleD=3)
 # crown_leaf2 = maple2(60,2)
 
-leaf2 = customLeaf()
+# leaf2 = customLeaf(length=30-0.75, thick=3,cut=False)
+# show_object(leaf2)
 
-show_object(leaf2)
-exporters.export(leaf2, "../out/leaftest.stl")
+bob=toyPendulumBob()
+show_object(bob)
+exporters.export(bob, "../out/toy_bob_with_leaf.stl")
+
+#exporters.export(leaf2, "../out/leaftest.stl")
 
 # exporters.export(leaf_small, "out/cuckoo_pendulum_leaf_fortoy_small.stl", tolerance=0.001, angularTolerance=0.01)
 

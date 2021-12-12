@@ -34,7 +34,7 @@ def chain_plate():
 rod_width = 10
 rod_thick = 3.5
 
-def pendulum_rod(max_length=170, hook_type="normal", fixing="simple"):
+def pendulum_rod(max_length=170, hook_type="normal", fixing="simple", normal_hook_width = 5.5):
     '''
 
     :param length: aprox lenght from tip of rod to bob
@@ -44,7 +44,7 @@ def pendulum_rod(max_length=170, hook_type="normal", fixing="simple"):
     :return:
     '''
 
-    normal_hook_width = 5.5
+
     hook_gap=1.5
 
     hook_thick = 2
@@ -490,7 +490,8 @@ class Whistle():
 # if __name__ == "__main__":
 #
 #     # plate = chain_plate()
-#     rod = pendulum_rod()
+# rod = pendulum_rod()
+rod_thin_hook = pendulum_rod(normal_hook_width=4.5)
 #     # toyrod = pendulum_rod(max_length=150,hook_type="toy")
 #     # fixing = pendulum_bob_fixing()
 # whistleObj = Whistle()
@@ -502,9 +503,11 @@ class Whistle():
 # bellow_top = whistleObj.getBellowTop()
 # bellow_template = whistleObj.getBellowsTemplate()
 
-backObj = back()
+# backObj = back()
 
-show_object(backObj)
+musical_back = back(width=109, height=109.75, lip_thick=2,thick=5,hole_d=20,hole_y=45,gongholder_width=12.8,gongholder_height=30)
+show_object(musical_back)
+# show_object(backObj)
 
 # whistle_top=whistle.getWhistleTop()
 #     # toyback = cuckoo_back()
@@ -514,7 +517,8 @@ show_object(backObj)
 #     # num = roman_numerals("VIIIX",10,cq.Workplane("XY"))
 #
 #     # show_object(plate)
-#     # show_object(rod)
+# show_object(rod)
+# show_object(rod_thin_hook)
 #     # show_object(toyrod)
 #     # show_object(fixing)
 #     # show_object(whistle.getBody())
@@ -553,4 +557,6 @@ show_object(backObj)
 #     exporters.export(bellow_base, "out/bellow_base.stl")
 #     exporters.export(bellow_top, "out/bellow_top.stl")
 
-exporters.export(backObj, "../out/back.stl")
+# exporters.export(backObj, "../out/back.stl")
+exporters.export(musical_back, "../out/musical_back.stl")
+# exporters.export(rod_thin_hook, "../out/cuckoo_pendulum_rod_thin_hook.stl")

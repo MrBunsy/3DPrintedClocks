@@ -128,14 +128,22 @@ if False:
     exporters.export(greencuckoo_min, "out/greencuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
     exporters.export(greencuckoo_hour, "out/greencuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
 
-#should be 1.6, but that was way too small. 2 was too big.
-smithsalarm_min = clockhand(style="square", thick = 2, fixing="circle", fixing_d1=1.8, length=35)
-#3.4 fits perfectly, but I need it to slide down a tiny bit further
-smithsalarm_hour = clockhand(style="square", hour=True, thick = 2, fixing="circle", fixing_d1=3.45, length=35)
+    #should be 1.6, but that was way too small. 2 was too big.
+    smithsalarm_min = clockhand(style="square", thick = 2, fixing="circle", fixing_d1=1.8, length=35)
+    #3.4 fits perfectly, but I need it to slide down a tiny bit further
+    smithsalarm_hour = clockhand(style="square", hour=True, thick = 2, fixing="circle", fixing_d1=3.45, length=35)
 
-exporters.export(smithsalarm_min, "out/smithsalarm_min.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(smithsalarm_hour, "out/smithsalarm_hour.stl", tolerance=0.001, angularTolerance=0.01)
+    exporters.export(smithsalarm_min, "out/smithsalarm_min.stl", tolerance=0.001, angularTolerance=0.01)
+    exporters.export(smithsalarm_hour, "out/smithsalarm_hour.stl", tolerance=0.001, angularTolerance=0.01)
 
+
+musiccuckoo_hour=clockhand(style="cuckoo",thick=1.3,hour=True, fixing="circle", fixing_d1=4.55, length=32)#4.35
+musiccuckoo_min=clockhand(style="cuckoo",thick=1.4,hour=False, fixing="circle", fixing_d1=5.3+0.15, length=32)#5.3+0.25 fits the collet, but too loose
+musiccuckoo_min2=clockhand(style="cuckoo",thick=1.4,hour=False, fixing="rectangle ", fixing_d1=2.6, fixing_d2=2.6, length=32)#5.3+0.25 fits the collet, but too loose
+
+exporters.export(musiccuckoo_min, "../out/musiccuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(musiccuckoo_hour, "../out/musiccuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+exporters.export(musiccuckoo_min2, "../out/musiccuckoo_min2.stl", tolerance=0.001, angularTolerance=0.01)
 
 # show_object(minicuckoo_min)
 # show_object(minicuckoo_hour)
