@@ -115,8 +115,11 @@ class WheelPinionPair:
         self.gear_ratio = wheelTeeth/pinionTeeth
 
         self.pinion_pitch_radius = self.module * pinionTeeth / 2
+        self.wheel_pitch_radius = self.module * wheelTeeth / 2
 
-        self.Diameter_generating_circle = self.pinion_pitch_radius
+        self.centre_distance = self.pinion_pitch_radius + self.wheel_pitch_radius
+
+        # self.Diameter_generating_circle = self.pinion_pitch_radius
 
 
 
@@ -127,7 +130,24 @@ class WheelPinionPair:
         wheel_dedendum_factor = math.pi/2
         self.wheel = Gear(wheelTeeth, module, wheel_addendum_factor, wheel_addendum_radius_factor, wheel_dedendum_factor)
 
-        # self.pinion=Gear(pinionTeeth,)
+        #based on the practical wheel addendum factor
+        pinion_dedendum_factor = wheel_addendum_factor*0.95 + 0.4
+        pinion_tooth_factor = 1.25
+        if pinionTeeth <= 10:
+            pinion_tooth_factor = 1.05
+        #https://www.csparks.com/watchmaking/CycloidalGears/index.jxl
+        if pinionTeeth == 6 or pinionTeeth == 7:
+            pinion_addendum_factor=0.855
+            pinion_addendum_radius_factor = 1.05
+        elif pinionTeeth == 8 or pinionTeeth == 9:
+            pinion_addendum_factor = 0.67
+            pinion_addendum_radius_factor = 0.7
+        else:
+            pinion_addendum_factor = 0.625
+            pinion_addendum_radius_factor = 0.625
+
+
+        self.pinion=Gear(pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor)
 
     def calcWheelAddendumFactor(self,pinionTeeth):
         #http://hessmer.org/gears/CycloidalGearBuilder.html MIT licence
@@ -160,9 +180,11 @@ class WheelPinionPair:
 pair = WheelPinionPair(30, 8,6)
 # wheel=pair.getWheel()
 
-wheel = pair.wheel.getCQ()
+wheel = pair.wheel.getCQ().rotateAboutCenter([0,0,1],180/pair.wheel.teeth)
+pinion = pair.pinion.getCQ().translate([0,pair.centre_distance,0])
 
 show_object(wheel)
+show_object(pinion)
 # show_object(cq.Workplane("XY").circle(10).extrude(20))
 
 exporters.export(wheel, "../out/wheel.stl")
