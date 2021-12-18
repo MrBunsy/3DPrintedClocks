@@ -501,7 +501,7 @@ def customLeaf(length=70, thick=10, shape="bowl", cut=True):
     return leaf
 
 
-def toyPendulumBob(diameter=30, thick=7.5, withHoleD=1):
+def toyPendulumBob(diameter=30, thick=7.5, withHoleD=2):
     '''
     a leaf on a circle
     '''
