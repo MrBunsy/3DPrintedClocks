@@ -58,20 +58,25 @@ class Gear:
         inner_radius = pitch_radius - dedendum_height
         outer_radius = pitch_radius + addendum_height
 
-        half_tooth_angle = self.toothFactor / (self.teeth/2)
+        tooth_angle = self.toothFactor / (self.teeth/2)
+        gap_angle = (math.pi - self.toothFactor) / (self.teeth/2)
 
         gear = cq.Workplane("XY")
 
         gear = gear.moveTo(inner_radius, 0)
 
         for t in range(self.teeth):
-            print("teeth: {}, angle: {}".format(t,half_tooth_angle*(t*2 + 1)))
-
-            midBottomPos = ( math.cos(half_tooth_angle*(t*2 + 1))*inner_radius, math.sin(half_tooth_angle*(t*2 + 1))*inner_radius )
-            addendum_startPos = ( math.cos(half_tooth_angle*(t*2 + 1))*pitch_radius, math.sin(half_tooth_angle*(t*2 + 1))*pitch_radius )
-            tipPos = ( math.cos(half_tooth_angle*(t*2 + 1.5))*outer_radius, math.sin(half_tooth_angle*(t*2 + 1.5))*outer_radius )
-            addendum_endPos = (math.cos(half_tooth_angle * (t * 2 + 2)) * pitch_radius, math.sin(half_tooth_angle * (t * 2 + 2)) * pitch_radius)
-            endBottomPos = (math.cos(half_tooth_angle * (t * 2 + 2)) * inner_radius, math.sin(half_tooth_angle * (t * 2 + 2)) * inner_radius)
+            print("teeth: {}, angle: {}".format(t,tooth_angle*(t*2 + 1)))
+            
+            toothStartAngle = (tooth_angle + gap_angle)*t + gap_angle
+            toothTipAngle = (tooth_angle + gap_angle)*t + gap_angle + tooth_angle/2
+            toothEndAngle = (tooth_angle + gap_angle)*(t + 1)
+            
+            midBottomPos = ( math.cos(toothStartAngle)*inner_radius, math.sin(toothStartAngle)*inner_radius )
+            addendum_startPos = ( math.cos(toothStartAngle)*pitch_radius, math.sin(toothStartAngle)*pitch_radius )
+            tipPos = ( math.cos(toothTipAngle)*outer_radius, math.sin(toothTipAngle)*outer_radius )
+            addendum_endPos = (math.cos(toothEndAngle) * pitch_radius, math.sin(toothEndAngle) * pitch_radius)
+            endBottomPos = (math.cos(toothEndAngle) * inner_radius, math.sin(toothEndAngle) * inner_radius)
 
             print(midBottomPos)
 
