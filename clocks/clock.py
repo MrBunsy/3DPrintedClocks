@@ -180,8 +180,10 @@ class WheelPinionPair:
 pair = WheelPinionPair(30, 8,6)
 # wheel=pair.getWheel()
 
-wheel = pair.wheel.getCQ().rotateAboutCenter([0,0,1],180/pair.wheel.teeth)
-pinion = pair.pinion.getCQ().translate([0,pair.centre_distance,0])
+wheel = pair.wheel.getCQ()
+#mirror and rotate a bit so the teeth line up and look nice
+pinion = pair.pinion.getCQ().rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
+#.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
 
 show_object(wheel)
 show_object(pinion)
