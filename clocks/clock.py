@@ -27,7 +27,8 @@ if 'show_object' not in globals():
 
 
 class Gear:
-    def __init__(self, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2):
+    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2):
+        self.iswheel = isWheel
         self.teeth = teeth
         self.module=module
         self.addendum_factor=addendum_factor
@@ -38,18 +39,59 @@ class Gear:
 
         self.toothFactor = toothFactor
 
+        self.pitch_diameter = self.module * self.teeth
         # # via practical addendum factor
         # self.addendum_height = 0.95 * addendum_factor * module
 
-    def getCQ(self, thick=0):
+    def get3D(self, holeD=0, thick=0, style="HAC"):
+        gear = self.get2D()
+
+        if thick == 0:
+            thick = round(self.pitch_diameter*0.05)
+        gear = gear.extrude(thick)
+
+        if holeD > 0:
+            gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
+
+        if self.iswheel:
+            if style == "HAC":
+                #vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
+                rimThick = holeD
+                rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
+
+                armThick = rimThick
+                armAngle=armThick/rimRadius
+                #cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
+                innerRadius = rimRadius*0.7
+                innerSagitta= rimRadius*0.325
+
+
+                arms = 5
+                for i in range(arms):
+                    startAngle = i*math.pi*2/arms
+                    endAngle = (i+1)*math.pi*2/arms - armAngle
+
+                    startPos = (math.cos(startAngle)*rimRadius, math.sin(startAngle)*rimRadius)
+                    endPos = (math.cos(endAngle) * rimRadius, math.sin(endAngle) * rimRadius)
+
+                    gear = gear.faces(">Z").workplane()
+                    gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos,-rimRadius).sagittaArc(startPos,-innerSagitta).close().cutThruAll()
+                        # .radiusArc(startPos,-innerRadius)\
+                        # .close().cutThruAll()
+
+
+
+        return gear
+
+    def get2D(self):
         '''
         Return a 2D cadquery profile of a single gear
 
         note - might need somethign different for pinions?
         '''
 
-        pitch_diameter = self.module * self.teeth
-        pitch_radius = pitch_diameter / 2
+
+        pitch_radius = self.pitch_diameter / 2
         addendum_radius = self.module * self.addendum_radius_factor
         # via practical addendum factor
         addendum_height = 0.95 * self.addendum_factor * self.module
@@ -95,8 +137,7 @@ class Gear:
 
         # gear = cq.Workplane("XY").circle(pitch_radius)
         gear = gear.close()
-        if thick > 0 :
-            gear = gear.extrude(thick)
+
         return gear
 
 class WheelPinionPair:
@@ -128,7 +169,7 @@ class WheelPinionPair:
         wheel_addendum_radius_factor=wheel_addendum_factor*1.4
         #TODO consider custom slop, this is from http://hessmer.org/gears/CycloidalGearBuilder.html
         wheel_dedendum_factor = math.pi/2
-        self.wheel = Gear(wheelTeeth, module, wheel_addendum_factor, wheel_addendum_radius_factor, wheel_dedendum_factor)
+        self.wheel = Gear(True, wheelTeeth, module, wheel_addendum_factor, wheel_addendum_radius_factor, wheel_dedendum_factor)
 
         #based on the practical wheel addendum factor
         pinion_dedendum_factor = wheel_addendum_factor*0.95 + 0.4
@@ -147,7 +188,7 @@ class WheelPinionPair:
             pinion_addendum_radius_factor = 0.625
 
 
-        self.pinion=Gear(pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor)
+        self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor)
 
     def calcWheelAddendumFactor(self,pinionTeeth):
         #http://hessmer.org/gears/CycloidalGearBuilder.html MIT licence
@@ -177,12 +218,15 @@ class WheelPinionPair:
     #
     #     return wheel
 
-pair = WheelPinionPair(30, 8,6)
+pair = WheelPinionPair(30, 8,3)
 # wheel=pair.getWheel()
 
-wheel = pair.wheel.getCQ()
+thick = 5
+arbourD=5
+
+wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
 #mirror and rotate a bit so the teeth line up and look nice
-pinion = pair.pinion.getCQ().rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
+pinion = pair.pinion.get3D(thick=thick, holeD=arbourD).rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
 #.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
 
 show_object(wheel)
