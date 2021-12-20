@@ -63,6 +63,7 @@ class Gear:
                 armAngle=armThick/rimRadius
                 #cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
                 innerRadius = rimRadius*0.7
+                #TODO might want to adjust this based on size of pinion attached to this wheel
                 innerSagitta= rimRadius*0.325
 
 
@@ -141,6 +142,12 @@ class Gear:
         return gear
 
 class WheelPinionPair:
+    '''
+    Wheels drive pinions, and wheels and pinions are made to mesh together
+
+    Each arbour will have the wheel of one pair and a pinion of a different pair - which need not have the same size module
+    '''
+
     errorLimit=0.000001
     def __init__(self, wheelTeeth, pinionTeeth, module=1.5):
         '''
@@ -210,19 +217,135 @@ class WheelPinionPair:
         return addendumFactor
 
 
-    # def getWheel(self):
-    #     addendum_factor = self.calcAddendumFactor()
-    #     # wheel = gear2D(self.wheelTeeth, self.module, addendum_factor).extrude(self.thick)
-    #
-    #     #TODO holes and stuff
-    #
-    #     return wheel
+class GoingTrain:
+    gravity = 9.81
+    def __init__(self, pendulum_period=1, intermediate_wheel=False,fourth_wheel=False, escapement_teeth=30):
+        '''
+        Grand plan: auto generate gear ratios.
+        Naming convention seems to be powered (spring/weight) wheel is first wheel, then minute hand wheel is second, etc, until the escapement
+        However, all the 8-day clocks I've got have an intermediate wheel between spring powered wheel and minute hand wheel
+        And only the little tiny balance wheel clocks have a "fourth" wheel.
+        Regula 1-day cuckoos have the minute hand driven directly from the chain wheel, but then also drive the wheels up the escapment from the chain wheel, effectively making the chain
+        wheel part of the gearing from the escapement to the minute wheel
 
-pair = WheelPinionPair(30, 8,3)
+        So, the plan: generate gear ratios from escapement to the minute hand, then make a wild guess about how much weight is needed and the ratio from the weight and
+         where it should enter the escapment->minute hand chain
+
+         so sod the usual naming convention until otherwise. Minute hand wheel is gonig to be zero, +ve is towards escapment and -ve is towards the powered wheel
+         I suspect regula are onto something, so I may end up just stealing their idea
+
+        '''
+
+        #in seconds
+        self.pendulum_period = pendulum_period
+        #in metres
+        self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
+
+        #calculate ratios from minute hand to escapement
+        #the last wheel is the escapement
+        self.wheels = 4 if fourth_wheel else 3
+
+        escapement_time = pendulum_period * escapement_teeth
+        desired_minute_time = 60*60
+        #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
+        options = []
+
+        pinion_min=8
+        pinion_max=12
+        wheel_min=20
+        wheel_max=100
+
+        #TODO prefer non-integer combos.
+        '''
+        https://needhamia.com/clock-repair-101-making-sense-of-the-time-gears/
+        “With an ‘integer ratio’, the same pairs of teeth (gear/pinion) always mesh on each revolution.
+         With a non-integer ratio, each pass puts a different pair of teeth in mesh. (Some fractional 
+         ratios are also called a ‘hunting ratio’ because a given tooth ‘hunts’ [walks around] the other gear.)”
+         
+         "So it seems clock designers prefer non-whole-number gear ratios to even out the wear of the gears’ teeth. "
+         
+         seems reasonable to me
+        '''
+        allGearPairCombos = []
+
+        for p in range(pinion_min,pinion_max):
+            for w in range(wheel_min, wheel_max):
+                allGearPairCombos.append([w,p])
+
+        #[ [[w,p],[w,p],[w,p]] ,  ]
+        allTrains = []
+
+        allTrainsLength = 1
+        for i in range(self.wheels):
+            allTrainsLength*=len(allGearPairCombos)
+
+        # for i in range(allTrainsLength):
+        #
+
+        # for i in range(wheels):
+        #     #clone
+        #     # trains = allTrains[:]
+        #     if i == 0:
+        #         for j in range(len(allGearPairCombos)):
+        #             allTrains.append([])
+        #             allTrains[j].append(allGearPairCombos[j])
+        #     else:
+        #         currentLength = len(allTrains)
+        #         for j in range(currentLength):
+        #             for k in range(len):
+
+        # def getComboBranch(allGearPairCombos, train, depth=0):
+        #     if depth == 0:
+        #         return getComboBranch(allGearPairCombos, allGearPairCombos[:], depth+1)
+        #     if depth == self.wheels:
+
+
+        #assuming no fourth wheel for now
+
+        #this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
+        #one fewer pairs than wheels
+        if self.wheels == 3:
+            for pair_0 in range(len(allGearPairCombos)):
+                for pair_1 in range(len(allGearPairCombos)):
+                        allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
+        elif self.wheels == 4:
+            for pair_0 in range(len(allGearPairCombos)):
+                for pair_1 in range(len(allGearPairCombos)):
+                    for pair_2 in range(len(allGearPairCombos)):
+                        allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1], allGearPairCombos[pair_2]])
+
+        allTimes=[]
+        for c in range(len(allTrains)):
+            totalRatio = 1
+            intRatio = False
+            for p in range(len(allTrains[c])):
+                ratio = allTrains[c][p][0] / allTrains[c][p][1]
+                if ratio == round(ratio):
+                    intRatio=True
+                totalRatio*=ratio
+            totalTime = totalRatio*escapement_time
+            error = 60*60-totalTime
+            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio }
+            if abs(error) < 1 and not intRatio:
+                allTimes.append(train)
+
+        allTimes.sort(key = lambda x: x["error"])
+
+        print(allTimes)
+
+
+
+train = GoingTrain(fourth_wheel=False)
+
+#{'time': 3600.0, 'train': [[20, 8], [54, 8], [64, 9]], 'error': 0.0}
+#[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0}, 
+#printed wheel in green:
+#pair = WheelPinionPair(30, 8,2)
+pair = WheelPinionPair(90, 8,1.25)
 # wheel=pair.getWheel()
 
 thick = 5
-arbourD=5
+arbourD=4
 
 wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
 #mirror and rotate a bit so the teeth line up and look nice
