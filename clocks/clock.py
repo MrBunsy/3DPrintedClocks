@@ -43,6 +43,9 @@ class Gear:
         # # via practical addendum factor
         # self.addendum_height = 0.95 * addendum_factor * module
 
+    def getMaxRadius(self):
+        return self.pitch_diameter/2 + self.addendum_factor*self.module
+
     def get3D(self, holeD=0, thick=0, style="HAC"):
         gear = self.get2D()
 
@@ -250,10 +253,10 @@ class GoingTrain:
         #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
         options = []
 
-        pinion_min=8
-        pinion_max=12
+        pinion_min=10
+        pinion_max=20
         wheel_min=20
-        wheel_max=100
+        wheel_max=60
 
         #TODO prefer non-integer combos.
         '''
@@ -318,42 +321,73 @@ class GoingTrain:
         for c in range(len(allTrains)):
             totalRatio = 1
             intRatio = False
+            totalTeeth = 0
             for p in range(len(allTrains[c])):
                 ratio = allTrains[c][p][0] / allTrains[c][p][1]
                 if ratio == round(ratio):
                     intRatio=True
                 totalRatio*=ratio
+                totalTeeth +=  allTrains[c][p][0] + allTrains[c][p][1]
             totalTime = totalRatio*escapement_time
             error = 60*60-totalTime
-            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio }
+
+            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalTeeth }
             if abs(error) < 1 and not intRatio:
                 allTimes.append(train)
 
-        allTimes.sort(key = lambda x: x["error"])
+        allTimes.sort(key = lambda x: x["error"]+totalTeeth/100)
 
         print(allTimes)
 
+def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
+    base = wheel.get3D(thick=thick, holeD=holeD,style=style)
+
+    top = pinion.get3D(thick=thick*3.5, holeD=holeD,style=style).translate([0,0,thick])
+
+    arbour = base.add(top)
+
+    arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick*0.5).circle(holeD/2).cutThruAll()
+    return arbour
+
+# train = GoingTrain(fourth_wheel=True, pendulum_period=1)
 
 
-train = GoingTrain(fourth_wheel=False)
+#{'time': 3600.0, 'train': [[36, 8], [50, 9], [48, 10]], 'error': 0.0, 'ratio': 120.0, 'teeth': 161}
+#{'time': 3600.0, 'train': [[44, 8], [48, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 171}
 
-#{'time': 3600.0, 'train': [[20, 8], [54, 8], [64, 9]], 'error': 0.0}
-#[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0}, 
-#printed wheel in green:
-#pair = WheelPinionPair(30, 8,2)
-pair = WheelPinionPair(90, 8,1.25)
+#{'time': 3600.0, 'train': [[48, 10], [55, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 184}
+
+
+# #{'time': 3600.0, 'train': [[20, 8], [54, 8], [64, 9]], 'error': 0.0}
+# #[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0},
+# #printed wheel in green:
+# #pair = WheelPinionPair(30, 8,2)
+moduleSize = 2
+
+# pair = WheelPinionPair(36, 8, moduleSize)
+# pair2 = WheelPinionPair(50, 9,moduleSize)
+# pair3 = WheelPinionPair(48, 10,moduleSize)
+pair = WheelPinionPair(48, 10, moduleSize)
+pair2 = WheelPinionPair(55, 10,moduleSize)
+pair3 = WheelPinionPair(50, 11,moduleSize)
+
 # wheel=pair.getWheel()
 
 thick = 5
-arbourD=4
-
-wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
-#mirror and rotate a bit so the teeth line up and look nice
-pinion = pair.pinion.get3D(thick=thick, holeD=arbourD).rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
-#.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
-
-show_object(wheel)
-show_object(pinion)
+arbourD=5
+#
+# wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
+# #mirror and rotate a bit so the teeth line up and look nice
+# pinion = pair.pinion.get3D(thick=thick, holeD=arbourD).rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
+# #.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
+#
+# show_object(wheel)
+# show_object(pinion)
 # show_object(cq.Workplane("XY").circle(10).extrude(20))
 
-exporters.export(wheel, "../out/wheel.stl")
+arbour = getArbour(pair2.wheel, pair.pinion, arbourD, thick)
+arbour2 = getArbour(pair3.wheel, pair2.pinion, arbourD, thick)
+
+show_object(arbour)
+
+exporters.export(arbour, "../out/arbour.stl")
