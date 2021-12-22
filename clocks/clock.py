@@ -4,29 +4,42 @@ from cadquery import exporters
 import math
 from math import sin, cos, pi, floor
 
+'''
+Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
+But another script will generate specific clock plates and arbours
+'''
+
 if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
-
-#
-# # define the generating function
-# def hypocycloid(t, r1, r2):
-#     return ((r1-r2)*cos(t)+r2*cos(r1/r2*t-t), (r1-r2)*sin(t)+r2*sin(-(r1/r2*t-t)))
-#
-# def epicycloid(t, r1, r2):
-#     return ((r1+r2)*cos(t)-r2*cos(r1/r2*t+t), (r1+r2)*sin(t)-r2*sin(r1/r2*t+t))
-#
-# def gear(t, r1=4, r2=1):
-#     if (-1)**(1+floor(t/2/pi*(r1/r2))) < 0:
-#         return epicycloid(t, r1, r2)
-#     else:
-#         return hypocycloid(t, r1, r2)
-
 
 
 
 
 class Gear:
+    @staticmethod
+    def cutHACStyle(gear,armThick, rimRadius):
+        # vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
+        armAngle = armThick / rimRadius
+        # cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
+        innerRadius = rimRadius * 0.7
+        # TODO might want to adjust this based on size of pinion attached to this wheel
+        innerSagitta = rimRadius * 0.325
+
+        arms = 5
+        for i in range(arms):
+            startAngle = i * math.pi * 2 / arms
+            endAngle = (i + 1) * math.pi * 2 / arms - armAngle
+
+            startPos = (math.cos(startAngle) * rimRadius, math.sin(startAngle) * rimRadius)
+            endPos = (math.cos(endAngle) * rimRadius, math.sin(endAngle) * rimRadius)
+
+            gear = gear.faces(">Z").workplane()
+            gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos, -rimRadius).sagittaArc(startPos, -innerSagitta).close().cutThruAll()
+            # .radiusArc(startPos,-innerRadius)\
+            # .close().cutThruAll()
+        return gear
+
     def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2):
         self.iswheel = isWheel
         self.teeth = teeth
@@ -58,30 +71,12 @@ class Gear:
 
         if self.iswheel:
             if style == "HAC":
-                #vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
+
                 rimThick = holeD
                 rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
 
                 armThick = rimThick
-                armAngle=armThick/rimRadius
-                #cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
-                innerRadius = rimRadius*0.7
-                #TODO might want to adjust this based on size of pinion attached to this wheel
-                innerSagitta= rimRadius*0.325
-
-
-                arms = 5
-                for i in range(arms):
-                    startAngle = i*math.pi*2/arms
-                    endAngle = (i+1)*math.pi*2/arms - armAngle
-
-                    startPos = (math.cos(startAngle)*rimRadius, math.sin(startAngle)*rimRadius)
-                    endPos = (math.cos(endAngle) * rimRadius, math.sin(endAngle) * rimRadius)
-
-                    gear = gear.faces(">Z").workplane()
-                    gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos,-rimRadius).sagittaArc(startPos,-innerSagitta).close().cutThruAll()
-                        # .radiusArc(startPos,-innerRadius)\
-                        # .close().cutThruAll()
+                Gear.cutHACStyle(gear, armThick, rimRadius)
 
 
 
@@ -112,7 +107,7 @@ class Gear:
         gear = gear.moveTo(inner_radius, 0)
 
         for t in range(self.teeth):
-            print("teeth: {}, angle: {}".format(t,tooth_angle*(t*2 + 1)))
+            # print("teeth: {}, angle: {}".format(t,tooth_angle*(t*2 + 1)))
             
             toothStartAngle = (tooth_angle + gap_angle)*t + gap_angle
             toothTipAngle = (tooth_angle + gap_angle)*t + gap_angle + tooth_angle/2
@@ -124,7 +119,7 @@ class Gear:
             addendum_endPos = (math.cos(toothEndAngle) * pitch_radius, math.sin(toothEndAngle) * pitch_radius)
             endBottomPos = (math.cos(toothEndAngle) * inner_radius, math.sin(toothEndAngle) * inner_radius)
 
-            print(midBottomPos)
+            # print(midBottomPos)
 
             #the gap
             gear = gear.radiusArc(midBottomPos, -inner_radius)
@@ -253,10 +248,10 @@ class GoingTrain:
         #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
         options = []
 
-        pinion_min=10
+        pinion_min=8
         pinion_max=20
-        wheel_min=20
-        wheel_max=60
+        wheel_min=30
+        wheel_max=100
 
         #TODO prefer non-integer combos.
         '''
@@ -322,72 +317,146 @@ class GoingTrain:
             totalRatio = 1
             intRatio = False
             totalTeeth = 0
+            #trying for small wheels and big pinions
+            totalWheelTeeth = 0
+            totalPinionTeeth = 0
             for p in range(len(allTrains[c])):
                 ratio = allTrains[c][p][0] / allTrains[c][p][1]
                 if ratio == round(ratio):
                     intRatio=True
                 totalRatio*=ratio
                 totalTeeth +=  allTrains[c][p][0] + allTrains[c][p][1]
+                totalWheelTeeth += allTrains[c][p][0]
+                totalPinionTeeth += allTrains[c][p][1]
             totalTime = totalRatio*escapement_time
             error = 60*60-totalTime
 
-            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalTeeth }
+            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth-totalPinionTeeth }
             if abs(error) < 1 and not intRatio:
                 allTimes.append(train)
 
-        allTimes.sort(key = lambda x: x["error"]+totalTeeth/100)
+        allTimes.sort(key = lambda x: x["error"]+x["teeth"])
 
         print(allTimes)
 
 def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
     base = wheel.get3D(thick=thick, holeD=holeD,style=style)
 
-    top = pinion.get3D(thick=thick*3.5, holeD=holeD,style=style).translate([0,0,thick])
+    top = pinion.get3D(thick=thick*3, holeD=holeD,style=style).translate([0,0,thick])
 
     arbour = base.add(top)
 
     arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick*0.5).circle(holeD/2).cutThruAll()
     return arbour
 
-# train = GoingTrain(fourth_wheel=True, pendulum_period=1)
+class Escapement:
+    def __init__(self, teeth=30, escapmentWheelDiameter=100, anchourDiameter=100):
+        '''
+        Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
+        '''
+
+        self.teeth = teeth
+        self.escapmentWheelDiameter=escapmentWheelDiameter
+        self.anchourDiameter=anchourDiameter
+
+        self.innerDiameter = escapmentWheelDiameter * 0.8
+
+        self.innerRadius = self.innerDiameter/2
+
+    def getWheel2D(self):
 
 
-#{'time': 3600.0, 'train': [[36, 8], [50, 9], [48, 10]], 'error': 0.0, 'ratio': 120.0, 'teeth': 161}
-#{'time': 3600.0, 'train': [[44, 8], [48, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 171}
+        dA = -math.pi*2/self.teeth
+        #done entirely by eye rather than working out the maths to adapt the book's geometry.
+        toothTipAngle = -math.pi*0.05
+        toothBaseAngle = -math.pi*0.03
 
-#{'time': 3600.0, 'train': [[48, 10], [55, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 184}
+        wheel = cq.Workplane("XY").moveTo(self.innerRadius, 0)
 
+        for i in range(self.teeth):
+            angle = dA*i
+            tipPos = (math.cos(angle+toothTipAngle)*self.escapmentWheelDiameter/2, math.sin(angle+toothTipAngle)*self.escapmentWheelDiameter/2)
+            nextbasePos = (math.cos(angle+dA) * self.innerRadius, math.sin(angle + dA) * self.innerRadius)
+            endPos = (math.cos(angle+toothBaseAngle) * self.innerRadius, math.sin(angle + toothBaseAngle) * self.innerRadius)
 
-# #{'time': 3600.0, 'train': [[20, 8], [54, 8], [64, 9]], 'error': 0.0}
-# #[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0},
-# #printed wheel in green:
-# #pair = WheelPinionPair(30, 8,2)
-moduleSize = 2
+            wheel = wheel.lineTo(tipPos[0], tipPos[1]).lineTo(endPos[0],endPos[1]).lineTo(nextbasePos[0],nextbasePos[1])#.radiusArc(nextbasePos,self.innerDiameter)
 
-# pair = WheelPinionPair(36, 8, moduleSize)
-# pair2 = WheelPinionPair(50, 9,moduleSize)
-# pair3 = WheelPinionPair(48, 10,moduleSize)
-pair = WheelPinionPair(48, 10, moduleSize)
-pair2 = WheelPinionPair(55, 10,moduleSize)
-pair3 = WheelPinionPair(50, 11,moduleSize)
+        wheel = wheel.close()
 
-# wheel=pair.getWheel()
+        return wheel
 
-thick = 5
-arbourD=5
+    def getWheel3D(self, thick=5, holeD=5, style="HAC"):
+        gear = self.getWheel2D().extrude(thick)
+
+        rimThick = holeD
+        rimRadius = self.innerRadius - rimThick
+
+        armThick = rimThick
+        gear = Gear.cutHACStyle(gear, armThick, rimRadius)
+
+        gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
+
+        return gear
+
+escapement = Escapement()
+
+show_object(escapement.getWheel3D())
+
 #
-# wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
-# #mirror and rotate a bit so the teeth line up and look nice
-# pinion = pair.pinion.get3D(thick=thick, holeD=arbourD).rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
-# #.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
 #
-# show_object(wheel)
-# show_object(pinion)
-# show_object(cq.Workplane("XY").circle(10).extrude(20))
-
-arbour = getArbour(pair2.wheel, pair.pinion, arbourD, thick)
-arbour2 = getArbour(pair3.wheel, pair2.pinion, arbourD, thick)
-
-show_object(arbour)
-
-exporters.export(arbour, "../out/arbour.stl")
+# # train = GoingTrain(fourth_wheel=False, pendulum_period=1, escapement_teeth=40)
+# #
+# # exit(0)
+#
+# #{'time': 3600.0, 'train': [[36, 8], [50, 9], [48, 10]], 'error': 0.0, 'ratio': 120.0, 'teeth': 161}
+# #{'time': 3600.0, 'train': [[44, 8], [48, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 171}
+#
+# #{'time': 3600.0, 'train': [[48, 10], [55, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 184}
+#
+#
+# # #{'time': 3600.0, 'train': [[20, 8], [54, 8], [64, 9]], 'error': 0.0}
+# # #[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0},
+# # #printed wheel in green:
+# # #pair = WheelPinionPair(30, 8,2)
+# moduleSize = 1.5
+#
+# '''
+# thoughts:
+# module of 2 prints very well - I think I can go below this without any trouble.
+# A module size of 1.5 produces ~12cm diameter wheels if I have no fourth wheel
+# However, that then requires a rather more thin arbour because the pinions are so small
+#
+# I think I might have to have a fourth wheel and larger gears just so 3-5mm rod will be able to fit
+# '''
+#
+# # pair = WheelPinionPair(36, 8, moduleSize)
+# # pair2 = WheelPinionPair(50, 9,moduleSize)
+# # pair3 = WheelPinionPair(48, 10,moduleSize)
+# # pair = WheelPinionPair(48, 10, moduleSize)
+# # pair2 = WheelPinionPair(55, 10,moduleSize)
+# # pair3 = WheelPinionPair(50, 11,moduleSize)
+#
+# pair = WheelPinionPair(81, 8, moduleSize)
+# pair2 = WheelPinionPair(80, 9, moduleSize)
+# # pair3 = WheelPinionPair(50, 11,moduleSize)
+#
+# # wheel=pair.getWheel()
+#
+# thick = 5
+# arbourD=5
+# #
+# # wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
+# # #mirror and rotate a bit so the teeth line up and look nice
+# # pinion = pair.pinion.get3D(thick=thick, holeD=arbourD).rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
+# # #.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
+# #
+# # show_object(wheel)
+# # show_object(pinion)
+# # show_object(cq.Workplane("XY").circle(10).extrude(20))
+#
+# arbour = getArbour(pair2.wheel, pair.pinion, arbourD, thick)
+# # arbour2 = getArbour(pair3.wheel, pair2.pinion, arbourD, thick)
+#
+# show_object(arbour)
+#
+# exporters.export(arbour, "../out/arbour.stl")
