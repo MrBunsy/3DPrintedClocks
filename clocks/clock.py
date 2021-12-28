@@ -416,11 +416,13 @@ class Escapement:
         entryPalletAngle=degToRad(6)
 
         # arbitary, just needs to be long enough to contain recoil and lift
-        entryPalletLength = self.toothHeight
+        entryPalletLength = self.toothHeight*0.5
 
 
         #height from centre of escape wheel to anchor pivot
         anchor_centre_distance = self.radius/math.cos(wheelAngle/2)
+
+        self.anchor_centre_distance = anchor_centre_distance
 
         #distance from anchor pivot to the nominal point the anchor meets the escape wheel
         x = math.sqrt(math.pow(anchor_centre_distance,2) - math.pow(self.radius,2))
@@ -447,7 +449,7 @@ class Escapement:
         exitPalletTip = ( -entryPoint[0], entryPoint[1])
 
         # anchor = anchor.moveTo(entryPoint[0], entryPoint[1])
-        anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1])
+        # anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1])
 
         anchorTopThickBase = (anchor_centre_distance - self.radius)*0.6
         anchorTopThickMid = (anchor_centre_distance - self.radius)*0.1
@@ -455,8 +457,8 @@ class Escapement:
 
 
 
-        endOfEntryPalletAngle = degToRad(15) # math.pi + wheelAngle/2 +
-        endOfExitPalletAngle = degToRad(25)
+        endOfEntryPalletAngle = degToRad(35) # math.pi + wheelAngle/2 +
+        endOfExitPalletAngle = degToRad(35)
 
         h = anchor_centre_distance - anchorTopThickBase - entryPalletTip[1]
 
@@ -466,14 +468,14 @@ class Escapement:
 
         h2 = anchor_centre_distance - anchorTopThickMid - exitPalletTip[1]
         farRight = (exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle), exitPalletTip[1] + h2)
-        farLeft = (-farRight[0], farRight[1])
+        farLeft = (-(exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle)), exitPalletTip[1] + h2)
 
         top = (0, anchor_centre_distance + anchorTopThickTop)
 
 
-        anchor = anchor.lineTo(innerLeft[0], innerLeft[1]).lineTo(innerRight[0], innerRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1])
-
-        anchor = anchor.lineTo(farRight[0], farRight[1]).lineTo(top[0], top[1]).lineTo(farLeft[0], farLeft[1])
+        # anchor = anchor.lineTo(innerLeft[0], innerLeft[1]).lineTo(innerRight[0], innerRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1])
+        #
+        # anchor = anchor.lineTo(farRight[0], farRight[1]).lineTo(top[0], top[1]).lineTo(farLeft[0], farLeft[1])
 
         # anchor = anchor.tangentArcPoint(entryPalletEnd, relative=False)
         # anchor = anchor.sagittaArc(entryPalletEnd, (farLeft[0] - entryPalletEnd[0])*1.75)
@@ -481,7 +483,21 @@ class Escapement:
 
         anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1]).lineTo(entryPalletEnd[0],entryPalletEnd[1]).tangentArcPoint(farLeft,relative=False)
 
+        anchor = anchor.lineTo(top[0], top[1]).lineTo(farRight[0], farRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1]).lineTo(innerRight[0], innerRight[1])
+
+        anchor = anchor.lineTo(innerLeft[0], innerLeft[1])
+
         anchor = anchor.close()
+
+        return anchor
+
+    def getAnchor3D(self, thick=15, holeD=2):
+
+        anchor = self.getAnchor2D()
+
+        anchor = anchor.extrude(thick)
+
+        anchor = anchor.faces(">Z").workplane().moveTo(0,self.anchor_centre_distance).circle(holeD/2).cutThruAll()
 
         return anchor
 
@@ -535,7 +551,7 @@ escapeWheel = escapement.getWheel3D()
 show_object(escapeWheel)
 # exporters.export(escapeWheel, "../out/escapeWheel.stl")
 
-anchor = escapement.getAnchor2D()
+anchor = escapement.getAnchor3D()
 
 show_object(anchor)
 #
