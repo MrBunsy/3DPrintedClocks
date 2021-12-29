@@ -545,15 +545,100 @@ class Escapement:
 
         return gear
 
-escapement = Escapement()
-escapeWheel = escapement.getWheel3D()
+
+class ChainWheel:
+
+    def __init__(self, max_diameter=45, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0):
+        '''
+        Going for a pocket-chain-wheel as this should be easiest to print in two parts
+
+        default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
+        '''
+        #diameter must be a multiple of the inside_length-tolerance
+
+        self.working_inside_length = inside_length-tolerance
+        leftover = max_diameter % (self.working_inside_length*2)
+
+        #diameter of the inner bit
+        self.diameter = max_diameter - leftover
+        print(self.diameter, self.diameter/self.working_inside_length)
+        self.outerDiameter = self.diameter + width * 0.75
+        self.outerRadius = self.outerDiameter/2
+
+        self.segments = round(self.outerDiameter/self.working_inside_length)
+
+
+        self.wall_thick = width*0.8
+        self.pocket_wall_thick = inside_length*0.2
+
+        self.chain_width = width
+        self.chain_thick = wire_thick
+
+        self.inner_width = width*1.2
+
+
+    def getHalf(self):
+        halfWheel = cq.Workplane("XY")
+
+        halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick).faces(">Z").workplane().tag("inside")
+
+
+
+        # width = self.chain_width*1.2
+
+        #the U shape when looking at a slice through the pocket
+        topGap = self.chain_thick*2.5
+        midGap = self.chain_thick*2
+        bottomGap = self.chain_thick*1.25
+
+        h1 = (self.inner_width - midGap)/2
+        h2 = (self.inner_width - bottomGap)/2
+        h3 = self.inner_width/2
+
+        bottomGapHeight = self.chain_width/2 - self.chain_thick/2
+
+        halfWheel = halfWheel.circle(self.diameter/2).extrude(h1).faces(">Z").workplane().circle(self.diameter/2).\
+            workplane(offset=h2-h1).tag("inside2").circle(self.diameter/2-bottomGapHeight).loft(combine=True). \
+            faces(">Z").workplane().circle(self.diameter/2-bottomGapHeight).extrude(bottomGap/2)
+
+        dA = math.pi * 2 / self.segments
+        pocketA = self.pocket_wall_thick/self.outerRadius
+
+        for i in range(self.segments):
+            angle = i*dA
+
+
+            halfWheel = halfWheel.workplaneFromTagged("inside")
+            # .rotateAboutCenter(axisEndPoint=(0,0,1),angleDegrees=dA)
+            # wp2 = halfWheel.transformed(offset=(0,0,self.inner_width/2)).moveTo(0, self.diameter/2).rect(self.chain_thick,self.chain_thick)
+            # halfWheel = halfWheel.moveTo(0, self.diameter / 2).rect(self.chain_thick * 2, self.chain_thick * 2). \
+            #     workplane(offset=self.inner_width / 2).moveTo(0, self.diameter / 2).rect(self.chain_thick, self.chain_thick).loft(combine=True)
+
+            # radiusArc((math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius), -self.outerRadius).close().extrude(h1)
+
+            #yay more weird cadquery bugs, can't have it with the full radius but 0.9999 is fine :/
+            halfWheel = halfWheel.moveTo(0,0).lineTo(math.cos(angle)*self.outerRadius, math.sin(angle)*self.outerRadius).\
+                radiusArc((math.cos(angle + pocketA) * self.outerRadius, math.sin(angle + pocketA) * self.outerRadius), -self.outerRadius*0.9999).close().extrude(h1)
+                # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
+
+        return halfWheel
+
+
+chainWheel = ChainWheel()
+
+halfWheel = chainWheel.getHalf()
+
+show_object(halfWheel)
+
+# escapement = Escapement()
+# escapeWheel = escapement.getWheel3D()
+# #
+# show_object(escapeWheel)
+# # exporters.export(escapeWheel, "../out/escapeWheel.stl")
 #
-show_object(escapeWheel)
-# exporters.export(escapeWheel, "../out/escapeWheel.stl")
-
-anchor = escapement.getAnchor3D()
-
-show_object(anchor)
+# anchor = escapement.getAnchor3D()
+#
+# show_object(anchor)
 #
 #
 # # train = GoingTrain(fourth_wheel=False, pendulum_period=1, escapement_teeth=40)
@@ -570,6 +655,10 @@ show_object(anchor)
 # # #[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0},
 # # #printed wheel in green:
 # # #pair = WheelPinionPair(30, 8,2)
+
+
+
+#
 # moduleSize = 1.5
 #
 # '''
@@ -581,12 +670,12 @@ show_object(anchor)
 # I think I might have to have a fourth wheel and larger gears just so 3-5mm rod will be able to fit
 # '''
 #
-# # pair = WheelPinionPair(36, 8, moduleSize)
-# # pair2 = WheelPinionPair(50, 9,moduleSize)
-# # pair3 = WheelPinionPair(48, 10,moduleSize)
-# # pair = WheelPinionPair(48, 10, moduleSize)
-# # pair2 = WheelPinionPair(55, 10,moduleSize)
-# # pair3 = WheelPinionPair(50, 11,moduleSize)
+# pair = WheelPinionPair(36, 8, moduleSize)
+# pair2 = WheelPinionPair(50, 9,moduleSize)
+# pair3 = WheelPinionPair(48, 10,moduleSize)
+# pair = WheelPinionPair(48, 10, moduleSize)
+# pair2 = WheelPinionPair(55, 10,moduleSize)
+# pair3 = WheelPinionPair(50, 11,moduleSize)
 #
 # pair = WheelPinionPair(81, 8, moduleSize)
 # pair2 = WheelPinionPair(80, 9, moduleSize)
@@ -595,7 +684,7 @@ show_object(anchor)
 # # wheel=pair.getWheel()
 #
 # thick = 5
-# arbourD=5
+# arbourD=3
 # #
 # # wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
 # # #mirror and rotate a bit so the teeth line up and look nice
