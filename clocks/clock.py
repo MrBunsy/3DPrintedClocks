@@ -569,7 +569,7 @@ class ChainWheel:
 
 
         self.wall_thick = width*0.8
-        self.pocket_wall_thick = inside_length*0.2
+        self.pocket_wall_thick = inside_length*0.4
 
         self.chain_width = width
         self.chain_thick = wire_thick
@@ -577,7 +577,7 @@ class ChainWheel:
         self.inner_width = width*1.2
 
 
-    def getHalf(self):
+    def getHalf(self, holeD=3 ,screwD=3):
         halfWheel = cq.Workplane("XY")
 
         halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick).faces(">Z").workplane().tag("inside")
@@ -618,8 +618,12 @@ class ChainWheel:
 
             #yay more weird cadquery bugs, can't have it with the full radius but 0.9999 is fine :/
             halfWheel = halfWheel.moveTo(0,0).lineTo(math.cos(angle)*self.outerRadius, math.sin(angle)*self.outerRadius).\
-                radiusArc((math.cos(angle + pocketA) * self.outerRadius, math.sin(angle + pocketA) * self.outerRadius), -self.outerRadius*0.9999).close().extrude(h1)
+                radiusArc((math.cos(angle + pocketA) * self.outerRadius, math.sin(angle + pocketA) * self.outerRadius), -self.outerRadius*0.99999999).close().extrude(h1)
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
+
+        halfWheel = halfWheel.faces(">Z").workplane().circle(holeD/2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.diameter*0.2).circle(holeD / 2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.diameter*0.2).circle(holeD / 2).cutThruAll()
 
         return halfWheel
 
@@ -629,6 +633,8 @@ chainWheel = ChainWheel()
 halfWheel = chainWheel.getHalf()
 
 show_object(halfWheel)
+
+exporters.export(halfWheel, "../out/chainWheel.stl")
 
 # escapement = Escapement()
 # escapeWheel = escapement.getWheel3D()
