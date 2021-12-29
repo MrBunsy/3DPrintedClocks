@@ -554,22 +554,26 @@ class ChainWheel:
 
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
         '''
-        #diameter must be a multiple of the inside_length-tolerance
+
+        max_circumference = math.pi * max_diameter
 
         self.working_inside_length = inside_length-tolerance
-        leftover = max_diameter % (self.working_inside_length*2)
+        leftover = max_circumference % (self.working_inside_length*2)
 
+
+        self.circumference = (max_circumference - leftover)
         #diameter of the inner bit
-        self.diameter = max_diameter - leftover
+        self.diameter = self.circumference/math.pi
+
         print(self.diameter, self.diameter/self.working_inside_length)
         self.outerDiameter = self.diameter + width * 0.75
         self.outerRadius = self.outerDiameter/2
 
-        self.segments = round(self.outerDiameter/self.working_inside_length)
+        self.segments = round(self.circumference/(self.working_inside_length*2))
 
 
-        self.wall_thick = width*0.8
-        self.pocket_wall_thick = inside_length*0.4
+        self.wall_thick = width*0.4
+        self.pocket_wall_thick = inside_length - wire_thick*3
 
         self.chain_width = width
         self.chain_thick = wire_thick
@@ -605,7 +609,8 @@ class ChainWheel:
         pocketA = self.pocket_wall_thick/self.outerRadius
 
         for i in range(self.segments):
-            angle = i*dA
+            #the offset is a lazy way to ensure both halves can be identical, with the screw holes vertical
+            angle = i*dA - pocketA/2
 
 
             halfWheel = halfWheel.workplaneFromTagged("inside")
