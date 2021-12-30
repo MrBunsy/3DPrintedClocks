@@ -554,7 +554,7 @@ class ChainWheel:
     # def getRadiusFromAnglePerLink(self, angle):
     #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
 
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.5):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.2):
         '''
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
 
@@ -609,6 +609,10 @@ class ChainWheel:
         return chainLength/((self.pockets*self.chain_inside_length*2)/minuteRatio)
 
     def getHalf(self, holeD=3.5 ,screwD=3):
+        '''
+        I'm hoping to be able to keep both halves identical - so long as there's space for the m3 screws and the m3 pivot then this should remain possible
+        '''
+
         halfWheel = cq.Workplane("XY")
 
         halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick).faces(">Z").workplane().tag("inside")
@@ -663,14 +667,63 @@ class ChainWheel:
 
         return halfWheel
 
+class Ratchet:
 
-chainWheel = ChainWheel()
+    def __init__(self, totalD=100, powerClockwise=True):
+        # , chain_hole_distance=10, chain_hole_d = 3):
+        # #distance of the screw holes on the chain wheel, so the ratchet wheel can be securely attached
+        # self.chain_hole_distance = chain_hole_distance
+        # self.chain_hole_d = chain_hole_d
+        self.outsideDiameter=totalD
 
-halfWheel = chainWheel.getHalf()
+        self.outer_thick = self.outsideDiameter*0.1
 
-show_object(halfWheel)
+        #the teeth will be outside this diameter
+        self.ratchetDiameter = self.outsideDiameter*0.5
 
-exporters.export(halfWheel, "../out/chainWheel.stl")
+        self.toothLength = self.outsideDiameter*0.1
+
+
+        self.clicks = 4
+        #ratchetTeet must be a multiple of clicks
+        self.ratchetTeeth = self.clicks*2
+
+        self.clockwise = powerClockwise
+
+    def getRatchetWheel(self, thick = 10):
+        wheel = cq.Workplane("XY")
+
+        dA = math.pi*2/self.ratchetTeeth * (1 if self.clockwise else -1)
+        radius = self.ratchetDiameter/2
+        wheel = wheel.moveTo(radius,0)
+
+        tipR = radius + self.toothLength
+
+        for i in range(self.ratchetTeeth):
+            angle = dA*i
+
+            wheel = wheel.lineTo(math.cos(angle)*tipR, math.sin(angle)*tipR)
+            wheel = wheel.lineTo(math.cos(angle+dA) * radius, math.sin(angle+dA) * radius)
+
+        wheel = wheel.close().extrude(thick)
+
+        return wheel
+
+
+ratchet = Ratchet()
+
+ratchetWheel = ratchet.getRatchetWheel()
+
+show_object(ratchetWheel)
+
+
+# chainWheel = ChainWheel()
+#
+# halfWheel = chainWheel.getHalf()
+#
+# show_object(halfWheel)
+#
+# exporters.export(halfWheel, "../out/chainWheel.stl")
 
 # escapement = Escapement()
 # escapeWheel = escapement.getWheel3D()
