@@ -554,8 +554,9 @@ class ChainWheel:
     # def getRadiusFromAnglePerLink(self, angle):
     #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
 
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.2):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
         '''
+        0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
 
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
@@ -697,9 +698,9 @@ class Ratchet:
         self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
         self.toothTipR = self.toothRadius - self.toothLength
 
-        self.clicks = 4
+        self.clicks = 8
         #ratchetTeet must be a multiple of clicks
-        self.ratchetTeeth = self.clicks*2
+        self.ratchetTeeth = self.clicks*1
 
 
         self.thick = thick
@@ -710,8 +711,10 @@ class Ratchet:
         Intended to be larger than the chain wheel so it can be printed as part of teh same object
         '''
         wheel = cq.Workplane("XY")
+        #designed originally with twice as many teeth as clicks, this bodge undoes that where needed
+        multiplier = 2
 
-        ratchetAngle = -math.pi*2/(self.clicks*2.5)* self.clockwise
+        ratchetAngle = -math.pi*2/(self.clicks*2.5/multiplier)* self.clockwise
 
         # radius = self.ratchetDiameter/2
         # wheel = wheel.moveTo(radius,0)
@@ -720,7 +723,7 @@ class Ratchet:
 
         # wheel = wheel.moveTo(self.toothRadius, 0)
         angle = -dA
-        wheel = wheel.moveTo(self.ratchetRadius,0)
+        wheel = wheel.moveTo(math.cos(angle + dA*multiplier) * self.ratchetRadius, math.sin(angle+ dA*multiplier) * self.ratchetRadius)
 
         outerR = self.toothRadius# (self.ratchetRadius + self.toothRadius*4)/5
         innerR = self.toothRadius#(self.ratchetRadius*2 + self.toothRadius)/3
@@ -732,7 +735,7 @@ class Ratchet:
             # wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
             # wheel = wheel.lineTo(math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
             # wheel = wheel.lineTo(math.cos(angle +dA ) * self.ratchetRadius, math.sin(angle +dA ) * self.ratchetRadius)
-            nextPoint = (math.cos(angle +dA - ratchetAngle ) * self.ratchetRadius, math.sin(angle +dA - ratchetAngle ) * self.ratchetRadius)
+            nextPoint = (math.cos(angle +dA*multiplier - ratchetAngle ) * self.ratchetRadius, math.sin(angle +dA*multiplier - ratchetAngle ) * self.ratchetRadius)
             wheel = wheel.radiusArc(nextPoint, self.ratchetRadius)
 
             toothTip=(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
@@ -746,7 +749,7 @@ class Ratchet:
 
             wheel = wheel.lineTo(ratchetHalfway[0], ratchetHalfway[1])
 
-            nextPoint2 = math.cos(angle + dA) * self.ratchetRadius, math.sin(angle+ dA) * self.ratchetRadius
+            nextPoint2 = math.cos(angle + dA*multiplier) * self.ratchetRadius, math.sin(angle+ dA*multiplier) * self.ratchetRadius
             wheel = wheel.radiusArc(nextPoint2, outerR)
             # wheel = wheel.lineTo(nextPoint2[0], nextPoint2[1])
 
@@ -776,25 +779,67 @@ class Ratchet:
 
         return wheel
 
+def getChainWheelWithRatchet(ratchet, chainwheel, holeD=3.5 ,screwD=3):
+    '''
+    slightly OO encapsulation breaking. oh well.
+    '''
+    chain = chainwheel.getHalf(holeD=holeD, screwD=screwD).translate((0, 0, ratchet.thick))
 
-ratchet = Ratchet()
+    clickwheel = ratchet.getInnerWheel()
 
-ratchetWheel = ratchet.getInnerWheel()
-clickWheel = ratchet.getOuterWheel()
 
-show_object(ratchetWheel)
-show_object(clickWheel)
+    # "the size of the circle the polygon is inscribed into"
+    nutDiameter=6.2
+    #TODO if we do this, make the nut tops bridgable
+    # clickwheel = clickwheel.faces(">Z").workplane().circle(holeD/2).moveTo(0,chainwheel.hole_distance).polygon(6,nutDiameter).moveTo(0,-chainwheel.hole_distance).polygon(6,nutDiameter).cutThruAll()
+    #be lazy for now and just screw into it
+    clickwheel = clickwheel.faces(">Z").workplane().circle(holeD / 2).moveTo(0, chainwheel.hole_distance).circle(screwD/2).moveTo(0, -chainwheel.hole_distance).circle(screwD/2).cutThruAll()
 
-exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
-exporters.export(clickWheel, "../out/clickWheel.stl")
+    # combined = combined.faces("<Z").workplane()
 
-# chainWheel = ChainWheel()
+
+
+    combined = clickwheel.add(chain)
+
+    return combined
+
+def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
+    gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style)
+
+    ratchetWheel = ratchet.getOuterWheel().translate((0,0,thick))
+
+    return gearWheel.add(ratchetWheel)
+
 #
-# halfWheel = chainWheel.getHalf()
+# ratchet = Ratchet()
 #
-# show_object(halfWheel)
+# ratchetWheel = ratchet.getInnerWheel()
+# clickWheel = ratchet.getOuterWheel()
 #
-# exporters.export(halfWheel, "../out/chainWheel.stl")
+# show_object(ratchetWheel)
+# show_object(clickWheel)
+#
+# exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
+# exporters.export(clickWheel, "../out/clickWheel.stl")
+
+# chainWithRatchet = getChainWheelWithRatchet(Ratchet(), ChainWheel())
+#
+# show_object(chainWithRatchet)
+# exporters.export(chainWithRatchet, "../out/chainWithRatchet.stl")
+
+
+wheelWithRatchet = getWheelWithRatchet(Ratchet(),WheelPinionPair(90, 8, 1.5).wheel)
+
+show_object(wheelWithRatchet)
+exporters.export(wheelWithRatchet, "../out/wheelWithRatchet.stl")
+
+chainWheel = ChainWheel()
+
+halfWheel = chainWheel.getHalf()
+
+show_object(halfWheel)
+
+exporters.export(halfWheel, "../out/chainWheel.stl")
 
 # escapement = Escapement()
 # escapeWheel = escapement.getWheel3D()
