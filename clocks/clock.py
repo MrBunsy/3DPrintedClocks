@@ -548,38 +548,63 @@ class Escapement:
 
 class ChainWheel:
 
-    def __init__(self, max_diameter=45, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0):
+    # def anglePerLink(self, radius):
+    #     return math.atan(((self.chain_thick + self.chain_inside_length)/2) / (radius + self.chain_thick/2))
+
+    # def getRadiusFromAnglePerLink(self, angle):
+    #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
+
+    def __init__(self, max_circumference=70, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0):
         '''
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
 
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
         '''
 
-        max_circumference = math.pi * max_diameter
+        self.chain_width = width
+        self.chain_thick = wire_thick
+        self.chain_inside_length = inside_length
 
-        self.working_inside_length = inside_length-tolerance
-        leftover = max_circumference % (self.working_inside_length*2)
+        # max_circumference = math.pi * max_diameter
 
+        link_length = inside_length*2 - tolerance
+        leftover = max_circumference %  link_length
 
+        #this is a circumference that fits exactly an even number of chain segments
         self.circumference = (max_circumference - leftover)
-        #diameter of the inner bit
-        self.diameter = self.circumference/math.pi
 
-        print(self.diameter, self.diameter/self.working_inside_length)
+        #shouldn't need rounding
+        self.pockets = int(self.circumference / link_length)
+
+        n = self.pockets*2
+
+        apothem = ( self.chain_inside_length/2 ) * math.tan((math.pi * (n - 2)) / (2*n))
+
+        #diameter of the inner bit
+        #a pocket is for two link segments
+        # angle_per_single_link = math.pi*2/(self.pockets*2)
+
+        self.diameter = (apothem - self.chain_thick/2)*2#self.getRadiusFromAnglePerLink(angle_per_single_link) * 2
+
+        print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference,self.getRunTime()))
         self.outerDiameter = self.diameter + width * 0.75
         self.outerRadius = self.outerDiameter/2
 
-        self.segments = round(self.circumference/(self.working_inside_length*2))
+
 
 
         self.wall_thick = width*0.4
         self.pocket_wall_thick = inside_length - wire_thick*3
 
-        self.chain_width = width
-        self.chain_thick = wire_thick
+
 
         self.inner_width = width*1.2
 
+        self.hole_distance = self.diameter*0.2
+
+    def getRunTime(self,minuteRatio=1,chainLength=2000):
+        #minute hand rotates once per hour, so this answer will be in hours
+        return chainLength/(self.circumference/minuteRatio)
 
     def getHalf(self, holeD=3 ,screwD=3):
         halfWheel = cq.Workplane("XY")
@@ -599,16 +624,16 @@ class ChainWheel:
         h2 = (self.inner_width - bottomGap)/2
         h3 = self.inner_width/2
 
-        bottomGapHeight = self.chain_width/2 - self.chain_thick/2
+        bottomGapHeight = self.chain_width*0.5
 
         halfWheel = halfWheel.circle(self.diameter/2).extrude(h1).faces(">Z").workplane().circle(self.diameter/2).\
             workplane(offset=h2-h1).tag("inside2").circle(self.diameter/2-bottomGapHeight).loft(combine=True). \
             faces(">Z").workplane().circle(self.diameter/2-bottomGapHeight).extrude(bottomGap/2)
 
-        dA = math.pi * 2 / self.segments
+        dA = math.pi * 2 / self.pockets
         pocketA = self.pocket_wall_thick/self.outerRadius
 
-        for i in range(self.segments):
+        for i in range(self.pockets):
             #the offset is a lazy way to ensure both halves can be identical, with the screw holes vertical
             angle = i*dA - pocketA/2
 
@@ -627,8 +652,8 @@ class ChainWheel:
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
         halfWheel = halfWheel.faces(">Z").workplane().circle(holeD/2).cutThruAll()
-        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.diameter*0.2).circle(holeD / 2).cutThruAll()
-        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.diameter*0.2).circle(holeD / 2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(holeD / 2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(holeD / 2).cutThruAll()
 
         return halfWheel
 
