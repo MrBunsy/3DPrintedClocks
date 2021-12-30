@@ -669,7 +669,14 @@ class ChainWheel:
 
 class Ratchet:
 
-    def __init__(self, totalD=100, powerClockwise=True):
+    '''
+    Plan is to do this slightly backwards - so the 'clicks' are attached to the chain wheel and the teeth are on the
+    gear-wheel.
+
+    This means that they can be printed as only two parts with minimal screws to keep everything together
+    '''
+
+    def __init__(self, totalD=50, thick=5, powerClockwise=True):
         # , chain_hole_distance=10, chain_hole_d = 3):
         # #distance of the screw holes on the chain wheel, so the ratchet wheel can be securely attached
         # self.chain_hole_distance = chain_hole_distance
@@ -678,44 +685,108 @@ class Ratchet:
 
         self.outer_thick = self.outsideDiameter*0.1
 
-        #the teeth will be outside this diameter
+
         self.ratchetDiameter = self.outsideDiameter*0.5
+        self.ratchetRadius = self.ratchetDiameter/2
 
-        self.toothLength = self.outsideDiameter*0.1
+        self.clockwise = 1 if powerClockwise else -1
 
+        self.toothLength = self.outsideDiameter*0.05
+        self.toothAngle = degToRad(2)* self.clockwise
+
+        self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
+        self.toothTipR = self.toothRadius - self.toothLength
 
         self.clicks = 4
         #ratchetTeet must be a multiple of clicks
         self.ratchetTeeth = self.clicks*2
 
-        self.clockwise = powerClockwise
 
-    def getRatchetWheel(self, thick = 10):
+        self.thick = thick
+
+    def getInnerWheel(self):
+        '''
+        Contains the ratchet clicks, hoping that PETG will be strong and springy enough
+        Intended to be larger than the chain wheel so it can be printed as part of teh same object
+        '''
         wheel = cq.Workplane("XY")
 
-        dA = math.pi*2/self.ratchetTeeth * (1 if self.clockwise else -1)
-        radius = self.ratchetDiameter/2
-        wheel = wheel.moveTo(radius,0)
+        ratchetAngle = -math.pi*2/(self.clicks*2.5)* self.clockwise
 
-        tipR = radius + self.toothLength
+        # radius = self.ratchetDiameter/2
+        # wheel = wheel.moveTo(radius,0)
+
+        dA = -math.pi*2 / self.clicks * self.clockwise
+
+        # wheel = wheel.moveTo(self.toothRadius, 0)
+        angle = -dA
+        wheel = wheel.moveTo(self.ratchetRadius,0)
+
+        outerR = self.toothRadius# (self.ratchetRadius + self.toothRadius*4)/5
+        innerR = self.toothRadius#(self.ratchetRadius*2 + self.toothRadius)/3
+        teethdA = -math.pi * 2 / self.ratchetTeeth * self.clockwise
+
+        for i in range(self.clicks):
+            angle = dA * i
+
+            # wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
+            # wheel = wheel.lineTo(math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
+            # wheel = wheel.lineTo(math.cos(angle +dA ) * self.ratchetRadius, math.sin(angle +dA ) * self.ratchetRadius)
+            nextPoint = (math.cos(angle +dA - ratchetAngle ) * self.ratchetRadius, math.sin(angle +dA - ratchetAngle ) * self.ratchetRadius)
+            wheel = wheel.radiusArc(nextPoint, self.ratchetRadius)
+
+            toothTip=(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
+            wheel = wheel.radiusArc(toothTip, -innerR)
+            toothDeep = (math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
+            #tooth deep
+            wheel = wheel.lineTo(toothDeep[0], toothDeep[1])
+
+            nextTip = (math.cos(angle +teethdA - self.toothAngle) * self.toothTipR, math.sin(angle+teethdA - self.toothAngle) * self.toothTipR)
+            ratchetHalfway = ((toothDeep[0] + nextTip[0])/2,(toothDeep[1] + nextTip[1])/2)
+
+            wheel = wheel.lineTo(ratchetHalfway[0], ratchetHalfway[1])
+
+            nextPoint2 = math.cos(angle + dA) * self.ratchetRadius, math.sin(angle+ dA) * self.ratchetRadius
+            wheel = wheel.radiusArc(nextPoint2, outerR)
+            # wheel = wheel.lineTo(nextPoint2[0], nextPoint2[1])
+
+        wheel = wheel.close().extrude(self.thick)
+
+        return wheel
+
+    def getOuterWheel(self):
+        '''
+        contains the ratchet teeth, designed so it can be printed as part of the same object as a gear wheel
+        '''
+        wheel = cq.Workplane("XY").circle(self.outsideDiameter/2)#.circle(self.outsideDiameter/2-self.outer_thick)
+
+        dA = math.pi * 2 / self.ratchetTeeth * self.clockwise
+
+
+        wheel = wheel.moveTo(self.toothRadius,0)
 
         for i in range(self.ratchetTeeth):
-            angle = dA*i
+            angle = dA * i
 
-            wheel = wheel.lineTo(math.cos(angle)*tipR, math.sin(angle)*tipR)
-            wheel = wheel.lineTo(math.cos(angle+dA) * radius, math.sin(angle+dA) * radius)
+            wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
+            wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
 
-        wheel = wheel.close().extrude(thick)
+        wheel = wheel.close().extrude(self.thick)
+
 
         return wheel
 
 
 ratchet = Ratchet()
 
-ratchetWheel = ratchet.getRatchetWheel()
+ratchetWheel = ratchet.getInnerWheel()
+clickWheel = ratchet.getOuterWheel()
 
 show_object(ratchetWheel)
+show_object(clickWheel)
 
+exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
+exporters.export(clickWheel, "../out/clickWheel.stl")
 
 # chainWheel = ChainWheel()
 #
