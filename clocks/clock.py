@@ -554,7 +554,7 @@ class ChainWheel:
     # def getRadiusFromAnglePerLink(self, angle):
     #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
 
-    def __init__(self, max_circumference=70, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.5):
         '''
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
 
@@ -566,7 +566,7 @@ class ChainWheel:
         self.chain_inside_length = inside_length
 
         # max_circumference = math.pi * max_diameter
-
+        self.tolerance = tolerance
         link_length = inside_length*2 - tolerance
         leftover = max_circumference %  link_length
 
@@ -577,14 +577,16 @@ class ChainWheel:
         self.pockets = int(self.circumference / link_length)
 
         n = self.pockets*2
-
-        apothem = ( self.chain_inside_length/2 ) * math.tan((math.pi * (n - 2)) / (2*n))
+        #https://en.wikipedia.org/wiki/Apothem "it is the line drawn from the center of the polygon that is perpendicular to one of its sides"
+        apothem = ( self.chain_inside_length/2 - self.tolerance ) * math.tan((math.pi * (n - 2)) / (2*n))
 
         #diameter of the inner bit
         #a pocket is for two link segments
         # angle_per_single_link = math.pi*2/(self.pockets*2)
 
         self.diameter = (apothem - self.chain_thick/2)*2#self.getRadiusFromAnglePerLink(angle_per_single_link) * 2
+
+        self.radius = self.diameter/2
 
         print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference,self.getRunTime()))
         self.outerDiameter = self.diameter + width * 0.75
@@ -594,19 +596,19 @@ class ChainWheel:
 
 
         self.wall_thick = width*0.4
-        self.pocket_wall_thick = inside_length - wire_thick*3
+        self.pocket_wall_thick = inside_length - wire_thick*4
 
 
 
         self.inner_width = width*1.2
 
-        self.hole_distance = self.diameter*0.2
+        self.hole_distance = self.diameter*0.25
 
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
-        return chainLength/(self.circumference/minuteRatio)
+        return chainLength/((self.pockets*self.chain_inside_length*2)/minuteRatio)
 
-    def getHalf(self, holeD=3 ,screwD=3):
+    def getHalf(self, holeD=3.5 ,screwD=3):
         halfWheel = cq.Workplane("XY")
 
         halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick).faces(">Z").workplane().tag("inside")
@@ -632,6 +634,8 @@ class ChainWheel:
 
         dA = math.pi * 2 / self.pockets
         pocketA = self.pocket_wall_thick/self.outerRadius
+        #angle the pocket ends inwards slightly
+        pocketA_end_diff = pocketA*0.2
 
         for i in range(self.pockets):
             #the offset is a lazy way to ensure both halves can be identical, with the screw holes vertical
@@ -647,13 +651,15 @@ class ChainWheel:
             # radiusArc((math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius), -self.outerRadius).close().extrude(h1)
 
             #yay more weird cadquery bugs, can't have it with the full radius but 0.9999 is fine :/
-            halfWheel = halfWheel.moveTo(0,0).lineTo(math.cos(angle)*self.outerRadius, math.sin(angle)*self.outerRadius).\
-                radiusArc((math.cos(angle + pocketA) * self.outerRadius, math.sin(angle + pocketA) * self.outerRadius), -self.outerRadius*0.99999999).close().extrude(h1)
+            halfWheel = halfWheel.moveTo(0,0).lineTo(math.cos(angle)*self.radius, math.sin(angle)*self.radius).\
+                lineTo(math.cos(angle+pocketA_end_diff) * self.outerRadius, math.sin(angle+pocketA_end_diff) * self.outerRadius).\
+                radiusArc((math.cos(angle + pocketA - pocketA_end_diff) * self.outerRadius, math.sin(angle + pocketA- pocketA_end_diff) * self.outerRadius), -self.outerRadius*0.99999999).\
+                lineTo(math.cos(angle+pocketA) * self.radius, math.sin(angle+pocketA) * self.radius).close().extrude(h1)
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
         halfWheel = halfWheel.faces(">Z").workplane().circle(holeD/2).cutThruAll()
-        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(holeD / 2).cutThruAll()
-        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(holeD / 2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(screwD / 2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(screwD / 2).cutThruAll()
 
         return halfWheel
 
