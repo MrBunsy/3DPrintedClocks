@@ -3,6 +3,7 @@ from pathlib import Path
 from cadquery import exporters
 import math
 from math import sin, cos, pi, floor
+import numpy as np
 
 '''
 Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
@@ -341,6 +342,9 @@ class GoingTrain:
 
 def degToRad(deg):
     return math.pi*deg/180
+
+def polar(angle, radius):
+    return (math.cos(angle) * radius, math.sin(angle) * radius)
 
 def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
     base = wheel.get3D(thick=thick, holeD=holeD,style=style)
@@ -687,8 +691,8 @@ class Ratchet:
         self.outer_thick = self.outsideDiameter*0.1
 
 
-        self.ratchetDiameter = self.outsideDiameter*0.5
-        self.ratchetRadius = self.ratchetDiameter/2
+        self.clickInnerDiameter = self.outsideDiameter * 0.5
+        self.clickInnerRadius = self.clickInnerDiameter / 2
 
         self.clockwise = 1 if powerClockwise else -1
 
@@ -711,10 +715,17 @@ class Ratchet:
         Intended to be larger than the chain wheel so it can be printed as part of teh same object
         '''
         wheel = cq.Workplane("XY")
-        #designed originally with twice as many teeth as clicks, this bodge undoes that where needed
-        multiplier = 2
+        # #designed originally with twice as many teeth as clicks, this bodge undoes that where needed
+        # multiplier = 2
 
-        ratchetAngle = -math.pi*2/(self.clicks*2.5/multiplier)* self.clockwise
+        thick = 1
+
+        innerClickR = self.clickInnerRadius
+
+        #arc aprox thick
+        clickArcAngle = self.clockwise * thick/innerClickR
+
+        clickOffsetAngle = -(math.pi*2/self.clicks)*0.5 * self.clockwise
 
         # radius = self.ratchetDiameter/2
         # wheel = wheel.moveTo(radius,0)
@@ -723,35 +734,55 @@ class Ratchet:
 
         # wheel = wheel.moveTo(self.toothRadius, 0)
         angle = -dA
-        wheel = wheel.moveTo(math.cos(angle + dA*multiplier) * self.ratchetRadius, math.sin(angle+ dA*multiplier) * self.ratchetRadius)
+        start = polar(clickOffsetAngle, innerClickR)
+        wheel = wheel.moveTo(start[0], start[1])
 
         outerR = self.toothRadius# (self.ratchetRadius + self.toothRadius*4)/5
         innerR = self.toothRadius#(self.ratchetRadius*2 + self.toothRadius)/3
         teethdA = -math.pi * 2 / self.ratchetTeeth * self.clockwise
 
         for i in range(self.clicks):
-            angle = dA * i
+            toothAngle = dA * i
+            clickStartAngle = dA * i + clickOffsetAngle
+            clickEndAngle = clickStartAngle - clickArcAngle
+            clickNextStartAngle = clickStartAngle + dA
 
-            # wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
-            # wheel = wheel.lineTo(math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
-            # wheel = wheel.lineTo(math.cos(angle +dA ) * self.ratchetRadius, math.sin(angle +dA ) * self.ratchetRadius)
-            nextPoint = (math.cos(angle +dA*multiplier - ratchetAngle ) * self.ratchetRadius, math.sin(angle +dA*multiplier - ratchetAngle ) * self.ratchetRadius)
-            wheel = wheel.radiusArc(nextPoint, self.ratchetRadius)
+            clickTip = polar(toothAngle, self.toothRadius)
+            toothInner = polar(toothAngle-self.toothAngle, self.toothTipR)
+            tipToInner = np.subtract(toothInner, clickTip)
+            clickInner = tuple(np.add(clickTip, np.multiply(tipToInner, thick/np.linalg.norm(tipToInner))))
 
-            toothTip=(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
-            wheel = wheel.radiusArc(toothTip, -innerR)
-            toothDeep = (math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
-            #tooth deep
-            wheel = wheel.lineTo(toothDeep[0], toothDeep[1])
+            clickStart = polar(clickStartAngle, innerClickR)
+            clickEnd = polar(clickEndAngle, innerClickR)
+            nextClickStart = polar(clickNextStartAngle, innerClickR)
 
-            nextTip = (math.cos(angle +teethdA - self.toothAngle) * self.toothTipR, math.sin(angle+teethdA - self.toothAngle) * self.toothTipR)
-            ratchetHalfway = ((toothDeep[0] + nextTip[0])/2,(toothDeep[1] + nextTip[1])/2)
+            wheel = wheel.radiusArc(clickInner, -innerR).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR).radiusArc(nextClickStart, innerClickR)
 
-            wheel = wheel.lineTo(ratchetHalfway[0], ratchetHalfway[1])
+            # wheel = wheel.lineTo(clickInner[0], clickInner[1]).lineTo(clickTip[0], clickTip[1]).lineTo(clickEnd[0], clickEnd[1]).lineTo(nextClickStart[0], nextClickStart[1])
 
-            nextPoint2 = math.cos(angle + dA*multiplier) * self.ratchetRadius, math.sin(angle+ dA*multiplier) * self.ratchetRadius
-            wheel = wheel.radiusArc(nextPoint2, outerR)
-            # wheel = wheel.lineTo(nextPoint2[0], nextPoint2[1])
+            # wheel = wheel.lineTo(clickInner[0], clickInner[1]).lineTo(clickTip[0], clickTip[1]).lineTo(clickEnd[0], clickEnd[1]).lineTo(nextClickStart[0], nextClickStart[1])
+
+
+            # # wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
+            # # wheel = wheel.lineTo(math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
+            # # wheel = wheel.lineTo(math.cos(angle +dA ) * self.ratchetRadius, math.sin(angle +dA ) * self.ratchetRadius)
+            # # nextPoint = (math.cos(angle +dA + clickOffsetAngle - clickArcAngle ) * self.ratchetRadius, math.sin(angle +dA*multiplier - clickArcAngle ) * self.ratchetRadius)
+            # # wheel = wheel.radiusArc(nextPoint, self.ratchetRadius)
+            #
+            # toothTip=(math.cos(angle - self.toothAngle) *innerClickR, math.sin(angle - self.toothAngle) * innerClickR)
+            # wheel = wheel.radiusArc(toothTip, -innerR)
+            # toothDeep = (math.cos(angle) * self.toothRadius, math.sin(angle) * self.toothRadius)
+            # #tooth deep
+            # wheel = wheel.lineTo(toothDeep[0], toothDeep[1])
+            #
+            # nextTip = (math.cos(angle +teethdA - self.toothAngle) * innerClickR, math.sin(angle+teethdA - self.toothAngle) * innerClickR)
+            # ratchetHalfway = ((toothDeep[0] + nextTip[0])/2,(toothDeep[1] + nextTip[1])/2)
+            #
+            # wheel = wheel.lineTo(ratchetHalfway[0], ratchetHalfway[1])
+            #
+            # nextPoint2 = math.cos(angle + dA) * self.ratchetRadius, math.sin(angle+ dA*multiplier) * self.ratchetRadius
+            # wheel = wheel.radiusArc(nextPoint2, outerR)
+            # # wheel = wheel.lineTo(nextPoint2[0], nextPoint2[1])
 
         wheel = wheel.close().extrude(self.thick)
 
@@ -827,19 +858,25 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 # show_object(chainWithRatchet)
 # exporters.export(chainWithRatchet, "../out/chainWithRatchet.stl")
 
+ratchet = Ratchet()
 
-wheelWithRatchet = getWheelWithRatchet(Ratchet(),WheelPinionPair(90, 8, 1.5).wheel)
-
-show_object(wheelWithRatchet)
-exporters.export(wheelWithRatchet, "../out/wheelWithRatchet.stl")
-
-chainWheel = ChainWheel()
-
-halfWheel = chainWheel.getHalf()
-
-show_object(halfWheel)
-
-exporters.export(halfWheel, "../out/chainWheel.stl")
+click = ratchet.getInnerWheel()
+show_object(click)
+show_object(ratchet.getOuterWheel())
+exporters.export(click, "../out/clickWheel.stl")
+#
+# wheelWithRatchet = getWheelWithRatchet(ratchet,WheelPinionPair(90, 8, 1.5).wheel)
+# show_object(ratchet.getOuterWheel())
+# # show_object(wheelWithRatchet)
+# exporters.export(wheelWithRatchet, "../out/wheelWithRatchet.stl")
+#
+# chainWheel = ChainWheel()
+#
+# halfWheel = chainWheel.getHalf()
+#
+# # show_object(halfWheel)
+#
+# exporters.export(halfWheel, "../out/chainWheel.stl")
 
 # escapement = Escapement()
 # escapeWheel = escapement.getWheel3D()
