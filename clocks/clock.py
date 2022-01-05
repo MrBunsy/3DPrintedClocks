@@ -696,7 +696,7 @@ class Ratchet:
 
         self.clockwise = 1 if powerClockwise else -1
 
-        self.toothLength = self.outsideDiameter*0.05
+        self.toothLength = self.outsideDiameter*0.025
         self.toothAngle = degToRad(2)* self.clockwise
 
         self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
@@ -716,13 +716,13 @@ class Ratchet:
         '''
         wheel = cq.Workplane("XY")
 
-        thick = 1
+        thick = 1.25
 
         innerClickR = self.clickInnerRadius
 
         #arc aprox thick
         clickArcAngle = self.clockwise * thick/innerClickR
-        clickOffsetAngle = -(math.pi*2/self.clicks)*0.5 * self.clockwise
+        clickOffsetAngle = -(math.pi*2/self.clicks)*1 * self.clockwise
 
         dA = -math.pi*2 / self.clicks * self.clockwise
 
@@ -770,7 +770,9 @@ class Ratchet:
             angle = dA * i
 
             wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
-            wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
+            # wheel = wheel.radiusArc(polar(angle - self.toothAngle, self.toothTipR), self.toothTipR)
+            # wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
+            wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius)
 
         wheel = wheel.close().extrude(self.thick)
 
@@ -828,9 +830,12 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 ratchet = Ratchet()
 
 click = ratchet.getInnerWheel()
+ratchetWheel = ratchet.getOuterWheel()
+
 show_object(click)
-show_object(ratchet.getOuterWheel())
+show_object(ratchetWheel)
 exporters.export(click, "../out/clickWheel.stl")
+exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
 #
 # wheelWithRatchet = getWheelWithRatchet(ratchet,WheelPinionPair(90, 8, 1.5).wheel)
 # show_object(ratchet.getOuterWheel())
