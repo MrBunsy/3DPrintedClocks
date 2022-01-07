@@ -357,14 +357,21 @@ class GoingTrain:
         print("pendulum length: {}m".format(self.pendulum_length))
         print("escapement time: {}s".format(self.escapement_time))
 
-    def genGears(self, module_size=1.5, holeD=3):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85):
         #TODO how many hours and how many gears between chain wheel and minute wheel (0+)?
+        #TODO auto calculate if the escape wheel is clockwise or not and add this functionality to the escape wheel generation!
         arbours = []
         thick = holeD*2
         style="HAC"
-        pairs = [WheelPinionPair(wheel[0],wheel[1],module_size) for wheel in self.trains[0]["train"]]
+        module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
-        escapement = Escapement(self.escapement_teeth,module_size*100)
+        #the module of each wheel is slightly smaller than the preceeding wheel
+        pairs = [WheelPinionPair(wheel[0],wheel[1],module_size* math.pow(moduleReduction, i)) for i,wheel in enumerate(self.trains[0]["train"])]
+
+
+        print(module_sizes)
+        #make the esacpe wheel smaller than the last wheel by modulereduction
+        escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
 
         for i in range(self.wheels):
 
