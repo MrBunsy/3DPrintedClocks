@@ -4,6 +4,7 @@ from cadquery import exporters
 import math
 from math import sin, cos, pi, floor
 import numpy as np
+import os
 
 '''
 Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
@@ -218,7 +219,7 @@ class WheelPinionPair:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, intermediate_wheel=False,fourth_wheel=False, escapement_teeth=30):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, min_pinion_teeth=10, max_wheel_teeth=100):
         '''
         Grand plan: auto generate gear ratios.
         Naming convention seems to be powered (spring/weight) wheel is first wheel, then minute hand wheel is second, etc, until the escapement
@@ -240,19 +241,30 @@ class GoingTrain:
         #in metres
         self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
 
+
+
         #calculate ratios from minute hand to escapement
         #the last wheel is the escapement
         self.wheels = 4 if fourth_wheel else 3
 
-        escapement_time = pendulum_period * escapement_teeth
+        self.escapement_time = pendulum_period * escapement_teeth
+        self.escapement_teeth = escapement_teeth
+
+
+        self.min_pinion_teeth=min_pinion_teeth
+        self.max_wheel_teeth=max_wheel_teeth
+        self.trains=[]
+
+    def genTrain(self):
+
         desired_minute_time = 60*60
         #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
         options = []
 
-        pinion_min=8
+        pinion_min=self.min_pinion_teeth
         pinion_max=20
         wheel_min=30
-        wheel_max=100
+        wheel_max=self.max_wheel_teeth
 
         #TODO prefer non-integer combos.
         '''
@@ -329,16 +341,52 @@ class GoingTrain:
                 totalTeeth +=  allTrains[c][p][0] + allTrains[c][p][1]
                 totalWheelTeeth += allTrains[c][p][0]
                 totalPinionTeeth += allTrains[c][p][1]
-            totalTime = totalRatio*escapement_time
+            totalTime = totalRatio*self.escapement_time
             error = 60*60-totalTime
 
-            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth-totalPinionTeeth }
+            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth/100-totalPinionTeeth/10 }
             if abs(error) < 1 and not intRatio:
                 allTimes.append(train)
 
         allTimes.sort(key = lambda x: x["error"]+x["teeth"])
+        # print(allTimes)
 
-        print(allTimes)
+        self.trains = allTimes
+    def printInfo(self):
+        print(self.trains[0])
+        print("pendulum length: {}m".format(self.pendulum_length))
+        print("escapement time: {}s".format(self.escapement_time))
+
+    def genGears(self, module_size=1.5, holeD=3):
+        #TODO how many hours and how many gears between chain wheel and minute wheel (0+)?
+        arbours = []
+        thick = holeD*2
+        style="HAC"
+        pairs = [WheelPinionPair(wheel[0],wheel[1],module_size) for wheel in self.trains[0]["train"]]
+
+        escapement = Escapement(self.escapement_teeth,module_size*100)
+
+        for i in range(self.wheels):
+
+            if i == 0:
+                #minute wheel
+                #TODO add chain wheel or chain wheel train pinion
+                arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
+            elif i < self.wheels-1:
+
+                #intermediate wheels
+                arbours.append(getArbour(pairs[i].wheel,pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
+            else:
+                #last pinion + escape wheel
+                arbours.append(getArbour(escapement, pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
+
+        self.arbours = arbours
+
+    def outputSTLs(self, name="clock", path="../out"):
+        for i,wheel in enumerate(self.arbours):
+            out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
+            print("Outputting ",out)
+            exporters.export(wheel, out)
 
 def degToRad(deg):
     return math.pi*deg/180
@@ -408,14 +456,23 @@ class Escapement:
         else:
             self.anchorTeeth = anchorTeeth
 
+        # angle that encompases the teeth the anchor encompases
+        self.wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth
 
+        # height from centre of escape wheel to anchor pivot
+        anchor_centre_distance = self.radius / math.cos(self.wheelAngle / 2)
+
+        self.anchor_centre_distance = anchor_centre_distance
+
+        self.anchorTopThickBase = (self.anchor_centre_distance - self.radius) * 0.6
+        self.anchorTopThickMid = (self.anchor_centre_distance - self.radius) * 0.1
+        self.anchorTopThickTop = (self.anchor_centre_distance - self.radius) * 0.75
 
     def getAnchor2D(self):
 
         anchor = cq.Workplane("XY")
 
-        # angle that encompases the teeth the anchor encompases
-        wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth
+
 
         entryPalletAngle=degToRad(6)
 
@@ -423,20 +480,17 @@ class Escapement:
         entryPalletLength = self.toothHeight*0.5
 
 
-        #height from centre of escape wheel to anchor pivot
-        anchor_centre_distance = self.radius/math.cos(wheelAngle/2)
 
-        self.anchor_centre_distance = anchor_centre_distance
 
         #distance from anchor pivot to the nominal point the anchor meets the escape wheel
-        x = math.sqrt(math.pow(anchor_centre_distance,2) - math.pow(self.radius,2))
+        x = math.sqrt(math.pow(self.anchor_centre_distance,2) - math.pow(self.radius,2))
 
-        entryPoint = (math.cos(math.pi/2+wheelAngle/2)*self.radius, math.sin(+math.pi/2+wheelAngle/2)*self.radius)
+        entryPoint = (math.cos(math.pi/2+self.wheelAngle/2)*self.radius, math.sin(+math.pi/2+self.wheelAngle/2)*self.radius)
 
         # entrySideDiameter = anchor_centre_distance - entryPoint[1]
 
         #how far the entry pallet extends into the escape wheel (along the angle of entryPalletAngle)
-        liftExtension = x * math.sin(self.halfLift)/math.sin(math.pi - self.halfLift - entryPalletAngle - wheelAngle/2)
+        liftExtension = x * math.sin(self.halfLift)/math.sin(math.pi - self.halfLift - entryPalletAngle - self.wheelAngle/2)
 
         # #crude aprox
         # liftExtension2 = math.sin(self.halfLift)*x
@@ -455,26 +509,24 @@ class Escapement:
         # anchor = anchor.moveTo(entryPoint[0], entryPoint[1])
         # anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1])
 
-        anchorTopThickBase = (anchor_centre_distance - self.radius)*0.6
-        anchorTopThickMid = (anchor_centre_distance - self.radius)*0.1
-        anchorTopThickTop = (anchor_centre_distance - self.radius) * 0.75
+
 
 
 
         endOfEntryPalletAngle = degToRad(35) # math.pi + wheelAngle/2 +
         endOfExitPalletAngle = degToRad(35)
 
-        h = anchor_centre_distance - anchorTopThickBase - entryPalletTip[1]
+        h = self.anchor_centre_distance - self.anchorTopThickBase - entryPalletTip[1]
 
         innerLeft = (entryPalletTip[0] - h*math.tan(endOfEntryPalletAngle), entryPoint[1] + h)
         innerRight = (exitPalletTip[0], innerLeft[1])
 
 
-        h2 = anchor_centre_distance - anchorTopThickMid - exitPalletTip[1]
+        h2 = self.anchor_centre_distance - self.anchorTopThickMid - exitPalletTip[1]
         farRight = (exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle), exitPalletTip[1] + h2)
         farLeft = (-(exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle)), exitPalletTip[1] + h2)
 
-        top = (0, anchor_centre_distance + anchorTopThickTop)
+        top = (0, self.anchor_centre_distance + self.anchorTopThickTop)
 
 
         # anchor = anchor.lineTo(innerLeft[0], innerLeft[1]).lineTo(innerRight[0], innerRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1])
@@ -495,15 +547,40 @@ class Escapement:
 
         return anchor
 
-    def getAnchor3D(self, thick=15, holeD=2):
+    def getAnchor3D(self, thick=15, holeD=2, clockwise=True):
 
         anchor = self.getAnchor2D()
 
+
+
         anchor = anchor.extrude(thick)
+
+        if not clockwise:
+            anchor = anchor.mirror("YZ", (0,0,0))
 
         anchor = anchor.faces(">Z").workplane().moveTo(0,self.anchor_centre_distance).circle(holeD/2).cutThruAll()
 
         return anchor
+
+    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, length=0, crutchHeight=50, crutchDepth=30):
+        '''
+        Going to try making the anchor and the pendulum one piece - not bothering with the crutch.
+        I'm hoping that it'll be large enoguh to be relatively sturdy. We'll find out!
+
+        length for how long to extend the 3d printed bit of the arbour - I'm still toying with the idea of using this to help keep things in place
+        '''
+
+        #get the anchor the other way around so we can build on top of it, and centre it on the pivot
+        arbour = self.getAnchor3D(anchorThick, holeD, not clockwise).translate([0,-self.anchor_centre_distance,0])
+
+        #clearly soemthing's wrong in the maths so anchorTopThickBase isn't being used as I'd hoped
+        #bodgetime
+        arbourRadius = min(self.anchorTopThickBase*0.85, self.anchorTopThickTop)
+
+        if length > 0:
+            arbour = arbour.faces(">Z").workplane().circle(arbourRadius).circle(holeD/2).extrude(length-anchorThick)
+
+        return arbour
 
     def getWheel2D(self):
 
@@ -543,11 +620,25 @@ class Escapement:
         rimRadius = self.innerRadius - rimThick
 
         armThick = rimThick
-        gear = Gear.cutHACStyle(gear, armThick, rimRadius)
+        if style == "HAC":
+            gear = Gear.cutHACStyle(gear, armThick, rimRadius)
 
         gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
 
         return gear
+    #hack to masquerade as a Gear
+    def get3D(self, thick=5, holeD=5, style="HAC"):
+        return self.getWheel3D(thick=thick, holeD=holeD, style=style)
+    # def getWithPinion(self, pinion, clockwise=True, thick=5, holeD=5, style="HAC"):
+    #     base = self.getWheel3D(thick=thick,holeD=holeD, style=style)
+    #
+    #     top = pinion.get3D(thick=thick * 3, holeD=holeD, style=style).translate([0, 0, thick])
+    #
+    #     wheel = base.add(top)
+
+        # # face = ">Z" if clockwise else "<Z"
+        # #cut hole through both
+        # wheel = wheel.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
 
 
 class ChainWheel:
@@ -826,16 +917,16 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 #
 # show_object(chainWithRatchet)
 # exporters.export(chainWithRatchet, "../out/chainWithRatchet.stl")
-
-ratchet = Ratchet()
-
-click = ratchet.getInnerWheel()
-ratchetWheel = ratchet.getOuterWheel()
-
-show_object(click)
-show_object(ratchetWheel)
-exporters.export(click, "../out/clickWheel.stl")
-exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
+#
+# ratchet = Ratchet()
+#
+# click = ratchet.getInnerWheel()
+# ratchetWheel = ratchet.getOuterWheel()
+#
+# show_object(click)
+# show_object(ratchetWheel)
+# exporters.export(click, "../out/clickWheel.stl")
+# exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
 #
 # wheelWithRatchet = getWheelWithRatchet(ratchet,WheelPinionPair(90, 8, 1.5).wheel)
 # show_object(ratchet.getOuterWheel())
@@ -921,3 +1012,10 @@ exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
 # show_object(arbour)
 #
 # exporters.export(arbour, "../out/arbour.stl")
+
+#
+# escapment = Escapement()
+#
+# anchor = escapment.getAnchorArbour(clockwise=True)
+#
+# show_object(anchor)
