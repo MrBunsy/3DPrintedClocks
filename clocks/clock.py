@@ -84,6 +84,32 @@ class Gear:
 
         return gear
 
+    def addToWheel(self,wheel, holeD=0, thick=0, front=True, style="HAC", pinionthicker=3):
+        '''
+        Intended to add a pinion (self) to a wheel (provided)
+        if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
+        pinionthicker is a multiplier to thickness of the week for thickness of the pinion
+        '''
+
+        pinionThick = thick * pinionthicker
+
+        base = wheel.get3D(thick=thick, holeD=holeD, style=style)
+
+        if front:
+            #pinion is on top of the wheel
+            distance = thick
+            topFace = ">Z"
+        else:
+            distance = -pinionThick
+            topFace = "<Z"
+
+        top = self.get3D(thick=pinionThick, holeD=holeD, style=style).translate([0, 0, distance])
+
+        arbour = base.add(top)
+
+        arbour = arbour.faces(topFace).workplane().circle(self.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
+        return arbour
+
     def get2D(self):
         '''
         Return a 2D cadquery profile of a single gear
@@ -219,8 +245,17 @@ class WheelPinionPair:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, min_pinion_teeth=10, max_wheel_teeth=100):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30, pendulumAtFront=True, min_pinion_teeth=10, max_wheel_teeth=100):
         '''
+
+        pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
+        fourth_wheel: if True there will be four wheels from minute hand to the escape wheel
+        escapement_teeth: number of teeth on the escape wheel
+        chainWheels: if 0 the minute wheel is also the chain wheel, if >0, this many gears between the minute wheel and chain wheel (say for 8 day clocks)
+        hours: intended hours to run for (dictates diameter of chain wheel)
+        pendulumAtFront: For deciding which side of the escape wheel the pinion should go (as we want the anchor as close to the pendulum as possible)
+
+
         Grand plan: auto generate gear ratios.
         Naming convention seems to be powered (spring/weight) wheel is first wheel, then minute hand wheel is second, etc, until the escapement
         However, all the 8-day clocks I've got have an intermediate wheel between spring powered wheel and minute hand wheel
@@ -241,6 +276,11 @@ class GoingTrain:
         #in metres
         self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
 
+        self.pendulumAtFront = pendulumAtFront
+
+        #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
+        self.chainWheels = chainWheels
+        self.hours = hours
 
 
         #calculate ratios from minute hand to escapement
@@ -256,6 +296,9 @@ class GoingTrain:
         self.trains=[]
 
     def genTrain(self):
+        '''
+        Returns and stores a list of possible trains, sorted in order of "best" to worst
+        '''
 
         desired_minute_time = 60*60
         #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
@@ -352,10 +395,19 @@ class GoingTrain:
         # print(allTimes)
 
         self.trains = allTimes
+
+        return allTimes
+
+    def setTrain(self, train):
+        '''
+        Set a single train as the preferred train to generate everythign else
+        '''
+        self.trains = [train]
+
     def printInfo(self):
         print(self.trains[0])
-        print("pendulum length: {}m".format(self.pendulum_length))
-        print("escapement time: {}s".format(self.escapement_time))
+        print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
+        print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement_teeth))
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85):
         #TODO how many hours and how many gears between chain wheel and minute wheel (0+)?
@@ -382,11 +434,12 @@ class GoingTrain:
             elif i < self.wheels-1:
 
                 #intermediate wheels
-                arbours.append(getArbour(pairs[i].wheel,pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
+                # arbours.append(getArbour(pairs[i].wheel,pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
+                arbours.append(pairs[i-1].pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, front=not self.pendulumAtFront, style=style))
             else:
                 #last pinion + escape wheel
-                arbours.append(getArbour(escapement, pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
-
+                # arbours.append(getArbour(escapement, pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
+                arbours.append(pairs[i - 1].pinion.addToWheel(escapement, holeD=holeD, thick=thick, front=not self.pendulumAtFront, style=style))
         self.arbours = arbours
 
     def outputSTLs(self, name="clock", path="../out"):
@@ -569,13 +622,23 @@ class Escapement:
 
         return anchor
 
-    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, length=0, crutchHeight=50, crutchDepth=30):
+    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=100, crutchBoltD=3):
         '''
-        Going to try making the anchor and the pendulum one piece - not bothering with the crutch.
-        I'm hoping that it'll be large enoguh to be relatively sturdy. We'll find out!
+        Final plan: The crutch will be a solid part of the anchor, and a bolt will link it to a slot in the pendulum
+        Thinking the anchor will be at the bottom of the clock, so the pendulum can be on the front
 
         length for how long to extend the 3d printed bit of the arbour - I'm still toying with the idea of using this to help keep things in place
         '''
+
+        crutchWidth = crutchBoltD*3
+
+
+        crutch = cq.Workplane("XY").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick)
+
+        crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2).cutThruAll()
+
+
+        #add a length for the arbour - if required
 
         #get the anchor the other way around so we can build on top of it, and centre it on the pivot
         arbour = self.getAnchor3D(anchorThick, holeD, not clockwise).translate([0,-self.anchor_centre_distance,0])
@@ -584,8 +647,10 @@ class Escapement:
         #bodgetime
         arbourRadius = min(self.anchorTopThickBase*0.85, self.anchorTopThickTop)
 
-        if length > 0:
-            arbour = arbour.faces(">Z").workplane().circle(arbourRadius).circle(holeD/2).extrude(length-anchorThick)
+        if arbourLength > 0:
+            arbour = arbour.faces(">Z").workplane().circle(arbourRadius).circle(holeD/2).extrude(arbourLength - anchorThick)
+
+        arbour = arbour.add(crutch)
 
         return arbour
 
@@ -633,9 +698,12 @@ class Escapement:
         gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
 
         return gear
-    #hack to masquerade as a Gear
+
+
+    #hack to masquerade as a Gear, then we can use this with getArbour()
     def get3D(self, thick=5, holeD=5, style="HAC"):
         return self.getWheel3D(thick=thick, holeD=holeD, style=style)
+
     # def getWithPinion(self, pinion, clockwise=True, thick=5, holeD=5, style="HAC"):
     #     base = self.getWheel3D(thick=thick,holeD=holeD, style=style)
     #
@@ -1021,8 +1089,10 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 # exporters.export(arbour, "../out/arbour.stl")
 
 #
-# escapment = Escapement()
-#
-# anchor = escapment.getAnchorArbour(clockwise=True)
-#
-# show_object(anchor)
+escapment = Escapement()
+
+anchor = escapment.getAnchorArbour(clockwise=True)
+
+show_object(anchor)
+
+exporters.export(anchor, "../out/anchor.stl")
