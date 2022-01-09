@@ -1038,7 +1038,7 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 
 class MotionWorks:
 
-    def __init__(self, holeD=3.3, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, style="HAC"):
+    def __init__(self, holeD=3.3, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
         '''
         if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
         '''
@@ -1055,7 +1055,7 @@ class MotionWorks:
         self.minuteHandHolderSize=minuteHandHolderSize
         self.minuteHandHolderD = minuteHandHolderSize*math.sqrt(2)+0.5
         print("minute hand holder D: {}".format(self.minuteHandHolderD))
-        self.minuteHolderTotalHeight = thick*8
+        self.minuteHolderTotalHeight = minuteHandHolderHeight
         self.minuteHandSlotHeight = minuteHandThick
 
         self.wallThick = 1.5
@@ -1066,11 +1066,18 @@ class MotionWorks:
         return self.hourHandHolderD
 
     def getCannonPinion(self):
-        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick)
+
+        base = cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.thick/2)
+        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick).translate((0,0,self.thick/2))
+
+        top = base.translate((0,0,self.thick/2+self.cannonPinionThick))
+
+        pinion = pinion.add(base).add(top)
+
 
         if self.cannonPinionLoose:
             #has an arm to hold the minute hand
-            pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD/2).extrude(self.minuteHolderTotalHeight-self.minuteHandSlotHeight-self.cannonPinionThick)
+            pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD/2).extrude(self.minuteHolderTotalHeight-self.minuteHandSlotHeight-self.cannonPinionThick - self.thick)
             pinion = pinion.faces(">Z").workplane().rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight)
 
         pinion = pinion.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
@@ -1083,11 +1090,43 @@ class MotionWorks:
 
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
+
+
+
         #TODO the sides need to slope in slightly to make the friction fit easier
         hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=self.style)
 
-        hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(self.minuteHolderTotalHeight - self.cannonPinionThick - self.thick  - self.minuteHandSlotHeight - self.space)
-        hour = hour.faces(">Z").workplane().circle(self.minuteHandHolderD/2 + self.space/2).cutThruAll()
+        height = self.minuteHolderTotalHeight - self.cannonPinionThick - self.thick - self.thick  - self.minuteHandSlotHeight - self.space
+
+        # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
+
+        #want it tapered so an hour hand can be pushed down for a friction fit
+        topR = self.hourHandHolderD/2-0.5
+        midR = self.hourHandHolderD/2
+        bottomR = self.hourHandHolderD/2
+
+        holeR = self.minuteHandHolderD / 2 + self.space / 2
+
+        # return hour
+        circle = cq.Workplane("XY").circle(bottomR)
+        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(midR,height/2).lineTo(topR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
+
+        hour = hour.add(shape)
+        # return shape
+
+        #something very strange is going on with trying to combine shapes. once again cadquery doesn't quite do anything that makes sense.
+        # shape = cq.Workplane("XY").add(cq.Solid.makeCone(bottomR,topR,height))
+        # # shape= shape.faces(">Z").workplane().circle(self.minuteHandHolderD/2 + self.space/2).cutThruAll()
+        # hour = hour.add(shape)
+
+        hole = cq.Workplane("XY").circle(holeR).extrude(height*2)
+        hour = hour.cut(hole)
+
+        #seems like we can't cut through all when we've added shapes? I'm sure this has worked elsewhere!
+        # hour = hour.faces(">Z").workplane().circle(self.minuteHandHolderD/2 + self.space/2).cutThruAll()
+
+
+
         return hour
 
     def outputSTLs(self, name="clock", path="../out"):
@@ -1103,13 +1142,13 @@ class MotionWorks:
         print("Outputting ", out)
         exporters.export(self.getHourHolder(), out)
 #
-# motion = MotionWorks()
+motion = MotionWorks()
 #
-# # cannonPinion = motion.getCannonPinion()
+cannonPinion = motion.getCannonPinion()
 # # minuteWheel = motion.getMotionArbour()
 # hourHolder = motion.getHourHolder()
 # show_object(hourHolder)
-# show_object(cannonPinion)
+show_object(cannonPinion)
 
 #
 # ratchet = Ratchet()
