@@ -98,7 +98,7 @@ class Gear:
                 rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
 
                 armThick = rimThick
-                Gear.cutHACStyle(gear, armThick, rimRadius)
+                gear = Gear.cutHACStyle(gear, armThick, rimRadius)
 
 
 
@@ -1036,6 +1036,81 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 
     return gearWheel.add(ratchetWheel)
 
+class MotionWorks:
+
+    def __init__(self, holeD=3.3, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, style="HAC"):
+        '''
+        if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
+        '''
+        self.holeD=holeD
+        self.thick = thick
+        self.style=style
+        self.cannonPinionLoose = cannonPinionLoose
+
+        #pinching ratios from The Modern Clock
+        self.pairs = [WheelPinionPair(36,12, module), WheelPinionPair(40,10,module)]
+
+        self.cannonPinionThick = self.thick*2
+
+        self.minuteHandHolderSize=minuteHandHolderSize
+        self.minuteHandHolderD = minuteHandHolderSize*math.sqrt(2)+0.5
+        print("minute hand holder D: {}".format(self.minuteHandHolderD))
+        self.minuteHolderTotalHeight = thick*8
+        self.minuteHandSlotHeight = minuteHandThick
+
+        self.wallThick = 1.5
+        self.space = 1
+        self.hourHandHolderD = self.minuteHandHolderD + self.space + self.wallThick*2
+
+    def getHourHandHoleD(self):
+        return self.hourHandHolderD
+
+    def getCannonPinion(self):
+        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick)
+
+        if self.cannonPinionLoose:
+            #has an arm to hold the minute hand
+            pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD/2).extrude(self.minuteHolderTotalHeight-self.minuteHandSlotHeight-self.cannonPinionThick)
+            pinion = pinion.faces(">Z").workplane().rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight)
+
+        pinion = pinion.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
+
+        return pinion
+
+    def getMotionArbour(self):
+        #mini arbour that sits between the cannon pinion and the hour wheel
+        return getArbour(self.pairs[0].wheel, self.pairs[1].pinion,holeD=self.holeD, thick = self.thick, style=self.style)
+
+    def getHourHolder(self):
+        #the final wheel and arm that friction holds the hour hand
+        #TODO the sides need to slope in slightly to make the friction fit easier
+        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=self.style)
+
+        hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(self.minuteHolderTotalHeight - self.cannonPinionThick - self.thick  - self.minuteHandSlotHeight - self.space)
+        hour = hour.faces(">Z").workplane().circle(self.minuteHandHolderD/2 + self.space/2).cutThruAll()
+        return hour
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_motion_cannon_pinion.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getCannonPinion(), out)
+
+        out = os.path.join(path, "{}_motion_arbour.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getMotionArbour(), out)
+
+        out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHourHolder(), out)
+#
+# motion = MotionWorks()
+#
+# # cannonPinion = motion.getCannonPinion()
+# # minuteWheel = motion.getMotionArbour()
+# hourHolder = motion.getHourHolder()
+# show_object(hourHolder)
+# show_object(cannonPinion)
+
 #
 # ratchet = Ratchet()
 #
@@ -1053,7 +1128,7 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 # show_object(chainWithRatchet)
 # exporters.export(chainWithRatchet, "../out/chainWithRatchet.stl")
 #
-ratchet = Ratchet()
+# ratchet = Ratchet()
 #
 # click = ratchet.getInnerWheel()
 # ratchetWheel = ratchet.getOuterWheel()
