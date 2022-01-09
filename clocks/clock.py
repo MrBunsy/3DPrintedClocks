@@ -9,6 +9,26 @@ import os
 '''
 Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
 But another script will generate specific clock plates and arbours
+
+Note: naming conventions I can find for clock gears seem to assume you always have the same number of gears between the chain and the minute hand
+this is blatantly false (I can see this just looking at the various clocks I have) so I'm adopting a different naming convention:
+
+The minute hand arbour is arbour 0.
+In the direction of the escapement is +=ve
+in the direction of the chain/spring wheel is -ve
+
+So for a very simple clock where the minute arbour is also the chain wheel, there could be only three arbours: 0, 1 and 2 (the escape wheel itself)
+
+This way I can add more gears in either direction without confusing things too much.
+
+The gears that drive the hour hand are the motion work. The cannon pinion is attached to the minute hand arbour, this drives the minute wheel.
+The minute wheel is on a mini arbour with the hour pinion, which drives the hour wheel. The hour wheel is on the hour shaft.
+The hour shaft fits over the minute arbour (on the clock face side) and the hour hand is friction fitted onto the hour shaft
+
+Current plan: the cannon pinion will be loose over the minute arbour, and have a little shaft for the minute hand.
+A nyloc nut underneath it and a normal nut on top of the minute hand will provide friction from the minute arbour to the motion work.
+I think this is similar to older cuckoos I've seen. It will result in a visible nut, but a more simple time train. Will try it
+for the first clock and decide if I want to switch to something else later. 
 '''
 
 if 'show_object' not in globals():
@@ -108,6 +128,12 @@ class Gear:
         arbour = base.add(top)
 
         arbour = arbour.faces(topFace).workplane().circle(self.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
+
+        if not front:
+            #make sure big side is on the bottom.
+            #wanted to mirror the wheel, but can't due to bug in cadquery https://github.com/ukaea/paramak/issues/548 (I can't see to get a later version to work either)
+            arbour = arbour.rotateAboutCenter((0,1,0),180)
+
         return arbour
 
     def get2D(self):
@@ -245,7 +271,7 @@ class WheelPinionPair:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30, pendulumAtFront=True, min_pinion_teeth=10, max_wheel_teeth=100):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30, pendulumAtFront=True, maxChainDrop=1800, max_chain_wheel_d=30, min_pinion_teeth=10, max_wheel_teeth=100):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -254,6 +280,8 @@ class GoingTrain:
         chainWheels: if 0 the minute wheel is also the chain wheel, if >0, this many gears between the minute wheel and chain wheel (say for 8 day clocks)
         hours: intended hours to run for (dictates diameter of chain wheel)
         pendulumAtFront: For deciding which side of the escape wheel the pinion should go (as we want the anchor as close to the pendulum as possible)
+        maxChainDrop: maximum length of chain drop to meet hours required, in mm
+        max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
 
 
         Grand plan: auto generate gear ratios.
@@ -281,7 +309,8 @@ class GoingTrain:
         #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
         self.chainWheels = chainWheels
         self.hours = hours
-
+        self.max_chain_wheel_d = max_chain_wheel_d
+        self.maxChainDrop = maxChainDrop
 
         #calculate ratios from minute hand to escapement
         #the last wheel is the escapement
@@ -333,29 +362,6 @@ class GoingTrain:
         for i in range(self.wheels):
             allTrainsLength*=len(allGearPairCombos)
 
-        # for i in range(allTrainsLength):
-        #
-
-        # for i in range(wheels):
-        #     #clone
-        #     # trains = allTrains[:]
-        #     if i == 0:
-        #         for j in range(len(allGearPairCombos)):
-        #             allTrains.append([])
-        #             allTrains[j].append(allGearPairCombos[j])
-        #     else:
-        #         currentLength = len(allTrains)
-        #         for j in range(currentLength):
-        #             for k in range(len):
-
-        # def getComboBranch(allGearPairCombos, train, depth=0):
-        #     if depth == 0:
-        #         return getComboBranch(allGearPairCombos, allGearPairCombos[:], depth+1)
-        #     if depth == self.wheels:
-
-
-        #assuming no fourth wheel for now
-
         #this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
         #one fewer pairs than wheels
         if self.wheels == 3:
@@ -398,6 +404,52 @@ class GoingTrain:
 
         return allTimes
 
+    def genChainWheels(self, thick=5, holeD=3):
+        '''
+        Generate the gear ratios for the wheels between chain and minute wheel
+        again, I'd like to make this generic but the solution isn't immediately obvious and it would take
+        longer to make it generic than just make it work
+        '''
+
+        # aproxChainWheelCircumference = math.pi*self.max_chain_wheel_d
+        #
+        # totalTurns = self.maxChainDrop / aproxChainWheelCircumference
+
+        # pinion_min = self.min_pinion_teeth
+        # pinion_max = 20
+        # wheel_min = 30
+        # wheel_max = self.max_wheel_teeth
+
+
+
+        if self.chainWheels == 0:
+            self.chainWheelCircumference = self.maxChainDrop/self.hours
+            self.max_chain_wheel_d = self.chainWheelCircumference/math.pi
+            self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference)
+
+
+            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2, thick=thick*1.5, powerClockwise=self.pendulumAtFront)
+
+            self.chainWheelWithRatchet = getChainWheelWithRatchet(self.ratchet, self.chainWheel,holeD=holeD)
+            self.chainWheelHalf = self.chainWheel.getHalf(holeD=holeD)
+        else:
+            raise ValueError("Only 0 chain wheels supported")
+        #
+        # allGearPairCombos = []
+        #
+        # for p in range(pinion_min, pinion_max):
+        #     for w in range(wheel_min, wheel_max):
+        #         allGearPairCombos.append([w, p])
+        #
+        # allRatios = []
+
+        # elif self.chainWheels == 1:
+        #
+        # elif self.chainWheels == 2:
+        #     for pair_0 in range(len(allGearPairCombos)):
+        #         for pair_1 in range(len(allGearPairCombos)):
+        #                 allRatios.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
+
     def setTrain(self, train):
         '''
         Set a single train as the preferred train to generate everythign else
@@ -429,8 +481,10 @@ class GoingTrain:
 
             if i == 0:
                 #minute wheel
-                #TODO add chain wheel or chain wheel train pinion
-                arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
+
+                # arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
+                arbours.append(getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=3, thick=thick, style=style))
+
             elif i < self.wheels-1:
 
                 #intermediate wheels
@@ -447,6 +501,12 @@ class GoingTrain:
             out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
             print("Outputting ",out)
             exporters.export(wheel, out)
+        out = os.path.join(path,"{}_chain_wheel_with_click.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.chainWheelWithRatchet, out)
+        out = os.path.join(path, "{}_chain_wheel_half.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.chainWheelHalf, out)
 
 def degToRad(deg):
     return math.pi*deg/180
@@ -828,7 +888,7 @@ class ChainWheel:
             #yay more weird cadquery bugs, can't have it with the full radius but 0.9999 is fine :/
             halfWheel = halfWheel.moveTo(0,0).lineTo(math.cos(angle)*self.radius, math.sin(angle)*self.radius).\
                 lineTo(math.cos(angle+pocketA_end_diff) * self.outerRadius, math.sin(angle+pocketA_end_diff) * self.outerRadius).\
-                radiusArc((math.cos(angle + pocketA - pocketA_end_diff) * self.outerRadius, math.sin(angle + pocketA- pocketA_end_diff) * self.outerRadius), -self.outerRadius*0.99999999).\
+                radiusArc((math.cos(angle + pocketA - pocketA_end_diff) * self.outerRadius, math.sin(angle + pocketA- pocketA_end_diff) * self.outerRadius), -self.outerRadius*0.999).\
                 lineTo(math.cos(angle+pocketA) * self.radius, math.sin(angle+pocketA) * self.radius).close().extrude(h1)
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
@@ -993,7 +1053,7 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 # show_object(chainWithRatchet)
 # exporters.export(chainWithRatchet, "../out/chainWithRatchet.stl")
 #
-# ratchet = Ratchet()
+ratchet = Ratchet()
 #
 # click = ratchet.getInnerWheel()
 # ratchetWheel = ratchet.getOuterWheel()
@@ -1004,8 +1064,8 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 # exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
 #
 # wheelWithRatchet = getWheelWithRatchet(ratchet,WheelPinionPair(90, 8, 1.5).wheel)
-# show_object(ratchet.getOuterWheel())
-# # show_object(wheelWithRatchet)
+# # show_object(ratchet.getOuterWheel())
+# show_object(wheelWithRatchet)
 # exporters.export(wheelWithRatchet, "../out/wheelWithRatchet.stl")
 #
 # chainWheel = ChainWheel()
@@ -1089,10 +1149,10 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 # exporters.export(arbour, "../out/arbour.stl")
 
 #
-escapment = Escapement()
-
-anchor = escapment.getAnchorArbour(clockwise=True)
-
-show_object(anchor)
-
-exporters.export(anchor, "../out/anchor.stl")
+# escapment = Escapement()
+#
+# anchor = escapment.getAnchorArbour(clockwise=True)
+#
+# show_object(anchor)
+#
+# exporters.export(anchor, "../out/anchor.stl")
