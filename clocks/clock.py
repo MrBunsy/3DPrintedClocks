@@ -432,7 +432,7 @@ class GoingTrain:
             self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2, thick=thick*1.5, powerClockwise=self.pendulumAtFront)
 
             self.chainWheelWithRatchet = getChainWheelWithRatchet(self.ratchet, self.chainWheel,holeD=looseHoleD)
-            self.chainWheelHalf = self.chainWheel.getHalf(holeD=holeD)
+            self.chainWheelHalf = self.chainWheel.getHalf(holeD=looseHoleD)
         else:
             raise ValueError("Only 0 chain wheels supported")
         #
