@@ -420,6 +420,7 @@ class GoingTrain:
         # wheel_min = 30
         # wheel_max = self.max_wheel_teeth
 
+        looseHoleD = holeD*1.2
 
 
         if self.chainWheels == 0:
@@ -430,7 +431,7 @@ class GoingTrain:
 
             self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2, thick=thick*1.5, powerClockwise=self.pendulumAtFront)
 
-            self.chainWheelWithRatchet = getChainWheelWithRatchet(self.ratchet, self.chainWheel,holeD=holeD)
+            self.chainWheelWithRatchet = getChainWheelWithRatchet(self.ratchet, self.chainWheel,holeD=looseHoleD)
             self.chainWheelHalf = self.chainWheel.getHalf(holeD=holeD)
         else:
             raise ValueError("Only 0 chain wheels supported")
@@ -1038,7 +1039,7 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 
 class MotionWorks:
 
-    def __init__(self, holeD=3.3, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
+    def __init__(self, holeD=3.6, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
         '''
         if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
         '''
@@ -1144,11 +1145,13 @@ class MotionWorks:
 #
 motion = MotionWorks()
 #
-cannonPinion = motion.getCannonPinion()
-# # minuteWheel = motion.getMotionArbour()
-# hourHolder = motion.getHourHolder()
-# show_object(hourHolder)
-show_object(cannonPinion)
+# cannonPinion = motion.getCannonPinion()
+# show_object(cannonPinion)
+# minuteWheel = motion.getMotionArbour()
+# show_object(minuteWheel)
+hourHolder = motion.getHourHolder()
+show_object(hourHolder)
+
 
 #
 # ratchet = Ratchet()
