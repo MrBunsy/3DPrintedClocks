@@ -8,7 +8,7 @@ import os
 
 '''
 Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
-But another script will generate specific clock plates and arbours
+But another script will generate specific clock plates and arbours (note - the GoingTrain class has become a bit of a jack of all trades generating most of the arbours)
 
 Note: naming conventions I can find for clock gears seem to assume you always have the same number of gears between the chain and the minute hand
 this is blatantly false (I can see this just looking at the various clocks I have) so I'm adopting a different naming convention:
@@ -467,6 +467,11 @@ class GoingTrain:
         #TODO auto calculate if the escape wheel is clockwise or not and add this functionality to the escape wheel generation!
         arbours = []
         thick = holeD*2
+        #thickness of just the wheel
+        self.gearWheelThick=thick
+        #thickness of arbour assembly
+        #wheel + pinion (3*wheel) + pinion top (0.5*wheel)
+        self.gearTotalThick=thick*4.5
         style="HAC"
         module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
@@ -495,6 +500,7 @@ class GoingTrain:
                 #last pinion + escape wheel
                 # arbours.append(getArbour(escapement, pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
                 arbours.append(pairs[i - 1].pinion.addToWheel(escapement, holeD=holeD, thick=thick, front=not self.pendulumAtFront, style=style))
+        self.wheelPinionPairs = pairs
         self.arbours = arbours
 
     def outputSTLs(self, name="clock", path="../out"):
@@ -836,6 +842,12 @@ class ChainWheel:
 
         self.hole_distance = self.diameter*0.25
 
+    def getHeight(self):
+        '''
+        Returns total height of the chain wheel, once assembled
+        '''
+        return self.inner_width + self.wall_thick*2
+
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
         return chainLength/((self.pockets*self.chain_inside_length*2)/minuteRatio)
@@ -1142,15 +1154,125 @@ class MotionWorks:
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHourHolder(), out)
+
+# class PivotHole:
+#     def __init__(self):
+
+class ClockPlates:
+
+    def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5):
+        '''
+        Idea: provide the train and the angles desired between the arbours, try and generate the rest
+        No idea if it will work nicely!
+        '''
+
+        self.goingTrain = goingTrain
+        self.anglesToScape = anglesToScape
+        self.anglesToChain=anglesToChain
+        self.plateThick=5
+        self.arbourD=arbourD
+        #maximum dimention of the bearing
+        self.bearingOuterD=bearingOuterD
+        #how much space we need to support the bearing (and how much space to leave for the arbour + screw0
+        self.bearingHolderLip=bearingHolderLip
+        self.bearingHeight = bearingHeight
+        self.screwheadHeight = screwheadHeight
+
+        self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
+
+        #if angles are not given, assume clock is entirely vertical
+
+        if anglesToScape is None:
+            #if pendulum is at the front, assuming it's at the bottom of the clock, otherwise at the top
+            angle = -math.pi/2 if self.goingTrain.pendulumAtFront else math.pi/2
+
+            self.anglesToScape = [angle for i in range(self.goingTrain.wheels)]
+        if anglesToChain is None:
+            angle = math.pi / 2 if self.goingTrain.pendulumAtFront else -math.pi / 2
+
+            self.anglesToChain = [angle for i in range(self.goingTrain.chainWheels)]
+
+
+        #[[x,y,z],]
+        self.goingWheelPositions=[]
+        #how much the arbours can wobble back and forth. End-shake? Something liek that
+        self.wobble = 1
+        #aiming to have the wheel in the centre of the next pinion, and each pinion is 3times the thickness of a wheel
+        #TODO control this from one variable, the knowledge that a pinion is 3 times thicker is baked into this
+        overlapHeight = self.goingTrain.ratchet.thick*2.5
+        cumulativeHeight = 0
+        for i in range(self.goingTrain.wheels):
+            if i == 0:
+                self.goingWheelPositions.append([0,0,0])
+                if self.goingTrain.pendulumAtFront:
+                    cumulativeHeight = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
+
+            else:
+                r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
+                angle=self.anglesToScape[i-1]
+                v = polar(angle, r)
+                v = [v[0], v[1], cumulativeHeight]
+                print("wheel {} r: {} angle: {}".format(i,r,angle), v)
+                pos = list(np.add(self.goingWheelPositions[i-1],v))
+                self.goingWheelPositions.append(pos)
+                cumulativeHeight += self.goingTrain.gearTotalThick - overlapHeight
+
+        print(self.goingWheelPositions)
+
+        #TODO chain wheels in the future
+
+    def getBearingHolder(self, height):
+        #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
+
+        wallThick = 3
+        diameter = self.bearingOuterD + wallThick*2
+        holder = cq.Workplane("XY").circle(diameter/2).circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
+
+        holder = holder.faces(">Z").workplane().circle(diameter/2).circle(self.bearingOuterD/2).extrude(self.bearingHeight)
+
+        return holder
+
+    # def getPosForWheel(self, wheel):
+    #     '''
+    #     Wheel from 0 +ve toward escape wheel and -ve towards chain wheel
+    #     '''
+    #     if wheel == 0:
+    #         return [0,0]
+    #     elif wheel > 0:
+
+
+    def getBackPlate(self):
+        '''
+
+        '''
+        minHeight = 10
+        plate = cq.Workplane("XY")
+        for i,pos in enumerate(self.goingWheelPositions):
+            plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
+
+        return plate
+
+train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train.genTrain()
+train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
+train.genChainWheels()
+train.genGears()
+
+train.printInfo()
+
+plates = ClockPlates(train)
+
+# show_object(plates.getBearingHolder(40))
+show_object(plates.getBackPlate())
 #
-motion = MotionWorks()
-#
-# cannonPinion = motion.getCannonPinion()
-# show_object(cannonPinion)
-# minuteWheel = motion.getMotionArbour()
-# show_object(minuteWheel)
-hourHolder = motion.getHourHolder()
-show_object(hourHolder)
+# motion = MotionWorks()
+# #
+# # cannonPinion = motion.getCannonPinion()
+# # show_object(cannonPinion)
+# # minuteWheel = motion.getMotionArbour()
+# # show_object(minuteWheel)
+# hourHolder = motion.getHourHolder()
+# show_object(hourHolder)
 
 
 #
