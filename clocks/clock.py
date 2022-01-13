@@ -271,7 +271,7 @@ class WheelPinionPair:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30, pendulumAtFront=True, maxChainDrop=1800, max_chain_wheel_d=30, min_pinion_teeth=10, max_wheel_teeth=100):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, scapeAtFront=False, maxChainDrop=1800, max_chain_wheel_d=30, min_pinion_teeth=10, max_wheel_teeth=100):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -279,7 +279,8 @@ class GoingTrain:
         escapement_teeth: number of teeth on the escape wheel
         chainWheels: if 0 the minute wheel is also the chain wheel, if >0, this many gears between the minute wheel and chain wheel (say for 8 day clocks)
         hours: intended hours to run for (dictates diameter of chain wheel)
-        pendulumAtFront: For deciding which side of the escape wheel the pinion should go (as we want the anchor as close to the pendulum as possible)
+        chainAtBack: Where the chain and ratchet mechanism should go relative to the minute wheel
+        scapeAtFront: Where the escape wheel should go relative to its pinion - so the teeth face the right direction.
         maxChainDrop: maximum length of chain drop to meet hours required, in mm
         max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
 
@@ -297,6 +298,8 @@ class GoingTrain:
          so sod the usual naming convention until otherwise. Minute hand wheel is gonig to be zero, +ve is towards escapment and -ve is towards the powered wheel
          I suspect regula are onto something, so I may end up just stealing their idea
 
+         This is intended to be agnostic to how the gears are laid out - the options are manually provided for which ways round the gear and scape wheel should face
+
         '''
 
         #in seconds
@@ -304,7 +307,8 @@ class GoingTrain:
         #in metres
         self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
 
-        self.pendulumAtFront = pendulumAtFront
+        self.scapeAtFront = scapeAtFront
+        self.chainAtBack = chainAtBack
 
         #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
         self.chainWheels = chainWheels
@@ -324,9 +328,9 @@ class GoingTrain:
         self.max_wheel_teeth=max_wheel_teeth
         self.trains=[]
 
-    def genTrain(self):
+    def calculateRatios(self):
         '''
-        Returns and stores a list of possible trains, sorted in order of "best" to worst
+        Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         '''
 
         desired_minute_time = 60*60
@@ -406,6 +410,8 @@ class GoingTrain:
 
     def genChainWheels(self, thick=5, holeD=3):
         '''
+        TODO tidy this up
+
         Generate the gear ratios for the wheels between chain and minute wheel
         again, I'd like to make this generic but the solution isn't immediately obvious and it would take
         longer to make it generic than just make it work
@@ -429,7 +435,7 @@ class GoingTrain:
             self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference)
 
 
-            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2, thick=thick*1.5, powerClockwise=self.pendulumAtFront)
+            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2, thick=thick*1.5, powerClockwise=self.chainAtBack)
 
             self.chainWheelWithRatchet = getChainWheelWithRatchet(self.ratchet, self.chainWheel,holeD=looseHoleD)
             self.chainWheelHalf = self.chainWheel.getHalf(holeD=looseHoleD)
@@ -471,7 +477,10 @@ class GoingTrain:
         self.gearWheelThick=thick
         #thickness of arbour assembly
         #wheel + pinion (3*wheel) + pinion top (0.5*wheel)
-        self.gearTotalThick=thick*4.5
+
+        self.gearPivotLength=thick*3
+        self.gearPivotEndCapLength=thick*0.5
+        self.gearTotalThick = self.gearWheelThick + self.gearPivotLength + self.gearPivotEndCapLength
         style="HAC"
         module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
@@ -494,12 +503,12 @@ class GoingTrain:
             elif i < self.wheels-1:
 
                 #intermediate wheels
-                # arbours.append(getArbour(pairs[i].wheel,pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
-                arbours.append(pairs[i-1].pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, front=not self.pendulumAtFront, style=style))
+                #no need to worry about front and back as they can just be turned around
+                arbours.append(pairs[i-1].pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionthicker=self.gearPivotLength/self.gearWheelThick))
             else:
                 #last pinion + escape wheel
-                # arbours.append(getArbour(escapement, pairs[i-1].pinion, holeD=holeD, thick=thick, style=style))
-                arbours.append(pairs[i - 1].pinion.addToWheel(escapement, holeD=holeD, thick=thick, front=not self.pendulumAtFront, style=style))
+                #instead of inverting teeth, being lazy and changing which side the pinion goes on
+                arbours.append(pairs[i - 1].pinion.addToWheel(escapement, holeD=holeD, thick=thick, front=not self.scapeAtFront, style=style, pinionthicker=self.gearPivotLength/self.gearWheelThick))
         self.wheelPinionPairs = pairs
         self.arbours = arbours
 
@@ -1160,7 +1169,7 @@ class MotionWorks:
 
 class ClockPlates:
 
-    def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5):
+    def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1177,25 +1186,26 @@ class ClockPlates:
         self.bearingHolderLip=bearingHolderLip
         self.bearingHeight = bearingHeight
         self.screwheadHeight = screwheadHeight
+        self.pendulumAtFront = pendulumAtFront
 
         self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
 
         #if angles are not given, assume clock is entirely vertical
 
         if anglesToScape is None:
-            #if pendulum is at the front, assuming it's at the bottom of the clock, otherwise at the top
-            angle = -math.pi/2 if self.goingTrain.pendulumAtFront else math.pi/2
+            #assume simple pendulum at bottom
+            angle = -math.pi/2 if self.pendulumAtFront else math.pi/2
 
             self.anglesToScape = [angle for i in range(self.goingTrain.wheels)]
         if anglesToChain is None:
-            angle = math.pi / 2 if self.goingTrain.pendulumAtFront else -math.pi / 2
+            angle = math.pi / 2 if self.pendulumAtFront else -math.pi / 2
 
             self.anglesToChain = [angle for i in range(self.goingTrain.chainWheels)]
 
 
         #[[x,y,z],]
         self.goingWheelPositions=[]
-        #how much the arbours can wobble back and forth. End-shake? Something liek that
+        #how much the arbours can wobble back and forth. aka End-shake.
         self.wobble = 1
         #aiming to have the wheel in the centre of the next pinion, and each pinion is 3times the thickness of a wheel
         #TODO control this from one variable, the knowledge that a pinion is 3 times thicker is baked into this
@@ -1204,7 +1214,7 @@ class ClockPlates:
         for i in range(self.goingTrain.wheels):
             if i == 0:
                 self.goingWheelPositions.append([0,0,0])
-                if self.goingTrain.pendulumAtFront:
+                if self.pendulumAtFront:
                     cumulativeHeight = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
 
             else:
