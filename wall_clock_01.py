@@ -8,6 +8,8 @@ if 'show_object' not in globals():
 clockName="wall_clock_01"
 clockOutDir="out"
 
+crutchLength=100
+
 train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 
 train.calculateRatios()
@@ -24,3 +26,6 @@ train.outputSTLs(clockName,clockOutDir)
 motionWorks = clock.MotionWorks()
 motionWorks.outputSTLs(clockName,clockOutDir)
 
+pendulum = clock.Pendulum(train.escapement)
+
+pendulum.outputSTLs(clockName, clockOutDir)

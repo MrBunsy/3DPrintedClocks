@@ -490,7 +490,7 @@ class GoingTrain:
 
         print(module_sizes)
         #make the esacpe wheel smaller than the last wheel by modulereduction
-        escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
+        self.escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
 
         for i in range(self.wheels):
 
@@ -508,7 +508,7 @@ class GoingTrain:
             else:
                 #last pinion + escape wheel
                 #instead of inverting teeth, being lazy and changing which side the pinion goes on
-                arbours.append(pairs[i - 1].pinion.addToWheel(escapement, holeD=holeD, thick=thick, front=not self.scapeAtFront, style=style, pinionthicker=self.gearPivotLength/self.gearWheelThick))
+                arbours.append(pairs[i - 1].pinion.addToWheel(self.escapement, holeD=holeD, thick=thick, front=not self.scapeAtFront, style=style, pinionthicker=self.gearPivotLength/self.gearWheelThick))
         self.wheelPinionPairs = pairs
         self.arbours = arbours
 
@@ -709,7 +709,8 @@ class Escapement:
         crutchWidth = crutchBoltD*3
 
 
-        crutch = cq.Workplane("XY").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick)
+        crutch = cq.Workplane("XY").tag("base").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick/2)
+        crutch = crutch.workplaneFromTagged("base").moveTo(0,crutchLength-crutchWidth/2).rect(crutchWidth,crutchWidth).extrude(anchorThick)
 
         crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2).cutThruAll()
 
@@ -1070,7 +1071,12 @@ class MotionWorks:
         self.cannonPinionLoose = cannonPinionLoose
 
         #pinching ratios from The Modern Clock
-        self.pairs = [WheelPinionPair(36,12, module), WheelPinionPair(40,10,module)]
+        #TODO adjust the module so the diameters work properly
+        #self.pitch_diameter = self.module * self.teeth
+        self.arbourDistace = module * (36 + 12) / 2
+        secondModule = 2 * self.arbourDistace / (40 + 10)
+        print("module: {}, secondMOdule: {}".format(module, secondModule))
+        self.pairs = [WheelPinionPair(36,12, module), WheelPinionPair(40,10,secondModule)]
 
         self.cannonPinionThick = self.thick*2
 
@@ -1182,6 +1188,8 @@ class ClockPlates:
         self.arbourD=arbourD
         #maximum dimention of the bearing
         self.bearingOuterD=bearingOuterD
+        #how chunky to make the bearing holders
+        self.bearingWallThick = 3
         #how much space we need to support the bearing (and how much space to leave for the arbour + screw0
         self.bearingHolderLip=bearingHolderLip
         self.bearingHeight = bearingHeight
@@ -1203,38 +1211,80 @@ class ClockPlates:
             self.anglesToChain = [angle for i in range(self.goingTrain.chainWheels)]
 
 
+        drivenToPivotEnd = self.goingTrain.gearPivotLength/2 + self.goingTrain.gearPivotEndCapLength
+        drivenToWheelEnd = self.goingTrain.gearPivotLength/2 + self.goingTrain.gearWheelThick
+
         #[[x,y,z],]
         self.goingWheelPositions=[]
         #how much the arbours can wobble back and forth. aka End-shake.
         self.wobble = 1
-        #aiming to have the wheel in the centre of the next pinion, and each pinion is 3times the thickness of a wheel
-        #TODO control this from one variable, the knowledge that a pinion is 3 times thicker is baked into this
-        overlapHeight = self.goingTrain.ratchet.thick*2.5
-        cumulativeHeight = 0
+        #height of the centre of the wheel that will drive the next pivot
+        drivingZ = 0
+        # bearingZ = 0
+        #this flip flops between gears, set it opposite of where the chain is, because the next wheel doesn't fit next to the chain wheel
+        pinionAtBack = not self.goingTrain.chainAtBack
         for i in range(self.goingTrain.wheels):
             if i == 0:
+                #assuming this is at the very back of the clock
                 self.goingWheelPositions.append([0,0,0])
                 if self.pendulumAtFront:
-                    cumulativeHeight = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
+                    #totalheight is self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
+                    drivingZ = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick/2
 
             else:
+
+                pinionAtBack = not pinionAtBack
+                if pinionAtBack:
+                    baseZ = drivingZ - drivenToPivotEnd
+                    drivingZ = drivingZ + drivenToWheelEnd - self.goingTrain.gearWheelThick/2
+                else:
+                    baseZ = drivingZ - drivenToWheelEnd
+                    drivingZ = drivingZ - drivenToWheelEnd + self.goingTrain.gearWheelThick/2
+
                 r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
                 angle=self.anglesToScape[i-1]
                 v = polar(angle, r)
-                v = [v[0], v[1], cumulativeHeight]
-                print("wheel {} r: {} angle: {}".format(i,r,angle), v)
+                v = [v[0], v[1], baseZ]
+                print("pinionAtBack: {} wheel {} r: {} angle: {}".format(pinionAtBack,i,r,angle), v)
                 pos = list(np.add(self.goingWheelPositions[i-1],v))
                 self.goingWheelPositions.append(pos)
-                cumulativeHeight += self.goingTrain.gearTotalThick - overlapHeight
 
         print(self.goingWheelPositions)
+
+        # self.pilarR=15
+        # self.pillarToGearGap=10
+        self.gearGap = 10
+
+        #hack for now
+        #use vertical plate-things, not pillars!
+        self.width = 50
+        # self
+        # r = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2
+        # r2 = self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-1].wheel.pitch_diameter/2
+        # topGearToTop = math.sqrt(math.pow(r + self.pilarR + self.pillarToGearGap, 2) + math.pow(self.width/2 - self.pilarR , 2)) + self.pilarR
+        # bottomGearToBottom = math.sqrt(math.pow(r2 + self.pilarR + self.pillarToGearGap, 2) + math.pow(self.width/2 - self.pilarR , 2)) + self.pilarR
+        # self.height =  topGearToTop + abs(self.goingWheelPositions[len(self.goingWheelPositions)-1][1]) + bottomGearToBottom
+        # print("height", self.height)
+        # self.topLeft = [-self.width/2, ]
+
+        #this is just going to be too tall, try holding it together in width instead
+        # self.height = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 + abs(self.goingWheelPositions[len(self.goingWheelPositions)-1][1]) + self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-2].wheel.pitch_diameter/2 + self.gearGap*2
+        # self.topY = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 +  self.gearGap
+
+        #TODO the anchor!
+
+        #just tall enough to hold the top and bottom bearings
+        self.height = self.bearingOuterD + abs(self.goingWheelPositions[len(self.goingWheelPositions)-1][1]) + self.bearingWallThick*2 + self.goingTrain.escapement.anchor_centre_distance
+        self.topY = self.bearingOuterD/2 + self.bearingWallThick
+
+        print("Height: ", self.height)
 
         #TODO chain wheels in the future
 
     def getBearingHolder(self, height):
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
 
-        wallThick = 3
+        wallThick = self.bearingWallThick
         diameter = self.bearingOuterD + wallThick*2
         holder = cq.Workplane("XY").circle(diameter/2).circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
 
@@ -1256,11 +1306,27 @@ class ClockPlates:
 
         '''
         minHeight = 10
-        plate = cq.Workplane("XY")
+        plate = cq.Workplane("XY").moveTo(0,self.topY-self.height/2).rect(self.width,self.height).extrude(self.plateThick)
         for i,pos in enumerate(self.goingWheelPositions):
             plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
 
         return plate
+
+class Pendulum:
+
+    def __init__(self, escapement, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=3, crutchBoltD=3):
+        self.escapement = escapement
+        self.crutchLength = crutchLength
+        self.anchorAngle = anchorAngle
+
+        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD)
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_anchor.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.anchor, out)
+
+
 
 train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 # train.genTrain()
@@ -1270,10 +1336,18 @@ train.genGears()
 
 train.printInfo()
 
-plates = ClockPlates(train)
+plates = ClockPlates(train)#[degToRad(-135),degToRad(-45)]
 
 # show_object(plates.getBearingHolder(40))
-show_object(plates.getBackPlate())
+# backPlate = plates.getBackPlate()
+# show_object(backPlate)
+# exporters.export(backPlate, "../out/backplate.stl")
+
+show_object(train.escapement.getAnchorArbour())
+
+
+
+
 #
 # motion = MotionWorks()
 # #
