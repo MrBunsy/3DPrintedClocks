@@ -402,7 +402,7 @@ class GoingTrain:
                 allTimes.append(train)
 
         allTimes.sort(key = lambda x: x["error"]+x["teeth"])
-        # print(allTimes)
+        print(allTimes)
 
         self.trains = allTimes
 
@@ -490,7 +490,13 @@ class GoingTrain:
 
         print(module_sizes)
         #make the esacpe wheel smaller than the last wheel by modulereduction
-        self.escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
+        # self.escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
+        # with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
+        lift = 4
+        rotateAnchor = lift
+        rotateWheel = -8
+        drop = -7
+        self.escapement = Escapement(teeth=self.escapement_teeth, diameter=pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction, lift=lift, drop=drop, anchorTeeth=None)
 
         for i in range(self.wheels):
 
@@ -524,11 +530,20 @@ class GoingTrain:
         print("Outputting ", out)
         exporters.export(self.chainWheelHalf, out)
 
+        out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.escapement.getTestRig(), out)
+
 def degToRad(deg):
     return math.pi*deg/180
 
 def polar(angle, radius):
     return (math.cos(angle) * radius, math.sin(angle) * radius)
+
+def toPolar(x,y):
+    r= math.sqrt(x*x + y*y)
+    angle = math.atan2(y,x)
+    return (angle, r)
 
 def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
     base = wheel.get3D(thick=thick, holeD=holeD,style=style)
@@ -541,7 +556,7 @@ def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
     return arbour
 
 class Escapement:
-    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, recoil=True, lift=15, drop=2, run=2):
+    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, recoil=True, lift=4, drop=4, run=2):
         '''
         Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
         if recoil, generate a recoil escapement, if false, deadbeat.
@@ -557,8 +572,10 @@ class Escapement:
 
         drop is the rotation of the escape wheel between the teeth engaging the pallets - this is lost energy
         from the weight/spring. However it seems to be required in a real clock. I *think* this is why some clocks are louder than others
+        I think this should be used to dictate exact anchor angle?
 
         run is how much the anchor continues to move towards the centre of the escape wheel after locking (or in the recoil, how much it recoils) in degrees
+        not sure how to actually use desired run to design anchor
         '''
 
         self.lift_deg = lift
@@ -586,16 +603,17 @@ class Escapement:
 
         if anchorTeeth is None:
             if recoil:
-                self.anchorTeeth = floor(self.teeth/6)+0.5
+                self.anchorTeeth = floor(self.teeth/4)#+0.5  run
             else:
-                self.anchorTeeth = floor(self.teeth/4)+0.5
+                #very much TODO
+                self.anchorTeeth = floor(self.teeth/4)#+0.5
         else:
             self.anchorTeeth = anchorTeeth
 
         # angle that encompases the teeth the anchor encompases
-        self.wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth
+        self.wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth + self.drop
 
-        # height from centre of escape wheel to anchor pivot
+        # height from centre of escape wheel to anchor pivot - assuming this is at the point the tangents (from the wheelangle on the escape wheel teeth) meet
         anchor_centre_distance = self.radius / math.cos(self.wheelAngle / 2)
 
         self.anchor_centre_distance = anchor_centre_distance
@@ -609,11 +627,12 @@ class Escapement:
         anchor = cq.Workplane("XY")
 
 
+        #TODO, what should this be for most efficiency?
+        #currently bodged in order to get enough drop to be reliable
+        entryPalletAngle=degToRad(12)
+        exitPalletAngle=-math.pi/2-degToRad(12)#entryPalletAngle
 
-        entryPalletAngle=degToRad(6)
 
-        # arbitary, just needs to be long enough to contain recoil and lift
-        entryPalletLength = self.toothHeight*0.5
 
 
 
@@ -621,12 +640,16 @@ class Escapement:
         #distance from anchor pivot to the nominal point the anchor meets the escape wheel
         x = math.sqrt(math.pow(self.anchor_centre_distance,2) - math.pow(self.radius,2))
 
+        #the point on the anchor swing that intersects the escape wheel tooth tip circle
         entryPoint = (math.cos(math.pi/2+self.wheelAngle/2)*self.radius, math.sin(+math.pi/2+self.wheelAngle/2)*self.radius)
 
         # entrySideDiameter = anchor_centre_distance - entryPoint[1]
 
         #how far the entry pallet extends into the escape wheel (along the angle of entryPalletAngle)
         liftExtension = x * math.sin(self.halfLift)/math.sin(math.pi - self.halfLift - entryPalletAngle - self.wheelAngle/2)
+
+        # arbitary, just needs to be long enough to contain recoil and lift
+        entryPalletLength = liftExtension*3
 
         # #crude aprox
         # liftExtension2 = math.sin(self.halfLift)*x
@@ -640,17 +663,24 @@ class Escapement:
 
         entryPalletEnd = (entryPalletTip[0] - math.cos(entryPalletAngle)* entryPalletLength, entryPalletTip[1] + math.sin(entryPalletAngle) * entryPalletLength)
 
-        exitPalletTip = ( -entryPoint[0], entryPoint[1])
+        exitPalletMiddle = ( -entryPoint[0], entryPoint[1])
+
+        # #try and calculate the actual run
+        #
+        # #when the tooth is resting on the entryPoint, where is the entry pallet tip?
+        # entryPalletEndFromAnchorCentre = np.subtract(entryPalletEnd,[0,self.anchor_centre_distance])
+
 
         # anchor = anchor.moveTo(entryPoint[0], entryPoint[1])
         # anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1])
 
-
-
+        #just assuming this is the same as entry is *nearly* but not quite right
+        exitPalletTip=(exitPalletMiddle[0]+liftExtension*math.cos(exitPalletAngle), exitPalletMiddle[1]+liftExtension*math.sin(exitPalletAngle) )
+        exitPalletEnd=(exitPalletMiddle[0]-(liftExtension + entryPalletLength)*math.cos(exitPalletAngle), exitPalletMiddle[1]-(liftExtension + entryPalletLength)*math.sin(exitPalletAngle))
 
 
         endOfEntryPalletAngle = degToRad(35) # math.pi + wheelAngle/2 +
-        endOfExitPalletAngle = degToRad(35)
+        endOfExitPalletAngle = degToRad(45)
 
         h = self.anchor_centre_distance - self.anchorTopThickBase - entryPalletTip[1]
 
@@ -675,7 +705,7 @@ class Escapement:
 
         anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1]).lineTo(entryPalletEnd[0],entryPalletEnd[1]).tangentArcPoint(farLeft,relative=False)
 
-        anchor = anchor.lineTo(top[0], top[1]).lineTo(farRight[0], farRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1]).lineTo(innerRight[0], innerRight[1])
+        anchor = anchor.lineTo(top[0], top[1]).lineTo(farRight[0], farRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1]).lineTo(exitPalletEnd[0],exitPalletEnd[1]).lineTo(innerRight[0], innerRight[1])
 
         anchor = anchor.lineTo(innerLeft[0], innerLeft[1])
 
@@ -780,6 +810,17 @@ class Escapement:
     #hack to masquerade as a Gear, then we can use this with getArbour()
     def get3D(self, thick=5, holeD=5, style="HAC"):
         return self.getWheel3D(thick=thick, holeD=holeD, style=style)
+
+    def getTestRig(self, holeD=3, tall=15):
+        #simple rig to place both parts on and check they actually work
+        holeD=holeD*0.85
+
+        height = self.anchor_centre_distance+holeD
+        width = holeD
+
+        testrig = cq.Workplane("XY").rect(width,height).extrude(3).faces(">Z").workplane().pushPoints([(0,self.anchor_centre_distance/2),(0,-self.anchor_centre_distance/2)]).circle(holeD/2).extrude(tall).translate([0,self.anchor_centre_distance/2,0])
+
+        return testrig
 
     # def getWithPinion(self, pinion, clockwise=True, thick=5, holeD=5, style="HAC"):
     #     base = self.getWheel3D(thick=thick,holeD=holeD, style=style)
@@ -1313,8 +1354,10 @@ class ClockPlates:
         return plate
 
 class Pendulum:
-
-    def __init__(self, escapement, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=3, crutchBoltD=3):
+    '''
+    Class to generate the anchor&crutch arbour and pendulum parts
+    '''
+    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=3, crutchBoltD=3):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -1327,23 +1370,23 @@ class Pendulum:
         exporters.export(self.anchor, out)
 
 
-
-train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train.genTrain()
-train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
-train.genChainWheels()
-train.genGears()
-
-train.printInfo()
-
-plates = ClockPlates(train)#[degToRad(-135),degToRad(-45)]
-
-# show_object(plates.getBearingHolder(40))
-# backPlate = plates.getBackPlate()
-# show_object(backPlate)
-# exporters.export(backPlate, "../out/backplate.stl")
-
-show_object(train.escapement.getAnchorArbour())
+#
+# train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# # train.genTrain()
+# train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
+# train.genChainWheels()
+# train.genGears()
+#
+# train.printInfo()
+#
+# plates = ClockPlates(train)#[degToRad(-135),degToRad(-45)]
+#
+# # show_object(plates.getBearingHolder(40))
+# # backPlate = plates.getBackPlate()
+# # show_object(backPlate)
+# # exporters.export(backPlate, "../out/backplate.stl")
+#
+# show_object(train.escapement.getAnchorArbour())
 
 
 
@@ -1399,15 +1442,29 @@ show_object(train.escapement.getAnchorArbour())
 #
 # exporters.export(halfWheel, "../out/chainWheel.stl")
 
-# escapement = Escapement()
-# escapeWheel = escapement.getWheel3D()
-# #
-# show_object(escapeWheel)
-# # exporters.export(escapeWheel, "../out/escapeWheel.stl")
+#with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
+lift=4
+rotateAnchor=lift
+rotateWheel=-8
+drop=-7
+escapement = Escapement(teeth=30,lift=lift,drop=drop,anchorTeeth=None)
+escapeWheel = escapement.getWheel2D()
 #
-# anchor = escapement.getAnchor3D()
-#
-# show_object(anchor)
+show_object(escapeWheel.rotateAboutCenter((0,0,1),rotateWheel-1.5+drop/2))#0.76
+
+anchor = escapement.getAnchor2D().rotate([0,escapement.anchor_centre_distance,0],[0,escapement.anchor_centre_distance,1],-lift/2+rotateAnchor)#(rotate%escapement.lift_deg))
+
+show_object(anchor)
+
+
+testRig = escapement.getTestRig()
+
+exporters.export(testRig,"../out/escapementTestRig.stl")
+show_object(cq.Workplane("XY").circle(escapement.radius))
+# show_object(escapement.getTestRig())
+# print(anchor.add(escapeWheel).toSvg())
+
+
 #
 #
 # # train = GoingTrain(fourth_wheel=False, pendulum_period=1, escapement_teeth=40)
