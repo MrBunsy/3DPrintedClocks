@@ -402,7 +402,7 @@ class GoingTrain:
                 allTimes.append(train)
 
         allTimes.sort(key = lambda x: x["error"]+x["teeth"])
-        print(allTimes)
+        # print(allTimes)
 
         self.trains = allTimes
 
@@ -488,13 +488,12 @@ class GoingTrain:
         pairs = [WheelPinionPair(wheel[0],wheel[1],module_size* math.pow(moduleReduction, i)) for i,wheel in enumerate(self.trains[0]["train"])]
 
 
-        print(module_sizes)
+        # print(module_sizes)
         #make the esacpe wheel smaller than the last wheel by modulereduction
         # self.escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
         # with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
-        lift = 4
-        rotateAnchor = lift
-        rotateWheel = -8
+        #trying a tiny bit more lift to make up for shorter plates due to printing?
+        lift = 5
         drop = -7
         self.escapement = Escapement(teeth=self.escapement_teeth, diameter=pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction, lift=lift, drop=drop, anchorTeeth=None)
 
@@ -598,6 +597,10 @@ class Escapement:
         self.innerRadius = self.innerDiameter/2
 
         self.toothHeight = self.diameter/2 - self.innerRadius
+        self.printedToothHeight = self.toothHeight*8.36/7
+        # print("tooth height", self.toothHeight)
+
+        #a tooth height of 8.36 gets printed to about 7mm
 
         self.recoil = recoil
 
@@ -763,6 +766,7 @@ class Escapement:
 
     def getWheel2D(self):
 
+        diameterForPrinting = self.diameter + (self.printedToothHeight - self.toothHeight)*2
 
         dA = -math.pi*2/self.teeth
 
@@ -781,10 +785,10 @@ class Escapement:
 
         for i in range(self.teeth):
             angle = dA*i
-            tipPos = (math.cos(angle+toothTipAngle)*self.diameter/2, math.sin(angle+toothTipAngle)*self.diameter/2)
+            tipPos = (math.cos(angle+toothTipAngle)*diameterForPrinting/2, math.sin(angle+toothTipAngle)*diameterForPrinting/2)
             nextbasePos = (math.cos(angle+dA) * self.innerRadius, math.sin(angle + dA) * self.innerRadius)
             endPos = (math.cos(angle+toothBaseAngle) * self.innerRadius, math.sin(angle + toothBaseAngle) * self.innerRadius)
-            print(tipPos)
+            # print(tipPos)
             # wheel = wheel.lineTo(0,tipPos[1])
             wheel = wheel.lineTo(tipPos[0], tipPos[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos,self.innerDiameter)
 
@@ -811,7 +815,7 @@ class Escapement:
     def get3D(self, thick=5, holeD=5, style="HAC"):
         return self.getWheel3D(thick=thick, holeD=holeD, style=style)
 
-    def getTestRig(self, holeD=3, tall=15):
+    def getTestRig(self, holeD=3, tall=4):
         #simple rig to place both parts on and check they actually work
         holeD=holeD*0.85
 
@@ -1116,14 +1120,14 @@ class MotionWorks:
         #self.pitch_diameter = self.module * self.teeth
         self.arbourDistace = module * (36 + 12) / 2
         secondModule = 2 * self.arbourDistace / (40 + 10)
-        print("module: {}, secondMOdule: {}".format(module, secondModule))
+        # print("module: {}, secondMOdule: {}".format(module, secondModule))
         self.pairs = [WheelPinionPair(36,12, module), WheelPinionPair(40,10,secondModule)]
 
         self.cannonPinionThick = self.thick*2
 
         self.minuteHandHolderSize=minuteHandHolderSize
         self.minuteHandHolderD = minuteHandHolderSize*math.sqrt(2)+0.5
-        print("minute hand holder D: {}".format(self.minuteHandHolderD))
+        # print("minute hand holder D: {}".format(self.minuteHandHolderD))
         self.minuteHolderTotalHeight = minuteHandHolderHeight
         self.minuteHandSlotHeight = minuteHandThick
 
@@ -1216,13 +1220,17 @@ class MotionWorks:
 
 class ClockPlates:
 
-    def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True):
+    def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
         '''
 
+        #just for the first prototype
+        self.anchorHasNormalBushing=True
+
         self.goingTrain = goingTrain
+        #up to and including the anchor
         self.anglesToScape = anglesToScape
         self.anglesToChain=anglesToChain
         self.plateThick=5
@@ -1236,6 +1244,8 @@ class ClockPlates:
         self.bearingHeight = bearingHeight
         self.screwheadHeight = screwheadHeight
         self.pendulumAtFront = pendulumAtFront
+        #TODO make some sort of object to hold all this info we keep passing around?
+        self.anchorThick=anchorThick
 
         self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
 
@@ -1245,7 +1255,8 @@ class ClockPlates:
             #assume simple pendulum at bottom
             angle = -math.pi/2 if self.pendulumAtFront else math.pi/2
 
-            self.anglesToScape = [angle for i in range(self.goingTrain.wheels)]
+            #one extra for the anchor
+            self.anglesToScape = [angle for i in range(self.goingTrain.wheels+1)]
         if anglesToChain is None:
             angle = math.pi / 2 if self.pendulumAtFront else -math.pi / 2
 
@@ -1256,7 +1267,10 @@ class ClockPlates:
         drivenToWheelEnd = self.goingTrain.gearPivotLength/2 + self.goingTrain.gearWheelThick
 
         #[[x,y,z],]
-        self.goingWheelPositions=[]
+        #normal arbours have ball bearings
+        self.bearingPositions=[]
+        #the anchor is having a simple bushing
+        self.bushingPositions=[]
         #how much the arbours can wobble back and forth. aka End-shake.
         self.wobble = 1
         #height of the centre of the wheel that will drive the next pivot
@@ -1264,33 +1278,59 @@ class ClockPlates:
         # bearingZ = 0
         #this flip flops between gears, set it opposite of where the chain is, because the next wheel doesn't fit next to the chain wheel
         pinionAtBack = not self.goingTrain.chainAtBack
-        for i in range(self.goingTrain.wheels):
+        for i in range(self.goingTrain.wheels+1):
             if i == 0:
+                #the minute wheel (with chain wheel ratchet)
+
                 #assuming this is at the very back of the clock
-                self.goingWheelPositions.append([0,0,0])
+                self.bearingPositions.append([0, 0, 0])
                 if self.pendulumAtFront:
                     #totalheight is self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
                     drivingZ = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick/2
+                else:
+                    raise ValueError("Not yet supported")
 
             else:
+                #all the other going wheels up to and including the escape wheel
 
-                pinionAtBack = not pinionAtBack
-                if pinionAtBack:
-                    baseZ = drivingZ - drivenToPivotEnd
-                    drivingZ = drivingZ + drivenToWheelEnd - self.goingTrain.gearWheelThick/2
+
+
+                if i == self.goingTrain.wheels:
+                    # the anchor
+                    baseZ = drivingZ - self.anchorThick / 2
+                    r = self.goingTrain.escapement.anchor_centre_distance
+                    print("is anchor")
                 else:
-                    baseZ = drivingZ - drivenToWheelEnd
-                    drivingZ = drivingZ - drivenToWheelEnd + self.goingTrain.gearWheelThick/2
+                    #any of the other wheels
+                    r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
 
-                r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
+                    pinionAtBack = not pinionAtBack
+                    if pinionAtBack:
+                        baseZ = drivingZ - drivenToPivotEnd
+                        drivingZ = drivingZ + drivenToWheelEnd - self.goingTrain.gearWheelThick / 2
+                    else:
+                        baseZ = drivingZ - drivenToWheelEnd
+                        drivingZ = drivingZ - drivenToWheelEnd + self.goingTrain.gearWheelThick / 2
+
                 angle=self.anglesToScape[i-1]
                 v = polar(angle, r)
                 v = [v[0], v[1], baseZ]
-                print("pinionAtBack: {} wheel {} r: {} angle: {}".format(pinionAtBack,i,r,angle), v)
-                pos = list(np.add(self.goingWheelPositions[i-1],v))
-                self.goingWheelPositions.append(pos)
 
-        print(self.goingWheelPositions)
+                # pos = list(np.add(self.bearingPositions[i-1],v))
+                pos = [self.bearingPositions[i - 1][0] + v[0], self.bearingPositions[i - 1][1] + v[1], baseZ]
+
+                print("pinionAtBack: {} wheel {} r: {} angle: {}".format(pinionAtBack, i, r, angle), pos)
+                print("baseZ: ",baseZ, "drivingZ ", drivingZ)
+
+                if i == self.goingTrain.wheels:
+                    # the anchor
+                    self.bushingPositions.append(pos)
+                else:
+                    #normal wheel
+                    self.bearingPositions.append(pos)
+
+
+        print(self.bearingPositions, self.bushingPositions)
 
         # self.pilarR=15
         # self.pillarToGearGap=10
@@ -1304,18 +1344,18 @@ class ClockPlates:
         # r2 = self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-1].wheel.pitch_diameter/2
         # topGearToTop = math.sqrt(math.pow(r + self.pilarR + self.pillarToGearGap, 2) + math.pow(self.width/2 - self.pilarR , 2)) + self.pilarR
         # bottomGearToBottom = math.sqrt(math.pow(r2 + self.pilarR + self.pillarToGearGap, 2) + math.pow(self.width/2 - self.pilarR , 2)) + self.pilarR
-        # self.height =  topGearToTop + abs(self.goingWheelPositions[len(self.goingWheelPositions)-1][1]) + bottomGearToBottom
+        # self.height =  topGearToTop + abs(self.bearingPositions[len(self.bearingPositions)-1][1]) + bottomGearToBottom
         # print("height", self.height)
         # self.topLeft = [-self.width/2, ]
 
         #this is just going to be too tall, try holding it together in width instead
-        # self.height = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 + abs(self.goingWheelPositions[len(self.goingWheelPositions)-1][1]) + self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-2].wheel.pitch_diameter/2 + self.gearGap*2
+        # self.height = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 + abs(self.bearingPositions[len(self.bearingPositions)-1][1]) + self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-2].wheel.pitch_diameter/2 + self.gearGap*2
         # self.topY = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 +  self.gearGap
 
         #TODO the anchor!
 
         #just tall enough to hold the top and bottom bearings
-        self.height = self.bearingOuterD + abs(self.goingWheelPositions[len(self.goingWheelPositions)-1][1]) + self.bearingWallThick*2 + self.goingTrain.escapement.anchor_centre_distance
+        self.height = self.bearingOuterD + abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + self.bearingWallThick * 2 + self.goingTrain.escapement.anchor_centre_distance
         self.topY = self.bearingOuterD/2 + self.bearingWallThick
 
         print("Height: ", self.height)
@@ -1348,8 +1388,23 @@ class ClockPlates:
         '''
         minHeight = 10
         plate = cq.Workplane("XY").moveTo(0,self.topY-self.height/2).rect(self.width,self.height).extrude(self.plateThick)
-        for i,pos in enumerate(self.goingWheelPositions):
+
+        bearingHoles = [(b[0], b[1]) for b in self.bearingPositions]
+
+        if self.anchorHasNormalBushing:
+            bearingHoles.append((self.bushingPositions[0][0], self.bushingPositions[0][1]))
+
+        plate = plate.faces(">Z").workplane().pushPoints(bearingHoles).circle(self.holderInnerD/2).cutThruAll()
+
+        for i,pos in enumerate(self.bearingPositions):
             plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
+
+        if self.anchorHasNormalBushing:
+            #TODO for first attempt I'm gonig to be lazy and do the same bearing based bushing for the anchor
+            #I've read and it seems reasonable that ball bearings will wear out quickly just rocking back and forth
+            #but right now I just want to see if the clock as a whole is viable
+            for i, pos in enumerate(self.bushingPositions):
+                plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
 
         return plate
 
@@ -1357,7 +1412,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=3, crutchBoltD=3):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -1370,22 +1425,22 @@ class Pendulum:
         exporters.export(self.anchor, out)
 
 
-#
-# train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# # train.genTrain()
-# train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
-# train.genChainWheels()
-# train.genGears()
-#
-# train.printInfo()
-#
-# plates = ClockPlates(train)#[degToRad(-135),degToRad(-45)]
-#
-# # show_object(plates.getBearingHolder(40))
-# # backPlate = plates.getBackPlate()
-# # show_object(backPlate)
-# # exporters.export(backPlate, "../out/backplate.stl")
-#
+
+train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train.genTrain()
+train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
+train.genChainWheels()
+train.genGears()
+
+train.printInfo()
+
+plates = ClockPlates(train)#[degToRad(-135),degToRad(-45)]
+
+# show_object(plates.getBearingHolder(40))
+backPlate = plates.getBackPlate()
+show_object(backPlate)
+# exporters.export(backPlate, "../out/backplate.stl")
+
 # show_object(train.escapement.getAnchorArbour())
 
 
@@ -1442,27 +1497,27 @@ class Pendulum:
 #
 # exporters.export(halfWheel, "../out/chainWheel.stl")
 
-#with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
-lift=4
-rotateAnchor=lift
-rotateWheel=-8
-drop=-7
-escapement = Escapement(teeth=30,lift=lift,drop=drop,anchorTeeth=None)
-escapeWheel = escapement.getWheel2D()
+# #with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
+# lift=4
+# rotateAnchor=lift
+# rotateWheel=-8
+# drop=-7
+# escapement = Escapement(teeth=30,lift=lift,drop=drop,anchorTeeth=None)
+# escapeWheel = escapement.getWheel2D()
+# #
+# show_object(escapeWheel.rotateAboutCenter((0,0,1),rotateWheel-1.5+drop/2))#0.76
 #
-show_object(escapeWheel.rotateAboutCenter((0,0,1),rotateWheel-1.5+drop/2))#0.76
-
-anchor = escapement.getAnchor2D().rotate([0,escapement.anchor_centre_distance,0],[0,escapement.anchor_centre_distance,1],-lift/2+rotateAnchor)#(rotate%escapement.lift_deg))
-
-show_object(anchor)
-
-
-testRig = escapement.getTestRig()
-
-exporters.export(testRig,"../out/escapementTestRig.stl")
-show_object(cq.Workplane("XY").circle(escapement.radius))
-# show_object(escapement.getTestRig())
-# print(anchor.add(escapeWheel).toSvg())
+# anchor = escapement.getAnchor2D().rotate([0,escapement.anchor_centre_distance,0],[0,escapement.anchor_centre_distance,1],-lift/2+rotateAnchor)#(rotate%escapement.lift_deg))
+#
+# show_object(anchor)
+#
+#
+# testRig = escapement.getTestRig()
+#
+# exporters.export(testRig,"../out/escapementTestRig.stl")
+# show_object(cq.Workplane("XY").circle(escapement.radius))
+# # show_object(escapement.getTestRig())
+# # print(anchor.add(escapeWheel).toSvg())
 
 
 #

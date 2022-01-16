@@ -27,6 +27,7 @@ train.outputSTLs(clockName,clockOutDir)
 motionWorks = clock.MotionWorks()
 motionWorks.outputSTLs(clockName,clockOutDir)
 
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length)
+#HACK for now using same bearing as rest of the gears for the anchor
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
 
 pendulum.outputSTLs(clockName, clockOutDir)
