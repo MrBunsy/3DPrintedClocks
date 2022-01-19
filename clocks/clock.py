@@ -1219,7 +1219,10 @@ class MotionWorks:
 #     def __init__(self):
 
 class ClockPlates:
-
+    '''
+    This was intended to be generic, but has become specific to wall_clock_01. It's going to be a future job to tease it apart
+    back to the reusable bits
+    '''
     def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
@@ -1238,7 +1241,7 @@ class ClockPlates:
         #maximum dimention of the bearing
         self.bearingOuterD=bearingOuterD
         #how chunky to make the bearing holders
-        self.bearingWallThick = 3
+        self.bearingWallThick = 4
         #how much space we need to support the bearing (and how much space to leave for the arbour + screw0
         self.bearingHolderLip=bearingHolderLip
         self.bearingHeight = bearingHeight
@@ -1271,6 +1274,7 @@ class ClockPlates:
         self.bearingPositions=[]
         #the anchor is having a simple bushing
         self.bushingPositions=[]
+        self.arbourThicknesses=[]
         #how much the arbours can wobble back and forth. aka End-shake.
         self.wobble = 1
         #height of the centre of the wheel that will drive the next pivot
@@ -1284,9 +1288,11 @@ class ClockPlates:
 
                 #assuming this is at the very back of the clock
                 self.bearingPositions.append([0, 0, 0])
+                chainwheelThick = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
+                self.arbourThicknesses.append(chainwheelThick)
                 if self.pendulumAtFront:
                     #totalheight is self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
-                    drivingZ = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick/2
+                    drivingZ = chainwheelThick - self.goingTrain.gearWheelThick/2
                 else:
                     raise ValueError("Not yet supported")
 
@@ -1298,12 +1304,13 @@ class ClockPlates:
                 if i == self.goingTrain.wheels:
                     # the anchor
                     baseZ = drivingZ - self.anchorThick / 2
+                    self.arbourThicknesses.append(self.anchorThick)
                     r = self.goingTrain.escapement.anchor_centre_distance
                     print("is anchor")
                 else:
                     #any of the other wheels
                     r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
-
+                    self.arbourThicknesses.append(self.goingTrain.gearTotalThick)
                     pinionAtBack = not pinionAtBack
                     if pinionAtBack:
                         baseZ = drivingZ - drivenToPivotEnd
@@ -1360,16 +1367,23 @@ class ClockPlates:
 
         print("Height: ", self.height)
 
+
+
         #TODO chain wheels in the future
 
-    def getBearingHolder(self, height):
+    def getBearingHolder(self, height, support=True):
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
 
         wallThick = self.bearingWallThick
         diameter = self.bearingOuterD + wallThick*2
         holder = cq.Workplane("XY").circle(diameter/2).circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
 
+
         holder = holder.faces(">Z").workplane().circle(diameter/2).circle(self.bearingOuterD/2).extrude(self.bearingHeight)
+        # extra support?
+        if False:
+            support = cq.Workplane("YZ").moveTo(-self.bearingOuterD/2,0).lineTo(-height-self.bearingOuterD/2,0).lineTo(-self.bearingOuterD/2,height).close().extrude(wallThick).translate([-wallThick/2,0,0])
+            holder = holder.add(support)
 
         return holder
 
@@ -1387,24 +1401,85 @@ class ClockPlates:
 
         '''
         minHeight = 10
-        plate = cq.Workplane("XY").moveTo(0,self.topY-self.height/2).rect(self.width,self.height).extrude(self.plateThick)
 
-        bearingHoles = [(b[0], b[1]) for b in self.bearingPositions]
 
-        if self.anchorHasNormalBushing:
-            bearingHoles.append((self.bushingPositions[0][0], self.bushingPositions[0][1]))
+        # bearingHoles = [(b[0], b[1]) for b in self.bearingPositions]
+        # if self.anchorHasNormalBushing:
+        #     #TODO for first attempt I'm gonig to be lazy and do the same bearing based bushing for the anchor
+        #     #I've read and it seems reasonable that ball bearings will wear out quickly just rocking back and forth
+        #     #but right now I just want to see if the clock as a whole is viable
+        allBearings = self.bearingPositions[:]
+        allBearings.extend(self.bushingPositions)
+        #
+        # if self.anchorHasNormalBushing:
+        #     bearingHoles.append((self.bushingPositions[0][0], self.bushingPositions[0][1]))
+        #
 
-        plate = plate.faces(">Z").workplane().pushPoints(bearingHoles).circle(self.holderInnerD/2).cutThruAll()
 
-        for i,pos in enumerate(self.bearingPositions):
+
+        #some extra support
+        shortest = min([p[2] for p in allBearings[1:]])
+
+        supportLength = allBearings[len(allBearings)-1][1] - allBearings[1][1]
+
+        leftMost = min([b[0] for b in allBearings])
+        rightMost = max([b[0] for b in allBearings])
+
+        padding_width=self.bearingWallThick + self.bearingOuterD/2
+        self.width = rightMost - leftMost + padding_width*2
+        self.centreX=leftMost + (rightMost - leftMost)/2
+
+        plate = cq.Workplane("XY").tag("base").moveTo(self.centreX, self.topY - self.height / 2).rect(self.width, self.height).extrude(self.plateThick).tag("basetop")
+        for i, pos in enumerate(allBearings):
             plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
 
-        if self.anchorHasNormalBushing:
-            #TODO for first attempt I'm gonig to be lazy and do the same bearing based bushing for the anchor
-            #I've read and it seems reasonable that ball bearings will wear out quickly just rocking back and forth
-            #but right now I just want to see if the clock as a whole is viable
-            for i, pos in enumerate(self.bushingPositions):
-                plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
+        #cut away uneeded material
+        topLeftToCut=(self.centreX - self.width/2 + self.bearingWallThick*2 + self.bearingOuterD, allBearings[1][1])
+        cutterSize = 500
+        cutter = cq.Workplane("XY").moveTo(topLeftToCut[0] + cutterSize/2, topLeftToCut[1] - cutterSize/2).rect(cutterSize, cutterSize).extrude(self.plateThick)
+        #wish I knew why cutThroughAll has stopped working
+        plate = plate.cut(cutter)
+
+        support = cq.Workplane("XY").moveTo(0,allBearings[1][1] + supportLength/2).rect(5,abs(supportLength)).extrude(shortest+minHeight)
+        #TODO tidy up later
+        # plate = plate.add(support)
+
+
+        # punch extra holes through the plates
+        #faces(">Z").workplane()
+        extraHoles= cq.Workplane("XY").pushPoints([(b[0], b[1]) for b in allBearings]).circle(self.holderInnerD / 2).extrude(200)
+        plate = plate.cut(extraHoles)
+        # plate = plate.workplaneFromTagged("basetop").pushPoints([(b[0], b[1]) for b in allBearings]).circle(self.holderInnerD / 2).cutThruAll()
+
+        # if self.anchorHasNormalBushing:
+        #     #TODO for first attempt I'm gonig to be lazy and do the same bearing based bushing for the anchor
+        #     #I've read and it seems reasonable that ball bearings will wear out quickly just rocking back and forth
+        #     #but right now I just want to see if the clock as a whole is viable
+        #     for i, pos in enumerate(self.bushingPositions):
+        #         plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
+
+        # screwhole to hang on the wall
+        #this looks fine, but I think with the weight at the top it's going to be a bit unstable.
+        #if I put the weight at the bottom (future plan) then it doesn't need to stick out the top at all
+        screwHeadD = 12
+        screwBodyD = 6
+        screwHoleHeight = 7.5
+        #sticking off the top makes the plate a bit too big to print nicely
+        screwholeStartY=-50#self.bearingOuterD / 2
+        hookPadding = 10
+        x = screwHeadD / 2 + hookPadding
+        if screwholeStartY > 0:
+            plate = plate.workplaneFromTagged("base").moveTo(self.centreX-x, screwholeStartY).line(0, screwHoleHeight + hookPadding + screwHeadD ).tangentArcPoint((2 * x, 0)).line(0, -( screwHoleHeight + hookPadding + screwHeadD )).close().extrude(self.plateThick)
+
+        plate = plate.faces(">Z").workplane().tag("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD/2).circle(screwHeadD/2).cutThruAll()
+        plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD*3/4 + screwHoleHeight/2).rect(screwBodyD,screwHoleHeight + screwHeadD/2).cutThruAll()
+        plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD + screwHoleHeight).circle(screwBodyD/2).cutThruAll()
+
+
+        holeWidth = 30
+        holeD = 6
+        #plan b, two holes to attach string or wire
+        plate = plate.faces(">Z").workplane().pushPoints([(self.centreX-holeWidth/2,0),(self.centreX+holeWidth/2,0)]).circle(holeD/2).cutThruAll()
 
         return plate
 
@@ -1434,12 +1509,12 @@ train.genGears()
 
 train.printInfo()
 
-plates = ClockPlates(train)#[degToRad(-135),degToRad(-45)]
+plates = ClockPlates(train, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
 
 # show_object(plates.getBearingHolder(40))
 backPlate = plates.getBackPlate()
 show_object(backPlate)
-# exporters.export(backPlate, "../out/backplate.stl")
+exporters.export(backPlate, "../out/backplate.stl")
 
 # show_object(train.escapement.getAnchorArbour())
 
