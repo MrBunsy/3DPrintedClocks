@@ -1270,10 +1270,10 @@ class ClockPlates:
         drivenToWheelEnd = self.goingTrain.gearPivotLength/2 + self.goingTrain.gearWheelThick
 
         #[[x,y,z],]
-        #normal arbours have ball bearings
+        #for everything, arbours and anchor
         self.bearingPositions=[]
         #the anchor is having a simple bushing
-        self.bushingPositions=[]
+        # self.bushingPositions=[]
         self.arbourThicknesses=[]
         #how much the arbours can wobble back and forth. aka End-shake.
         self.wobble = 1
@@ -1306,7 +1306,7 @@ class ClockPlates:
                     baseZ = drivingZ - self.anchorThick / 2
                     self.arbourThicknesses.append(self.anchorThick)
                     r = self.goingTrain.escapement.anchor_centre_distance
-                    print("is anchor")
+                    print("is anchor", self.goingTrain.escapement.anchor_centre_distance)
                 else:
                     #any of the other wheels
                     r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
@@ -1321,7 +1321,7 @@ class ClockPlates:
 
                 angle=self.anglesToScape[i-1]
                 v = polar(angle, r)
-                v = [v[0], v[1], baseZ]
+                # v = [v[0], v[1], baseZ]
 
                 # pos = list(np.add(self.bearingPositions[i-1],v))
                 pos = [self.bearingPositions[i - 1][0] + v[0], self.bearingPositions[i - 1][1] + v[1], baseZ]
@@ -1329,15 +1329,17 @@ class ClockPlates:
                 print("pinionAtBack: {} wheel {} r: {} angle: {}".format(pinionAtBack, i, r, angle), pos)
                 print("baseZ: ",baseZ, "drivingZ ", drivingZ)
 
-                if i == self.goingTrain.wheels:
-                    # the anchor
-                    self.bushingPositions.append(pos)
-                else:
-                    #normal wheel
-                    self.bearingPositions.append(pos)
+                self.bearingPositions.append(pos)
 
 
-        print(self.bearingPositions, self.bushingPositions)
+        # print(self.bearingPositions, self.bushingPositions)
+
+        topZs = [self.arbourThicknesses[i] + self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
+
+        #not taking into account minheight of bearing holders
+        self.plateDistance=max(topZs) + self.wobble
+
+        print("Plate distance", self.plateDistance)
 
         # self.pilarR=15
         # self.pillarToGearGap=10
@@ -1362,7 +1364,7 @@ class ClockPlates:
         #TODO the anchor!
 
         #just tall enough to hold the top and bottom bearings
-        self.height = self.bearingOuterD + abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + self.bearingWallThick * 2 + self.goingTrain.escapement.anchor_centre_distance
+        self.height = self.bearingOuterD + abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + self.bearingWallThick * 2# + self.goingTrain.escapement.anchor_centre_distance
         self.topY = self.bearingOuterD/2 + self.bearingWallThick
 
         print("Height: ", self.height)
@@ -1400,7 +1402,7 @@ class ClockPlates:
         '''
 
         '''
-        minHeight = 10
+        minHeight = self.plateThick + self.bearingHeight
 
 
         # bearingHoles = [(b[0], b[1]) for b in self.bearingPositions]
@@ -1409,7 +1411,7 @@ class ClockPlates:
         #     #I've read and it seems reasonable that ball bearings will wear out quickly just rocking back and forth
         #     #but right now I just want to see if the clock as a whole is viable
         allBearings = self.bearingPositions[:]
-        allBearings.extend(self.bushingPositions)
+        # allBearings.extend(self.bushingPositions)
         #
         # if self.anchorHasNormalBushing:
         #     bearingHoles.append((self.bushingPositions[0][0], self.bushingPositions[0][1]))
@@ -1465,7 +1467,7 @@ class ClockPlates:
         screwBodyD = 6
         screwHoleHeight = 7.5
         #sticking off the top makes the plate a bit too big to print nicely
-        screwholeStartY=-50#self.bearingOuterD / 2
+        screwholeStartY=-40#self.bearingOuterD / 2
         hookPadding = 10
         x = screwHeadD / 2 + hookPadding
         if screwholeStartY > 0:
@@ -1476,7 +1478,7 @@ class ClockPlates:
         plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD + screwHoleHeight).circle(screwBodyD/2).cutThruAll()
 
 
-        holeWidth = 30
+        holeWidth = 20
         holeD = 6
         #plan b, two holes to attach string or wire
         plate = plate.faces(">Z").workplane().pushPoints([(self.centreX-holeWidth/2,0),(self.centreX+holeWidth/2,0)]).circle(holeD/2).cutThruAll()
@@ -1501,11 +1503,11 @@ class Pendulum:
 
 
 
-train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train.genTrain()
-train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
+train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
+train.calculateRatios()
+# train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
 train.genChainWheels()
-train.genGears()
+train.genGears(module_size=1.2,moduleReduction=0.85)
 
 train.printInfo()
 

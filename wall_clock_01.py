@@ -21,7 +21,7 @@ train.genChainWheels()
 train.genGears(module_size=1.2,moduleReduction=0.85)
 
 show_object(train.arbours[0])
-
+print("anchor centre distnace", train.escapement.anchor_centre_distance)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks()
