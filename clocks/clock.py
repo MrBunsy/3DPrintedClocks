@@ -1338,8 +1338,9 @@ class ClockPlates:
 
         topZs = [self.arbourThicknesses[i] + self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
 
-        #not taking into account minheight of bearing holders
-        self.plateDistance=max(topZs) + self.wobble
+        self.bearingStartHeight = self.plateThick + self.bearingHeight
+
+        self.plateDistance=max(topZs) + self.wobble + self.bearingStartHeight*2
 
         print("Plate distance", self.plateDistance)
 
@@ -1384,6 +1385,8 @@ class ClockPlates:
 
         #TODO chain wheels in the future
 
+
+
     def getBearingHolder(self, height, support=True):
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
 
@@ -1400,15 +1403,21 @@ class ClockPlates:
 
         return holder
 
-    def getLeg(self, totalHeight, fixingD=3.1):
+    def getLeg(self, left=True, fixingD=3.1):
+        '''
+        The legs should overlap and a screw & nut will hold them tight
+        Original plan was that all legs are identical, but if there is any thickness mismatch then the bearing holes could be misaligned
+        so instead making them mirrored around the Y axis, so if any thickness mismatch occurs they can bend and keep the bearing holes aligned
+        '''
         leg = cq.Workplane("XY")
-        overlap = totalHeight*0.2
+        overlap = self.plateDistance*0.2
 
         width = self.legWidth
         length= self.legLength
+        neg = 1 if left else -1
 
-        leg = leg.rect(width,length).extrude(totalHeight/2 - overlap/2)
-        leg = leg.faces(">Z").workplane().moveTo(width*0.25,0).rect(width/2,length).extrude(overlap)
+        leg = leg.rect(width,length).extrude(self.plateDistance/2 - overlap/2)
+        leg = leg.faces(">Z").workplane().moveTo(neg*width*0.25,0).rect(width/2,length).extrude(overlap)
         leg = leg.faces(">X").workplane().moveTo(0,overlap/2).circle(fixingD/2).cutThruAll()
 
         return leg
@@ -1426,7 +1435,7 @@ class ClockPlates:
         '''
 
         '''
-        minHeight = self.plateThick + self.bearingHeight
+        minHeight = self.bearingStartHeight
 
 
         # bearingHoles = [(b[0], b[1]) for b in self.bearingPositions]
@@ -1479,7 +1488,7 @@ class ClockPlates:
                 legHolder = legHolder.lineTo(leg[0], leg[1] - self.legLength / 2)
                 legHolder = legHolder.lineTo(leg[0], leg[1] + self.legLength / 2)
                 legHolder = legHolder.close().extrude(self.plateThick)
-            plate = plate.add(self.getLeg(self.plateDistance).translate(leg))
+            plate = plate.add(self.getLeg(i%2 == 0).translate(leg))
 
         plate = plate.add(legHolder)
 
@@ -1502,7 +1511,7 @@ class ClockPlates:
         # screwhole to hang on the wall
         #this looks fine, but I think with the weight at the top it's going to be a bit unstable.
         #if I put the weight at the bottom (future plan) then it doesn't need to stick out the top at all
-        screwHeadD = 12
+        screwHeadD = 11
         screwBodyD = 6
         screwHoleHeight = 7.5
         #sticking off the top makes the plate a bit too big to print nicely
