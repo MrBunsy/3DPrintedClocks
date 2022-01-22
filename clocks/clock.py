@@ -1538,6 +1538,34 @@ class ClockPlates:
 
         return plate
 
+    def getFrontPlate(self):
+        #mostly copy-pasted from backPlate, could do with a generic plate and then the tweaks on top?
+        
+        allBearings = self.bearingPositions
+        minHeight = self.bearingStartHeight
+        
+        leftMost = min([b[0] for b in allBearings])
+        rightMost = max([b[0] for b in allBearings])
+
+        padding_width = self.bearingWallThick + self.bearingOuterD / 2
+        self.width = rightMost - leftMost + padding_width * 2
+        #negative for front plate
+        self.centreX = -(leftMost + (rightMost - leftMost) / 2)
+
+        plate = cq.Workplane("XY").tag("base").moveTo(self.centreX, self.topY - self.height / 2).rect(self.width, self.height).extrude(self.plateThick).tag("basetop")
+        for i, pos in enumerate(allBearings):
+            plate = plate.add(self.getBearingHolder(self.plateDistance - (pos[2]) - self.arbourThicknesses[i] - self.bearingStartHeight - self.wobble).translate((-pos[0], pos[1], 0)))
+
+        # cut away uneeded material
+        topLeftToCut = (self.centreX - self.width / 2 + self.bearingWallThick * 2 + self.bearingOuterD, allBearings[1][1])
+        cutterSize = 500
+        cutter = cq.Workplane("XY").moveTo(topLeftToCut[0] + cutterSize / 2, topLeftToCut[1] - cutterSize / 2).rect(cutterSize, cutterSize).extrude(self.plateThick)
+        # wish I knew why cutThroughAll has stopped working
+        plate = plate.cut(cutter)
+        
+        return plate
+
+
 class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
@@ -1567,9 +1595,13 @@ train.printInfo()
 plates = ClockPlates(train)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
 
 # show_object(plates.getBearingHolder(40))
-backPlate = plates.getBackPlate()
-show_object(backPlate)
-exporters.export(backPlate, "../out/backplate.stl")
+# backPlate = plates.getBackPlate()
+# show_object(backPlate)
+# exporters.export(backPlate, "../out/backplate.stl")
+
+frontPlate = plates.getFrontPlate()
+show_object(frontPlate)
+exporters.export(frontPlate, "../out/frontplate.stl")
 
 # show_object(train.escapement.getAnchorArbour())
 
