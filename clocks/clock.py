@@ -795,6 +795,8 @@ class Escapement:
         wheel = wheel.close()
 
         return wheel
+    def getWheelMaxR(self):
+        return self.diameter/2
 
     def getWheel3D(self, thick=5, holeD=5, style="HAC"):
         gear = self.getWheel2D().extrude(thick)
@@ -1369,7 +1371,16 @@ class ClockPlates:
 
         print("Height: ", self.height)
 
+        self.legWidth = 10
+        self.legLength = 15
 
+        safetySpace = 10 + self.legWidth / 2
+        topGearR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
+        bottomGearR = self.goingTrain.escapement.getWheelMaxR()
+        bottomLegsPos = (self.bearingPositions[2][0], (self.bearingPositions[2][1] + self.bearingPositions[3][1])/2, 0 )
+
+        self.legs = [(-topGearR - safetySpace, 0, 0), (topGearR + safetySpace, 0, 0),
+                (bottomLegsPos[0] - (safetySpace + bottomGearR), bottomLegsPos[1], 0), (bottomLegsPos[0] + (safetySpace + bottomGearR), bottomLegsPos[1], 0)]
 
         #TODO chain wheels in the future
 
@@ -1388,6 +1399,19 @@ class ClockPlates:
             holder = holder.add(support)
 
         return holder
+
+    def getLeg(self, totalHeight, fixingD=3.1):
+        leg = cq.Workplane("XY")
+        overlap = totalHeight*0.2
+
+        width = self.legWidth
+        length= self.legLength
+
+        leg = leg.rect(width,length).extrude(totalHeight/2 - overlap/2)
+        leg = leg.faces(">Z").workplane().moveTo(width*0.25,0).rect(width/2,length).extrude(overlap)
+        leg = leg.faces(">X").workplane().moveTo(0,overlap/2).circle(fixingD/2).cutThruAll()
+
+        return leg
 
     # def getPosForWheel(self, wheel):
     #     '''
@@ -1446,6 +1470,21 @@ class ClockPlates:
         #TODO tidy up later
         # plate = plate.add(support)
 
+        legHolder = cq.Workplane("XY")
+        for i, leg in enumerate(self.legs):
+            if i % 2 == 0:
+                legHolder = legHolder.moveTo(leg[0], leg[1] + self.legLength / 2)
+                legHolder = legHolder.lineTo(leg[0], leg[1] - self.legLength / 2)
+            else:
+                legHolder = legHolder.lineTo(leg[0], leg[1] - self.legLength / 2)
+                legHolder = legHolder.lineTo(leg[0], leg[1] + self.legLength / 2)
+                legHolder = legHolder.close().extrude(self.plateThick)
+            plate = plate.add(self.getLeg(self.plateDistance).translate(leg))
+
+        plate = plate.add(legHolder)
+
+
+
 
         # punch extra holes through the plates
         #faces(">Z").workplane()
@@ -1467,7 +1506,7 @@ class ClockPlates:
         screwBodyD = 6
         screwHoleHeight = 7.5
         #sticking off the top makes the plate a bit too big to print nicely
-        screwholeStartY=-40#self.bearingOuterD / 2
+        screwholeStartY=-45#self.bearingOuterD / 2
         hookPadding = 10
         x = screwHeadD / 2 + hookPadding
         if screwholeStartY > 0:
@@ -1478,10 +1517,15 @@ class ClockPlates:
         plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD + screwHoleHeight).circle(screwBodyD/2).cutThruAll()
 
 
-        holeWidth = 20
+        holeWidth = 40
         holeD = 6
         #plan b, two holes to attach string or wire
         plate = plate.faces(">Z").workplane().pushPoints([(self.centreX-holeWidth/2,0),(self.centreX+holeWidth/2,0)]).circle(holeD/2).cutThruAll()
+
+
+
+
+
 
         return plate
 
@@ -1511,7 +1555,7 @@ train.genGears(module_size=1.2,moduleReduction=0.85)
 
 train.printInfo()
 
-plates = ClockPlates(train, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
+plates = ClockPlates(train)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
 
 # show_object(plates.getBearingHolder(40))
 backPlate = plates.getBackPlate()
