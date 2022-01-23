@@ -1575,7 +1575,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -1585,8 +1585,16 @@ class Pendulum:
 
         self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD)
 
+        self.crutchSlackWidth=crutchBoltD*1.5
+        self.crutchSlackHeight = 30
         self.suspensionD=20
+        self.pendulumTopD = self.suspensionD*1.75
+        self.pendulumTopExtraRadius = 5
+        self.pendulumTopThick = 6
+        self.threadedRodM=3
+
         self.suspensionOpenAngle=degToRad(120)
+        self.knifeEdgeAngle = self.suspensionOpenAngle*0.25
         self.suspension_length=10
         self.suspension_cap_length=3
         self.suspension_cap_d = self.suspensionD*1.2
@@ -1632,6 +1640,31 @@ class Pendulum:
             radiusArc(left, self.suspensionD/2).close().extrude(self.suspension_cap_length)
         return sus
 
+    def getPendulum(self):
+
+        pendulum = cq.Workplane("XY")
+
+        left = polar(math.pi/2 + self.knifeEdgeAngle/2, self.pendulumTopD/2)
+        right = polar(math.pi / 2 - self.knifeEdgeAngle / 2, self.pendulumTopD/2)
+
+        #head that knife-edges on the suspension point
+        pendulum = pendulum.circle(self.pendulumTopD / 2 + self.pendulumTopExtraRadius).extrude(self.pendulumTopThick)
+        pendulum = pendulum.faces(">Z").workplane().moveTo(0,0).lineTo(right[0], right[1]).radiusArc((0,-self.pendulumTopD/2), self.pendulumTopD/2).radiusArc(left, self.pendulumTopD/2).close().cutThruAll()
+
+        #arm to the crutch
+        #current plan - have a Y shape from the crutch come to meet the pendulum, which is just the top + a threaded rod
+        # top = -self.pendulumTopD/2
+
+        rod = cq.Workplane("XZ").moveTo(0,self.pendulumTopThick/2).circle(self.threadedRodM/2).extrude(100)
+
+        pendulum = pendulum.cut(rod)
+
+
+
+        # arm = cq.Workplane("XY").moveTo()
+
+        return pendulum
+
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_anchor.stl".format(name))
@@ -1641,6 +1674,10 @@ class Pendulum:
         out = os.path.join(path, "{}_suspension.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getSuspension(), out)
+
+        out = os.path.join(path, "{}_pendulum.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getPendulum(), out)
 
 #
 train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
@@ -1667,6 +1704,7 @@ pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
 
 
 show_object(pendulum.getSuspension())
+show_object(pendulum.getPendulum())
 
 #
 # motion = MotionWorks()
