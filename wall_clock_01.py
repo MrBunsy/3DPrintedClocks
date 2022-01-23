@@ -31,3 +31,7 @@ motionWorks.outputSTLs(clockName,clockOutDir)
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
 
 pendulum.outputSTLs(clockName, clockOutDir)
+
+
+plates = clock.ClockPlates(train, motionWorks, pendulum)
+plates.outputSTLs(clockName, clockOutDir)

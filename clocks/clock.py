@@ -1225,7 +1225,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to wall_clock_01. It's going to be a future job to tease it apart
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10):
+    def __init__(self, goingTrain, motionWorks, pendulum, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1233,8 +1233,9 @@ class ClockPlates:
 
         #just for the first prototype
         self.anchorHasNormalBushing=True
-
+        self.motionWorks = motionWorks
         self.goingTrain = goingTrain
+        self.pendulum=pendulum
         #up to and including the anchor
         self.anglesToScape = anglesToScape
         self.anglesToChain=anglesToChain
@@ -1251,6 +1252,8 @@ class ClockPlates:
         self.pendulumAtFront = pendulumAtFront
         #TODO make some sort of object to hold all this info we keep passing around?
         self.anchorThick=anchorThick
+
+        self.fixingScrewsD = fixingScrewsD
 
         self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
 
@@ -1431,10 +1434,14 @@ class ClockPlates:
     #     elif wheel > 0:
 
 
-    def getBackPlate(self):
+    def getPlate(self, back=True):
         '''
 
         '''
+
+        neg = 1 if back else -1
+
+
         minHeight = self.bearingStartHeight
 
 
@@ -1462,11 +1469,16 @@ class ClockPlates:
 
         padding_width=self.bearingWallThick + self.bearingOuterD/2
         self.width = rightMost - leftMost + padding_width*2
-        self.centreX=leftMost + (rightMost - leftMost)/2
+        self.centreX=neg*(leftMost + (rightMost - leftMost)/2)
 
         plate = cq.Workplane("XY").tag("base").moveTo(self.centreX, self.topY - self.height / 2).rect(self.width, self.height).extrude(self.plateThick).tag("basetop")
         for i, pos in enumerate(allBearings):
-            plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
+
+            if back:
+                height = pos[2] + minHeight
+            else:
+                height = self.plateDistance - (pos[2]) - self.arbourThicknesses[i] - self.bearingStartHeight - self.wobble
+            plate = plate.add(self.getBearingHolder(height).translate((pos[0], pos[1], 0)))
 
         #cut away uneeded material
         topLeftToCut=(self.centreX - self.width/2 + self.bearingWallThick*2 + self.bearingOuterD, allBearings[1][1])
@@ -1482,13 +1494,16 @@ class ClockPlates:
         legHolder = cq.Workplane("XY")
         for i, leg in enumerate(self.legs):
             if i % 2 == 0:
-                legHolder = legHolder.moveTo(leg[0], leg[1] + self.legLength / 2)
-                legHolder = legHolder.lineTo(leg[0], leg[1] - self.legLength / 2)
+                legHolder = legHolder.moveTo(neg*leg[0], leg[1] + self.legLength / 2)
+                legHolder = legHolder.lineTo(neg*leg[0], leg[1] - self.legLength / 2)
             else:
-                legHolder = legHolder.lineTo(leg[0], leg[1] - self.legLength / 2)
-                legHolder = legHolder.lineTo(leg[0], leg[1] + self.legLength / 2)
+                legHolder = legHolder.lineTo(neg*leg[0], leg[1] - self.legLength / 2)
+                legHolder = legHolder.lineTo(neg*leg[0], leg[1] + self.legLength / 2)
                 legHolder = legHolder.close().extrude(self.plateThick)
-            plate = plate.add(self.getLeg(i%2 == 0).translate(leg))
+            faceIn=i%2 == 0
+            if not back:
+                faceIn = not faceIn
+            plate = plate.add(self.getLeg(faceIn).translate(leg))
 
         plate = plate.add(legHolder)
 
@@ -1508,29 +1523,38 @@ class ClockPlates:
         #     for i, pos in enumerate(self.bushingPositions):
         #         plate = plate.add(self.getBearingHolder(pos[2] + minHeight).translate((pos[0], pos[1], 0)))
 
-        # screwhole to hang on the wall
-        #this looks fine, but I think with the weight at the top it's going to be a bit unstable.
-        #if I put the weight at the bottom (future plan) then it doesn't need to stick out the top at all
-        screwHeadD = 11
-        screwBodyD = 6
-        screwHoleHeight = 7.5
-        #sticking off the top makes the plate a bit too big to print nicely
-        screwholeStartY=-45#self.bearingOuterD / 2
-        hookPadding = 10
-        x = screwHeadD / 2 + hookPadding
-        if screwholeStartY > 0:
-            plate = plate.workplaneFromTagged("base").moveTo(self.centreX-x, screwholeStartY).line(0, screwHoleHeight + hookPadding + screwHeadD ).tangentArcPoint((2 * x, 0)).line(0, -( screwHoleHeight + hookPadding + screwHeadD )).close().extrude(self.plateThick)
+        if back:
+            # screwhole to hang on the wall
+            #this looks fine, but I think with the weight at the top it's going to be a bit unstable.
+            #if I put the weight at the bottom (future plan) then it doesn't need to stick out the top at all
+            screwHeadD = 11
+            screwBodyD = 6
+            screwHoleHeight = 7.5
+            #sticking off the top makes the plate a bit too big to print nicely
+            screwholeStartY=-45#self.bearingOuterD / 2
+            hookPadding = 10
+            x = screwHeadD / 2 + hookPadding
+            if screwholeStartY > 0:
+                plate = plate.workplaneFromTagged("base").moveTo(self.centreX-x, screwholeStartY).line(0, screwHoleHeight + hookPadding + screwHeadD ).tangentArcPoint((2 * x, 0)).line(0, -( screwHoleHeight + hookPadding + screwHeadD )).close().extrude(self.plateThick)
 
-        plate = plate.faces(">Z").workplane().tag("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD/2).circle(screwHeadD/2).cutThruAll()
-        plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD*3/4 + screwHoleHeight/2).rect(screwBodyD,screwHoleHeight + screwHeadD/2).cutThruAll()
-        plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD + screwHoleHeight).circle(screwBodyD/2).cutThruAll()
+            plate = plate.faces(">Z").workplane().tag("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD/2).circle(screwHeadD/2).cutThruAll()
+            plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD*3/4 + screwHoleHeight/2).rect(screwBodyD,screwHoleHeight + screwHeadD/2).cutThruAll()
+            plate = plate.workplaneFromTagged("top").moveTo(self.centreX, screwholeStartY + hookPadding + screwHeadD + screwHoleHeight).circle(screwBodyD/2).cutThruAll()
 
 
-        holeWidth = 40
-        holeD = 6
-        #plan b, two holes to attach string or wire
-        plate = plate.faces(">Z").workplane().pushPoints([(self.centreX-holeWidth/2,0),(self.centreX+holeWidth/2,0)]).circle(holeD/2).cutThruAll()
+            holeWidth = 40
+            holeD = 6
+            #plan b, two holes to attach string or wire
+            plate = plate.faces(">Z").workplane().pushPoints([(self.centreX-holeWidth/2,0),(self.centreX+holeWidth/2,0)]).circle(holeD/2).cutThruAll()
+        else:
+            #holes for motionworks and pendulum suspension point
+            #TODO take into account chain wheels and whatnot for now assume first bearing is the minute wheel
+            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[0][0],self.bearingPositions[0][1] - self.motionWorks.arbourDistace).circle(self.motionWorks.holeD/2).cutThruAll()
 
+            suspensionAttachments=self.pendulum.getSuspensionAttachmentHoles()
+
+            for p in suspensionAttachments:
+                plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.wheels][0]+p[0],self.bearingPositions[self.goingTrain.wheels][1]+p[1]).circle(self.fixingScrewsD/2).cutThruAll()
 
 
 
@@ -1538,52 +1562,87 @@ class ClockPlates:
 
         return plate
 
-    def getFrontPlate(self):
-        #mostly copy-pasted from backPlate, could do with a generic plate and then the tweaks on top?
-        
-        allBearings = self.bearingPositions
-        minHeight = self.bearingStartHeight
-        
-        leftMost = min([b[0] for b in allBearings])
-        rightMost = max([b[0] for b in allBearings])
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_front_plate.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getPlate(False), out)
 
-        padding_width = self.bearingWallThick + self.bearingOuterD / 2
-        self.width = rightMost - leftMost + padding_width * 2
-        #negative for front plate
-        self.centreX = -(leftMost + (rightMost - leftMost) / 2)
-
-        plate = cq.Workplane("XY").tag("base").moveTo(self.centreX, self.topY - self.height / 2).rect(self.width, self.height).extrude(self.plateThick).tag("basetop")
-        for i, pos in enumerate(allBearings):
-            plate = plate.add(self.getBearingHolder(self.plateDistance - (pos[2]) - self.arbourThicknesses[i] - self.bearingStartHeight - self.wobble).translate((-pos[0], pos[1], 0)))
-
-        # cut away uneeded material
-        topLeftToCut = (self.centreX - self.width / 2 + self.bearingWallThick * 2 + self.bearingOuterD, allBearings[1][1])
-        cutterSize = 500
-        cutter = cq.Workplane("XY").moveTo(topLeftToCut[0] + cutterSize / 2, topLeftToCut[1] - cutterSize / 2).rect(cutterSize, cutterSize).extrude(self.plateThick)
-        # wish I knew why cutThroughAll has stopped working
-        plate = plate.cut(cutter)
-        
-        return plate
-
+        out = os.path.join(path, "{}_back_plate.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getPlate(True), out)
 
 class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
 
+        #nominal length of the pendulum
+        self.length = length
+
         self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD)
+
+        self.suspensionD=20
+        self.suspensionOpenAngle=degToRad(120)
+        self.suspension_length=10
+        self.suspension_cap_length=3
+        self.suspension_cap_d = self.suspensionD*1.2
+        self.thick = 5
+        self.suspensionScrewD=suspensionScrewD
+
+        self.suspensionAttachmentPoints=[(-20,25),(20,25)]
+
+    def getSuspensionAttachmentHoles(self):
+        '''
+        get relative positions of the holes used to screw the pendulum suspension to the front/back plate
+        '''
+        return self.suspensionAttachmentPoints
+
+
+    def getSuspension(self):
+        '''
+        Can be attached to the front plate to hold the weight of the pendulum.
+        Knife-edge rather than suspension spring
+        '''
+        sus = cq.Workplane("XY")
+        padding = 7.5
+        sus = sus.moveTo(self.suspensionD/2, 0).radiusArc((-self.suspensionD/2,0),self.suspensionD/2).lineTo(self.suspensionAttachmentPoints[0][0]-padding, self.suspensionAttachmentPoints[0][1]).\
+            radiusArc((self.suspensionAttachmentPoints[0][0], self.suspensionAttachmentPoints[0][1]+padding), padding).lineTo(self.suspensionAttachmentPoints[1][0], self.suspensionAttachmentPoints[1][1]+padding).\
+            radiusArc((self.suspensionAttachmentPoints[1][0] + padding, self.suspensionAttachmentPoints[0][1]), padding).close()
+
+        sus = sus.extrude(self.thick)
+
+        sus = sus.faces(">Z").pushPoints(self.suspensionAttachmentPoints).circle(self.suspensionScrewD/2).cutThruAll()
+        # width = self.suspensionAttachmentPoints[0][0] - self.suspensionAttachmentPoints[1][0] + padding*2
+        # height = self.suspensionAttachmentPoints[0][1] + padding + su
+
+        smallAngle = (math.pi - self.suspensionOpenAngle)/2
+
+        left = polar(math.pi - smallAngle, self.suspensionD/2)
+        right = polar(smallAngle, self.suspensionD/2)
+
+        sus = sus.faces(">Z").workplane().moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
+            radiusArc(left, self.suspensionD/2).lineTo(0,0).close().extrude(self.suspension_length)
+
+        # sus = sus.faces(">Z").workplane().moveTo(0,0).circle(self.suspension_cap_d/2).extrude(self.suspension_cap_length)
+        sus = sus.faces(">Z").workplane().moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
+            radiusArc(left, self.suspensionD/2).close().extrude(self.suspension_cap_length)
+        return sus
+
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_anchor.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.anchor, out)
 
+        out = os.path.join(path, "{}_suspension.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getSuspension(), out)
 
-
+#
 train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
 train.calculateRatios()
 # train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
@@ -1591,22 +1650,23 @@ train.genChainWheels()
 train.genGears(module_size=1.2,moduleReduction=0.85)
 
 train.printInfo()
-
-plates = ClockPlates(train)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
-
-# show_object(plates.getBearingHolder(40))
-# backPlate = plates.getBackPlate()
-# show_object(backPlate)
+motionWorks = MotionWorks()
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
+# plates = ClockPlates(train, motionWorks, pendulum)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
+#
+# # show_object(plates.getBearingHolder(40))
+# backPlate = plates.getPlate(True)
+# # show_object(backPlate)
 # exporters.export(backPlate, "../out/backplate.stl")
-
-frontPlate = plates.getFrontPlate()
-show_object(frontPlate)
-exporters.export(frontPlate, "../out/frontplate.stl")
+#
+# frontPlate = plates.getPlate(False)
+# show_object(frontPlate)
+# exporters.export(frontPlate, "../out/frontplate.stl")
 
 # show_object(train.escapement.getAnchorArbour())
 
 
-
+show_object(pendulum.getSuspension())
 
 #
 # motion = MotionWorks()
