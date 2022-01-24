@@ -1919,35 +1919,35 @@ class Hands:
 #
 # hands.outputSTLs("test", "../out")
 
-
 #
-train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
-train.calculateRatios()
-# train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
-train.genChainWheels()
-train.genGears(module_size=1.2,moduleReduction=0.85)
-
-train.printInfo()
-motionWorks = MotionWorks()
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
-# plates = ClockPlates(train, motionWorks, pendulum)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
-
-# # show_object(plates.getBearingHolder(40))
-# backPlate = plates.getPlate(True)
-# # show_object(backPlate)
-# exporters.export(backPlate, "../out/backplate.stl")
+# #
+# train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
+# train.calculateRatios()
+# # train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
+# train.genChainWheels()
+# train.genGears(module_size=1.2,moduleReduction=0.85)
 #
-# frontPlate = plates.getPlate(False)
-# show_object(frontPlate)
-# exporters.export(frontPlate, "../out/frontplate.stl")
-
-# show_object(train.escapement.getAnchorArbour())
-
-
-# show_object(pendulum.getSuspension())
-# show_object(pendulum.getPendulum())
-# show_object(pendulum.getBob())
-show_object(pendulum.getBobNut())
+# train.printInfo()
+# motionWorks = MotionWorks()
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
+# # plates = ClockPlates(train, motionWorks, pendulum)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
+#
+# # # show_object(plates.getBearingHolder(40))
+# # backPlate = plates.getPlate(True)
+# # # show_object(backPlate)
+# # exporters.export(backPlate, "../out/backplate.stl")
+# #
+# # frontPlate = plates.getPlate(False)
+# # show_object(frontPlate)
+# # exporters.export(frontPlate, "../out/frontplate.stl")
+#
+# # show_object(train.escapement.getAnchorArbour())
+#
+#
+# # show_object(pendulum.getSuspension())
+# # show_object(pendulum.getPendulum())
+# # show_object(pendulum.getBob())
+# show_object(pendulum.getBobNut())
 # #
 # # motion = MotionWorks()
 # #
