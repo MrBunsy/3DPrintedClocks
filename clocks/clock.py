@@ -1705,7 +1705,36 @@ class Pendulum:
         return bob
 
     def getBobNut(self):
-        nut = cq.Workplane("XY").polygon(20,self.bobNutD/2)
+        #TODO consider calculating how much time+- a single segment might be
+        segments = 20
+        knobbleR = 1
+        r=self.bobNutD/2 - knobbleR
+
+        knobbleAngle = knobbleR*2/r
+        # nonSegmentAngle=math.pi*2/segments - segmentAngle
+
+        nut = cq.Workplane("XY").moveTo(r,0)
+
+        dA = math.pi*2 / segments
+
+        for i in range(segments):
+            angle = dA * i
+            start = polar(angle, r)
+            nobbleStart = polar(angle + dA - knobbleAngle, r)
+            nobbleEnd = polar(angle + dA, r)
+            nut = nut.radiusArc(nobbleStart,-r)
+            nut = nut.radiusArc(nobbleEnd, -knobbleR)
+        nut = nut.close().extrude(self.bobNutThick).faces(">Z").workplane().circle(self.threadedRodM/2+0.25).cutThruAll()
+
+        # currently assuming M3
+        nutD=6.15
+        nutHeight=1.8
+
+        nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0,0,self.bobNutThick-nutHeight))
+
+        nut = nut.cut(nutSpace)
+
+        # nut = cq.Workplane("XY").polygon(20,self.bobNutD/2)
         #TODO print in place nut
         return nut
 
@@ -1725,6 +1754,10 @@ class Pendulum:
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getBob(), out)
+
+        out = os.path.join(path, "{}_bob_nut.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getBobNut(), out)
 
 
 class Hands:
@@ -1913,7 +1946,8 @@ pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
 
 # show_object(pendulum.getSuspension())
 # show_object(pendulum.getPendulum())
-show_object(pendulum.getBob())
+# show_object(pendulum.getBob())
+show_object(pendulum.getBobNut())
 # #
 # # motion = MotionWorks()
 # #
