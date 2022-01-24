@@ -13,7 +13,7 @@ def clockhand(style="simple",fixing="rectangle",fixing_d1=1.5,fixing_d2=2.5,leng
     '''
     fixings: rectangle, square, circle
     '''
-    #base_d = (fixing_d2 if fixing_d2 > fixing_d1 else fixing_d1)*3
+    #base_d = (minuteFixing_d2 if minuteFixing_d2 > minuteFixing_d1 else minuteFixing_d1)*3
     #nominal width of base and sticky out bits
     width = length*0.3
     end_d = width*0.1
@@ -135,30 +135,30 @@ if False:
 
     exporters.export(smithsalarm_min, "out/smithsalarm_min.stl", tolerance=0.001, angularTolerance=0.01)
     exporters.export(smithsalarm_hour, "out/smithsalarm_hour.stl", tolerance=0.001, angularTolerance=0.01)
-
-
-musiccuckoo_hour=clockhand(style="cuckoo",thick=1.3,hour=True, fixing="circle", fixing_d1=4.55, length=32)#4.35
-musiccuckoo_min=clockhand(style="cuckoo",thick=1.4,hour=False, fixing="circle", fixing_d1=5.3+0.15, length=32)#5.3+0.25 fits the collet, but too loose
-musiccuckoo_min2=clockhand(style="cuckoo",thick=1.4,hour=False, fixing="rectangle ", fixing_d1=2.6, fixing_d2=2.6, length=32)#5.3+0.25 fits the collet, but too loose
-
-exporters.export(musiccuckoo_min, "../out/musiccuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(musiccuckoo_hour, "../out/musiccuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
-exporters.export(musiccuckoo_min2, "../out/musiccuckoo_min2.stl", tolerance=0.001, angularTolerance=0.01)
-
-# show_object(minicuckoo_min)
-# show_object(minicuckoo_hour)
-#show_object(greencuckoo_min)
-# show_object(smallcuckoo_hour)
-
-#show_object(smithsalarm_min)
-#show_object(smithsalarm_hour)
-
-
-Path("out").mkdir(parents=True, exist_ok=True)
-# exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(minicuckoo_hour, "out/minicuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(minisimple_min, "out/minisimple_min.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
-# exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
-
+#
+#
+# musiccuckoo_hour=clockhand(style="cuckoo",thick=1.3,hour=True, fixing="circle", minuteFixing_d1=4.55, length=32)#4.35
+# musiccuckoo_min=clockhand(style="cuckoo",thick=1.4,hour=False, fixing="circle", minuteFixing_d1=5.3+0.15, length=32)#5.3+0.25 fits the collet, but too loose
+# musiccuckoo_min2=clockhand(style="cuckoo",thick=1.4,hour=False, fixing="rectangle ", minuteFixing_d1=2.6, minuteFixing_d2=2.6, length=32)#5.3+0.25 fits the collet, but too loose
+#
+# exporters.export(musiccuckoo_min, "../out/musiccuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(musiccuckoo_hour, "../out/musiccuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+# exporters.export(musiccuckoo_min2, "../out/musiccuckoo_min2.stl", tolerance=0.001, angularTolerance=0.01)
+#
+# # show_object(minicuckoo_min)
+# # show_object(minicuckoo_hour)
+# #show_object(greencuckoo_min)
+# # show_object(smallcuckoo_hour)
+#
+# #show_object(smithsalarm_min)
+# #show_object(smithsalarm_hour)
+#
+#
+# Path("out").mkdir(parents=True, exist_ok=True)
+# # exporters.export(minicuckoo_min, "out/minicuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+# # exporters.export(minicuckoo_hour, "out/minicuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+# # exporters.export(minisimple_min, "out/minisimple_min.stl", tolerance=0.001, angularTolerance=0.01)
+# # exporters.export(minisimple_hour, "out/minisimple_hour.stl", tolerance=0.001, angularTolerance=0.01)
+# # exporters.export(smallcuckoo_min, "out/smallcuckoo_min.stl", tolerance=0.001, angularTolerance=0.01)
+# # exporters.export(smallcuckoo_hour, "out/smallcuckoo_hour.stl", tolerance=0.001, angularTolerance=0.01)
+#

@@ -731,21 +731,28 @@ class Escapement:
 
         return anchor
 
-    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=100, crutchBoltD=3):
+    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=50, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35):
         '''
         Final plan: The crutch will be a solid part of the anchor, and a bolt will link it to a slot in the pendulum
         Thinking the anchor will be at the bottom of the clock, so the pendulum can be on the front
 
         length for how long to extend the 3d printed bit of the arbour - I'm still toying with the idea of using this to help keep things in place
+
+        crutchToPendulum - top of the anchor to the start of the pendulum
         '''
 
-        crutchWidth = crutchBoltD*3
+        # crutchWidth = crutchBoltD*3
+        crutchWidth = pendulumThick*4
 
+        pendulum_space = 30
 
         crutch = cq.Workplane("XY").tag("base").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick/2)
-        crutch = crutch.workplaneFromTagged("base").moveTo(0,crutchLength-crutchWidth/2).rect(crutchWidth,crutchWidth).extrude(anchorThick)
+        crutch = crutch.workplaneFromTagged("base").moveTo(0,crutchLength-crutchWidth/2).rect(crutchWidth,crutchWidth).extrude(crutchToPendulum + anchorThick - pendulum_space/2)
 
-        crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2).cutThruAll()
+        crutch = crutch.faces(">Z").workplane().pushPoints([(-crutchWidth/2 + pendulumThick/2, crutchLength-crutchWidth/2 ), (crutchWidth/2 - pendulumThick/2 , crutchLength-crutchWidth/2)]).rect(pendulumThick, crutchWidth).extrude(pendulum_space)
+
+        #.moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2)
+        crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
 
 
         #add a length for the arbour - if required
@@ -1575,15 +1582,16 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=100, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
 
         #nominal length of the pendulum
         self.length = length
+        # self.crutchWidth = 9
 
-        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD)
+        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM)
 
         self.crutchSlackWidth=crutchBoltD*1.5
         self.crutchSlackHeight = 30
@@ -1591,7 +1599,7 @@ class Pendulum:
         self.pendulumTopD = self.suspensionD*1.75
         self.pendulumTopExtraRadius = 5
         self.pendulumTopThick = 6
-        self.threadedRodM=3
+        self.threadedRodM=threadedRodM
 
         self.suspensionOpenAngle=degToRad(120)
         self.knifeEdgeAngle = self.suspensionOpenAngle*0.25
@@ -1602,6 +1610,8 @@ class Pendulum:
         self.suspensionScrewD=suspensionScrewD
 
         self.suspensionAttachmentPoints=[(-20,25),(20,25)]
+
+        self.bobNutD = 60
 
     def getSuspensionAttachmentHoles(self):
         '''
@@ -1654,17 +1664,38 @@ class Pendulum:
         #arm to the crutch
         #current plan - have a Y shape from the crutch come to meet the pendulum, which is just the top + a threaded rod
         # top = -self.pendulumTopD/2
-
-        rod = cq.Workplane("XZ").moveTo(0,self.pendulumTopThick/2).circle(self.threadedRodM/2).extrude(100)
+        # note - this seems to result in a malformed shape
+        # rod = cq.Workplane("XZ").moveTo(0,self.pendulumTopThick/2).circle(self.threadedRodM/2).extrude(100)
+        #workaroudn is to use a polygon
+        rod = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(20,self.threadedRodM ).extrude(100)
+        # return rod
 
         pendulum = pendulum.cut(rod)
 
+        # pendulum = pendulum.faces("<Y").workplane().circle(self.threadedRodM/2).cutThruAll()#.moveTo(0, self.pendulumTopThick)
 
 
         # arm = cq.Workplane("XY").moveTo()
 
         return pendulum
 
+    def getCrutchExtension(self):
+        '''
+        Attaches to the bottom of the anchor to finish linking the crutch to the pendulum
+        '''
+
+
+    def getBob(self):
+        bobThick = 15
+        bob = cq.Workplane("XY").circle(100).rect(self.bobNutD*1.2,10).extrude(bobThick).faces(">Y").workplane().moveTo(0,bobThick/2).circle(self.threadedRodM/2+0.5).cutThruAll()
+        # bob = bob.faces(">Z").workplane().rect(70,10).cutThruAll()
+
+        return bob
+
+    def getBobNut(self):
+        nut = cq.Workplane("XY").polygon(20,self.bobNutD/2)
+        #TODO print in place nut
+        return nut
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_anchor.stl".format(name))
@@ -1677,37 +1708,200 @@ class Pendulum:
 
         out = os.path.join(path, "{}_pendulum.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getPendulum(), out)
+        exporters.export(self.getPendulum(), out)#,tolerance=0.01)
 
-#
-train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
-train.calculateRatios()
-# train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
-train.genChainWheels()
-train.genGears(module_size=1.2,moduleReduction=0.85)
-
-train.printInfo()
-motionWorks = MotionWorks()
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
-# plates = ClockPlates(train, motionWorks, pendulum)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
-#
-# # show_object(plates.getBearingHolder(40))
-# backPlate = plates.getPlate(True)
-# # show_object(backPlate)
-# exporters.export(backPlate, "../out/backplate.stl")
-#
-# frontPlate = plates.getPlate(False)
-# show_object(frontPlate)
-# exporters.export(frontPlate, "../out/frontplate.stl")
-
-# show_object(train.escapement.getAnchorArbour())
+        out = os.path.join(path, "{}_bob.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getBob(), out)
 
 
-show_object(pendulum.getSuspension())
-show_object(pendulum.getPendulum())
+class Hands:
+    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, length=25, thick=1.6, fixing_offset=0):
+        '''
 
-#
+        '''
+        self.thick=thick
+        #how much to rotate the minute fixing by
+        self.fixing_offset=fixing_offset
+        self.length = length
+        # self.width = length * 0.3
+        # self.end_d = self.width * 0.1
+        self.style=style
+        #for the hour hand,
+        self.minuteFixing=minuteFixing
+        self.minuteFixing_d1 = minuteFixing_d1
+        self.minuteFixing_d2 = minuteFixing_d2
+
+        if self.minuteFixing == "square":
+            self.minuteFixing_d2 = self.minuteFixing_d1
+            self.minuteFixing="rectangle"
+
+        self.hourFixing=hourFixing
+        self.hourFixing_d = hourfixing_d
+        #the found bit that attaches to the clock
+        self.base_r = length * 0.15
+
+        if self.style == "square":
+            self.base_r /= 2
+
+        #ensure it's actually big enoguh to fit onto the fixing
+        if self.base_r < minuteFixing_d1 * 0.7:
+            self.base_r = minuteFixing_d1 * 1.5 / 2
+
+        if self.base_r < minuteFixing_d2 * 0.7:
+            self.base_r = minuteFixing_d2 * 1.5 / 2
+
+        if self.base_r < hourfixing_d * 0.7:
+            self.base_r = hourfixing_d * 1.5 / 2
+
+    def getHand(self, hour=True):
+        length = self.length
+        # width = self.length * 0.3
+        if hour:
+            length = self.length * 0.8
+            # if self.style == "simple":
+            #     width = width * 1.2
+            # if self.style == "square":
+            #     width = width * 1.75
+
+
+
+        hand = cq.Workplane("XY").tag("base").circle(radius=self.base_r).extrude(self.thick)
+        # hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(thick)
+
+        if self.style == "simple":
+            width = self.length * 0.3 * 0.4
+            # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).lineTo(end_d / 2, length).radiusArc((-end_d / 2, length), -end_d / 2).lineTo(-width * 0.4, 0).close().extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0,self.length/2).rect(width, length).extrude(self.thick)
+        elif self.style == "square":
+            handWidth = self.length * 0.3 * 0.25
+            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(self.thick)
+        elif self.style == "cuckoo":
+            end_d = self.width * 0.1
+            centrehole_y = length * 0.6
+            width = self.length * 0.3
+            centrehole_r = width * 0.15
+
+            # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).threePointArc((end_d *0.75, length/2),(end_d / 2, length)).radiusArc(
+            #    (-end_d / 2, length), -end_d / 2).threePointArc((-end_d *0.75, length/2),(-width * 0.4, 0)).close().extrude(thick)
+
+            # hand = hand.workplaneFromTagged("base").moveTo(width * 0.25, length*0.3).lineTo(end_d / 2, length).radiusArc(
+            #     (-end_d / 2, length), -end_d / 2).lineTo(-width * 0.25, length*0.3).close().extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(width * 0.2, length * 0.3).lineTo(end_d / 2, length).threePointArc((0, length + end_d / 2), (-end_d / 2, length)).lineTo(-width * 0.2, length * 0.3).close().extrude(self.thick)
+
+            # extra round bits towards the end of the hand
+            little_sticky_out_dist = width * 0.3
+            little_sticky_out_d = width * 0.35
+            little_sticky_out_y = centrehole_y - centrehole_r * 0.4
+            little_sticky_out_d2 = width * 0.125
+            little_sticky_out_dist2 = width * 0.2
+            stickyoutblobs = hand.workplaneFromTagged("base")
+            # the two smaller blobs, justcircles
+            for angle_d in [45]:
+                angle = math.pi * angle_d / 180
+                # just circle, works but needs more
+                stickyoutblobs = stickyoutblobs.moveTo(0 + math.cos(angle) * little_sticky_out_dist2, centrehole_y + little_sticky_out_d2 * 0.25 + math.sin(angle) * little_sticky_out_dist2).circle(little_sticky_out_d2)
+                # hand =  hand.workplaneFromTagged("base").moveTo(0+math.cos(angle+math.pi/2)*little_sticky_out_d/2,centrehole_y+math.sin(angle+math.pi/2)*little_sticky_out_d/2).lineTo()
+                # hand = hand.workplaneFromTagged("base").moveTo(0, centrehole_y).rot
+            hand = stickyoutblobs.mirrorY().extrude(self.thick)
+
+            # hand = hand.workplaneFromTagged("base").moveTo(0, centrehole_y-centrehole_r).spline([(little_sticky_out_dist*1.6,centrehole_y-little_sticky_out_d*0.6),(little_sticky_out_dist*1.6,centrehole_y+little_sticky_out_d*0.2),(0,centrehole_y)],includeCurrent=True)\
+            #     .mirrorY().extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0, little_sticky_out_y - little_sticky_out_d / 2 + little_sticky_out_d * 0.1).lineTo(little_sticky_out_dist, little_sticky_out_y - little_sticky_out_d / 2).threePointArc(
+                (little_sticky_out_dist + little_sticky_out_d / 2, little_sticky_out_y), (little_sticky_out_dist, little_sticky_out_y + little_sticky_out_d / 2)).line(-little_sticky_out_dist, 0) \
+                .mirrorY().extrude(self.thick)
+
+            petalend = (width * 0.6, length * 0.45)
+
+            # petal-like bits near the centre of the hand
+            hand = hand.workplaneFromTagged("base").lineTo(width * 0.1, 0).spline([(petalend[0] * 0.3, petalend[1] * 0.1), (petalend[0] * 0.7, petalend[1] * 0.4), (petalend[0] * 0.6, petalend[1] * 0.75), petalend], includeCurrent=True) \
+                .line(0, length * 0.005).spline([(petalend[0] * 0.5, petalend[1] * 0.95), (0, petalend[1] * 0.8)], includeCurrent=True).mirrorY()
+            # return hand
+            hand = hand.extrude(self.thick)
+
+            # sticky out bottom bit for hour hand
+            if hour:
+                hand = hand.workplaneFromTagged("base").lineTo(width * 0.4, 0).lineTo(0, -width * 0.9).mirrorY().extrude(self.thick)
+                # return hand
+            # cut bits out
+            # roudn bit in centre of knobbly bit
+            hand = hand.moveTo(0, centrehole_y).circle(centrehole_r).cutThruAll()
+            heartbase = self.base_r + length * 0.025  # length*0.175
+
+            hearttop = length * 0.425
+            heartheight = hearttop - heartbase
+            heartwidth = length * 0.27 * 0.3  # width*0.3
+            # heart shape (definitely not a dick)
+            # hand = hand.moveTo(0, heartbase).spline([(heartwidth*0.6,heartbase*0.9),(heartwidth*0.8,heartbase+heartheight*0.15),(heartwidth*0.6,heartbase+heartheight*0.4),(heartwidth*0.3,heartbase + heartheight/2)],includeCurrent=True).lineTo(heartwidth*0.5,heartbase + heartheight*0.75).lineTo(0,hearttop).mirrorY().cutThruAll()
+            hand = hand.moveTo(0, heartbase).spline(
+                [(heartwidth * 0.6, heartbase * 0.9), (heartwidth * 0.8, heartbase + heartheight * 0.15),
+                 (heartwidth * 0.6, heartbase + heartheight * 0.4), (heartwidth * 0.3, heartbase + heartheight / 2)],
+                includeCurrent=True).lineTo(heartwidth * 0.5, heartbase + heartheight * 0.75).lineTo(0,
+                                                                                                     hearttop).mirrorY()  # .cutThruAll()
+            # return hand.extrude(thick*2)
+            hand = hand.cutThruAll()
+
+        # fixing = self.hourFixing if hour else self.minuteFixing
+
+        if self.fixing_offset != 0:
+            hand = hand.workplaneFromTagged("base").transformed(rotate=(0, 0,self. fixing_offset))
+
+        if not hour and self.minuteFixing == "rectangle":
+            hand = hand.moveTo(0, 0).rect(self.minuteFixing_d1, self.minuteFixing_d2).cutThruAll()
+        elif hour and self.hourFixing == "circle":
+            hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()
+        else:
+            raise ValueError("Combination not supported yet")
+
+        return hand
+
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_hour_hand.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHand(True), out)
+
+        out = os.path.join(path, "{}_minute_hand.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHand(False), out)
+
 # motion = MotionWorks()
+#
+# hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=motion.minuteHandHolderSize+0.2, hourfixing_d=motion.getHourHandHoleD(), length=50)
+#
+# show_object(hands.getHand(False))
+# show_object(hands.getHand(True).translate((20,0,0)))
+
+#
+# #
+# train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
+# train.calculateRatios()
+# # train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
+# train.genChainWheels()
+# train.genGears(module_size=1.2,moduleReduction=0.85)
+#
+# train.printInfo()
+# motionWorks = MotionWorks()
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
+# # plates = ClockPlates(train, motionWorks, pendulum)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
+#
+# # # show_object(plates.getBearingHolder(40))
+# # backPlate = plates.getPlate(True)
+# # # show_object(backPlate)
+# # exporters.export(backPlate, "../out/backplate.stl")
+# #
+# # frontPlate = plates.getPlate(False)
+# # show_object(frontPlate)
+# # exporters.export(frontPlate, "../out/frontplate.stl")
+#
+# # show_object(train.escapement.getAnchorArbour())
+#
+#
+# # show_object(pendulum.getSuspension())
+# # show_object(pendulum.getPendulum())
+# show_object(pendulum.getBob())
+# #
+# # motion = MotionWorks()
 # #
 # # cannonPinion = motion.getCannonPinion()
 # # show_object(cannonPinion)
