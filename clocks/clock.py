@@ -35,9 +35,13 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
+LAYER_THICK=0.2
 
+class Clock:
+    def __init__(self):
+        '''
 
-
+        '''
 class Gear:
     @staticmethod
     def cutHACStyle(gear,armThick, rimRadius):
@@ -162,11 +166,11 @@ class Gear:
 
         for t in range(self.teeth):
             # print("teeth: {}, angle: {}".format(t,tooth_angle*(t*2 + 1)))
-            
+
             toothStartAngle = (tooth_angle + gap_angle)*t + gap_angle
             toothTipAngle = (tooth_angle + gap_angle)*t + gap_angle + tooth_angle/2
             toothEndAngle = (tooth_angle + gap_angle)*(t + 1)
-            
+
             midBottomPos = ( math.cos(toothStartAngle)*inner_radius, math.sin(toothStartAngle)*inner_radius )
             addendum_startPos = ( math.cos(toothStartAngle)*pitch_radius, math.sin(toothStartAngle)*pitch_radius )
             tipPos = ( math.cos(toothTipAngle)*outer_radius, math.sin(toothTipAngle)*outer_radius )
@@ -435,10 +439,10 @@ class GoingTrain:
             self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference)
 
 
-            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2, thick=thick*1.5, powerClockwise=self.chainAtBack)
+            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2,innerRadius=self.chainWheel.outerDiameter/2, thick=thick*1.5, powerClockwise=self.chainAtBack)
 
-            self.chainWheelWithRatchet = getChainWheelWithRatchet(self.ratchet, self.chainWheel,holeD=looseHoleD)
-            self.chainWheelHalf = self.chainWheel.getHalf(holeD=looseHoleD)
+            self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
+            self.chainWheelHalf = self.chainWheel.getHalf(False)
         else:
             raise ValueError("Only 0 chain wheels supported")
         #
@@ -468,18 +472,18 @@ class GoingTrain:
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement_teeth))
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6):
         #TODO how many hours and how many gears between chain wheel and minute wheel (0+)?
         #TODO auto calculate if the escape wheel is clockwise or not and add this functionality to the escape wheel generation!
         arbours = []
-        thick = holeD*2
+        # thick = holeD*2
         #thickness of just the wheel
         self.gearWheelThick=thick
         #thickness of arbour assembly
         #wheel + pinion (3*wheel) + pinion top (0.5*wheel)
 
-        self.gearPivotLength=thick*3
-        self.gearPivotEndCapLength=thick*0.5
+        self.gearPivotLength=thick*2
+        self.gearPivotEndCapLength=thick*0.25
         self.gearTotalThick = self.gearWheelThick + self.gearPivotLength + self.gearPivotEndCapLength
         style="HAC"
         module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
@@ -846,6 +850,30 @@ class Escapement:
         # #cut hole through both
         # wheel = wheel.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
 
+def getHoleWithHole(innerD,outerD,deep, layerThick=LAYER_THICK):
+    '''
+    Generate the shape of a hole ( to be used to cut out of another shape)
+    that can be printed with bridging
+
+      |  | inner D
+    __|  |__
+    |       | outer D       | deep
+
+    '''
+
+    hole = cq.Workplane("XY").circle(outerD/2).extrude(deep+layerThick*2)
+
+    #the shape we want the bridging to end up
+    bridgeCutterCutter= cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD,innerD).extrude(layerThick)#
+
+    bridgeCutter = cq.Workplane("XY").circle(outerD/2).extrude(layerThick*2).cut(bridgeCutterCutter).translate((0,0,deep))
+
+    hole = hole.cut(bridgeCutter)
+
+    # hole = hole.faces(">Z").workplane().
+
+    return hole
+
 
 class ChainWheel:
 
@@ -855,13 +883,20 @@ class ChainWheel:
     # def getRadiusFromAnglePerLink(self, angle):
     #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
 
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=3, bearing=None):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
 
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
         '''
+
+        self.holeD=holeD
+        self.screwD=screwD
+        self.bearing=bearing
+        if bearing is None:
+            self.bearing = BearingInfo()
+
 
         self.chain_width = width
         self.chain_thick = wire_thick
@@ -900,6 +935,8 @@ class ChainWheel:
         self.wall_thick = width*0.4
         self.pocket_wall_thick = inside_length - wire_thick*4
 
+        #so the bearing can fit in and still have space for the screws
+        self.extra_height=self.bearing.bearingHeight
 
 
         self.inner_width = width*1.2
@@ -910,20 +947,22 @@ class ChainWheel:
         '''
         Returns total height of the chain wheel, once assembled
         '''
-        return self.inner_width + self.wall_thick*2
+        return self.inner_width + self.wall_thick*2 + self.extra_height
 
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
         return chainLength/((self.pockets*self.chain_inside_length*2)/minuteRatio)
 
-    def getHalf(self, holeD=3.5 ,screwD=3):
+    def getHalf(self, sideWithClicks=False):
         '''
         I'm hoping to be able to keep both halves identical - so long as there's space for the m3 screws and the m3 pivot then this should remain possible
         '''
 
         halfWheel = cq.Workplane("XY")
-
-        halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick).faces(">Z").workplane().tag("inside")
+        extraHeight = 0
+        if not sideWithClicks:
+            extraHeight = self.extra_height
+        halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
 
 
 
@@ -969,11 +1008,46 @@ class ChainWheel:
                 lineTo(math.cos(angle+pocketA) * self.radius, math.sin(angle+pocketA) * self.radius).close().extrude(h1)
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
-        halfWheel = halfWheel.faces(">Z").workplane().circle(holeD/2).cutThruAll()
-        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(screwD / 2).cutThruAll()
-        halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(screwD / 2).cutThruAll()
+        halfWheel = halfWheel.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
+        if sideWithClicks:
+            halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(self.screwD / 2).cutThruAll()
+            halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(self.screwD / 2).cutThruAll()
+        else:
+            #don't need screw heads
+            holes = cq.Workplane("XY").pushPoints([(0, self.hole_distance), (0,-self.hole_distance)]).circle(self.screwD/2).extrude(200).translate((0,0,self.bearing.bearingHeight + LAYER_THICK*2))
+
+            halfWheel = halfWheel.cut(holes)
+
+        if not sideWithClicks:
+            #space for the bearing
+            halfWheel = halfWheel.cut(getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight))
+
 
         return halfWheel
+
+    def getWithRatchet(self, ratchet):
+
+
+        chain =self.getHalf(True).translate((0, 0, ratchet.thick))
+
+        clickwheel = ratchet.getInnerWheel()
+
+        # "the size of the circle the polygon is inscribed into"
+        nutDiameter = 6.2
+        # TODO if we do this, make the nut tops bridgable
+        # clickwheel = clickwheel.faces(">Z").workplane().circle(holeD/2).moveTo(0,chainwheel.hole_distance).polygon(6,nutDiameter).moveTo(0,-chainwheel.hole_distance).polygon(6,nutDiameter).cutThruAll()
+        # be lazy for now and just screw into it
+        clickwheel = clickwheel.faces(">Z").workplane().circle(self.holeD / 2).moveTo(0, self.hole_distance).circle(self.screwD / 2).moveTo(0, -self.hole_distance).circle(self.screwD / 2).cutThruAll()
+
+        bearingHole = getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight)
+
+        # combined = combined.faces("<Z").workplane()
+
+        combined = clickwheel.add(chain)
+
+        combined = combined.cut(bearingHole)
+
+        return combined
 
 class Ratchet:
 
@@ -984,7 +1058,7 @@ class Ratchet:
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
 
-    def __init__(self, totalD=50, thick=5, powerClockwise=True):
+    def __init__(self, totalD=50, thick=5, powerClockwise=True, innerRadius=0):
         # , chain_hole_distance=10, chain_hole_d = 3):
         # #distance of the screw holes on the chain wheel, so the ratchet wheel can be securely attached
         # self.chain_hole_distance = chain_hole_distance
@@ -995,7 +1069,10 @@ class Ratchet:
 
 
         self.clickInnerDiameter = self.outsideDiameter * 0.5
-        self.clickInnerRadius = self.clickInnerDiameter / 2
+        if innerRadius == 0:
+            self.clickInnerRadius = self.clickInnerDiameter / 2
+        else:
+            self.clickInnerRadius = innerRadius
 
         self.clockwise = 1 if powerClockwise else -1
 
@@ -1082,29 +1159,6 @@ class Ratchet:
 
         return wheel
 
-def getChainWheelWithRatchet(ratchet, chainwheel, holeD=3.5 ,screwD=3):
-    '''
-    slightly OO encapsulation breaking. oh well.
-    '''
-    chain = chainwheel.getHalf(holeD=holeD, screwD=screwD).translate((0, 0, ratchet.thick))
-
-    clickwheel = ratchet.getInnerWheel()
-
-
-    # "the size of the circle the polygon is inscribed into"
-    nutDiameter=6.2
-    #TODO if we do this, make the nut tops bridgable
-    # clickwheel = clickwheel.faces(">Z").workplane().circle(holeD/2).moveTo(0,chainwheel.hole_distance).polygon(6,nutDiameter).moveTo(0,-chainwheel.hole_distance).polygon(6,nutDiameter).cutThruAll()
-    #be lazy for now and just screw into it
-    clickwheel = clickwheel.faces(">Z").workplane().circle(holeD / 2).moveTo(0, chainwheel.hole_distance).circle(screwD/2).moveTo(0, -chainwheel.hole_distance).circle(screwD/2).cutThruAll()
-
-    # combined = combined.faces("<Z").workplane()
-
-
-
-    combined = clickwheel.add(chain)
-
-    return combined
 
 def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
     gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style)
@@ -1226,6 +1280,18 @@ class MotionWorks:
 
 # class PivotHole:
 #     def __init__(self):
+
+class BearingInfo():
+    '''
+    I'm undecided how to pass this info about
+    '''
+    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3):
+        self.bearingOuterD = bearingOuterD
+        # how much space we need to support the bearing (and how much space to leave for the arbour + screw0
+        self.bearingHolderLip = bearingHolderLip
+        self.bearingHeight = bearingHeight
+        self.inner=innerD
+
 
 class ClockPlates:
     '''
@@ -1910,186 +1976,16 @@ class Hands:
         print("Outputting ", out)
         exporters.export(self.getHand(False), out)
 
-# motion = MotionWorks()
-#
-# hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=motion.minuteHandHolderSize+0.2, hourfixing_d=motion.getHourHandHoleD(), length=50)
-#
-# show_object(hands.getHand(False))
-# show_object(hands.getHand(True).translate((20,0,0)))
-#
-# hands.outputSTLs("test", "../out")
+train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
+train.calculateRatios()
+train.printInfo()
+train.genChainWheels()
+# show_object(train.chainWheelWithRatchet)
+show_object(train.chainWheelHalf)
 
+# holepunch = getHoleWithHole(3,10,4)
+# show_object(holepunch)
+# shape = cq.Workplane("XY").circle(10).extrude(20)
+# shape = shape.cut(holepunch)
 #
-# #
-# train = GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
-# train.calculateRatios()
-# # train.trains=[{'time': 3599.9999999999995, 'train': [[90, 11], [88, 12]], 'error': 4.547473508864641e-13, 'ratio': 59.99999999999999, 'teeth': -0.5199999999999998}]
-# train.genChainWheels()
-# train.genGears(module_size=1.2,moduleReduction=0.85)
-#
-# train.printInfo()
-# motionWorks = MotionWorks()
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3)
-# # plates = ClockPlates(train, motionWorks, pendulum)#, [degToRad(180+45), degToRad(-90), degToRad(-90)])#[degToRad(-135),degToRad(-45)]
-#
-# # # show_object(plates.getBearingHolder(40))
-# # backPlate = plates.getPlate(True)
-# # # show_object(backPlate)
-# # exporters.export(backPlate, "../out/backplate.stl")
-# #
-# # frontPlate = plates.getPlate(False)
-# # show_object(frontPlate)
-# # exporters.export(frontPlate, "../out/frontplate.stl")
-#
-# # show_object(train.escapement.getAnchorArbour())
-#
-#
-# # show_object(pendulum.getSuspension())
-# # show_object(pendulum.getPendulum())
-# # show_object(pendulum.getBob())
-# show_object(pendulum.getBobNut())
-# #
-# # motion = MotionWorks()
-# #
-# # cannonPinion = motion.getCannonPinion()
-# # show_object(cannonPinion)
-# # minuteWheel = motion.getMotionArbour()
-# # show_object(minuteWheel)
-# hourHolder = motion.getHourHolder()
-# show_object(hourHolder)
-
-
-#
-# ratchet = Ratchet()
-#
-# ratchetWheel = ratchet.getInnerWheel()
-# clickWheel = ratchet.getOuterWheel()
-#
-# show_object(ratchetWheel)
-# show_object(clickWheel)
-#
-# exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
-# exporters.export(clickWheel, "../out/clickWheel.stl")
-
-# chainWithRatchet = getChainWheelWithRatchet(Ratchet(), ChainWheel())
-#
-# show_object(chainWithRatchet)
-# exporters.export(chainWithRatchet, "../out/chainWithRatchet.stl")
-#
-# ratchet = Ratchet()
-#
-# click = ratchet.getInnerWheel()
-# ratchetWheel = ratchet.getOuterWheel()
-#
-# show_object(click)
-# show_object(ratchetWheel)
-# exporters.export(click, "../out/clickWheel.stl")
-# exporters.export(ratchetWheel, "../out/ratchetWheel.stl")
-#
-# wheelWithRatchet = getWheelWithRatchet(ratchet,WheelPinionPair(90, 8, 1.5).wheel)
-# # show_object(ratchet.getOuterWheel())
-# show_object(wheelWithRatchet)
-# exporters.export(wheelWithRatchet, "../out/wheelWithRatchet.stl")
-#
-# chainWheel = ChainWheel()
-#
-# halfWheel = chainWheel.getHalf()
-#
-# # show_object(halfWheel)
-#
-# exporters.export(halfWheel, "../out/chainWheel.stl")
-
-# #with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
-# lift=4
-# rotateAnchor=lift
-# rotateWheel=-8
-# drop=-7
-# escapement = Escapement(teeth=30,lift=lift,drop=drop,anchorTeeth=None)
-# escapeWheel = escapement.getWheel2D()
-# #
-# show_object(escapeWheel.rotateAboutCenter((0,0,1),rotateWheel-1.5+drop/2))#0.76
-#
-# anchor = escapement.getAnchor2D().rotate([0,escapement.anchor_centre_distance,0],[0,escapement.anchor_centre_distance,1],-lift/2+rotateAnchor)#(rotate%escapement.lift_deg))
-#
-# show_object(anchor)
-#
-#
-# testRig = escapement.getTestRig()
-#
-# exporters.export(testRig,"../out/escapementTestRig.stl")
-# show_object(cq.Workplane("XY").circle(escapement.radius))
-# # show_object(escapement.getTestRig())
-# # print(anchor.add(escapeWheel).toSvg())
-
-
-#
-#
-# # train = GoingTrain(fourth_wheel=False, pendulum_period=1, escapement_teeth=40)
-# #
-# # exit(0)
-#
-# #{'time': 3600.0, 'train': [[36, 8], [50, 9], [48, 10]], 'error': 0.0, 'ratio': 120.0, 'teeth': 161}
-# #{'time': 3600.0, 'train': [[44, 8], [48, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 171}
-#
-# #{'time': 3600.0, 'train': [[48, 10], [55, 10], [50, 11]], 'error': 0.0, 'ratio': 120.0, 'teeth': 184}
-#
-#
-# # #{'time': 3600.0, 'train': [[20, 8], [54, 8], [64, 9]], 'error': 0.0}
-# # #[{'time': 3600.0, 'train': [[90, 8], [96, 9]], 'error': 0.0, 'ratio': 120.0},
-# # #printed wheel in green:
-# # #pair = WheelPinionPair(30, 8,2)
-
-
-
-#
-# moduleSize = 1.5
-#
-# '''
-# thoughts:
-# module of 2 prints very well - I think I can go below this without any trouble.
-# A module size of 1.5 produces ~12cm diameter wheels if I have no fourth wheel
-# However, that then requires a rather more thin arbour because the pinions are so small
-#
-# I think I might have to have a fourth wheel and larger gears just so 3-5mm rod will be able to fit
-# '''
-#
-# pair = WheelPinionPair(36, 8, moduleSize)
-# pair2 = WheelPinionPair(50, 9,moduleSize)
-# pair3 = WheelPinionPair(48, 10,moduleSize)
-# pair = WheelPinionPair(48, 10, moduleSize)
-# pair2 = WheelPinionPair(55, 10,moduleSize)
-# pair3 = WheelPinionPair(50, 11,moduleSize)
-#
-# pair = WheelPinionPair(81, 8, moduleSize)
-# pair2 = WheelPinionPair(80, 9, moduleSize)
-# # pair3 = WheelPinionPair(50, 11,moduleSize)
-#
-# # wheel=pair.getWheel()
-#
-# thick = 5
-# arbourD=3
-# #
-# # wheel = pair.wheel.get3D(thick=thick, holeD=arbourD)
-# # #mirror and rotate a bit so the teeth line up and look nice
-# # pinion = pair.pinion.get3D(thick=thick, holeD=arbourD).rotateAboutCenter([0,1,0],180).rotateAboutCenter([0,0,1],180/pair.pinion.teeth).translate([pair.centre_distance,0,0])
-# # #.rotateAboutCenter([0,0,1],-360/pair.pinion.teeth)
-# #
-# # show_object(wheel)
-# # show_object(pinion)
-# # show_object(cq.Workplane("XY").circle(10).extrude(20))
-#
-# arbour = getArbour(pair2.wheel, pair.pinion, arbourD, thick)
-# # arbour2 = getArbour(pair3.wheel, pair2.pinion, arbourD, thick)
-#
-# show_object(arbour)
-#
-# exporters.export(arbour, "../out/arbour.stl")
-
-#
-# escapment = Escapement()
-#
-# anchor = escapment.getAnchorArbour(clockwise=True)
-#
-# show_object(anchor)
-#
-# exporters.export(anchor, "../out/anchor.stl")
+# show_object(shape)
