@@ -428,7 +428,7 @@ class GoingTrain:
 
         return allTimes
 
-    def genChainWheels(self, thick=5, holeD=3):
+    def genChainWheels(self, thick=7.5, holeD=3):
         '''
         TODO tidy this up
 
@@ -455,7 +455,7 @@ class GoingTrain:
             self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference)
 
 
-            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2,innerRadius=self.chainWheel.outerDiameter/2, thick=thick*1.5, powerClockwise=self.chainAtBack)
+            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2,innerRadius=self.chainWheel.outerDiameter/2, thick=thick, powerClockwise=self.chainAtBack)
 
             self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
             self.chainWheelHalf = self.chainWheel.getHalf(False)
@@ -965,7 +965,7 @@ class ChainWheel:
 
 
 
-        self.wall_thick = width*0.3
+        self.wall_thick = 1.5
         self.pocket_wall_thick = inside_length - wire_thick*4
 
         if self.useBearings:
@@ -1000,12 +1000,14 @@ class ChainWheel:
         extraHeight = 0
         if not sideWithClicks:
             extraHeight = self.extra_height
-            halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
-        else:
-            #not having a wall if we're going to be attached to the ratchet
-            halfWheel = halfWheel.tag("inside")
+            # halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
+        # else:
+        #     #not having a wall if we're going to be attached to the ratchet
+        #     # halfWheel = halfWheel.tag("inside")
+        #     #changed mind, it looks like the chain might catch a bit
+        #     halfWheel = halfWheel.circle(self.outerDiameter / 2).extrude(self.wall_thick*0.5).faces(">Z").workplane().tag("inside")
 
-
+        halfWheel = halfWheel.circle(self.outerDiameter / 2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
 
         # width = self.chain_width*1.2
 
@@ -1208,7 +1210,7 @@ class Ratchet:
             wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
             # wheel = wheel.radiusArc(polar(angle - self.toothAngle, self.toothTipR), self.toothTipR)
             # wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
-            wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius)
+            wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius* self.clockwise)
 
         wheel = wheel.close().extrude(self.thick)
 
@@ -2042,14 +2044,15 @@ if 'show_object' not in globals():
         pass
 
 
-train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-train.calculateRatios()
-train.printInfo()
-train.genChainWheels()
-show_object(train.chainWheelWithRatchet)
-show_object(train.chainWheelHalf.translate((0,30,0)))
-
-# show_object(train.ratchet.getInnerWheel())
+# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=True)
+# train.calculateRatios()
+# train.printInfo()
+# train.genChainWheels()
+# # show_object(train.chainWheelWithRatchet)
+# # show_object(train.chainWheelHalf.translate((0,30,0)))
+# train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+# # show_object(train.ratchet.getInnerWheel())
+# show_object(train.arbours[0])
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)

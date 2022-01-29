@@ -28,9 +28,9 @@ train.calculateRatios()
 
 train.printInfo()
 
-train.genChainWheels()
-train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+train.genChainWheels(thick=5)
 
+train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=30)
