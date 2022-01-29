@@ -36,6 +36,23 @@ if 'show_object' not in globals():
         pass
 
 LAYER_THICK=0.2
+#assuming m2 screw has a head 2*m2, etc
+METRIC_HEAD_D_MULT=2
+#assuming an m2 screw has a head of depth 1.5
+METRIC_HEAD_DEPTH_MULT=0.75
+#metric nut width is double the thread size
+METRIC_NUT_WIDTH_MULT=2
+
+def getNutContainingDiameter(metric_thread):
+    '''
+    Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
+    but the poly() in cq requires:
+    "the size of the circle the polygon is inscribed into"
+
+    so this calculates that
+
+    '''
+    return metric_thread*METRIC_NUT_WIDTH_MULT/math.cos(math.pi/6)
 
 class Clock:
     def __init__(self):
@@ -850,7 +867,7 @@ class Escapement:
         # #cut hole through both
         # wheel = wheel.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
 
-def getHoleWithHole(innerD,outerD,deep, layerThick=LAYER_THICK):
+def getHoleWithHole(innerD,outerD,deep, sides=1, layerThick=LAYER_THICK):
     '''
     Generate the shape of a hole ( to be used to cut out of another shape)
     that can be printed with bridging
@@ -859,18 +876,33 @@ def getHoleWithHole(innerD,outerD,deep, layerThick=LAYER_THICK):
     __|  |__
     |       | outer D       | deep
 
+    if sides is 1 it's a circle, else it's a polygone with that number of sides
+    funnily enough zero and 2 are invalid values
+
     '''
 
-    hole = cq.Workplane("XY").circle(outerD/2).extrude(deep+layerThick*2)
+    if sides <= 0 or sides == 2:
+        raise ValueError("Impossible polygon, can't have {} sides".format(sides))
+
+    hole = cq.Workplane("XY")
+    if sides == 1:
+        hole = hole.circle(outerD/2)
+    else:
+        hole = hole.polygon(sides,outerD)
+    hole = hole.extrude(deep+layerThick*2)
 
     #the shape we want the bridging to end up
     bridgeCutterCutter= cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD,innerD).extrude(layerThick)#
 
-    bridgeCutter = cq.Workplane("XY").circle(outerD/2).extrude(layerThick*2).cut(bridgeCutterCutter).translate((0,0,deep))
+    bridgeCutter = cq.Workplane("XY")
+    if sides == 1:
+        bridgeCutter = bridgeCutter.circle(outerD/2)
+    else:
+        bridgeCutter = bridgeCutter.polygon(sides,outerD)
+
+    bridgeCutter = bridgeCutter.extrude(layerThick*2).cut(bridgeCutterCutter).translate((0,0,deep))
 
     hole = hole.cut(bridgeCutter)
-
-    # hole = hole.faces(">Z").workplane().
 
     return hole
 
@@ -883,7 +915,7 @@ class ChainWheel:
     # def getRadiusFromAnglePerLink(self, angle):
     #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
 
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=3, bearing=None):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=2, bearing=None):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
@@ -895,7 +927,9 @@ class ChainWheel:
         self.screwD=screwD
         self.bearing=bearing
         if bearing is None:
-            self.bearing = BearingInfo()
+            # I'd been pondering using bearings to reduce chance of hands turning backwards when winidn the chain
+            # I've changed  my mind and I think that having the minute wheel firmly attached to the minute rod will be sufficient to avoid the problem
+            self.useBearings = False
 
 
         self.chain_width = width
@@ -931,12 +965,14 @@ class ChainWheel:
 
 
 
-
-        self.wall_thick = width*0.4
+        self.wall_thick = width*0.3
         self.pocket_wall_thick = inside_length - wire_thick*4
 
-        #so the bearing can fit in and still have space for the screws
-        self.extra_height=self.bearing.bearingHeight
+        if self.useBearings:
+            #so the bearing can fit in and still have space for the screws
+            self.extra_height=self.bearing.bearingHeight
+        else:
+            self.extra_height = 0
 
 
         self.inner_width = width*1.2
@@ -956,13 +992,17 @@ class ChainWheel:
     def getHalf(self, sideWithClicks=False):
         '''
         I'm hoping to be able to keep both halves identical - so long as there's space for the m3 screws and the m3 pivot then this should remain possible
+        both halves are identical if we're not using bearings
         '''
 
         halfWheel = cq.Workplane("XY")
         extraHeight = 0
         if not sideWithClicks:
             extraHeight = self.extra_height
-        halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
+            halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
+        else:
+            #not having a wall if we're going to be attached to the ratchet
+            halfWheel = halfWheel.tag("inside")
 
 
 
@@ -1009,7 +1049,7 @@ class ChainWheel:
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
         halfWheel = halfWheel.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
-        if sideWithClicks:
+        if sideWithClicks or not self.useBearings:
             halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(self.screwD / 2).cutThruAll()
             halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(self.screwD / 2).cutThruAll()
         else:
@@ -1018,10 +1058,15 @@ class ChainWheel:
 
             halfWheel = halfWheel.cut(holes)
 
-        if not sideWithClicks:
+        if not sideWithClicks and self.useBearings:
             #space for the bearing
             halfWheel = halfWheel.cut(getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight))
 
+        if not sideWithClicks:
+            #need space for the nuts
+            nutSpace = getHoleWithHole(self.screwD, getNutContainingDiameter(self.screwD), self.screwD*METRIC_HEAD_DEPTH_MULT, 6).translate((0, self.hole_distance, 0))
+            nutSpace = nutSpace.add(getHoleWithHole(self.screwD, getNutContainingDiameter(self.screwD), self.screwD*METRIC_HEAD_DEPTH_MULT, 6).translate((0, -self.hole_distance, 0)))
+            halfWheel = halfWheel.cut(nutSpace)
 
         return halfWheel
 
@@ -1032,20 +1077,21 @@ class ChainWheel:
 
         clickwheel = ratchet.getInnerWheel()
 
-        # "the size of the circle the polygon is inscribed into"
-        nutDiameter = 6.2
-        # TODO if we do this, make the nut tops bridgable
-        # clickwheel = clickwheel.faces(">Z").workplane().circle(holeD/2).moveTo(0,chainwheel.hole_distance).polygon(6,nutDiameter).moveTo(0,-chainwheel.hole_distance).polygon(6,nutDiameter).cutThruAll()
-        # be lazy for now and just screw into it
+        #holes for screws
         clickwheel = clickwheel.faces(">Z").workplane().circle(self.holeD / 2).moveTo(0, self.hole_distance).circle(self.screwD / 2).moveTo(0, -self.hole_distance).circle(self.screwD / 2).cutThruAll()
-
-        bearingHole = getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight)
-
-        # combined = combined.faces("<Z").workplane()
 
         combined = clickwheel.add(chain)
 
-        combined = combined.cut(bearingHole)
+        if self.useBearings:
+            bearingHole = getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight)
+            combined = combined.cut(bearingHole)
+        else:
+            #space for the heads of the screws
+            #general assumption: screw heads are double the diameter of the screw and the same depth as the screw diameter
+            screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,self.screwD).translate((0,self.hole_distance,0))
+            screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, self.screwD).translate((0, -self.hole_distance, 0)))
+            # return screwHeadSpace
+            combined = combined.cut(screwHeadSpace)
 
         return combined
 
@@ -1793,7 +1839,7 @@ class Pendulum:
         nut = nut.close().extrude(self.bobNutThick).faces(">Z").workplane().circle(self.threadedRodM/2+0.25).cutThruAll()
 
         # currently assuming M3
-        nutD=6.15
+        nutD=getNutContainingDiameter(3)
         nutHeight=1.8
 
         nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0,0,self.bobNutThick-nutHeight))
@@ -1980,8 +2026,8 @@ train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, max
 train.calculateRatios()
 train.printInfo()
 train.genChainWheels()
-# show_object(train.chainWheelWithRatchet)
-show_object(train.chainWheelHalf)
+show_object(train.chainWheelWithRatchet)
+show_object(train.chainWheelHalf.translate((0,30,0)))
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
