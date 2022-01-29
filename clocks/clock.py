@@ -31,13 +31,12 @@ I think this is similar to older cuckoos I've seen. It will result in a visible 
 for the first clock and decide if I want to switch to something else later. 
 '''
 
-if 'show_object' not in globals():
-    def show_object(*args, **kwargs):
-        pass
+
 
 LAYER_THICK=0.2
 #assuming m2 screw has a head 2*m2, etc
-METRIC_HEAD_D_MULT=2
+#note, pretty sure this is often wrong.
+METRIC_HEAD_D_MULT=1.9
 #assuming an m2 screw has a head of depth 1.5
 METRIC_HEAD_DEPTH_MULT=0.75
 #metric nut width is double the thread size
@@ -915,7 +914,7 @@ class ChainWheel:
     # def getRadiusFromAnglePerLink(self, angle):
     #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
 
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=2, bearing=None):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=2, screwThreadLength=10, bearing=None):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
@@ -925,6 +924,7 @@ class ChainWheel:
 
         self.holeD=holeD
         self.screwD=screwD
+        self.screwThreadLength=screwThreadLength
         self.bearing=bearing
         if bearing is None:
             # I'd been pondering using bearings to reduce chance of hands turning backwards when winidn the chain
@@ -982,6 +982,7 @@ class ChainWheel:
     def getHeight(self):
         '''
         Returns total height of the chain wheel, once assembled
+        TOTO THIS IS PROBABLY WRONG IN MOST CIRCUMSTANCE
         '''
         return self.inner_width + self.wall_thick*2 + self.extra_height
 
@@ -1086,10 +1087,19 @@ class ChainWheel:
             bearingHole = getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight)
             combined = combined.cut(bearingHole)
         else:
+
+            totalHeight=self.inner_width + self.wall_thick + self.extra_height + ratchet.thick
+
+            #if I don't have screws long enough, sink them further into the click bit
+            headDepth = self.screwD*METRIC_HEAD_DEPTH_MULT
+            if self.screwThreadLength + headDepth < totalHeight:
+                headDepth +=totalHeight - (self.screwThreadLength + headDepth)
+                print("extra head depth: ", headDepth)
+
             #space for the heads of the screws
             #general assumption: screw heads are double the diameter of the screw and the same depth as the screw diameter
-            screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,self.screwD).translate((0,self.hole_distance,0))
-            screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, self.screwD).translate((0, -self.hole_distance, 0)))
+            screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,headDepth).translate((0,self.hole_distance,0))
+            screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, headDepth).translate((0, -self.hole_distance, 0)))
             # return screwHeadSpace
             combined = combined.cut(screwHeadSpace)
 
@@ -2026,6 +2036,11 @@ class Hands:
         out = os.path.join(path, "{}_minute_hand.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHand(False), out)
+
+if 'show_object' not in globals():
+    def show_object(*args, **kwargs):
+        pass
+
 
 # train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
 # train.calculateRatios()
