@@ -1184,7 +1184,7 @@ class Ratchet:
             clickEnd = polar(clickEndAngle, innerClickR)
             nextClickStart = polar(clickNextStartAngle, innerClickR)
 
-            wheel = wheel.radiusArc(clickInner, -innerR).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR).radiusArc(nextClickStart, innerClickR)
+            wheel = wheel.radiusArc(clickInner, -innerR * self.clockwise).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR* self.clockwise).radiusArc(nextClickStart, innerClickR* self.clockwise)
 
 
         wheel = wheel.close().extrude(self.thick)
@@ -2042,12 +2042,14 @@ if 'show_object' not in globals():
         pass
 
 
-# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
-# train.calculateRatios()
-# train.printInfo()
-# train.genChainWheels()
-# show_object(train.chainWheelWithRatchet)
-# show_object(train.chainWheelHalf.translate((0,30,0)))
+train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
+train.calculateRatios()
+train.printInfo()
+train.genChainWheels()
+show_object(train.chainWheelWithRatchet)
+show_object(train.chainWheelHalf.translate((0,30,0)))
+
+# show_object(train.ratchet.getInnerWheel())
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
