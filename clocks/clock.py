@@ -1211,6 +1211,11 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 
     ratchetWheel = ratchet.getOuterWheel().translate((0,0,thick))
 
+    #space for a nyloc nut
+
+    nutSpace = getHoleWithHole(holeD, getNutContainingDiameter(holeD), METRIC_HEAD_DEPTH_MULT*holeD, 6)
+    gearWheel = gearWheel.cut(nutSpace)
+
     return gearWheel.add(ratchetWheel)
 
 class MotionWorks:
@@ -2022,12 +2027,12 @@ class Hands:
         print("Outputting ", out)
         exporters.export(self.getHand(False), out)
 
-train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
-train.calculateRatios()
-train.printInfo()
-train.genChainWheels()
-show_object(train.chainWheelWithRatchet)
-show_object(train.chainWheelHalf.translate((0,30,0)))
+# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
+# train.calculateRatios()
+# train.printInfo()
+# train.genChainWheels()
+# show_object(train.chainWheelWithRatchet)
+# show_object(train.chainWheelHalf.translate((0,30,0)))
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
