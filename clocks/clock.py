@@ -632,7 +632,8 @@ class Escapement:
         self.innerRadius = self.innerDiameter/2
 
         self.toothHeight = self.diameter/2 - self.innerRadius
-        self.printedToothHeight = self.toothHeight*8.36/7
+        #*8.36/7 worked for a diameter of about 82mm, it's not enough at about 60mm
+        self.printedToothHeight = self.toothHeight+1.4#*8.36/7
         # print("tooth height", self.toothHeight)
 
         #a tooth height of 8.36 gets printed to about 7mm
@@ -662,8 +663,9 @@ class Escapement:
 
     def getAnchor2D(self):
 
-        anchor = cq.Workplane("XY")
+        anchor = cq.Workplane("XY").tag("anchorbase")
 
+        centreRadius = self.diameter * 0.09
 
         #TODO, what should this be for most efficiency?
         #currently bodged in order to get enough drop to be reliable
@@ -730,7 +732,11 @@ class Escapement:
         farRight = (exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle), exitPalletTip[1] + h2)
         farLeft = (-(exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle)), exitPalletTip[1] + h2)
 
+
+
         top = (0, self.anchor_centre_distance + self.anchorTopThickTop)
+        topRight = (centreRadius, self.anchor_centre_distance )
+        topLeft =  (-centreRadius, self.anchor_centre_distance )
 
 
         # anchor = anchor.lineTo(innerLeft[0], innerLeft[1]).lineTo(innerRight[0], innerRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1])
@@ -743,7 +749,11 @@ class Escapement:
 
         anchor = anchor.moveTo(entryPalletTip[0], entryPalletTip[1]).lineTo(entryPalletEnd[0],entryPalletEnd[1]).tangentArcPoint(farLeft,relative=False)
 
-        anchor = anchor.lineTo(top[0], top[1]).lineTo(farRight[0], farRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1]).lineTo(exitPalletEnd[0],exitPalletEnd[1]).lineTo(innerRight[0], innerRight[1])
+        #making the anchor a bit smaller
+        # anchor = anchor.lineTo(top[0], top[1])
+        anchor = anchor.lineTo(topLeft[0], topLeft[1]).radiusArc(topRight, centreRadius)
+
+        anchor = anchor.lineTo(farRight[0], farRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1]).lineTo(exitPalletEnd[0],exitPalletEnd[1]).lineTo(innerRight[0], innerRight[1])
 
         anchor = anchor.lineTo(innerLeft[0], innerLeft[1])
 
@@ -766,7 +776,7 @@ class Escapement:
 
         return anchor
 
-    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=50, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35):
+    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=50, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0):
         '''
         Final plan: The crutch will be a solid part of the anchor, and a bolt will link it to a slot in the pendulum
         Thinking the anchor will be at the bottom of the clock, so the pendulum can be on the front
@@ -774,20 +784,22 @@ class Escapement:
         length for how long to extend the 3d printed bit of the arbour - I'm still toying with the idea of using this to help keep things in place
 
         crutchToPendulum - top of the anchor to the start of the pendulum
+
+        if nutMetricSize is provided, leave space for two nuts on either side (intended to be nyloc to fix the anchor to the rod)
         '''
 
         # crutchWidth = crutchBoltD*3
         crutchWidth = pendulumThick*4
 
         pendulum_space = 30
+        if crutchLength > 0:
+            crutch = cq.Workplane("XY").tag("base").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick/2)
+            crutch = crutch.workplaneFromTagged("base").moveTo(0,crutchLength-crutchWidth/2).rect(crutchWidth,crutchWidth).extrude(crutchToPendulum + anchorThick - pendulum_space/2)
 
-        crutch = cq.Workplane("XY").tag("base").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick/2)
-        crutch = crutch.workplaneFromTagged("base").moveTo(0,crutchLength-crutchWidth/2).rect(crutchWidth,crutchWidth).extrude(crutchToPendulum + anchorThick - pendulum_space/2)
+            crutch = crutch.faces(">Z").workplane().pushPoints([(-crutchWidth/2 + pendulumThick/2, crutchLength-crutchWidth/2 ), (crutchWidth/2 - pendulumThick/2 , crutchLength-crutchWidth/2)]).rect(pendulumThick, crutchWidth).extrude(pendulum_space)
 
-        crutch = crutch.faces(">Z").workplane().pushPoints([(-crutchWidth/2 + pendulumThick/2, crutchLength-crutchWidth/2 ), (crutchWidth/2 - pendulumThick/2 , crutchLength-crutchWidth/2)]).rect(pendulumThick, crutchWidth).extrude(pendulum_space)
-
-        #.moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2)
-        crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
+            #.moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2)
+            crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
 
 
         #add a length for the arbour - if required
@@ -802,7 +814,14 @@ class Escapement:
         if arbourLength > 0:
             arbour = arbour.faces(">Z").workplane().circle(arbourRadius).circle(holeD/2).extrude(arbourLength - anchorThick)
 
-        arbour = arbour.add(crutch)
+        if crutchLength > 0:
+            arbour = arbour.add(crutch)
+
+
+        if nutMetricSize > 0:
+            nutThick = METRIC_NUT_DEPTH_MULT * nutMetricSize
+            nutSpace = cq.Workplane("XY").polygon(6,getNutContainingDiameter(nutMetricSize,0.2)).extrude(nutThick)
+            arbour = arbour.cut(nutSpace.translate((0,0, anchorThick-nutThick)))
 
         return arbour
 
@@ -1765,34 +1784,49 @@ class ClockPlates:
         '''
         Just two vertical slats, with a shelf-bracket like brace at the bottom to stop it bending
         '''
-        width=40
 
-        bracketThick=8
+        chainHoleD = 10
+
+        chainHoleHolderWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
+        chainHoleHolderThick = 5
+
+        width=chainHoleHolderWidth#25
+        print("width", width)
+
+        #was originally planning an angle bracket, but decided to just make it square and have screws vertically
+        bottomBracketLength=self.plateDistance
+        topBracketLength = 10
         fixingScrewD=3
 
-        height = self.minHeight + self.gearGap  + bracketThick
+        height = self.minHeight + self.gearGap  + bottomBracketLength + topBracketLength
+        topY = self.topY + topBracketLength
 
-        fixingSpace = width - fixingScrewD*2.5
+        # fixingSpace = width - fixingScrewD*2.5
 
-        fixingPositions=[(-fixingSpace/2, self.topY - height + bracketThick/2), (0, self.topY - height + bracketThick/2), (fixingSpace/2, self.topY - height + bracketThick/2) ]
+        totalBracketHeight = bottomBracketLength + width/2
 
-        if back:
-            #for the triangular bracket
-            height+= self.plateDistance
+        fixingPositions=[(0, topY - height + bottomBracketLength - totalBracketHeight/5), (0, topY - height + bottomBracketLength - totalBracketHeight/2), (0, topY - height + bottomBracketLength - totalBracketHeight*4/5) ]
+
+        # if back:
+        #     #for the triangular bracket
+        #     height+= self.plateDistance
 
         # plate = cq.Workplane("XY").moveTo(0, - self.minHeight/2).rect(width, self.minHeight).extrude(10)
 
-        plate = cq.Workplane("XY").moveTo(-width/2,self.topY).radiusArc((width/2,self.topY), width/2).line(0, -height).radiusArc((-width/2,self.topY-height), width/2).close().extrude(self.plateThick)
+        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2).close().extrude(self.plateThick)
 
         for i, pos in enumerate(self.bearingPositions):
 
             plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
 
         if not back:
-            suspensionBaseThick=0.5
-            suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], self.plateThick-suspensionBaseThick))
+            # suspensionBaseThick=0.5
+            # suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], self.plateThick-suspensionBaseThick))
+            #
+            # plate = plate.add(suspensionPoint)
+            #new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
+            #no idea if it'll work without the rod bending!
 
-            plate = plate.add(suspensionPoint)
 
             motionWorksDistance = self.motionWorks.getArbourDistance()
 
@@ -1817,20 +1851,27 @@ class ClockPlates:
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD * 3 / 4 + screwHoleHeight / 2).rect(screwBodyD, screwHoleHeight + screwHeadD / 2).cutThruAll()
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD + screwHoleHeight).circle(screwBodyD / 2).cutThruAll()
 
-            bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bracketThick,0).lineTo(-bracketThick,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
+
+
+
+            # bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bottomBracketLength,0).lineTo(-bottomBracketLength,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
+            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).line(width,0).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
+            #TODO tidier way to hold the chains
+            # bracket = bracket.workplaneFromTagged("base").moveTo(0,self.topY - height + chainHoleHolderThick/2).rect(chainHoleHolderWidth, chainHoleHolderThick).extrude(self.plateDistance)
+
 
             # holes for the chain
             chainFromBack =self.bearingPositions[0][2] + self.goingTrain.gearWheelThick + self.goingTrain.chainWheel.getHeight()/2
-            chainHoleD=10
-            bracket = bracket.faces(">Y").workplane().pushPoints([(-width/2 + self.goingTrain.chainWheel.diameter / 2, chainFromBack), (-width/2 -self.goingTrain.chainWheel.diameter / 2, chainFromBack)]).circle(chainHoleD/2).cutThruAll()
+
+            bracket = bracket.faces(">Y").workplane().pushPoints([(self.goingTrain.chainWheel.diameter / 2, chainFromBack), (-self.goingTrain.chainWheel.diameter / 2, chainFromBack)]).circle(chainHoleD/2).cutThruAll()
             # bracket = bracket.faces(">Y").workplane().moveTo(0,chainHoleD).circle(chainHoleD / 2).cutThruAll()
 
             minuteWheelR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
             #shelf-like bracket to hold the front plate
 
-            # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bracketThick/2 - self.gearGap).rect(bracketWidth, bracketThick).extrude(self.plateDistance)
+            # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bottomBracketLength/2 - self.gearGap).rect(bracketWidth, bottomBracketLength).extrude(self.plateDistance)
 
-            plate = plate.add(bracket.translate((-width/2,-minuteWheelR - self.gearGap, self.plateThick)))
+            plate = plate.add(bracket.translate((0,0,self.plateThick)))#.translate((-width/2,-minuteWheelR - self.gearGap, self.plateThick)))
 
 
 
@@ -1855,7 +1896,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -1864,7 +1905,10 @@ class Pendulum:
         self.length = length
         # self.crutchWidth = 9
 
-        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM)
+        #space for a nut to hold the anchor to the rod
+        self.nutMetricSize=nutMetricSize
+
+        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize)
 
         self.crutchSlackWidth=crutchBoltD*1.5
         self.crutchSlackHeight = 30
@@ -2199,28 +2243,28 @@ if 'show_object' not in globals():
         pass
 
 
-train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-train.calculateRatios()
-train.printInfo()
-train.genChainWheels()
-# show_object(train.chainWheelWithRatchet)
-# show_object(train.chainWheelHalf.translate((0,30,0)))
-train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
-# show_object(train.ratchet.getInnerWheel())
-# show_object(train.arbours[0])
-
-motionWorks = MotionWorks(minuteHandHolderHeight=30)
-
-#HACK for now using same bearing as rest of the gears for the anchor
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
-
-
-plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
-
-backplate = plates.getPlate(True)
-frontplate = plates.getPlate(False)
-show_object(backplate)
-show_object(frontplate.translate((100,0,0)))
+# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
+# train.calculateRatios()
+# train.printInfo()
+# train.genChainWheels()
+# # show_object(train.chainWheelWithRatchet)
+# # show_object(train.chainWheelHalf.translate((0,30,0)))
+# train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+# # show_object(train.ratchet.getInnerWheel())
+# # show_object(train.arbours[0])
+#
+# motionWorks = MotionWorks(minuteHandHolderHeight=30)
+#
+# #HACK for now using same bearing as rest of the gears for the anchor
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
+#
+#
+# plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
+#
+# backplate = plates.getPlate(True)
+# frontplate = plates.getPlate(False)
+# show_object(backplate)
+# show_object(frontplate.translate((100,0,0)))
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
@@ -2228,3 +2272,9 @@ show_object(frontplate.translate((100,0,0)))
 # shape = shape.cut(holepunch)
 #
 # show_object(shape)
+
+escapement = Escapement(teeth=30, diameter=60)
+
+# show_object(escapement.getAnchor3D())
+show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
+
