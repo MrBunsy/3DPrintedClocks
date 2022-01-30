@@ -751,7 +751,7 @@ class Escapement:
 
         #making the anchor a bit smaller
         # anchor = anchor.lineTo(top[0], top[1])
-        anchor = anchor.lineTo(topLeft[0], topLeft[1]).radiusArc(topRight, centreRadius)
+        anchor = anchor.lineTo(topLeft[0], topLeft[1]).radiusArc(topRight, centreRadius+0.1)
 
         anchor = anchor.lineTo(farRight[0], farRight[1]).lineTo(exitPalletTip[0], exitPalletTip[1]).lineTo(exitPalletEnd[0],exitPalletEnd[1]).lineTo(innerRight[0], innerRight[1])
 
@@ -1787,25 +1787,28 @@ class ClockPlates:
 
         chainHoleD = 10
 
+        #making the plates wide enough that there can be vaguely strong holes for the chains to go through
         chainHoleHolderWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
-        chainHoleHolderThick = 5
 
         width=chainHoleHolderWidth#25
         print("width", width)
 
         #was originally planning an angle bracket, but decided to just make it square and have screws vertically
         bottomBracketLength=self.plateDistance
-        topBracketLength = 10
+        #bottom of teh top bracket
+        topBracketOffset =  self.bearingOuterD/2 + self.bearingWallThick + 5
+        topBracketLength = 5
         fixingScrewD=3
 
-        height = self.minHeight + self.gearGap  + bottomBracketLength + topBracketLength
-        topY = self.topY + topBracketLength
+        height = self.minHeight + self.gearGap  + bottomBracketLength + topBracketLength + topBracketOffset
+        topY = self.topY + topBracketOffset + topBracketLength
 
         # fixingSpace = width - fixingScrewD*2.5
 
         totalBracketHeight = bottomBracketLength + width/2
 
-        fixingPositions=[(0, topY - height + bottomBracketLength - totalBracketHeight/5), (0, topY - height + bottomBracketLength - totalBracketHeight/2), (0, topY - height + bottomBracketLength - totalBracketHeight*4/5) ]
+        fixingPositions=[ (-width/4, topY + width*0.2), (width/4, topY + width*0.2),
+            (0, topY - height + bottomBracketLength - totalBracketHeight/5), (0, topY - height + bottomBracketLength - totalBracketHeight/2), (0, topY - height + bottomBracketLength - totalBracketHeight*4/5) ]
 
         # if back:
         #     #for the triangular bracket
@@ -1872,6 +1875,12 @@ class ClockPlates:
             # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bottomBracketLength/2 - self.gearGap).rect(bracketWidth, bottomBracketLength).extrude(self.plateDistance)
 
             plate = plate.add(bracket.translate((0,0,self.plateThick)))#.translate((-width/2,-minuteWheelR - self.gearGap, self.plateThick)))
+
+
+            topBracket = cq.Workplane("XY").moveTo(-width/2,topY -topBracketLength).line(0, topBracketLength)\
+                .radiusArc((width/2, topY), width/2).line(0, -topBracketLength).radiusArc((-width/2, topY - topBracketLength), -width).close().extrude(self.plateDistance)
+
+            plate = plate.add(topBracket.translate((0,0,self.plateThick)))
 
 
 
@@ -2243,28 +2252,28 @@ if 'show_object' not in globals():
         pass
 
 
-# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-# train.calculateRatios()
-# train.printInfo()
-# train.genChainWheels()
-# # show_object(train.chainWheelWithRatchet)
-# # show_object(train.chainWheelHalf.translate((0,30,0)))
-# train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
-# # show_object(train.ratchet.getInnerWheel())
-# # show_object(train.arbours[0])
-#
-# motionWorks = MotionWorks(minuteHandHolderHeight=30)
-#
-# #HACK for now using same bearing as rest of the gears for the anchor
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
-#
-#
-# plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
-#
-# backplate = plates.getPlate(True)
-# frontplate = plates.getPlate(False)
-# show_object(backplate)
-# show_object(frontplate.translate((100,0,0)))
+train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
+train.calculateRatios()
+train.printInfo()
+train.genChainWheels()
+# show_object(train.chainWheelWithRatchet)
+# show_object(train.chainWheelHalf.translate((0,30,0)))
+train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+# show_object(train.ratchet.getInnerWheel())
+# show_object(train.arbours[0])
+
+motionWorks = MotionWorks(minuteHandHolderHeight=30)
+
+#HACK for now using same bearing as rest of the gears for the anchor
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
+
+
+plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
+
+backplate = plates.getPlate(True)
+frontplate = plates.getPlate(False)
+show_object(backplate)
+show_object(frontplate.translate((100,0,0)))
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
@@ -2273,8 +2282,7 @@ if 'show_object' not in globals():
 #
 # show_object(shape)
 
-escapement = Escapement(teeth=30, diameter=60)
-
-# show_object(escapement.getAnchor3D())
-show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
+# escapement = Escapement(teeth=30, diameter=60)
+# # show_object(escapement.getAnchor3D())
+# show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 
