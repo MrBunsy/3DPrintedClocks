@@ -30,7 +30,7 @@ train.printInfo()
 
 train.genChainWheels(thick=5)
 
-train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+train.genGears(module_size=1,moduleReduction=0.85, thick=4)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=30)
@@ -42,7 +42,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 pendulum.outputSTLs(clockName, clockOutDir)
 
 
-plates = clock.ClockPlates(train, motionWorks, pendulum)
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=10)
 plates.outputSTLs(clockName, clockOutDir)
 
 hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=50, thick=motionWorks.minuteHandSlotHeight)

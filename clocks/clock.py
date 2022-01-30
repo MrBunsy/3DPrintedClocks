@@ -53,11 +53,6 @@ def getNutContainingDiameter(metric_thread):
     '''
     return metric_thread*METRIC_NUT_WIDTH_MULT/math.cos(math.pi/6)
 
-class Clock:
-    def __init__(self):
-        '''
-
-        '''
 class Gear:
     @staticmethod
     def cutHACStyle(gear,armThick, rimRadius):
@@ -114,7 +109,7 @@ class Gear:
         if self.iswheel:
             if style == "HAC":
 
-                rimThick = holeD
+                rimThick = max(self.pitch_diameter * 0.035 , 2.2)
                 rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
 
                 armThick = rimThick
@@ -515,7 +510,10 @@ class GoingTrain:
         #trying a tiny bit more lift to make up for shorter plates due to printing?
         lift = 5
         drop = -7
-        self.escapement = Escapement(teeth=self.escapement_teeth, diameter=pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction, lift=lift, drop=drop, anchorTeeth=None)
+
+        escapeWheelDiameter = pairs[len(pairs)-1].wheel.getMaxRadius()*2*0.75
+
+        self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, lift=lift, drop=drop, anchorTeeth=None)
 
         for i in range(self.wheels):
 
@@ -981,8 +979,7 @@ class ChainWheel:
 
     def getHeight(self):
         '''
-        Returns total height of the chain wheel, once assembled
-        TOTO THIS IS PROBABLY WRONG IN MOST CIRCUMSTANCE
+        Returns total height of the chain wheel, once assembled, ignoring the ratchet
         '''
         return self.inner_width + self.wall_thick*2 + self.extra_height
 
@@ -1090,7 +1087,7 @@ class ChainWheel:
             combined = combined.cut(bearingHole)
         else:
 
-            totalHeight=self.inner_width + self.wall_thick + self.extra_height + ratchet.thick
+            totalHeight=self.inner_width + self.wall_thick*2 + self.extra_height + ratchet.thick
 
             #if I don't have screws long enough, sink them further into the click bit
             headDepth = self.screwD*METRIC_HEAD_DEPTH_MULT
@@ -1228,6 +1225,9 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
     nutSpace = getHoleWithHole(holeD, getNutContainingDiameter(holeD), METRIC_HEAD_DEPTH_MULT*holeD, 6)
     gearWheel = gearWheel.cut(nutSpace)
 
+    #in case the ratchet wheel is larger than the space in the middle of whichever style is being used
+    gearWheel = gearWheel.add(cq.Workplane("XY").circle(ratchet.outsideDiameter/2).circle(holeD/2).extrude(thick))
+
     return gearWheel.add(ratchetWheel)
 
 class MotionWorks:
@@ -1361,7 +1361,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to wall_clock_01. It's going to be a future job to tease it apart
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3):
+    def __init__(self, goingTrain, motionWorks, pendulum, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1375,7 +1375,7 @@ class ClockPlates:
         #up to and including the anchor
         self.anglesToScape = anglesToScape
         self.anglesToChain=anglesToChain
-        self.plateThick=5
+        self.plateThick=plateThick
         self.arbourD=arbourD
         #maximum dimention of the bearing
         self.bearingOuterD=bearingOuterD
@@ -1386,6 +1386,7 @@ class ClockPlates:
         self.bearingHeight = bearingHeight
         self.screwheadHeight = screwheadHeight
         self.pendulumAtFront = pendulumAtFront
+
         #TODO make some sort of object to hold all this info we keep passing around?
         self.anchorThick=anchorThick
 
@@ -1396,8 +1397,8 @@ class ClockPlates:
         #if angles are not given, assume clock is entirely vertical
 
         if anglesToScape is None:
-            #assume simple pendulum at bottom
-            angle = -math.pi/2 if self.pendulumAtFront else math.pi/2
+            #assume simple pendulum at top
+            angle = math.pi/2 if self.pendulumAtFront else math.pi/2
 
             #one extra for the anchor
             self.anglesToScape = [angle for i in range(self.goingTrain.wheels+1)]
@@ -1417,6 +1418,7 @@ class ClockPlates:
         # self.bushingPositions=[]
         self.arbourThicknesses=[]
         #how much the arbours can wobble back and forth. aka End-shake.
+        #note - might not have much effect anymore since I might not elevant the bearing holders
         self.wobble = 1
         #height of the centre of the wheel that will drive the next pivot
         drivingZ = 0
@@ -1477,9 +1479,9 @@ class ClockPlates:
 
         topZs = [self.arbourThicknesses[i] + self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
 
-        self.bearingStartHeight = self.plateThick + self.bearingHeight
+        # self.bearingStartHeight = self.plateThick + self.bearingHeight
 
-        self.plateDistance=max(topZs) + self.wobble + self.bearingStartHeight*2
+        self.plateDistance=max(topZs) + self.wobble# + self.bearingStartHeight*2
 
         print("Plate distance", self.plateDistance)
 
@@ -1503,13 +1505,20 @@ class ClockPlates:
         # self.height = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 + abs(self.bearingPositions[len(self.bearingPositions)-1][1]) + self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-2].wheel.pitch_diameter/2 + self.gearGap*2
         # self.topY = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 +  self.gearGap
 
-        #TODO the anchor!
 
+        #how much space to leave around the edge of the gears for safety
+        self.gearSpace=5
         #just tall enough to hold the top and bottom bearings
         self.height = self.bearingOuterD + abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + self.bearingWallThick * 2# + self.goingTrain.escapement.anchor_centre_distance
-        self.topY = self.bearingOuterD/2 + self.bearingWallThick
 
-        print("Height: ", self.height)
+        # topExtra =self.bearingOuterD/2 + self.bearingWallThick
+        # topExtra = self.bearingOuterD/2 + self.bearingWallThick
+        topExtra=0
+        self.minHeight = abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + topExtra + self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
+        # self.topY = self.bearingOuterD/2 + self.bearingWallThick
+        self.topY = self.bearingPositions[len(self.bearingPositions) - 1][1] + topExtra
+
+        print("Height: ", self.minHeight)
 
         self.legWidth = 10
         self.legLength = 15
@@ -1542,6 +1551,21 @@ class ClockPlates:
 
         return holder
 
+    def getBearingPunch(self, bearingOnTop=True):
+        '''
+        A shape that can be cut out of a clock plate to hold a bearing
+        '''
+
+        height = self.plateThick
+
+        if bearingOnTop:
+            punch = cq.Workplane("XY").circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
+            punch = punch.faces(">Z").workplane().circle(self.bearingOuterD/2).extrude(self.bearingHeight)
+        else:
+            punch = getHoleWithHole(self.holderInnerD,self.bearingOuterD, self.bearingHeight).faces(">Z").workplane().circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
+
+        return punch
+
     def getLeg(self, left=True, fixingD=3.1):
         '''
         The legs should overlap and a screw & nut will hold them tight
@@ -1570,9 +1594,12 @@ class ClockPlates:
     #     elif wheel > 0:
 
 
-    def getPlate(self, back=True):
+    def getPlateWithSideArms(self, back=True):
         '''
+        This was wall_clock_02 - it didn't work very well as the weight of the weight caused the front plate to droop
+        and the gears get out of alignment
 
+        note - this will likely be broken as it will depend on assumptions that have changed
         '''
 
         neg = 1 if back else -1
@@ -1698,6 +1725,65 @@ class ClockPlates:
 
         return plate
 
+    def getPlate(self, back=True):
+        '''
+        Just two vertical slats, with a shelf-bracket like brace at the bottom to stop it bending
+        '''
+        width=40
+
+        bracketThick=8
+        fixingScrewD=3
+
+        height = self.minHeight + self.gearGap
+
+        fixingSpace = width/2
+
+        fixingPositions=[(-fixingSpace/2, self.topY - height - bracketThick/2),(fixingSpace/2, self.topY - height - bracketThick/2) ]
+
+        if back:
+            #for the triangular bracket
+            height+= self.plateDistance
+
+        # plate = cq.Workplane("XY").moveTo(0, - self.minHeight/2).rect(width, self.minHeight).extrude(10)
+
+        plate = cq.Workplane("XY").moveTo(-width/2,self.topY).radiusArc((width/2,self.topY), width/2).line(0, -height).radiusArc((-width/2,self.topY-height), width/2).close().extrude(self.plateThick)
+
+        for i, pos in enumerate(self.bearingPositions):
+
+            plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
+
+        if not back:
+            suspensionPoint = self.pendulum.getSuspension(False).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], self.plateThick))
+
+            plate = plate.add(suspensionPoint)
+
+            plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD/2).cutThruAll()
+
+        if back:
+            # screwhole to hang on the wall
+            screwHeadD = 11
+            screwBodyD = 6
+            screwHoleHeight = 7.5
+            # sticking off the top makes the plate a bit too big to print nicely
+            screwholeStartY = (self.bearingPositions[len(self.bearingPositions)-1][1] + self.bearingPositions[len(self.bearingPositions)-2][1] )/2 - screwHoleHeight/2 - screwHeadD/2
+
+            centreX=0
+            plate = plate.faces(">Z").workplane().tag("top").moveTo(centreX, screwholeStartY + screwHeadD / 2).circle(screwHeadD / 2).cutThruAll()
+            plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD * 3 / 4 + screwHoleHeight / 2).rect(screwBodyD, screwHoleHeight + screwHeadD / 2).cutThruAll()
+            plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD + screwHoleHeight).circle(screwBodyD / 2).cutThruAll()
+
+            bracket = cq.Workplane("YZ").lineTo(-self.plateDistance,0).lineTo(-bracketThick,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
+
+            minuteWheelR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
+            #shelf-like bracket to hold the front plate
+
+            # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bracketThick/2 - self.gearGap).rect(bracketWidth, bracketThick).extrude(self.plateDistance)
+
+            plate = plate.add(bracket.translate((-width/2,-minuteWheelR - self.gearGap, self.plateThick)))
+
+        return plate
+
+
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
@@ -1752,20 +1838,25 @@ class Pendulum:
         return self.suspensionAttachmentPoints
 
 
-    def getSuspension(self):
+    def getSuspension(self, withAttachment=True):
         '''
         Can be attached to the front plate to hold the weight of the pendulum.
+        if withAttachment is false, this is just the knife-edge holder ready to be combined with the clock plate
         Knife-edge rather than suspension spring
         '''
         sus = cq.Workplane("XY")
-        padding = 7.5
-        sus = sus.moveTo(self.suspensionD/2, 0).radiusArc((-self.suspensionD/2,0),self.suspensionD/2).lineTo(self.suspensionAttachmentPoints[0][0]-padding, self.suspensionAttachmentPoints[0][1]).\
-            radiusArc((self.suspensionAttachmentPoints[0][0], self.suspensionAttachmentPoints[0][1]+padding), padding).lineTo(self.suspensionAttachmentPoints[1][0], self.suspensionAttachmentPoints[1][1]+padding).\
-            radiusArc((self.suspensionAttachmentPoints[1][0] + padding, self.suspensionAttachmentPoints[0][1]), padding).close()
+        if withAttachment:
+            padding = 7.5
+            sus = sus.moveTo(self.suspensionD/2, 0).radiusArc((-self.suspensionD/2,0),self.suspensionD/2).lineTo(self.suspensionAttachmentPoints[0][0]-padding, self.suspensionAttachmentPoints[0][1]).\
+                radiusArc((self.suspensionAttachmentPoints[0][0], self.suspensionAttachmentPoints[0][1]+padding), padding).lineTo(self.suspensionAttachmentPoints[1][0], self.suspensionAttachmentPoints[1][1]+padding).\
+                radiusArc((self.suspensionAttachmentPoints[1][0] + padding, self.suspensionAttachmentPoints[0][1]), padding).close()
 
-        sus = sus.extrude(self.thick)
+            sus = sus.extrude(self.thick)
 
-        sus = sus.faces(">Z").pushPoints(self.suspensionAttachmentPoints).circle(self.suspensionScrewD/2).cutThruAll()
+            #screw holes
+            sus = sus.faces(">Z").pushPoints(self.suspensionAttachmentPoints).circle(self.suspensionScrewD/2).cutThruAll()
+
+            sus = sus.faces(">Z").workplane()
         # width = self.suspensionAttachmentPoints[0][0] - self.suspensionAttachmentPoints[1][0] + padding*2
         # height = self.suspensionAttachmentPoints[0][1] + padding + su
 
@@ -1774,7 +1865,7 @@ class Pendulum:
         left = polar(math.pi - smallAngle, self.suspensionD/2)
         right = polar(smallAngle, self.suspensionD/2)
 
-        sus = sus.faces(">Z").workplane().moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
+        sus = sus.moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
             radiusArc(left, self.suspensionD/2).lineTo(0,0).close().extrude(self.suspension_length)
 
         # sus = sus.faces(">Z").workplane().moveTo(0,0).circle(self.suspension_cap_d/2).extrude(self.suspension_cap_length)
@@ -2044,15 +2135,28 @@ if 'show_object' not in globals():
         pass
 
 
-# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=True)
-# train.calculateRatios()
-# train.printInfo()
-# train.genChainWheels()
-# # show_object(train.chainWheelWithRatchet)
-# # show_object(train.chainWheelHalf.translate((0,30,0)))
-# train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
-# # show_object(train.ratchet.getInnerWheel())
+train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=True)
+train.calculateRatios()
+train.printInfo()
+train.genChainWheels()
+# show_object(train.chainWheelWithRatchet)
+# show_object(train.chainWheelHalf.translate((0,30,0)))
+train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+# show_object(train.ratchet.getInnerWheel())
 # show_object(train.arbours[0])
+
+motionWorks = MotionWorks(minuteHandHolderHeight=30)
+
+#HACK for now using same bearing as rest of the gears for the anchor
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
+
+
+plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
+
+backplate = plates.getPlate(True)
+frontplate = plates.getPlate(False)
+show_object(backplate)
+show_object(frontplate.translate((100,0,0)))
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
