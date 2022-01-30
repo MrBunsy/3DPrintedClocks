@@ -44,8 +44,9 @@ METRIC_NUT_WIDTH_MULT=2
 
 #depth of a nut, right for m3, might be right for others
 METRIC_NUT_DEPTH_MULT=0.77
+METRIC_HALF_NUT_DEPTH_MULT=0.57
 
-def getNutContainingDiameter(metric_thread):
+def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     '''
     Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
     but the poly() in cq requires:
@@ -54,7 +55,15 @@ def getNutContainingDiameter(metric_thread):
     so this calculates that
 
     '''
-    return metric_thread*METRIC_NUT_WIDTH_MULT/math.cos(math.pi/6)
+
+    nutWidth = metric_thread*METRIC_NUT_WIDTH_MULT
+
+    if metric_thread == 3:
+        nutWidth=5.4
+
+    nutWidth+=wiggleRoom
+
+    return nutWidth/math.cos(math.pi/6)
 
 class Gear:
     @staticmethod
@@ -524,7 +533,12 @@ class GoingTrain:
                 #minute wheel
 
                 # arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
-                arbours.append(getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=3, thick=thick, style=style))
+                arbour = getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=holeD, thick=thick, style=style)
+
+                #nyloc nut to fix to rod
+                arbour = arbour.cut(getHoleWithHole(holeD, getNutContainingDiameter(holeD,0.2), thick*0.25,6))
+
+                arbours.append(arbour)
 
             elif i < self.wheels-1:
 
@@ -1783,7 +1797,7 @@ class ClockPlates:
             motionWorksDistance = self.motionWorks.getArbourDistance()
 
             plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance).circle(self.arbourD/2).cutThruAll()
-            nutDeep = METRIC_NUT_DEPTH_MULT*self.arbourD
+            nutDeep = METRIC_HALF_NUT_DEPTH_MULT*self.arbourD
             nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance, self.plateThick-nutDeep))
 
             plate = plate.cut(nutSpace)
