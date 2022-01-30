@@ -32,7 +32,7 @@ for the first clock and decide if I want to switch to something else later.
 '''
 
 
-
+#TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.
@@ -41,6 +41,9 @@ METRIC_HEAD_D_MULT=1.9
 METRIC_HEAD_DEPTH_MULT=0.75
 #metric nut width is double the thread size
 METRIC_NUT_WIDTH_MULT=2
+
+#depth of a nut, right for m3, might be right for others
+METRIC_NUT_DEPTH_MULT=0.77
 
 def getNutContainingDiameter(metric_thread):
     '''
@@ -1242,10 +1245,9 @@ class MotionWorks:
         self.cannonPinionLoose = cannonPinionLoose
 
         #pinching ratios from The Modern Clock
-        #TODO adjust the module so the diameters work properly
-        #self.pitch_diameter = self.module * self.teeth
-        self.arbourDistace = module * (36 + 12) / 2
-        secondModule = 2 * self.arbourDistace / (40 + 10)
+        #adjust the module so the diameters work properly
+        self.arbourDistance = module * (36 + 12) / 2
+        secondModule = 2 * self.arbourDistance / (40 + 10)
         # print("module: {}, secondMOdule: {}".format(module, secondModule))
         self.pairs = [WheelPinionPair(36,12, module), WheelPinionPair(40,10,secondModule)]
 
@@ -1263,6 +1265,9 @@ class MotionWorks:
 
     def getHourHandHoleD(self):
         return self.hourHandHolderD
+
+    def getArbourDistance(self):
+        return self.arbourDistance
 
     def getCannonPinion(self):
 
@@ -1775,6 +1780,13 @@ class ClockPlates:
 
             plate = plate.add(suspensionPoint)
 
+            motionWorksDistance = self.motionWorks.getArbourDistance()
+
+            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance).circle(self.arbourD/2).cutThruAll()
+            nutDeep = METRIC_NUT_DEPTH_MULT*self.arbourD
+            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance, self.plateThick-nutDeep))
+
+            plate = plate.cut(nutSpace)
 
 
 
