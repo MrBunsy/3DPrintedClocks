@@ -119,14 +119,14 @@ class Gear:
 
         return gear
 
-    def addToWheel(self,wheel, holeD=0, thick=0, front=True, style="HAC", pinionthicker=3):
+    def addToWheel(self,wheel, holeD=0, thick=4, front=True, style="HAC", pinionThick=8, capThick=2):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
         pinionthicker is a multiplier to thickness of the week for thickness of the pinion
         '''
 
-        pinionThick = thick * pinionthicker
+        # pinionThick = thick * pinionthicker
 
         base = wheel.get3D(thick=thick, holeD=holeD, style=style)
 
@@ -142,7 +142,7 @@ class Gear:
 
         arbour = base.add(top)
 
-        arbour = arbour.faces(topFace).workplane().circle(self.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
+        arbour = arbour.faces(topFace).workplane().circle(self.getMaxRadius()).extrude(capThick).circle(holeD / 2).cutThruAll()
 
         if not front:
             #make sure big side is on the bottom.
@@ -527,11 +527,11 @@ class GoingTrain:
 
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(pairs[i-1].pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionthicker=self.gearPivotLength/self.gearWheelThick))
+                arbours.append(pairs[i-1].pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength))
             else:
                 #last pinion + escape wheel
                 #instead of inverting teeth, being lazy and changing which side the pinion goes on
-                arbours.append(pairs[i - 1].pinion.addToWheel(self.escapement, holeD=holeD, thick=thick, front=not self.scapeAtFront, style=style, pinionthicker=self.gearPivotLength/self.gearWheelThick))
+                arbours.append(pairs[i - 1].pinion.addToWheel(self.escapement, holeD=holeD, thick=thick, front=not self.scapeAtFront, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength))
         self.wheelPinionPairs = pairs
         self.arbours = arbours
 
@@ -1425,20 +1425,25 @@ class ClockPlates:
         # bearingZ = 0
         #this flip flops between gears, set it opposite of where the chain is, because the next wheel doesn't fit next to the chain wheel
         pinionAtBack = not self.goingTrain.chainAtBack
+        print("initial pinionAtBack", pinionAtBack)
         for i in range(self.goingTrain.wheels+1):
             if i == 0:
                 #the minute wheel (with chain wheel ratchet)
-
+                # if self.goingTrain.chainAtBack:
                 #assuming this is at the very back of the clock
-                self.bearingPositions.append([0, 0, 0])
-                chainwheelThick = self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
+                #note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
+                pos = [0, 0, 0]
+                self.bearingPositions.append(pos)
+                # else:
+                # self.screwheadHeight not used since the chainwheel has countersunk heads inside
+                chainwheelThick =self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
                 self.arbourThicknesses.append(chainwheelThick)
-                if self.pendulumAtFront:
+                if self.goingTrain.chainAtBack:
                     #totalheight is self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
                     drivingZ = chainwheelThick - self.goingTrain.gearWheelThick/2
                 else:
-                    raise ValueError("Not yet supported")
-
+                    drivingZ = self.goingTrain.gearWheelThick/2
+                print("pinionAtBack: {} wheel {} drivingZ: {}".format(pinionAtBack, i, drivingZ), pos)
             else:
                 #all the other going wheels up to and including the escape wheel
 
@@ -1475,9 +1480,21 @@ class ClockPlates:
                 self.bearingPositions.append(pos)
 
 
-        # print(self.bearingPositions, self.bushingPositions)
+        print(self.bearingPositions)
 
         topZs = [self.arbourThicknesses[i] + self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
+
+        bottomZs = [self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
+
+        bottomZ = min(bottomZs)
+        if bottomZ < 0:
+            #positions are relative (chain at front), so readjust everything
+            topZs = [z-bottomZ for z in topZs]
+            # bottomZs = [z - bottomZ for z in bottomZs]
+            for i in range(len(self.bearingPositions)):
+                self.bearingPositions[i][2] -= bottomZ
+
+        print(self.bearingPositions)
 
         # self.bearingStartHeight = self.plateThick + self.bearingHeight
 
@@ -1734,11 +1751,11 @@ class ClockPlates:
         bracketThick=8
         fixingScrewD=3
 
-        height = self.minHeight + self.gearGap
+        height = self.minHeight + self.gearGap  + bracketThick
 
-        fixingSpace = width/2
+        fixingSpace = width - fixingScrewD*2.5
 
-        fixingPositions=[(-fixingSpace/2, self.topY - height - bracketThick/2),(fixingSpace/2, self.topY - height - bracketThick/2) ]
+        fixingPositions=[(-fixingSpace/2, self.topY - height + bracketThick/2), (0, self.topY - height + bracketThick/2), (fixingSpace/2, self.topY - height + bracketThick/2) ]
 
         if back:
             #for the triangular bracket
@@ -1753,17 +1770,19 @@ class ClockPlates:
             plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
 
         if not back:
-            suspensionPoint = self.pendulum.getSuspension(False).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], self.plateThick))
+            suspensionBaseThick=0.5
+            suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], self.plateThick-suspensionBaseThick))
 
             plate = plate.add(suspensionPoint)
 
-            plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD/2).cutThruAll()
+
+
 
         if back:
             # screwhole to hang on the wall
             screwHeadD = 11
             screwBodyD = 6
-            screwHoleHeight = 7.5
+            screwHoleHeight = 5
             # sticking off the top makes the plate a bit too big to print nicely
             screwholeStartY = (self.bearingPositions[len(self.bearingPositions)-1][1] + self.bearingPositions[len(self.bearingPositions)-2][1] )/2 - screwHoleHeight/2 - screwHeadD/2
 
@@ -1772,7 +1791,13 @@ class ClockPlates:
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD * 3 / 4 + screwHoleHeight / 2).rect(screwBodyD, screwHoleHeight + screwHeadD / 2).cutThruAll()
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD + screwHoleHeight).circle(screwBodyD / 2).cutThruAll()
 
-            bracket = cq.Workplane("YZ").lineTo(-self.plateDistance,0).lineTo(-bracketThick,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
+            bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bracketThick,0).lineTo(-bracketThick,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
+
+            # holes for the chain
+            chainFromBack =self.bearingPositions[0][2] + self.goingTrain.gearWheelThick + self.goingTrain.chainWheel.getHeight()/2
+            chainHoleD=10
+            bracket = bracket.faces(">Y").workplane().pushPoints([(-width/2 + self.goingTrain.chainWheel.diameter / 2, chainFromBack), (-width/2 -self.goingTrain.chainWheel.diameter / 2, chainFromBack)]).circle(chainHoleD/2).cutThruAll()
+            # bracket = bracket.faces(">Y").workplane().moveTo(0,chainHoleD).circle(chainHoleD / 2).cutThruAll()
 
             minuteWheelR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
             #shelf-like bracket to hold the front plate
@@ -1780,6 +1805,13 @@ class ClockPlates:
             # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bracketThick/2 - self.gearGap).rect(bracketWidth, bracketThick).extrude(self.plateDistance)
 
             plate = plate.add(bracket.translate((-width/2,-minuteWheelR - self.gearGap, self.plateThick)))
+
+
+
+
+
+        # currently punching holes all the way through the front and back, might revisit this idea with something like embedded nuts
+        plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
 
         return plate
 
@@ -1818,8 +1850,8 @@ class Pendulum:
 
         self.suspensionOpenAngle=degToRad(120)
         self.knifeEdgeAngle = self.suspensionOpenAngle*0.25
-        self.suspension_length=10
-        self.suspension_cap_length=3
+        self.suspension_length=25
+        self.suspension_cap_length=2
         self.suspension_cap_d = self.suspensionD*1.2
         self.thick = 5
         self.suspensionScrewD=suspensionScrewD
@@ -1838,12 +1870,18 @@ class Pendulum:
         return self.suspensionAttachmentPoints
 
 
-    def getSuspension(self, withAttachment=True):
+    def getSuspension(self, withAttachment=True, bottomThick=0):
         '''
         Can be attached to the front plate to hold the weight of the pendulum.
         if withAttachment is false, this is just the knife-edge holder ready to be combined with the clock plate
         Knife-edge rather than suspension spring
         '''
+
+        smallAngle = (math.pi - self.suspensionOpenAngle) / 2
+
+        left = polar(math.pi - smallAngle, self.suspensionD / 2)
+        right = polar(smallAngle, self.suspensionD / 2)
+
         sus = cq.Workplane("XY")
         if withAttachment:
             padding = 7.5
@@ -1857,13 +1895,13 @@ class Pendulum:
             sus = sus.faces(">Z").pushPoints(self.suspensionAttachmentPoints).circle(self.suspensionScrewD/2).cutThruAll()
 
             sus = sus.faces(">Z").workplane()
+        elif bottomThick > 0:
+            sus = sus.moveTo(right[0], right[1]).radiusArc((self.suspensionD / 2, 0), self.suspensionD / 2).radiusArc((-self.suspensionD / 2, 0), self.suspensionD / 2). \
+                radiusArc(left, self.suspensionD / 2).close().extrude(bottomThick)
         # width = self.suspensionAttachmentPoints[0][0] - self.suspensionAttachmentPoints[1][0] + padding*2
         # height = self.suspensionAttachmentPoints[0][1] + padding + su
 
-        smallAngle = (math.pi - self.suspensionOpenAngle)/2
 
-        left = polar(math.pi - smallAngle, self.suspensionD/2)
-        right = polar(smallAngle, self.suspensionD/2)
 
         sus = sus.moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
             radiusArc(left, self.suspensionD/2).lineTo(0,0).close().extrude(self.suspension_length)
@@ -2135,7 +2173,7 @@ if 'show_object' not in globals():
         pass
 
 
-train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=True)
+train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
 train.calculateRatios()
 train.printInfo()
 train.genChainWheels()
