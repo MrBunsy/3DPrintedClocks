@@ -525,7 +525,18 @@ class GoingTrain:
 
         escapeWheelDiameter = pairs[len(pairs)-1].wheel.getMaxRadius()*2*0.75
 
-        self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, lift=lift, drop=drop, anchorTeeth=None)
+        #chain wheel imaginary pivot (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
+        #using != as XOR, so if an odd number of wheels, it's the same as chainAtBack. If it's an even number of wheels, it's the opposite
+        escapeWheelPivotAtFront = self.chainAtBack != (self.wheels % 2 == 0)
+
+        #only true if an odd number of wheels
+        escapeWheelClockwise = self.wheels %2 == 1
+
+        escapeWheelClockwiseFromPivotSide = escapeWheelPivotAtFront == escapeWheelClockwise
+
+        print("Escape wheel pivot at front: {}, clockwise (from front) {}, clockwise from pivot side: {} ".format(escapeWheelPivotAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPivotSide))
+
+        self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, lift=lift, drop=drop, anchorTeeth=None, clockwiseFromPivotSide=escapeWheelClockwiseFromPivotSide)
 
         for i in range(self.wheels):
 
@@ -590,7 +601,7 @@ def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
     return arbour
 
 class Escapement:
-    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, recoil=True, lift=4, drop=4, run=2):
+    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, recoil=True, lift=4, drop=4, run=2, clockwiseFromPivotSide=True):
         '''
         Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
         if recoil, generate a recoil escapement, if false, deadbeat.
@@ -610,6 +621,8 @@ class Escapement:
 
         run is how much the anchor continues to move towards the centre of the escape wheel after locking (or in the recoil, how much it recoils) in degrees
         not sure how to actually use desired run to design anchor
+
+        clockwiseFromPivotSide is for the escape wheel
         '''
 
         self.lift_deg = lift
@@ -618,6 +631,7 @@ class Escapement:
         self.drop_deg= drop
         self.drop = degToRad(drop)
 
+        self.clockwiseFromPivotSide=clockwiseFromPivotSide
         self.run_deg = run
         self.run = degToRad(run)
 
@@ -786,6 +800,9 @@ class Escapement:
         crutchToPendulum - top of the anchor to the start of the pendulum
 
         if nutMetricSize is provided, leave space for two nuts on either side (intended to be nyloc to fix the anchor to the rod)
+
+        clockwise from the point of view of the side with the crutch - which may or may not be the front of the clock
+
         '''
 
         # crutchWidth = crutchBoltD*3
@@ -861,6 +878,9 @@ class Escapement:
 
     def getWheel3D(self, thick=5, holeD=5, style="HAC"):
         gear = self.getWheel2D().extrude(thick)
+
+        if not self.clockwiseFromPivotSide:
+            gear = gear.mirror("YZ", (0,0,0))
 
         rimThick = holeD
         rimRadius = self.innerRadius - rimThick
@@ -1399,7 +1419,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to wall_clock_01. It's going to be a future job to tease it apart
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5):
+    def __init__(self, goingTrain, motionWorks, pendulum, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1424,6 +1444,7 @@ class ClockPlates:
         self.bearingHeight = bearingHeight
         self.screwheadHeight = screwheadHeight
         self.pendulumAtFront = pendulumAtFront
+        self.pendulumSticksOut = pendulumSticksOut
 
         #TODO make some sort of object to hold all this info we keep passing around?
         self.anchorThick=anchorThick
@@ -1590,7 +1611,7 @@ class ClockPlates:
 
 
 
-    def getBearingHolder(self, height, support=True):
+    def getBearingHolder(self, height, addSupport=True):
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
 
         wallThick = self.bearingWallThick
@@ -1600,7 +1621,7 @@ class ClockPlates:
 
         holder = holder.faces(">Z").workplane().circle(diameter/2).circle(self.bearingOuterD/2).extrude(self.bearingHeight)
         # extra support?
-        if False:
+        if addSupport:
             support = cq.Workplane("YZ").moveTo(-self.bearingOuterD/2,0).lineTo(-height-self.bearingOuterD/2,0).lineTo(-self.bearingOuterD/2,height).close().extrude(wallThick).translate([-wallThick/2,0,0])
             holder = holder.add(support)
 
@@ -1830,6 +1851,9 @@ class ClockPlates:
             #new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
             #no idea if it'll work without the rod bending!
 
+            if self.pendulumSticksOut > 0:
+                extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions)-1][0],self.bearingPositions[len(self.bearingPositions)-1][1],self.plateThick))
+                plate = plate.add(extraBearingHolder)
 
             motionWorksDistance = self.motionWorks.getArbourDistance()
 
@@ -1847,7 +1871,7 @@ class ClockPlates:
             screwBodyD = 6
             screwHoleHeight = 5
             # sticking off the top makes the plate a bit too big to print nicely
-            screwholeStartY = (self.bearingPositions[len(self.bearingPositions)-1][1] + self.bearingPositions[len(self.bearingPositions)-2][1] )/2 - screwHoleHeight/2 - screwHeadD/2
+            screwholeStartY = (self.bearingPositions[len(self.bearingPositions)-1][1] + self.bearingPositions[len(self.bearingPositions)-2][1] )/2 - screwHoleHeight - screwHeadD/2
 
             centreX=0
             plate = plate.faces(">Z").workplane().tag("top").moveTo(centreX, screwholeStartY + screwHeadD / 2).circle(screwHeadD / 2).cutThruAll()
