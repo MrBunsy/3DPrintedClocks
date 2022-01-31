@@ -1948,7 +1948,7 @@ class Pendulum:
         self.suspensionD=20
         self.pendulumTopD = self.suspensionD*1.75
         self.pendulumTopExtraRadius = 5
-        self.pendulumTopThick = 6
+        self.pendulumTopThick = getNutContainingDiameter(threadedRodM) + 2
         self.threadedRodM=threadedRodM
 
         self.suspensionOpenAngle=degToRad(120)
@@ -2014,7 +2014,7 @@ class Pendulum:
             radiusArc(left, self.suspensionD/2).close().extrude(self.suspension_cap_length)
         return sus
 
-    def getPendulum(self):
+    def getPendulumForKnifeEdge(self):
 
         pendulum = cq.Workplane("XY")
 
@@ -2042,6 +2042,57 @@ class Pendulum:
         # arm = cq.Workplane("XY").moveTo()
 
         return pendulum
+
+    def getPendulumForRod(self, holeD=3):
+        '''
+        Will allow a threaded rod for the pendulum to be attached to threaded rod for the arbour
+        '''
+
+        pendulum = cq.Workplane("XY")
+        if False:
+            #tried out a fancy one with the HAC style cut, looks alright but going to stick to soemthign more simple
+            outerR = self.pendulumTopD / 2 + self.pendulumTopExtraRadius
+
+            pendulum = pendulum.circle(outerR).extrude(self.pendulumTopThick)
+
+            centreD= holeD*2.5
+
+            pendulum = Gear.cutHACStyle(pendulum,holeD, outerR - holeD)
+
+            pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
+
+        width = holeD*4
+        height = holeD*5
+
+
+        nutD = getNutContainingDiameter(holeD)
+
+        wall_thick = (width - (nutD + 1))/2
+
+        pendulum = pendulum.moveTo(-width/2,0).radiusArc((width/2,0), width/2).line(0,-height).radiusArc((-width/2,-height), width/2).close().extrude(self.pendulumTopThick)
+
+        pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
+
+        #nut to hold to anchor rod
+        nutThick = METRIC_NUT_DEPTH_MULT * holeD
+        nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
+        pendulum = pendulum.cut(nutSpace)
+
+
+        # pendulum = pendulum.faces(">Z").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).cutThruAll()
+        space = cq.Workplane("XY").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).extrude(self.pendulumTopThick).translate((0,0,0.6))
+        pendulum = pendulum.cut(space)
+
+        #
+        rod = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).circle(self.threadedRodM/2).extrude(100).translate((0,-height/2,0))
+        pendulum = pendulum.cut(rod)
+
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD).extrude(nutThick).translate((0,-height,0))
+        pendulum = pendulum.cut(nutSpace2)
+
+
+        return pendulum
+
 
     def getCrutchExtension(self):
         '''
@@ -2108,9 +2159,13 @@ class Pendulum:
         print("Outputting ", out)
         exporters.export(self.getSuspension(), out)
 
-        out = os.path.join(path, "{}_pendulum.stl".format(name))
+        out = os.path.join(path, "{}_pendulum_for_knife_edge.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getPendulum(), out)#,tolerance=0.01)
+        exporters.export(self.getPendulumForKnifeEdge(), out)#,tolerance=0.01)
+
+        out = os.path.join(path, "{}_pendulum_for_rod.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getPendulumForRod(), out)
 
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
@@ -2288,16 +2343,17 @@ train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
 
 motionWorks = MotionWorks(minuteHandHolderHeight=30)
 
-#HACK for now using same bearing as rest of the gears for the anchor
 pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
 
 
-plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
+show_object(pendulum.getPendulumForRod())
 
-backplate = plates.getPlate(True)
-frontplate = plates.getPlate(False)
-show_object(backplate)
-show_object(frontplate.translate((100,0,0)))
+# plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
+#
+# backplate = plates.getPlate(True)
+# frontplate = plates.getPlate(False)
+# show_object(backplate)
+# show_object(frontplate.translate((100,0,0)))
 
 # holepunch = getHoleWithHole(3,10,4)
 # show_object(holepunch)
