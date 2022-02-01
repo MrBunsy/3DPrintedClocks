@@ -1806,13 +1806,18 @@ class ClockPlates:
         Just two vertical slats, with a shelf-bracket like brace at the bottom to stop it bending
         '''
 
-        chainHoleD = 10
+        chainHoleD = 8
 
         #making the plates wide enough that there can be vaguely strong holes for the chains to go through
         chainHoleHolderWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
 
         width=chainHoleHolderWidth#25
         print("width", width)
+        plateThick = self.plateThick
+
+        # if not back:
+        #     #the back plate is pretty solid, don't think the front needs to be quite as chunky?
+        #     plateThick *= 0.75
 
         #was originally planning an angle bracket, but decided to just make it square and have screws vertically
         bottomBracketLength=self.plateDistance
@@ -1837,7 +1842,7 @@ class ClockPlates:
 
         # plate = cq.Workplane("XY").moveTo(0, - self.minHeight/2).rect(width, self.minHeight).extrude(10)
 
-        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2).close().extrude(self.plateThick)
+        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2).close().extrude(plateThick)
 
         for i, pos in enumerate(self.bearingPositions):
 
@@ -1845,21 +1850,21 @@ class ClockPlates:
 
         if not back:
             # suspensionBaseThick=0.5
-            # suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], self.plateThick-suspensionBaseThick))
+            # suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], plateThick-suspensionBaseThick))
             #
             # plate = plate.add(suspensionPoint)
             #new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
             #no idea if it'll work without the rod bending!
 
             if self.pendulumSticksOut > 0:
-                extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions)-1][0],self.bearingPositions[len(self.bearingPositions)-1][1],self.plateThick))
+                extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions)-1][0],self.bearingPositions[len(self.bearingPositions)-1][1],plateThick))
                 plate = plate.add(extraBearingHolder)
 
             motionWorksDistance = self.motionWorks.getArbourDistance()
 
             plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance).circle(self.arbourD/2).cutThruAll()
             nutDeep = METRIC_HALF_NUT_DEPTH_MULT*self.arbourD
-            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance, self.plateThick-nutDeep))
+            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance, plateThick-nutDeep))
 
             plate = plate.cut(nutSpace)
 
@@ -1888,7 +1893,7 @@ class ClockPlates:
 
 
             # holes for the chain
-            chainFromBack =self.bearingPositions[0][2] + self.goingTrain.gearWheelThick + self.goingTrain.chainWheel.getHeight()/2
+            chainFromBack =self.bearingPositions[0][2] + self.goingTrain.gearWheelThick + self.goingTrain.chainWheel.getHeight()/2 + self.goingTrain.ratchet.thick
 
             bracket = bracket.faces(">Y").workplane().pushPoints([(self.goingTrain.chainWheel.diameter / 2, chainFromBack), (-self.goingTrain.chainWheel.diameter / 2, chainFromBack)]).circle(chainHoleD/2).cutThruAll()
             # bracket = bracket.faces(">Y").workplane().moveTo(0,chainHoleD).circle(chainHoleD / 2).cutThruAll()
@@ -1898,13 +1903,13 @@ class ClockPlates:
 
             # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bottomBracketLength/2 - self.gearGap).rect(bracketWidth, bottomBracketLength).extrude(self.plateDistance)
 
-            plate = plate.add(bracket.translate((0,0,self.plateThick)))#.translate((-width/2,-minuteWheelR - self.gearGap, self.plateThick)))
+            plate = plate.add(bracket.translate((0,0,plateThick)))#.translate((-width/2,-minuteWheelR - self.gearGap, plateThick)))
 
 
             topBracket = cq.Workplane("XY").moveTo(-width/2,topY -topBracketLength).line(0, topBracketLength)\
                 .radiusArc((width/2, topY), width/2).line(0, -topBracketLength).radiusArc((-width/2, topY - topBracketLength), -width).close().extrude(self.plateDistance)
 
-            plate = plate.add(topBracket.translate((0,0,self.plateThick)))
+            plate = plate.add(topBracket.translate((0,0,plateThick)))
 
 
 
@@ -1929,7 +1934,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -1960,6 +1965,8 @@ class Pendulum:
         self.suspensionScrewD=suspensionScrewD
 
         self.suspensionAttachmentPoints=[(-20,25),(20,25)]
+
+        self.handAvoiderInnerD=handAvoiderInnerD
 
         self.bobNutD = 30
         self.bobNutThick=10
@@ -2093,6 +2100,26 @@ class Pendulum:
 
         return pendulum
 
+    def getHandAvoider(self):
+        '''
+        Get a circular part which attaches inline with pendulum rod, so it can go over the hands (for a front-pendulum)
+        '''
+        extraR=5
+        avoider = cq.Workplane("XY").circle(self.handAvoiderInnerD/2).circle(self.handAvoiderInnerD/2 + extraR).extrude(self.pendulumTopThick)
+
+        nutD = getNutContainingDiameter(self.threadedRodM)
+        nutThick = METRIC_NUT_DEPTH_MULT * self.threadedRodM
+
+        nutSpace = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick/2).polygon(6, nutD).extrude(nutThick).translate((0, -self.handAvoiderInnerD/2+0.5, 0))
+        avoider = avoider.cut(nutSpace)
+
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.handAvoiderInnerD / 2 +nutThick - 0.5, 0))
+        avoider = avoider.cut(nutSpace2)
+
+        avoider = avoider.faces(">Y").workplane().moveTo(0,self.pendulumTopThick/2).circle(self.threadedRodM/2).cutThruAll()
+
+        return avoider
+
 
     def getCrutchExtension(self):
         '''
@@ -2166,6 +2193,10 @@ class Pendulum:
         out = os.path.join(path, "{}_pendulum_for_rod.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getPendulumForRod(), out)
+
+        out = os.path.join(path, "{}_pendulum_hand_avoider.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHandAvoider(), out)
 
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
@@ -2346,7 +2377,8 @@ motionWorks = MotionWorks(minuteHandHolderHeight=30)
 pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
 
 
-show_object(pendulum.getPendulumForRod())
+# show_object(pendulum.getPendulumForRod())
+show_object(pendulum.getHandAvoider())
 
 # plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
 #
