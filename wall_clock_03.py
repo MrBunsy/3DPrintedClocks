@@ -47,5 +47,5 @@ pendulum.outputSTLs(clockName, clockOutDir)
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut)
 plates.outputSTLs(clockName, clockOutDir)
 
-hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=120, thick=motionWorks.minuteHandSlotHeight, outline=1)
+hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)

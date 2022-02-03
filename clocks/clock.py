@@ -2250,7 +2250,7 @@ class Hands:
         self.hourFixing=hourFixing
         self.hourFixing_d = hourfixing_d
         #the found bit that attaches to the clock
-        self.base_r = length * 0.15
+        self.base_r = length * 0.12
 
         if self.style == "square":
             self.base_r /= 2
@@ -2285,7 +2285,7 @@ class Hands:
         # hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(thick)
 
         if self.style == "simple":
-            width = self.length * 0.3 * 0.4
+            width = self.length * 0.1
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).lineTo(end_d / 2, length).radiusArc((-end_d / 2, length), -end_d / 2).lineTo(-width * 0.4, 0).close().extrude(thick)
             #
             #
@@ -2380,13 +2380,22 @@ class Hands:
 
         if self.outline > 0:
             if outline:
-                fullHand = hand
                 #thinner internal bit
                 shell = hand.shell(-self.outline).translate((0,0,-self.outline))
                 # return shell
-                hand = hand.cut(shell)
+                notOutline = hand.cut(shell)
                 #chop off the mess above the first few layers that we want
-                hand = hand.cut(cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,LAYER_THICK*2)))
+
+                bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,LAYER_THICK*2))
+
+
+
+                if self.outlineSameAsBody:
+                    notOutline = notOutline.cut(bigSlab)
+                else:
+                    notOutline = notOutline.add(bigSlab)
+
+                hand = hand.cut(notOutline)
 
             else:
                 #chop out the outline from the shape
@@ -2457,7 +2466,7 @@ if 'show_object' not in globals():
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 
-hands = Hands(minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=3, outline=0.5, style="simple")
+hands = Hands(minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=3, outline=0.5, style="simple", outlineSameAsBody=False)
 
-show_object(hands.getHand(outline=False))
+show_object(hands.getHand(outline=True))
 # hands.outputSTLs(clockName, clockOutDir)
