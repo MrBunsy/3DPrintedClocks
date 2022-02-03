@@ -46,6 +46,16 @@ METRIC_NUT_WIDTH_MULT=2
 METRIC_NUT_DEPTH_MULT=0.77
 METRIC_HALF_NUT_DEPTH_MULT=0.57
 
+def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
+    if halfHeight:
+        return metric_thread*METRIC_HALF_NUT_DEPTH_MULT
+
+    if metric_thread == 3:
+        if nyloc:
+            return 3.9
+
+    return metric_thread * METRIC_NUT_DEPTH_MULT
+
 def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     '''
     Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
@@ -2134,8 +2144,12 @@ class Pendulum:
 
         bob = cq.Workplane("XZ").lineTo(self.bobR,0).radiusArc((self.bobR,self.bobThick),-self.bobThick*0.9).lineTo(0,self.bobThick).close().sweep(circle)
 
-        cut = cq.Workplane("XY").rect(self.bobNutD*1.2,self.bobNutThick+1).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+0.5).extrude(self.bobR*2).\
-            faces("<Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+0.5).extrude(self.bobR*2)
+        #was 0.5, which is plenty of space. Giong to try 0.1 to see if being a tight fit helps stop it rotate over time
+        extraR=0.1
+
+        #rectangle for the nut, with space for the threaded rod up and down
+        cut = cq.Workplane("XY").rect(self.bobNutD*1.2,self.bobNutThick+1).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2).\
+            faces("<Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2)
         bob=bob.cut(cut)
 
         # bob = bob.faces(">Z").workplane().rect(self.bobNutD*1.2,self.bobNutThick+1).cutThruAll()#.faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+0.5).cutThruAll()
@@ -2167,7 +2181,8 @@ class Pendulum:
 
         # currently assuming M3
         nutD=getNutContainingDiameter(3)
-        nutHeight=1.8
+        #and going to try a nyloc nut to see if that stops it untightening itself
+        nutHeight=getNutHeight(3,nyloc=True)
 
         nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0,0,self.bobNutThick-nutHeight))
 
@@ -2208,7 +2223,7 @@ class Pendulum:
 
 
 class Hands:
-    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, length=25, thick=1.6, fixing_offset=0):
+    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, length=25, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True):
         '''
 
         '''
@@ -2223,6 +2238,10 @@ class Hands:
         self.minuteFixing=minuteFixing
         self.minuteFixing_d1 = minuteFixing_d1
         self.minuteFixing_d2 = minuteFixing_d2
+        #Add a different coloured outline that is this many mm thick
+        self.outline = outline
+        #if true the outline will be part of the same STL as the main body, if false, it'll just be a small sliver
+        self.outlineSameAsBody = outlineSameAsBody
 
         if self.minuteFixing == "square":
             self.minuteFixing_d2 = self.minuteFixing_d1
@@ -2246,7 +2265,11 @@ class Hands:
         if self.base_r < hourfixing_d * 0.7:
             self.base_r = hourfixing_d * 1.5 / 2
 
-    def getHand(self, hour=True):
+    def getHand(self, hour=True, outline=False):
+        '''
+        if hour is true this ist he hour hand
+        if outline is true, this is just the bit of the shape that should be printed in a different colour
+        '''
         length = self.length
         # width = self.length * 0.3
         if hour:
@@ -2264,11 +2287,21 @@ class Hands:
         if self.style == "simple":
             width = self.length * 0.3 * 0.4
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).lineTo(end_d / 2, length).radiusArc((-end_d / 2, length), -end_d / 2).lineTo(-width * 0.4, 0).close().extrude(thick)
-            hand = hand.workplaneFromTagged("base").moveTo(0,self.length/2).rect(width, length).extrude(self.thick)
+            #
+            #
+            # if outline:
+            #     #top right
+            #     hand = cq.Workplane("XY").moveTo(width,length).lineTo()
+
+
+            # else:
+            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(self.thick)
+
         elif self.style == "square":
             handWidth = self.length * 0.3 * 0.25
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(self.thick)
         elif self.style == "cuckoo":
+
             end_d = self.length * 0.3 * 0.1
             centrehole_y = length * 0.6
             width = self.length * 0.3
@@ -2345,6 +2378,20 @@ class Hands:
         else:
             raise ValueError("Combination not supported yet")
 
+        if self.outline > 0:
+            if outline:
+                fullHand = hand
+                #thinner internal bit
+                shell = hand.shell(-self.outline).translate((0,0,-self.outline))
+                # return shell
+                hand = hand.cut(shell)
+                #chop off the mess above the first few layers that we want
+                hand = hand.cut(cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,LAYER_THICK*2)))
+
+            else:
+                #chop out the outline from the shape
+                hand = hand.cut(self.getHand(hour, outline=True))
+
         return hand
 
 
@@ -2357,28 +2404,40 @@ class Hands:
         print("Outputting ", out)
         exporters.export(self.getHand(False), out)
 
+        if self.outline > 0:
+            out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getHand(True, outline=True), out)
+
+            out = os.path.join(path, "{}_minute_hand_outline.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getHand(False, outline=True), out)
+
 if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
+#
+# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
+# train.calculateRatios()
+# train.printInfo()
+# train.genChainWheels()
+# # show_object(train.chainWheelWithRatchet)
+# # show_object(train.chainWheelHalf.translate((0,30,0)))
+# train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+# # show_object(train.ratchet.getInnerWheel())
+# # show_object(train.arbours[0])
+#
+# motionWorks = MotionWorks(minuteHandHolderHeight=30)
+#
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
+#
+#
+# # show_object(pendulum.getPendulumForRod())
+# # show_object(pendulum.getHandAvoider())
+# # show_object(pendulum.getBob())
+# show_object(pendulum.getBobNut())
 
-train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-train.calculateRatios()
-train.printInfo()
-train.genChainWheels()
-# show_object(train.chainWheelWithRatchet)
-# show_object(train.chainWheelHalf.translate((0,30,0)))
-train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
-# show_object(train.ratchet.getInnerWheel())
-# show_object(train.arbours[0])
-
-motionWorks = MotionWorks(minuteHandHolderHeight=30)
-
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
-
-
-# show_object(pendulum.getPendulumForRod())
-show_object(pendulum.getHandAvoider())
 
 # plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
 #
@@ -2398,3 +2457,7 @@ show_object(pendulum.getHandAvoider())
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 
+hands = Hands(minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=3, outline=0.5, style="simple")
+
+show_object(hands.getHand(outline=False))
+# hands.outputSTLs(clockName, clockOutDir)

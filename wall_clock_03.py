@@ -30,10 +30,12 @@ train.printInfo()
 
 train.genChainWheels(thick=5)
 
+pendulumSticksOut=20
+
 train.genGears(module_size=1,moduleReduction=0.85, thick=4)
 train.outputSTLs(clockName,clockOutDir)
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=30)
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
 motionWorks.outputSTLs(clockName,clockOutDir)
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
@@ -42,8 +44,8 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 pendulum.outputSTLs(clockName, clockOutDir)
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8)
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut)
 plates.outputSTLs(clockName, clockOutDir)
 
-hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=50, thick=motionWorks.minuteHandSlotHeight)
+hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=120, thick=motionWorks.minuteHandSlotHeight, outline=1)
 hands.outputSTLs(clockName, clockOutDir)
