@@ -22,12 +22,17 @@ clockOutDir="out"
 # crutchLength=100
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=True)
+train=clock.GoingTrain(pendulum_period=1.2,fourth_wheel=False,escapement_teeth=30, hours=60, maxChainDrop=1500, chainAtBack=True, max_wheel_teeth=100, min_pinion_teeth=8, chainWheels=1)
 
 train.calculateRatios()
 
 train.printInfo()
-
+'''
+{'time': 3600.0, 'train': [[90, 8], [80, 9]], 'error': 0.0, 'ratio': 100.0, 'teeth': 0.0}
+pendulum length: 0.3578258921512801m period: 1.2s
+escapement time: 36.0s teeth: 30
+cicumference: 67.25, run time of:29.4hours
+'''
 train.genChainWheels(thick=5)
 
 pendulumSticksOut=20

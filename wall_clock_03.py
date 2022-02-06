@@ -16,7 +16,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_03"
+clockName="wall_clock_03_temp"
 clockOutDir="out"
 
 # crutchLength=100
@@ -27,6 +27,12 @@ train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=3
 train.calculateRatios()
 
 train.printInfo()
+'''
+{'time': 3599.1000000000004, 'train': [[86, 10], [93, 10]], 'error': 0.8999999999996362, 'ratio': 79.98, 'teeth': -0.20999999999999996}
+pendulum length: 0.5591029564863751m period: 1.5s
+escapement time: 45.0s teeth: 30
+cicumference: 67.25, run time of:29.4hours
+'''
 
 train.genChainWheels(thick=5)
 

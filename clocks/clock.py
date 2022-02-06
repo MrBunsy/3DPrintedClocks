@@ -373,7 +373,7 @@ class WheelPinionPair:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, scapeAtFront=False, maxChainDrop=1800, max_chain_wheel_d=30, min_pinion_teeth=10, max_wheel_teeth=100):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, scapeAtFront=False, maxChainDrop=1800, max_chain_wheel_d=23, min_pinion_teeth=10, max_wheel_teeth=100):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -454,7 +454,7 @@ class GoingTrain:
 
         pinion_min=self.min_pinion_teeth
         pinion_max=20
-        wheel_min=30
+        wheel_min=50
         wheel_max=self.max_wheel_teeth
 
         #TODO prefer non-integer combos.
@@ -473,7 +473,7 @@ class GoingTrain:
         for p in range(pinion_min,pinion_max):
             for w in range(wheel_min, wheel_max):
                 allGearPairCombos.append([w,p])
-
+        print("allGearPairCombos", len(allGearPairCombos))
         #[ [[w,p],[w,p],[w,p]] ,  ]
         allTrains = []
 
@@ -492,7 +492,7 @@ class GoingTrain:
                 for pair_1 in range(len(allGearPairCombos)):
                     for pair_2 in range(len(allGearPairCombos)):
                         allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1], allGearPairCombos[pair_2]])
-
+        print("allTrains", len(allTrains))
         allTimes=[]
         for c in range(len(allTrains)):
             totalRatio = 1
@@ -545,32 +545,74 @@ class GoingTrain:
 
 
         if self.chainWheels == 0:
-            self.chainWheelCircumference = self.maxChainDrop/self.hours
+            chainWheelCircumference = self.maxChainDrop/self.hours
             self.max_chain_wheel_d = self.chainWheelCircumference/math.pi
             self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference)
 
 
-            self.ratchet = Ratchet(totalD=self.max_chain_wheel_d*2,innerRadius=self.chainWheel.outerDiameter/2, thick=thick, powerClockwise=self.chainAtBack)
 
-            self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
-            self.chainWheelHalf = self.chainWheel.getHalf(False)
+        elif self.chainWheels == 1:
+            chainWheelCircumference = self.max_chain_wheel_d * math.pi
+            #use provided max_chain_wheel_d and calculate the rest
+            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference)
+
+            #get the actual circumference (calculated from the length of chain segments)
+            chainWheelCircumference = self.chainWheel.circumference
+
+            turns = self.maxChainDrop/chainWheelCircumference
+
+            #find the ratio we need from the chain wheel to the minute wheel
+            turnsPerHour = turns/self.hours
+
+            desiredRatio = 1/turnsPerHour
+
+            print("Chain wheel turns per hour", turnsPerHour)
+
+            allGearPairCombos = []
+
+            pinion_min = 10
+            pinion_max = 20
+            wheel_min = 20
+            wheel_max = 80
+
+            for p in range(pinion_min, pinion_max):
+                for w in range(wheel_min, wheel_max):
+                    allGearPairCombos.append([w, p])
+            print("ChainWheel: allGearPairCombos", len(allGearPairCombos))
+
+            allRatios = []
+            for i in range(len(allGearPairCombos)):
+                ratio = allGearPairCombos[i][0]/allGearPairCombos[i][1]
+                if round(ratio) == ratio:
+                    #integer ratio
+                    continue
+                totalTeeth = 0
+                # trying for small wheels and big pinions
+                totalWheelTeeth = allGearPairCombos[i][0]
+                totalPinionTeeth = allGearPairCombos[i][1]
+
+                error = desiredRatio - ratio
+                #want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
+                train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth /1000}
+                if abs(error) < 0.01:
+                    allRatios.append(train)
+
+            allRatios.sort(key=lambda x: x["error"] - x["teeth"])#
+
+            print(allRatios)
+
+            self.chainWheelRatio = allRatios[0]["pair"]
+
+
         else:
-            raise ValueError("Only 0 chain wheels supported")
-        #
-        # allGearPairCombos = []
-        #
-        # for p in range(pinion_min, pinion_max):
-        #     for w in range(wheel_min, wheel_max):
-        #         allGearPairCombos.append([w, p])
-        #
-        # allRatios = []
+            raise ValueError("Unsupported number of chain wheels")
 
-        # elif self.chainWheels == 1:
-        #
-        # elif self.chainWheels == 2:
-        #     for pair_0 in range(len(allGearPairCombos)):
-        #         for pair_1 in range(len(allGearPairCombos)):
-        #                 allRatios.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
+
+
+        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=thick, powerClockwise=self.chainAtBack)
+
+        self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
+        self.chainWheelHalf = self.chainWheel.getHalf(False)
 
     def setTrain(self, train):
         '''
@@ -603,6 +645,8 @@ class GoingTrain:
         pairs = [WheelPinionPair(wheel[0],wheel[1],module_size* math.pow(moduleReduction, i)) for i,wheel in enumerate(self.trains[0]["train"])]
 
 
+
+
         # print(module_sizes)
         #make the esacpe wheel smaller than the last wheel by modulereduction
         # self.escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
@@ -625,15 +669,32 @@ class GoingTrain:
         print("Escape wheel pivot at front: {}, clockwise (from front) {}, clockwise from pivot side: {} ".format(escapeWheelPivotAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPivotSide))
         self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPivotSide=escapeWheelClockwiseFromPivotSide)
 
+        if self.chainWheels > 0:
+            # assuming one chain wheel for now
+            chainModule = module_size * (1 / moduleReduction)
+            chainDistance = chainModule * (self.chainWheelRatio[0] + self.chainWheelRatio[1]) / 2
+
+            minuteWheelSpace = pairs[0].wheel.getMaxRadius() + holeD*2
+
+            #check if the chain wheel will fit next to the minute wheel
+            if chainDistance < minuteWheelSpace:
+                # calculate module for the chain wheel based on teh space available
+                chainModule = 2 * minuteWheelSpace / (self.chainWheelRatio[0] + self.chainWheelRatio[1])
+            chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
+
         for i in range(self.wheels):
 
             if i == 0:
                 #minute wheel
+                if self.chainWheels == 0:
+                    #the minute wheel also has the chain with ratchet
+                    # arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
+                    arbour = getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=holeD, thick=thick, style=style)
+                else:
+                    #just a normal gear
+                    arbour = chainWheelPair.pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength)
 
-                # arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
-                arbour = getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=holeD, thick=thick, style=style)
-
-                #nyloc nut to fix to rod
+                #regardless of chains, we need a nyloc nut to fix the wheel to the rod
                 arbour = arbour.cut(getHoleWithHole(holeD, getNutContainingDiameter(holeD,0.2), thick*0.25,6))
 
                 arbours.append(arbour)
@@ -650,6 +711,13 @@ class GoingTrain:
         self.wheelPinionPairs = pairs
         self.arbours = arbours
 
+
+
+
+        self.chainWheelArbours = []
+        if self.chainWheels > 0:
+            self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,chainWheelPair.wheel,holeD=holeD, thick=thick, style=style)]
+
     def outputSTLs(self, name="clock", path="../out"):
         for i,wheel in enumerate(self.arbours):
             out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
@@ -661,6 +729,11 @@ class GoingTrain:
         out = os.path.join(path, "{}_chain_wheel_half.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.chainWheelHalf, out)
+
+        for i,wheel in enumerate(self.chainWheelArbours):
+            out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
+            print("Outputting ", out)
+            exporters.export(wheel, out)
 
         out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
         print("Outputting ", out)
@@ -697,11 +770,10 @@ class Escapement:
         Also from reading of The Modern Clock
         Type: "recoil", "deadbeat"
 
-        Choosing recoil as it's supposedly more reliable (even if less accurate) and should have less wear on the teeth, since
+        Choose recoil for the first attempt as it's supposedly more reliable (even if less accurate) and should have less wear on the teeth, since
         most of the side of the tooth is in contact, rather than just the tip
 
-        Deadbeat aim: teeth should be an even number that is not a multiple of 4 (aiming for x.5 number of teeth between the pallets - don't know if this is needed or not)
-        for recoil, I don't think it matters, just any half number of teeth might do
+        "With the recoil escapements, there is no need to adjust for lock, only drop" Escapment Mechanics
 
         lift is the angle of pendulum swing, in degrees
 
@@ -710,6 +782,7 @@ class Escapement:
         I think this should be used to dictate exact anchor angle?
 
         Lock "is the distance which the pallet has moved inside of the pitch circle of the escape wheel before being struck by the escape wheel tooth." (The Modern Clock)
+        We add lock to the design by changing the position of the pallets
 
         run is how much the anchor continues to move towards the centre of the escape wheel after locking (or in the recoil, how much it recoils) in degrees
         not sure how to actually use desired run to design anchor
@@ -836,9 +909,6 @@ class Escapement:
         entryPalletStartPos = entryPalletStartLineFromAnchor.intersection(entryPalletStartLineFromWheel)
         entryPalletEndPos = entryPalletEndLineFromAnchor.intersection(entryPalletEndLineFromWheel)
         
-        entryPalletStartRelativePos = np.subtract(entryPalletStartPos, anchorCentre)
-        entryPalletEndRelativePos = np.subtract(entryPalletEndPos, anchorCentre)
-        
         # =========== exit pallet ============
         exitPalletStartLineFromAnchor = Line(anchorCentre, anchorToExitPalletCentreAngle + palletLengthAngle / 2)
         exitPalletEndLineFromAnchor = Line(anchorCentre, anchorToExitPalletCentreAngle - palletLengthAngle / 2)
@@ -848,24 +918,17 @@ class Escapement:
 
         exitPalletStartPos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
         exitPalletEndPos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
-
-        exitPalletStartRelativePos = np.subtract(exitPalletStartPos, anchorCentre)
-        exitPalletEndRelativePos = np.subtract(exitPalletEndPos, anchorCentre)
         
         # ========== points on the anchor =========
 
         #distance of the end of the entry pallet from the anchor centre
         entryPalletEndR = np.linalg.norm(np.subtract(entryPalletEndPos, anchorCentre))
         entryPalletStartR = np.linalg.norm(np.subtract(entryPalletStartPos, anchorCentre))
-        # innerLeftPoint = tuple(np.add(polar(math.atan2(entryPalletEndRelativePos[1], entryPalletEndRelativePos[0]) - deadbeatAngle, entryPalletEndR), anchorCentre))
-        # outerLeftPoint = tuple(np.add(polar(math.atan2(entryPalletStartRelativePos[1], entryPalletStartRelativePos[0]) - armThickAngle - deadbeatAngle, entryPalletStartR), anchorCentre))
         innerLeftPoint = tuple(np.add(polar(math.pi*1.5 - self.anchorAngle/2 - palletLengthAngle/2 - deadbeatAngle, entryPalletEndR), anchorCentre))
         outerLeftPoint = tuple(np.add(polar(math.pi*1.5 - self.anchorAngle/2 - palletLengthAngle/2 - armThickAngle - deadbeatAngle, entryPalletStartR), anchorCentre))
 
         exitPalletEndR = np.linalg.norm(np.subtract(exitPalletEndPos, anchorCentre))
         exitPalletStartR = np.linalg.norm(np.subtract(exitPalletStartPos, anchorCentre))
-        # innerRightPoint = tuple(np.add(polar(math.atan2(exitPalletStartRelativePos[1], exitPalletStartRelativePos[0]) + deadbeatAngle, exitPalletStartR), anchorCentre))
-        # outerRightPoint = tuple(np.add(polar(math.atan2(exitPalletEndRelativePos[1], exitPalletEndRelativePos[0]) + deadbeatAngle, exitPalletEndR), anchorCentre))
         innerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle, exitPalletStartR), anchorCentre))
         outerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle + armThickAngle, exitPalletEndR), anchorCentre))
 
@@ -1003,6 +1066,8 @@ class Escapement:
     def getAnchor3D(self, thick=15, holeD=2, clockwise=True):
 
         anchor = self.getAnchor2D()
+
+        anchor = anchor.add(cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(holeD*4/2).extrude(thick))
 
 
 
@@ -1647,14 +1712,20 @@ class BearingInfo():
 
 class ClockPlates:
     '''
-    This was intended to be generic, but has become specific to wall_clock_01. It's going to be a future job to tease it apart
+    This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, anglesToScape=None, anglesToChain=None, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20):
+    def __init__(self, goingTrain, motionWorks,  pendulum, compact=False, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
         '''
+
+        anglesToScape = None
+        anglesToChain = None
+
+        #reduce the height/width as much as possible
+        self.compact = compact
 
         #just for the first prototype
         self.anchorHasNormalBushing=True
@@ -1840,6 +1911,9 @@ class ClockPlates:
 
         #TODO chain wheels in the future
 
+    def getPlate(self, back=True):
+        if self.compact:
+            return self.getSimpleVerticalPlate(back)
 
 
     def getBearingHolder(self, height, addSupport=True):
@@ -2032,9 +2106,10 @@ class ClockPlates:
 
         return plate
 
-    def getPlate(self, back=True):
+    def getSimpleVerticalPlate(self, back=True):
         '''
-        Just two vertical slats, with a shelf-bracket like brace at the bottom to stop it bending
+        Just two vertical slats, with a shelf-bracket like brace at the bottom to stop it bending.
+        Works pretty well! just a bit more chunky than needed
         '''
 
         chainHoleD = 8
@@ -2155,11 +2230,11 @@ class ClockPlates:
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getPlate(False), out)
+        exporters.export(self.getSimpleVerticalPlate(False), out)
 
         out = os.path.join(path, "{}_back_plate.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getPlate(True), out)
+        exporters.export(self.getSimpleVerticalPlate(True), out)
 
 class Pendulum:
     '''
@@ -2696,7 +2771,7 @@ if 'show_object' not in globals():
 drop =2
 lift =4
 lock=2
-escapement = Escapement(drop=drop, lift=lift, type="deadbeat", teeth=30, lock=lock, anchorTeeth=None)
+escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=61.454842805344896, teeth=30, lock=lock, anchorTeeth=None)
 # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
 #                              clockwiseFromPivotSide=False, type="deadbeat")
 
@@ -2706,7 +2781,7 @@ anchor_angle = 0#lift/2 + lock/2
 show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
 show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
 
-# anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
-# # show_object(escapement.getAnchor3D())
-# show_object(anchor)
+anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
+# show_object(escapement.getAnchor3D())
+show_object(anchor)
 # exporters.export(anchor, "../out/anchor_test.stl")
