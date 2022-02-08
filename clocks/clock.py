@@ -523,38 +523,26 @@ class GoingTrain:
 
         return allTimes
 
-    def genChainWheels(self, thick=7.5, holeD=3):
+    def genChainWheels(self, thick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5):
         '''
-        TODO tidy this up
 
         Generate the gear ratios for the wheels between chain and minute wheel
         again, I'd like to make this generic but the solution isn't immediately obvious and it would take
         longer to make it generic than just make it work
         '''
 
-        # aproxChainWheelCircumference = math.pi*self.max_chain_wheel_d
-        #
-        # totalTurns = self.maxChainDrop / aproxChainWheelCircumference
-
-        # pinion_min = self.min_pinion_teeth
-        # pinion_max = 20
-        # wheel_min = 30
-        # wheel_max = self.max_wheel_teeth
-
-        looseHoleD = holeD*1.2
-
 
         if self.chainWheels == 0:
             chainWheelCircumference = self.maxChainDrop/self.hours
-            self.max_chain_wheel_d = self.chainWheelCircumference/math.pi
-            self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference)
+            self.max_chain_wheel_d = chainWheelCircumference/math.pi
+            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD)
 
 
 
         elif self.chainWheels == 1:
             chainWheelCircumference = self.max_chain_wheel_d * math.pi
             #use provided max_chain_wheel_d and calculate the rest
-            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference)
+            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD)
 
             #get the actual circumference (calculated from the length of chain segments)
             chainWheelCircumference = self.chainWheel.circumference
@@ -567,13 +555,14 @@ class GoingTrain:
             desiredRatio = 1/turnsPerHour
 
             print("Chain wheel turns per hour", turnsPerHour)
+            print("Chain wheel ratio to minute wheel", desiredRatio)
 
             allGearPairCombos = []
 
             pinion_min = 10
             pinion_max = 20
             wheel_min = 20
-            wheel_max = 80
+            wheel_max = 100
 
             for p in range(pinion_min, pinion_max):
                 for w in range(wheel_min, wheel_max):
@@ -594,7 +583,7 @@ class GoingTrain:
                 error = desiredRatio - ratio
                 #want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
                 train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth /1000}
-                if abs(error) < 0.01:
+                if abs(error) < 0.1:
                     allRatios.append(train)
 
             allRatios.sort(key=lambda x: x["error"] - x["teeth"])#
@@ -1787,20 +1776,19 @@ class ClockPlates:
         #this flip flops between gears, set it opposite of where the chain is, because the next wheel doesn't fit next to the chain wheel
         pinionAtBack = not self.goingTrain.chainAtBack
         print("initial pinionAtBack", pinionAtBack)
-        for i in range(self.goingTrain.wheels+1):
-            if i == 0:
-                #the minute wheel (with chain wheel ratchet)
-                # if self.goingTrain.chainAtBack:
+        for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
+
+            if  (i == 0 and self.goingTrain.chainWheels == 0) or (i == -self.goingTrain.chainWheels):
+                #the wheel with chain wheel ratchet
                 #assuming this is at the very back of the clock
                 #note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
                 pos = [0, 0, 0]
                 self.bearingPositions.append(pos)
-                # else:
-                # self.screwheadHeight not used since the chainwheel has countersunk heads inside
+
+
                 chainwheelThick =self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
                 self.arbourThicknesses.append(chainwheelThick)
                 if self.goingTrain.chainAtBack:
-                    #totalheight is self.screwheadHeight + self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
                     drivingZ = chainwheelThick - self.goingTrain.gearWheelThick/2
                 else:
                     drivingZ = self.goingTrain.gearWheelThick/2
@@ -1870,18 +1858,6 @@ class ClockPlates:
         #hack for now
         #use vertical plate-things, not pillars!
         self.width = 50
-        # self
-        # r = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2
-        # r2 = self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-1].wheel.pitch_diameter/2
-        # topGearToTop = math.sqrt(math.pow(r + self.pilarR + self.pillarToGearGap, 2) + math.pow(self.width/2 - self.pilarR , 2)) + self.pilarR
-        # bottomGearToBottom = math.sqrt(math.pow(r2 + self.pilarR + self.pillarToGearGap, 2) + math.pow(self.width/2 - self.pilarR , 2)) + self.pilarR
-        # self.height =  topGearToTop + abs(self.bearingPositions[len(self.bearingPositions)-1][1]) + bottomGearToBottom
-        # print("height", self.height)
-        # self.topLeft = [-self.width/2, ]
-
-        #this is just going to be too tall, try holding it together in width instead
-        # self.height = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 + abs(self.bearingPositions[len(self.bearingPositions)-1][1]) + self.goingTrain.wheelPinionPairs[self.goingTrain.wheels-2].wheel.pitch_diameter/2 + self.gearGap*2
-        # self.topY = self.goingTrain.wheelPinionPairs[0].wheel.pitch_diameter/2 +  self.gearGap
 
 
         #how much space to leave around the edge of the gears for safety
@@ -1898,22 +1874,25 @@ class ClockPlates:
 
         print("Height: ", self.minHeight)
 
-        self.legWidth = 10
-        self.legLength = 15
 
-        safetySpace = 10 + self.legWidth / 2
-        topGearR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
-        bottomGearR = self.goingTrain.escapement.getWheelMaxR()
-        bottomLegsPos = (self.bearingPositions[2][0], (self.bearingPositions[2][1] + self.bearingPositions[3][1])/2, 0 )
-
-        self.legs = [(-topGearR - safetySpace, 0, 0), (topGearR + safetySpace, 0, 0),
-                (bottomLegsPos[0] - (safetySpace + bottomGearR), bottomLegsPos[1], 0), (bottomLegsPos[0] + (safetySpace + bottomGearR), bottomLegsPos[1], 0)]
 
         #TODO chain wheels in the future
 
     def getPlate(self, back=True):
         if self.compact:
+            return self.getCompactPlate(back)
+        else:
             return self.getSimpleVerticalPlate(back)
+
+
+
+
+    def getCompactPlate(self, back=True):
+        '''
+        a plate design to minimise total height, so more complicated clocks can still fit on the print bed
+
+        Still trying to keep the pendulum, hands and weight in a line
+        '''
 
 
     def getBearingHolder(self, height, addSupport=True):
@@ -1982,6 +1961,18 @@ class ClockPlates:
 
         note - this will likely be broken as it will depend on assumptions that have changed
         '''
+
+        self.legWidth = 10
+        self.legLength = 15
+
+        safetySpace = 10 + self.legWidth / 2
+        topGearR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
+        bottomGearR = self.goingTrain.escapement.getWheelMaxR()
+        bottomLegsPos = (self.bearingPositions[2][0], (self.bearingPositions[2][1] + self.bearingPositions[3][1])/2, 0 )
+
+        self.legs = [(-topGearR - safetySpace, 0, 0), (topGearR + safetySpace, 0, 0),
+                (bottomLegsPos[0] - (safetySpace + bottomGearR), bottomLegsPos[1], 0), (bottomLegsPos[0] + (safetySpace + bottomGearR), bottomLegsPos[1], 0)]
+
 
         neg = 1 if back else -1
 
@@ -2148,7 +2139,7 @@ class ClockPlates:
 
         # plate = cq.Workplane("XY").moveTo(0, - self.minHeight/2).rect(width, self.minHeight).extrude(10)
 
-        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2).close().extrude(plateThick)
+        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2+1).close().extrude(plateThick)
 
         for i, pos in enumerate(self.bearingPositions):
 
@@ -2230,11 +2221,11 @@ class ClockPlates:
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getSimpleVerticalPlate(False), out)
+        exporters.export(self.getPlate(False), out)
 
         out = os.path.join(path, "{}_back_plate.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getSimpleVerticalPlate(True), out)
+        exporters.export(self.getPlate(True), out)
 
 class Pendulum:
     '''
@@ -2767,21 +2758,43 @@ if 'show_object' not in globals():
 # show_object(hands.getHand(outline=True))
 # hands.outputSTLs(clockName, clockOutDir)
 
-#drop of 1 and lift of 3 has good pallet angles with 42 teeth
-drop =2
-lift =4
-lock=2
-escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=61.454842805344896, teeth=30, lock=lock, anchorTeeth=None)
-# escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
-#                              clockwiseFromPivotSide=False, type="deadbeat")
+# #drop of 1 and lift of 3 has good pallet angles with 42 teeth
+# drop =2
+# lift =4
+# lock=2
+# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=61.454842805344896, teeth=30, lock=lock, anchorTeeth=None)
+# # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
+# #                              clockwiseFromPivotSide=False, type="deadbeat")
+#
+# wheel_angle = 0#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
+# anchor_angle = 0#lift/2 + lock/2
+#
+# show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
+# show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
+#
+# anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
+# # show_object(escapement.getAnchor3D())
+# show_object(anchor)
+# # exporters.export(anchor, "../out/anchor_test.stl")
 
-wheel_angle = 0#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-anchor_angle = 0#lift/2 + lock/2
 
-show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
-show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
+# train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
+train.calculateRatios()
+train.genChainWheels(thick=5)
+pendulumSticksOut=20
+train.genGears(module_size=1,moduleReduction=0.85, thick=4)
+motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
+#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
 
-anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
-# show_object(escapement.getAnchor3D())
-show_object(anchor)
-# exporters.export(anchor, "../out/anchor_test.stl")
+
+#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut)
+
+show_object(plates.getSimpleVerticalPlate(True))
+#
+# hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+
+
+

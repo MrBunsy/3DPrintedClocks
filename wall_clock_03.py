@@ -16,7 +16,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_03_temp"
+clockName="wall_clock_03_v2"
 clockOutDir="out"
 
 # crutchLength=100
@@ -34,7 +34,7 @@ escapement time: 45.0s teeth: 30
 cicumference: 67.25, run time of:29.4hours
 '''
 
-train.genChainWheels(thick=5)
+train.genChainWheels(thick=5, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2)
 
 pendulumSticksOut=20
 
@@ -55,3 +55,4 @@ plates.outputSTLs(clockName, clockOutDir)
 
 hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)
+
