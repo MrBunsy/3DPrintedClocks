@@ -196,7 +196,7 @@ class Gear:
         if self.iswheel:
             if style == "HAC":
 
-                rimThick = max(self.pitch_diameter * 0.035 , 2.2)
+                rimThick = max(self.pitch_diameter * 0.035 , 3)
                 rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
 
                 armThick = rimThick
@@ -523,7 +523,7 @@ class GoingTrain:
 
         return allTimes
 
-    def genChainWheels(self, thick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5):
+    def genChainWheels(self, thick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
         '''
 
         Generate the gear ratios for the wheels between chain and minute wheel
@@ -535,7 +535,7 @@ class GoingTrain:
         if self.chainWheels == 0:
             chainWheelCircumference = self.maxChainDrop/self.hours
             self.max_chain_wheel_d = chainWheelCircumference/math.pi
-            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD)
+            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance)
 
 
 
@@ -706,6 +706,12 @@ class GoingTrain:
         self.chainWheelArbours = []
         if self.chainWheels > 0:
             self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,chainWheelPair.wheel,holeD=holeD, thick=thick, style=style)]
+
+    def getWheelPinionPair(self, i):
+        return self.wheelPinionPairs[i]
+
+    def getMinuteWheelPinionPair(self):
+        return self.wheelPinionPairs[self.chainWheels]
 
     def outputSTLs(self, name="clock", path="../out"):
         for i,wheel in enumerate(self.arbours):
@@ -1167,7 +1173,7 @@ class Escapement:
         if not self.clockwiseFromPivotSide:
             gear = gear.mirror("YZ", (0,0,0))
 
-        rimThick = holeD
+        rimThick = holeD*1.5
         rimRadius = self.innerRadius - rimThick
 
         armThick = rimThick
@@ -1853,26 +1859,16 @@ class ClockPlates:
 
         # self.pilarR=15
         # self.pillarToGearGap=10
-        self.gearGap = 10
+        # how much space to leave around the edge of the gears for safety
+        self.gearGap = 3
 
         #hack for now
         #use vertical plate-things, not pillars!
-        self.width = 50
+        # self.width = 50
 
 
-        #how much space to leave around the edge of the gears for safety
-        self.gearSpace=5
-        #just tall enough to hold the top and bottom bearings
-        self.height = self.bearingOuterD + abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + self.bearingWallThick * 2# + self.goingTrain.escapement.anchor_centre_distance
 
-        # topExtra =self.bearingOuterD/2 + self.bearingWallThick
-        # topExtra = self.bearingOuterD/2 + self.bearingWallThick
-        topExtra=0
-        self.minHeight = abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + topExtra + self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
-        # self.topY = self.bearingOuterD/2 + self.bearingWallThick
-        self.topY = self.bearingPositions[len(self.bearingPositions) - 1][1] + topExtra
 
-        print("Height: ", self.minHeight)
 
 
 
@@ -2103,12 +2099,19 @@ class ClockPlates:
         Works pretty well! just a bit more chunky than needed
         '''
 
+
+
+        # print("Height: ", self.minHeight)
+
+
         chainHoleD = 8
 
         #making the plates wide enough that there can be vaguely strong holes for the chains to go through
-        chainHoleHolderWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
+        # chainHoleHolderWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
+        #
+        # width=chainHoleHolderWidth#25
 
-        width=chainHoleHolderWidth#25
+        width = self.bearingOuterD + self.bearingWallThick*2 #18#self.goingTrain.chainWheel.diameter - chainHoleD
         print("width", width)
         plateThick = self.plateThick
 
@@ -2116,22 +2119,33 @@ class ClockPlates:
         #     #the back plate is pretty solid, don't think the front needs to be quite as chunky?
         #     plateThick *= 0.75
 
+        #https://en.wikipedia.org/wiki/Sagitta_(geometry)
+        bottomGearR = self.goingTrain.getWheelPinionPair(0).wheel.getMaxRadius()
+        l=width
+        #aprox
+        sagittaOfBottomGear = l*2/(8*bottomGearR)
+
         #was originally planning an angle bracket, but decided to just make it square and have screws vertically
-        bottomBracketLength=self.plateDistance
+        bottomBracketLength=self.plateDistance - width/2
+        bottomBracketOffset = self.gearGap + bottomGearR - sagittaOfBottomGear
         #bottom of teh top bracket
-        topBracketOffset =  self.bearingOuterD/2 + self.bearingWallThick + 5
-        topBracketLength = 5
+        #making it now just a circle - not the most compact, but I think it looks better
+        topBracketOffset =  self.bearingOuterD/2 + self.gearGap
+        topBracketLength = width/2
         fixingScrewD=3
 
-        height = self.minHeight + self.gearGap  + bottomBracketLength + topBracketLength + topBracketOffset
-        topY = self.topY + topBracketOffset + topBracketLength
+        #height of the rectangular bit
+        height = abs(self.bearingPositions[len(self.bearingPositions) - 1][1]) + bottomBracketOffset + bottomBracketLength + topBracketLength + topBracketOffset
+        topY = self.bearingPositions[len(self.bearingPositions) - 1][1] + topBracketOffset + topBracketLength
 
         # fixingSpace = width - fixingScrewD*2.5
 
         totalBracketHeight = bottomBracketLength + width/2
 
-        fixingPositions=[ (-width/4, topY + width*0.2), (width/4, topY + width*0.2),
-            (0, topY - height + bottomBracketLength - totalBracketHeight/5), (0, topY - height + bottomBracketLength - totalBracketHeight/2), (0, topY - height + bottomBracketLength - totalBracketHeight*4/5) ]
+        # fixingPositions=[ (-width/4, topY + width*0.2), (width/4, topY + width*0.2),
+        #     (0, topY - height + bottomBracketLength - totalBracketHeight/5), (0, topY - height + bottomBracketLength - totalBracketHeight/2), (0, topY - height + bottomBracketLength - totalBracketHeight*4/5) ]
+
+        fixingPositions = [(-width/4, topY), (width/4, topY),  (0, topY - height + bottomBracketLength - totalBracketHeight/4), (0, topY - height + bottomBracketLength - totalBracketHeight*2/3)]
 
         # if back:
         #     #for the triangular bracket
@@ -2139,7 +2153,7 @@ class ClockPlates:
 
         # plate = cq.Workplane("XY").moveTo(0, - self.minHeight/2).rect(width, self.minHeight).extrude(10)
 
-        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2+1).close().extrude(plateThick)
+        plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2).close().extrude(plateThick)
 
         for i, pos in enumerate(self.bearingPositions):
 
@@ -2169,7 +2183,7 @@ class ClockPlates:
 
         if back:
             # screwhole to hang on the wall
-            screwHeadD = 11
+            screwHeadD = 9
             screwBodyD = 6
             screwHoleHeight = 5
             # sticking off the top makes the plate a bit too big to print nicely
@@ -2184,7 +2198,7 @@ class ClockPlates:
 
 
             # bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bottomBracketLength,0).lineTo(-bottomBracketLength,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
-            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).line(width,0).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
+            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).radiusArc((width/2, topY - height + bottomBracketLength), -bottomGearR).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
             #TODO tidier way to hold the chains
             # bracket = bracket.workplaneFromTagged("base").moveTo(0,self.topY - height + chainHoleHolderThick/2).rect(chainHoleHolderWidth, chainHoleHolderThick).extrude(self.plateDistance)
 
@@ -2203,8 +2217,10 @@ class ClockPlates:
             plate = plate.add(bracket.translate((0,0,plateThick)))#.translate((-width/2,-minuteWheelR - self.gearGap, plateThick)))
 
 
-            topBracket = cq.Workplane("XY").moveTo(-width/2,topY -topBracketLength).line(0, topBracketLength)\
-                .radiusArc((width/2, topY), width/2).line(0, -topBracketLength).radiusArc((-width/2, topY - topBracketLength), -width).close().extrude(self.plateDistance)
+            # topBracket = cq.Workplane("XY").moveTo(-width/2,topY -topBracketLength).line(0, topBracketLength)\
+            #     .radiusArc((width/2, topY), width/2).line(0, -topBracketLength).close().extrude(self.plateDistance)
+            # #.radiusArc((-width/2, topY - topBracketLength), -width)
+            topBracket = cq.Workplane("XY").moveTo(0, topY).circle(width/2).extrude(self.plateDistance)
 
             plate = plate.add(topBracket.translate((0,0,plateThick)))
 

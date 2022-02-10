@@ -34,11 +34,12 @@ escapement time: 45.0s teeth: 30
 cicumference: 67.25, run time of:29.4hours
 '''
 
-train.genChainWheels(thick=5, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2)
+#chain size seems about right, trying reducing tolerance
+train.genChainWheels(thick=5, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=0.85, thick=4)
+train.genGears(module_size=1,moduleReduction=0.85, thick=3)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
