@@ -517,11 +517,21 @@ class GoingTrain:
                 allTimes.append(train)
 
         allTimes.sort(key = lambda x: x["error"]+x["teeth"])
-        # print(allTimes)
+        print(allTimes)
 
         self.trains = allTimes
 
+        if len(allTimes) == 0:
+            raise RuntimeError("Unable to calculate valid going train")
+
         return allTimes
+
+    def setRatios(self, gearPinionPairs):
+        #keep in the format of the autoformat
+        time={'train': gearPinionPairs}
+
+        self.trains = [time]
+
 
     def genChainWheels(self, thick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
         '''
@@ -2198,7 +2208,7 @@ class ClockPlates:
 
 
             # bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bottomBracketLength,0).lineTo(-bottomBracketLength,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
-            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).radiusArc((width/2, topY - height + bottomBracketLength), -bottomGearR).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
+            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).radiusArc((width/2, topY - height + bottomBracketLength), -bottomGearR-1).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
             #TODO tidier way to hold the chains
             # bracket = bracket.workplaneFromTagged("base").moveTo(0,self.topY - height + chainHoleHolderThick/2).rect(chainHoleHolderWidth, chainHoleHolderThick).extrude(self.plateDistance)
 
@@ -2793,24 +2803,24 @@ if 'show_object' not in globals():
 # show_object(anchor)
 # # exporters.export(anchor, "../out/anchor_test.stl")
 
-
-# train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-train.calculateRatios()
-train.genChainWheels(thick=5)
-pendulumSticksOut=20
-train.genGears(module_size=1,moduleReduction=0.85, thick=4)
-motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
-#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
-
-
-#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut)
-
-show_object(plates.getSimpleVerticalPlate(True))
 #
-# hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-
-
-
+# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
+# train.calculateRatios()
+# train.genChainWheels(thick=5)
+# pendulumSticksOut=20
+# train.genGears(module_size=1,moduleReduction=0.85, thick=4)
+# motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
+# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+#
+#
+# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut)
+#
+# show_object(plates.getSimpleVerticalPlate(True))
+# #
+# # hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+#
+#
+#
