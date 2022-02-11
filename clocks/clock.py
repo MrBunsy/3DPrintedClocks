@@ -532,37 +532,23 @@ class GoingTrain:
 
         self.trains = [time]
 
-
-    def genChainWheels(self, thick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
-        '''
-
-        Generate the gear ratios for the wheels between chain and minute wheel
-        again, I'd like to make this generic but the solution isn't immediately obvious and it would take
-        longer to make it generic than just make it work
-        '''
-
-
+    def calculateChainWheelRatios(self):
         if self.chainWheels == 0:
-            chainWheelCircumference = self.maxChainDrop/self.hours
-            self.max_chain_wheel_d = chainWheelCircumference/math.pi
-            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance)
-
-
-
+            '''
+            nothing to do
+            '''
         elif self.chainWheels == 1:
             chainWheelCircumference = self.max_chain_wheel_d * math.pi
-            #use provided max_chain_wheel_d and calculate the rest
-            self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD)
 
-            #get the actual circumference (calculated from the length of chain segments)
+            # get the actual circumference (calculated from the length of chain segments)
             chainWheelCircumference = self.chainWheel.circumference
 
-            turns = self.maxChainDrop/chainWheelCircumference
+            turns = self.maxChainDrop / chainWheelCircumference
 
-            #find the ratio we need from the chain wheel to the minute wheel
-            turnsPerHour = turns/self.hours
+            # find the ratio we need from the chain wheel to the minute wheel
+            turnsPerHour = turns / self.hours
 
-            desiredRatio = 1/turnsPerHour
+            desiredRatio = 1 / turnsPerHour
 
             print("Chain wheel turns per hour", turnsPerHour)
             print("Chain wheel ratio to minute wheel", desiredRatio)
@@ -581,9 +567,9 @@ class GoingTrain:
 
             allRatios = []
             for i in range(len(allGearPairCombos)):
-                ratio = allGearPairCombos[i][0]/allGearPairCombos[i][1]
+                ratio = allGearPairCombos[i][0] / allGearPairCombos[i][1]
                 if round(ratio) == ratio:
-                    #integer ratio
+                    # integer ratio
                     continue
                 totalTeeth = 0
                 # trying for small wheels and big pinions
@@ -591,24 +577,45 @@ class GoingTrain:
                 totalPinionTeeth = allGearPairCombos[i][1]
 
                 error = desiredRatio - ratio
-                #want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
-                train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth /1000}
+                # want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
+                train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth / 1000}
                 if abs(error) < 0.1:
                     allRatios.append(train)
 
-            allRatios.sort(key=lambda x: x["error"] - x["teeth"])#
+            allRatios.sort(key=lambda x: x["error"] - x["teeth"])  #
 
             print(allRatios)
 
             self.chainWheelRatio = allRatios[0]["pair"]
-
-
         else:
             raise ValueError("Unsupported number of chain wheels")
 
+    def setChainWheelRatio(self, pinionPair):
+        self.chainWheelRatio = pinionPair
+
+    def genChainWheels(self, ratchetThick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
+        '''
+
+        Generate the gear ratios for the wheels between chain and minute wheel
+        again, I'd like to make this generic but the solution isn't immediately obvious and it would take
+        longer to make it generic than just make it work
+        '''
 
 
-        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=thick, powerClockwise=self.chainAtBack)
+        if self.chainWheels == 0:
+            chainWheelCircumference = self.maxChainDrop/self.hours
+            self.max_chain_wheel_d = chainWheelCircumference/math.pi
+
+        elif self.chainWheels == 1:
+            chainWheelCircumference = self.max_chain_wheel_d * math.pi
+            #use provided max_chain_wheel_d and calculate the rest
+
+        self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance)
+
+
+
+
+        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=ratchetThick, powerClockwise=self.chainAtBack)
 
         self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
         self.chainWheelHalf = self.chainWheel.getHalf(False)
@@ -621,14 +628,23 @@ class GoingTrain:
 
     def printInfo(self):
         print(self.trains[0])
+
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement_teeth))
+        # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
+        chainRatio = 1
+        if self.chainWheels > 0:
+            print(self.chainWheelRatio)
+            chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
+        runtime = self.chainWheel.getRunTime(chainRatio,self.maxChainDrop)
+        print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
+
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6):
         #TODO how many hours and how many gears between chain wheel and minute wheel (0+)?
         #TODO auto calculate if the escape wheel is clockwise or not and add this functionality to the escape wheel generation!
         arbours = []
-        # thick = holeD*2
+        # ratchetThick = holeD*2
         #thickness of just the wheel
         self.gearWheelThick=thick
         #thickness of arbour assembly
@@ -658,9 +674,9 @@ class GoingTrain:
 
         #chain wheel imaginary pivot (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
         #using != as XOR, so if an odd number of wheels, it's the same as chainAtBack. If it's an even number of wheels, it's the opposite
-        escapeWheelPivotAtFront = self.chainAtBack != (self.wheels % 2 == 0)
+        escapeWheelPivotAtFront = self.chainAtBack != ((self.wheels + self.chainWheels) % 2 == 0)
 
-        #only true if an odd number of wheels
+        #only true if an odd number of wheels (note this IS wheels, not with chainwheels, as the minute wheel is always clockwise)
         escapeWheelClockwise = self.wheels %2 == 1
 
         escapeWheelClockwiseFromPivotSide = escapeWheelPivotAtFront == escapeWheelClockwise
@@ -679,7 +695,9 @@ class GoingTrain:
             if chainDistance < minuteWheelSpace:
                 # calculate module for the chain wheel based on teh space available
                 chainModule = 2 * minuteWheelSpace / (self.chainWheelRatio[0] + self.chainWheelRatio[1])
-            chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
+            self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
+            #only supporting one at the moment, but open to more in the future if needed
+            self.chainWheelPairs=[self.chainWheelPair]
 
         for i in range(self.wheels):
 
@@ -687,11 +705,11 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    # arbours.append(pairs[i].wheel.get3D(holeD=holeD,thick=thick, style=style))
+                    # arbours.append(pairs[i].wheel.get3D(holeD=holeD,ratchetThick=ratchetThick, style=style))
                     arbour = getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=holeD, thick=thick, style=style)
                 else:
                     #just a normal gear
-                    arbour = chainWheelPair.pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength)
+                    arbour = self.chainWheelPair.pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength)
 
                 #regardless of chains, we need a nyloc nut to fix the wheel to the rod
                 arbour = arbour.cut(getHoleWithHole(holeD, getNutContainingDiameter(holeD,0.2), thick*0.25,6))
@@ -715,13 +733,23 @@ class GoingTrain:
 
         self.chainWheelArbours = []
         if self.chainWheels > 0:
-            self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,chainWheelPair.wheel,holeD=holeD, thick=thick, style=style)]
+            self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,self.chainWheelPair.wheel,holeD=holeD, thick=thick, style=style)]
 
     def getWheelPinionPair(self, i):
-        return self.wheelPinionPairs[i]
+        '''
+        +ve is in direction of the anchor
+        0 is minute wheel
+        -ve is in direction of power ( so last chain wheel is -1, first chain wheel is -chainWheels)
+        '''
+
+        if i >= 0:
+            return self.wheelPinionPairs[i]
+        else:
+            return self.chainWheelPairs[self.chainWheels+i]
+
 
     def getMinuteWheelPinionPair(self):
-        return self.wheelPinionPairs[self.chainWheels]
+        return self.wheelPinionPairs[0]
 
     def outputSTLs(self, name="clock", path="../out"):
         for i,wheel in enumerate(self.arbours):
@@ -1219,7 +1247,7 @@ class Escapement:
 
         # # face = ">Z" if clockwise else "<Z"
         # #cut hole through both
-        # wheel = wheel.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
+        # wheel = wheel.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(ratchetThick * 0.5).circle(holeD / 2).cutThruAll()
 
 def getHoleWithHole(innerD,outerD,deep, sides=1, layerThick=LAYER_THICK):
     '''
@@ -1314,7 +1342,7 @@ class ChainWheel:
 
         self.radius = self.diameter/2
 
-        print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference,self.getRunTime()))
+        # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference,self.getRunTime()))
         self.outerDiameter = self.diameter + width * 0.75
         self.outerRadius = self.outerDiameter/2
 
@@ -1512,7 +1540,7 @@ class Ratchet:
 
         innerClickR = self.clickInnerRadius
 
-        #arc aprox thick
+        #arc aprox ratchetThick
         clickArcAngle = self.clockwise * thick/innerClickR
         clickOffsetAngle = -(math.pi*2/self.clicks)*1 * self.clockwise
 
@@ -1792,8 +1820,8 @@ class ClockPlates:
         #this flip flops between gears, set it opposite of where the chain is, because the next wheel doesn't fit next to the chain wheel
         pinionAtBack = not self.goingTrain.chainAtBack
         print("initial pinionAtBack", pinionAtBack)
-        for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
-
+        for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
+            print(str(i))
             if  (i == 0 and self.goingTrain.chainWheels == 0) or (i == -self.goingTrain.chainWheels):
                 #the wheel with chain wheel ratchet
                 #assuming this is at the very back of the clock
@@ -1822,7 +1850,8 @@ class ClockPlates:
                     print("is anchor", self.goingTrain.escapement.anchor_centre_distance)
                 else:
                     #any of the other wheels
-                    r = self.goingTrain.wheelPinionPairs[i-1].wheel.pitch_diameter/2 + goingTrain.wheelPinionPairs[i-1].pinion.pitch_diameter/2
+                    r = self.goingTrain.getWheelPinionPair(i-1).wheel.pitch_diameter/2 + goingTrain.getWheelPinionPair(i-1).pinion.pitch_diameter/2
+                    print("r",r)
                     self.arbourThicknesses.append(self.goingTrain.gearTotalThick)
                     pinionAtBack = not pinionAtBack
                     if pinionAtBack:
@@ -1835,9 +1864,9 @@ class ClockPlates:
                 angle=self.anglesToScape[i-1]
                 v = polar(angle, r)
                 # v = [v[0], v[1], baseZ]
-
+                lastPos = self.bearingPositions[-1]
                 # pos = list(np.add(self.bearingPositions[i-1],v))
-                pos = [self.bearingPositions[i - 1][0] + v[0], self.bearingPositions[i - 1][1] + v[1], baseZ]
+                pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
 
                 print("pinionAtBack: {} wheel {} r: {} angle: {}".format(pinionAtBack, i, r, angle), pos)
                 print("baseZ: ",baseZ, "drivingZ ", drivingZ)
@@ -2130,7 +2159,7 @@ class ClockPlates:
         #     plateThick *= 0.75
 
         #https://en.wikipedia.org/wiki/Sagitta_(geometry)
-        bottomGearR = self.goingTrain.getWheelPinionPair(0).wheel.getMaxRadius()
+        bottomGearR = self.goingTrain.getMinuteWheelPinionPair().wheel.getMaxRadius()
         l=width
         #aprox
         sagittaOfBottomGear = l*2/(8*bottomGearR)
@@ -2183,9 +2212,9 @@ class ClockPlates:
 
             motionWorksDistance = self.motionWorks.getArbourDistance()
 
-            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance).circle(self.arbourD/2).cutThruAll()
+            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0], self.bearingPositions[self.goingTrain.chainWheels][1]-motionWorksDistance).circle(self.arbourD/2).cutThruAll()
             nutDeep = METRIC_HALF_NUT_DEPTH_MULT*self.arbourD
-            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[0][0], self.bearingPositions[0][1]-motionWorksDistance, plateThick-nutDeep))
+            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[self.goingTrain.chainWheels][0], self.bearingPositions[self.goingTrain.chainWheels][1]-motionWorksDistance, plateThick-nutDeep))
 
             plate = plate.cut(nutSpace)
 
@@ -2208,6 +2237,7 @@ class ClockPlates:
 
 
             # bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bottomBracketLength,0).lineTo(-bottomBracketLength,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
+            #sometimes cadquery complains the radius isn't large enough to reach. it blatently is, but add 0.1 to bodge it
             bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).radiusArc((width/2, topY - height + bottomBracketLength), -bottomGearR-1).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
             #TODO tidier way to hold the chains
             # bracket = bracket.workplaneFromTagged("base").moveTo(0,self.topY - height + chainHoleHolderThick/2).rect(chainHoleHolderWidth, chainHoleHolderThick).extrude(self.plateDistance)
@@ -2219,7 +2249,7 @@ class ClockPlates:
             bracket = bracket.faces(">Y").workplane().pushPoints([(self.goingTrain.chainWheel.diameter / 2, chainFromBack), (-self.goingTrain.chainWheel.diameter / 2, chainFromBack)]).circle(chainHoleD/2).cutThruAll()
             # bracket = bracket.faces(">Y").workplane().moveTo(0,chainHoleD).circle(chainHoleD / 2).cutThruAll()
 
-            minuteWheelR = self.goingTrain.wheelPinionPairs[0].wheel.getMaxRadius()
+            # minuteWheelR = self.goingTrain.getMinuteWheelPair().wheel.getMaxRadius()
             #shelf-like bracket to hold the front plate
 
             # plate = plate.faces(">Z").workplane().moveTo(0, -minuteWheelR -bottomBracketLength/2 - self.gearGap).rect(bracketWidth, bottomBracketLength).extrude(self.plateDistance)
@@ -2551,7 +2581,7 @@ class Hands:
         self.minuteFixing=minuteFixing
         self.minuteFixing_d1 = minuteFixing_d1
         self.minuteFixing_d2 = minuteFixing_d2
-        #Add a different coloured outline that is this many mm thick
+        #Add a different coloured outline that is this many mm ratchetThick
         self.outline = outline
         #if true the outline will be part of the same STL as the main body, if false, it'll just be a small sliver
         self.outlineSameAsBody = outlineSameAsBody
@@ -2595,11 +2625,11 @@ class Hands:
 
 
         hand = cq.Workplane("XY").tag("base").circle(radius=self.base_r).extrude(self.thick)
-        # hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(thick)
+        # hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(ratchetThick)
 
         if self.style == "simple":
             width = self.length * 0.1
-            # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).lineTo(end_d / 2, length).radiusArc((-end_d / 2, length), -end_d / 2).lineTo(-width * 0.4, 0).close().extrude(thick)
+            # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).lineTo(end_d / 2, length).radiusArc((-end_d / 2, length), -end_d / 2).lineTo(-width * 0.4, 0).close().extrude(ratchetThick)
             #
             #
             # if outline:
@@ -2621,10 +2651,10 @@ class Hands:
             centrehole_r = width * 0.15
 
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).threePointArc((end_d *0.75, length/2),(end_d / 2, length)).radiusArc(
-            #    (-end_d / 2, length), -end_d / 2).threePointArc((-end_d *0.75, length/2),(-width * 0.4, 0)).close().extrude(thick)
+            #    (-end_d / 2, length), -end_d / 2).threePointArc((-end_d *0.75, length/2),(-width * 0.4, 0)).close().extrude(ratchetThick)
 
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.25, length*0.3).lineTo(end_d / 2, length).radiusArc(
-            #     (-end_d / 2, length), -end_d / 2).lineTo(-width * 0.25, length*0.3).close().extrude(thick)
+            #     (-end_d / 2, length), -end_d / 2).lineTo(-width * 0.25, length*0.3).close().extrude(ratchetThick)
             hand = hand.workplaneFromTagged("base").moveTo(width * 0.2, length * 0.3).lineTo(end_d / 2, length).threePointArc((0, length + end_d / 2), (-end_d / 2, length)).lineTo(-width * 0.2, length * 0.3).close().extrude(self.thick)
 
             # extra round bits towards the end of the hand
@@ -2644,7 +2674,7 @@ class Hands:
             hand = stickyoutblobs.mirrorY().extrude(self.thick)
 
             # hand = hand.workplaneFromTagged("base").moveTo(0, centrehole_y-centrehole_r).spline([(little_sticky_out_dist*1.6,centrehole_y-little_sticky_out_d*0.6),(little_sticky_out_dist*1.6,centrehole_y+little_sticky_out_d*0.2),(0,centrehole_y)],includeCurrent=True)\
-            #     .mirrorY().extrude(thick)
+            #     .mirrorY().extrude(ratchetThick)
             hand = hand.workplaneFromTagged("base").moveTo(0, little_sticky_out_y - little_sticky_out_d / 2 + little_sticky_out_d * 0.1).lineTo(little_sticky_out_dist, little_sticky_out_y - little_sticky_out_d / 2).threePointArc(
                 (little_sticky_out_dist + little_sticky_out_d / 2, little_sticky_out_y), (little_sticky_out_dist, little_sticky_out_y + little_sticky_out_d / 2)).line(-little_sticky_out_dist, 0) \
                 .mirrorY().extrude(self.thick)
@@ -2676,7 +2706,7 @@ class Hands:
                  (heartwidth * 0.6, heartbase + heartheight * 0.4), (heartwidth * 0.3, heartbase + heartheight / 2)],
                 includeCurrent=True).lineTo(heartwidth * 0.5, heartbase + heartheight * 0.75).lineTo(0,
                                                                                                      hearttop).mirrorY()  # .cutThruAll()
-            # return hand.extrude(thick*2)
+            # return hand.extrude(ratchetThick*2)
             hand = hand.cutThruAll()
 
         # fixing = self.hourFixing if hour else self.minuteFixing
@@ -2746,7 +2776,7 @@ if 'show_object' not in globals():
 # train.genChainWheels()
 # # show_object(train.chainWheelWithRatchet)
 # # show_object(train.chainWheelHalf.translate((0,30,0)))
-# train.genGears(module_size=1.2,moduleReduction=0.85, thick=4)
+# train.genGears(module_size=1.2,moduleReduction=0.85, ratchetThick=4)
 # # show_object(train.ratchet.getInnerWheel())
 # # show_object(train.arbours[0])
 #
@@ -2779,7 +2809,7 @@ if 'show_object' not in globals():
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 #
-# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=3, outline=1, outlineSameAsBody=False)
+# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, ratchetThick=3, outline=1, outlineSameAsBody=False)
 #
 # show_object(hands.getHand(outline=True))
 # hands.outputSTLs(clockName, clockOutDir)
@@ -2807,9 +2837,9 @@ if 'show_object' not in globals():
 # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 # train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
 # train.calculateRatios()
-# train.genChainWheels(thick=5)
+# train.genChainWheels(ratchetThick=5)
 # pendulumSticksOut=20
-# train.genGears(module_size=1,moduleReduction=0.85, thick=4)
+# train.genGears(module_size=1,moduleReduction=0.85, ratchetThick=4)
 # motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
 # #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
 # pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
@@ -2820,7 +2850,7 @@ if 'show_object' not in globals():
 #
 # show_object(plates.getSimpleVerticalPlate(True))
 # #
-# # hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+# # hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, ratchetThick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 #
 #
 #

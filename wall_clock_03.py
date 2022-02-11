@@ -36,7 +36,7 @@ cicumference: 67.25, run time of:29.4hours
 '''
 
 #chain size seems about right, trying reducing tolerance
-train.genChainWheels(thick=5, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+train.genChainWheels(ratchetThick=5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.1)
 
 pendulumSticksOut=20
 

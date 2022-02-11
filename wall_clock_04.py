@@ -32,7 +32,7 @@ cicumference: 68.60000000000001, run time of:28.9hours
 '''
 
 # 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
-train.genChainWheels(thick=5, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+train.genChainWheels(ratchetThick=5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.1)
 
 pendulumSticksOut=20
 
