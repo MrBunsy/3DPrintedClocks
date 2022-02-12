@@ -300,6 +300,9 @@ class WheelPinionPair:
     Wheels drive pinions, and wheels and pinions are made to mesh together
 
     Each arbour will have the wheel of one pair and a pinion of a different pair - which need not have the same size module
+
+    This class creates teh basic shapes for a wheel that drives a specific pinion. There is not much reason for this class to be used outside teh GoingTrain
+    The Arbour class combines the wheels and pinions that are on the same rod
     '''
 
     errorLimit=0.000001
@@ -370,6 +373,115 @@ class WheelPinionPair:
         addendumFactor = pinionTeeth / 4.0 * (1.0 - k + math.sqrt( 1.0 + k * k - 2.0 * k * math.cos(theta)) )
         return addendumFactor
 
+class Arbour:
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None, endCapThick=1, style="HAC", distanceToNextArbour=-1):
+        '''
+        This represents a combination of wheel and pinion. But with special versions:
+        - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
+        - escape wheel is pinion + escape wheel
+        - anchor is just the escapement anchor (NOTE - DECIDED IT'S NOT WORTH HAVING THAT AS PART OF THIS)
+
+        Trying to store all the special logic for thicknesses and radii in one place
+        '''
+        self.arbourD=arbourD
+        self.wheel=wheel
+        self.wheelThick=wheelThick
+        self.pinion=pinion
+        self.pinionThick=pinionThick
+        self.ratchet=ratchet
+        self.escapement=escapement
+        self.endCapThick=endCapThick
+        #the pocket chain wheel (needed only to calculate full height)
+        self.chainWheel=chainWheel
+        self.style=style
+        self.distanceToNextArbour=distanceToNextArbour
+        self.nutSpaceMetric=None
+
+        if self.getType() == "Unknown":
+            raise ValueError("Not a valid arbour")
+
+    def setNutSpace(self, nutMetricSize=3):
+        '''
+        This arbour is fixed firmly to the rod, so needs space for a nyloc nut
+        '''
+        self.nutSpaceMetric=nutMetricSize
+
+    def getType(self):
+        if self.wheel is not None and self.pinion is not None:
+            return "WheelAndPinion"
+        if self.wheel is not None and self.ratchet is not None and self.chainWheel is not None:
+            return "ChainWheel"
+        if self.wheel is None and self.escapement is not None:
+            return "EscapeWheel"
+        # if self.escapement is not None:
+        #     return "Anchor"
+        return "Unknown"
+
+
+    def getTotalThickness(self):
+        '''
+        return total thickness of everything that will be on the rod
+        '''
+        if self.getType() == "WheelAndPinion" or self.getType() == "EscapeWheel":
+            return self.wheelThick + self.pinionThick + self.endCapThick
+        if self.getType() == "ChainWheel":
+            return self.wheelThick + self.ratchet.thick + self.chainWheel.getHeight()
+        # if self.getType() == "Anchor":
+        #     #wheel thick being used for anchor thick
+        #     return self.wheelThick
+
+    def getWheelCentreZ(self, pinionOnTop=True):
+        '''
+        Get the centre of the height of the wheel - which drives the next arbour
+        '''
+        if pinionOnTop:
+            return self.wheelThick / 2
+        else:
+            return self.getTotalThickness() - self.wheelThick/2
+
+    def getPinionCentreZ(self, pinionOnTop=True):
+        if pinionOnTop:
+            return self.getTotalThickness() - self.endCapThick - self.pinionThick/2
+        else:
+            return self.endCapThick + self.pinionThick/2
+
+    def getPinionToWheelZ(self, pinionOnTop=True):
+        '''
+        Useful for calculating the height of the next part of the power train
+        '''
+        return self.getWheelCentreZ(pinionOnTop) - self.getPinionCentreZ(pinionOnTop)
+
+    def getMaxRadius(self):
+        if self.wheel is not None:
+            #chain wheel, WheelAndPinion
+            return self.wheel.getMaxRadius()
+        if self.getType() == "EscapeWheel":
+            return self.escapement.getWheelMaxR()
+        raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
+
+    def getShape(self):
+        '''
+        return a shape that can be exported to STL
+        '''
+        if self.getType() == "WheelAndPinion":
+            shape = self.pinion.addToWheel(self.wheel, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+        elif self.getType() == "EscapeWheel":
+            shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+        elif self.getType() == "ChainWheel":
+            shape = getWheelWithRatchet(self.ratchet,self.wheel,holeD=self.arbourD, thick=self.wheelThick, style=self.style)
+        else:
+            # if self.getType() == "Anchor":
+            #     return self.escapement.getAnchorArbour
+            raise NotImplementedError("GetShape not yet implemented for arbour type {}".format(self.getType()))
+        if self.nutSpaceMetric is not None:
+            #cut out a space for a nyloc nut
+            deep = self.wheelThick * 0.25
+            if self.pinion is not None:
+                #can make this much deeper
+                deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
+            shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, 0.2), deep , 6))
+
+        return shape
 
 class GoingTrain:
     gravity = 9.81
@@ -640,9 +752,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6):
-        #TODO how many hours and how many gears between chain wheel and minute wheel (0+)?
-        #TODO auto calculate if the escape wheel is clockwise or not and add this functionality to the escape wheel generation!
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6, chainWheelThick=-1):
         arbours = []
         # ratchetThick = holeD*2
         #thickness of just the wheel
@@ -650,9 +760,18 @@ class GoingTrain:
         #thickness of arbour assembly
         #wheel + pinion (3*wheel) + pinion top (0.5*wheel)
 
+        if chainWheelThick < 0:
+            chainWheelThick = thick
+
+        #TODO variable thicknesses? thickness per gear? or is just extra for the chain wheels enough?
+        #having chain wheels different thicknesses is enough to warrent thickness per gear i think
+        #and possibly a new class to hold this info together
         self.gearPivotLength=thick*2
+        self.chainGearPivotLength = chainWheelThick*2
+
         self.gearPivotEndCapLength=thick*0.25
         self.gearTotalThick = self.gearWheelThick + self.gearPivotLength + self.gearPivotEndCapLength
+        # self.chainGearTotalThick
         style="HAC"
         module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
@@ -698,6 +817,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
+            self.chainWheelArbours=[Arbour(chainWheel=self.chainWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style)]
 
         for i in range(self.wheels):
 
@@ -705,14 +825,13 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    # arbours.append(pairs[i].wheel.get3D(holeD=holeD,ratchetThick=ratchetThick, style=style))
-                    arbour = getWheelWithRatchet(self.ratchet,pairs[i].wheel,holeD=holeD, thick=thick, style=style)
+                    arbour = Arbour(chainWheel=self.chainWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance)
                 else:
                     #just a normal gear
-                    arbour = self.chainWheelPair.pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength)
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*2, endCapThick=self.gearPivotEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style)
 
                 #regardless of chains, we need a nyloc nut to fix the wheel to the rod
-                arbour = arbour.cut(getHoleWithHole(holeD, getNutContainingDiameter(holeD,0.2), thick*0.25,6))
+                arbour.setNutSpace(holeD)
 
                 arbours.append(arbour)
 
@@ -720,22 +839,23 @@ class GoingTrain:
 
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(pairs[i-1].pinion.addToWheel(pairs[i].wheel, holeD=holeD, thick=thick, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength))
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * 2, endCapThick=self.gearPivotEndCapLength,
+                                distanceToNextArbour=pairs[i].centre_distance, style=style))
             else:
-                #last pinion + escape wheel
-                #instead of inverting teeth, being lazy and changing which side the pinion goes on
-                arbours.append(pairs[i - 1].pinion.addToWheel(self.escapement, holeD=holeD, thick=thick, front=not self.scapeAtFront, style=style, pinionThick=self.gearPivotLength, capThick=self.gearPivotEndCapLength))
+                #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * 2, endCapThick=self.gearPivotEndCapLength,
+                                      distanceToNextArbour=self.escapement.anchor_centre_distance, style=style))
         self.wheelPinionPairs = pairs
         self.arbours = arbours
 
 
 
 
-        self.chainWheelArbours = []
-        if self.chainWheels > 0:
-            self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,self.chainWheelPair.wheel,holeD=holeD, thick=thick, style=style)]
+        # self.chainWheelArbours = []
+        # if self.chainWheels > 0:
+        #     self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,self.chainWheelPair.wheel,holeD=holeD, thick=chainWheelThick, style=style)]
 
-    def getWheelPinionPair(self, i):
+    def getArbour(self, i):
         '''
         +ve is in direction of the anchor
         0 is minute wheel
@@ -743,19 +863,19 @@ class GoingTrain:
         '''
 
         if i >= 0:
-            return self.wheelPinionPairs[i]
+            return self.arbours[i]
         else:
-            return self.chainWheelPairs[self.chainWheels+i]
+            return self.chainWheelArbours[self.chainWheels+i]
 
 
-    def getMinuteWheelPinionPair(self):
-        return self.wheelPinionPairs[0]
+    # def getMinuteWheelPinionPair(self):
+    #     return self.wheelPinionPairs[0]
 
     def outputSTLs(self, name="clock", path="../out"):
-        for i,wheel in enumerate(self.arbours):
+        for i,arbour in enumerate(self.arbours):
             out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
             print("Outputting ",out)
-            exporters.export(wheel, out)
+            exporters.export(arbour.getShape(), out)
         out = os.path.join(path,"{}_chain_wheel_with_click.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.chainWheelWithRatchet, out)
@@ -763,10 +883,10 @@ class GoingTrain:
         print("Outputting ", out)
         exporters.export(self.chainWheelHalf, out)
 
-        for i,wheel in enumerate(self.chainWheelArbours):
+        for i,arbour in enumerate(self.chainWheelArbours):
             out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
             print("Outputting ", out)
-            exporters.export(wheel, out)
+            exporters.export(arbour.getShape(), out)
 
         out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
         print("Outputting ", out)
@@ -1828,38 +1948,26 @@ class ClockPlates:
                 #note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
                 pos = [0, 0, 0]
                 self.bearingPositions.append(pos)
-
-
-                chainwheelThick =self.goingTrain.chainWheel.getHeight() + self.goingTrain.ratchet.thick + self.goingTrain.gearWheelThick
-                self.arbourThicknesses.append(chainwheelThick)
-                if self.goingTrain.chainAtBack:
-                    drivingZ = chainwheelThick - self.goingTrain.gearWheelThick/2
-                else:
-                    drivingZ = self.goingTrain.gearWheelThick/2
+                #note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
+                drivingZ = self.goingTrain.getArbour(i).getWheelCentreZ(pinionAtBack)
+                self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
                 print("pinionAtBack: {} wheel {} drivingZ: {}".format(pinionAtBack, i, drivingZ), pos)
             else:
+                r = self.goingTrain.getArbour(i - 1).distanceToNextArbour
+                print("r", r)
                 #all the other going wheels up to and including the escape wheel
-
-
-
                 if i == self.goingTrain.wheels:
                     # the anchor
                     baseZ = drivingZ - self.anchorThick / 2
                     self.arbourThicknesses.append(self.anchorThick)
-                    r = self.goingTrain.escapement.anchor_centre_distance
-                    print("is anchor", self.goingTrain.escapement.anchor_centre_distance)
+                    print("is anchor")
                 else:
                     #any of the other wheels
-                    r = self.goingTrain.getWheelPinionPair(i-1).wheel.pitch_diameter/2 + goingTrain.getWheelPinionPair(i-1).pinion.pitch_diameter/2
-                    print("r",r)
-                    self.arbourThicknesses.append(self.goingTrain.gearTotalThick)
                     pinionAtBack = not pinionAtBack
-                    if pinionAtBack:
-                        baseZ = drivingZ - drivenToPivotEnd
-                        drivingZ = drivingZ + drivenToWheelEnd - self.goingTrain.gearWheelThick / 2
-                    else:
-                        baseZ = drivingZ - drivenToWheelEnd
-                        drivingZ = drivingZ - drivenToWheelEnd + self.goingTrain.gearWheelThick / 2
+                    print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(not pinionAtBack), self.goingTrain.getArbour(i).getPinionCentreZ(not pinionAtBack)))
+                    drivingZ = drivingZ + self.goingTrain.getArbour(i).getPinionToWheelZ(not pinionAtBack)
+                    baseZ = drivingZ - self.goingTrain.getArbour(i).getPinionCentreZ(not pinionAtBack)
+                    self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
 
                 angle=self.anglesToScape[i-1]
                 v = polar(angle, r)
@@ -2159,7 +2267,7 @@ class ClockPlates:
         #     plateThick *= 0.75
 
         #https://en.wikipedia.org/wiki/Sagitta_(geometry)
-        bottomGearR = self.goingTrain.getMinuteWheelPinionPair().wheel.getMaxRadius()
+        bottomGearR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius()
         l=width
         #aprox
         sagittaOfBottomGear = l*2/(8*bottomGearR)
@@ -2238,7 +2346,7 @@ class ClockPlates:
 
             # bracket = cq.Workplane("YZ").lineTo(-self.plateDistance-bottomBracketLength,0).lineTo(-bottomBracketLength,self.plateDistance).lineTo(0,self.plateDistance).close().extrude(width)
             #sometimes cadquery complains the radius isn't large enough to reach. it blatently is, but add 0.1 to bodge it
-            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).radiusArc((width/2, topY - height + bottomBracketLength), -bottomGearR-1).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
+            bracket = cq.Workplane("XY").tag("base").moveTo(-width/2, topY - height + bottomBracketLength).radiusArc((width/2, topY - height + bottomBracketLength), -bottomGearR-2).line(0, -bottomBracketLength).radiusArc((-width/2,topY - height), width/2).close().extrude(self.plateDistance)
             #TODO tidier way to hold the chains
             # bracket = bracket.workplaneFromTagged("base").moveTo(0,self.topY - height + chainHoleHolderThick/2).rect(chainHoleHolderWidth, chainHoleHolderThick).extrude(self.plateDistance)
 
