@@ -725,9 +725,13 @@ class GoingTrain:
         self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance)
 
 
+        #true for no chainwheels
+        anticlockwise = self.chainAtBack
 
+        for i in range(self.chainWheels):
+            anticlockwise = not anticlockwise
 
-        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=ratchetThick, powerClockwise=self.chainAtBack)
+        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=ratchetThick, powerAntiClockwise=anticlockwise)
 
         self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
         self.chainWheelHalf = self.chainWheel.getHalf(False)
@@ -805,7 +809,7 @@ class GoingTrain:
 
         print("Escape wheel pivot at front: {}, clockwise (from front) {}, clockwise from pivot side: {} ".format(escapeWheelPivotAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPivotSide))
         self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPivotSide=escapeWheelClockwiseFromPivotSide)
-
+        self.chainWheelArbours=[]
         if self.chainWheels > 0:
             # assuming one chain wheel for now
             chainModule = module_size * (1 / moduleReduction)
@@ -1621,7 +1625,7 @@ class Ratchet:
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
 
-    def __init__(self, totalD=50, thick=5, powerClockwise=True, innerRadius=0):
+    def __init__(self, totalD=50, thick=5, powerAntiClockwise=True, innerRadius=0):
         # , chain_hole_distance=10, chain_hole_d = 3):
         # #distance of the screw holes on the chain wheel, so the ratchet wheel can be securely attached
         # self.chain_hole_distance = chain_hole_distance
@@ -1637,10 +1641,10 @@ class Ratchet:
         else:
             self.clickInnerRadius = innerRadius
 
-        self.clockwise = 1 if powerClockwise else -1
+        self.anticlockwise = 1 if powerAntiClockwise else -1
 
         self.toothLength = self.outsideDiameter*0.025
-        self.toothAngle = degToRad(2)* self.clockwise
+        self.toothAngle = degToRad(2)* self.anticlockwise
 
         self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
         self.toothTipR = self.toothRadius - self.toothLength
@@ -1664,10 +1668,10 @@ class Ratchet:
         innerClickR = self.clickInnerRadius
 
         #arc aprox ratchetThick
-        clickArcAngle = self.clockwise * thick/innerClickR
-        clickOffsetAngle = -(math.pi*2/self.clicks)*1 * self.clockwise
+        clickArcAngle = self.anticlockwise * thick / innerClickR
+        clickOffsetAngle = -(math.pi*2/self.clicks)*1 * self.anticlockwise
 
-        dA = -math.pi*2 / self.clicks * self.clockwise
+        dA = -math.pi*2 / self.clicks * self.anticlockwise
 
         start = polar(clickOffsetAngle, innerClickR)
         wheel = wheel.moveTo(start[0], start[1])
@@ -1691,7 +1695,7 @@ class Ratchet:
             clickEnd = polar(clickEndAngle, innerClickR)
             nextClickStart = polar(clickNextStartAngle, innerClickR)
 
-            wheel = wheel.radiusArc(clickInner, -innerR * self.clockwise).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR* self.clockwise).radiusArc(nextClickStart, innerClickR* self.clockwise)
+            wheel = wheel.radiusArc(clickInner, -innerR * self.anticlockwise).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR * self.anticlockwise).radiusArc(nextClickStart, innerClickR * self.anticlockwise)
 
 
         wheel = wheel.close().extrude(self.thick)
@@ -1704,7 +1708,7 @@ class Ratchet:
         '''
         wheel = cq.Workplane("XY").circle(self.outsideDiameter/2)#.circle(self.outsideDiameter/2-self.outer_thick)
 
-        dA = math.pi * 2 / self.ratchetTeeth * self.clockwise
+        dA = math.pi * 2 / self.ratchetTeeth * self.anticlockwise
 
 
         wheel = wheel.moveTo(self.toothRadius,0)
@@ -1715,7 +1719,7 @@ class Ratchet:
             wheel = wheel.lineTo(math.cos(angle - self.toothAngle) * self.toothTipR, math.sin(angle - self.toothAngle) * self.toothTipR)
             # wheel = wheel.radiusArc(polar(angle - self.toothAngle, self.toothTipR), self.toothTipR)
             # wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
-            wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius* self.clockwise)
+            wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius * self.anticlockwise)
 
         wheel = wheel.close().extrude(self.thick)
 
@@ -2254,13 +2258,15 @@ class ClockPlates:
         # print("Height: ", self.minHeight)
 
 
-        chainHoleD = 8
+        chainHoleD = self.goingTrain.chainWheel.chain_width+3
+        print("chain hole D", chainHoleD)
 
         #making the plates wide enough that there can be vaguely strong holes for the chains to go through
-        # chainHoleHolderWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
+        baseWidth = self.goingTrain.chainWheel.diameter + chainHoleD + 3
         #
         # width=chainHoleHolderWidth#25
 
+        #just wide enough to safely hold the bearings
         width = self.bearingOuterD + self.bearingWallThick*2 #18#self.goingTrain.chainWheel.diameter - chainHoleD
         print("width", width)
         plateThick = self.plateThick

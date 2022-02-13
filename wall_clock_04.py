@@ -23,6 +23,10 @@ train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30,
 
 # train.calculateRatios()
 train.setRatios([[81, 12], [80, 9]])
+
+# 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
+train.genChainWheels(ratchetThick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.1)
+
 train.printInfo()
 '''
 {'train': [[81, 12], [80, 9]]}
@@ -31,8 +35,7 @@ escapement time: 60s teeth: 30
 cicumference: 68.60000000000001, run time of:28.9hours
 '''
 
-# 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
-train.genChainWheels(ratchetThick=5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.1)
+
 
 pendulumSticksOut=20
 
