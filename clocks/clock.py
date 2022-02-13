@@ -555,9 +555,10 @@ class GoingTrain:
         if type is not None:
             self.type = type
 
-    def calculateRatios(self):
+    def calculateRatios(self,moduleReduction=0.85):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
+        module recution used to caculate smallest possible wheels - assumes each wheel has a smaller module than the last
         '''
 
         desired_minute_time = 60*60
@@ -613,6 +614,7 @@ class GoingTrain:
             #trying for small wheels and big pinions
             totalWheelTeeth = 0
             totalPinionTeeth = 0
+            weighting = 0
             for p in range(len(allTrains[c])):
                 ratio = allTrains[c][p][0] / allTrains[c][p][1]
                 if ratio == round(ratio):
@@ -621,14 +623,15 @@ class GoingTrain:
                 totalTeeth +=  allTrains[c][p][0] + allTrains[c][p][1]
                 totalWheelTeeth += allTrains[c][p][0]
                 totalPinionTeeth += allTrains[c][p][1]
+                weighting += math.pow(moduleReduction, p)*allTrains[c][p][0]
             totalTime = totalRatio*self.escapement_time
             error = 60*60-totalTime
 
-            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth/100-totalPinionTeeth/10 }
-            if abs(error) < 1 and not intRatio:
+            train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting }
+            if abs(error) < 0.1 and not intRatio:
                 allTimes.append(train)
 
-        allTimes.sort(key = lambda x: x["error"]+x["teeth"])
+        allTimes.sort(key = lambda x: x["weighting"])
         print(allTimes)
 
         self.trains = allTimes

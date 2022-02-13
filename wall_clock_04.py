@@ -21,8 +21,8 @@ clockOutDir="out"
 #pendulum period of 1.25 actually results in larger clock than period of 1
 train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False, max_wheel_teeth=120, min_pinion_teeth=9)
 
-# train.calculateRatios()
-train.setRatios([[81, 12], [80, 9]])
+train.calculateRatios()
+# train.setRatios([[81, 12], [80, 9]])
 
 # 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
 train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.1)
