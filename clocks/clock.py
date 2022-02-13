@@ -752,7 +752,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6, chainWheelThick=-1):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6, chainWheelThick=-1, escapeWheelThick=-1):
         arbours = []
         # ratchetThick = holeD*2
         #thickness of just the wheel
@@ -762,6 +762,9 @@ class GoingTrain:
 
         if chainWheelThick < 0:
             chainWheelThick = thick
+
+        if escapeWheelThick < 0:
+            escapeWheelThick = thick
 
         #TODO variable thicknesses? thickness per gear? or is just extra for the chain wheels enough?
         #having chain wheels different thicknesses is enough to warrent thickness per gear i think
@@ -843,7 +846,7 @@ class GoingTrain:
                                 distanceToNextArbour=pairs[i].centre_distance, style=style))
             else:
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * 2, endCapThick=self.gearPivotEndCapLength,
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=escapeWheelThick, pinionThick=arbours[-1].wheelThick * 2, endCapThick=self.gearPivotEndCapLength,
                                       distanceToNextArbour=self.escapement.anchor_centre_distance, style=style))
         self.wheelPinionPairs = pairs
         self.arbours = arbours
