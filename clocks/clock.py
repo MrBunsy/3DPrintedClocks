@@ -1875,7 +1875,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks,  pendulum, compact=False, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20):
+    def __init__(self, goingTrain, motionWorks,  pendulum, compact=False, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name=""):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1886,6 +1886,8 @@ class ClockPlates:
 
         #reduce the height/width as much as possible
         self.compact = compact
+
+        self.name = name
 
         #just for the first prototype
         self.anchorHasNormalBushing=True
@@ -2313,8 +2315,17 @@ class ClockPlates:
         #with base width same as width
         # plate = cq.Workplane("XY").moveTo(-width/2, topY).radiusArc((width/2, topY), width/2).line(0, -height).radiusArc((-width/2, topY-height), width/2).close().extrude(plateThick)
         plate = cq.Workplane("XY").tag("base").moveTo(-width/2, topY+topBracketR).radiusArc((width/2,topY+topBracketR),topBracketR).line(0, -topBracketR-minHeight-bottomBracketR).line(-width,0).close().extrude(plateThick)
-        plate = plate.workplaneFromTagged("base").moveTo(-baseWidth/2,0).radiusArc((baseWidth/2,0),baseWidth/2).lineTo(baseWidth/2, topY - minHeight - bottomBracketR).\
-            radiusArc((-baseWidth/2, topY - minHeight - bottomBracketR), baseWidth/2).close().extrude(plateThick)
+
+
+        if self.goingTrain.chainWheels == 0:
+            #don't need to be very beefy as this is a one-day clock
+            # baseWidthStartY = topY - minHeight - bottomBracketR
+            plate = plate.workplaneFromTagged("base").moveTo(0,topY - minHeight - bottomBracketR).circle(bottomBracketR).extrude(plateThick)
+        else:
+            baseWidthStartY = 0
+
+            plate = plate.workplaneFromTagged("base").moveTo(-baseWidth/2,baseWidthStartY).radiusArc((baseWidth/2,baseWidthStartY),baseWidth/2+0.001).lineTo(baseWidth/2, topY - minHeight - bottomBracketR).\
+                radiusArc((-baseWidth/2, topY - minHeight - bottomBracketR), baseWidth/2).close().extrude(plateThick)
 
         for i, pos in enumerate(self.bearingPositions):
 
@@ -2356,7 +2367,13 @@ class ClockPlates:
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD * 3 / 4 + screwHoleHeight / 2).rect(screwBodyD, screwHoleHeight + screwHeadD / 2).cutThruAll()
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD + screwHoleHeight).circle(screwBodyD / 2).cutThruAll()
 
+            textY = screwholeStartY - (screwholeStartY + bottomBracketR*2 + bottomGearSpace)/2
 
+            if len(self.name) > 0:
+                #text on the bottom
+                text = cq.Workplane("XY").moveTo(0,0).text(self.name, width*0.75, LAYER_THICK, cut=False, halign='center', valign='center').rotateAboutCenter((0,0,1),90).rotateAboutCenter((1,0,0),180).translate((width*0.15,textY,0))
+
+            plate = plate.cut(text)
 
             bottomBracket = cq.Workplane("XY").tag("base").moveTo(0, topY - minHeight - bottomBracketR).circle(bottomBracketR).extrude(self.plateDistance)
             #TODO tidier way to hold the chains
