@@ -5,6 +5,7 @@ import math
 from math import sin, cos, pi, floor
 import numpy as np
 import os
+import datetime
 
 '''
 Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
@@ -2370,13 +2371,27 @@ class ClockPlates:
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD * 3 / 4 + screwHoleHeight / 2).rect(screwBodyD, screwHoleHeight + screwHeadD / 2).cutThruAll()
             plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD + screwHoleHeight).circle(screwBodyD / 2).cutThruAll()
 
-            textY = screwholeStartY - (screwholeStartY + bottomBracketR*2 + bottomGearSpace)/2
+            def addText(plate, text, y):
+                textSize =  width*0.25
+                textYOffset = width*0.025
+                text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center').rotateAboutCenter((0, 0, 1), 90).rotateAboutCenter((1, 0, 0), 180).translate((textYOffset, y, 0))
+                return plate.cut(text)
 
-            if len(self.name) > 0:
-                #text on the bottom
-                text = cq.Workplane("XY").moveTo(0,0).text(self.name, width*0.75, LAYER_THICK, cut=False, halign='center', valign='center').rotateAboutCenter((0,0,1),90).rotateAboutCenter((1,0,0),180).translate((width*0.15,textY,0))
+            # textY = screwholeStartY - (screwholeStartY + bottomBracketR*2 + bottomGearSpace)/2
+            textY = (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2
+            plate = addText(plate, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2)
+            plate = addText(plate, "{:.1f}cm".format(self.goingTrain.pendulum_length*100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2)
 
-            plate = plate.cut(text)
+            plate = addText(plate, datetime.date.today().strftime('%Y-%m-%d'), - bottomGearR/2)
+            # if len(self.name) > 0:
+            #     #text on the bottom
+            #     # textSize =  width*0.75
+            #     # textYOffset = width*0.15
+            #     textSize =  width*0.25
+            #     textYOffset = width*0.05
+            #     text = cq.Workplane("XY").moveTo(0,0).text(self.name,textSize, LAYER_THICK, cut=False, halign='center', valign='center').rotateAboutCenter((0,0,1),90).rotateAboutCenter((1,0,0),180).translate((textYOffset,textY,0))
+            #
+            #     plate = plate.cut(text)
 
             bottomBracket = cq.Workplane("XY").tag("base").moveTo(0, topY - minHeight - bottomBracketR).circle(bottomBracketR).extrude(self.plateDistance)
             #TODO tidier way to hold the chains
