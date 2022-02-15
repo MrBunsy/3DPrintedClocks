@@ -709,7 +709,7 @@ class GoingTrain:
     def setChainWheelRatio(self, pinionPair):
         self.chainWheelRatio = pinionPair
 
-    def genChainWheels(self, ratchetThick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15):
+    def genChainWheels(self, ratchetThick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
         '''
 
         Generate the gear ratios for the wheels between chain and minute wheel
@@ -726,7 +726,7 @@ class GoingTrain:
             chainWheelCircumference = self.max_chain_wheel_d * math.pi
             #use provided max_chain_wheel_d and calculate the rest
 
-        self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance)
+        self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
 
 
         #true for no chainwheels
