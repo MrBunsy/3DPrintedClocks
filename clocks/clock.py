@@ -2512,6 +2512,10 @@ class Pendulum:
         self.bobR=50
         self.bobThick = 15
 
+        # #bit that can attach to the same rod as teh anchor, and the pendulum can just slot over the top
+        # self.holderWidth = anchorHoleD * 4
+        # self.holderHeight = self.holderWidth
+
     def getSuspensionAttachmentHoles(self):
         '''
         get relative positions of the holes used to screw the pendulum suspension to the front/back plate
@@ -2595,17 +2599,6 @@ class Pendulum:
         '''
 
         pendulum = cq.Workplane("XY")
-        if False:
-            #tried out a fancy one with the HAC style cut, looks alright but going to stick to soemthign more simple
-            outerR = self.pendulumTopD / 2 + self.pendulumTopExtraRadius
-
-            pendulum = pendulum.circle(outerR).extrude(self.pendulumTopThick)
-
-            centreD= holeD*2.5
-
-            pendulum = Gear.cutHACStyle(pendulum,holeD, outerR - holeD)
-
-            pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
 
         width = holeD*4
         height = holeD*5
@@ -2626,15 +2619,54 @@ class Pendulum:
 
 
         # pendulum = pendulum.faces(">Z").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).cutThruAll()
-        space = cq.Workplane("XY").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).extrude(self.pendulumTopThick).translate((0,0,0.6))
+        space = cq.Workplane("XY").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).extrude(self.pendulumTopThick).translate((0,0,LAYER_THICK*3))
         pendulum = pendulum.cut(space)
 
+        extraSpaceForRod = 0.5
         #
-        rod = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).circle(self.threadedRodM/2).extrude(100).translate((0,-height/2,0))
+        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2).circle(self.threadedRodM/2 + extraSpaceForRod/2).extrude(100)
+        # add slot for rod to come in and out
+        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick).rect(self.threadedRodM + extraSpaceForRod, self.pendulumTopThick).extrude(100)
+
+        rod = rod.translate((0,-height/2,0))
+
+
+
+
         pendulum = pendulum.cut(rod)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD).extrude(nutThick).translate((0,-height,0))
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForRod).extrude(nutThick).translate((0,-height,0))
         pendulum = pendulum.cut(nutSpace2)
+
+
+        return pendulum
+
+    # def getPendulumForRod(self, holeD=3):
+    #     '''
+    #     Attaches to a threaded rod and provides something for the pendulum to slot over in a detachable way
+    #     '''
+    #
+    #     pendulum = cq.Workplane("XY")
+    #
+    #
+    #
+    #
+    #
+    #     nutD = getNutContainingDiameter(holeD)
+    #
+    #     wall_thick = (width - (nutD + 1))/2
+    #
+    #     pendulum = pendulum.rect(width, height ).extrude(self.pendulumTopThick)
+    #
+    #     #hole for rod
+    #     pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
+    #
+    #     #nut to hold to anchor rod
+    #     nutThick = METRIC_NUT_DEPTH_MULT * holeD
+    #     nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
+    #     pendulum = pendulum.cut(nutSpace)
+
+
 
 
         return pendulum
@@ -2671,18 +2703,52 @@ class Pendulum:
 
         circle = cq.Workplane("XY").circle(self.bobR)
 
+        #nice rounded edge
         bob = cq.Workplane("XZ").lineTo(self.bobR,0).radiusArc((self.bobR,self.bobThick),-self.bobThick*0.9).lineTo(0,self.bobThick).close().sweep(circle)
 
-        #was 0.5, which is plenty of space. Giong to try 0.1 to see if being a tight fit helps stop it rotate over time
+        #was 0.5, which is plenty of space, but can slowly rotate. 0.1 seems to be a tight fit that help stop it rotate over time
         extraR=0.1
 
+        gapHeight = self.bobNutThick+1
+        gapWidth=self.bobNutD*1.2
+
         #rectangle for the nut, with space for the threaded rod up and down
-        cut = cq.Workplane("XY").rect(self.bobNutD*1.2,self.bobNutThick+1).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2).\
+        cut = cq.Workplane("XY").rect(gapWidth, gapHeight).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2).\
             faces("<Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2)
         bob=bob.cut(cut)
 
-        # bob = bob.faces(">Z").workplane().rect(self.bobNutD*1.2,self.bobNutThick+1).cutThruAll()#.faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+0.5).cutThruAll()
-        # bob = bob.faces(">Z").workplane().rect(70,10).cutThruAll()
+        #could make hollow with shell, but that might be hard to print, so doing it manually
+        # bob = bob.shell(-2)
+
+        # space to put stuff for extra weight! Will try some steel shot soon
+        wallThick=2.5
+        slotThick = wallThick/2
+        #
+        # startAngle =
+        #
+        # weightHole = cq.Workplane("XY").moveTo(self.threadedRodM/2 + wallThick, self.bobR - wallThick).radiusArc((self.threadedRodM/2 + wallThick, -self.bobR + wallThick), self.bobR-wallThick).\
+        #     lineTo(self.threadedRodM/2 + wallThick, -gapHeight/2 - wallThick).line(gapWidth/2 + wallThick,0).line(0,gapHeight + wallThick*2).line(-gapWidth/2 - wallThick,0)\
+        #     .close().extrude(self.bobThick).translate((0,0,wallThick))
+        weightHole = cq.Workplane("XY").circle(self.bobR - wallThick).extrude(self.bobThick-wallThick*2).translate((0,0,wallThick))
+
+        notHole = cut.shell(wallThick)
+        #don't have a floating tube through the middle, give it something below
+        notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + wallThick*2, self.bobR*2).extrude(self.bobThick/2 - wallThick).translate((0,0,wallThick)))
+
+        weightHole = weightHole.cut(notHole)
+
+        #add space for a lid
+        #don't want the whole of the back open, just some
+        angle = math.acos((gapWidth/2)/(self.bobR-wallThick))
+        angle2 = math.acos((gapWidth / 2 + slotThick) / (self.bobR - wallThick + slotThick))
+        weightHole = weightHole.faces(">Z").workplane().moveTo(gapWidth/2,gapHeight/2+wallThick).lineTo(gapWidth/2,math.sin(angle)*(self.bobR-wallThick)).\
+            radiusArc((-gapWidth/2,math.sin(angle)*(self.bobR-wallThick)), -(self.bobR-wallThick)).lineTo(-gapWidth/2,gapHeight/2+wallThick).close().extrude(wallThick-slotThick)
+        weightHole = weightHole.faces(">Z").workplane().moveTo(gapWidth / 2 + slotThick, gapHeight / 2 + wallThick - slotThick).lineTo(math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)). \
+            radiusArc((-math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)), -(self.bobR - wallThick + slotThick)).lineTo(-gapWidth / 2 - slotThick, gapHeight / 2 + wallThick - slotThick).close().extrude(wallThick - slotThick)
+
+
+        #
+        bob = bob.cut(weightHole)
 
         return bob
 
@@ -3003,7 +3069,13 @@ class Dial:
 #
 # show_object(shape)
 
-# escapement = Escapement(teeth=30, diameter=60)
+escapement = Escapement(teeth=30, diameter=60)
+
+pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+
+# show_object(pendulum.getPendulumForRod())
+show_object(pendulum.getBob())
+
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 #
