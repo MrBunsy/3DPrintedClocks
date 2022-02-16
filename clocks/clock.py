@@ -2512,9 +2512,13 @@ class Pendulum:
         self.bobR=50
         self.bobThick = 15
 
-        # #bit that can attach to the same rod as teh anchor, and the pendulum can just slot over the top
-        # self.holderWidth = anchorHoleD * 4
-        # self.holderHeight = self.holderWidth
+        self.gapHeight = self.bobNutThick + 0.5
+        self.gapWidth = self.bobNutD + 1
+
+        # space to put stuff for extra weight! Will try some steel shot soon
+        self.wallThick = 2.5
+        self.slotThick = self.wallThick / 2
+
 
     def getSuspensionAttachmentHoles(self):
         '''
@@ -2709,48 +2713,65 @@ class Pendulum:
         #was 0.5, which is plenty of space, but can slowly rotate. 0.1 seems to be a tight fit that help stop it rotate over time
         extraR=0.1
 
-        gapHeight = self.bobNutThick+1
-        gapWidth=self.bobNutD*1.2
+        
 
         #rectangle for the nut, with space for the threaded rod up and down
-        cut = cq.Workplane("XY").rect(gapWidth, gapHeight).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2).\
+        cut = cq.Workplane("XY").rect(self.gapWidth, self.gapHeight).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2).\
             faces("<Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2)
         bob=bob.cut(cut)
 
         #could make hollow with shell, but that might be hard to print, so doing it manually
         # bob = bob.shell(-2)
 
-        # space to put stuff for extra weight! Will try some steel shot soon
-        wallThick=2.5
-        slotThick = wallThick/2
+        
         #
         # startAngle =
         #
-        # weightHole = cq.Workplane("XY").moveTo(self.threadedRodM/2 + wallThick, self.bobR - wallThick).radiusArc((self.threadedRodM/2 + wallThick, -self.bobR + wallThick), self.bobR-wallThick).\
-        #     lineTo(self.threadedRodM/2 + wallThick, -gapHeight/2 - wallThick).line(gapWidth/2 + wallThick,0).line(0,gapHeight + wallThick*2).line(-gapWidth/2 - wallThick,0)\
-        #     .close().extrude(self.bobThick).translate((0,0,wallThick))
-        weightHole = cq.Workplane("XY").circle(self.bobR - wallThick).extrude(self.bobThick-wallThick*2).translate((0,0,wallThick))
+        # weightHole = cq.Workplane("XY").moveTo(self.threadedRodM/2 + self.wallThick, self.bobR - self.wallThick).radiusArc((self.threadedRodM/2 + self.wallThick, -self.bobR + self.wallThick), self.bobR-self.wallThick).\
+        #     lineTo(self.threadedRodM/2 + self.wallThick, -gapHeight/2 - self.wallThick).line(gapWidth/2 + self.wallThick,0).line(0,gapHeight + self.wallThick*2).line(-gapWidth/2 - self.wallThick,0)\
+        #     .close().extrude(self.bobThick).translate((0,0,self.wallThick))
+        weightHole = cq.Workplane("XY").circle(self.bobR - self.wallThick).extrude(self.bobThick-self.wallThick*2).translate((0,0,self.wallThick))
 
-        notHole = cut.shell(wallThick)
+        notHole = cut.shell(self.wallThick)
         #don't have a floating tube through the middle, give it something below
-        notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + wallThick*2, self.bobR*2).extrude(self.bobThick/2 - wallThick).translate((0,0,wallThick)))
+        notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
 
         weightHole = weightHole.cut(notHole)
-
-        #add space for a lid
-        #don't want the whole of the back open, just some
-        angle = math.acos((gapWidth/2)/(self.bobR-wallThick))
-        angle2 = math.acos((gapWidth / 2 + slotThick) / (self.bobR - wallThick + slotThick))
-        weightHole = weightHole.faces(">Z").workplane().moveTo(gapWidth/2,gapHeight/2+wallThick).lineTo(gapWidth/2,math.sin(angle)*(self.bobR-wallThick)).\
-            radiusArc((-gapWidth/2,math.sin(angle)*(self.bobR-wallThick)), -(self.bobR-wallThick)).lineTo(-gapWidth/2,gapHeight/2+wallThick).close().extrude(wallThick-slotThick)
-        weightHole = weightHole.faces(">Z").workplane().moveTo(gapWidth / 2 + slotThick, gapHeight / 2 + wallThick - slotThick).lineTo(math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)). \
-            radiusArc((-math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)), -(self.bobR - wallThick + slotThick)).lineTo(-gapWidth / 2 - slotThick, gapHeight / 2 + wallThick - slotThick).close().extrude(wallThick - slotThick)
-
+        
+        lid = self.getBobLid(True)
+        
+        weightHole = weightHole.add(lid.translate((0,0,self.bobThick-self.wallThick)))
 
         #
         bob = bob.cut(weightHole)
 
         return bob
+    
+    def getBobLid(self, forCutting=False):
+        '''
+        extraslot size for the slot, but not for the lid itself
+        '''
+
+        wallThick = self.wallThick
+        slotThick = self.slotThick
+
+        if not forCutting:
+            #reduce size a tiny bit so it can fit into the slot
+            slotThick-=0.2
+
+        # add space for a lid
+        # don't want the whole of the back open, just some
+        angle = math.acos((self.gapWidth / 2) / (self.bobR - wallThick))
+        angle2 = math.acos((self.gapWidth / 2 + slotThick) / (self.bobR - wallThick + slotThick))
+        lid = cq.Workplane("XY").moveTo(self.gapWidth / 2, self.gapHeight / 2 + wallThick).lineTo(self.gapWidth / 2, math.sin(angle) * (self.bobR - wallThick)). \
+            radiusArc((-self.gapWidth / 2, math.sin(angle) * (self.bobR - wallThick)), -(self.bobR - wallThick)).lineTo(-self.gapWidth / 2, self.gapHeight / 2 + wallThick).close().extrude(wallThick - slotThick)
+        lid = lid.faces(">Z").workplane().moveTo(self.gapWidth / 2 + slotThick, self.gapHeight / 2 + wallThick - slotThick).lineTo(math.cos(angle2) * (self.bobR - wallThick + slotThick),
+                                                                                                                                   math.sin(angle2) * (self.bobR - wallThick + slotThick)). \
+            radiusArc((-math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)), -(self.bobR - wallThick + slotThick)).lineTo(-self.gapWidth / 2 - slotThick,
+                                                                                                                                                                                      self.gapHeight / 2 + wallThick - slotThick).close().extrude(
+            wallThick - slotThick)
+
+        return lid
 
     def getBobNut(self):
         #TODO consider calculating how much time+- a single segment might be
@@ -2815,6 +2836,10 @@ class Pendulum:
         out = os.path.join(path, "{}_bob_nut.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getBobNut(), out)
+
+        out = os.path.join(path, "{}_bob_lid.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getBobLid(), out)
 
 
 class Hands:
