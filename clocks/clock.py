@@ -2519,6 +2519,11 @@ class Pendulum:
         self.wallThick = 2.5
         self.slotThick = self.wallThick / 2
 
+        #pretty well centred, but might make it hard to fit larger stuff inside!
+        #self.bobLidNutPositions=[(self.gapWidth/3, self.bobR*0.55), (-self.gapWidth/3, self.bobR*0.55)]
+
+        self.bobLidNutPositions = [(self.gapWidth / 3, self.bobR * 0.75), (-self.gapWidth / 3, self.bobR * 0.75)]
+
 
     def getSuspensionAttachmentHoles(self):
         '''
@@ -2736,6 +2741,9 @@ class Pendulum:
         #don't have a floating tube through the middle, give it something below
         notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
 
+        for pos in self.bobLidNutPositions:
+            notHole = notHole.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.nutMetricSize*1.5).circle(self.nutMetricSize/2).extrude(self.bobThick-self.wallThick))
+
         weightHole = weightHole.cut(notHole)
         
         lid = self.getBobLid(True)
@@ -2758,6 +2766,7 @@ class Pendulum:
         if not forCutting:
             #reduce size a tiny bit so it can fit into the slot
             slotThick-=0.2
+            wallThick+=0.2
 
         # add space for a lid
         # don't want the whole of the back open, just some
@@ -2770,6 +2779,9 @@ class Pendulum:
             radiusArc((-math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)), -(self.bobR - wallThick + slotThick)).lineTo(-self.gapWidth / 2 - slotThick,
                                                                                                                                                                                       self.gapHeight / 2 + wallThick - slotThick).close().extrude(
             wallThick - slotThick)
+        if not forCutting:
+            for pos in self.bobLidNutPositions:
+                lid =  lid.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.nutMetricSize/2).cutThruAll()
 
         return lid
 
