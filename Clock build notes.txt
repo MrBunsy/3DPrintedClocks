@@ -1,0 +1,66 @@
+=========== Wall Clock 01/02: ===========
+
+without pendulum (just anchor):
+Runs for a few hours with the 1.5kg cuckoo weight
+Runs only for a few minutes with a 420g cuckoo weight
+
+This might be improved once the pendulum is fitted - the anchor is clearly driven by the escape wheel and not by its own period
+-after using wire to hold the plates in place, it has run for ~24hours with 420g
+
+Need the weights to be further from the wall!
+Need more space between chains and anchor/pendulum
+-chain at front, and pendulum further away
+
+Really do need the chain wheel at the bottom for stability
+-done
+
+Had to file away part of the bearing holder for the minute wheel to get the next wheel to fit
+-done, not extending bearing holders
+
+The gears are easily strong enoguh and could be reduced in thickness, maybe module too
+-done, untested
+
+The plates aren't really strong enough - but might be if they were closer together or printed in higher toughness
+-done
+
+The gears lose a lot of grip on the threaded rod if they have to be removed and re-threaded - will want to think about a better way of garenteeing motion from the minute wheel to the shaft - maybe a nyloc nut?
+-done, but untested
+
+The pendulum knife edge might need to be longer - it wobbles all over the place
+-going to test having pendulum on same rod as anchor and not using knife edge for now
+
+Pendulum bob and nut work, but the bob rotates slowly. Needs something to prevent it from doing that - usually the pendulum rod isn't round the whole way down
+-planning to try nyloc nut in the bob nut
+
+Plans for next clock:
+Make bob small and round, so it doesn't matter if it rotates a bit - might need something to prevent it from loosening/tightening itself? Or will it not have this problem if it's a different shape?
+Use nyloc nut to attach main wheel to the rod, then try a spring rather than just tight nuts to hold the motion works to the same rod.
+Make motion works shorter - they don't need to be quite as long as they are, I'm not actually planning on hiding them behind a dial
+
+the chainwheel could have either a section of pipe that slots over the rod, or space for one or two bearings - this should reduce the chance it turns the hands backwards when being wound up
+
+
+Maybe consider making a fancy handnut piece that goes over a normal nut to make the hands slightly tidier?
+
+
+============== Wall Clock 03 =============
+
+works! Had problems with it stopping, turned out to be some globs of PETG in one of the teeth. the smaller teeth I suspect make it more suseptical to it
+
+Will be worth far more thoroughly inspecting teeth in the future
+
+Permanently attached pendulum is a bad idea, although the anchor and pendulum on the same rod works quite well. Try some sort of hook on the rod attachment so the main pendulum can be removed?
+
+The clock plates are far thicker and wider than they need to be. The width also hides the smaller gears. Future plan: make the plates as narrow as possible
+
+the tick is less satisfying than the previous clock. Maybe go back to a larger escape wheel? Could a fully solid escape wheel without the HAC styling still go "clunk"?
+
+thoughts: having the escape wheel to the left/right of the anchor would make the clock less tall and might help with increasing the size of the gears again
+
+It's very easy to knock the clock out of beat when winding up the weight or adjusting the pendulum. Some grippy pads on the back might help?
+
+
+=================== Wall clock 04 =====================
+
+Might be worth ensuring the bottom-side (as printed) of as many parts as possible is forwards. The bottom of the anchor is considerably more neat and tidy than the top
+Could have made the design more compact (height-wise), as the large first wheel has enough space for the small second wheel to interlock

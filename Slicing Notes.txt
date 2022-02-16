@@ -1,0 +1,6 @@
+Chain Wheels
+
+adjust layer height on the angled bit of the wheel to make as smooth as possible
+
+
+on wheels with smaller pinions, need a modifier on the pinion to allow Fill Gaps and Gap Fill Speed just for the pinion
