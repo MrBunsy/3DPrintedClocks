@@ -2918,17 +2918,10 @@ class Hands:
 
         if self.style == "simple":
             width = self.length * 0.1
-            # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).lineTo(end_d / 2, length).radiusArc((-end_d / 2, length), -end_d / 2).lineTo(-width * 0.4, 0).close().extrude(ratchetThick)
-            #
-            #
-            # if outline:
-            #     #top right
-            #     hand = cq.Workplane("XY").moveTo(width,length).lineTo()
-
-
-            # else:
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(self.thick)
-
+        elif self.style == "simple_rounded":
+            width = self.length * 0.1
+            hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(self.thick)
         elif self.style == "square":
             handWidth = self.length * 0.3 * 0.25
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(self.thick)
@@ -3106,19 +3099,20 @@ class Dial:
 #
 # show_object(shape)
 
-escapement = Escapement(teeth=30, diameter=60)
-
-pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
-
-# show_object(pendulum.getPendulumForRod())
-show_object(pendulum.getBob())
+# escapement = Escapement(teeth=30, diameter=60)
+#
+# pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+#
+# # show_object(pendulum.getPendulumForRod())
+# show_object(pendulum.getBob())
 
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 #
-# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, ratchetThick=3, outline=1, outlineSameAsBody=False)
+# hands = Hands(style="simple", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, outline=1, outlineSameAsBody=False)
+hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
 #
-# show_object(hands.getHand(outline=True))
+show_object(hands.getHand(outline=False))
 # hands.outputSTLs(clockName, clockOutDir)
 
 # #drop of 1 and lift of 3 has good pallet angles with 42 teeth
