@@ -2855,7 +2855,7 @@ class Pendulum:
 
 
 class Hands:
-    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, length=25, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True):
+    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, length=25, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
         '''
 
         '''
@@ -2874,6 +2874,7 @@ class Hands:
         self.outline = outline
         #if true the outline will be part of the same STL as the main body, if false, it'll just be a small sliver
         self.outlineSameAsBody = outlineSameAsBody
+        self.handNutMetricSize=handNutMetricSize
 
         if self.minuteFixing == "square":
             self.minuteFixing_d2 = self.minuteFixing_d1
@@ -2896,6 +2897,21 @@ class Hands:
 
         if self.base_r < hourfixing_d * 0.7:
             self.base_r = hourfixing_d * 1.5 / 2
+
+    def getHandNut(self):
+        #fancy bit to hide the actual nut
+        r = self.handNutMetricSize*2.5
+        height = r*0.75
+
+
+        circle = cq.Workplane("XY").circle(r)
+        nut = cq.Workplane("XZ").moveTo(self.handNutMetricSize/2,0).lineTo(r,0).line(0,height*0.25).lineTo(self.handNutMetricSize/2,height).close().sweep(circle)
+
+        nutSpace = getHoleWithHole(innerD=self.handNutMetricSize,outerD=getNutContainingDiameter(self.handNutMetricSize),sides=6, deep=getNutHeight(self.handNutMetricSize))
+
+        nut = nut.cut(nutSpace)
+
+        return nut
 
     def getHand(self, hour=True, outline=False):
         '''
@@ -3038,6 +3054,10 @@ class Hands:
         print("Outputting ", out)
         exporters.export(self.getHand(False), out)
 
+        out = os.path.join(path, "{}_hand_nut.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHandNut(), out)
+
         if self.outline > 0:
             out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))
             print("Outputting ", out)
@@ -3112,7 +3132,8 @@ class Dial:
 # hands = Hands(style="simple", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, outline=1, outlineSameAsBody=False)
 hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
 #
-show_object(hands.getHand(outline=False))
+# show_object(hands.getHand(outline=False))
+show_object(hands.getHandNut())
 # hands.outputSTLs(clockName, clockOutDir)
 
 # #drop of 1 and lift of 3 has good pallet angles with 42 teeth
