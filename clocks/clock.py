@@ -2473,7 +2473,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -2507,10 +2507,10 @@ class Pendulum:
 
         self.handAvoiderInnerD=handAvoiderInnerD
 
-        self.bobNutD = 30
-        self.bobNutThick=10
-        self.bobR=50
-        self.bobThick = 15
+        self.bobNutD = bobD*0.3
+        self.bobNutThick=bobThick*2/3
+        self.bobR=bobD/2
+        self.bobThick = bobThick
 
         self.gapHeight = self.bobNutThick + 0.5
         self.gapWidth = self.bobNutD + 1
@@ -2788,7 +2788,7 @@ class Pendulum:
     def getBobNut(self):
         #TODO consider calculating how much time+- a single segment might be
         segments = 20
-        knobbleR = 1
+        knobbleR = self.bobNutD/30
         r=self.bobNutD/2 - knobbleR
 
         knobbleAngle = knobbleR*2/r
@@ -3119,21 +3119,21 @@ class Dial:
 #
 # show_object(shape)
 
-# escapement = Escapement(teeth=30, diameter=60)
-#
-# pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+escapement = Escapement(teeth=30, diameter=60)
+
+pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
 #
 # # show_object(pendulum.getPendulumForRod())
-# show_object(pendulum.getBob())
+show_object(pendulum.getBob())
 
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
 #
-# hands = Hands(style="simple", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, outline=1, outlineSameAsBody=False)
-hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
-#
-# show_object(hands.getHand(outline=False))
-show_object(hands.getHandNut())
+# # hands = Hands(style="simple", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, outline=1, outlineSameAsBody=False)
+# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
+# #
+# # show_object(hands.getHand(outline=False))
+# show_object(hands.getHandNut())
 # hands.outputSTLs(clockName, clockOutDir)
 
 # #drop of 1 and lift of 3 has good pallet angles with 42 teeth
