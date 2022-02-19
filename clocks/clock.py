@@ -32,6 +32,8 @@ I think this is similar to older cuckoos I've seen. It will result in a visible 
 for the first clock and decide if I want to switch to something else later. 
 '''
 
+#aprox 1.13kg per 200ml for number 9 steel shot (2.25mm diameter)
+STEEL_SHOT_DENSITY=1.13/0.2
 
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
@@ -3097,7 +3099,20 @@ class Dial:
         return self.outsideD - self.fixingD*4
 
 class Weight:
+
+    # @staticmethod
+    # def getMaxWeightForDimensions(h, d, wallThick=3):
+    #     r = (d / 2 - wallThick * 2) / 1000
+    #     h = (h - wallThick * 2) / 1000
+    #     # in litres
+    #     volume = math.pi * r * r * h * 1000
+
     def __init__(self, height=100, diameter=30, boltMetricSize=3):
+
+        # if height == 0 and diameter == 0:
+
+
+
         self.height=height
         self.diameter=diameter
         self.boltMetricSize=boltMetricSize
@@ -3106,7 +3121,27 @@ class Weight:
         self.slotThick = self.wallThick/3
         self.lidWidth = self.diameter * 0.3
 
+
+    def getVolume_L(self):
+        # get everything in metres
+        r = (self.diameter / 2 - self.wallThick * 2) / 1000
+        h = (self.height - self.wallThick * 2) / 1000
+        # in litres
+        volume = math.pi * r * r * h * 1000
+
+        return volume
+    def getMaxWeight(self, density = STEEL_SHOT_DENSITY):
+        '''
+        calculate maximum weight (in kg) this could fit, ignoring lots of details
+        '''
+        weight = density * self.getVolume_L()
+
+        return weight
+
     def getWeight(self):
+        '''
+        get the body of teh weight
+        '''
         #main body of the weight
         weight = cq.Workplane("XY").circle(self.diameter/2).extrude(self.height).shell(-self.wallThick)
 
@@ -3127,7 +3162,7 @@ class Weight:
         nutD = getNutContainingDiameter(self.boltMetricSize, 0.2)
         nutHeight = getNutHeight(self.boltMetricSize) + 0.5
         headHeight = getScrewHeadHeight(self.boltMetricSize) + 0.5
-        headD = getScrewHeadDiameter(self.boltMetricSize) + 0.2
+        headD = getScrewHeadDiameter(self.boltMetricSize) + 0.5
         screwHeight = r - nutD
 
         extraCutter = 1
@@ -3189,6 +3224,8 @@ class Weight:
 weight = Weight()
 
 show_object(weight.getWeight())
+
+print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
 # show_object(weight.getLid(forCutting=True))
 #
 # train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)

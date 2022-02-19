@@ -34,11 +34,7 @@ pendulum length: 0.9939608115313336m period: 2s
 escapement time: 60s teeth: 30
 cicumference: 68.60000000000001, run time of:28.9hours
 '''
-
-
-
 pendulumSticksOut=20
-
 #keeping chain wheel slightly thicker so it might be less wonky on the rod?
 train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=4)
 train.outputSTLs(clockName,clockOutDir)
@@ -62,3 +58,4 @@ hands.outputSTLs(clockName, clockOutDir)
 
 weight = clock.Weight()
 weight.outputSTLs(clockName, clockOutDir)
+print("Weight max: kg".format(weight.getMaxWeight()))
