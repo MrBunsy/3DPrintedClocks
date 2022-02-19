@@ -3107,16 +3107,20 @@ class Weight:
     #     # in litres
     #     volume = math.pi * r * r * h * 1000
 
-    def __init__(self, height=100, diameter=30, boltMetricSize=3):
-
-        # if height == 0 and diameter == 0:
+    def __init__(self, height=100, diameter=38, boltMetricSize=3, wallThick=2.7, boltThreadLength=30):
+        '''
+        34mm diameter fits nicely with a 40mm m3 screw
+        38mm diameter results in a weight of ~0.3kg
+        wallThick of 2.6 should result in no infill with three layers of walls
+        '''
 
 
 
         self.height=height
         self.diameter=diameter
         self.boltMetricSize=boltMetricSize
-        self.wallThick=3
+        self.boltThreadLength=boltThreadLength
+        self.wallThick=wallThick
         # self.baseThick=4
         self.slotThick = self.wallThick/3
         self.lidWidth = self.diameter * 0.3
@@ -3165,10 +3169,14 @@ class Weight:
         headD = getScrewHeadDiameter(self.boltMetricSize) + 0.5
         screwHeight = r - nutD
 
+        largeCut = self.diameter
+        wiggleSpace = 1
+        boltSpace = self.boltThreadLength - nutHeight - wiggleSpace
+
         extraCutter = 1
-        screwSpace = cq.Workplane("YZ").polygon(6,nutD).extrude(nutHeight + extraCutter).faces(">X").workplane()\
-            .circle(self.boltMetricSize/2).extrude(self.diameter - nutHeight - headHeight).faces(">X").workplane()\
-            .circle(headD/2).extrude(headHeight + extraCutter).translate((-self.diameter/2 - extraCutter,0,screwHeight + self.height))
+        screwSpace = cq.Workplane("YZ").polygon(6,nutD).extrude(largeCut).faces(">X").workplane()\
+            .circle(self.boltMetricSize/2).extrude(boltSpace).faces(">X").workplane()\
+            .circle(headD/2).extrude(largeCut).translate((-largeCut - boltSpace/2,0,screwHeight + self.height))
 
         weight = weight.cut(screwSpace)
 
@@ -3198,6 +3206,13 @@ class Weight:
 
 
         width = self.lidWidth
+
+        if not forCutting:
+            # reduce size a tiny bit so it can fit into the slot
+            slotThick -= 0.3
+            wallThick += 0.4
+            width -= 0.2
+
         #cadquery just can't cope with cuts that line up perfectly
         wallR = self.diameter/2 - wallThick-0.001
         topR = self.diameter/2 - wallThick + slotThick
@@ -3208,10 +3223,7 @@ class Weight:
         wallCorner = polar(wallAngle, wallR)
         topCorner = polar(topAngle, topR)
 
-        if not forCutting:
-            # reduce size a tiny bit so it can fit into the slot
-            slotThick -= 0.3
-            wallThick += 0.4
+
 
         lid = cq.Workplane("XY").moveTo(-wallCorner[0], wallCorner[1]).radiusArc(wallCorner, wallR).lineTo(wallCorner[0], - wallCorner[1]).radiusArc((-wallCorner[0], -wallCorner[1]), wallR).close().extrude(wallThick - slotThick)
         lid = lid.faces(">Z").workplane().moveTo(-topCorner[0], topCorner[1]).radiusArc(topCorner, topR).lineTo(topCorner[0], - topCorner[1]).radiusArc((-topCorner[0], -topCorner[1]), topR).close().extrude(slotThick)
@@ -3221,7 +3233,7 @@ class Weight:
 
         return lid
 
-weight = Weight()
+weight = Weight(boltThreadLength=30, diameter=38)
 
 show_object(weight.getWeight())
 

@@ -58,4 +58,4 @@ hands.outputSTLs(clockName, clockOutDir)
 
 weight = clock.Weight()
 weight.outputSTLs(clockName, clockOutDir)
-print("Weight max: kg".format(weight.getMaxWeight()))
+print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
