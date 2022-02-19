@@ -60,3 +60,5 @@ plates.outputSTLs(clockName, clockOutDir)
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=80, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)
 
+weight = clock.Weight()
+weight.outputSTLs(clockName, clockOutDir)

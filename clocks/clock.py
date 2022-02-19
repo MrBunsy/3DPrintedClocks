@@ -57,6 +57,17 @@ def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
 
     return metric_thread * METRIC_NUT_DEPTH_MULT
 
+def getScrewHeadHeight(metric_thread):
+    if metric_thread == 3:
+        return 2.6
+
+    return metric_thread
+
+def getScrewHeadDiameter(metric_thread):
+    if metric_thread == 3:
+        return 6
+    return METRIC_HEAD_D_MULT * metric_thread
+
 def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     '''
     Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
@@ -3072,7 +3083,9 @@ if 'show_object' not in globals():
         pass
 
 class Dial:
-
+    '''
+    WIP
+    '''
     def __init__(self, outsideD, hollow=True, style="simple", fixingD=3, supportLength=0):
         self.outsideD=outsideD
         self.hollow = hollow
@@ -3083,6 +3096,100 @@ class Dial:
     def getFixingDistance(self):
         return self.outsideD - self.fixingD*4
 
+class Weight:
+    def __init__(self, height=100, diameter=30, boltMetricSize=3):
+        self.height=height
+        self.diameter=diameter
+        self.boltMetricSize=boltMetricSize
+        self.wallThick=3
+        # self.baseThick=4
+        self.slotThick = self.wallThick/3
+        self.lidWidth = self.diameter * 0.3
+
+    def getWeight(self):
+        #main body of the weight
+        weight = cq.Workplane("XY").circle(self.diameter/2).extrude(self.height).shell(-self.wallThick)
+
+        # hole to fill with shot
+        lidHole = self.getLid(True).translate((0,0,self.height - self.wallThick))
+        weight = weight.cut(lidHole)
+
+        #something to be hooked onto - two sticky out bits with a machine screw through them
+        extraWidth = 0
+
+        r = self.diameter/2
+        angle = math.acos((self.lidWidth/2 + extraWidth) / r)
+        corner = polar(angle, r)
+        # more cadquery fudgery with r
+        weight = weight.faces(">Z").workplane().moveTo(corner[0], corner[1]).radiusArc((corner[0], -corner[1]), r - 0.001).close().mirrorY().extrude(r)
+
+
+        nutD = getNutContainingDiameter(self.boltMetricSize, 0.2)
+        nutHeight = getNutHeight(self.boltMetricSize) + 0.5
+        headHeight = getScrewHeadHeight(self.boltMetricSize) + 0.5
+        headD = getScrewHeadDiameter(self.boltMetricSize) + 0.2
+        screwHeight = r - nutD
+
+        extraCutter = 1
+        screwSpace = cq.Workplane("YZ").polygon(6,nutD).extrude(nutHeight + extraCutter).faces(">X").workplane()\
+            .circle(self.boltMetricSize/2).extrude(self.diameter - nutHeight - headHeight).faces(">X").workplane()\
+            .circle(headD/2).extrude(headHeight + extraCutter).translate((-self.diameter/2 - extraCutter,0,screwHeight + self.height))
+
+        weight = weight.cut(screwSpace)
+
+
+        #pretty shape
+
+        topCutterToKeep = cq.Workplane("YZ").circle(r).extrude(self.diameter*2).translate((-self.diameter,0,0))
+        topCutter = cq.Workplane("XY").rect(self.diameter*2, self.diameter*2).extrude(self.diameter)
+        topCutter = topCutter.cut(topCutterToKeep).translate((0,0,self.height))
+
+        weight = weight.cut(topCutter)
+
+        return weight
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_weight.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getWeight(), out)
+
+        out = os.path.join(path, "{}_weight_lid.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getLid(), out)
+
+    def getLid(self, forCutting=False):
+        wallThick = self.wallThick
+        slotThick = self.slotThick
+
+
+        width = self.lidWidth
+        #cadquery just can't cope with cuts that line up perfectly
+        wallR = self.diameter/2 - wallThick-0.001
+        topR = self.diameter/2 - wallThick + slotThick
+
+        wallAngle = math.acos((width/2)/wallR)
+        topAngle = math.acos((width / 2) / topR)
+        
+        wallCorner = polar(wallAngle, wallR)
+        topCorner = polar(topAngle, topR)
+
+        if not forCutting:
+            # reduce size a tiny bit so it can fit into the slot
+            slotThick -= 0.3
+            wallThick += 0.4
+
+        lid = cq.Workplane("XY").moveTo(-wallCorner[0], wallCorner[1]).radiusArc(wallCorner, wallR).lineTo(wallCorner[0], - wallCorner[1]).radiusArc((-wallCorner[0], -wallCorner[1]), wallR).close().extrude(wallThick - slotThick)
+        lid = lid.faces(">Z").workplane().moveTo(-topCorner[0], topCorner[1]).radiusArc(topCorner, topR).lineTo(topCorner[0], - topCorner[1]).radiusArc((-topCorner[0], -topCorner[1]), topR).close().extrude(slotThick)
+
+        # lid = cq.Workplane("XY").moveTo(-topCorner[0], topCorner[1]).radiusArc(topCorner, topR).lineTo(topCorner[0], - topCorner[1]).radiusArc((-topCorner[0], -topCorner[1]), topR).close().extrude(slotThick)
+
+
+        return lid
+
+weight = Weight()
+
+show_object(weight.getWeight())
+# show_object(weight.getLid(forCutting=True))
 #
 # train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
 # train.calculateRatios()
@@ -3119,12 +3226,12 @@ class Dial:
 #
 # show_object(shape)
 
-escapement = Escapement(teeth=30, diameter=60)
-
-pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
+# escapement = Escapement(teeth=30, diameter=60)
 #
-# # show_object(pendulum.getPendulumForRod())
-show_object(pendulum.getBob())
+# pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
+# #
+# # # show_object(pendulum.getPendulumForRod())
+# show_object(pendulum.getBob())
 
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
