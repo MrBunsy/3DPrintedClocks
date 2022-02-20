@@ -33,7 +33,11 @@ for the first clock and decide if I want to switch to something else later.
 '''
 
 #aprox 1.13kg per 200ml for number 9 steel shot (2.25mm diameter)
-STEEL_SHOT_DENSITY=1.13/0.2
+#this must be a bit low, my height=100, diameter=38 wallThick=2.7 could fit nearly 350g of shot (and weighed 50g itself)
+#STEEL_SHOT_DENSITY=1.13/0.2
+STEEL_SHOT_DENSITY=0.35/0.055
+#"Steel shot has a density of 7.8 g/cc" "For equal spheres in three dimensions, the densest packing uses approximately 74% of the volume. A random packing of equal spheres generally has a density around 64%."
+#and 70% of 7.8 is 5.46, which is lower than my lowest measured :/
 
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
@@ -3125,6 +3129,10 @@ class Weight:
         self.slotThick = self.wallThick/3
         self.lidWidth = self.diameter * 0.3
 
+    def printInfo(self):
+        vol = self.getVolume_L()
+        weight = self.getMaxWeight()
+        print("Volume: {:.3f}L Weight Aprox: {:.3f}kg".format(vol, weight))
 
     def getVolume_L(self):
         # get everything in metres
@@ -3233,11 +3241,13 @@ class Weight:
 
         return lid
 
-weight = Weight(boltThreadLength=30, diameter=38)
+weight = Weight()
 
 show_object(weight.getWeight())
 
-print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
+weight.printInfo()
+
+# print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
 # show_object(weight.getLid(forCutting=True))
 #
 # train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
