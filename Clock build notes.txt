@@ -25,12 +25,13 @@ The plates aren't really strong enough - but might be if they were closer togeth
 
 The gears lose a lot of grip on the threaded rod if they have to be removed and re-threaded - will want to think about a better way of garenteeing motion from the minute wheel to the shaft - maybe a nyloc nut?
 -done, but untested
+nyloc nut worked, but introduces wobblyness of the wheel if it's too thin
 
 The pendulum knife edge might need to be longer - it wobbles all over the place
 -going to test having pendulum on same rod as anchor and not using knife edge for now
 
 Pendulum bob and nut work, but the bob rotates slowly. Needs something to prevent it from doing that - usually the pendulum rod isn't round the whole way down
--planning to try nyloc nut in the bob nut
+-planning to try nyloc nut in the bob nut (worked)
 
 Plans for next clock:
 Make bob small and round, so it doesn't matter if it rotates a bit - might need something to prevent it from loosening/tightening itself? Or will it not have this problem if it's a different shape?
@@ -48,30 +49,36 @@ Maybe consider making a fancy handnut piece that goes over a normal nut to make 
 works! Had problems with it stopping, turned out to be some globs of PETG in one of the teeth. the smaller teeth I suspect make it more suseptical to it
 
 Will be worth far more thoroughly inspecting teeth in the future
+DONE worked with clock 4
 
 Permanently attached pendulum is a bad idea, although the anchor and pendulum on the same rod works quite well. Try some sort of hook on the rod attachment so the main pendulum can be removed?
+DONE but didn't work well
 
 The clock plates are far thicker and wider than they need to be. The width also hides the smaller gears. Future plan: make the plates as narrow as possible
+DONE clock 4 looks great
 
 the tick is less satisfying than the previous clock. Maybe go back to a larger escape wheel? Could a fully solid escape wheel without the HAC styling still go "clunk"?
+DONEish clock 4 the tick is less anoying but a lot quieter in general
 
 thoughts: having the escape wheel to the left/right of the anchor would make the clock less tall and might help with increasing the size of the gears again
+Planning a "compact" clock plate design
 
 It's very easy to knock the clock out of beat when winding up the weight or adjusting the pendulum. Some grippy pads on the back might help?
-
+DONE stick on grippy pads from RS work really well
 
 =================== Wall clock 04 =====================
 
 Might be worth ensuring the bottom-side (as printed) of as many parts as possible is forwards. The bottom of the anchor is considerably more neat and tidy than the top
 Could have made the design more compact (height-wise), as the large first wheel has enough space for the small second wheel to interlock
 
-The gear wheel is very wonky - looks like it's always pulled forwards by the chain. Maybe consider keeping this one thicker and reducing the size of the hole in the chain wheel, so it's got less angle to pull?
+The minute wheel is very wonky - looks like it's always pulled forwards by the chain. Maybe consider keeping this one thicker and reducing the size of the hole in the chain wheel, so it's got less angle to pull?
 I think this has always been the case, but the large and thin minute wheel has amplified it here.
 
 Might be worth considering printing spacers, or going back to the bearing-holderst that stick out from the clock plates. It takes a long time to get all the gears lined up when I'm manually adjusting lots of little nyloc nuts.
 
 The new deadbeat escapement seems pretty good. The pendulum does have a wide swing (need to measure, see if it really is 5deg), so for longer pendulums I'll want to reduce this a bit maybe?
 THOUGHT - looking closely I'm wondering if it's over-swinging quite a lot. If I actually weight the bob down, then this should reduce? (power from escapement will then be less compared to its total mass?)
+Yes - increasing mass of pendulum or reducing mass of the weight reduces overswinging. Don't know what impact that has on timekeeping yet.
 
 There is a noticable little clunk when the chain segment leaves the chain wheel. Will be worth reducing the tolerance on that a tiny bit.
 
@@ -80,3 +87,12 @@ The anchor threaded slightly wonky, and is also very loose, even with the nyloc 
 The detachable pendulum needed a nut to keep it from being too wobbly - so it didn't really work. again real bushing + knife edge would fix this
 
 The lid of the weight isn't very easy to fit
+
+Inspecting the teeth and using a small file on any irregularities appears to have paid off - only times gears have got stuck is because they weren't lined up and the wonky minute wheel problem.
+
+Is it worth always having a chain wheel in future? This means the one day clocks can be mounted lower on the wall and it sidesteps the wonky minute wheel
+
+
+General thought - is it worth designing a clock to be hung from the picture rail? Legs sticking out the top and bottom at the back, with a hook fairly far forwards on the top might do the job
+
+Go back to the larger screw hole + maybe give the back plate an extra circular bulge to accomodate it?

@@ -1,5 +1,10 @@
 import clocks.clock as clock
 
+'''
+The first iteration of this clock was just some parts before I realised I needed to tweak the ratios. 
+Wall_clock_02 was the new ratios and actually got finished
+'''
+
 if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass

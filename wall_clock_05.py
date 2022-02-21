@@ -19,10 +19,11 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False, max_wheel_teeth=120, min_pinion_teeth=9, chainWheels=1, hours=180)
+train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False, max_wheel_teeth=120, min_pinion_teeth=9, chainWheels=1, hours=180)
 
 train.calculateRatios()
 # train.setRatios([[81, 12], [80, 9]])
+train.setRatios([[108, 10], [80, 9]])
 train.setChainWheelRatio([74, 11])
 
 '''
@@ -40,14 +41,14 @@ train.printInfo()
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=5,escapeWheelThick=5)
+train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=6, useNyloc=False)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
 motionWorks.outputSTLs(clockName,clockOutDir)
 
-#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+#trying a thicker anchor and glue rather than nyloc
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNyloc=False)
 
 pendulum.outputSTLs(clockName, clockOutDir)
 
@@ -57,3 +58,6 @@ plates.outputSTLs(clockName, clockOutDir)
 
 hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)
+
+#no weight for this clock, as it's going to probably be too heavy to make myself.
+

@@ -777,7 +777,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6, chainWheelThick=-1, escapeWheelThick=-1):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True):
         arbours = []
         # ratchetThick = holeD*2
         #thickness of just the wheel
@@ -810,14 +810,12 @@ class GoingTrain:
 
 
         # print(module_sizes)
-        #make the esacpe wheel smaller than the last wheel by modulereduction
-        # self.escapement = Escapement(self.escapement_teeth,pairs[len(pairs)-1].wheel.getMaxRadius()*2*moduleReduction)
-        # with lift of 4deg, 30 teeth, a drop adjustment of -7 results in 3deg of drop evenly on both pallets
-        #trying a tiny bit more lift to make up for shorter plates due to printing?
-        # lift = 5
-        # drop = -7
-
+        #make the esacpe wheel smaller than the last wheel by default
         escapeWheelDiameter = pairs[len(pairs)-1].wheel.getMaxRadius()*2*0.75
+
+        #we might choose to override this
+        if escapeWheelMaxD > 0 and escapeWheelDiameter > escapeWheelMaxD:
+            escapeWheelDiameter = escapeWheelMaxD
 
         #chain wheel imaginary pivot (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
         #using != as XOR, so if an odd number of wheels, it's the same as chainAtBack. If it's an even number of wheels, it's the opposite
@@ -858,8 +856,9 @@ class GoingTrain:
                     #just a normal gear
                     arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*2, endCapThick=self.gearPivotEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style)
 
-                #regardless of chains, we need a nyloc nut to fix the wheel to the rod
-                arbour.setNutSpace(holeD)
+                if useNyloc:
+                    #regardless of chains, we need a nyloc nut to fix the wheel to the rod
+                    arbour.setNutSpace(holeD)
 
                 arbours.append(arbour)
 
@@ -1117,7 +1116,7 @@ class Escapement:
         anchor = anchor.moveTo(entryPalletEndPos[0], entryPalletEndPos[1]).lineTo(entryPalletStartPos[0],entryPalletStartPos[1])
 
         if self.type == "deadbeat":
-            anchor = anchor.radiusArc(outerLeftPoint, entryPalletEndR)
+            anchor = anchor.radiusArc(outerLeftPoint, entryPalletEndR+0.01)
 
         #just temp - need proper arm and centre
         anchor = anchor.lineTo(anchorCentreTop[0], anchorCentreTop[1]).lineTo(outerRightPoint[0], outerRightPoint[1])
@@ -1366,6 +1365,10 @@ class Escapement:
         if style == "HAC":
             gear = Gear.cutHACStyle(gear, armThick, rimRadius)
 
+        # hole = cq.Workplane("XY").circle(holeD/2).extrude(thick+2).translate((0,0,-1))
+        #
+        # gear = gear.cut(hole)
+        #for some reason this doesn't always work
         gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
 
         return gear
@@ -2490,7 +2493,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNyloc=True):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -2499,10 +2502,13 @@ class Pendulum:
         self.length = length
         # self.crutchWidth = 9
 
+        #if true, we're using a nyloc nut to fix the anchor to the rod, if false we're not worried about fixing it, or we're using glue
+        self.useNyloc=useNyloc
+
         #space for a nut to hold the anchor to the rod
         self.nutMetricSize=nutMetricSize
 
-        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize)
+        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize if useNyloc else 0)
 
         self.crutchSlackWidth=crutchBoltD*1.5
         self.crutchSlackHeight = 30
@@ -3241,11 +3247,11 @@ class Weight:
 
         return lid
 
-weight = Weight()
-
-show_object(weight.getWeight())
-
-weight.printInfo()
+# weight = Weight()
+#
+# show_object(weight.getWeight())
+#
+# weight.printInfo()
 
 # print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
 # show_object(weight.getLid(forCutting=True))
