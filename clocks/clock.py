@@ -3128,9 +3128,60 @@ class Dial:
         self.style = style
         self.fixingD=fixingD
         self.supportLength=supportLength
+        self.thick = 3
 
     def getFixingDistance(self):
         return self.outsideD - self.fixingD*4
+
+    def getDial(self):
+        r = self.outsideD / 2
+
+        bigLineThick=3
+        smallLineThick=1
+
+        bigAngle = math.asin((bigLineThick/2)/r)*2
+        smallAngle = math.asin((smallLineThick / 2) / r) * 2
+
+        lineThick = LAYER_THICK*2
+
+        innerR = r*0.8
+
+        dial = cq.Workplane("XY").circle(r).circle(innerR).extrude(self.thick)
+
+        dial = dial.faces(">Z").workplane().tag("top")
+
+        lines = 60
+
+        dA = math.pi*2/lines
+
+        fromEdge = self.outsideD*0.01
+
+        lineInnerR = innerR + fromEdge
+        lineOuterR = r - fromEdge
+
+        for i in range(lines):
+            big = i % 5 == 0
+            # big=True
+            lineAngle = bigAngle if big else smallAngle
+            angle = math.pi/2 - i*dA
+
+            # if not big:
+            #     continue
+
+            bottomLeft=polar(angle - lineAngle/2, lineInnerR)
+            bottomRight=polar(angle + lineAngle/2, lineInnerR)
+            topRight=polar(angle + lineAngle/2, lineOuterR)
+            topLeft=polar(angle - lineAngle / 2, lineOuterR)
+            #keep forgetting cq does not line shapes that line up perfectly, so have a 0.001 bodge... again
+            dial = dial.workplaneFromTagged("top").moveTo(bottomLeft[0], bottomLeft[1]).radiusArc(bottomRight, 0.001-innerR).lineTo(topRight[0], topRight[1]).radiusArc(topLeft, r-0.001).close().extrude(lineThick)
+            # dial = dial.workplaneFromTagged("top").moveTo(bottomLeft[0], bottomLeft[1]).lineTo(bottomRight[0], bottomRight[1]).lineTo(topRight[0], topRight[1]).lineTo(topLeft[0], topLeft[1]).close().extrude(lineThick)
+
+        return dial
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_dial.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getDial(), out)
 
 class Weight:
 
@@ -3271,6 +3322,61 @@ class Weight:
 
         return lid
 
+def getRadiusForPointsOnACircle(distances, circleAngle=math.pi, iterations=100):
+    '''
+    given a list of distances between points, place them on the edge of a circle at those distances apart (to cover circleangle of the circle)
+    find the radius of a circle where this is possible
+    circleAngle is in radians
+    '''
+
+    def getAngleCovered(distances,r):
+        totalAngle = 0
+
+        for dist in distances:
+            totalAngle += math.asin(dist/(2*r))
+
+        totalAngle*=2
+
+        return totalAngle
+
+    #treat as circumference
+    aproxR = sum(distances)/circleAngle
+
+    minR = aproxR*0.8
+    maxR = aproxR*1.2
+
+    # errorMin = circleAngle - getAngleCovered(distances, minR)
+    # errorMax = circleAngle - getAngleCovered(distances, maxR)
+    testR = aproxR
+    errorTest = circleAngle - getAngleCovered(distances, testR)
+
+    for i in range(iterations):
+        print("Iteration {}, testR: {}, errorTest: {}".format(i,testR, errorTest))
+        if errorTest < 0:
+            #r is too small
+            minR = testR
+
+        if errorTest > 0:
+            maxR = testR
+
+        if errorTest == 0:
+            #turns out this can happen. hurrah for floating point!
+            print("found exact after {} iterations".format(i))
+            break
+
+        testR = (minR + maxR)/2
+        errorTest = circleAngle - getAngleCovered(distances, testR)
+
+    return testR
+
+
+getRadiusForPointsOnACircle([10,20,15], math.pi)
+
+
+dial = Dial(120)
+
+show_object(dial.getDial())
+
 # weight = Weight()
 #
 # show_object(weight.getWeight())
@@ -3315,12 +3421,10 @@ class Weight:
 #
 # show_object(shape)
 
-escapement = Escapement(teeth=30, diameter=60)
-
-pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
-
-show_object(pendulum.getPendulumForRod())
-# show_object(pendulum.getBob())
+# escapement = Escapement(teeth=30, diameter=60)
+# pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
+# show_object(pendulum.getPendulumForRod())
+# # show_object(pendulum.getBob())
 
 # # show_object(escapement.getAnchor3D())
 # show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))

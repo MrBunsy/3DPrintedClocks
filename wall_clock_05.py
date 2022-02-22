@@ -52,6 +52,9 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 
 pendulum.outputSTLs(clockName, clockOutDir)
 
+dial = clock.Dial(120)
+dial.outputSTLs(clockName, clockOutDir)
+
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05")
 plates.outputSTLs(clockName, clockOutDir)
