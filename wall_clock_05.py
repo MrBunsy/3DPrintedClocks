@@ -19,11 +19,11 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False, max_wheel_teeth=120, min_pinion_teeth=9, chainWheels=1, hours=180)
+train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
 
-train.calculateRatios()
+train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.setRatios([[81, 12], [80, 9]])
-train.setRatios([[108, 10], [80, 9]])
+# train.setRatios([[108, 10], [80, 9]])
 train.setChainWheelRatio([74, 11])
 
 '''
@@ -35,7 +35,7 @@ cicumference: 68.60000000000001, run time of:28.9hours
 
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
-train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.1)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 train.printInfo()
 
@@ -48,7 +48,7 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
 motionWorks.outputSTLs(clockName,clockOutDir)
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNyloc=False)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
 
 pendulum.outputSTLs(clockName, clockOutDir)
 

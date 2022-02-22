@@ -503,7 +503,7 @@ class Arbour:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, scapeAtFront=False, maxChainDrop=1800, max_chain_wheel_d=23, min_pinion_teeth=10, max_wheel_teeth=100):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, scapeAtFront=False, maxChainDrop=1800, max_chain_wheel_d=23):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -559,8 +559,10 @@ class GoingTrain:
         self.escapement_lock = 2
         self.escapement_type = "deadbeat"
 
-        self.min_pinion_teeth=min_pinion_teeth
-        self.max_wheel_teeth=max_wheel_teeth
+        # self.min_pinion_teeth=min_pinion_teeth
+        # self.max_wheel_teeth=max_wheel_teeth
+        # self.pinion_max_teeth = pinion_max_teeth
+        # self.wheel_min_teeth = wheel_min_teeth
         self.trains=[]
 
     def setEscapementDetails(self, lift = None, drop = None, lock=None, type=None):
@@ -573,7 +575,7 @@ class GoingTrain:
         if type is not None:
             self.type = type
 
-    def calculateRatios(self,moduleReduction=0.85):
+    def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         module recution used to caculate smallest possible wheels - assumes each wheel has a smaller module than the last
@@ -583,10 +585,10 @@ class GoingTrain:
         #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
         options = []
 
-        pinion_min=self.min_pinion_teeth
-        pinion_max=20
-        wheel_min=50
-        wheel_max=self.max_wheel_teeth
+        pinion_min=min_pinion_teeth
+        pinion_max=pinion_max_teeth
+        wheel_min=wheel_min_teeth
+        wheel_max=max_wheel_teeth
 
         #TODO prefer non-integer combos.
         '''
@@ -633,20 +635,30 @@ class GoingTrain:
             totalWheelTeeth = 0
             totalPinionTeeth = 0
             weighting = 0
+            lastSize=0
+            fits=True
             for p in range(len(allTrains[c])):
                 ratio = allTrains[c][p][0] / allTrains[c][p][1]
                 if ratio == round(ratio):
                     intRatio=True
+                    break
                 totalRatio*=ratio
                 totalTeeth +=  allTrains[c][p][0] + allTrains[c][p][1]
                 totalWheelTeeth += allTrains[c][p][0]
                 totalPinionTeeth += allTrains[c][p][1]
-                weighting += math.pow(moduleReduction, p)*allTrains[c][p][0]
+                #module * number of wheel teeth - proportional to diameter
+                size =  math.pow(moduleReduction, p)*allTrains[c][p][0]
+                weighting += size
+                if p > 0 and size > lastSize*0.9:
+                    #this wheel is unlikely to physically fit
+                    fits=False
+                    break;
+                lastSize = size
             totalTime = totalRatio*self.escapement_time
             error = 60*60-totalTime
 
             train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting }
-            if abs(error) < 0.1 and not intRatio:
+            if fits and  abs(error) < max_error and not intRatio:
                 allTimes.append(train)
 
         allTimes.sort(key = lambda x: x["weighting"])
@@ -726,8 +738,10 @@ class GoingTrain:
     def setChainWheelRatio(self, pinionPair):
         self.chainWheelRatio = pinionPair
 
-    def genChainWheels(self, ratchetThick=7.5, holeD=3.5, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
+    def genChainWheels(self, ratchetThick=7.5, holeD=3.3, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
         '''
+        HoleD of 3.5 is nice and loose, but I think it's contributing to making the chain wheel wonky - the weight is pulling it over a bit
+        Trying 3.3, wondering if I'm going to want to go back to the idea of a brass tube in the middle
 
         Generate the gear ratios for the wheels between chain and minute wheel
         again, I'd like to make this generic but the solution isn't immediately obvious and it would take
@@ -1291,6 +1305,10 @@ class Escapement:
 
         #add a length for the arbour - if required
 
+        if crutchLength == 0 and nutMetricSize == 0:
+            #if we've got no crutch or nyloc nut, deliberately reverse it so the side facing forwards is the side printed on the nice textured sheet
+            clockwise = not clockwise
+
         #get the anchor the other way around so we can build on top of it, and centre it on the pivot
         arbour = self.getAnchor3D(anchorThick, holeD, not clockwise).translate([0,-self.anchor_centre_distance,0])
 
@@ -1677,7 +1695,7 @@ class Ratchet:
 
         self.clicks = 8
         #ratchetTeet must be a multiple of clicks
-        self.ratchetTeeth = self.clicks*1
+        self.ratchetTeeth = self.clicks*2
 
 
         self.thick = thick
@@ -1733,6 +1751,7 @@ class Ratchet:
         contains the ratchet teeth, designed so it can be printed as part of the same object as a gear wheel
         '''
         wheel = cq.Workplane("XY").circle(self.outsideDiameter/2)#.circle(self.outsideDiameter/2-self.outer_thick)
+
 
         dA = math.pi * 2 / self.ratchetTeeth * self.anticlockwise
 
@@ -2493,7 +2512,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNyloc=True):
+    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -2503,19 +2522,19 @@ class Pendulum:
         # self.crutchWidth = 9
 
         #if true, we're using a nyloc nut to fix the anchor to the rod, if false we're not worried about fixing it, or we're using glue
-        self.useNyloc=useNyloc
+        self.useNylocForAnchor=useNylocForAnchor
 
         #space for a nut to hold the anchor to the rod
         self.nutMetricSize=nutMetricSize
 
-        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize if useNyloc else 0)
+        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize if useNylocForAnchor else 0)
 
         self.crutchSlackWidth=crutchBoltD*1.5
         self.crutchSlackHeight = 30
         self.suspensionD=20
         self.pendulumTopD = self.suspensionD*1.75
         self.pendulumTopExtraRadius = 5
-        self.pendulumTopThick = getNutContainingDiameter(threadedRodM) + 2
+        self.pendulumTopThick = 15#getNutContainingDiameter(threadedRodM) + 2
         self.threadedRodM=threadedRodM
 
         self.suspensionOpenAngle=degToRad(120)
@@ -2633,8 +2652,13 @@ class Pendulum:
         pendulum = cq.Workplane("XY")
 
         width = holeD*4
-        height = holeD*5
+        height = holeD*6
 
+        #(0,0,0) is the rod from the anchor, the rod is along the z axis
+
+        holeStartY=-height*0.2
+        holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + 1
+        holeEndY = holeStartY - holeHeight
 
         nutD = getNutContainingDiameter(holeD)
 
@@ -2651,23 +2675,23 @@ class Pendulum:
 
 
         # pendulum = pendulum.faces(">Z").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).cutThruAll()
-        space = cq.Workplane("XY").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).extrude(self.pendulumTopThick).translate((0,0,LAYER_THICK*3))
+        space = cq.Workplane("XY").moveTo(0,holeStartY-holeHeight/2).rect(width-wall_thick*2,holeHeight).extrude(self.pendulumTopThick).translate((0,0,LAYER_THICK*3))
         pendulum = pendulum.cut(space)
 
-        extraSpaceForRod = 0.5
+        extraSpaceForRod = 0.2
         #
         rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2).circle(self.threadedRodM/2 + extraSpaceForRod/2).extrude(100)
         # add slot for rod to come in and out
         rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick).rect(self.threadedRodM + extraSpaceForRod, self.pendulumTopThick).extrude(100)
 
-        rod = rod.translate((0,-height/2,0))
+        rod = rod.translate((0,holeStartY,0))
 
 
 
 
         pendulum = pendulum.cut(rod)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForRod).extrude(nutThick).translate((0,-height,0))
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForRod).extrude(nutThick).translate((0,holeStartY-holeHeight,0))
         pendulum = pendulum.cut(nutSpace2)
 
 
@@ -3291,11 +3315,11 @@ class Weight:
 #
 # show_object(shape)
 
-# escapement = Escapement(teeth=30, diameter=60)
-#
-# pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
-# #
-# # # show_object(pendulum.getPendulumForRod())
+escapement = Escapement(teeth=30, diameter=60)
+
+pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
+
+show_object(pendulum.getPendulumForRod())
 # show_object(pendulum.getBob())
 
 # # show_object(escapement.getAnchor3D())

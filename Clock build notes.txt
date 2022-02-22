@@ -70,11 +70,14 @@ DONE stick on grippy pads from RS work really well
 
 Might be worth ensuring the bottom-side (as printed) of as many parts as possible is forwards. The bottom of the anchor is considerably more neat and tidy than the top
 Could have made the design more compact (height-wise), as the large first wheel has enough space for the small second wheel to interlock
+PART-DONE only anchor
 
 The minute wheel is very wonky - looks like it's always pulled forwards by the chain. Maybe consider keeping this one thicker and reducing the size of the hole in the chain wheel, so it's got less angle to pull?
 I think this has always been the case, but the large and thin minute wheel has amplified it here.
+TRYING reducing diameter of hole in chain wheel, keeping chain wheel thicker and using superglue/threadlock instead of a nyloc nut
 
 Might be worth considering printing spacers, or going back to the bearing-holderst that stick out from the clock plates. It takes a long time to get all the gears lined up when I'm manually adjusting lots of little nyloc nuts.
+PLAN - output a list of measurements for where to align the nyloc nuts, and just put nyloc nuts on all arbours. Maybe consider elongating the pinion if there's not enough space for a nut?
 
 The new deadbeat escapement seems pretty good. The pendulum does have a wide swing (need to measure, see if it really is 5deg), so for longer pendulums I'll want to reduce this a bit maybe?
 THOUGHT - looking closely I'm wondering if it's over-swinging quite a lot. If I actually weight the bob down, then this should reduce? (power from escapement will then be less compared to its total mass?)
@@ -87,6 +90,7 @@ The anchor threaded slightly wonky, and is also very loose, even with the nyloc 
 The detachable pendulum needed a nut to keep it from being too wobbly - so it didn't really work. again real bushing + knife edge would fix this
 
 The lid of the weight isn't very easy to fit
+FIXED
 
 Inspecting the teeth and using a small file on any irregularities appears to have paid off - only times gears have got stuck is because they weren't lined up and the wonky minute wheel problem.
 

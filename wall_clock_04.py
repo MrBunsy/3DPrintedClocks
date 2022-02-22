@@ -19,9 +19,9 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False, max_wheel_teeth=120, min_pinion_teeth=9)
+train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
 
-# train.calculateRatios()
+# train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9)
 # train.setRatios([[81, 12], [80, 9]])
 train.setRatios([[108, 10], [80, 9]])
 # 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
@@ -43,7 +43,7 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+40, )
 motionWorks.outputSTLs(clockName,clockOutDir)
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, handAvoiderInnerD=50, bobD=60, bobThick=10)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, handAvoiderInnerD=50, bobD=60, bobThick=10, useNylocForAnchor=False)
 
 pendulum.outputSTLs(clockName, clockOutDir)
 
