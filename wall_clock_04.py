@@ -25,7 +25,7 @@ train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=
 # train.setRatios([[81, 12], [80, 9]])
 train.setRatios([[108, 10], [80, 9]])
 # 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.1,screwThreadLength=8)
+train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
 
 train.printInfo()
 '''
@@ -36,7 +36,7 @@ cicumference: 68.60000000000001, run time of:28.9hours
 '''
 pendulumSticksOut=20
 #keeping chain wheel slightly thicker so it might be less wonky on the rod?
-train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=4)
+train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=6, useNyloc=False)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+40, )
