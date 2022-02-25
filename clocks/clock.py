@@ -576,7 +576,7 @@ class GoingTrain:
         if type is not None:
             self.type = type
 
-    def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1):
+    def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         module recution used to caculate smallest possible wheels - assumes each wheel has a smaller module than the last
@@ -591,7 +591,6 @@ class GoingTrain:
         wheel_min=wheel_min_teeth
         wheel_max=max_wheel_teeth
 
-        #TODO prefer non-integer combos.
         '''
         https://needhamia.com/clock-repair-101-making-sense-of-the-time-gears/
         “With an ‘integer ratio’, the same pairs of teeth (gear/pinion) always mesh on each revolution.
@@ -607,7 +606,8 @@ class GoingTrain:
         for p in range(pinion_min,pinion_max):
             for w in range(wheel_min, wheel_max):
                 allGearPairCombos.append([w,p])
-        print("allGearPairCombos", len(allGearPairCombos))
+        if loud:
+            print("allGearPairCombos", len(allGearPairCombos))
         #[ [[w,p],[w,p],[w,p]] ,  ]
         allTrains = []
 
@@ -617,18 +617,25 @@ class GoingTrain:
 
         #this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
         #one fewer pairs than wheels
+        allcomboCount=len(allGearPairCombos)
         if self.wheels == 3:
-            for pair_0 in range(len(allGearPairCombos)):
-                for pair_1 in range(len(allGearPairCombos)):
+            for pair_0 in range(allcomboCount):
+                for pair_1 in range(allcomboCount):
                         allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
         elif self.wheels == 4:
-            for pair_0 in range(len(allGearPairCombos)):
-                for pair_1 in range(len(allGearPairCombos)):
-                    for pair_2 in range(len(allGearPairCombos)):
+            for pair_0 in range(allcomboCount):
+                if loud and pair_0 % 10 == 0:
+                    print("{:.1f}% of calculating trains".format(100*pair_0/allcomboCount))
+                for pair_1 in range(allcomboCount):
+                    for pair_2 in range(allcomboCount):
                         allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1], allGearPairCombos[pair_2]])
-        print("allTrains", len(allTrains))
+        if loud:
+            print("allTrains", len(allTrains))
         allTimes=[]
-        for c in range(len(allTrains)):
+        totalTrains = len(allTrains)
+        for c in range(totalTrains):
+            if loud and c % 100 == 0:
+                print("{:.1f}% of combos".format(100*c/totalTrains))
             totalRatio = 1
             intRatio = False
             totalTeeth = 0
@@ -1943,8 +1950,8 @@ class ClockPlates:
         No idea if it will work nicely!
         '''
 
-        anglesToScape = None
-        anglesToChain = None
+        anglesFromMinute = None
+        anglesFromChain = None
 
         #reduce the height/width as much as possible
         self.compact = compact
@@ -1959,8 +1966,8 @@ class ClockPlates:
         self.goingTrain = goingTrain
         self.pendulum=pendulum
         #up to and including the anchor
-        self.anglesToScape = anglesToScape
-        self.anglesToChain=anglesToChain
+        self.anglesFromMinute = anglesFromMinute
+        self.anglesFromChain=anglesFromChain
         self.plateThick=plateThick
         self.arbourD=arbourD
         #maximum dimention of the bearing
@@ -1983,20 +1990,24 @@ class ClockPlates:
 
         #if angles are not given, assume clock is entirely vertical
 
-        if anglesToScape is None:
+        if anglesFromMinute is None:
             #assume simple pendulum at top
             angle = math.pi/2 if self.pendulumAtFront else math.pi/2
 
             #one extra for the anchor
-            self.anglesToScape = [angle for i in range(self.goingTrain.wheels+1)]
-        if anglesToChain is None:
+            self.anglesFromMinute = [angle for i in range(self.goingTrain.wheels + 1)]
+        if anglesFromChain is None:
             angle = math.pi / 2 if self.pendulumAtFront else -math.pi / 2
 
-            self.anglesToChain = [angle for i in range(self.goingTrain.chainWheels)]
+            self.anglesFromChain = [angle for i in range(self.goingTrain.chainWheels)]
 
-
-        drivenToPinionEnd = self.goingTrain.gearPinionLength/2 + self.goingTrain.gearPinionEndCapLength
-        drivenToWheelEnd = self.goingTrain.gearPinionLength/2 + self.goingTrain.gearWheelThick
+        if self.compact:
+            for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
+                if i == - self.goingTrain.chainWheels:
+                    dist = self.goingTrain.getArbour(i).distanceToNextArbour
+                    #line the weight up with teh centre
+                    x = self.goingTrain.chainWheel.diameter * 0.5 * self.goingTrain.ratchet.anticlockwise
+                    angle = math.asin(x/dist)
 
         #[[x,y,z],]
         #for everything, arbours and anchor
@@ -2042,7 +2053,10 @@ class ClockPlates:
                     baseZ = drivingZ - self.goingTrain.getArbour(i).getPinionCentreZ()
                     self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
 
-                angle=self.anglesToScape[i-1]
+                if i <= 0:
+                    angle = self.anglesFromChain[i - 1 + self.goingTrain.chainWheels]
+                else:
+                    angle = self.anglesFromMinute[i - 1]
                 v = polar(angle, r)
                 # v = [v[0], v[1], baseZ]
                 lastPos = self.bearingPositions[-1]
