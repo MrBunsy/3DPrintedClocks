@@ -2028,21 +2028,21 @@ class ClockPlates:
             #minute wheel and anchor aligned centrally, chainwheel offset so weight is central, rest in an arc (on opposite side of chainwheel to try and keep it balanced)
             # for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
             #     angle = math.pi/2
-            if self.goingTrain.chainWheels > 0:
-                dist = self.goingTrain.getArbour(-self.goingTrain.chainWheels).distanceToNextArbour
-                #line the weight up with teh centre
+            if False:
+                if self.goingTrain.chainWheels > 0:
+                    dist = self.goingTrain.getArbour(-self.goingTrain.chainWheels).distanceToNextArbour
+                    #line the weight up with teh centre
 
-                x = self.goingTrain.chainWheel.diameter * 0.5 * side
-                angle = math.pi/2 + math.asin(x/dist)
-                #TODO support more chain wheels?
-                self.anglesFromChain[0] = angle
+                    x = self.goingTrain.chainWheel.diameter * 0.5 * side
+                    angle = math.pi/2 + math.asin(x/dist)
+                    #TODO support more chain wheels?
+                    self.anglesFromChain[0] = angle
 
                 #leave rest of chain wheel angles vertical, we currently don't support more than 1 anyway
+            distances = [self.goingTrain.getArbour(arbour).distanceToNextArbour for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels)]
 
-            distances = [self.goingTrain.getArbour(arbour).distanceToNextArbour for arbour in range(self.goingTrain.wheels)]
 
-
-            arcRadius = getRadiusForPointsOnACircle(distances)
+            arcRadius = getRadiusForPointsOnACircle(distances, math.pi*1.5)
             minDistance = min(distances)
             if arcRadius < minDistance - self.gearGap:
                 #i think it's possible for this to be false, but also still not be enough space
@@ -2051,19 +2051,22 @@ class ClockPlates:
             angleOnArc = -math.pi/2
             lastPos = polar(angleOnArc, arcRadius)
 
-            for i in range(self.goingTrain.wheels):
+            for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels):
                 '''
                 Calculate angle of the isololese triangle with the distance at the base and radius as the other two sides
                 then work around the arc to get the positions
                 then calculate the relative angles so the logic for finding bearing locations still works
                 bit over complicated
                 '''
-                nextAngleOnArc = angleOnArc + math.asin(distances[i]/(2*arcRadius))
+                print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
+                nextAngleOnArc = angleOnArc + 2*math.asin(distances[i+self.goingTrain.chainWheels]/(2*arcRadius))
                 nextPos = polar(nextAngleOnArc, arcRadius)
 
                 relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
-
-                self.anglesFromMinute[i] = relativeAngle
+                if i < 0 :
+                    self.anglesFromChain[i + self.goingTrain.chainWheels] = relativeAngle
+                else:
+                    self.anglesFromMinute[i] = relativeAngle
                 lastPos = nextPos
                 angleOnArc = nextAngleOnArc
 
@@ -2085,7 +2088,7 @@ class ClockPlates:
         # print("initial pinionAtBack", pinionAtBack)
         for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
             print(str(i))
-            if  (i == 0 and self.goingTrain.chainWheels == 0) or (i == -self.goingTrain.chainWheels):
+            if  i == -self.goingTrain.chainWheels:
                 #the wheel with chain wheel ratchet
                 #assuming this is at the very back of the clock
                 #note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
@@ -2184,7 +2187,7 @@ class ClockPlates:
         plate = cq.Workplane("XY")
 
         for i,pos in enumerate(self.bearingPositions):
-            plate = plate.add(cq.Workplane("XY").circle(10).circle(2).extrude(self.plateThick).translate((pos[0], pos[1])))
+            plate = plate.add(cq.Workplane("XY").circle(10).circle(2).extrude(2).translate((pos[0], pos[1])))
 
 
         return plate
@@ -3552,30 +3555,30 @@ def getRadiusForPointsOnACircle(distances, circleAngle=math.pi, iterations=100):
 # # exporters.export(anchor, "../out/anchor_test.stl")
 #
 #
-# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
-# # train.calculateRatios()
-# train.setRatios([[64, 12], [63, 12], [60, 14]])
-# train.setChainWheelRatio([74, 11])
-# # train.genChainWheels(ratchetThick=5)
-# pendulumSticksOut=20
-# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-# train.genGears(module_size=1,moduleReduction=0.9, thick=3, chainWheelThick=6, useNyloc=False)
-# motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
-# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+# train.calculateRatios()
+train.setRatios([[64, 12], [63, 12], [60, 14]])
+train.setChainWheelRatio([74, 11])
+# train.genChainWheels(ratchetThick=5)
+pendulumSticksOut=20
+train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+train.genGears(module_size=1,moduleReduction=1, thick=3, chainWheelThick=6, useNyloc=False)
+motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
+#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
+
+
+#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
+
+plate = plates.getPlate(True)
+
+show_object(plate)
+
+exporters.export(plate, "../out/platetest.stl")
 #
-#
-# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
-#
-# plate = plates.getPlate(True)
-#
-# show_object(plate)
-#
-# exporters.export(plate, "../out/platetest.stl")
-# #
-# # hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, ratchetThick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-#
+# hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, ratchetThick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+
 #
 #
