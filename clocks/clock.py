@@ -746,6 +746,19 @@ class GoingTrain:
     def setChainWheelRatio(self, pinionPair):
         self.chainWheelRatio = pinionPair
 
+    def isWeightOnTheRight(self):
+        '''
+        returns true if the weight dangles from the right side of the chain wheel (as seen from the front)
+        '''
+
+        clockwise = self.ratchet.isClockwise()
+        chainAtFront = not self.chainAtBack
+
+        #XNOR
+        clockwiseFromFront = not (clockwise != chainAtFront)
+
+        return clockwiseFromFront
+
     def genChainWheels(self, ratchetThick=7.5, holeD=3.3, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
         '''
         HoleD of 3.5 is nice and loose, but I think it's contributing to making the chain wheel wonky - the weight is pulling it over a bit
@@ -1724,6 +1737,9 @@ class Ratchet:
 
         self.thick = thick
 
+    def isClockwise(self):
+        return self.anticlockwise == -1
+
     def getInnerWheel(self):
         '''
         Contains the ratchet clicks, hoping that PETG will be strong and springy enough, if not I'll have to go for screws as pinions and some spring wire (stainless steel wire might work?)
@@ -1944,7 +1960,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks,  pendulum, compact=False, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtFront=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None):
+    def __init__(self, goingTrain, motionWorks, pendulum, compact=False, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, anchorThick=10, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1978,8 +1994,11 @@ class ClockPlates:
         self.bearingHolderLip=bearingHolderLip
         self.bearingHeight = bearingHeight
         self.screwheadHeight = screwheadHeight
-        self.pendulumAtFront = pendulumAtFront
+        self.pendulumAtTop = pendulumAtTop
         self.pendulumSticksOut = pendulumSticksOut
+
+        # how much space to leave around the edge of the gears for safety
+        self.gearGap = 3
 
         #TODO make some sort of object to hold all this info we keep passing around?
         self.anchorThick=anchorThick
@@ -1992,22 +2011,62 @@ class ClockPlates:
 
         if anglesFromMinute is None:
             #assume simple pendulum at top
-            angle = math.pi/2 if self.pendulumAtFront else math.pi/2
+            angle = math.pi/2 if self.pendulumAtTop else math.pi / 2
 
             #one extra for the anchor
             self.anglesFromMinute = [angle for i in range(self.goingTrain.wheels + 1)]
         if anglesFromChain is None:
-            angle = math.pi / 2 if self.pendulumAtFront else -math.pi / 2
+            angle = math.pi / 2 if self.pendulumAtTop else -math.pi / 2
 
             self.anglesFromChain = [angle for i in range(self.goingTrain.chainWheels)]
 
         if self.compact:
-            for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
-                if i == - self.goingTrain.chainWheels:
-                    dist = self.goingTrain.getArbour(i).distanceToNextArbour
-                    #line the weight up with teh centre
-                    x = self.goingTrain.chainWheel.diameter * 0.5 * self.goingTrain.ratchet.anticlockwise
-                    angle = math.asin(x/dist)
+
+            # TODO check if this is in the right direction or not
+            side = 1 if self.goingTrain.isWeightOnTheRight() else -1
+
+            #minute wheel and anchor aligned centrally, chainwheel offset so weight is central, rest in an arc (on opposite side of chainwheel to try and keep it balanced)
+            # for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
+            #     angle = math.pi/2
+            if self.goingTrain.chainWheels > 0:
+                dist = self.goingTrain.getArbour(-self.goingTrain.chainWheels).distanceToNextArbour
+                #line the weight up with teh centre
+
+                x = self.goingTrain.chainWheel.diameter * 0.5 * side
+                angle = math.pi/2 + math.asin(x/dist)
+                #TODO support more chain wheels?
+                self.anglesFromChain[0] = angle
+
+                #leave rest of chain wheel angles vertical, we currently don't support more than 1 anyway
+
+            distances = [self.goingTrain.getArbour(arbour).distanceToNextArbour for arbour in range(self.goingTrain.wheels)]
+
+
+            arcRadius = getRadiusForPointsOnACircle(distances)
+            minDistance = min(distances)
+            if arcRadius < minDistance - self.gearGap:
+                #i think it's possible for this to be false, but also still not be enough space
+                raise ValueError("Can't make arc for gears, insufficient space")
+
+            angleOnArc = -math.pi/2
+            lastPos = polar(angleOnArc, arcRadius)
+
+            for i in range(self.goingTrain.wheels):
+                '''
+                Calculate angle of the isololese triangle with the distance at the base and radius as the other two sides
+                then work around the arc to get the positions
+                then calculate the relative angles so the logic for finding bearing locations still works
+                bit over complicated
+                '''
+                nextAngleOnArc = angleOnArc + math.asin(distances[i]/(2*arcRadius))
+                nextPos = polar(nextAngleOnArc, arcRadius)
+
+                relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
+
+                self.anglesFromMinute[i] = relativeAngle
+                lastPos = nextPos
+                angleOnArc = nextAngleOnArc
+
 
         #[[x,y,z],]
         #for everything, arbours and anchor
@@ -2093,8 +2152,7 @@ class ClockPlates:
 
         # self.pilarR=15
         # self.pillarToGearGap=10
-        # how much space to leave around the edge of the gears for safety
-        self.gearGap = 3
+
 
         #hack for now
         #use vertical plate-things, not pillars!
@@ -2117,12 +2175,19 @@ class ClockPlates:
 
 
 
-    def getCompactPlate(self, back=True):
+    def getCompactPlate(self, back=True, text=False):
         '''
         a plate design to minimise total height, so more complicated clocks can still fit on the print bed
 
         Still trying to keep the pendulum, hands and weight in a line
         '''
+        plate = cq.Workplane("XY")
+
+        for i,pos in enumerate(self.bearingPositions):
+            plate = plate.add(cq.Workplane("XY").circle(10).circle(2).extrude(self.plateThick).translate((pos[0], pos[1])))
+
+
+        return plate
 
 
     def getBearingHolder(self, height, addSupport=True):
@@ -3485,23 +3550,30 @@ def getRadiusForPointsOnACircle(distances, circleAngle=math.pi, iterations=100):
 # # show_object(escapement.getAnchor3D())
 # show_object(anchor)
 # # exporters.export(anchor, "../out/anchor_test.stl")
-
 #
-# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-# train.calculateRatios()
-# train.genChainWheels(ratchetThick=5)
+#
+# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+# # train.calculateRatios()
+# train.setRatios([[64, 12], [63, 12], [60, 14]])
+# train.setChainWheelRatio([74, 11])
+# # train.genChainWheels(ratchetThick=5)
 # pendulumSticksOut=20
-# train.genGears(module_size=1,moduleReduction=0.85, ratchetThick=4)
+# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+# train.genGears(module_size=1,moduleReduction=0.9, thick=3, chainWheelThick=6, useNyloc=False)
 # motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
 # #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
 # pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0)
 #
 #
 # #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut)
+# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
 #
-# show_object(plates.getSimpleVerticalPlate(True))
+# plate = plates.getPlate(True)
+#
+# show_object(plate)
+#
+# exporters.export(plate, "../out/platetest.stl")
 # #
 # # hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, ratchetThick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 #
