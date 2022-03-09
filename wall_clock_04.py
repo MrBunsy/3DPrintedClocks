@@ -36,7 +36,7 @@ cicumference: 68.60000000000001, run time of:28.9hours
 '''
 pendulumSticksOut=20
 #keeping chain wheel slightly thicker so it might be less wonky on the rod?
-train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=6, useNyloc=False)
+train.genGears(module_size=1,moduleReduction=0.85, thick=3, chainWheelThick=6, useNyloc=False, escapeWheelMaxD=0.75)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+40, )
@@ -59,3 +59,6 @@ hands.outputSTLs(clockName, clockOutDir)
 weight = clock.Weight(height=100, diameter=35)
 weight.outputSTLs(clockName, clockOutDir)
 weight.printInfo()
+
+assembly = clock.Assembly(plates, hands=hands)
+assembly.outputSTLs(clockName, clockOutDir)

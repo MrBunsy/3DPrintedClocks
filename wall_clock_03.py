@@ -40,7 +40,7 @@ train.genChainWheels(ratchetThick=5, wire_thick=0.85, width=3.6, inside_length=6
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=0.85, thick=3)
+train.genGears(module_size=1,moduleReduction=0.85, thick=3, escapeWheelMaxD=0.75)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )

@@ -43,7 +43,7 @@ train.printInfo()
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=1, thick=3, chainWheelThick=6, useNyloc=False)
+train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
@@ -61,7 +61,7 @@ dial.outputSTLs(clockName, clockOutDir)
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05")#, compact=True)
 plates.outputSTLs(clockName, clockOutDir)
 
-hands = clock.Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
