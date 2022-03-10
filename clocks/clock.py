@@ -2181,14 +2181,18 @@ class ClockPlates:
 
         print("Plate distance", self.plateDistance)
 
-        motionWorksDistance = -self.motionWorks.getArbourDistance()
+        motionWorksDistance = self.motionWorks.getArbourDistance()
         #get position of motion works relative to the minute wheel
         if compact:
-            #TODO
-
-            self.motionWorksRelativePos = [0, motionWorksDistance]
+            #place the motion works on the same circle as the rest of the bearings
+            angle =  2*math.asin(motionWorksDistance/(2*self.compactRadius))
+            compactCentre = (0, self.compactRadius)
+            minuteAngle = math.atan2(self.bearingPositions[self.goingTrain.chainWheels][1] - compactCentre[1], self.bearingPositions[self.goingTrain.chainWheels][0] - compactCentre[0])
+            motionWorksPos = polar(minuteAngle - angle, self.compactRadius)
+            motionWorksPos=(motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
+            self.motionWorksRelativePos = (motionWorksPos[0] - self.bearingPositions[self.goingTrain.chainWheels][0], motionWorksPos[1] - self.bearingPositions[self.goingTrain.chainWheels][1])
         else:
-            self.motionWorksRelativePos = [0, motionWorksDistance]
+            self.motionWorksRelativePos = [0, -motionWorksDistance]
 
 
 
@@ -2234,6 +2238,9 @@ class ClockPlates:
             # plate = plate.add(cq.Workplane("XY").circle(10).circle(2).extrude(2).translate((pos[0], pos[1])))
             plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
 
+
+        if not back:
+           plate = self.frontAdditionsToPlate(plate)
 
         return plate
 
@@ -2287,15 +2294,6 @@ class ClockPlates:
         leg = leg.faces(">X").workplane().moveTo(0,overlap/2).circle(fixingD/2).cutThruAll()
 
         return leg
-
-    # def getPosForWheel(self, wheel):
-    #     '''
-    #     Wheel from 0 +ve toward escape wheel and -ve towards chain wheel
-    #     '''
-    #     if wheel == 0:
-    #         return [0,0]
-    #     elif wheel > 0:
-
 
     def getPlateWithSideArms(self, back=True):
         '''
@@ -2524,33 +2522,7 @@ class ClockPlates:
             plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
 
         if not back:
-            #FRONT
-
-            #note - works fine with the pendulum on the same rod as teh anchor, but I'm not sure about the long term use of ball bearings for just rocking back and forth
-            # suspensionBaseThick=0.5
-            # suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], plateThick-suspensionBaseThick))
-            #
-            # plate = plate.add(suspensionPoint)
-            #new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
-            #no idea if it'll work without the rod bending!
-
-            if self.pendulumSticksOut > 0:
-                extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions)-1][0],self.bearingPositions[len(self.bearingPositions)-1][1],plateThick))
-                plate = plate.add(extraBearingHolder)
-
-
-
-            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0]+self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1]+self.motionWorksRelativePos[1]).circle(self.arbourD/2).cutThruAll()
-            nutDeep = METRIC_HALF_NUT_DEPTH_MULT*self.arbourD
-            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[self.goingTrain.chainWheels][0]+self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1]+self.motionWorksRelativePos[1], plateThick-nutDeep))
-
-            plate = plate.cut(nutSpace)
-
-            if self.dial is not None:
-                dialFixings = self.dial.getFixingDistance()
-                minuteY = self.bearingPositions[self.goingTrain.chainWheels][1]
-                plate = plate.faces(">Z").workplane().pushPoints([(0,minuteY + dialFixings/2), (0,minuteY - dialFixings/2)]).circle(self.dial.fixingD/2).cutThruAll()
-
+           plate = self.frontAdditionsToPlate(plate)
 
 
         if back:
@@ -2639,6 +2611,39 @@ class ClockPlates:
 
         return plate
 
+    def frontAdditionsToPlate(self, plate):
+        '''
+        stuff shared between all plate designs
+        '''
+        plateThick = self.plateThick
+        # FRONT
+
+        # note - works fine with the pendulum on the same rod as teh anchor, but I'm not sure about the long term use of ball bearings for just rocking back and forth
+        # suspensionBaseThick=0.5
+        # suspensionPoint = self.pendulum.getSuspension(False,suspensionBaseThick ).translate((self.bearingPositions[len(self.bearingPositions)-1][0], self.bearingPositions[len(self.bearingPositions)-1][1], plateThick-suspensionBaseThick))
+        #
+        # plate = plate.add(suspensionPoint)
+        # new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
+        # no idea if it'll work without the rod bending!
+
+        if self.pendulumSticksOut > 0:
+            extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
+            plate = plate.add(extraBearingHolder)
+
+        plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
+            self.arbourD / 2).cutThruAll()
+        nutDeep = METRIC_HALF_NUT_DEPTH_MULT * self.arbourD
+        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate(
+            (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], plateThick - nutDeep))
+
+        plate = plate.cut(nutSpace)
+
+        if self.dial is not None:
+            dialFixings = self.dial.getFixingDistance()
+            minuteY = self.bearingPositions[self.goingTrain.chainWheels][1]
+            plate = plate.faces(">Z").workplane().pushPoints([(0, minuteY + dialFixings / 2), (0, minuteY - dialFixings / 2)]).circle(self.dial.fixingD / 2).cutThruAll()
+
+        return plate
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
