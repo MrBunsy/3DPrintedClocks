@@ -1877,6 +1877,14 @@ class MotionWorks:
     def getArbourDistance(self):
         return self.arbourDistance
 
+    def getCannonPinionBaseThick(self):
+        '''
+        get the thickness of the pinion + caps at the bottom of the cannon pinion
+
+        '''
+
+        return self.thick + self.cannonPinionThick
+
     def getCannonPinion(self):
 
         base = cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.thick/2)
@@ -2173,13 +2181,14 @@ class ClockPlates:
 
         print("Plate distance", self.plateDistance)
 
-        # self.pilarR=15
-        # self.pillarToGearGap=10
+        motionWorksDistance = -self.motionWorks.getArbourDistance()
+        #get position of motion works relative to the minute wheel
+        if compact:
+            #TODO
 
-
-        #hack for now
-        #use vertical plate-things, not pillars!
-        # self.width = 50
+            self.motionWorksRelativePos = [0, motionWorksDistance]
+        else:
+            self.motionWorksRelativePos = [0, motionWorksDistance]
 
 
 
@@ -2529,11 +2538,11 @@ class ClockPlates:
                 extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions)-1][0],self.bearingPositions[len(self.bearingPositions)-1][1],plateThick))
                 plate = plate.add(extraBearingHolder)
 
-            motionWorksDistance = -self.motionWorks.getArbourDistance()
 
-            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0], self.bearingPositions[self.goingTrain.chainWheels][1]+motionWorksDistance).circle(self.arbourD/2).cutThruAll()
+
+            plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0]+self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1]+self.motionWorksRelativePos[1]).circle(self.arbourD/2).cutThruAll()
             nutDeep = METRIC_HALF_NUT_DEPTH_MULT*self.arbourD
-            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[self.goingTrain.chainWheels][0], self.bearingPositions[self.goingTrain.chainWheels][1]+motionWorksDistance, plateThick-nutDeep))
+            nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate((self.bearingPositions[self.goingTrain.chainWheels][0]+self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1]+self.motionWorksRelativePos[1], plateThick-nutDeep))
 
             plate = plate.cut(nutSpace)
 
@@ -2671,6 +2680,7 @@ class Pendulum:
         self.pendulumTopD = self.suspensionD*1.75
         self.pendulumTopExtraRadius = 5
         self.pendulumTopThick = 15#getNutContainingDiameter(threadedRodM) + 2
+        self.handAvoiderThick = getNutContainingDiameter(threadedRodM) + 2
         self.threadedRodM=threadedRodM
 
         self.suspensionOpenAngle=degToRad(120)
@@ -2868,18 +2878,18 @@ class Pendulum:
         Get a circular part which attaches inline with pendulum rod, so it can go over the hands (for a front-pendulum)
         '''
         extraR=5
-        avoider = cq.Workplane("XY").circle(self.handAvoiderInnerD/2).circle(self.handAvoiderInnerD/2 + extraR).extrude(self.pendulumTopThick)
+        avoider = cq.Workplane("XY").circle(self.handAvoiderInnerD/2).circle(self.handAvoiderInnerD/2 + extraR).extrude(self.handAvoiderThick)
 
         nutD = getNutContainingDiameter(self.threadedRodM)
         nutThick = METRIC_NUT_DEPTH_MULT * self.threadedRodM
 
-        nutSpace = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick/2).polygon(6, nutD).extrude(nutThick).translate((0, -self.handAvoiderInnerD/2+0.5, 0))
+        nutSpace = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick/2).polygon(6, nutD).extrude(nutThick).translate((0, -self.handAvoiderInnerD/2+0.5, 0))
         avoider = avoider.cut(nutSpace)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.handAvoiderInnerD / 2 +nutThick - 0.5, 0))
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.handAvoiderInnerD / 2 +nutThick - 0.5, 0))
         avoider = avoider.cut(nutSpace2)
 
-        avoider = avoider.faces(">Y").workplane().moveTo(0,self.pendulumTopThick/2).circle(self.threadedRodM/2).cutThruAll()
+        avoider = avoider.faces(">Y").workplane().moveTo(0,self.handAvoiderThick/2).circle(self.threadedRodM/2).cutThruAll()
 
         return avoider
 
@@ -3523,6 +3533,8 @@ class Assembly:
     '''
     Produce a fully (or near fully) assembled clock
     likely to be fragile as it will need to delve into the detail of basically everything
+
+    currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
     def __init__(self, plates, hands=None, dial=None):
         self.plates = plates
@@ -3531,6 +3543,7 @@ class Assembly:
         self.goingTrain = plates.goingTrain
         self.arbourCount = self.goingTrain.chainWheels + self.goingTrain.wheels
         self.pendulum = self.plates.pendulum
+        self.motionWorks = self.plates.motionWorks
 
     def getClock(self):
         bottomPlate = self.plates.getPlate(True)
@@ -3551,15 +3564,57 @@ class Assembly:
            chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + self.goingTrain.chainWheel.getHeight()/2 + self.goingTrain.ratchet.thick)))
 
         anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
-        # anchorAngle=0
 
-        #the anchor is upside down for better printing
-        anchor = self.pendulum.anchor.mirror("YZ", (0,0,0))#.translate((0,0,self.pendulum.anchorThick))
-
+        #the anchor is upside down for better printing, so flip it back
+        anchor = self.pendulum.anchor.mirror("YZ", (0,0,0))
+        #and rotate it into position
         anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.plateThick + self.plates.wobble/2))
         clock = clock.add(anchor)
 
+        #where the nylock nut and spring washer would be
+        motionWorksZOffset = 3
 
+        time_min = 10
+        time_hour = 10
+
+        minuteAngle = - 360 * (time_min / 60)
+        hourAngle = - 360 * (time_hour + time_min / 60) / 12
+
+        #motion work in place
+        motionWorksModel = self.motionWorks.getCannonPinion().rotate((0,0,0),(0,0,1), minuteAngle)
+        motionWorksModel = motionWorksModel.add(self.motionWorks.getHourHolder().translate((0,0,self.motionWorks.getCannonPinionBaseThick())))
+        motionWorksModel = motionWorksModel.add(self.motionWorks.getMotionArbour().translate((self.plates.motionWorksRelativePos[0],self.plates.motionWorksRelativePos[1], self.motionWorks.getCannonPinionBaseThick()/2)))
+
+        clock = clock.add(motionWorksModel.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.plateThick*2 + self.plates.plateDistance + motionWorksZOffset)))
+
+
+
+        #hands on the motion work, showing the time set above
+        minuteHand = self.hands.getHand(hour=False).rotate((0,0,0),(0,0,1), minuteAngle)
+        hourHand = self.hands.getHand(hour=True).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+        clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.plateThick*2 + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick)))
+
+        clock = clock.add(hourHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
+                                                self.plates.plateThick * 2 + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick*3)))
+
+        pendulumRodExtraZ = 2
+
+        pendulumRodFixing = self.pendulum.getPendulumForRod().mirror().translate((0,0,self.pendulum.pendulumTopThick))
+
+        clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], self.plates.plateThick*2 + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ)))
+
+        minuteToPendulum = (self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[self.goingTrain.chainWheels][1])
+
+        if abs(minuteToPendulum[0]) < 50:
+            #assume we need the ring to go around the hands
+            ring = self.pendulum.getHandAvoider()
+            handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
+            #ring is over the minute wheel/hands
+            clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],self.plates.plateThick * 2 + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
+
+        #TODO pendulum bob and nut
+
+        #TODO weight?
 
         return clock
 
@@ -3580,7 +3635,7 @@ class Assembly:
 # show_object(weight.getWeight())
 #
 # weight.printInfo()
-
+#
 # print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
 # show_object(weight.getLid(forCutting=True))
 #
@@ -3603,10 +3658,10 @@ class Assembly:
 # # show_object(pendulum.getHandAvoider())
 # # show_object(pendulum.getBob())
 # show_object(pendulum.getBobNut())
-
-
-# plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
 #
+#
+# plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
+# #
 # backplate = plates.getPlate(True)
 # frontplate = plates.getPlate(False)
 # show_object(backplate)
@@ -3654,35 +3709,36 @@ class Assembly:
 # # exporters.export(anchor, "../out/anchor_test.stl")
 # #
 # #
-# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
-# # train.calculateRatios()
-# train.setRatios([[64, 12], [63, 12], [60, 14]])
-# train.setChainWheelRatio([74, 11])
-# # train.genChainWheels(ratchetThick=5)
-# pendulumSticksOut=20
-# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-# train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-# motionWorks = MotionWorks(minuteHandHolderHeight=pendulumSticksOut+20, )
-# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+# train.calculateRatios()
+train.setRatios([[64, 12], [63, 12], [60, 14]])
+train.setChainWheelRatio([74, 11])
+# train.genChainWheels(ratchetThick=5)
+pendulumSticksOut=0
+train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+motionWorks = MotionWorks(minuteHandHolderHeight=30)
+#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+
+
+#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
+
+plate = plates.getPlate(True)
+
+# show_object(plate)
 #
-#
-# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
-#
-# plate = plates.getPlate(True)
-#
-# # show_object(plate)
-# #
-# # show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
-#
-# hands = Hands(minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
-# assembly = Assembly(plates, hands=hands)
-#
-# show_object(assembly.getClock())
-#
-#
+# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+
+# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
+hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+assembly = Assembly(plates, hands=hands)
+
+show_object(assembly.getClock())
+
+
 # # anchorAngle = math.atan2(plates.bearingPositions[-1][1] - plates.bearingPositions[-2][1], plates.bearingPositions[-1][0] - plates.bearingPositions[-2][0]) - math.pi / 2
 # # # anchorAngle=0
 # # anchor = pendulum.anchor.rotate((0,0,0),(0, 0, 1), radToDeg(anchorAngle))#.translate(plates.bearingPositions[-1]).translate((0, 0, plates.plateThick + plates.wobble / 2))
