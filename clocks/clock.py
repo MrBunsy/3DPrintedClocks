@@ -837,8 +837,9 @@ class GoingTrain:
         if escapeWheelThick < 0:
             escapeWheelThick = thick
 
-        self.gearPinionLength=thick*3
-        self.chainGearPinionLength = chainWheelThick*2.5
+        # self.gearPinionLength=thick*3
+        # self.chainGearPinionLength = chainWheelThick*2.5
+        pinionThickMultiplier = 2.5
 
         self.gearPinionEndCapLength=thick*0.25
         # self.gearTotalThick = self.gearWheelThick + self.gearPinionLength + self.gearPinionEndCapLength
@@ -917,7 +918,7 @@ class GoingTrain:
                     arbour = Arbour(chainWheel=self.chainWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
                 else:
                     #just a normal gear
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*2, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
 
                 if useNyloc:
                     #regardless of chains, we need a nyloc nut to fix the wheel to the rod
@@ -929,11 +930,11 @@ class GoingTrain:
 
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * 2, endCapThick=self.gearPinionEndCapLength,
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                 distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=escapeWheelThick, pinionThick=arbours[-1].wheelThick * 2, endCapThick=self.gearPinionEndCapLength,
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=escapeWheelThick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                       distanceToNextArbour=self.escapement.anchor_centre_distance, style=style, pinionAtFront=pinionAtFront))
 
             pinionAtFront = not pinionAtFront
@@ -2102,7 +2103,7 @@ class ClockPlates:
         self.arbourThicknesses=[]
         #how much the arbours can wobble back and forth. aka End-shake.
         #note - might not have much effect anymore since I might not elevant the bearing holders
-        self.wobble = 2
+        self.wobble = 2#2
         #height of the centre of the wheel that will drive the next pinion
         drivingZ = 0
         # bearingZ = 0
@@ -2645,6 +2646,31 @@ class ClockPlates:
 
         return plate
 
+    def getArbourExtension(self, arbourID, top=True, arbourD=3):
+        '''
+        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
+        arbour from -chainwheels to +ve wheels + 1 (for the anchor)
+        returns None if no extension is needed
+        '''
+        bearingPos = self.bearingPositions[arbourID + self.goingTrain.chainWheels]
+        if arbourID < self.goingTrain.wheels:
+            arbourThick = self.goingTrain.getArbour(arbourID).getTotalThickness()
+        else:
+            #anchor!
+            arbourThick = self.pendulum.anchorThick
+
+        length = 0
+        if top:
+            length = self.plateDistance - arbourThick - bearingPos[2] - self.wobble
+        else:
+            length = bearingPos[2]
+
+        if length > LAYER_THICK:
+            return  cq.Workplane("XY").circle(arbourD).circle(arbourD/2).extrude(length)
+        return None
+
+
+
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
@@ -2656,6 +2682,14 @@ class ClockPlates:
         out = os.path.join(path, "{}_back_plate_textcolour.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getPlate(True, True), out)
+
+        for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
+            for top in [True, False]:
+                extensionShape=self.getArbourExtension(arbour, top=top)
+                if extensionShape is not None:
+                    out = os.path.join(path, "{}_arbour_{}_{}_extension.stl".format(name, arbour, "top" if top else "bottom"))
+                    print("Outputting ", out)
+                    exporters.export(extensionShape, out)
 
 class Pendulum:
     '''
@@ -3617,6 +3651,21 @@ class Assembly:
             #ring is over the minute wheel/hands
             clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],self.plates.plateThick * 2 + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
 
+
+
+        for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
+            bearingPos = self.plates.bearingPositions[arbour + self.goingTrain.chainWheels]
+            for top in [True, False]:
+                extensionShape=self.plates.getArbourExtension(arbour, top=top)
+                z =  0
+                if top:
+                    if arbour < self.goingTrain.wheels:
+                        z = self.goingTrain.getArbour(arbour).getTotalThickness() +  bearingPos[2]
+                    else:
+                        z = self.pendulum.anchorThick + bearingPos[2]
+                if extensionShape is not None:
+                    clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.plateThick + self.plates.wobble/2)))
+
         #TODO pendulum bob and nut
 
         #TODO weight?
@@ -3714,35 +3763,35 @@ class Assembly:
 # # exporters.export(anchor, "../out/anchor_test.stl")
 # #
 # #
-# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
-# train.calculateRatios()
-train.setRatios([[64, 12], [63, 12], [60, 14]])
-train.setChainWheelRatio([74, 11])
-# train.genChainWheels(ratchetThick=5)
-pendulumSticksOut=0
-train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-motionWorks = MotionWorks(minuteHandHolderHeight=30)
-#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
-
-
-#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
-
-plate = plates.getPlate(True)
-
-# show_object(plate)
+# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+# # train.calculateRatios()
+# train.setRatios([[64, 12], [63, 12], [60, 14]])
+# train.setChainWheelRatio([74, 11])
+# # train.genChainWheels(ratchetThick=5)
+# pendulumSticksOut=0
+# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+# train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+# motionWorks = MotionWorks(minuteHandHolderHeight=30)
+# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
 #
-# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
-
-# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
-hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-assembly = Assembly(plates, hands=hands)
-
-show_object(assembly.getClock())
-
+#
+# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
+#
+# plate = plates.getPlate(True)
+#
+# # show_object(plate)
+# #
+# # show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+#
+# # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
+# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+# assembly = Assembly(plates, hands=hands)
+#
+# show_object(assembly.getClock())
+#
 
 # # anchorAngle = math.atan2(plates.bearingPositions[-1][1] - plates.bearingPositions[-2][1], plates.bearingPositions[-1][0] - plates.bearingPositions[-2][0]) - math.pi / 2
 # # # anchorAngle=0
