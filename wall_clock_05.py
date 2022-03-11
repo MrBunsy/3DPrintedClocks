@@ -28,13 +28,6 @@ train.setRatios([[64, 12], [63, 12], [60, 14]])
 # train.setRatios([[108, 10], [80, 9]])
 train.setChainWheelRatio([74, 11])
 
-'''
-{'train': [[81, 12], [80, 9]]}
-pendulum length: 0.9939608115313336m period: 2s
-escapement time: 60s teeth: 30
-cicumference: 68.60000000000001, run time of:28.9hours
-'''
-
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
@@ -43,7 +36,7 @@ train.printInfo()
 
 pendulumSticksOut=0
 
-train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
 train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=30 )
