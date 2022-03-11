@@ -169,9 +169,11 @@ class Gear:
         innerSagitta = rimRadius * 0.325
 
         arms = 5
+        #line it up so there's a nice arm a the bottom
+        offsetAngle = -math.pi/2 + armAngle/2
         for i in range(arms):
-            startAngle = i * math.pi * 2 / arms
-            endAngle = (i + 1) * math.pi * 2 / arms - armAngle
+            startAngle = i * math.pi * 2 / arms + offsetAngle
+            endAngle = (i + 1) * math.pi * 2 / arms - armAngle + offsetAngle
 
             startPos = (math.cos(startAngle) * rimRadius, math.sin(startAngle) * rimRadius)
             endPos = (math.cos(endAngle) * rimRadius, math.sin(endAngle) * rimRadius)
@@ -392,12 +394,12 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None, endCapThick=1, style="HAC", distanceToNextArbour=-1, pinionAtFront=True):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None, anchor=None, endCapThick=1, style="HAC", distanceToNextArbour=-1, pinionAtFront=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
         - escape wheel is pinion + escape wheel
-        - anchor is just the escapement anchor (NOTE - DECIDED IT'S NOT WORTH HAVING THAT AS PART OF THIS)
+        - anchor is just the escapement anchor ( NOTE - NOT FULLY IMPLEMENTED)
 
         Trying to store all the special logic for thicknesses and radii in one place
         '''
@@ -415,6 +417,7 @@ class Arbour:
         self.distanceToNextArbour=distanceToNextArbour
         self.nutSpaceMetric=None
         self.pinionOnTop=pinionAtFront
+        self.anchor = anchor
 
         if self.getType() == "Unknown":
             raise ValueError("Not a valid arbour")
@@ -476,6 +479,8 @@ class Arbour:
             return self.wheel.getMaxRadius()
         if self.getType() == "EscapeWheel":
             return self.escapement.getWheelMaxR()
+        # if self.getType() == "Anchor":
+        #     return -1
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
     def getShape(self, forPrinting=True):
@@ -1983,7 +1988,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, compact=False, arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1992,8 +1997,8 @@ class ClockPlates:
         anglesFromMinute = None
         anglesFromChain = None
 
-        #reduce the height/width as much as possible
-        self.compact = compact
+        #"round" or "vertical"
+        self.style=style
         #to print on the back
         self.name = name
         #to get fixing positions
@@ -2043,7 +2048,7 @@ class ClockPlates:
 
             self.anglesFromChain = [angle for i in range(self.goingTrain.chainWheels)]
 
-        if self.compact:
+        if self.style=="round":
 
             # TODO check if this is in the right direction or not
             side = 1 if self.goingTrain.isWeightOnTheRight() else -1
@@ -2184,7 +2189,7 @@ class ClockPlates:
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         #get position of motion works relative to the minute wheel
-        if compact:
+        if style == "round":
             #place the motion works on the same circle as the rest of the bearings
             angle =  2*math.asin(motionWorksDistance/(2*self.compactRadius))
             compactCentre = (0, self.compactRadius)
@@ -2195,8 +2200,7 @@ class ClockPlates:
         else:
             self.motionWorksRelativePos = [0, -motionWorksDistance]
 
-
-
+        self.chainHoleD = self.goingTrain.chainWheel.chain_width + 2
 
 
 
@@ -2204,15 +2208,15 @@ class ClockPlates:
         #TODO chain wheels in the future
 
     def getPlate(self, back=True, text=False):
-        if self.compact:
-            return self.getCompactPlate(back, text)
+        if self.style=="round":
+            return self.getRoundPlate(back, text)
         else:
             return self.getSimpleVerticalPlate(back, text)
 
 
 
 
-    def getCompactPlate(self, back=True, text=False):
+    def getRoundPlate(self, back=True, text=False):
         '''
         a plate design to minimise total height, so more complicated clocks can still fit on the print bed
 
@@ -2223,24 +2227,81 @@ class ClockPlates:
 
         radius = self.compactRadius + holderWide/2
 
-
+        chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
 
         #had toyed with the idea of making the plates a giant gear, but I think (after feedback) it detracts from teh skeleton clock style
         #now going to use it just for the back
         if back:
-            plate = cq.Workplane("XY").circle(radius).extrude(self.plateThick)
-            plate = Gear.cutHACStyle(plate,holderWide*0.5,radius - holderWide)
-            plate = plate.translate((self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius))
+            #with the fancy gear cut out shapes:
+            # plate = cq.Workplane("XY").circle(radius).extrude(self.plateThick)
+            # plate = Gear.cutHACStyle(plate,holderWide*0.5,radius - holderWide)
+            # plate = plate.translate((self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius))
+            plate = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius).extrude(self.plateThick)
+
+
+
         else:
+            #just ring that holds the gears
             plate = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius).circle(radius - holderWide).extrude(self.plateThick)
 
 
-        for i,pos in enumerate(self.bearingPositions):
-            # plate = plate.add(cq.Workplane("XY").circle(10).circle(2).extrude(2).translate((pos[0], pos[1])))
-            plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
+        extraCircleThick = self.plateThick
+        if back:
+            extraCircleThick += self.plateDistance
 
 
-        if not back:
+        chainWheelRing = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]).circle(chainWheelR + holderWide).extrude(extraCircleThick)
+        chainWheelRing = Gear.cutHACStyle(chainWheelRing, holderWide, chainWheelR)
+
+        #extra circle to enclose the chainwheel
+        plate = plate.add(chainWheelRing)
+
+        #can't decide if I need it or not
+        centralPillar=False
+
+        centrePillarPos = (self.bearingPositions[0][0], self.bearingPositions[0][1] + chainWheelR + holderWide/2)
+
+        if back:
+            # back plate is a ring that holds wheels, plus the ring around the chain wheel, with the top intersection filled in
+            cutter = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius - holderWide).extrude(self.plateThick)
+            cutter = cutter.intersect(cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]).circle(chainWheelR).extrude(self.plateThick))
+            # return cutter
+            plate = plate.cut(cutter)
+
+
+            #chop out everything inside the ring
+            plate = plate.cut(cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius - holderWide).extrude(self.plateDistance).translate((0,0,self.plateThick)))
+
+            if centralPillar:
+                #add in a central pillar
+                plate = plate.add(cq.Workplane("XY").moveTo(centrePillarPos[0], centrePillarPos[1]).circle(holderWide/2).extrude(self.plateThick + self.plateDistance))
+
+            #chop bits out so it doesn't get in the way of the gears
+            for a in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
+                bearingPos = self.bearingPositions[a + self.goingTrain.chainWheels]
+                if a < self.goingTrain.wheels:
+                    arbour = self.goingTrain.getArbour(a)
+                    r = arbour.getMaxRadius() + self.gearGap
+                else:
+                    #the anchor, BODGE
+                    r = self.goingTrain.escapement.diameter*0.6
+
+                plate = plate.cut(cq.Workplane("XY").circle(r).extrude(self.plateDistance).translate((bearingPos[0],bearingPos[1],self.plateThick)))
+        else:
+            #front, don't want the arc  across the middle
+            plate = plate.cut(cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius - holderWide).extrude(self.plateThick))
+            if centralPillar:
+                #just a bit to hold the centrepillar
+                plate = plate.add(cq.Workplane("XY").moveTo(centrePillarPos[0]-holderWide/2, self.compactRadius*2).lineTo(centrePillarPos[0]-holderWide/2, centrePillarPos[1]).radiusArc((centrePillarPos[0] + holderWide/2, centrePillarPos[1]), -holderWide/2).lineTo(centrePillarPos[0]+holderWide/2, self.compactRadius*2).close().extrude(self.plateThick))
+
+
+        plate = self.punchBearingHoles(plate, back)
+
+
+        if back:
+            #line up the whole with the big heavy weight
+            plate = self.addScrewHole(plate, (self.goingTrain.chainWheel.diameter/2, chainWheelR + holderWide*1.5), backThick=5, screwHeadD=11)
+        else:
            plate = self.frontAdditionsToPlate(plate)
 
         return plate
@@ -2438,6 +2499,41 @@ class ClockPlates:
 
 
         return plate
+    def punchBearingHoles(self, plate, back):
+        for i, pos in enumerate(self.bearingPositions):
+            plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
+        return plate
+
+    def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 10, backThick = -1):
+        '''
+        screwholePos is the position the clock will hang from
+        this is an upside-down-lollypop shape
+
+        if backThick is default, this cuts through the whole plate
+        if not, backthick is the thickness of the plastic around the screw
+
+
+          /-\   circle of screwBodyD diameter (centre of the circle is the screwholePos)
+          |  |  screwbodyD wide
+          |  |  distance between teh two circle centres is screwholeHeight
+        /     \
+        |     |  circle of screwHeadD diameter
+        \_____/
+        '''
+
+        #big hole
+        plate = plate.faces(">Z").workplane().tag("top").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD / 2).cutThruAll()
+        #slot
+        plate = plate.workplaneFromTagged("top").moveTo(screwholePos[0], screwholePos[1] - slotLength/2).rect(screwBodyD, slotLength).cutThruAll()
+        # small hole
+        plate = plate.workplaneFromTagged("top").moveTo(screwholePos[0], screwholePos[1]).circle(screwBodyD / 2).cutThruAll()
+
+        if backThick > 0:
+            cutter = cq.Workplane("XY").moveTo(screwholePos[0], screwholePos[1]).circle(screwHeadD/2).extrude(self.plateThick - backThick).translate((0,0,backThick))
+            cutter = cutter.add(cq.Workplane("XY").moveTo(screwholePos[0], screwholePos[1] - slotLength / 2).rect(screwHeadD, slotLength).extrude(self.plateThick - backThick).translate((0, 0, backThick)))
+            plate = plate.cut(cutter)
+
+        return plate
 
     def getSimpleVerticalPlate(self, back=True, getText=False):
         '''
@@ -2451,7 +2547,7 @@ class ClockPlates:
         # print("Height: ", self.minHeight)
 
 
-        chainHoleD = self.goingTrain.chainWheel.chain_width+2
+        chainHoleD = self.chainHoleD
         print("chain hole D", chainHoleD)
 
         #making the plates wide enough that there can be vaguely strong holes for the chains to go through
@@ -2518,28 +2614,16 @@ class ClockPlates:
             plate = plate.workplaneFromTagged("base").moveTo(-baseWidth/2,baseWidthStartY).radiusArc((baseWidth/2,baseWidthStartY),baseWidth/2+0.001).lineTo(baseWidth/2, topY - minHeight - bottomBracketR).\
                 radiusArc((-baseWidth/2, topY - minHeight - bottomBracketR), baseWidth/2).close().extrude(plateThick)
 
-        for i, pos in enumerate(self.bearingPositions):
-
-            plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
+        plate = self.punchBearingHoles(plate, back)
 
         if not back:
            plate = self.frontAdditionsToPlate(plate)
 
 
         if back:
-            # screwhole to hang on the wall
-            screwHeadD = 9
-            screwBodyD = 6
-            screwHoleHeight = 5
             # sticking off the top makes the plate a bit too big to print nicely
-            screwholeStartY = (self.bearingPositions[len(self.bearingPositions)-1][1] + self.bearingPositions[len(self.bearingPositions)-2][1] )/2 - screwHoleHeight - screwHeadD/2
-
-            centreX=0
-            #hole to hang on the wall
-            plate = plate.faces(">Z").workplane().tag("top").moveTo(centreX, screwholeStartY + screwHeadD / 2).circle(screwHeadD / 2).cutThruAll()
-            plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD * 3 / 4 + screwHoleHeight / 2).rect(screwBodyD, screwHoleHeight + screwHeadD / 2).cutThruAll()
-            plate = plate.workplaneFromTagged("top").moveTo(centreX, screwholeStartY + screwHeadD + screwHoleHeight).circle(screwBodyD / 2).cutThruAll()
-
+            screwholeStartY = (self.bearingPositions[len(self.bearingPositions) - 1][1] + self.bearingPositions[len(self.bearingPositions) - 2][1]) / 2 - 5
+            plate = self.addScrewHole(plate, (0,screwholeStartY))
             def addText(plate, multimaterial, text, y):
                 # textSize =  width*0.25
                 # textYOffset = width*0.025
@@ -3763,28 +3847,28 @@ class Assembly:
 # # exporters.export(anchor, "../out/anchor_test.stl")
 # #
 # #
-# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
-# # train.calculateRatios()
-# train.setRatios([[64, 12], [63, 12], [60, 14]])
-# train.setChainWheelRatio([74, 11])
-# # train.genChainWheels(ratchetThick=5)
-# pendulumSticksOut=0
-# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-# train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-# motionWorks = MotionWorks(minuteHandHolderHeight=30)
-# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+# train.calculateRatios()
+train.setRatios([[64, 12], [63, 12], [60, 14]])
+train.setChainWheelRatio([74, 11])
+# train.genChainWheels(ratchetThick=5)
+pendulumSticksOut=0
+train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+motionWorks = MotionWorks(minuteHandHolderHeight=30)
+#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+
+
+#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, style="round")
+
+plate = plates.getPlate(True)
 #
-#
-# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, compact=True)
-#
-# plate = plates.getPlate(True)
-#
-# # show_object(plate)
-# #
-# # show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+show_object(plate)
+
+show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
 #
 # # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
 # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
