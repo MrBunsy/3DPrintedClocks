@@ -2287,6 +2287,45 @@ class ClockPlates:
                     r = self.goingTrain.escapement.diameter*0.6
 
                 plate = plate.cut(cq.Workplane("XY").circle(r).extrude(self.plateDistance).translate((bearingPos[0],bearingPos[1],self.plateThick)))
+
+            chainHoles = self.getChainHoles()
+            plate = plate.cut(chainHoles)
+            # from the HAC gear
+            armAngle =holderWide / chainWheelR
+            #chop out more so that there's less to print
+
+            keepForChainHolesArcAngle = math.asin((self.goingTrain.chainWheel.diameter/2 + self.chainHoleD*0.6) / chainWheelR)
+            print(radToDeg(keepForChainHolesArcAngle))
+            keepAboveAngle = math.pi*2/5 - armAngle/2
+            for i in [-1,1]:
+                # i=-1
+                p1 = polar(-math.pi/2 + i*keepAboveAngle, chainWheelR*2)
+                p2 = polar(-math.pi/2 + i*keepForChainHolesArcAngle, chainWheelR*2)
+                cutter = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]).lineTo(p1[0], p1[1]).lineTo(p2[0], p2[1]).close().extrude(self.plateDistance).translate((0,0,self.plateThick))
+                # return cutter
+                plate = plate.cut(cutter)
+            #right hand side
+            p1 = polar(-math.pi / 2 + 2*math.pi/5 + armAngle/2, chainWheelR * 2)
+            p2 = polar(math.pi/4, chainWheelR * 2)
+            cutter = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]).lineTo(p1[0], p1[1]).lineTo(p2[0], p2[1]).close().extrude(self.plateDistance).translate((0, 0, self.plateThick))
+            plate = plate.cut(cutter)
+
+            #left hand side
+            p1 = polar(-math.pi / 2 - 2 * math.pi / 5 - armAngle / 2, chainWheelR * 2)
+            # p2 = polar(math.pi, chainWheelR * 2)
+
+            cutter = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] - holderWide/2).radiusArc((-radius-holderWide/2, radius), radius+holderWide/2).line(-100,0).lineTo(p1[0],p1[1]).close().extrude(self.plateDistance).translate((0, 0, self.plateThick))
+            # return cutter
+            plate = plate.cut(cutter)
+
+            # for i in range(5):
+            #     p1 = polar(-math.pi / 2 + armAngle/2 + i * math.pi*2/5, chainWheelR * 2)
+            #     p2 = polar(-math.pi / 2 - armAngle/2 + (i+1) * math.pi*2/5, chainWheelR*2)
+            #     cutter = cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1]).lineTo(p1[0], p1[1]).lineTo(p2[0], p2[1]).close().extrude(self.plateDistance).translate((0,0,self.plateThick))
+            #     # return cutter
+            #     plate = plate.cut(cutter)
+
+
         else:
             #front, don't want the arc  across the middle
             plate = plate.cut(cq.Workplane("XY").moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius - holderWide).extrude(self.plateThick))
@@ -2306,6 +2345,12 @@ class ClockPlates:
 
         return plate
 
+    def getChainHoles(self):
+        chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - self.goingTrain.chainWheel.getHeight() / 2 + self.wobble/2
+
+        chainHoles = cq.Workplane("XZ").pushPoints([(self.goingTrain.chainWheel.diameter / 2, chainZ), (-self.goingTrain.chainWheel.diameter / 2, chainZ)]).circle(self.chainHoleD / 2).extrude(1000)
+
+        return chainHoles
 
     def getBearingHolder(self, height, addSupport=True):
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
