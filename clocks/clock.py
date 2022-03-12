@@ -2293,7 +2293,7 @@ class ClockPlates:
             fullText = "{} {:.1f}cm {}".format(self.name, self.goingTrain.pendulum_length * 100, datetime.date.today().strftime('%Y-%m'))
 
             textMultiMaterial = cq.Workplane("XY")
-            textSize = bottomPillarR * 0.6
+            textSize = bottomPillarR * 0.5
             # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1]) / 2, textSize)
             # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length * 100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2, textSize)
             #
@@ -4020,7 +4020,7 @@ train.setChainWheelRatio([74, 11])
 # train.genChainWheels(ratchetThick=5)
 pendulumSticksOut=0
 train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
 motionWorks = MotionWorks(minuteHandHolderHeight=30)
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
 pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
