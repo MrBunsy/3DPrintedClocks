@@ -2225,13 +2225,16 @@ class ClockPlates:
             return self.getSimpleVerticalPlate(back, text)
 
 
-    def getRoundPlate(self, back=True, text=False):
+    def getRoundPlate(self, back=True, getText=False):
         '''
         a plate design to minimise total height, so more complicated clocks can still fit on the print bed
 
-        Still trying to keep the pendulum, hands and weight in a line
+        pendulum and hands are offset from the centre. Screwhole is also offset from the centreline so the weight can hang inline with the screwhole
         '''
 
+        # #need to print the bearing holes as holesinholes if we want the pendulum sticking out
+        #note - to invert requires flipping bearings and stuff I'm not sure I can be bothered with
+        # frontTopsideUp = self.pendulumSticksOut > 0
 
         holderWide =  self.bearingOuterD + self.bearingWallThick*2
 
@@ -2251,7 +2254,9 @@ class ClockPlates:
 
         topY = self.bearingPositions[0][1]
 
-        screwHolePos = (self.goingTrain.chainWheel.diameter/2, chainWheelR*1.4)
+        weightOnSide = 1 if self.goingTrain.chainWheels % 2 == 0 else -1
+
+        screwHolePos = (weightOnSide*self.goingTrain.chainWheel.diameter/2, chainWheelR*1.4)
 
         for i in range(len(self.bearingPositions)-1):
             y = self.bearingPositions[i][1] + self.goingTrain.getArbourWithConventionalNaming(i).getMaxRadius() + self.gearGap
@@ -2282,6 +2287,25 @@ class ClockPlates:
             plate = plate.faces(">Z").workplane().moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR).extrude(self.plateDistance)
 
             plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.99999).extrude(self.plateThick + self.plateDistance)
+
+            textY = (self.bearingPositions[0][1] + self.bearingPositions[1][1]) / 2
+
+            fullText = "{} {:.1f}cm {}".format(self.name, self.goingTrain.pendulum_length * 100, datetime.date.today().strftime('%Y-%m'))
+
+            textMultiMaterial = cq.Workplane("XY")
+            textSize = bottomPillarR * 0.6
+            # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1]) / 2, textSize)
+            # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length * 100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2, textSize)
+            #
+            # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, datetime.date.today().strftime('%Y-%m'), - bottomGearR / 2, textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), self.compactRadius*0.7, textSize)
+
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m')), -chainWheelR*0.5, textSize)
+
+            if getText:
+                return textMultiMaterial
+
+
         # plate = plate.add(verticalPlate)
 
 
@@ -2298,8 +2322,14 @@ class ClockPlates:
            plate = self.frontAdditionsToPlate(plate)
 
         fixingScrewD = 3
-        # currently punching holes all the way through the front and back, might revisit this idea with something like embedded nuts
+
+        #screws to fix the plates together
         plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
+
+        embeddedNutHeight = self.plateThick + self.plateDistance/2
+        for fixingPos in fixingPositions:
+            #embedded nuts!
+            plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,0.2), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], embeddedNutHeight)))
 
         return plate
 
@@ -2668,6 +2698,15 @@ class ClockPlates:
 
         return plate
 
+    def addText(self,plate, multimaterial, text, y, textSize):
+        # textSize =  width*0.25
+        # textYOffset = width*0.025
+
+        textYOffset = 0  # width*0.1
+        text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotateAboutCenter((0, 0, 1), 90).rotateAboutCenter((1, 0, 0), 180).translate((textYOffset, y, 0))
+
+        return plate.cut(text), multimaterial.add(text)
+
     def getSimpleVerticalPlate(self, back=True, getText=False):
         '''
         Just two vertical slats, with a shelf-bracket like brace at the bottom to stop it bending.
@@ -2757,14 +2796,7 @@ class ClockPlates:
             # sticking off the top makes the plate a bit too big to print nicely
             screwholeStartY = (self.bearingPositions[len(self.bearingPositions) - 1][1] + self.bearingPositions[len(self.bearingPositions) - 2][1]) / 2 - 5
             plate = self.addScrewHole(plate, (0,screwholeStartY))
-            def addText(plate, multimaterial, text, y):
-                # textSize =  width*0.25
-                # textYOffset = width*0.025
-                textSize =  width*0.6
-                textYOffset =0# width*0.1
-                text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotateAboutCenter((0, 0, 1), 90).rotateAboutCenter((1, 0, 0), 180).translate((textYOffset, y, 0))
 
-                return plate.cut(text), multimaterial.add(text)
 
 
             #very hard to read against the textured surface, so I think multimaterial is going to be needed
@@ -2773,11 +2805,11 @@ class ClockPlates:
             textY = (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2
 
             textMultiMaterial = cq.Workplane("XY")
+            textSize = width * 0.6
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2, textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length*100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2, textSize)
 
-            plate, textMultiMaterial = addText(plate, textMultiMaterial, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2)
-            plate, textMultiMaterial = addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length*100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2)
-
-            plate, textMultiMaterial = addText(plate, textMultiMaterial, datetime.date.today().strftime('%Y-%m'), - bottomGearR/2)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, datetime.date.today().strftime('%Y-%m'), - bottomGearR/2, textSize)
             # if len(self.name) > 0:
             #     #text on the bottom
             #     # textSize =  width*0.75
@@ -3995,7 +4027,7 @@ pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anch
 
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, style="round")
+plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
 
 plate = plates.getPlate(True)
 #
