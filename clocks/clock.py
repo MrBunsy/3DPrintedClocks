@@ -2265,7 +2265,7 @@ class ClockPlates:
 
         bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - chainWheelR - bottomPillarR]
         topPillarPos = [self.bearingPositions[0][0], topY + topPillarR]
-        topOfWidePlatePos = (self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius*2) if back else self.bearingPositions[0]
+        topOfWidePlatePos = (self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius*2) if (back and False) else self.bearingPositions[0]
 
         fixingPositions = [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
 
@@ -2281,7 +2281,7 @@ class ClockPlates:
 
         if back:
             #extra bit to hold the screwhole
-            plate = plate.workplaneFromTagged("base").moveTo(self.bearingPositions[0][0], screwHolePos[1]).circle(self.goingTrain.chainWheel.diameter*1.5).extrude(self.plateThick)
+            plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]).circle(self.goingTrain.chainWheel.diameter*1.25).extrude(self.plateThick)
             #the pillars
 
             plate = plate.faces(">Z").workplane().moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR).extrude(self.plateDistance)
@@ -2294,13 +2294,9 @@ class ClockPlates:
 
             textMultiMaterial = cq.Workplane("XY")
             textSize = bottomPillarR * 0.5
-            # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1]) / 2, textSize)
-            # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length * 100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2, textSize)
-            #
-            # plate, textMultiMaterial = self.addText(plate, textMultiMaterial, datetime.date.today().strftime('%Y-%m'), - bottomGearR / 2, textSize)
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), self.compactRadius*0.7, textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.9, -chainWheelR*0.5), textSize)
 
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m')), -chainWheelR*0.5, textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.9,-chainWheelR*0.5), textSize)
 
             if getText:
                 return textMultiMaterial
@@ -2462,8 +2458,14 @@ class ClockPlates:
     #
     #     return plate
 
-    def getChainHoles(self):
+    def getChainHoles(self, absoluteZ=False):
+        '''
+        if absolute Z is false, these are positioned above the base plateThick
+        '''
         chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - self.goingTrain.chainWheel.getHeight() / 2 + self.wobble/2
+
+        if not absoluteZ:
+            chainZ += self.plateThick
 
         chainHoles = cq.Workplane("XZ").pushPoints([(self.goingTrain.chainWheel.diameter / 2, chainZ), (-self.goingTrain.chainWheel.diameter / 2, chainZ)]).circle(self.chainHoleD / 2).extrude(1000)
 
@@ -2698,11 +2700,11 @@ class ClockPlates:
 
         return plate
 
-    def addText(self,plate, multimaterial, text, y, textSize):
+    def addText(self,plate, multimaterial, text, pos, textSize):
         # textSize =  width*0.25
         # textYOffset = width*0.025
-
-        textYOffset = 0  # width*0.1
+        y = pos[1]
+        textYOffset = 0  + pos[0]# width*0.1
         text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotateAboutCenter((0, 0, 1), 90).rotateAboutCenter((1, 0, 0), 180).translate((textYOffset, y, 0))
 
         return plate.cut(text), multimaterial.add(text)
@@ -2806,10 +2808,10 @@ class ClockPlates:
 
             textMultiMaterial = cq.Workplane("XY")
             textSize = width * 0.6
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, self.name, (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2, textSize)
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length*100), (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2, textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, self.name, (0, (self.bearingPositions[0][1] + self.bearingPositions[1][1])/2), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{:.1f}".format(self.goingTrain.pendulum_length*100), (0, (self.bearingPositions[1][1] + self.bearingPositions[2][1]) / 2), textSize)
 
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, datetime.date.today().strftime('%Y-%m'), - bottomGearR/2, textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, datetime.date.today().strftime('%Y-%m'), (0, - bottomGearR/2), textSize)
             # if len(self.name) > 0:
             #     #text on the bottom
             #     # textSize =  width*0.75
@@ -3289,7 +3291,7 @@ class Pendulum:
         nut = nut.close().extrude(self.bobNutThick).faces(">Z").workplane().circle(self.threadedRodM/2+0.25).cutThruAll()
 
         # currently assuming M3
-        nutD=getNutContainingDiameter(3)
+        nutD=getNutContainingDiameter(3, 0.1)
         #and going to try a nyloc nut to see if that stops it untightening itself
         nutHeight=getNutHeight(3,nyloc=True)
 
@@ -3341,6 +3343,8 @@ class Hands:
 
         '''
         self.thick=thick
+        #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
+        self.outlineThick=LAYER_THICK
         #how much to rotate the minute fixing by
         self.fixing_offset=fixing_offset
         self.length = length
@@ -3503,6 +3507,9 @@ class Hands:
         if self.outline > 0:
             if outline:
 
+                #this doesn't work for fancier shapes - I think it can't cope if there isn't space to extrude the shell without it overlapping itself?
+                #works fine for simple hands, not for cuckoo hands
+
                 # mould = cq.Workplane("XY").rect(self.length*4,self.length*4).extrude(self.thick).cut(hand)
                 # #try and make entirely solid so the shell stuff actually works in all cases
                 # hand = cq.Workplane("XY").rect(self.length*3,self.length*3).extrude(self.thick).cut(mould)
@@ -3519,10 +3526,10 @@ class Hands:
                 # shell = mould.shell(-self.outline)
 
                 notOutline = hand.cut(shell)
-                return notOutline
+                # return notOutline
                 #chop off the mess above the first few layers that we want
 
-                bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,LAYER_THICK*2))
+                bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,self.outlineThick))
 
 
 

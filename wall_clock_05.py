@@ -43,7 +43,7 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=30 )
 motionWorks.outputSTLs(clockName,clockOutDir)
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10, useNylocForAnchor=False)
 
 pendulum.outputSTLs(clockName, clockOutDir)
 
@@ -54,7 +54,7 @@ dial.outputSTLs(clockName, clockOutDir)
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
 plates.outputSTLs(clockName, clockOutDir)
 
-hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=80, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
