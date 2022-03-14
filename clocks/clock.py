@@ -1077,12 +1077,12 @@ class Escapement:
         self.innerRadius = self.innerDiameter/2
 
         self.toothHeight = self.diameter/2 - self.innerRadius
+        #it can't print a sharp tip, instead of the previous bodge with a different height for printing and letting the slicer do it, do it ourselves
+        self.toothTipWidth=1
+        self.printedToothHeight = self.toothHeight
         #*8.36/7 worked for a diameter of about 82mm, it's not enough at about 60mm
-        self.printedToothHeight = self.toothHeight+1.4#*8.36/7
-        print("tooth height", self.toothHeight)
-
-        # print("WARNING NOT PRINTED TOOTH HEIGHT")
-        # self.printedToothHeight = self.toothHeight
+        # self.printedToothHeight = self.toothHeight+1.4#*8.36/7
+        # print("tooth height", self.toothHeight)
 
 
         #a tooth height of 8.36 gets printed to about 7mm
@@ -1403,6 +1403,7 @@ class Escapement:
         diameterForPrinting = self.diameter + (self.printedToothHeight - self.toothHeight)*2
 
         dA = -math.pi*2/self.teeth
+        toothTipArcAngle = self.toothTipWidth/diameterForPrinting
 
         if self.type == "recoil":
             #based on the angle of the tooth being 20deg, but I want to calculate everyting in angles from the cetnre of the wheel
@@ -1414,23 +1415,19 @@ class Escapement:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
             toothTipAngle = -math.pi*0.05
             toothBaseAngle = -math.pi*0.03
-
-        # if self.type == "deadbeat":
-        #     # toothAngle*=-1
-        #     toothTipAngle*=-1
-        #     toothBaseAngle*=
-
+            toothTipArcAngle*=-1
 
         wheel = cq.Workplane("XY").moveTo(self.innerRadius, 0)
 
         for i in range(self.teeth):
             angle = dA*i
-            tipPos = (math.cos(angle+toothTipAngle)*diameterForPrinting/2, math.sin(angle+toothTipAngle)*diameterForPrinting/2)
+            tipPosStart = (math.cos(angle+toothTipAngle)*diameterForPrinting/2, math.sin(angle+toothTipAngle)*diameterForPrinting/2)
+            tipPosEnd = (math.cos(angle + toothTipAngle + toothTipArcAngle) * diameterForPrinting / 2, math.sin(angle + toothTipAngle + toothTipArcAngle) * diameterForPrinting / 2)
             nextbasePos = (math.cos(angle+dA) * self.innerRadius, math.sin(angle + dA) * self.innerRadius)
             endPos = (math.cos(angle+toothBaseAngle) * self.innerRadius, math.sin(angle + toothBaseAngle) * self.innerRadius)
             # print(tipPos)
             # wheel = wheel.lineTo(0,tipPos[1])
-            wheel = wheel.lineTo(tipPos[0], tipPos[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos,self.innerDiameter)
+            wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos,self.innerDiameter)
 
         wheel = wheel.close()
 
@@ -3831,7 +3828,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, dial=None):
+    def __init__(self, plates, hands=None, dial=None, timeMins=10, timeHours=10):
         self.plates = plates
         self.hands = hands
         self.dial=dial
@@ -3839,6 +3836,8 @@ class Assembly:
         self.arbourCount = self.goingTrain.chainWheels + self.goingTrain.wheels
         self.pendulum = self.plates.pendulum
         self.motionWorks = self.plates.motionWorks
+        self.timeMins = timeMins
+        self.timeHours = timeHours
 
     def getClock(self):
         bottomPlate = self.plates.getPlate(True)
@@ -3869,8 +3868,8 @@ class Assembly:
         #where the nylock nut and spring washer would be
         motionWorksZOffset = 3
 
-        time_min = 10
-        time_hour = 10
+        time_min = self.timeMins
+        time_hour = self.timeHours
 
         minuteAngle = - 360 * (time_min / 60)
         hourAngle = - 360 * (time_hour + time_min / 60) / 12
@@ -4025,7 +4024,7 @@ train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxCha
 train.setRatios([[64, 12], [63, 12], [60, 14]])
 train.setChainWheelRatio([74, 11])
 # train.genChainWheels(ratchetThick=5)
-pendulumSticksOut=0
+pendulumSticksOut=25
 train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
 motionWorks = MotionWorks(minuteHandHolderHeight=30)

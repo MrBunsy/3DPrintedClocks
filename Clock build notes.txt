@@ -110,5 +110,14 @@ Clock 5:
 Somehow the anchor was still printed upside down, so it's still not the nice side visible!
 
 I completely forgot about how big the weight is - it needs the pendulum away from the clock face. I'm going to try just putting it further along the rod, but it really needed some pendulumSticksOut!
+I've decided to shrink the hands rather than have them stick out by miles
 
 The arbour extensions are a fiddle to put on, but they make it much easier to assemble the clock! Worth keeping, plus I like the look.
+
+Still not sure I got the chain wheel quite perfect for the heavier duty chain. Also, might want to beef up the lugs that hold the chain - I think they can be widened without affecting the function
+
+IDEA - since winding up the eight day can knock it out of beat easily - how about a screw-slot at the bottom that can be used to fix it in place once it's been put in beat?
+
+IDEA - also a tool (with long handle) to hold the anchor to make it easier to put in beat
+
+REFACTOR - I think that the circular and vertical clock plates can be combined, they're actually very similar. Then there's only one thing to maintain
