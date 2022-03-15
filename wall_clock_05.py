@@ -58,7 +58,10 @@ plates.outputSTLs(clockName, clockOutDir)
 hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 hands.outputSTLs(clockName, clockOutDir)
 
-#no weight for this clock, as it's going to probably be too heavy to make myself.
+#no weight for this clock, using the cheap 2.5kg weight from cousins
+#which needs a shell to look better!
+shell = clock.WeightShell(45,220, twoParts=True, holeD=5)
+shell.outputSTLs(clockName, clockOutDir)
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=47)
 assembly.outputSTLs(clockName, clockOutDir)

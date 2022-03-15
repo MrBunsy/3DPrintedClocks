@@ -3932,6 +3932,48 @@ class Assembly:
         print("Outputting ", out)
         exporters.export(self.getClock(), out)
 
+class WeightShell:
+    '''
+    A shell to go around the large and ugly weights from cousins
+    '''
+    def __init__(self, diameter, height, twoParts=True, holeD=5):
+        #internal diameter
+        self.diameter=diameter
+        self.height = height
+        self.wallThick=1.2
+        #if True then (probably because it's too tall...) print in two sections that slot over top and bottom
+        self.twoParts=twoParts
+        self.holeD=holeD
+
+    def getShell(self, top=True):
+        shell = cq.Workplane("XY")
+        outerR = self.diameter/2 + self.wallThick
+        height = self.height
+        overlap = 3
+        if self.twoParts:
+            height=height/2 - overlap/2
+
+        shell = shell.circle(outerR).circle(self.holeD/2).extrude(self.wallThick)
+        shell = shell.faces(">Z").workplane().circle(outerR).circle(self.diameter/2).extrude(height)
+
+        if self.twoParts:
+            if top:
+                shell = shell.faces(">Z").workplane().circle(outerR).circle(outerR - self.wallThick/2).extrude(overlap)
+            else:
+                shell = shell.faces(">Z").workplane().circle(outerR - self.wallThick / 2).circle(outerR - self.wallThick).extrude(overlap)
+
+        return shell
+
+    def outputSTLs(self, name="clock", path="../out"):
+
+        out = os.path.join(path, "{}_weight_shell_top.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getShell(True), out)
+
+        out = os.path.join(path, "{}_weight_shell_bottom.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getShell(False), out)
+
 # getRadiusForPointsOnACircle([10,20,15], math.pi)
 #
 #
@@ -4018,35 +4060,37 @@ class Assembly:
 # # exporters.export(anchor, "../out/anchor_test.stl")
 # #
 # #
-# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
-# train.calculateRatios()
-train.setRatios([[64, 12], [63, 12], [60, 14]])
-train.setChainWheelRatio([74, 11])
-# train.genChainWheels(ratchetThick=5)
-pendulumSticksOut=25
-train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-motionWorks = MotionWorks(minuteHandHolderHeight=30)
-#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
 
-
-#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
-
-plate = plates.getPlate(True)
+# ### ============FULL CLOCK ============
+# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train=GoingTrain(pendulum_period=1,fourth_wheel=True,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+# # train.calculateRatios()
+# train.setRatios([[64, 12], [63, 12], [60, 14]])
+# train.setChainWheelRatio([74, 11])
+# # train.genChainWheels(ratchetThick=5)
+# pendulumSticksOut=25
+# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+# train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+# motionWorks = MotionWorks(minuteHandHolderHeight=30)
+# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
 #
-show_object(plate)
-
-show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
 #
-# # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
-# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-# assembly = Assembly(plates, hands=hands)
+# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
 #
-# show_object(assembly.getClock())
+# plate = plates.getPlate(True)
+# #
+# show_object(plate)
 #
+# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+# #
+# # # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
+# # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+# # assembly = Assembly(plates, hands=hands)
+# #
+# # show_object(assembly.getClock())
+# #
 
 # # anchorAngle = math.atan2(plates.bearingPositions[-1][1] - plates.bearingPositions[-2][1], plates.bearingPositions[-1][0] - plates.bearingPositions[-2][0]) - math.pi / 2
 # # # anchorAngle=0
@@ -4063,3 +4107,10 @@ show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.
 # # hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
 # # show_object(hands.getHand(False,True))
 # # show_object(hands.getHand(False,False).translate((50,0,0)))
+
+
+shell = WeightShell(45,220, twoParts=True, holeD=5)
+
+show_object(shell.getShell())
+
+show_object(shell.getShell(False).translate((100,0,0)))

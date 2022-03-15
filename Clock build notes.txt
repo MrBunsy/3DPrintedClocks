@@ -121,3 +121,5 @@ IDEA - since winding up the eight day can knock it out of beat easily - how abou
 IDEA - also a tool (with long handle) to hold the anchor to make it easier to put in beat
 
 REFACTOR - I think that the circular and vertical clock plates can be combined, they're actually very similar. Then there's only one thing to maintain
+
+thought for the grasshopper, or others to show off the mechanism: the front plate could cover only the chain wheel (maybe the motion works and minute wheel too?), the rest of the gears have the bearing embedded in the gear itself, and are simply bolted onto the rear plate. How do I hold the pendulum?? Could I offset from the wall on little legs and have the pendulum out the back?
