@@ -2311,8 +2311,8 @@ class ClockPlates:
             plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]).circle(holderWide).extrude(self.plateThick)
 
             #the pillars
-            plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.99).extrude(self.plateThick + self.plateDistance)
-            plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.999).extrude(self.plateThick + self.plateDistance)
+            plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.9999).extrude(self.plateThick + self.plateDistance)
+            plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.9999).extrude(self.plateThick + self.plateDistance)
 
             textMultiMaterial = cq.Workplane("XY")
             textSize = bottomPillarR * 0.5
@@ -2396,8 +2396,9 @@ class ClockPlates:
         for i, pos in enumerate(self.bearingPositions):
             if i == len(self.bearingPositions)-1 and not back and self.pendulumSticksOut > 0:
                 #don't need three bearings for the anchor - it's not taking much weight! Just using one on the end of the pendulumSticksOut bit so it can't bend as easily
-                continue
-            plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
+                plate = plate.cut(cq.Workplane("XY").circle(self.holderInnerD/2).extrude(self.plateThick).translate((pos[0], pos[1], 0)))
+            else:
+                plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1):
