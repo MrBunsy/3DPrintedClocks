@@ -2060,15 +2060,28 @@ class ClockPlates:
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
             side = -1 if self.goingTrain.isWeightOnTheRight() else 1
-            distances = [self.goingTrain.getArbour(arbour).distanceToNextArbour for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels)]
+            arbours = [self.goingTrain.getArbourWithConventionalNaming(arbour) for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels)]
+            distances = [arbour.distanceToNextArbour for arbour in arbours]
+            maxRs = [arbour.getMaxRadius() for arbour in arbours]
+            arcAngleDeg = 270
 
+            foundSolution=False
+            while(not foundSolution and arcAngleDeg > 180):
+                arcRadius = getRadiusForPointsOnAnArc(distances, degToRad(arcAngleDeg))
 
-            arcRadius = getRadiusForPointsOnACircle(distances, degToRad(250-50))
-            self.compactRadius = arcRadius
-            minDistance = min(distances)
-            if arcRadius < minDistance - self.gearGap:
-                #i think it's possible for this to be false, but also still not be enough space
-                raise ValueError("Can't make arc for gears, insufficient space")
+                # minDistance = max(distances)
+
+                if arcRadius > max(maxRs):
+                    #if none of the gears cross the centre, they should all fit
+                    #pretty sure there are other situations where they all fit
+                    #and it might be possible for this to be true and they still don't all fit
+                    #but a bit of playing around and it looks true enough
+                    foundSolution=True
+                    self.compactRadius = arcRadius
+                else:
+                    arcAngleDeg-=1
+            if not foundSolution:
+                raise ValueError("Unable to calculate radius for gear ring, try a vertical clock instead")
 
             angleOnArc = -math.pi/2
             lastPos = polar(angleOnArc, arcRadius)
@@ -2190,11 +2203,7 @@ class ClockPlates:
         self.chainHoleD = self.goingTrain.chainWheel.chain_width + 2
 
 
-    def getPlate(self, back=True, text=False):
-        return self.getSimplePlate(back, text)
-
-
-    def getSimplePlate(self, back=True, getText=False):
+    def getPlate(self, back=True, getText=False):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
         Designed to be flat up against the wall, with everything offset to avoid the wall and picture rail
@@ -2385,6 +2394,9 @@ class ClockPlates:
 
     def punchBearingHoles(self, plate, back):
         for i, pos in enumerate(self.bearingPositions):
+            if i == len(self.bearingPositions)-1 and not back and self.pendulumSticksOut > 0:
+                #don't need three bearings for the anchor - it's not taking much weight! Just using one on the end of the pendulumSticksOut bit so it can't bend as easily
+                continue
             plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
         return plate
 
@@ -2445,7 +2457,8 @@ class ClockPlates:
         # no idea if it'll work without the rod bending!
 
         if self.pendulumSticksOut > 0:
-            extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, True).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
+            #trying this WITHOUT the support
+            extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
             plate = plate.add(extraBearingHolder)
 
         plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
@@ -3343,36 +3356,38 @@ class Weight:
 
         return lid
 
-def getRadiusForPointsOnACircle(distances, circleAngle=math.pi, iterations=100):
+def getAngleCovered(distances,r):
+    totalAngle = 0
+
+    for dist in distances:
+        totalAngle += math.asin(dist/(2*r))
+
+    totalAngle*=2
+
+    return totalAngle
+
+def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
     '''
     given a list of distances between points, place them on the edge of a circle at those distances apart (to cover circleangle of the circle)
     find the radius of a circle where this is possible
     circleAngle is in radians
     '''
 
-    def getAngleCovered(distances,r):
-        totalAngle = 0
 
-        for dist in distances:
-            totalAngle += math.asin(dist/(2*r))
-
-        totalAngle*=2
-
-        return totalAngle
 
     #treat as circumference
-    aproxR = sum(distances)/circleAngle
+    aproxR = sum(distances) / arcAngle
 
     minR = aproxR
     maxR = aproxR*1.2
-
+    lastTestR = 0
     # errorMin = circleAngle - getAngleCovered(distances, minR)
     # errorMax = circleAngle - getAngleCovered(distances, maxR)
     testR = aproxR
-    errorTest = circleAngle - getAngleCovered(distances, testR)
+    errorTest = arcAngle - getAngleCovered(distances, testR)
 
     for i in range(iterations):
-        print("Iteration {}, testR: {}, errorTest: {}".format(i,testR, errorTest))
+        # print("Iteration {}, testR: {}, errorTest: {}".format(i,testR, errorTest))
         if errorTest < 0:
             #r is too small
             minR = testR
@@ -3380,13 +3395,14 @@ def getRadiusForPointsOnACircle(distances, circleAngle=math.pi, iterations=100):
         if errorTest > 0:
             maxR = testR
 
-        if errorTest == 0:
-            #turns out this can happen. hurrah for floating point!
-            print("found exact after {} iterations".format(i))
+        if errorTest == 0 or testR == lastTestR:
+            #turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testR anymore
+            print("Iteration {}, testR: {}, errorTest: {}".format(i, testR, errorTest))
+            # print("found after {} iterations".format(i))
             break
-
+        lastTestR = testR
         testR = (minR + maxR)/2
-        errorTest = circleAngle - getAngleCovered(distances, testR)
+        errorTest = arcAngle - getAngleCovered(distances, testR)
 
     return testR
 
@@ -3630,30 +3646,30 @@ class WeightShell:
 # #
 # #
 
-### ============FULL CLOCK ============
-# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=0)#, hours=180)
-train.calculateRatios()
-# train.setRatios([[64, 12], [63, 12], [60, 14]])
-# train.setChainWheelRatio([74, 11])
-# train.genChainWheels(ratchetThick=5)
-pendulumSticksOut=25
-train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-motionWorks = MotionWorks(minuteHandHolderHeight=30)
-#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
-
-
-#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
-
-plate = plates.getPlate(True)
+# ### ============FULL CLOCK ============
+# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=0)#, hours=180)
+# train.calculateRatios()
+# # train.setRatios([[64, 12], [63, 12], [60, 14]])
+# # train.setChainWheelRatio([74, 11])
+# # train.genChainWheels(ratchetThick=5)
+# pendulumSticksOut=25
+# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+# train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+# motionWorks = MotionWorks(minuteHandHolderHeight=30)
+# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
 #
-show_object(plate)
-
-show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
 #
+# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
+#
+# plate = plates.getPlate(True)
+# #
+# show_object(plate)
+#
+# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+# #
 # # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
 # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 # assembly = Assembly(plates, hands=hands)

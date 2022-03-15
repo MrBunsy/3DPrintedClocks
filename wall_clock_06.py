@@ -13,7 +13,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_06"
 clockOutDir="out"
 
-outputSTL=False
+outputSTL=True
 
 train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
 
