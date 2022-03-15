@@ -13,10 +13,8 @@ if 'show_object' not in globals():
 clockName="wall_clock_06"
 clockOutDir="out"
 
-# crutchLength=100
+outputSTL=False
 
-# train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-#pendulum period of 1.25 actually results in larger clock than period of 1
 train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
 
 # train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
@@ -36,28 +34,39 @@ train.printInfo()
 pendulumSticksOut=20
 
 train.genGears(module_size=1.2,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
-train.outputSTLs(clockName,clockOutDir)
+
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=30 )
-motionWorks.outputSTLs(clockName,clockOutDir)
+
 
 #trying a thicker anchor and glue rather than nyloc
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10, useNylocForAnchor=False)
 
-pendulum.outputSTLs(clockName, clockOutDir)
+
 
 dial = clock.Dial(120)
-dial.outputSTLs(clockName, clockOutDir)
+
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 06", style="round")
-plates.outputSTLs(clockName, clockOutDir)
+
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
-hands.outputSTLs(clockName, clockOutDir)
+
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=47)
-assembly.outputSTLs(clockName, clockOutDir)
+
+
+show_object(assembly.getClock())
+
+if outputSTL:
+    train.outputSTLs(clockName,clockOutDir)
+    motionWorks.outputSTLs(clockName,clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
+    dial.outputSTLs(clockName, clockOutDir)
+    plates.outputSTLs(clockName, clockOutDir)
+    hands.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)
