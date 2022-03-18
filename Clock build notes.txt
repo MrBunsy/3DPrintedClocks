@@ -105,6 +105,7 @@ General thought - is it worth designing a clock to be hung from the picture rail
 Go back to the larger screw hole + maybe give the back plate an extra circular bulge to accomodate it?
 
 Escape wheel - worth making the teeth not pointed? they print with a small blunt end anyway, and this way I don't need the printed length bodge
+DONE (but untested)
 
 Clock 5:
 Somehow the anchor was still printed upside down, so it's still not the nice side visible!
@@ -125,3 +126,5 @@ REFACTOR - I think that the circular and vertical clock plates can be combined, 
 thought for the grasshopper, or others to show off the mechanism: the front plate could cover only the chain wheel (maybe the motion works and minute wheel too?), the rest of the gears have the bearing embedded in the gear itself, and are simply bolted onto the rear plate. How do I hold the pendulum?? Could I offset from the wall on little legs and have the pendulum out the back?
 
 Can I reduce the thickness of the ratchet (the bit attached to the gear) on the chain wheel? 
+
+clock 5 stopped earlier - nothing wrong with the going train, but the chain on the chain wheel was in an odd position. I think maybe the chain wheel can't reliably cope with 2.5kg. Worth trying clock cord?

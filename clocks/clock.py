@@ -273,12 +273,16 @@ class Gear:
 
         pitch_radius = self.pitch_diameter / 2
         addendum_radius = self.module * self.addendum_radius_factor
+        if not self.iswheel:
+            print("addendum radius", addendum_radius, self.module)
         # via practical addendum factor
         addendum_height = 0.95 * self.addendum_factor * self.module
         dedendum_height = self.dedendum_factor * self.module
 
         inner_radius = pitch_radius - dedendum_height
         outer_radius = pitch_radius + addendum_height
+        if not self.iswheel:
+            print("inner radius", inner_radius)
 
         tooth_angle = self.toothFactor / (self.teeth/2)
         gap_angle = (math.pi - self.toothFactor) / (self.teeth/2)

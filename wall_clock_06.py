@@ -15,10 +15,10 @@ clockOutDir="out"
 
 outputSTL=True
 
-train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+train=clock.GoingTrain(pendulum_period=1.75,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
 
-# train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
-train.calculateRatios()
+train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
+# train.calculateRatios()
 # train.setRatios([[60, 14], [63, 12], [64, 12]])
 # train.setRatios([[64, 12], [63, 12], [60, 14]])
 # train.setRatios([[81, 12], [80, 9]])
