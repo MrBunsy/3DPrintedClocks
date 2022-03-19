@@ -46,6 +46,10 @@ STEEL_SHOT_DENSITY=0.35/0.055
 
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
+
+#extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
+NUT_WIGGLE_ROOM = 0.2
+
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.
 METRIC_HEAD_D_MULT=1.9
@@ -420,7 +424,7 @@ class Arbour:
         self.ratchet=ratchet
         self.escapement=escapement
         self.endCapThick=endCapThick
-        #the pocket chain wheel (needed only to calculate full height)
+        #the pocket chain wheel or cord wheel (needed only to calculate full height)
         self.chainWheel=chainWheel
         self.style=style
         self.distanceToNextArbour=distanceToNextArbour
@@ -456,7 +460,8 @@ class Arbour:
         if self.getType() == "WheelAndPinion" or self.getType() == "EscapeWheel":
             return self.wheelThick + self.pinionThick + self.endCapThick
         if self.getType() == "ChainWheel":
-            return self.wheelThick + self.ratchet.thick + self.chainWheel.getHeight()
+            #the chainwheel (or cordwheel) now includes the ratceht thickness
+            return self.wheelThick + self.chainWheel.getHeight()
         # if self.getType() == "Anchor":
         #     #wheel thick being used for anchor thick
         #     return self.wheelThick
@@ -513,7 +518,7 @@ class Arbour:
             if self.pinion is not None:
                 #can make this much deeper
                 deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
-            shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, 0.2), deep , 6))
+            shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
 
         if not forPrinting and not self.pinionOnTop:
             #make it the right way around for placing in a model
@@ -779,6 +784,26 @@ class GoingTrain:
 
         return clockwiseFromFront
 
+    def genPowerWheelRatchet(self, ratchetThick=7.5):
+        '''
+        The ratchet and bits shared between chain and cord wheels
+        '''
+        if self.chainWheels == 0:
+            self.chainWheelCircumference = self.maxChainDrop/self.hours
+            self.max_chain_wheel_d = self.chainWheelCircumference/math.pi
+
+        elif self.chainWheels == 1:
+            self.chainWheelCircumference = self.max_chain_wheel_d * math.pi
+            #use provided max_chain_wheel_d and calculate the rest
+
+        # true for no chainwheels
+        anticlockwise = self.chainAtBack
+
+        for i in range(self.chainWheels):
+            anticlockwise = not anticlockwise
+
+        self.poweredWheelAnticlockwise = anticlockwise
+
     def genChainWheels(self, ratchetThick=7.5, holeD=3.3, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
         '''
         HoleD of 3.5 is nice and loose, but I think it's contributing to making the chain wheel wonky - the weight is pulling it over a bit
@@ -789,28 +814,29 @@ class GoingTrain:
         longer to make it generic than just make it work
         '''
 
-
-        if self.chainWheels == 0:
-            chainWheelCircumference = self.maxChainDrop/self.hours
-            self.max_chain_wheel_d = chainWheelCircumference/math.pi
-
-        elif self.chainWheels == 1:
-            chainWheelCircumference = self.max_chain_wheel_d * math.pi
-            #use provided max_chain_wheel_d and calculate the rest
-
-        self.chainWheel = ChainWheel(max_circumference=chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
+        self.genPowerWheelRatchet()
 
 
-        #true for no chainwheels
-        anticlockwise = self.chainAtBack
+        self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
+        self.poweredWheel=self.chainWheel
 
-        for i in range(self.chainWheels):
-            anticlockwise = not anticlockwise
 
-        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=ratchetThick, powerAntiClockwise=anticlockwise)
+        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
-        self.chainWheelWithRatchet = self.chainWheel.getWithRatchet(self.ratchet)
-        self.chainWheelHalf = self.chainWheel.getHalf(False)
+        self.chainWheel.setRatchet(self.ratchet)
+
+        self.usingChain=True
+
+    def genCordWheels(self,ratchetThick=7.5, holeD=3.3, cordCoilThick=10, useKey=False, cordThick=2 ):
+
+        self.genPowerWheelRatchet()
+
+
+        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.max_chain_wheel_d / 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
+
+        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodD=holeD, thick=cordCoilThick, useKey=useKey, cordThick=cordThick)
+        self.poweredWheel = self.cordWheel
+        self.usingChain=False
 
     def setTrain(self, train):
         '''
@@ -828,7 +854,9 @@ class GoingTrain:
         if self.chainWheels > 0:
             print(self.chainWheelRatio)
             chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
-        runtime = self.chainWheel.getRunTime(chainRatio,self.maxChainDrop)
+
+        runtime = self.poweredWheel.getRunTime(chainRatio,self.maxChainDrop)
+
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
@@ -920,7 +948,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(chainWheel=self.chainWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style)]
+            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -929,7 +957,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(chainWheel=self.chainWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
+                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
                 else:
                     #just a normal gear
                     arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
@@ -989,12 +1017,11 @@ class GoingTrain:
             out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
             print("Outputting ",out)
             exporters.export(arbour.getShape(), out)
-        out = os.path.join(path,"{}_chain_wheel_with_click.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.chainWheelWithRatchet, out)
-        out = os.path.join(path, "{}_chain_wheel_half.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.chainWheelHalf, out)
+
+        if self.usingChain:
+            self.chainWheel.outputSTLs(name, path)
+        else:
+            self.cordWheel.outputSTLs(name, path)
 
         for i,arbour in enumerate(self.chainWheelArbours):
             out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
@@ -1397,7 +1424,7 @@ class Escapement:
 
         if nutMetricSize > 0:
             nutThick = METRIC_NUT_DEPTH_MULT * nutMetricSize
-            nutSpace = cq.Workplane("XY").polygon(6,getNutContainingDiameter(nutMetricSize,0.2)).extrude(nutThick)
+            nutSpace = cq.Workplane("XY").polygon(6,getNutContainingDiameter(nutMetricSize,NUT_WIGGLE_ROOM)).extrude(nutThick)
             arbour = arbour.cut(nutSpace.translate((0,0, anchorThick-nutThick)))
 
         return arbour
@@ -1526,9 +1553,146 @@ def getHoleWithHole(innerD,outerD,deep, sides=1, layerThick=LAYER_THICK):
 
     return hole
 
+class CordWheel:
+    '''
+    This will be a replacement for the chainwheel, instead of using a chain this will be clock cord.
+    One end will be tied to the wheel and then the wheel wound up.
+
+    Two options: use a key to wind it up, or have a double wheel and one half winds when the other unwinds, then you can tug the wound up side
+    to wind up the weighted side.
+
+    Made of two segments (one if using key) and a cap. Designed to be attached to the ratchet click wheel
+    '''
+
+    def __init__(self, diameter, capDiameter, ratchet, rodD=3.3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2):
+        self.diameter=diameter
+        #thickness of one segment
+        self.thick=thick
+        self.useKey=useKey
+        self.capThick=1
+        self.capDiameter = capDiameter
+        self.rodD=rodD
+        self.screwThreadMetric=screwThreadMetric
+        # self.screwLength=screwLength
+
+        self.fixingDistance=self.diameter*0.3
+        self.fixingPoints = [(self.fixingDistance,0), (-self.fixingDistance,0)]
+        self.cordThick=cordThick
+
+        #distance to keep the springs of the clickwheel from the cap, so they don't snag
+        self.clickWheelExtra=LAYER_THICK*2
+        self.ratchet = ratchet
+
+    def getSegment(self, front=True):
+        #if front segment, the holes for screws/nuts will be different
+
+        segment = cq.Workplane("XY").circle(self.capDiameter/2).extrude(self.capThick).faces(">Z").workplane().circle(self.diameter/2).extrude(self.thick)
+
+        #hole for the rod
+        segment = segment.faces(">Z").circle(self.rodD/2).cutThruAll()
+
+        #holes for the screws that hold this together
+        segment = segment.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric/2).cutThruAll()
+
+        if front:
+            #base of this needs space for the nuts
+            #current plan is to put the screw heads in the ratchet, as this side gives us more wiggle room for screws of varying length
+            cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric,getNutContainingDiameter(self.screwThreadMetric,NUT_WIGGLE_ROOM),self.thick/2,sides=6).translate(self.fixingPoints[0]))
+            cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[1]))
+            #
+
+            segment = segment.cut(cutter)
+
+        #cut a hole so we can tie the cord
+        cutter = cq.Workplane("YZ").moveTo(self.diameter*0.25,self.thick/2 + self.capThick).circle(1.5*self.cordThick/2).extrude(self.diameter*4).translate((-self.diameter*2,0,0))
+
+        segment = segment.cut(cutter)
+
+        return segment
+
+    def getCap(self):
+        cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(self.capThick)
+        # hole for the rod
+        cap = cap.faces(">Z").circle(self.rodD / 2).cutThruAll()
+
+        # holes for the screws that hold this together
+        cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
+
+        return cap
+
+    def getClickWheelForCord(self):
+        clickwheel = self.ratchet.getInnerWheel()
+
+        clickwheel = clickwheel.faces(">Z").workplane().circle(self.ratchet.clickInnerRadius*0.999).extrude(self.clickWheelExtra)
+
+        # hole for the rod
+        clickwheel = clickwheel.faces(">Z").circle(self.rodD / 2).cutThruAll()
+
+        # holes for the screws that hold this together
+        clickwheel = clickwheel.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
+
+        #cut out space for screwheads
+        # cutter = cq.Workplane("XY").pushPoints(self.fixingPoints).circle(getScrewHeadDiameter(self.screwThreadMetric) / 2).extrude(getScrewHeadHeight(self.screwThreadMetric))
+        cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getScrewHeadDiameter(self.screwThreadMetric), getScrewHeadHeight(self.screwThreadMetric)+LAYER_THICK).translate(self.fixingPoints[0]))
+        cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getScrewHeadDiameter(self.screwThreadMetric), getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK).translate(self.fixingPoints[1]))
+        clickwheel = clickwheel.cut(cutter)
+
+
+
+        return clickwheel
+
+    def getRunTime(self, minuteRatio=1, cordLength=2000):
+        #minute hand rotates once per hour, so this answer will be in hours
+        return cordLength / ((math.pi * self.diameter) / minuteRatio)
+
+    def getAssembled(self):
+        model = cq.Workplane("XY")
+        model = self.getClickWheelForCord()
+        model = model.add(self.getCap().translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
+        model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
+        model = model.add(self.getSegment(True).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.capThick)))
+
+        minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric)+LAYER_THICK) + self.clickWheelExtra + self.capThick*2 + self.thick*1.5
+        if self.useKey:
+            minScrewLength -= self.thick
+        print("cord wheel screw length between", minScrewLength, minScrewLength + self.thick/2 + self.capThick)
+
+        return model
+
+    def getHeight(self):
+        #total ehight, once assembled
+        return self.ratchet.thick + self.clickWheelExtra + self.capThick*3 + self.thick*2
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_cordwheel_top_segment.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getSegment(True), out)
+
+        if not self.useKey:
+            out = os.path.join(path, "{}_cordwheel_bottom_segment.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getSegment(False), out)
+
+        out = os.path.join(path, "{}_cordwheel_cap.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getCap(), out)
+
+        out = os.path.join(path, "{}_cordwheel_click.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getClickWheelForCord(), out)
+
+
 
 class ChainWheel:
+    '''
+    This is a pocket chain wheel, printed in two parts.
 
+    Works well for lighter (<1kg) weights, doesn't work reliably for heavier weights.
+
+    Note it's fiddly to get the tolerance right, you want a larger tolerance value ot make it more reliable, but then you get a little 'clunk'
+    every time a link leaves.
+
+    '''
     # def anglePerLink(self, radius):
     #     return math.atan(((self.chain_thick + self.chain_inside_length)/2) / (radius + self.chain_thick/2))
 
@@ -1602,9 +1766,9 @@ class ChainWheel:
 
     def getHeight(self):
         '''
-        Returns total height of the chain wheel, once assembled, ignoring the ratchet
+        Returns total height of the chain wheel, once assembled, including the ratchet
         '''
-        return self.inner_width + self.wall_thick*2 + self.extra_height
+        return self.inner_width + self.wall_thick*2 + self.extra_height + self.ratchet.thick
 
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
@@ -1728,6 +1892,19 @@ class ChainWheel:
             combined = combined.cut(screwHeadSpace)
 
         return combined
+
+    def setRatchet(self, ratchet):
+        self.ratchet=ratchet
+
+    def outputSTLs(self, name="clock", path="../out"):
+
+        out = os.path.join(path,"{}_chain_wheel_with_click.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getWithRatchet(self.ratchet), out)
+        out = os.path.join(path, "{}_chain_wheel_half.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHalf(False), out)
+
 
 class Ratchet:
 
@@ -2000,7 +2177,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None, heavy=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -2015,6 +2192,9 @@ class ClockPlates:
         self.name = name
         #to get fixing positions
         self.dial = dial
+
+        #is the weight heavy enough that we want to chagne the plate design?
+        self.heavy = heavy
 
         #just for the first prototype
         self.anchorHasNormalBushing=True
@@ -2203,11 +2383,19 @@ class ClockPlates:
         else:
             #motion works is directly below the minute rod
             self.motionWorksRelativePos = [0, -motionWorksDistance]
+        if self.goingTrain.usingChain:
+            self.chainHoleD = self.goingTrain.chainWheel.chain_width + 2
+        else:
+            self.chainHoleD = self.goingTrain.cordWheel.cordThick*3
 
-        self.chainHoleD = self.goingTrain.chainWheel.chain_width + 2
+        self.weightOnRightSide = self.goingTrain.chainWheels % 2 == 0
 
 
     def getPlate(self, back=True, getText=False):
+        if self.style in ["round", "vertical"]:
+            return self.getSimplePlate(back, getText)
+
+    def getSimplePlate(self, back=True, getText=False):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
         Designed to be flat up against the wall, with everything offset to avoid the wall and picture rail
@@ -2242,15 +2430,24 @@ class ClockPlates:
 
 
 
-        weightOnSide = 1 if self.goingTrain.chainWheels % 2 == 0 else -1
+
+
+
 
         if self.style == "round":
             screwHoleY = chainWheelR*1.4
         elif self.style == "vertical":
             screwHoleY = self.bearingPositions[-3][1] + (self.bearingPositions[-2][1] - self.bearingPositions[-3][1])*0.6
 
-        # line up the hole with the big heavy weight
-        screwHolePos = (weightOnSide*self.goingTrain.chainWheel.diameter/2, screwHoleY)
+        chainX = 0
+
+        weightOnSide = 1 if self.weightOnRightSide else -1
+        if self.heavy:
+            # line up the hole with the big heavy weight
+            chainX = weightOnSide*self.goingTrain.poweredWheel.diameter/2
+
+        #hole for hanging on the wall
+        screwHolePos = (chainX , screwHoleY)
 
         #find the Y position of the bottom of the top pillar
         topY = self.bearingPositions[0][1]
@@ -2335,7 +2532,7 @@ class ClockPlates:
 
             plate = self.addScrewHole(plate, screwHolePos , backThick=5, screwHeadD=11)
 
-            chainHoles = self.getChainHoles()
+            chainHoles = self.getChainHoles(absoluteZ=True)
             plate = plate.cut(chainHoles)
         else:
            plate = self.frontAdditionsToPlate(plate)
@@ -2348,7 +2545,7 @@ class ClockPlates:
         embeddedNutHeight = self.plateThick + self.plateDistance/2
         for fixingPos in fixingPositions:
             #embedded nuts!
-            plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,0.2), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], embeddedNutHeight)))
+            plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], embeddedNutHeight)))
 
         return plate
 
@@ -2356,12 +2553,27 @@ class ClockPlates:
         '''
         if absolute Z is false, these are positioned above the base plateThick
         '''
-        chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - self.goingTrain.chainWheel.getHeight() / 2 + self.wobble/2
+        if self.goingTrain.usingChain:
+            chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
+            leftZ = chainZ
+            rightZ = chainZ
+        else:
+            #cord
+            bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
+            topZ = bottomZ +  self.goingTrain.cordWheel.thick - self.goingTrain.cordWheel.capThick
 
-        if not absoluteZ:
-            chainZ += self.plateThick
+            if self.weightOnRightSide:
+                rightZ = bottomZ
+                leftZ = topZ
+            else:
+                rightZ = topZ
+                leftZ = bottomZ
 
-        chainHoles = cq.Workplane("XZ").pushPoints([(self.goingTrain.chainWheel.diameter / 2, chainZ), (-self.goingTrain.chainWheel.diameter / 2, chainZ)]).circle(self.chainHoleD / 2).extrude(1000)
+        if absoluteZ:
+            leftZ += self.plateThick
+            rightZ += self.plateThick
+
+        chainHoles = cq.Workplane("XZ").pushPoints([(self.goingTrain.poweredWheel.diameter / 2, rightZ), (-self.goingTrain.poweredWheel.diameter / 2, leftZ)]).circle(self.chainHoleD / 2).extrude(1000)
 
         return chainHoles
 
@@ -3291,7 +3503,7 @@ class Weight:
         weight = weight.faces(">Z").workplane().moveTo(corner[0], corner[1]).radiusArc((corner[0], -corner[1]), r - 0.001).close().mirrorY().extrude(r)
 
 
-        nutD = getNutContainingDiameter(self.boltMetricSize, 0.2)
+        nutD = getNutContainingDiameter(self.boltMetricSize, NUT_WIGGLE_ROOM)
         nutHeight = getNutHeight(self.boltMetricSize) + 0.5
         headHeight = getScrewHeadHeight(self.boltMetricSize) + 0.5
         headD = getScrewHeadDiameter(self.boltMetricSize) + 0.5
@@ -3440,12 +3652,17 @@ class Assembly:
             clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a+self.goingTrain.chainWheels]).translate((0,0,self.plates.plateThick + self.plates.wobble/2)))
 
         #the chain wheel parts
-        clock = clock.add(self.goingTrain.chainWheelWithRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
+        if self.goingTrain.usingChain:
+            clock = clock.add(self.goingTrain.chainWheelWithRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
 
-        chainWheelTop =  self.goingTrain.chainWheelHalf.mirror().translate((0,0,self.goingTrain.chainWheel.getHeight()/2))
+            chainWheelTop =  self.goingTrain.chainWheelHalf.mirror().translate((0,0,self.goingTrain.chainWheel.getHeight()/2))
 
-        clock = clock.add(
-           chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + self.goingTrain.chainWheel.getHeight()/2 + self.goingTrain.ratchet.thick)))
+            clock = clock.add(
+               chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + self.goingTrain.chainWheel.getHeight()/2 + self.goingTrain.ratchet.thick)))
+
+        else:
+            clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
+
 
         anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
 
@@ -3704,3 +3921,16 @@ class WeightShell:
 # show_object(shell.getShell())
 #
 # show_object(shell.getShell(False).translate((100,0,0)))
+
+# ratchet = Ratchet()
+# cordWheel = CordWheel(23,50, ratchet=ratchet)
+#
+#
+#
+# show_object(cordWheel.getAssembled())
+
+# show_object(cordWheel.getClickWheelForCord(ratchet))
+# show_object(cordWheel.getCap().translate((0,0,ratchet.thick)))
+# show_object(cordWheel.getSegment(False).mirror().translate((0,0,cordWheel.thick)).translate((0,0,ratchet.thick + cordWheel.capThick)))
+# show_object(cordWheel.getSegment(True).mirror().translate((0,0,cordWheel.thick)).translate((0,0,ratchet.thick + cordWheel.capThick + cordWheel.thick)))
+
