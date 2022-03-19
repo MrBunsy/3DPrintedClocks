@@ -3199,6 +3199,16 @@ class Hands:
 
         return nut
 
+    def cutFixing(self, hand, hour):
+        if not hour and self.minuteFixing == "rectangle":
+            hand = hand.moveTo(0, 0).rect(self.minuteFixing_d1, self.minuteFixing_d2).cutThruAll()
+        elif hour and self.hourFixing == "circle":
+            hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()
+        else:
+            raise ValueError("Combination not supported yet")
+
+        return hand
+
     def getHand(self, hour=True, outline=False):
         '''
         if hour is true this ist he hour hand
@@ -3216,7 +3226,6 @@ class Hands:
 
 
         hand = cq.Workplane("XY").tag("base").circle(radius=self.base_r).extrude(self.thick)
-        # hand = hand.workplaneFromTagged("base").moveTo(0,length/2).rect(length*0.1,length).extrude(ratchetThick)
 
         if self.style == "simple":
             width = self.length * 0.1
@@ -3298,52 +3307,63 @@ class Hands:
         if self.fixing_offset != 0:
             hand = hand.workplaneFromTagged("base").transformed(rotate=(0, 0,self. fixing_offset))
 
-        if not hour and self.minuteFixing == "rectangle":
-            hand = hand.moveTo(0, 0).rect(self.minuteFixing_d1, self.minuteFixing_d2).cutThruAll()
-        elif hour and self.hourFixing == "circle":
-            hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()
-        else:
-            raise ValueError("Combination not supported yet")
+        hand = self.cutFixing(hand, hour)
 
         if self.outline > 0:
-            if outline:
+            if self.style != "cuckoo":
+                if outline:
+                    #use a negative shell to get a thick line just inside the edge of the hand
 
-                #this doesn't work for fancier shapes - I think it can't cope if there isn't space to extrude the shell without it overlapping itself?
-                #works fine for simple hands, not for cuckoo hands
+                    #this doesn't work for fancier shapes - I think it can't cope if there isn't space to extrude the shell without it overlapping itself?
+                    #works fine for simple hands, not for cuckoo hands
 
-                # mould = cq.Workplane("XY").rect(self.length*4,self.length*4).extrude(self.thick).cut(hand)
-                # #try and make entirely solid so the shell stuff actually works in all cases
-                # hand = cq.Workplane("XY").rect(self.length*3,self.length*3).extrude(self.thick).cut(mould)
-                # return hand
-                # return hand
-                # hand = hand.combine(clean=True)
-                # return hand
-                # hand = hand.shell(self.outline).shell(-self.outline)
-                # return hand
-                #thinner internal bit
-                shell = hand.shell(-self.outline).translate((0,0,-self.outline))
-                # return shell
-                # return mould
-                # shell = mould.shell(-self.outline)
+                    shell = hand.shell(-self.outline).translate((0,0,-self.outline))
 
-                notOutline = hand.cut(shell)
-                # return notOutline
-                #chop off the mess above the first few layers that we want
+                    notOutline = hand.cut(shell)
+                    # return notOutline
+                    #chop off the mess above the first few layers that we want
 
-                bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,self.outlineThick))
+                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,self.outlineThick))
 
 
 
-                if self.outlineSameAsBody:
-                    notOutline = notOutline.cut(bigSlab)
+                    if self.outlineSameAsBody:
+                        notOutline = notOutline.cut(bigSlab)
+                    else:
+                        notOutline = notOutline.add(bigSlab)
+
+                    hand = hand.cut(notOutline)
+
                 else:
-                    notOutline = notOutline.add(bigSlab)
-
-                hand = hand.cut(notOutline)
-
+                    #chop out the outline from the shape
+                    hand = hand.cut(self.getHand(hour, outline=True))
             else:
-                #chop out the outline from the shape
-                hand = hand.cut(self.getHand(hour, outline=True))
+                #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
+                if outline:
+                    shell = hand.shell(self.outline)
+
+                    bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick)
+
+                    outline = shell.intersect(bigSlab)
+                    outline = self.cutFixing(outline, hour)
+                    return outline
+                else:
+                    #make the whole hand bigger by the outline amount
+                    shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.thick-self.outlineThick).translate((0,0,self.outlineThick)))
+
+
+
+                    # shell2 = hand.shell(self.outline+0.1).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick))
+
+                    # return shell2
+                    # hand = shell
+                    hand = hand.add(shell)
+                    hand = self.cutFixing(hand, hour)
+                    return hand
+                    # shell2 = self.cutFixing(shell2, hour)
+                    #
+                    # hand = hand.cut(shell2)
+
 
         return hand
 
@@ -3658,9 +3678,9 @@ class Assembly:
 
         #the chain wheel parts
         if self.goingTrain.usingChain:
-            clock = clock.add(self.goingTrain.chainWheelWithRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
+            clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
 
-            chainWheelTop =  self.goingTrain.chainWheelHalf.mirror().translate((0,0,self.goingTrain.chainWheel.getHeight()/2))
+            chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,self.goingTrain.chainWheel.getHeight()/2))
 
             clock = clock.add(
                chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + self.goingTrain.chainWheel.getHeight()/2 + self.goingTrain.ratchet.thick)))
@@ -3873,30 +3893,30 @@ class WeightShell:
 # #
 # #
 
-### ============FULL CLOCK ============
-# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False)#,chainWheels=1, hours=180)
-train.calculateRatios()
-# train.setRatios([[64, 12], [63, 12], [60, 14]])
-# train.setChainWheelRatio([74, 11])
-# train.genChainWheels(ratchetThick=5)
-pendulumSticksOut=25
-# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
-train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-motionWorks = MotionWorks(minuteHandHolderHeight=30)
-#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
-
-
-#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="vertical")#, heavy=True)
-
-plate = plates.getPlate(True)
+# ### ============FULL CLOCK ============
+# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+# train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False)#,chainWheels=1, hours=180)
+# train.calculateRatios()
+# # train.setRatios([[64, 12], [63, 12], [60, 14]])
+# # train.setChainWheelRatio([74, 11])
+# # train.genChainWheels(ratchetThick=5)
+# pendulumSticksOut=25
+# # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+# train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
+# train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+# motionWorks = MotionWorks(minuteHandHolderHeight=30)
+# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
 #
-show_object(plate)
-
-show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+#
+# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="vertical")#, heavy=True)
+#
+# plate = plates.getPlate(True)
+# #
+# show_object(plate)
+#
+# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
 # #
 # # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
 # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
@@ -3916,10 +3936,10 @@ show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.
 #
 # #
 # #
-# # show_object(plates.goingTrain.getArbour(0).getShape(False).translate((0,200,0)))
-# # hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
-# # show_object(hands.getHand(False,True))
-# # show_object(hands.getHand(False,False).translate((50,0,0)))
+# show_object(plates.goingTrain.getArbour(0).getShape(False).translate((0,200,0)))
+hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
+show_object(hands.getHand(True,True))
+show_object(hands.getHand(True,False).translate((50,0,0)))
 
 #
 # shell = WeightShell(45,220, twoParts=True, holeD=5)
