@@ -12,7 +12,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_04"
+clockName="wall_clock_04b"
 clockOutDir="out"
 
 # crutchLength=100
@@ -25,7 +25,8 @@ train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=
 # train.setRatios([[81, 12], [80, 9]])
 train.setRatios([[108, 10], [80, 9]])
 # 61 links/ft 1-day regula chain. Size seems about right, trying reducing tolerance
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+# train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+train.genCordWheels(ratchetThick=4, cordThick=2, cordCoilThick=11)
 
 train.printInfo()
 '''

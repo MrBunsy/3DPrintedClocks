@@ -28,7 +28,7 @@ train.setChainWheelRatio([74, 11])
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=10)
+train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
 
 train.printInfo()
 

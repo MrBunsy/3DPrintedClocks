@@ -1569,7 +1569,7 @@ class CordWheel:
         #thickness of one segment
         self.thick=thick
         self.useKey=useKey
-        self.capThick=1
+        self.capThick=2
         self.capDiameter = capDiameter
         self.rodD=rodD
         self.screwThreadMetric=screwThreadMetric
@@ -1582,6 +1582,11 @@ class CordWheel:
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
         self.clickWheelExtra=LAYER_THICK*2
         self.ratchet = ratchet
+
+        minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
+        if self.useKey:
+            minScrewLength -= self.thick
+        print("cord wheel screw length between", minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
 
     def getSegment(self, front=True):
         #if front segment, the holes for screws/nuts will be different
@@ -1652,10 +1657,7 @@ class CordWheel:
         model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
         model = model.add(self.getSegment(True).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.capThick)))
 
-        minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric)+LAYER_THICK) + self.clickWheelExtra + self.capThick*2 + self.thick*1.5
-        if self.useKey:
-            minScrewLength -= self.thick
-        print("cord wheel screw length between", minScrewLength, minScrewLength + self.thick/2 + self.capThick)
+
 
         return model
 
@@ -2425,7 +2427,10 @@ class ClockPlates:
             plate = plate.moveTo(self.bearingPositions[0][0]-holderWide/2, self.bearingPositions[0][1] - chainWheelR).line(holderWide,0).\
                 lineTo(self.bearingPositions[-1][0]+holderWide/2, self.bearingPositions[-1][1]).line(-holderWide,0).close().extrude(self.plateThick)
 
-        bottomPillarR= self.plateDistance/2
+        #original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
+        #so instead, make it just big enough to contain the holes for the chains/cord
+        # bottomPillarR= self.plateDistance/2
+        bottomPillarR = (self.goingTrain.poweredWheel.diameter + self.chainHoleD*1.5)/2
         topPillarR = holderWide/2
 
 
@@ -2509,18 +2514,18 @@ class ClockPlates:
         if back:
             #extra bit around the screwhole
             #r = self.goingTrain.chainWheel.diameter*1.25
-            plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]).circle(holderWide).extrude(self.plateThick)
+            plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]).circle(holderWide*0.75).extrude(self.plateThick)
 
             #the pillars
-            plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.9999).extrude(self.plateThick + self.plateDistance)
-            plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.9999).extrude(self.plateThick + self.plateDistance)
+            plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.999).extrude(self.plateThick + self.plateDistance)
+            plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.999).extrude(self.plateThick + self.plateDistance)
 
             textMultiMaterial = cq.Workplane("XY")
-            textSize = bottomPillarR * 0.5
+            textSize = topPillarR * 0.9
             textY = (self.bearingPositions[0][1] + fixingPositions[2][1])/2
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.7, textY), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.6, textY), textSize)
 
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.8, textY), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.7, textY), textSize)
 
             if getText:
                 return textMultiMaterial
@@ -3868,29 +3873,30 @@ class WeightShell:
 # #
 # #
 
-# ### ============FULL CLOCK ============
-# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False,chainWheels=0)#, hours=180)
-# train.calculateRatios()
-# # train.setRatios([[64, 12], [63, 12], [60, 14]])
-# # train.setChainWheelRatio([74, 11])
-# # train.genChainWheels(ratchetThick=5)
-# pendulumSticksOut=25
+### ============FULL CLOCK ============
+# # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
+train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False)#,chainWheels=1, hours=180)
+train.calculateRatios()
+# train.setRatios([[64, 12], [63, 12], [60, 14]])
+# train.setChainWheelRatio([74, 11])
+# train.genChainWheels(ratchetThick=5)
+pendulumSticksOut=25
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-# train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-# motionWorks = MotionWorks(minuteHandHolderHeight=30)
-# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
+train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+motionWorks = MotionWorks(minuteHandHolderHeight=30)
+#trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
+
+
+#printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
+plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="vertical")#, heavy=True)
+
+plate = plates.getPlate(True)
 #
-#
-# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
-#
-# plate = plates.getPlate(True)
-# #
-# show_object(plate)
-#
-# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
+show_object(plate)
+
+show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
 # #
 # # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
 # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
