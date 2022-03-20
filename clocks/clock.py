@@ -199,7 +199,7 @@ class Gear:
             # .close().cutThruAll()
         return gear
 
-    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2):
+    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, innerRadiusForStyle=-1):
         self.iswheel = isWheel
         self.teeth = teeth
         self.module=module
@@ -212,6 +212,10 @@ class Gear:
         self.toothFactor = toothFactor
 
         self.pitch_diameter = self.module * self.teeth
+
+        #purely for the fancy styling, is there anyhting in the centre (like a pinion or ratchet) to avoid?
+        self.innerRadiusForStyle=innerRadiusForStyle
+
         # # via practical addendum factor
         # self.addendum_height = 0.95 * addendum_factor * module
 
@@ -235,7 +239,7 @@ class Gear:
                 rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
 
                 armThick = rimThick
-                gear = Gear.cutHACStyle(gear, armThick, rimRadius)
+                gear = Gear.cutHACStyle(gear, armThick, rimRadius, innerRadius=self.innerRadiusForStyle)
 
 
 
@@ -440,6 +444,9 @@ class Arbour:
 
         if self.getType() == "Unknown":
             raise ValueError("Not a valid arbour")
+
+        if self.getType() == "ChainWheel":
+            self.wheel.innerRadiusForStyle=self.ratchet.outsideDiameter*0.6
 
     def setNutSpace(self, nutMetricSize=3):
         '''
@@ -3944,20 +3951,21 @@ class WeightShell:
 # show_object(hands.getHandNut())
 # hands.outputSTLs(clockName, clockOutDir)
 
-# #drop of 1 and lift of 3 has good pallet angles with 42 teeth
-drop =1.5
-lift =3
-lock=1.5
-diameter = 64.44433859295404#61.454842805344896
-escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=diameter, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
-# # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
-# #                              clockwiseFromPinionSide=False, type="deadbeat")
-#
-wheel_angle = -6.75-drop#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-anchor_angle = lift/2+lock/2+4#lift/2 + lock/2
-#
-show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
-show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
+##### =========== escapement testing ======================
+# # #drop of 1 and lift of 3 has good pallet angles with 42 teeth
+# drop =1.5
+# lift =3
+# lock=1.5
+# diameter = 64.44433859295404#61.454842805344896
+# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=diameter, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+# # # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
+# # #                              clockwiseFromPinionSide=False, type="deadbeat")
+# #
+# wheel_angle = -6.75-drop#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
+# anchor_angle = lift/2+lock/2+4#lift/2 + lock/2
+# #
+# show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
+# show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
 #
 # anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
 # # show_object(escapement.getAnchor3D())
@@ -4011,12 +4019,12 @@ show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
 # #
 # # show_object(plates.goingTrain.getArbour(0).getShape(False).translate((0,200,0)))
 
-
-
-hands = Hands(style="simple_rounded",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
-show_object(hands.getHand(True,True))
-show_object(hands.getHand(True,False).translate((50,0,0)))
-show_object(hands.getHand(hour=False,second=True).translate((-50,0,0)))
+# ============ hands ==================
+#
+# hands = Hands(style="simple_rounded",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
+# show_object(hands.getHand(True,True))
+# show_object(hands.getHand(True,False).translate((50,0,0)))
+# show_object(hands.getHand(hour=False,second=True).translate((-50,0,0)))
 
 #
 # shell = WeightShell(45,220, twoParts=True, holeD=5)
