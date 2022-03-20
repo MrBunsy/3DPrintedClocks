@@ -169,13 +169,19 @@ class Line:
 
 class Gear:
     @staticmethod
-    def cutHACStyle(gear,armThick, rimRadius):
+    def cutHACStyle(gear, armThick, rimRadius, innerRadius=-1):
         # vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
         armAngle = armThick / rimRadius
-        # cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
-        innerRadius = rimRadius * 0.7
-        # TODO might want to adjust this based on size of pinion attached to this wheel
-        innerSagitta = rimRadius * 0.325
+        # # cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
+        # innerRadius = rimRadius * 0.7
+
+        if innerRadius < 0:
+            #default, looks fine, works in most situations
+            innerSagitta = rimRadius * 0.325
+        else:
+            #for more tightly controlled wheels were we need a certain amount of space in the centre
+            #note, this is a bodge, I really need to calculate the sagitta of the outer circle so I can correctly calculate the desired inner sagitta
+            innerSagitta = (rimRadius - innerRadius)*0.675
 
         arms = 5
         #line it up so there's a nice arm a the bottom
@@ -530,17 +536,18 @@ class Arbour:
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23, escapement=None):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
         fourth_wheel: if True there will be four wheels from minute hand to the escape wheel
-        escapement_teeth: number of teeth on the escape wheel
+        escapement_teeth: number of teeth on the escape wheel DEPRECATED, provide entire escapement instead
         chainWheels: if 0 the minute wheel is also the chain wheel, if >0, this many gears between the minute wheel and chain wheel (say for 8 day clocks)
         hours: intended hours to run for (dictates diameter of chain wheel)
         chainAtBack: Where the chain and ratchet mechanism should go relative to the minute wheel
         maxChainDrop: maximum length of chain drop to meet hours required, in mm
         max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
+        escapement: Escapement object. If not provided, falls back to defaults with esacpement_teeth
 
 
         Grand plan: auto generate gear ratios.
@@ -577,12 +584,16 @@ class GoingTrain:
         #the last wheel is the escapement
         self.wheels = 4 if fourth_wheel else 3
 
-        self.escapement_time = pendulum_period * escapement_teeth
-        self.escapement_teeth = escapement_teeth
-        self.escapement_lift = 4
-        self.escapement_drop = 2
-        self.escapement_lock = 2
-        self.escapement_type = "deadbeat"
+        self.escapement=escapement
+        if escapement is None:
+            self.escapement = Escapement(teeth=escapement_teeth)
+        #
+        self.escapement_time = pendulum_period * self.escapement.teeth
+        # self.escapement_teeth = escapement_teeth
+        # self.escapement_lift = 4
+        # self.escapement_drop = 2
+        # self.escapement_lock = 2
+        # self.escapement_type = "deadbeat"
 
         # self.min_pinion_teeth=min_pinion_teeth
         # self.max_wheel_teeth=max_wheel_teeth
@@ -590,15 +601,15 @@ class GoingTrain:
         # self.wheel_min_teeth = wheel_min_teeth
         self.trains=[]
 
-    def setEscapementDetails(self, lift = None, drop = None, lock=None, type=None):
-        if lift is not None:
-            self.lift = lift
-        if drop is not None:
-            self.drop = drop
-        if lock is not None:
-            self.lock = lock
-        if type is not None:
-            self.type = type
+    # def setEscapementDetails(self, lift = None, drop = None, lock=None, type=None):
+    #     if lift is not None:
+    #         self.lift = lift
+    #     if drop is not None:
+    #         self.drop = drop
+    #     if lock is not None:
+    #         self.lock = lock
+    #     if type is not None:
+    #         self.type = type
 
     def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
         '''
@@ -684,7 +695,7 @@ class GoingTrain:
                 if p > 0 and size > lastSize*0.9:
                     #this wheel is unlikely to physically fit
                     fits=False
-                    break;
+                    break
                 lastSize = size
             totalTime = totalRatio*self.escapement_time
             error = 60*60-totalTime
@@ -847,7 +858,7 @@ class GoingTrain:
         print(self.trains[0])
 
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
-        print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement_teeth))
+        print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
         chainRatio = 1
         if self.chainWheels > 0:
@@ -896,7 +907,7 @@ class GoingTrain:
 
         # print(module_sizes)
         #make the escape wheel as large as possible, by default
-        escapeWheelDiameter = pairs[len(pairs)-1].wheel.getMaxRadius()*2 - pairs[len(pairs)-1].pinion.getMaxRadius() - 5
+        escapeWheelDiameter = (pairs[len(pairs)-1].centre_distance - pairs[len(pairs)-1].pinion.getMaxRadius() - 3)*2
 
         #we might choose to override this
         if escapeWheelMaxD > 1 and escapeWheelDiameter > escapeWheelMaxD:
@@ -928,7 +939,10 @@ class GoingTrain:
         pinionAtFront = chainWheelImaginaryPinionAtFront
 
         print("Escape wheel pinion at front: {}, clockwise (from front) {}, clockwise from pinion side: {} ".format(escapeWheelPinionAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPinionSide))
-        self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide)
+        #escapment is now provided or configured in the constructor
+        # self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide)
+        self.escapement.setDiameter(escapeWheelDiameter)
+        self.escapement.clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide
         self.chainWheelArbours=[]
         if self.chainWheels > 0:
             # assuming one chain wheel for now
@@ -1056,7 +1070,7 @@ def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
     return arbour
 
 class Escapement:
-    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, type="recoil", lift=4, drop=4, run=10, lock=2, clockwiseFromPinionSide=True):
+    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, type="recoil", lift=4, drop=4, run=10, lock=2, clockwiseFromPinionSide=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
         Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
         Also from reading of The Modern Clock
@@ -1092,30 +1106,20 @@ class Escapement:
         self.lock_deg = lock
         self.lock=degToRad(lock)
 
+        #to fine tune the teeth, the defaults work well with 30 teeth
+        self.toothTipAngle=degToRad(toothTipAngle)
+        self.toothBaseAngle=degToRad(toothBaseAngle)
+
         self.clockwiseFromPinionSide=clockwiseFromPinionSide
         self.run_deg = run
         self.run = degToRad(run)
 
         self.teeth = teeth
-        self.diameter=diameter
-        # self.anchourDiameter=anchourDiameter
+        self.toothHeightFraction = toothHeightFraction
 
-        self.innerDiameter = diameter * 0.8
 
-        self.radius = self.diameter/2
-
-        self.innerRadius = self.innerDiameter/2
-
-        self.toothHeight = self.diameter/2 - self.innerRadius
         #it can't print a sharp tip, instead of the previous bodge with a different height for printing and letting the slicer do it, do it ourselves
         self.toothTipWidth=1
-        self.printedToothHeight = self.toothHeight
-        #*8.36/7 worked for a diameter of about 82mm, it's not enough at about 60mm
-        # self.printedToothHeight = self.toothHeight+1.4#*8.36/7
-        # print("tooth height", self.toothHeight)
-
-
-        #a tooth height of 8.36 gets printed to about 7mm
 
         self.type = type
 
@@ -1128,14 +1132,34 @@ class Escapement:
         else:
             self.anchorTeeth = anchorTeeth
 
-        # self.anchorTeeth = floor(self.teeth / 4)  + 0.5
-
         # angle that encompases the teeth the anchor encompases
         self.wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth
 
+        #calculates things like tooth height from diameter
+        self.setDiameter(diameter)
 
 
-        self.toothAngle = math.pi*2 / self.teeth
+    def setDiameter(self, diameter):
+        self.diameter = diameter
+        # self.anchourDiameter=anchourDiameter
+
+        self.innerDiameter = diameter * (1 - self.toothHeightFraction)
+
+        self.radius = self.diameter / 2
+
+        self.innerRadius = self.innerDiameter / 2
+
+        self.toothHeight = self.diameter / 2 - self.innerRadius
+
+        self.printedToothHeight = self.toothHeight
+        # *8.36/7 worked for a diameter of about 82mm, it's not enough at about 60mm
+        # self.printedToothHeight = self.toothHeight+1.4#*8.36/7
+        # print("tooth height", self.toothHeight)
+
+        # a tooth height of 8.36 gets printed to about 7mm
+
+        # angle on teh wheel between teeth, not angle the tooth leans at
+        self.toothAngle = math.pi * 2 / self.teeth
 
         # height from centre of escape wheel to anchor pinion - assuming this is at the point the tangents (from the wheelangle on the escape wheel teeth) meet
         anchor_centre_distance = self.radius / math.cos(self.wheelAngle / 2)
@@ -1256,7 +1280,9 @@ class Escapement:
         return anchor
 
     def getAnchor2DOld(self):
-
+        '''
+        Worked, but more by fluke than design, didn't properly take into account lift, drop and run
+        '''
         anchor = cq.Workplane("XY").tag("anchorbase")
 
         centreRadius = self.diameter * 0.09
@@ -1443,9 +1469,11 @@ class Escapement:
             toothBaseAngle = -math.atan(math.tan(toothAngle)*self.toothHeight/self.innerRadius)
         else:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
-            toothTipAngle = -math.pi*0.05
-            toothBaseAngle = -math.pi*0.03
+            toothTipAngle = -self.toothTipAngle#-math.pi*0.05
+            toothBaseAngle = -self.toothBaseAngle#-math.pi*0.03
             toothTipArcAngle*=-1
+
+        print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
 
         wheel = cq.Workplane("XY").moveTo(self.innerRadius, 0)
 
@@ -1590,7 +1618,7 @@ class CordWheel:
     def getSegment(self, front=True):
         #if front segment, the holes for screws/nuts will be different
 
-        segment = cq.Workplane("XY").circle(self.capDiameter/2).extrude(self.capThick).faces(">Z").workplane().circle(self.diameter/2).extrude(self.thick)
+        segment = self.getCap().faces(">Z").workplane().circle(self.diameter/2).extrude(self.thick)
 
         #hole for the rod
         segment = segment.faces(">Z").circle(self.rodD/2).cutThruAll()
@@ -1621,6 +1649,8 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
+
+        cap = Gear.cutHACStyle(cap,self.rodD*0.75,self.capDiameter/2-self.rodD*0.75, self.diameter/2 + self.cordThick)
 
         return cap
 
@@ -2510,11 +2540,16 @@ class ClockPlates:
             .lineTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR) \
             .lineTo(topOfPlate[0] + topPillarR, topOfPlate[1]).close().extrude(self.plateThick)
 
+        # #for the screwhole
+        # screwHeadD = 9
+        # screwBodyD = 6
+        # slotLength = 7
+
         if back:
             #extra bit around the screwhole
             #r = self.goingTrain.chainWheel.diameter*1.25
-            plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]).circle(holderWide*0.75).extrude(self.plateThick)
-
+            # plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]-7-11/2).circle(holderWide*0.75).extrude(self.plateThick)
+            plate = self.addScrewHole(plate, screwHolePos, backThick=5, screwHeadD=11, addExtraSupport=True)
             #the pillars
             plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.999).extrude(self.plateThick + self.plateDistance)
             plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.999).extrude(self.plateThick + self.plateDistance)
@@ -2534,7 +2569,7 @@ class ClockPlates:
 
         if back:
 
-            plate = self.addScrewHole(plate, screwHolePos , backThick=5, screwHeadD=11)
+
 
             chainHoles = self.getChainHoles(absoluteZ=True)
             plate = plate.cut(chainHoles)
@@ -2621,7 +2656,7 @@ class ClockPlates:
                 plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
         return plate
 
-    def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1):
+    def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
         '''
         screwholePos is the position the clock will hang from
         this is an upside-down-lollypop shape
@@ -2637,6 +2672,11 @@ class ClockPlates:
         |     |  circle of screwHeadD diameter
         \_____/
         '''
+
+        if addExtraSupport:
+            #a circle around the big hole to strengthen the plate
+            #assumes plate has been tagged
+            plate = plate.workplaneFromTagged("base").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD*1.25).extrude(self.plateThick)
 
         #big hole
         plate = plate.faces(">Z").workplane().tag("top").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD / 2).cutThruAll()
@@ -3873,18 +3913,19 @@ class WeightShell:
 # hands.outputSTLs(clockName, clockOutDir)
 
 # #drop of 1 and lift of 3 has good pallet angles with 42 teeth
-# drop =2
-# lift =4
-# lock=2
-# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=61.454842805344896, teeth=30, lock=lock, anchorTeeth=None)
+drop =1.5
+lift =3
+lock=1.5
+diameter = 64.44433859295404#61.454842805344896
+escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=diameter, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 # # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
 # #                              clockwiseFromPinionSide=False, type="deadbeat")
 #
-# wheel_angle = 0#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-# anchor_angle = 0#lift/2 + lock/2
+wheel_angle = -6.75-drop#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
+anchor_angle = lift/2+lock/2+4#lift/2 + lock/2
 #
-# show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
-# show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
+show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
+show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
 #
 # anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
 # # show_object(escapement.getAnchor3D())
@@ -3936,10 +3977,13 @@ class WeightShell:
 #
 # #
 # #
-# show_object(plates.goingTrain.getArbour(0).getShape(False).translate((0,200,0)))
-hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
-show_object(hands.getHand(True,True))
-show_object(hands.getHand(True,False).translate((50,0,0)))
+# # show_object(plates.goingTrain.getArbour(0).getShape(False).translate((0,200,0)))
+
+
+
+# hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
+# show_object(hands.getHand(True,True))
+# show_object(hands.getHand(True,False).translate((50,0,0)))
 
 #
 # shell = WeightShell(45,220, twoParts=True, holeD=5)
@@ -3954,9 +3998,9 @@ show_object(hands.getHand(True,False).translate((50,0,0)))
 #
 #
 # show_object(cordWheel.getAssembled())
-
+#
 # show_object(cordWheel.getClickWheelForCord(ratchet))
 # show_object(cordWheel.getCap().translate((0,0,ratchet.thick)))
 # show_object(cordWheel.getSegment(False).mirror().translate((0,0,cordWheel.thick)).translate((0,0,ratchet.thick + cordWheel.capThick)))
 # show_object(cordWheel.getSegment(True).mirror().translate((0,0,cordWheel.thick)).translate((0,0,ratchet.thick + cordWheel.capThick + cordWheel.thick)))
-
+#
