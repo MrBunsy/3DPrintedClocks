@@ -51,7 +51,7 @@ dial = clock.Dial(120)
 dial.outputSTLs(clockName, clockOutDir)
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round", heavy=True)
 plates.outputSTLs(clockName, clockOutDir)
 
 # hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)

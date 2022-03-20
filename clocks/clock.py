@@ -522,14 +522,15 @@ class Arbour:
 
         if not forPrinting and not self.pinionOnTop:
             #make it the right way around for placing in a model
-            shape = shape.mirror().translate((0,0,self.getTotalThickness()))
+            #rotate not mirror! otherwise the escape wheels end up backwards
+            shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.getTotalThickness()))
 
 
         return shape
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, scapeAtFront=False, maxChainDrop=1800, max_chain_wheel_d=23):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -538,7 +539,6 @@ class GoingTrain:
         chainWheels: if 0 the minute wheel is also the chain wheel, if >0, this many gears between the minute wheel and chain wheel (say for 8 day clocks)
         hours: intended hours to run for (dictates diameter of chain wheel)
         chainAtBack: Where the chain and ratchet mechanism should go relative to the minute wheel
-        scapeAtFront: Where the escape wheel should go relative to its pinion - so the teeth face the right direction.
         maxChainDrop: maximum length of chain drop to meet hours required, in mm
         max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
 
@@ -565,7 +565,6 @@ class GoingTrain:
         #in metres
         self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
 
-        self.scapeAtFront = scapeAtFront
         self.chainAtBack = chainAtBack
 
         #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
@@ -957,7 +956,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
+                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack)
                 else:
                     #just a normal gear
                     arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
@@ -2390,7 +2389,7 @@ class ClockPlates:
         else:
             self.chainHoleD = self.goingTrain.cordWheel.cordThick*3
 
-        self.weightOnRightSide = self.goingTrain.chainWheels % 2 == 0
+        self.weightOnRightSide = self.goingTrain.isWeightOnTheRight()
 
 
     def getPlate(self, back=True, getText=False):
@@ -3672,18 +3671,19 @@ class Assembly:
 
         clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.plateThick)))
 
-        for a in range(-self.goingTrain.chainWheels, self.goingTrain.wheels):
-            arbour = self.goingTrain.getArbour(a)
-            clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a+self.goingTrain.chainWheels]).translate((0,0,self.plates.plateThick + self.plates.wobble/2)))
+        #the wheels
+        for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels):
+            arbour = self.goingTrain.getArbourWithConventionalNaming(a)
+            clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.plateThick + self.plates.wobble/2)))
 
         #the chain wheel parts
         if self.goingTrain.usingChain:
             clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
 
-            chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,self.goingTrain.chainWheel.getHeight()/2))
+            chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,(self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2))
 
             clock = clock.add(
-               chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + self.goingTrain.chainWheel.getHeight()/2 + self.goingTrain.ratchet.thick)))
+               chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
 
         else:
             clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
