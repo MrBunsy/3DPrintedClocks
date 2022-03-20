@@ -3178,7 +3178,7 @@ class Pendulum:
 
 
 class Hands:
-    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, length=25, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
+    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
         '''
 
         '''
@@ -3188,13 +3188,14 @@ class Hands:
         #how much to rotate the minute fixing by
         self.fixing_offset=fixing_offset
         self.length = length
-        # self.width = length * 0.3
-        # self.end_d = self.width * 0.1
         self.style=style
-        #for the hour hand,
         self.minuteFixing=minuteFixing
         self.minuteFixing_d1 = minuteFixing_d1
         self.minuteFixing_d2 = minuteFixing_d2
+        self.secondFixing=secondFixing
+        self.secondFixing_d = secondFixing_d
+        self.secondFixing_thick = self.thick
+        self.secondLength= secondLength
         #Add a different coloured outline that is this many mm ratchetThick
         self.outline = outline
         #if true the outline will be part of the same STL as the main body, if false, it'll just be a small sliver
@@ -3238,21 +3239,32 @@ class Hands:
 
         return nut
 
-    def cutFixing(self, hand, hour):
+    def cutFixing(self, hand, hour, second=False):
+        if second and self.secondFixing == "rod":
+            #second hand, assuming threaded onto a threaded rod
+            hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + self.thick)
+            hand = hand.moveTo(0, 0).circle(self.secondFixing_d/2).cutThruAll()
+            return hand
+
         if not hour and self.minuteFixing == "rectangle":
+            #minute hand, assuming square or rectangle
             hand = hand.moveTo(0, 0).rect(self.minuteFixing_d1, self.minuteFixing_d2).cutThruAll()
         elif hour and self.hourFixing == "circle":
+            #hour hand, assuming circular friction fit
             hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()
         else:
+            #major TODO would be a collet for the minute hand
             raise ValueError("Combination not supported yet")
 
         return hand
 
-    def getHand(self, hour=True, outline=False):
+    def getHand(self, hour=True, outline=False, second=False):
         '''
         if hour is true this ist he hour hand
         if outline is true, this is just the bit of the shape that should be printed in a different colour
+        if second is true, this overrides hour and this is the second hand
         '''
+        base_r = self.base_r
         length = self.length
         # width = self.length * 0.3
         if hour:
@@ -3261,16 +3273,20 @@ class Hands:
             #     width = width * 1.2
             # if self.style == "square":
             #     width = width * 1.75
+        if second:
+            length = self.secondLength
+            base_r = self.secondLength*0.2
 
 
-
-        hand = cq.Workplane("XY").tag("base").circle(radius=self.base_r).extrude(self.thick)
+        hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(self.thick)
 
         if self.style == "simple":
             width = self.length * 0.1
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(self.thick)
         elif self.style == "simple_rounded":
             width = self.length * 0.1
+            # if second:
+            #     width = length * 0.2
             hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(self.thick)
         elif self.style == "square":
             handWidth = self.length * 0.3 * 0.25
@@ -3346,7 +3362,10 @@ class Hands:
         if self.fixing_offset != 0:
             hand = hand.workplaneFromTagged("base").transformed(rotate=(0, 0,self. fixing_offset))
 
-        hand = self.cutFixing(hand, hour)
+        # if second:
+        #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + self.thick)
+
+        hand = self.cutFixing(hand, hour, second)
 
         if self.outline > 0:
             if self.style != "cuckoo":
@@ -3362,7 +3381,7 @@ class Hands:
                     # return notOutline
                     #chop off the mess above the first few layers that we want
 
-                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick).translate((0,0,self.outlineThick))
+                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick*10).translate((0,0,self.outlineThick))
 
 
 
@@ -3375,7 +3394,7 @@ class Hands:
 
                 else:
                     #chop out the outline from the shape
-                    hand = hand.cut(self.getHand(hour, outline=True))
+                    hand = hand.cut(self.getHand(hour, outline=True, second=second))
             else:
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
                 if outline:
@@ -3384,7 +3403,7 @@ class Hands:
                     bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick)
 
                     outline = shell.intersect(bigSlab)
-                    outline = self.cutFixing(outline, hour)
+                    outline = self.cutFixing(outline, hour, second)
                     return outline
                 else:
                     #make the whole hand bigger by the outline amount
@@ -3397,7 +3416,7 @@ class Hands:
                     # return shell2
                     # hand = shell
                     hand = hand.add(shell)
-                    hand = self.cutFixing(hand, hour)
+                    hand = self.cutFixing(hand, hour, second)
                     return hand
                     # shell2 = self.cutFixing(shell2, hour)
                     #
@@ -3410,11 +3429,15 @@ class Hands:
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_hour_hand.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHand(True), out)
+        exporters.export(self.getHand(hour=True), out)
 
         out = os.path.join(path, "{}_minute_hand.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHand(False), out)
+        exporters.export(self.getHand(hour=False), out)
+
+        out = os.path.join(path, "{}_second_hand.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHand(second=True), out)
 
         out = os.path.join(path, "{}_hand_nut.stl".format(name))
         print("Outputting ", out)
@@ -3756,12 +3779,21 @@ class Assembly:
 
 
         #hands on the motion work, showing the time set above
-        minuteHand = self.hands.getHand(hour=False).rotate((0,0,0),(0,0,1), minuteAngle)
-        hourHand = self.hands.getHand(hour=True).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+        #mirror them so the outline is visible (consistent with second hand)
+        minuteHand = self.hands.getHand(hour=False).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
+        hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+
+
         clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.plateThick*2 + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick)))
 
         clock = clock.add(hourHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
                                                 self.plates.plateThick * 2 + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick*3)))
+
+        if self.goingTrain.escapement_time == 60:
+            #second hand!! yay
+            secondHand = self.hands.getHand(second=True).mirror().translate((0,0,self.hands.thick))#.rotate((0, 0, 0), (0, 0, 1), hourAngle)
+            clock = clock.add(secondHand.translate((self.plates.bearingPositions[-2][0], self.plates.bearingPositions[-2][1], self.plates.plateThick*2 + self.plates.plateDistance+self.hands.secondFixing_thick )))
+
 
         pendulumRodExtraZ = 2
 
@@ -3981,9 +4013,10 @@ show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
 
 
 
-# hands = Hands(style="cuckoo",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
-# show_object(hands.getHand(True,True))
-# show_object(hands.getHand(True,False).translate((50,0,0)))
+hands = Hands(style="simple_rounded",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
+show_object(hands.getHand(True,True))
+show_object(hands.getHand(True,False).translate((50,0,0)))
+show_object(hands.getHand(hour=False,second=True).translate((-50,0,0)))
 
 #
 # shell = WeightShell(45,220, twoParts=True, holeD=5)

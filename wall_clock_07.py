@@ -5,9 +5,11 @@ Simple one day clock with shortest pendulum I can manage to also have a second h
 and the first to be printed using the cord wheel
 
 '''
-
+outputSTL=False
 
 if 'show_object' not in globals():
+    #don't output STL when we're in cadquery editor
+    outputSTL = True
     def show_object(*args, **kwargs):
         pass
 
@@ -15,7 +17,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_07"
 clockOutDir="out"
 
-outputSTL=True
+
 drop =1.5
 lift =3
 lock=1.5
@@ -32,12 +34,12 @@ train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
 
 train.printInfo()
 
-pendulumSticksOut=20
+pendulumSticksOut=8
 
 train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
 
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+40 )
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30 )
 
 
 #trying a thicker anchor and glue rather than nyloc
