@@ -43,7 +43,7 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30 )
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=50, bobD=60, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
 
@@ -61,6 +61,8 @@ hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_
 
 assembly = clock.Assembly(plates, hands=hands)
 
+weight = clock.Weight(height=100, diameter=35)
+weight.printInfo()
 
 show_object(assembly.getClock())
 
@@ -71,4 +73,5 @@ if outputSTL:
     dial.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
+    weight.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)

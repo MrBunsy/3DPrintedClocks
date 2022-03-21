@@ -72,8 +72,10 @@ def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
 
     return metric_thread * METRIC_NUT_DEPTH_MULT
 
-def getScrewHeadHeight(metric_thread):
+def getScrewHeadHeight(metric_thread, countersunk=False):
     if metric_thread == 3:
+        if countersunk:
+            return 1.86
         return 2.6
 
     return metric_thread
@@ -82,6 +84,7 @@ def getScrewHeadDiameter(metric_thread):
     if metric_thread == 3:
         return 6
     return METRIC_HEAD_D_MULT * metric_thread
+
 
 def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     '''
@@ -2428,6 +2431,9 @@ class ClockPlates:
 
         self.weightOnRightSide = self.goingTrain.isWeightOnTheRight()
 
+        #absolute z position
+        self.embeddedNutHeight = self.plateThick + self.plateDistance - 20
+
 
     def getPlate(self, back=True, getText=False):
         if self.style in ["round", "vertical"]:
@@ -2547,6 +2553,8 @@ class ClockPlates:
             .lineTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR) \
             .lineTo(topOfPlate[0] + topPillarR, topOfPlate[1]).close().extrude(self.plateThick)
 
+
+        plate = plate.tag("top")
         # #for the screwhole
         # screwHeadD = 9
         # screwBodyD = 6
@@ -2564,9 +2572,9 @@ class ClockPlates:
             textMultiMaterial = cq.Workplane("XY")
             textSize = topPillarR * 0.9
             textY = (self.bearingPositions[0][1] + fixingPositions[2][1])/2
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.6, textY), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.5, textY), textSize)
 
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.7, textY), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.5, textY), textSize)
 
             if getText:
                 return textMultiMaterial
@@ -2586,12 +2594,17 @@ class ClockPlates:
         fixingScrewD = 3
 
         #screws to fix the plates together
+        # if back:
         plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
+        # else:
+        #can't get the countersinking to work
+        #     plate = plate.workplaneFromTagged("top").pushPoints(fixingPositions).cskHole(diameter=fixingScrewD, cskAngle=90, cskDiameter=getScrewHeadDiameter(fixingScrewD), depth=None)#.cutThruAll()
 
-        embeddedNutHeight = self.plateThick + self.plateDistance/2
+
+
         for fixingPos in fixingPositions:
             #embedded nuts!
-            plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], embeddedNutHeight)))
+            plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
 
         return plate
 
@@ -2744,18 +2757,27 @@ class ClockPlates:
 
         return plate
 
-    def getArbourExtension(self, arbourID, top=True, arbourD=3):
+    def getArbourExtension(self, arbourID, top=True, arbourD=3, forModel=False):
         '''
         Get little cylinders we can use as spacers to keep the gears in the right place on the rod
         arbour from -chainwheels to +ve wheels + 1 (for the anchor)
+
+        if for model, will return the way up needed to assemble the little model
+
         returns None if no extension is needed
         '''
+
+        flaredBase = False
+
         bearingPos = self.bearingPositions[arbourID + self.goingTrain.chainWheels]
         if arbourID < self.goingTrain.wheels:
             arbourThick = self.goingTrain.getArbour(arbourID).getTotalThickness()
         else:
             #anchor!
             arbourThick = self.pendulum.anchorThick
+            #the bearing is on the front of the plate! need something to stop it falling through the gap
+            if self.pendulumSticksOut > 0 and top:
+                flaredBase = True
 
         length = 0
         if top:
@@ -2764,7 +2786,15 @@ class ClockPlates:
             length = bearingPos[2]
 
         if length > LAYER_THICK:
-            return  cq.Workplane("XY").circle(arbourD).circle(arbourD/2).extrude(length)
+            extendoArbour = cq.Workplane("XY").tag("base").circle(arbourD).circle(arbourD/2).extrude(length)
+
+            if flaredBase:
+                baseLength = min(2, length)
+                extendoArbour = extendoArbour.workplaneFromTagged("base").circle(arbourD*2).circle(arbourD).extrude(baseLength)
+                if forModel:
+                    extendoArbour = extendoArbour.mirror().translate((0,0,length))
+
+            return extendoArbour
         return None
 
 
@@ -3529,6 +3559,11 @@ class Dial:
         exporters.export(self.getDial(), out)
 
 class Weight:
+    '''
+    A cylindrical weight shell which can be filled with shot
+    Also includes hooks and eyes for the cord
+    '''
+
 
     # @staticmethod
     # def getMaxWeightForDimensions(h, d, wallThick=3):
@@ -3555,6 +3590,10 @@ class Weight:
         self.slotThick = self.wallThick/3
         self.lidWidth = self.diameter * 0.3
 
+        self.hookInnerD = boltMetricSize*2.5
+        self.hookOuterD = self.hookInnerD*1.5
+        self.hookThick = self.lidWidth * 0.5
+
     def printInfo(self):
         vol = self.getVolume_L()
         weight = self.getMaxWeight()
@@ -3575,6 +3614,32 @@ class Weight:
         weight = density * self.getVolume_L()
 
         return weight
+
+    def getHook(self):
+
+        holeDistance=self.hookOuterD/2 + self.hookInnerD/2
+
+
+
+        wallThick = (self.hookOuterD - self.hookInnerD)/2
+        hook = cq.Workplane("XY").moveTo(-self.hookOuterD/2,0).radiusArc((self.hookOuterD/2,0),-self.hookOuterD/2).line(0,holeDistance).radiusArc((-self.hookOuterD/2, holeDistance), -self.hookOuterD/2)
+
+        hook = hook.radiusArc((-self.hookInnerD/2, holeDistance), -wallThick/2).radiusArc((self.hookInnerD/2,holeDistance), self.hookInnerD/2).radiusArc((0,self.hookOuterD/2),self.hookInnerD/2).radiusArc((-self.hookOuterD/2,0),-self.hookOuterD/2).close()
+
+
+        hook = hook.extrude(self.hookThick)
+
+        #pushPoints([(0,0), (0,self.hookOuterD/2 + self.hookInnerD/2)])
+        hook = hook.faces(">Z").workplane().circle(self.hookInnerD/2).cutThruAll()
+
+
+
+        return hook
+
+    def getRing(self):
+        ring = cq.Workplane("XY").circle(self.hookOuterD/2).circle(self.hookInnerD/2).extrude(self.hookThick)
+
+        return ring
 
     def getWeight(self):
         '''
@@ -3633,6 +3698,14 @@ class Weight:
         out = os.path.join(path, "{}_weight_lid.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getLid(), out)
+
+        out = os.path.join(path, "{}_weight_hook.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHook(), out)
+
+        out = os.path.join(path, "{}_weight_ring.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getRing(), out)
 
     def getLid(self, forCutting=False):
         wallThick = self.wallThick
@@ -3822,7 +3895,7 @@ class Assembly:
         for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
             bearingPos = self.plates.bearingPositions[arbour + self.goingTrain.chainWheels]
             for top in [True, False]:
-                extensionShape=self.plates.getArbourExtension(arbour, top=top)
+                extensionShape=self.plates.getArbourExtension(arbour, top=top, forModel=True)
                 z =  0
                 if top:
                     if arbour < self.goingTrain.wheels:
@@ -3892,7 +3965,11 @@ class WeightShell:
 #
 # show_object(dial.getDial())
 
-# weight = Weight()
+weight = Weight()
+
+show_object(weight.getHook())
+
+show_object(weight.getRing().translate((20,0,0)))
 #
 # show_object(weight.getWeight())
 #
