@@ -136,3 +136,11 @@ Plan: Since the cord wheel will be wider, I could embed the ratchet inside the g
 Idea for key to wind up: use a much wider bearing (10mm or 20mm internal diameter?) and have a cylinder on the cord wheel that ends in a square for a key. the wide bearing can slot over this cylinder instead of over the rod. Have the cord wheel still loose on the rod and the great wheel still fixed to the rod. Other end of the rod still in a bearing like now. Will be interesting to see if a cylinder of pritned petg can be strong enough to wind up the 2.5kg weight
 
 to wind up - could gear down on the front (with another gear just screwed into the front of the plate, no need for a bearing maybe?) and that gear can have the square for a key.
+
+
+clock 07:
+the bottom pillar is barely wide enough to print successfully with the holes for the cord
+FIXED (untested)
+
+There is a teeny tiny amount of clearence between the screwhead that holds the clock to the wall and the second gear! Maybe sink the screwhole back a bit further?
+There is also barely enough clearnce between the head of the screw that holds the motion works in place and the end of the chord wheel. Not immediately sure of the best way to fix that - put the embedded screw on the inside?

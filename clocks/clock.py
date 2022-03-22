@@ -2472,7 +2472,7 @@ class ClockPlates:
         #original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
         #so instead, make it just big enough to contain the holes for the chains/cord
         # bottomPillarR= self.plateDistance/2
-        bottomPillarR = (self.goingTrain.poweredWheel.diameter + self.chainHoleD*1.5)/2
+        bottomPillarR = (self.goingTrain.poweredWheel.diameter + self.chainHoleD*2)/2
         topPillarR = holderWide/2
 
 
@@ -3312,7 +3312,10 @@ class Hands:
             #     width = width * 1.75
         if second:
             length = self.secondLength
-            base_r = self.secondLength*0.2
+            base_r = self.secondLength * 0.2
+
+            if self.style == "cuckoo":
+                base_r = self.secondLength * 0.12
 
 
         hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(self.thick)
@@ -3333,6 +3336,9 @@ class Hands:
             end_d = self.length * 0.3 * 0.1
             centrehole_y = length * 0.6
             width = self.length * 0.3
+            if second:
+                width = length*0.3
+                end_d = length * 0.3 * 0.1
             centrehole_r = width * 0.15
 
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).threePointArc((end_d *0.75, length/2),(end_d / 2, length)).radiusArc(
@@ -3373,7 +3379,7 @@ class Hands:
             hand = hand.extrude(self.thick)
 
             # sticky out bottom bit for hour hand
-            if hour:
+            if hour and not second:
                 hand = hand.workplaneFromTagged("base").lineTo(width * 0.4, 0).lineTo(0, -width * 0.9).mirrorY().extrude(self.thick)
                 # return hand
             # cut bits out
@@ -3392,7 +3398,10 @@ class Hands:
                 includeCurrent=True).lineTo(heartwidth * 0.5, heartbase + heartheight * 0.75).lineTo(0,
                                                                                                      hearttop).mirrorY()  # .cutThruAll()
             # return hand.extrude(ratchetThick*2)
-            hand = hand.cutThruAll()
+            try:
+                hand = hand.cutThruAll()
+            except:
+                print("Unable to cut detail in cuckoo hand")
 
         # fixing = self.hourFixing if hour else self.minuteFixing
 
@@ -3404,7 +3413,11 @@ class Hands:
 
         hand = self.cutFixing(hand, hour, second)
 
-        if self.outline > 0:
+        ignoreOutline = False
+        if self.style == "cuckoo" and second:
+            ignoreOutline = True
+
+        if self.outline > 0 and not ignoreOutline:
             if self.style != "cuckoo":
                 if outline:
                     #use a negative shell to get a thick line just inside the edge of the hand
@@ -3488,6 +3501,10 @@ class Hands:
             out = os.path.join(path, "{}_minute_hand_outline.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.getHand(False, outline=True), out)
+
+            out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getHand(hour=False, second=True, outline=True), out)
 
 if 'show_object' not in globals():
     def show_object(*args, **kwargs):
