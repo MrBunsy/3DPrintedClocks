@@ -1101,7 +1101,7 @@ class Escapement:
         We add lock to the design by changing the position of the pallets
 
         run is how much the anchor continues to move towards the centre of the escape wheel after locking (or in the recoil, how much it recoils) in degrees
-        not sure how to actually use desired run to design anchor
+        only makes sense for deadbeat
 
         clockwiseFromPinionSide is for the escape wheel
         '''
@@ -2564,7 +2564,8 @@ class ClockPlates:
             #extra bit around the screwhole
             #r = self.goingTrain.chainWheel.diameter*1.25
             # plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]-7-11/2).circle(holderWide*0.75).extrude(self.plateThick)
-            plate = self.addScrewHole(plate, screwHolePos, backThick=5, screwHeadD=11, addExtraSupport=True)
+            backThick = max(self.plateThick-5, 4)
+            plate = self.addScrewHole(plate, screwHolePos, backThick=backThick, screwHeadD=11, addExtraSupport=True)
             #the pillars
             plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.999).extrude(self.plateThick + self.plateDistance)
             plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.999).extrude(self.plateThick + self.plateDistance)
@@ -2744,11 +2745,20 @@ class ClockPlates:
 
         plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
             self.arbourD / 2).cutThruAll()
-        nutDeep = METRIC_HALF_NUT_DEPTH_MULT * self.arbourD
-        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.arbourD)).extrude(nutDeep).translate(
-            (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], plateThick - nutDeep))
+
+        nutDeep = getNutHeight(self.fixingScrewsD, halfHeight=True)
+        screwheadHeight = getScrewHeadHeight(self.fixingScrewsD)
+        #ideally want a nut embedded on the top, but that can leave the plate a bit thin here
+
+        nutZ = max(screwheadHeight + 3, self.plateThick - nutDeep)
+        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.fixingScrewsD)).extrude(nutDeep).translate(
+            (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], nutZ))
 
         plate = plate.cut(nutSpace)
+
+        screwheadSpace =  getHoleWithHole(self.fixingScrewsD, getScrewHeadDiameter(self.fixingScrewsD)+0.5, screwheadHeight).translate((self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], 0))
+
+        plate = plate.cut(screwheadSpace)
 
         if self.dial is not None:
             dialFixings = self.dial.getFixingDistance()

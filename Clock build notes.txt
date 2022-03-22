@@ -143,4 +143,5 @@ the bottom pillar is barely wide enough to print successfully with the holes for
 FIXED (untested)
 
 There is a teeny tiny amount of clearence between the screwhead that holds the clock to the wall and the second gear! Maybe sink the screwhole back a bit further?
+done!
 There is also barely enough clearnce between the head of the screw that holds the motion works in place and the end of the chord wheel. Not immediately sure of the best way to fix that - put the embedded screw on the inside?
