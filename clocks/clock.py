@@ -850,9 +850,11 @@ class GoingTrain:
     def genCordWheels(self,ratchetThick=7.5, holeD=3.3, cordCoilThick=10, useKey=False, cordThick=2 ):
 
         self.genPowerWheelRatchet()
-        ratchetD = self.max_chain_wheel_d + 3
-        ratchetD = 21.22065907891938
-        self.ratchet = Ratchet(totalD=ratchetD * 2, innerRadius=ratchetD / 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
+        #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
+        #21.2 comes from a mistake on clock 07, but a happy mistake as it was a good size. keeping this for now
+        ratchetD = max(self.max_chain_wheel_d, 21.2)
+        # ratchetD = 21.22065907891938
+        self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
         self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodD=holeD, thick=cordCoilThick, useKey=useKey, cordThick=cordThick)
         self.poweredWheel = self.cordWheel
