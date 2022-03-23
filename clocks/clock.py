@@ -850,9 +850,9 @@ class GoingTrain:
     def genCordWheels(self,ratchetThick=7.5, holeD=3.3, cordCoilThick=10, useKey=False, cordThick=2 ):
 
         self.genPowerWheelRatchet()
-
-
-        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.max_chain_wheel_d / 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
+        ratchetD = self.max_chain_wheel_d + 3
+        ratchetD = 21.22065907891938
+        self.ratchet = Ratchet(totalD=ratchetD * 2, innerRadius=ratchetD / 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
         self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodD=holeD, thick=cordCoilThick, useKey=useKey, cordThick=cordThick)
         self.poweredWheel = self.cordWheel

@@ -14,7 +14,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_07"
+clockName="wall_clock_07b"
 clockOutDir="out"
 
 
@@ -23,7 +23,7 @@ lift =3
 lock=1.5
 escapement = clock.Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement=escapement, maxChainDrop=2000, chainAtBack=False,chainWheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement=escapement, maxChainDrop=1700, chainAtBack=False,chainWheels=0, hours=30)
 
 #, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4
 # train.setEscapementDetails(drop=1.5, lift=3, lock=1.5)
@@ -64,6 +64,9 @@ assembly = clock.Assembly(plates, hands=hands)
 weight = clock.Weight(height=100, diameter=35)
 weight.printInfo()
 
+bigweight = clock.Weight(height=125, diameter=45)
+bigweight.printInfo()
+
 show_object(assembly.getClock())
 
 if outputSTL:
@@ -74,4 +77,5 @@ if outputSTL:
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
     weight.outputSTLs(clockName, clockOutDir)
+    bigweight.outputSTLs(clockName+"_big", clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
