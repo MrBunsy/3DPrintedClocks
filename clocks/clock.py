@@ -47,6 +47,8 @@ STEEL_SHOT_DENSITY=0.35/0.055
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
 
+WASHER_THICK = 0.5
+
 #extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
 NUT_WIGGLE_ROOM = 0.2
 
@@ -478,9 +480,9 @@ class Arbour:
         if self.getType() == "ChainWheel":
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             return self.wheelThick + self.chainWheel.getHeight()
-        # if self.getType() == "Anchor":
-        #     #wheel thick being used for anchor thick
-        #     return self.wheelThick
+        if self.getType() == "Anchor":
+            #wheel thick being used for anchor thick
+            return self.wheelThick
 
     def getWheelCentreZ(self):
         '''
@@ -492,6 +494,8 @@ class Arbour:
             return self.getTotalThickness() - self.wheelThick/2
 
     def getPinionCentreZ(self):
+        if self.getType() not in ["WheelAndPinion", "EscapeWheel"]:
+            raise ValueError("This does not have a pinion")
         if self.pinionOnTop:
             return self.getTotalThickness() - self.endCapThick - self.pinionThick/2
         else:
@@ -1501,6 +1505,9 @@ class Escapement:
 
         wheel = wheel.close()
 
+        #rotate so a tooth is at 0deg on the edge of the entry pallet (makes animations of the escapement easier)
+        wheel = wheel.rotateAboutCenter((0,0,1),radToDeg(-toothTipAngle-toothTipArcAngle))
+
         return wheel
     def getWheelMaxR(self):
         return self.diameter/2
@@ -1704,7 +1711,8 @@ class CordWheel:
 
     def getHeight(self):
         #total ehight, once assembled
-        return self.ratchet.thick + self.clickWheelExtra + self.capThick*3 + self.thick*2
+        #include space for a washer at the end, to stop the end cap rubbing too much on the top plate (wasn't really the same problem with the much smaller chain wheel)
+        return self.ratchet.thick + self.clickWheelExtra + self.capThick*3 + self.thick*2 + WASHER_THICK
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_cordwheel_top_segment.stl".format(name))
@@ -2614,14 +2622,15 @@ class ClockPlates:
     def getChainHoles(self, absoluteZ=False):
         '''
         if absolute Z is false, these are positioned above the base plateThick
+        this assumes an awful lot, it's likely to be a bit fragile
         '''
         if self.goingTrain.usingChain:
             chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
             leftZ = chainZ
             rightZ = chainZ
         else:
-            #cord
-            bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
+            #cord, leaving enough space for the washer as well (which is hackily included in getTotalThickness()
+            bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
             topZ = bottomZ +  self.goingTrain.cordWheel.thick - self.goingTrain.cordWheel.capThick
 
             if self.weightOnRightSide:
@@ -3079,7 +3088,7 @@ class Pendulum:
         '''
 
 
-    def getBob(self):
+    def getBob(self, hollow=True):
 
 
         circle = cq.Workplane("XY").circle(self.bobR)
@@ -3097,33 +3106,26 @@ class Pendulum:
             faces("<Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2)
         bob=bob.cut(cut)
 
-        #could make hollow with shell, but that might be hard to print, so doing it manually
-        # bob = bob.shell(-2)
 
+        if hollow:
+            # could make hollow with shell, but that might be hard to print, so doing it manually
+            # bob = bob.shell(-2)
+            weightHole = cq.Workplane("XY").circle(self.bobR - self.wallThick).extrude(self.bobThick-self.wallThick*2).translate((0,0,self.wallThick))
 
-        #
-        # startAngle =
-        #
-        # weightHole = cq.Workplane("XY").moveTo(self.threadedRodM/2 + self.wallThick, self.bobR - self.wallThick).radiusArc((self.threadedRodM/2 + self.wallThick, -self.bobR + self.wallThick), self.bobR-self.wallThick).\
-        #     lineTo(self.threadedRodM/2 + self.wallThick, -gapHeight/2 - self.wallThick).line(gapWidth/2 + self.wallThick,0).line(0,gapHeight + self.wallThick*2).line(-gapWidth/2 - self.wallThick,0)\
-        #     .close().extrude(self.bobThick).translate((0,0,self.wallThick))
-        weightHole = cq.Workplane("XY").circle(self.bobR - self.wallThick).extrude(self.bobThick-self.wallThick*2).translate((0,0,self.wallThick))
+            notHole = cut.shell(self.wallThick)
+            #don't have a floating tube through the middle, give it something below
+            notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
 
-        notHole = cut.shell(self.wallThick)
-        #don't have a floating tube through the middle, give it something below
-        notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
+            for pos in self.bobLidNutPositions:
+                notHole = notHole.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.nutMetricSize*1.5).circle(self.nutMetricSize/2).extrude(self.bobThick-self.wallThick))
 
-        for pos in self.bobLidNutPositions:
-            notHole = notHole.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.nutMetricSize*1.5).circle(self.nutMetricSize/2).extrude(self.bobThick-self.wallThick))
+            weightHole = weightHole.cut(notHole)
 
-        weightHole = weightHole.cut(notHole)
+            lid = self.getBobLid(True)
 
-        lid = self.getBobLid(True)
+            weightHole = weightHole.add(lid.translate((0,0,self.bobThick-self.wallThick)))
 
-        weightHole = weightHole.add(lid.translate((0,0,self.bobThick-self.wallThick)))
-
-        #
-        bob = bob.cut(weightHole)
+            bob = bob.cut(weightHole)
 
         return bob
 
@@ -3216,6 +3218,10 @@ class Pendulum:
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getBob(), out)
+
+        out = os.path.join(path, "{}_bob_solid.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getBob(hollow=False), out)
 
         out = os.path.join(path, "{}_bob_nut.stl".format(name))
         print("Outputting ", out)
@@ -3993,12 +3999,12 @@ class WeightShell:
 # dial = Dial(120)
 #
 # show_object(dial.getDial())
-
-weight = Weight()
-
-show_object(weight.getHook())
-
-show_object(weight.getRing().translate((20,0,0)))
+#
+# weight = Weight()
+#
+# show_object(weight.getHook())
+#
+# show_object(weight.getRing().translate((20,0,0)))
 #
 # show_object(weight.getWeight())
 #
@@ -4058,20 +4064,24 @@ show_object(weight.getRing().translate((20,0,0)))
 # hands.outputSTLs(clockName, clockOutDir)
 
 ##### =========== escapement testing ======================
-# # #drop of 1 and lift of 3 has good pallet angles with 42 teeth
-# drop =1.5
-# lift =3
-# lock=1.5
-# diameter = 64.44433859295404#61.454842805344896
-# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=diameter, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
-# # # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
-# # #                              clockwiseFromPinionSide=False, type="deadbeat")
-# #
-# wheel_angle = -6.75-drop#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-# anchor_angle = lift/2+lock/2+4#lift/2 + lock/2
-# #
-# show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
-# show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
+# #drop of 1 and lift of 3 has good pallet angles with 42 teeth
+drop =1.5
+lift =2
+lock=1.5
+teeth = 48
+diameter = 65# 64.44433859295404#61.454842805344896
+toothTipAngle = 4
+toothBaseAngle = 3
+escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
+# # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
+# #                              clockwiseFromPinionSide=False, type="deadbeat")
+#
+toothAngle = 360/teeth
+wheel_angle = radToDeg(math.pi/2 +escapement.anchorAngle/2) #-3.5#-5.55 - drop -(toothAngle/2 - drop)#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
+anchor_angle = 0#lift/2+lock/2+2#lift/2 + lock/2
+#
+show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
+show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
 #
 # anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
 # # show_object(escapement.getAnchor3D())

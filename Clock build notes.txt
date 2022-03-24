@@ -126,6 +126,7 @@ REFACTOR - I think that the circular and vertical clock plates can be combined, 
 thought for the grasshopper, or others to show off the mechanism: the front plate could cover only the chain wheel (maybe the motion works and minute wheel too?), the rest of the gears have the bearing embedded in the gear itself, and are simply bolted onto the rear plate. How do I hold the pendulum?? Could I offset from the wall on little legs and have the pendulum out the back?
 
 Can I reduce the thickness of the ratchet (the bit attached to the gear) on the chain wheel? 
+Instead I've tweaked the HAC cut so it can take into account whatever is in teh middle of teh wheel
 
 clock 5 stopped earlier - nothing wrong with the going train, but the chain on the chain wheel was in an odd position. I think maybe the chain wheel can't reliably cope with 2.5kg. Worth trying clock cord?
 
@@ -145,3 +146,6 @@ FIXED (untested)
 There is a teeny tiny amount of clearence between the screwhead that holds the clock to the wall and the second gear! Maybe sink the screwhole back a bit further?
 done!
 There is also barely enough clearnce between the head of the screw that holds the motion works in place and the end of the chord wheel. Not immediately sure of the best way to fix that - put the embedded screw on the inside?
+Trying space for the screwhead in teh front plate
+
+The cord wheel can end up resting against the front clock plate, with a noticable (but slight) reduction in power of the clock. I think allowing space for a washer between teh top cap and the front plate would help? If I'd left it with 2mm of wobble (end shake) it would have been fine to pop a washer in!
