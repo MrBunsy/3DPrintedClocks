@@ -1614,7 +1614,7 @@ class CordWheel:
     Made of two segments (one if using key) and a cap. Designed to be attached to the ratchet click wheel
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=10, bearingHeight=4, keyKnobHeight=15, useGear=False, gearThick=5, frontPlateThick=8):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, gearThick=5, frontPlateThick=8):
         self.diameter=diameter
         #thickness of one segment
         self.thick=thick
@@ -1641,21 +1641,33 @@ class CordWheel:
 
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
         self.clickWheelExtra=LAYER_THICK*2
-        self.beforeBearingExtraExtra= self.clickWheelExtra
+        self.beforeBearingExtraHeight= self.clickWheelExtra
         self.ratchet = ratchet
+        self.keyScrewHoleD = self.screwThreadMetric
 
         minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
         if self.useKey:
             minScrewLength -= self.thick
         print("cord wheel screw length between", minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
 
+        #extra radius to add to stand off from a bearing
+        self.bearingLip=1
+        self.bearingWiggleRoom = 0.1
+        self.keyWiggleRoom = 0.2
+        # self.keyHeight = 20
         if self.useGear:
-            wheelTeeth = 50
-            pinionTeeth = 8
+            wheelTeeth = 30
+            # pinionTeeth = 11
+            #TODO also want the pinion inner radius to be at last (bearingInnerD/2 + bearingLip)
             #do we actually we want the inner radius to be the same as the capdiameter? (inner_radius = pitch_radius - dedendum_height)
             module = self.capDiameter/wheelTeeth
+            #fudging slightly to account for the innerradius rather than pitch circle
+            pinionTeeth = math.ceil(1.6*(self.bearingInnerD + self.bearingLip*2)/module)
             self.wheelPinionPair = WheelPinionPair(wheelTeeth, pinionTeeth,module)
             self.wheelPinionPair.wheel.innerRadiusForStyle =  self.diameter/2 + self.cordThick
+            #self.gearDistance = self.wheelPinionPair.centre_distance
+            self.keySize = math.sqrt(2) * (self.bearingInnerD / 2 - self.bearingWiggleRoom - 1)
+            print("key size", self.keySize)
 
     def getNutHoles(self):
         cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[0]))
@@ -1716,9 +1728,9 @@ class CordWheel:
         keyCap = self.getCap(extraThick=extraHeight)
 
 
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).circle(self.bearingInnerD/2 + 1).extrude(self.beforeBearingExtraExtra)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).circle(self.bearingInnerD/2-0.2).extrude(self.bearingHeight)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).polygon(4, self.bearingInnerD-0.2).extrude(self.keyKnobHeight)
+        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).circle(self.bearingInnerD/2 + 1).extrude(self.beforeBearingExtraHeight)
+        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight)
+        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom).extrude(self.keyKnobHeight)
 
         keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).circle(self.rodD/2).cutThruAll()
         return keyCap
@@ -1754,13 +1766,56 @@ class CordWheel:
 
     def getKeyGear(self):
         '''
-        If using gear, this is the gear with the key
+        If using gear, this is the gear that the key slots into
         designed to be two parts screwed together on either side of a bearing in the front plate with a larger inner diameter
         '''
+        holeD = self.keyScrewHoleD
 
-        keyGear = self.wheelPinionPair.pinion.get3D(holeD=self.screwThreadMetric+0.3, thick=self.gearThick)
+        keyGear = self.wheelPinionPair.pinion.get3D(holeD=holeD, thick=self.gearThick)
+
+        keyGear = keyGear.faces(">Z").workplane().circle(self.bearingInnerD/2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
+
+        keyGear = keyGear.faces(">Z").workplane().circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight)
+
+        keySquareHole = cq.Workplane("XY").rect(self.keySize, self.keySize).extrude(self.bearingHeight).translate((0,0,self.gearThick + self.beforeBearingExtraHeight))
+
+        keyGear = keyGear.cut(keySquareHole)
+
+        keyGear = keyGear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
+
+        screwHeadHole = getHoleWithHole(self.screwThreadMetric,getScrewHeadDiameter(self.screwThreadMetric)+0.5,getScrewHeadHeight(self.screwThreadMetric))
+
+        keyGear = keyGear.cut(screwHeadHole)
 
         return keyGear
+
+    def getKeyKey(self):
+        '''
+        If using gear and key ,this is the square bit that will be out the front of the clock
+        '''
+        key = cq.Workplane("XY").rect(self.keySize-self.keyWiggleRoom, self.keySize - self.keyWiggleRoom).extrude(self.keyKnobHeight + self.bearingHeight)
+
+        key = key.faces(">Z").workplane().circle(self.keyScrewHoleD / 2).cutThruAll()
+
+        nutHeight = getNutHeight(self.screwThreadMetric)
+        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwThreadMetric,0.2)).extrude(nutHeight).translate((0,0,self.keyKnobHeight + self.bearingHeight - nutHeight))
+
+        key = key.cut(nutSpace)
+
+        clampyBitThick = 2
+        clampyBit = cq.Workplane("XY").circle(self.bearingInnerD/2 + self.bearingLip).extrude(clampyBitThick)
+        cutOffClampyBit = cq.Workplane("XY").moveTo(-self.bearingInnerD,-(self.keySize - self.keyWiggleRoom)/2).line(self.bearingInnerD*2,0).line(0,-self.bearingInnerD).line(-self.bearingInnerD*2,0).close().extrude(clampyBitThick)
+        clampyBit = clampyBit.cut(cutOffClampyBit).translate((0,0,self.bearingHeight))
+
+        clampyBit = clampyBit.faces(">Z").workplane().circle(self.keyScrewHoleD / 2).cutThruAll()
+        # return clampyBit
+        # clampyBit = cq.Workplane("XY").moveTo()
+        key = key.add(clampyBit)
+
+
+        # this needs to be sideways so we can print a lip that will hold it against the top of the bearing
+
+        return key
 
 
     def getRunTime(self, minuteRatio=1, cordLength=2000):
@@ -1803,6 +1858,8 @@ class CordWheel:
         elif self.useGear:
             model = model.add(self.getCap().translate((0, 0, self.ratchet.thick + self.clickWheelExtra)))
             model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.gearThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
+            model = model.add(self.getKeyGear().translate((0,-self.wheelPinionPair.centre_distance,self.ratchet.thick + self.capThick + self.clickWheelExtra + self.thick )))
+            model = model.add(self.getKeyKey().translate((0, -self.wheelPinionPair.centre_distance, self.ratchet.thick + self.capThick + self.clickWheelExtra + self.thick + self.gearThick + self.beforeBearingExtraHeight)))
         else:
             model = model.add(self.getCap().translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
             model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
@@ -1815,7 +1872,7 @@ class CordWheel:
     def getHeight(self):
         if self.useKey:
             raise ValueError("TODO height of key cord wheel")
-            return self.ratchet.thick
+            # return self.ratchet.thick
         elif self.useGear:
             return self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.gearThick + WASHER_THICK
         #total ehight, once assembled
@@ -1829,8 +1886,6 @@ class CordWheel:
         exporters.export(self.getSegment(False), out)
 
         if not self.useKey and not self.useGear:
-
-
             out = os.path.join(path, "{}_cordwheel_cap.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.getCap(), out)
@@ -4124,43 +4179,56 @@ def animateEscapement(escapement, frames=100, path="out", overswing=2):
     wheel_angle = wheelAngle_toothAtEndOfExitPallet  # -3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
     anchorAngle_toothAtEndOfExitPallet =  escapement.lift_deg / 2 + escapement.lock_deg / 2
     anchor_angle = anchorAngle_toothAtEndOfExitPallet # lift/2 + lock/2
-
-    stages = ["dropToEntry", "lockBeforeEntry","entry", "dropToExit", "lockBeforeExit", "exit"]
-    # stage = stages[0]
     #
-    # stageCount = 0
+    # stages = ["dropToEntry", "lockBeforeEntry","entry", "dropToExit", "lockBeforeExit", "exit"]
+    # # stage = stages[0]
+    # #
+    # # stageCount = 0
+    #
+    # framesPerStage = floor(frames/len(stages))
+    # for frame in range(frames):
+    #     currentStage = 0
+    #     for stage in range(len(stages)):
+    #         if frame < framesPerStage*(stage+1):
+    #             currentStage = stage
+    #             break
+    #     framesIntoStage = frame - framesPerStage*currentStage
+    #
+    #     print("frame: {} current stage: {}, framesIntoStage: {}".format(frame, currentStage, framesIntoStage) )
+    #
+    #     if stage == stages.index("dropToEntry"):
+    #         #anchor swings by overswing, and the wheel rotates just by drop
+    #
+    #         fractionIntoFrame = framesIntoStage/(framesPerStage-1)
+    #
+    #         #quadratic that peaks halfway through the stage
+    #         overswingAngle = overswing * (-4*math.pow(fractionIntoFrame - 0.5, 2) + 1)
+    #         #overswinging anchor right
+    #         wheel_angle = wheelAngle_toothAtEndOfExitPallet - frame * fractionIntoFrame * (drop )
+    #         anchor_angle = anchorAngle_toothAtEndOfExitPallet + overswingAngle
+    #         print(overswingAngle)
 
-    framesPerStage = floor(frames/len(stages))
+    pendulumPerFrame = math.pi*2/frames
+
     for frame in range(frames):
-        currentStage = 0
-        for stage in range(len(stages)):
-            if frame < framesPerStage*(stage+1):
-                currentStage = stage
-                break
-        framesIntoStage = frame - framesPerStage*currentStage
 
-        print("frame: {} current stage: {}, framesIntoStage: {}".format(frame, currentStage, framesIntoStage) )
+        anchor_angle_rad = math.sin(pendulumPerFrame * frame)*(escapement.lift+escapement.lock + degToRad(overswing))/2
 
-        if stage == stages.index("dropToEntry"):
-            #anchor swings by overswing, and the wheel rotates just by drop
+        anchor_angle = radToDeg(anchor_angle_rad)
 
-            fractionIntoFrame = framesIntoStage/(framesPerStage-1)
+        #TODO, check if anchor angle is where the wheel should be locked, heading to being locked, or moving along one of the pallets
+        #then choose a speed to move when the wheel is moving freely and work out how to match up the speed with the pallets
+        #should be able to figure out how many frames are required across the lift angle with arcsine somehow?
 
-            #quadratic that peaks halfway through the stage
-            overswingAngle = overswing * (-4*math.pow(fractionIntoFrame - 0.5, 2) + 1)
-            #overswinging anchor right
-            wheel_angle = wheelAngle_toothAtEndOfExitPallet - frame * fractionIntoFrame * (drop  )
-            anchor_angle = anchorAngle_toothAtEndOfExitPallet + overswingAngle
-            print(overswingAngle)
         # #
         wholeObject = escapement.getAnchor2D().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0, 0, 1), wheel_angle))
         exporters.export(wholeObject, os.path.join(path,"escapment_animation_{:02d}.svg".format(frame)), opt=svgOpt)
         # # # svgString = exporters.getSVG(exporters.toCompound(wholeObject), opts=svgOpt)
         # # # print(svgString)
-        # # show_object(wholeObject)
+        # show_object(wholeObject)
         # print("frame",frame)
 
-    os.system("{} -delay 100, -loop 0 {}/escapment_animation_*.svg {}/escapment_animation.gif".format(IMAGEMAGICK_CONVERT_PATH, path,path))
+    os.system("{} -delay 20, -loop 0 {}/escapment_animation_*.svg {}/escapment_animation.gif".format(IMAGEMAGICK_CONVERT_PATH, path,path))
 
 drop = 1.5
 lift = 2
@@ -4171,7 +4239,7 @@ toothTipAngle = 4
 toothBaseAngle = 3
 escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
-animateEscapement(escapement, 30)
+# animateEscapement(escapement, 30)
 
 
 
@@ -4375,12 +4443,12 @@ animateEscapement(escapement, 30)
 #
 # show_object(shell.getShell(False).translate((100,0,0)))
 
-# ratchet = Ratchet()
-# cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True)
-#
-#
-#
-# show_object(cordWheel.getAssembled())
+ratchet = Ratchet()
+cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True)
+
+
+
+show_object(cordWheel.getAssembled())
 
 # show_object(cordWheel.getClickWheelForCord(ratchet))
 # show_object(cordWheel.getCap().translate((0,0,ratchet.thick)))
