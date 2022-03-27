@@ -4162,17 +4162,15 @@ class WeightShell:
         exporters.export(self.getShell(False), out)
 
 
-def animateEscapement(escapement, frames=100, path="out", overswing_deg=2):
-    # # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
-    # #                              clockwiseFromPinionSide=False, type="deadbeat")
-    ##
-    svgOpt = opt = {"showAxes": False,
+def animateEscapement(escapement, frames=100, path="out", name="escapement_animation", overswing_deg=2, period=1.5):
+
+    svgOpt = {"showAxes": False,
                     "projectionDir": (0, 0, 1),
                     "width": 1280,
                     "height": 720,
                     }
-
-
+    #in GIF terms
+    timePerFrame = int(round((period * 100) / frames))
     toothAngle_deg = 360 / escapement.teeth
 
     palletAngleFromWheel_deg = (toothAngle_deg / 2 - escapement.drop_deg)
@@ -4188,35 +4186,7 @@ def animateEscapement(escapement, frames=100, path="out", overswing_deg=2):
     anchorAngle_endOfExitPallet_deg =  escapement.lock_deg / 2 + escapement.lift_deg / 2
     anchorAngle_startOfEntryPallet_deg = -escapement.lock_deg / 2 + escapement.lift_deg / 2
     anchorAngle_endOfEntryPallet_deg = -escapement.lock_deg / 2 - escapement.lift_deg / 2
-    # anchor_angle = anchorAngle_toothAtEndOfExitPallet_deg # lift/2 + lock/2
-    #
-    # stages = ["dropToEntry", "lockBeforeEntry","entry", "dropToExit", "lockBeforeExit", "exit"]
-    # # stage = stages[0]
-    # #
-    # # stageCount = 0
-    #
-    # framesPerStage = floor(frames/len(stages))
-    # for frame in range(frames):
-    #     currentStage = 0
-    #     for stage in range(len(stages)):
-    #         if frame < framesPerStage*(stage+1):
-    #             currentStage = stage
-    #             break
-    #     framesIntoStage = frame - framesPerStage*currentStage
-    #
-    #     print("frame: {} current stage: {}, framesIntoStage: {}".format(frame, currentStage, framesIntoStage) )
-    #
-    #     if stage == stages.index("dropToEntry"):
-    #         #anchor swings by overswing, and the wheel rotates just by drop
-    #
-    #         fractionIntoFrame = framesIntoStage/(framesPerStage-1)
-    #
-    #         #quadratic that peaks halfway through the stage
-    #         overswingAngle = overswing * (-4*math.pow(fractionIntoFrame - 0.5, 2) + 1)
-    #         #overswinging anchor right
-    #         wheel_angle = wheelAngle_toothAtEndOfExitPallet_deg - frame * fractionIntoFrame * (drop )
-    #         anchor_angle = anchorAngle_toothAtEndOfExitPallet_deg + overswingAngle
-    #         print(overswingAngle)
+
 
     #pendulum swings by simple harmonic motion, a sine wave, so the entire animations spans 2pi
     circlePerFrame = math.pi*2/frames
@@ -4324,7 +4294,7 @@ def animateEscapement(escapement, frames=100, path="out", overswing_deg=2):
 
         # #
         wholeObject = escapement.getAnchor2D().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0, 0, 1), wheel_angle_deg))
-        exporters.export(wholeObject, os.path.join(path,"escapment_animation_{:02d}.svg".format(frame)), opt=svgOpt)
+        exporters.export(wholeObject, os.path.join(path,"{}_{:02d}.svg".format(name, frame)), opt=svgOpt)
 
         # show_object(wholeObject.add(cq.Workplane("XY").circle(escapement.diameter/2)))
         # return
@@ -4333,18 +4303,24 @@ def animateEscapement(escapement, frames=100, path="out", overswing_deg=2):
         # # # svgString = exporters.getSVG(exporters.toCompound(wholeObject), opts=svgOpt)
         # # # print(svgString)
 
-    os.system("{} -delay 20, -loop 0 {}/escapment_animation_*.svg {}/escapment_animation.gif".format(IMAGEMAGICK_CONVERT_PATH, path,path))
+    os.system("{} -delay {}, -loop 0 {}/{}_*.svg {}/{}.gif".format(IMAGEMAGICK_CONVERT_PATH, timePerFrame,  path, name,path, name))
 
-drop = 1.5
-lift = 2
-lock = 1.5
-teeth = 48
-diameter = 65  # 64.44433859295404#61.454842805344896
-toothTipAngle = 4
-toothBaseAngle = 3
-escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
+#trial for 48 tooth wheel
+# drop = 1.5
+# lift = 2
+# lock = 1.5
+# teeth = 48
+# diameter = 65  # 64.44433859295404#61.454842805344896
+# toothTipAngle = 4
+# toothBaseAngle = 3
+# escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
-animateEscapement(escapement, 30)
+drop =1.5
+lift =3
+lock=1.5
+escapement = Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+
+animateEscapement(escapement, frames=100, period=1.5)
 
 
 
