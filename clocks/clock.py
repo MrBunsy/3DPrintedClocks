@@ -1662,12 +1662,12 @@ class CordWheel:
             #do we actually we want the inner radius to be the same as the capdiameter? (inner_radius = pitch_radius - dedendum_height)
             module = self.capDiameter/wheelTeeth
             #fudging slightly to account for the innerradius rather than pitch circle
-            pinionTeeth = math.ceil(1.6*(self.bearingInnerD + self.bearingLip*2)/module)
+            pinionTeeth = math.ceil(1.4*(self.bearingInnerD + self.bearingLip*2)/module)
             self.wheelPinionPair = WheelPinionPair(wheelTeeth, pinionTeeth,module)
             self.wheelPinionPair.wheel.innerRadiusForStyle =  self.diameter/2 + self.cordThick
             #self.gearDistance = self.wheelPinionPair.centre_distance
             self.keySize = math.sqrt(2) * (self.bearingInnerD / 2 - self.bearingWiggleRoom - 1)
-            print("key size", self.keySize)
+            print("key size", self.keySize, "gear ratio", wheelTeeth/ pinionTeeth)
 
     def getNutHoles(self):
         cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[0]))
@@ -1802,6 +1802,8 @@ class CordWheel:
 
         key = key.cut(nutSpace)
 
+        #this is a bit that sticks out so the gear can't fall inside the clock.
+        #TODO take into account the front plate thickness, not just the bearing thickness
         clampyBitThick = 2
         clampyBit = cq.Workplane("XY").circle(self.bearingInnerD/2 + self.bearingLip).extrude(clampyBitThick)
         cutOffClampyBit = cq.Workplane("XY").moveTo(-self.bearingInnerD,-(self.keySize - self.keyWiggleRoom)/2).line(self.bearingInnerD*2,0).line(0,-self.bearingInnerD).line(-self.bearingInnerD*2,0).close().extrude(clampyBitThick)
@@ -4160,7 +4162,7 @@ class WeightShell:
         exporters.export(self.getShell(False), out)
 
 
-def animateEscapement(escapement, frames=100, path="out", overswing=2):
+def animateEscapement(escapement, frames=100, path="out", overswing_deg=2):
     # # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
     # #                              clockwiseFromPinionSide=False, type="deadbeat")
     ##
@@ -4171,14 +4173,22 @@ def animateEscapement(escapement, frames=100, path="out", overswing=2):
                     }
 
 
-    toothAngle = 360 / escapement.teeth
+    toothAngle_deg = 360 / escapement.teeth
 
-    palletAngleFromWheel = (toothAngle / 2 - escapement.drop_deg)
+    palletAngleFromWheel_deg = (toothAngle_deg / 2 - escapement.drop_deg)
 
-    wheelAngle_toothAtEndOfExitPallet = radToDeg(math.pi / 2 + escapement.anchorAngle / 2) -  palletAngleFromWheel/ 2
-    wheel_angle = wheelAngle_toothAtEndOfExitPallet  # -3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-    anchorAngle_toothAtEndOfExitPallet =  escapement.lift_deg / 2 + escapement.lock_deg / 2
-    anchor_angle = anchorAngle_toothAtEndOfExitPallet # lift/2 + lock/2
+    wheelAngle_toothAtEndOfExitPallet_deg = radToDeg(math.pi / 2 + escapement.anchorAngle / 2) -  palletAngleFromWheel_deg/ 2
+    #increment (-ve for clockwise) by drop
+    wheelAngle_toothAtStartOfEntryPallet_deg = wheelAngle_toothAtEndOfExitPallet_deg - escapement.drop_deg#(toothAngle_deg - escapement.drop_deg)
+    wheelAngle_toothAtEndOfEntryPallet_deg = wheelAngle_toothAtStartOfEntryPallet_deg - palletAngleFromWheel_deg
+    wheelAngle_toothAtStartOfExitPallet_deg = wheelAngle_toothAtEndOfEntryPallet_deg - escapement.drop_deg#(toothAngle_deg - escapement.drop_deg)
+
+    # wheel_angle_deg = wheelAngle_toothAtEndOfExitPallet_deg  # -3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
+    anchorAngle_startOfExitPallet_deg = escapement.lock_deg / 2 -escapement.lift_deg / 2
+    anchorAngle_endOfExitPallet_deg =  escapement.lock_deg / 2 + escapement.lift_deg / 2
+    anchorAngle_startOfEntryPallet_deg = -escapement.lock_deg / 2 + escapement.lift_deg / 2
+    anchorAngle_endOfEntryPallet_deg = -escapement.lock_deg / 2 - escapement.lift_deg / 2
+    # anchor_angle = anchorAngle_toothAtEndOfExitPallet_deg # lift/2 + lock/2
     #
     # stages = ["dropToEntry", "lockBeforeEntry","entry", "dropToExit", "lockBeforeExit", "exit"]
     # # stage = stages[0]
@@ -4204,29 +4214,124 @@ def animateEscapement(escapement, frames=100, path="out", overswing=2):
     #         #quadratic that peaks halfway through the stage
     #         overswingAngle = overswing * (-4*math.pow(fractionIntoFrame - 0.5, 2) + 1)
     #         #overswinging anchor right
-    #         wheel_angle = wheelAngle_toothAtEndOfExitPallet - frame * fractionIntoFrame * (drop )
-    #         anchor_angle = anchorAngle_toothAtEndOfExitPallet + overswingAngle
+    #         wheel_angle = wheelAngle_toothAtEndOfExitPallet_deg - frame * fractionIntoFrame * (drop )
+    #         anchor_angle = anchorAngle_toothAtEndOfExitPallet_deg + overswingAngle
     #         print(overswingAngle)
 
-    pendulumPerFrame = math.pi*2/frames
+    #pendulum swings by simple harmonic motion, a sine wave, so the entire animations spans 2pi
+    circlePerFrame = math.pi*2/frames
+
+    swingAmplitude_rad = (escapement.lift + escapement.lock + degToRad(overswing_deg)) / 2
+
+    #when not free running, this is the pallet/lock face we're against, when free running it's where we'll be in contact with NEXT
+    toothContactWithEntry=False
+    wheelFreeRunning=False
+    #not free running and also not against locking face
+    toothOnPallet=True
+    #angle per frame, when free running
+    wheelSpeed = -4*toothAngle_deg/frames
+    # wheelStartAngle_deg = wheelAngle_toothAtEndOfExitPallet_deg
+    wheel_angle_deg = wheelAngle_toothAtEndOfExitPallet_deg
+
+    # anchor_angle_rad_lastPos = degToRad(anchorAngle_toothAtEndOfExitPallet_deg)
+
+    def getAnchorAngleForFrame_rad(frame):
+        return math.sin(circlePerFrame * frame + math.asin(degToRad(anchorAngle_endOfExitPallet_deg) / swingAmplitude_rad)) * swingAmplitude_rad
 
     for frame in range(frames):
 
-        anchor_angle_rad = math.sin(pendulumPerFrame * frame)*(escapement.lift+escapement.lock + degToRad(overswing))/2
+        print("frame", frame)
+
+        #starting at the point where a tooth is leaving the exit pallet, when frame == 0 anchor angle == anchorAngle_toothAtEndOfExitPallet_deg
+        anchor_angle_rad = getAnchorAngleForFrame_rad(frame)
+
+        print("anchor_angle",radToDeg(anchor_angle_rad))
+        print("anchorAngle_toothAtEndOfExitPallet_deg", anchorAngle_endOfExitPallet_deg)
 
         anchor_angle = radToDeg(anchor_angle_rad)
+        #bodge
+        if frame > 0:
+            if wheelFreeRunning:
+                print("wheel running free")
+                if toothContactWithEntry:
+                    print("heading towards entry")
+                    if (wheel_angle_deg + wheelSpeed) < wheelAngle_toothAtStartOfEntryPallet_deg:
+                        wheel_angle_deg =  wheelAngle_toothAtStartOfEntryPallet_deg
+                        wheelFreeRunning = False
+                        # exit locking face
+                        toothContactWithEntry = True
+                        toothOnPallet = False
+                        print("locked against entry")
+                else:
+                    print("heading towards exit")
+                    # remembering that clockwise is -ve
+                    if wheel_angle_deg + wheelSpeed < wheelAngle_toothAtStartOfExitPallet_deg:
+                        # this will come into contact with the locking edge of the entry pallet
+                        wheel_angle_deg = wheelAngle_toothAtStartOfExitPallet_deg
+                        wheelFreeRunning = False
+                        toothContactWithEntry = False
+                        toothOnPallet = False
+                        print("locked against exit")
+
+                #if we're still free-running, rotate
+                if wheelFreeRunning:
+                    #carry on rotating
+                    wheel_angle_deg+= wheelSpeed
+                    print("wheel still running free")
+
+            else:
+                #wheel is not free running, it is either in lock or in contact with a pallet
+                print("wheel not running free")
+                if toothOnPallet:
+                    print("tooth on pallet")
+                    #actually on the pallet
+                    # rotate the wheel at teh same rate as the anchor (bodge?)
+
+                    # wheel_angle_deg += -abs(radToDeg(getAnchorAngleForFrame_rad(frame) - getAnchorAngleForFrame_rad(frame -1)))
+
+                    wheel_angle_deg += -abs(radToDeg(getAnchorAngleForFrame_rad(frame +1) - getAnchorAngleForFrame_rad(frame)))
+
+                    if not toothContactWithEntry and anchor_angle > anchorAngle_endOfExitPallet_deg:
+                        #tooth has left exit pallet
+                        wheelFreeRunning = True
+                        toothOnPallet = False
+                        toothContactWithEntry=True
+                        print("left exit pallet")
+                    elif toothContactWithEntry and anchor_angle < anchorAngle_endOfEntryPallet_deg:
+                        # tooth has left entry pallet
+                        wheelFreeRunning = True
+                        toothOnPallet = False
+                        toothContactWithEntry = False
+                        print("left entry pallet")
+                else:
+                    print("wheel is locked")
+                    #against a locking face
+                    if toothContactWithEntry and anchor_angle < anchorAngle_startOfEntryPallet_deg:
+                        #now against the entry pallet
+                        toothOnPallet = True
+                        print("now in contact with entry pallet")
+
+                    elif not toothContactWithEntry and anchor_angle > anchorAngle_startOfExitPallet_deg:
+                        toothOnPallet = True
+                        print("now in contact with exit pallet")
+
+
+
 
         #TODO, check if anchor angle is where the wheel should be locked, heading to being locked, or moving along one of the pallets
         #then choose a speed to move when the wheel is moving freely and work out how to match up the speed with the pallets
         #should be able to figure out how many frames are required across the lift angle with arcsine somehow?
 
         # #
-        wholeObject = escapement.getAnchor2D().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0, 0, 1), wheel_angle))
+        wholeObject = escapement.getAnchor2D().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0, 0, 1), wheel_angle_deg))
         exporters.export(wholeObject, os.path.join(path,"escapment_animation_{:02d}.svg".format(frame)), opt=svgOpt)
+
+        # show_object(wholeObject.add(cq.Workplane("XY").circle(escapement.diameter/2)))
+        # return
+        # print("frame",frame)
+
         # # # svgString = exporters.getSVG(exporters.toCompound(wholeObject), opts=svgOpt)
         # # # print(svgString)
-        # show_object(wholeObject)
-        # print("frame",frame)
 
     os.system("{} -delay 20, -loop 0 {}/escapment_animation_*.svg {}/escapment_animation.gif".format(IMAGEMAGICK_CONVERT_PATH, path,path))
 
@@ -4239,7 +4344,7 @@ toothTipAngle = 4
 toothBaseAngle = 3
 escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
-# animateEscapement(escapement, 30)
+animateEscapement(escapement, 30)
 
 
 
@@ -4443,12 +4548,12 @@ escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter
 #
 # show_object(shell.getShell(False).translate((100,0,0)))
 
-ratchet = Ratchet()
-cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True)
-
-
-
-show_object(cordWheel.getAssembled())
+# ratchet = Ratchet()
+# cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True)
+#
+#
+#
+# show_object(cordWheel.getAssembled())
 
 # show_object(cordWheel.getClickWheelForCord(ratchet))
 # show_object(cordWheel.getCap().translate((0,0,ratchet.thick)))
