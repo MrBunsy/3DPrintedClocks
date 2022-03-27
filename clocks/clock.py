@@ -4169,8 +4169,12 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
                     "width": 1280,
                     "height": 720,
                     }
-    #in GIF terms
+    #in GIF terms (100ths of a second, I think)
     timePerFrame = int(round((period * 100) / frames))
+
+    #can't find a better way to stop the camera moving about, than giving it something at the edges that doesn't change
+    boundingBox = cq.Workplane("XY").rect(escapement.diameter * 1.25, escapement.diameter * 1.75)
+
     toothAngle_deg = 360 / escapement.teeth
 
     palletAngleFromWheel_deg = (toothAngle_deg / 2 - escapement.drop_deg)
@@ -4294,6 +4298,9 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
 
         # #
         wholeObject = escapement.getAnchor2D().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0, 0, 1), wheel_angle_deg))
+
+        wholeObject = wholeObject.add(boundingBox)
+
         exporters.export(wholeObject, os.path.join(path,"{}_{:02d}.svg".format(name, frame)), opt=svgOpt)
 
         # show_object(wholeObject.add(cq.Workplane("XY").circle(escapement.diameter/2)))
@@ -4320,7 +4327,7 @@ lift =3
 lock=1.5
 escapement = Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-animateEscapement(escapement, frames=100, period=1.5)
+animateEscapement(escapement, frames=100, period=1.5,overswing_deg=4)
 
 
 
