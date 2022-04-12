@@ -149,3 +149,5 @@ There is also barely enough clearnce between the head of the screw that holds th
 Trying space for the screwhead in teh front plate
 
 The cord wheel can end up resting against the front clock plate, with a noticable (but slight) reduction in power of the clock. I think allowing space for a washer between teh top cap and the front plate would help? If I'd left it with 2mm of wobble (end shake) it would have been fine to pop a washer in!
+
+clock 04 has stopped being reliable after I got back from a week away. I can shove the chain wheel back a bit and then it works for a few hours. Even with the 750g weight it gets stuck. Not sure if related or not, but I think having a minimum standoff from the plates would be a good idea. This could be a washer or printed bit. Things like the anchor, cord or chain wheels need to not come into contact with the inside of the plate.

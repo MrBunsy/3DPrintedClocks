@@ -50,6 +50,7 @@ STEEL_SHOT_DENSITY=0.35/0.055
 
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
+GRAVITY = 9.81
 
 WASHER_THICK = 0.5
 
@@ -208,6 +209,35 @@ class Gear:
             # .close().cutThruAll()
         return gear
 
+    @staticmethod
+    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2):
+        '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
+
+        if innerRadius < 0:
+            innerRadius = 3
+
+
+
+        # #TEMP
+        # gear = gear.faces(">Z").workplane().circle(innerRadius).cutThruAll()
+        # return gear
+
+        #sopme slight fudging occurs with minGap as using the diameter (gapSize) as a measure of how much circumference the circle takes up isn't accurate
+
+        gapSize = (outerRadius - innerRadius)
+
+        bigCirclescircumference = 2 * math.pi * (innerRadius + gapSize/2)
+
+        bigCircleCount = math.floor(bigCirclescircumference / (gapSize + minGap))
+        if bigCircleCount > 0 :
+            bigCircleAngle = math.pi*2/bigCircleCount
+            for circle in range(bigCircleCount):
+                pos = polar(bigCircleAngle*circle, innerRadius + gapSize/2)
+
+                gear = gear.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(gapSize/2  - minGap/2).cutThruAll()
+
+        return gear
+
     def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, innerRadiusForStyle=-1):
         self.iswheel = isWheel
         self.teeth = teeth
@@ -223,7 +253,7 @@ class Gear:
         self.pitch_diameter = self.module * self.teeth
 
         #purely for the fancy styling, is there anyhting in the centre (like a pinion or ratchet) to avoid?
-        self.innerRadiusForStyle=innerRadiusForStyle
+        # self.innerRadiusForStyle=innerRadiusForStyle
 
         # # via practical addendum factor
         # self.addendum_height = 0.95 * addendum_factor * module
@@ -231,7 +261,7 @@ class Gear:
     def getMaxRadius(self):
         return self.pitch_diameter/2 + self.addendum_factor*self.module
 
-    def get3D(self, holeD=0, thick=0, style="HAC"):
+    def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1):
         gear = self.get2D()
 
         if thick == 0:
@@ -242,13 +272,19 @@ class Gear:
             gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
 
         if self.iswheel:
+            rimThick = max(self.pitch_diameter * 0.035, 3)
+            rimRadius = self.pitch_diameter / 2 - self.dedendum_factor * self.module - rimThick
+
+            armThick = rimThick
             if style == "HAC":
 
-                rimThick = max(self.pitch_diameter * 0.035 , 3)
-                rimRadius = self.pitch_diameter/2 - self.dedendum_factor*self.module - rimThick
 
-                armThick = rimThick
-                gear = Gear.cutHACStyle(gear, armThick, rimRadius, innerRadius=self.innerRadiusForStyle)
+                gear = Gear.cutHACStyle(gear, armThick, rimRadius, innerRadius=innerRadiusForStyle)
+            elif style == "circles":
+                # innerRadius = self.innerRadiusForStyle
+                # if innerRadius < 0:
+                #     innerRadius = self.
+                gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
 
 
 
@@ -263,7 +299,7 @@ class Gear:
 
         # pinionThick = thick * pinionthicker
 
-        base = wheel.get3D(thick=thick, holeD=holeD, style=style)
+        base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.getMaxRadius())
 
         if front:
             #pinion is on top of the wheel
@@ -454,8 +490,10 @@ class Arbour:
         if self.getType() == "Unknown":
             raise ValueError("Not a valid arbour")
 
-        if self.getType() == "ChainWheel":
-            self.wheel.innerRadiusForStyle=self.ratchet.outsideDiameter*0.6
+        # if self.getType() == "ChainWheel":
+        #     self.wheel.innerRadiusForStyle=self.ratchet.outsideDiameter*0.6
+        # elif self.getType() == "WheelAndPinion":
+        #     self.wheel.innerRadiusForStyle = self.pinion.getMaxRadius()+1
 
     def setNutSpace(self, nutMetricSize=3):
         '''
@@ -855,7 +893,7 @@ class GoingTrain:
 
         self.usingChain=True
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2 ):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC" ):
 
         self.genPowerWheelRatchet()
         #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
@@ -864,7 +902,7 @@ class GoingTrain:
         # ratchetD = 21.22065907891938
         self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
-        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick)
+        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
         self.poweredWheel = self.cordWheel
         self.usingChain=False
 
@@ -890,7 +928,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.85, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC"):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -911,12 +949,12 @@ class GoingTrain:
 
         # self.gearPinionLength=thick*3
         # self.chainGearPinionLength = chainWheelThick*2.5
-        pinionThickMultiplier = 2.5
+
 
         self.gearPinionEndCapLength=thick*0.25
         # self.gearTotalThick = self.gearWheelThick + self.gearPinionLength + self.gearPinionEndCapLength
         # self.chainGearTotalThick
-        style="HAC"
+
         module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
         #the module of each wheel is slightly smaller than the preceeding wheel
@@ -1516,7 +1554,7 @@ class Escapement:
     def getWheelMaxR(self):
         return self.diameter/2
 
-    def getWheel3D(self, thick=5, holeD=5, style="HAC"):
+    def getWheel3D(self, thick=5, holeD=5, style="HAC", innerRadiusForStyle=-1):
         gear = self.getWheel2D().extrude(thick)
 
         if not self.clockwiseFromPinionSide:
@@ -1528,6 +1566,8 @@ class Escapement:
         armThick = rimThick
         if style == "HAC":
             gear = Gear.cutHACStyle(gear, armThick, rimRadius)
+        elif style == "circles":
+            gear = Gear.cutCirclesStyle(gear, outerRadius=rimRadius, innerRadius=innerRadiusForStyle)
 
         # hole = cq.Workplane("XY").circle(holeD/2).extrude(thick+2).translate((0,0,-1))
         #
@@ -1539,8 +1579,8 @@ class Escapement:
 
 
     #hack to masquerade as a Gear, then we can use this with getArbour()
-    def get3D(self, thick=5, holeD=5, style="HAC"):
-        return self.getWheel3D(thick=thick, holeD=holeD, style=style)
+    def get3D(self, thick=5, holeD=5, style="HAC", innerRadiusForStyle=-1):
+        return self.getWheel3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=innerRadiusForStyle)
 
     def getTestRig(self, holeD=3, tall=4):
         #simple rig to place both parts on and check they actually work
@@ -1614,7 +1654,7 @@ class CordWheel:
     Made of two segments (one if using key) and a cap. Designed to be attached to the ratchet click wheel
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, gearThick=5, frontPlateThick=8):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, gearThick=5, frontPlateThick=8, style="HAC"):
         self.diameter=diameter
         #thickness of one segment
         self.thick=thick
@@ -1634,6 +1674,8 @@ class CordWheel:
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
         # self.screwLength=screwLength
+
+        self.style = style
 
         self.fixingDistance=self.diameter*0.3
         self.fixingPoints = [(self.fixingDistance,0), (-self.fixingDistance,0)]
@@ -1664,7 +1706,7 @@ class CordWheel:
             #fudging slightly to account for the innerradius rather than pitch circle
             pinionTeeth = math.ceil(1.4*(self.bearingInnerD + self.bearingLip*2)/module)
             self.wheelPinionPair = WheelPinionPair(wheelTeeth, pinionTeeth,module)
-            self.wheelPinionPair.wheel.innerRadiusForStyle =  self.diameter/2 + self.cordThick
+            # self.wheelPinionPair.wheel.innerRadiusForStyle =  self.diameter/2 + self.cordThick
             #self.gearDistance = self.wheelPinionPair.centre_distance
             self.keySize = math.sqrt(2) * (self.bearingInnerD / 2 - self.bearingWiggleRoom - 1)
             print("key size", self.keySize, "gear ratio", wheelTeeth/ pinionTeeth)
@@ -1678,7 +1720,7 @@ class CordWheel:
         #if front segment, the holes for screws/nuts will be different
 
         if self.useGear:
-            segment = self.wheelPinionPair.wheel.get3D(holeD=self.rodD, thick=self.gearThick)
+            segment = self.wheelPinionPair.wheel.get3D(holeD=self.rodD, thick=self.gearThick, innerRadiusForStyle=self.diameter/2 + self.cordThick, style=self.style)
         else:
             segment = self.getCap()
 
@@ -1713,8 +1755,10 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
-
-        cap = Gear.cutHACStyle(cap,self.rodD*0.75,self.capDiameter/2-self.rodD*0.75, self.diameter/2 + self.cordThick)
+        if self.style == "HAC":
+            cap = Gear.cutHACStyle(cap,self.rodD*0.75,self.capDiameter/2-self.rodD*0.75, self.diameter/2 + self.cordThick)
+        elif self.style == "circles":
+            cap = Gear.cutCirclesStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius= self.diameter / 2 + self.cordThick)
 
         return cap
 
@@ -2241,7 +2285,7 @@ class Ratchet:
 
 
 def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
-    gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style)
+    gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style, innerRadiusForStyle=ratchet.outsideDiameter*0.5)
 
     ratchetWheel = ratchet.getOuterWheel().translate((0,0,thick))
 
@@ -4163,7 +4207,9 @@ class WeightShell:
 
 
 def animateEscapement(escapement, frames=100, path="out", name="escapement_animation", overswing_deg=2, period=1.5):
-
+    '''
+    There is osmethign wrong here, it works for a 40 or 48 tooth escapment, but not for a 30 tooth
+    '''
     svgOpt = {"showAxes": False,
                     "projectionDir": (0, 0, 1),
                     "width": 1280,
@@ -4312,6 +4358,55 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
 
     os.system("{} -delay {}, -loop 0 {}/{}_*.svg {}/{}.gif".format(IMAGEMAGICK_CONVERT_PATH, timePerFrame,  path, name,path, name))
 
+
+class BallWheel:
+    '''
+    Use steel balls in a waterwheel-like wheel instead of a weight on a cord or chain.
+    Shouldn't need a power maintainer. Might need some sort of stop works to avoid getting stuck half empty
+
+    stop works idea: sprung lever from the side, after where the ball drops in. If there's no ball there (or no ball falls on it), it would stop the wheel turning
+    '''
+
+    def __init__(self, ballDiameter=25.4, ballsAtOnce=10, ballWeight = 0.065):
+        self.ballDiameter = ballDiameter
+        # self.maxDiameter = maxDiameter
+        #how many balls to fit onto half the wheel
+        self.ballsAtOnce = ballsAtOnce
+        self.ballWeightKg = ballWeight
+
+        self.wallThick=3
+        self.wiggleRoom=2
+        self.taperAngleDeg = 3
+
+        self.segmentArcLength = (ballDiameter + self.wallThick + self.wiggleRoom)
+
+        self.pitchCircumference = ballsAtOnce*(ballDiameter + self.wallThick + self.wiggleRoom)*2
+        self.pitchDiameter = self.pitchCircumference / math.pi
+        print("pitch diameter", self.pitchDiameter)
+
+    def getTorque(self):
+        ballAngle = math.pi*2/(self.ballsAtOnce*2)
+
+        torque = 0
+
+        #from top to bottom, assuming clockwise for no particularily good reason
+        for ball in range(self.ballsAtOnce):
+            angle = math.pi/2 - ball*ballAngle
+            print("angle", radToDeg(angle))
+
+            xDir = math.cos(angle)*self.pitchDiameter/2
+            print(xDir)
+            xDirMetres = xDir/1000
+            torque += xDirMetres * self.ballWeightKg * GRAVITY
+
+        return torque
+
+
+
+ballWheel = BallWheel()
+torque = ballWheel.getTorque()
+print("torque", torque, torque/0.037)
+
 #trial for 48 tooth wheel
 # drop = 1.5
 # lift = 2
@@ -4322,12 +4417,12 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
 # toothBaseAngle = 3
 # escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
-drop =1.5
-lift =3
-lock=1.5
-escapement = Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+# drop =1.5
+# lift =3
+# lock=1.5
+# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-animateEscapement(escapement, frames=100, period=1.5,overswing_deg=4)
+# animateEscapement(escapement, frames=100, period=1.5,overswing_deg=4)
 
 
 
@@ -4531,12 +4626,16 @@ animateEscapement(escapement, frames=100, period=1.5,overswing_deg=4)
 #
 # show_object(shell.getShell(False).translate((100,0,0)))
 
-# ratchet = Ratchet()
-# cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True)
+ratchet = Ratchet()
+cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
 #
 #
 #
-# show_object(cordWheel.getAssembled())
+show_object(cordWheel.getAssembled())
+
+# show_object(cordWheel.getCap())
+
+
 
 # show_object(cordWheel.getClickWheelForCord(ratchet))
 # show_object(cordWheel.getCap().translate((0,0,ratchet.thick)))

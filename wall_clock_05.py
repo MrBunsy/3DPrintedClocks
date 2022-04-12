@@ -1,9 +1,12 @@
 import clocks.clock as clock
 
 '''
-Wall clock 03 proved the new design of clock plates and that smaller gears can work.
+This is an attempt to make an eight day clock.
 
-This is an attempt to make an eight day clock
+It has an asymetric design to try out making clock plates smaller. This works, but looks a bit odd.
+
+It failed as the chain wheel couldn't take the weight (the lugs broke/bent) and the chain stretched.
+It ran for about 4 days first though, proving that the going train can work. Plan is to remake this clock but with a symetric design and a cord wheel
 '''
 
 
