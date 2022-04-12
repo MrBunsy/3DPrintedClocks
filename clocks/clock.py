@@ -210,7 +210,7 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2):
+    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2.4):
         '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
 
         if innerRadius < 0:
@@ -224,17 +224,34 @@ class Gear:
 
         #sopme slight fudging occurs with minGap as using the diameter (gapSize) as a measure of how much circumference the circle takes up isn't accurate
 
-        gapSize = (outerRadius - innerRadius)
+        ringSize = (outerRadius - innerRadius)
+        bigCircleR = ringSize*0.45
+        bigCircleSpace = ringSize
+        # smallCircleR = bigCircleR*0.3
 
-        bigCirclescircumference = 2 * math.pi * (innerRadius + gapSize/2)
 
-        bigCircleCount = math.floor(bigCirclescircumference / (gapSize + minGap))
+
+        bigCirclescircumference = 2 * math.pi * (innerRadius + ringSize/2)
+
+        bigCircleCount = math.floor(bigCirclescircumference / bigCircleSpace)
         if bigCircleCount > 0 :
             bigCircleAngle = math.pi*2/bigCircleCount
-            for circle in range(bigCircleCount):
-                pos = polar(bigCircleAngle*circle, innerRadius + gapSize/2)
 
-                gear = gear.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(gapSize/2  - minGap/2).cutThruAll()
+            bigCirclePos = polar(0, innerRadius + ringSize / 2)
+            smallCirclePos = polar(bigCircleAngle / 2, innerRadius + ringSize * 0.75)
+            distance = math.sqrt((bigCirclePos[0] - smallCirclePos[0])**2 + (bigCirclePos[1] - smallCirclePos[1])**2)
+            smallCircleR = distance - bigCircleR - minGap
+
+            hasSmallCircles = smallCircleR > 2
+
+            for circle in range(bigCircleCount):
+                angle = bigCircleAngle*circle
+                pos = polar(angle, innerRadius + ringSize/2)
+
+                gear = gear.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(bigCircleR).cutThruAll()
+                if hasSmallCircles:
+                    smallCirclePos = polar(angle + bigCircleAngle/2, innerRadius + ringSize*0.75)
+                    gear = gear.faces(">Z").workplane().moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).cutThruAll()
 
         return gear
 
