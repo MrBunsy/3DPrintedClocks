@@ -1134,15 +1134,7 @@ def toPolar(x,y):
     angle = math.atan2(y,x)
     return (angle, r)
 
-def getArbour(wheel,pinion, holeD=0, thick=0, style="HAC"):
-    base = wheel.get3D(thick=thick, holeD=holeD,style=style)
 
-    top = pinion.get3D(thick=thick*3, holeD=holeD,style=style).translate([0,0,thick])
-
-    arbour = base.add(top)
-
-    arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick*0.5).circle(holeD/2).cutThruAll()
-    return arbour
 
 class Escapement:
     def __init__(self, teeth=42, diameter=100, anchorTeeth=None, type="recoil", lift=4, drop=4, run=10, lock=2, clockwiseFromPinionSide=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
@@ -2379,26 +2371,48 @@ class MotionWorks:
 
         return pinion
 
+    # def getArbour(self, wheel, pinion, holeD=0, thick=0, style="HAC"):
+    #     base = wheel.get3D(thick=thick, holeD=holeD, style=style)
+    #
+    #     top = pinion.get3D(thick=thick * 3, holeD=holeD, style=style).translate([0, 0, thick])
+    #
+    #     arbour = base.add(top)
+    #
+    #     arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
+    #     return arbour
+
     def getMotionArbour(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
+        wheel = self.pairs[0].wheel
+        pinion = self.pairs[1].pinion
+
+        base = wheel.get3D(thick=self.thick, holeD=self.holeD, style=self.style, innerRadiusForStyle= pinion.getMaxRadius())
+
+        top = pinion.get3D(thick=self.thick * 3, holeD=self.holeD, style=self.style).translate([0, 0, self.thick])
+
+        arbour = base.add(top)
+
+        arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(self.thick * 0.5).circle(self.holeD / 2).cutThruAll()
+        return arbour
+
         return getArbour(self.pairs[0].wheel, self.pairs[1].pinion,holeD=self.holeD, thick = self.thick, style=self.style)
 
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
 
-
+        # want it tapered so an hour hand can be pushed down for a friction fit
+        topR = self.hourHandHolderD / 2 - 0.5
+        midR = self.hourHandHolderD / 2
+        bottomR = self.hourHandHolderD / 2
 
         #TODO the sides need to slope in slightly to make the friction fit easier
-        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=self.style)
+        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=self.style, innerRadiusForStyle=bottomR)
 
         height = self.minuteHolderTotalHeight - self.cannonPinionThick - self.thick - self.thick  - self.minuteHandSlotHeight - self.space
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
-        #want it tapered so an hour hand can be pushed down for a friction fit
-        topR = self.hourHandHolderD/2-0.5
-        midR = self.hourHandHolderD/2
-        bottomR = self.hourHandHolderD/2
+
 
         holeR = self.minuteHandHolderD / 2 + self.space / 2
 
