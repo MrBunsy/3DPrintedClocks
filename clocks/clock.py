@@ -225,8 +225,8 @@ class Gear:
         #sopme slight fudging occurs with minGap as using the diameter (gapSize) as a measure of how much circumference the circle takes up isn't accurate
 
         ringSize = (outerRadius - innerRadius)
-        bigCircleR = ringSize*0.45
-        bigCircleSpace = ringSize
+        bigCircleR = ringSize*0.425
+        bigCircleSpace = ringSize*1.1
         # smallCircleR = bigCircleR*0.3
 
 
@@ -1570,7 +1570,8 @@ class Escapement:
             gear = gear.mirror("YZ", (0,0,0))
 
         rimThick = holeD*1.5
-        rimRadius = self.innerRadius - rimThick
+        #have toyed with making the escape wheel more solid to see if it improves the tick sound. not convinced it does
+        rimRadius = self.innerRadius - holeD*0.5# - rimThick
 
         armThick = rimThick
         if style == "HAC":
@@ -1671,6 +1672,7 @@ class CordWheel:
         self.useKey=useKey
         #if true, this cord wheel has a gear and something (like a key) is used to turn that gear
         self.useGear=useGear
+        #1mm felt too flimsy
         self.capThick=2
         self.capDiameter = capDiameter
         self.rodMetricSize = rodMetricSize
@@ -1746,12 +1748,13 @@ class CordWheel:
             #current plan is to put the screw heads in the ratchet, as this side gives us more wiggle room for screws of varying length
             segment = segment.cut(self.getNutHoles())
 
-        cordHoleZ = self.thick/2 + self.capThick
+        cordHoleR = 1.5*self.cordThick/2
+        cordHoleZ = self.capThick + cordHoleR
         if self.useGear:
-            cordHoleZ = self.thick/2 + self.gearThick
+            cordHoleZ = self.gearThick + cordHoleR
 
         #cut a hole so we can tie the cord
-        cutter = cq.Workplane("YZ").moveTo(self.diameter*0.25,cordHoleZ).circle(1.5*self.cordThick/2).extrude(self.diameter*4).translate((-self.diameter*2,0,0))
+        cutter = cq.Workplane("YZ").moveTo(self.diameter*0.25,cordHoleZ).circle(cordHoleR).extrude(self.diameter*4).translate((-self.diameter*2,0,0))
 
         segment = segment.cut(cutter)
 
