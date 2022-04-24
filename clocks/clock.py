@@ -52,6 +52,9 @@ STEEL_SHOT_DENSITY=0.35/0.055
 LAYER_THICK=0.2
 GRAVITY = 9.81
 
+#extra diameter to add to something that should be free to rotate over a rod
+LOOSE_FIT_ON_ROD = 0.3
+
 WASHER_THICK = 0.5
 
 #extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
@@ -210,7 +213,7 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2.4):
+    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2.4, cantUseCutThroughAllBodgeThickness=0):
         '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
 
         if innerRadius < 0:
@@ -248,10 +251,18 @@ class Gear:
                 angle = bigCircleAngle*circle
                 pos = polar(angle, innerRadius + ringSize/2)
 
-                gear = gear.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(bigCircleR).cutThruAll()
+                if cantUseCutThroughAllBodgeThickness > 0:
+                    cutter = cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR).extrude(cantUseCutThroughAllBodgeThickness)
+                    gear = gear.cut(cutter)
+                else:
+                    gear = gear.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(bigCircleR).cutThruAll()
                 if hasSmallCircles:
-                    smallCirclePos = polar(angle + bigCircleAngle/2, innerRadius + ringSize*0.75)
-                    gear = gear.faces(">Z").workplane().moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).cutThruAll()
+                    smallCirclePos = polar(angle + bigCircleAngle / 2, innerRadius + ringSize * 0.75)
+                    if cantUseCutThroughAllBodgeThickness > 0:
+                        cutter = cq.Workplane("XY").moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).extrude(cantUseCutThroughAllBodgeThickness)
+                        gear = gear.cut(cutter)
+                    else:
+                        gear = gear.faces(">Z").workplane().moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).cutThruAll()
 
         return gear
 
@@ -910,7 +921,7 @@ class GoingTrain:
 
         self.usingChain=True
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC" ):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", useFriction=False ):
 
         self.genPowerWheelRatchet()
         #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
@@ -919,7 +930,7 @@ class GoingTrain:
         # ratchetD = 21.22065907891938
         self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
-        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
+        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, useFriction=useFriction)
         self.poweredWheel = self.cordWheel
         self.usingChain=False
 
@@ -1653,6 +1664,75 @@ def getHoleWithHole(innerD,outerD,deep, sides=1, layerThick=LAYER_THICK):
 
     return hole
 
+# class FrictionCordWheel:
+#     '''
+#     CordWheel works, but is very wide as it needs space to coil two cords - one for the weight and one to pull it up.
+#
+#     Instead this will be a hemp cord/rope (hemp should have more friction) with a counterweight and a V-shaped pulley.
+#
+#     Apparently this can work, I'll find out! Should be nearer to a drop in replacement for the chain wheel
+#     '''
+#
+#     def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3):
+#         self.diameter=diameter
+#         self.cordDiameter=cordDiameter
+#         self.rodMetricSize=rodMetricSize
+#         self.screwMetricSize=screwMetricSize
+
+class Pulley:
+    '''
+    Pulley wheel that can be re-used by all sorts of other things
+    '''
+
+    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3, vShaped=False, style=None):
+        self.diameter=diameter
+        self.cordDiameter=cordDiameter
+        self.vShaped=vShaped
+
+        self.style=style
+
+        #if negative, don't punch holes
+        self.rodMetricSize=rodMetricSize
+        self.rodHoleD = rodMetricSize + LOOSE_FIT_ON_ROD
+        self.screwMetricSize=screwMetricSize
+
+        self.edgeThick=cordDiameter*0.5
+        self.taper = cordDiameter*0.2
+
+    def getTotalThick(self):
+        return self.edgeThick*2 + self.taper*2 + self.cordDiameter
+
+    def getHalf(self):
+        radius = self.diameter/2
+        #from the side
+        bottomPos = (radius + self.cordDiameter, 0)
+        topOfEdgePos = (radius + self.cordDiameter, self.edgeThick)
+        endOfTaperPos = (radius, self.edgeThick + self.taper)
+        topPos = (endOfTaperPos[0]-self.cordDiameter/2, endOfTaperPos[1] + self.cordDiameter/2)
+
+        # edgeR = self.diameter/2 + self.cordDiameter/4
+        # middleR = self.diameter/2 - self.cordDiameter/2
+
+        circle = cq.Workplane("XY").circle(self.diameter/2)
+        pulley = cq.Workplane("XZ").moveTo(bottomPos[0], bottomPos[1]).lineTo(topOfEdgePos[0], topOfEdgePos[1]).lineTo(endOfTaperPos[0], endOfTaperPos[1])#.\
+
+        if self.vShaped:
+            pulley = pulley.lineTo(topPos[0], topPos[1])
+        else:
+            pulley = pulley.radiusArc(topPos, self.cordDiameter/2)
+
+        pulley = pulley.lineTo(0,topPos[1]).lineTo(0,0).close().sweep(circle)
+        # TODO cut out rod hole and screwholes if needed
+        # if self.rodMetricSize > 0:
+        #     shape = shape.faces(">Z").workplane().circle((self.rodMetricSize+LOOSE_FIT_ON_ROD)/2).cutThruAll()
+
+        if self.style == "HAC":
+            pulley = Gear.cutHACStyle(pulley,self.rodHoleD*0.75,self.diameter/2-self.rodHoleD*0.75, self.diameter/2)
+        elif self.style == "circles":
+            pulley = Gear.cutCirclesStyle(pulley, self.diameter/2-self.cordDiameter/2, innerRadius= self.rodHoleD, cantUseCutThroughAllBodgeThickness=self.getTotalThick())
+
+        return pulley
+
 class CordWheel:
     '''
     This will be a replacement for the chainwheel, instead of using a chain this will be clock cord.
@@ -1662,9 +1742,12 @@ class CordWheel:
     to wind up the weighted side.
 
     Made of two segments (one if using key) and a cap. Designed to be attached to the ratchet click wheel
+
+    If useFriction is true: this will be a hemp cord/rope (hemp should have more friction) with a counterweight and a V-shaped pulley.
+    Apparently this can work, I'll find out! Should be nearer to a drop in replacement for the chain wheel
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, gearThick=5, frontPlateThick=8, style="HAC"):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC"):
         self.diameter=diameter
         #thickness of one segment
         self.thick=thick
@@ -1672,11 +1755,13 @@ class CordWheel:
         self.useKey=useKey
         #if true, this cord wheel has a gear and something (like a key) is used to turn that gear
         self.useGear=useGear
+        #if true this is like the chain wheel, using friction and a counterweight for a loop of cord over the wheel
+        self.useFriction = useFriction
         #1mm felt too flimsy
         self.capThick=2
         self.capDiameter = capDiameter
         self.rodMetricSize = rodMetricSize
-        self.rodD=rodMetricSize+0.3
+        self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
         self.screwThreadMetric=screwThreadMetric
         #only if useKey is true will this be used
         self.bearingInnerD=bearingInnerD
@@ -1722,18 +1807,37 @@ class CordWheel:
             self.keySize = math.sqrt(2) * (self.bearingInnerD / 2 - self.bearingWiggleRoom - 1)
             print("key size", self.keySize, "gear ratio", wheelTeeth/ pinionTeeth)
 
+        if self.useFriction:
+            self.pulley = Pulley(diameter=diameter, style=None)
+
     def getNutHoles(self):
         cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[0]))
         cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[1]))
         return cutter
 
+    def getPulleySegment(self):
+        '''
+        like the segment, but sufficiently not like it to have its own method
+        '''
+        segment = self.pulley.getHalf()
+
+        holes = cq.Workplane("XY").pushPoints(self.fixingPoints).circle(self.screwThreadMetric/2).extrude(self.pulley.getTotalThick())
+        holes = holes.add(cq.Workplane("XY").circle(self.rodD/2).extrude(self.pulley.getTotalThick()))
+        segment = segment.cut(holes)
+
+        return segment
+
     def getSegment(self, front=True):
         #if front segment, the holes for screws/nuts will be different
+        #not for pulley (useFriction true)
 
         if self.useGear:
+            #end is a gear
             segment = self.wheelPinionPair.wheel.get3D(holeD=self.rodD, thick=self.gearThick, innerRadiusForStyle=self.diameter/2 + self.cordThick, style=self.style)
         else:
+            #end is the cap
             segment = self.getCap()
+
 
         segment = segment.faces(">Z").workplane().circle(self.diameter/2).extrude(self.thick)
 
@@ -1919,38 +2023,59 @@ class CordWheel:
             model = model.add(self.getKeyGear().translate((0,-self.wheelPinionPair.centre_distance,self.ratchet.thick + self.capThick + self.clickWheelExtra + self.thick )))
             model = model.add(self.getKeyKey().translate((0, -self.wheelPinionPair.centre_distance, self.ratchet.thick + self.capThick + self.clickWheelExtra + self.thick + self.gearThick + self.beforeBearingExtraHeight)))
         else:
-            model = model.add(self.getCap().translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
-            model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
-            model = model.add(self.getSegment(True).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.capThick)))
+
+            if self.useFriction:
+                model = model.add(self.getPulleySegment().translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
+                model = model.add(self.getPulleySegment().mirror().translate((0,0,self.pulley.getTotalThick()/2)).translate((0, 0, self.ratchet.thick + self.clickWheelExtra + self.pulley.getTotalThick()/2)))
+            else:
+                model = model.add(self.getCap().translate((0, 0, self.ratchet.thick + self.clickWheelExtra)))
+                model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
+                model = model.add(self.getSegment(True).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.capThick)))
 
 
 
         return model
 
     def getHeight(self):
+        '''
+        only ones currently working are: (!friction && !gear && !key) or (friction)
+
+        NOTE = includes heighto of a washer as part of the cordwheel
+        '''
+
         if self.useKey:
             raise ValueError("TODO height of key cord wheel")
             # return self.ratchet.thick
         elif self.useGear:
             return self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.gearThick + WASHER_THICK
+
+        if self.useFriction:
+            return self.ratchet.thick + self.clickWheelExtra + self.pulley.getTotalThick() + WASHER_THICK
+
         #total ehight, once assembled
         #include space for a washer at the end, to stop the end cap rubbing too much on the top plate (wasn't really the same problem with the much smaller chain wheel)
         return self.ratchet.thick + self.clickWheelExtra + self.capThick*3 + self.thick*2 + WASHER_THICK
 
     def outputSTLs(self, name="clock", path="../out"):
 
-        out = os.path.join(path, "{}_cordwheel_bottom_segment.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getSegment(False), out)
-
-        if not self.useKey and not self.useGear:
-            out = os.path.join(path, "{}_cordwheel_cap.stl".format(name))
+        if self.useFriction:
+            out = os.path.join(path, "{}_cordwheel_pulley_segment.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getCap(), out)
+            exporters.export(self.getPulleySegment(), out)
+        else:
 
-            out = os.path.join(path, "{}_cordwheel_top_segment.stl".format(name))
+            out = os.path.join(path, "{}_cordwheel_bottom_segment.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getSegment(True), out)
+            exporters.export(self.getSegment(False), out)
+
+            if not self.useKey and not self.useGear:
+                out = os.path.join(path, "{}_cordwheel_cap.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.getCap(), out)
+
+                out = os.path.join(path, "{}_cordwheel_top_segment.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.getSegment(True), out)
 
         out = os.path.join(path, "{}_cordwheel_click.stl".format(name))
         print("Outputting ", out)
@@ -2875,16 +3000,23 @@ class ClockPlates:
             leftZ = chainZ
             rightZ = chainZ
         else:
-            #cord, leaving enough space for the washer as well (which is hackily included in getTotalThickness()
-            bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
-            topZ = bottomZ +  self.goingTrain.cordWheel.thick - self.goingTrain.cordWheel.capThick
-
-            if self.weightOnRightSide:
-                rightZ = bottomZ
-                leftZ = topZ
+            if self.goingTrain.cordWheel.useFriction:
+                #basically a chain wheel that uses friction instead of chain links
+                chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.pulley.getTotalThick()/2 + self.wobble / 2
+                leftZ = chainZ
+                rightZ = chainZ
             else:
-                rightZ = topZ
-                leftZ = bottomZ
+                #assuming a two-section cord wheel, one side coils up as the weight coils down
+                #cord, leaving enough space for the washer as well (which is hackily included in getTotalThickness()
+                bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
+                topZ = bottomZ +  self.goingTrain.cordWheel.thick - self.goingTrain.cordWheel.capThick
+
+                if self.weightOnRightSide:
+                    rightZ = bottomZ
+                    leftZ = topZ
+                else:
+                    rightZ = topZ
+                    leftZ = bottomZ
 
         if absoluteZ:
             leftZ += self.plateThick
@@ -4661,10 +4793,17 @@ print("torque", torque, torque/0.037)
 # show_object(shell.getShell(False).translate((100,0,0)))
 
 ratchet = Ratchet()
-cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
+# cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
+cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useFriction=True)
 #
 #
 #
+
+# pulley = Pulley(diameter=30, vShaped=False)
+#
+# show_object(pulley.getHalf())
+
+# show_object(cordWheel.getSegment())
 show_object(cordWheel.getAssembled())
 
 # show_object(cordWheel.getCap())
