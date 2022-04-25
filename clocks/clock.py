@@ -72,6 +72,8 @@ METRIC_NUT_WIDTH_MULT=2
 METRIC_NUT_DEPTH_MULT=0.77
 METRIC_HALF_NUT_DEPTH_MULT=0.57
 
+COUNTERSUNK_HEAD_WIGGLE = 0.3
+
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
     if halfHeight:
         return metric_thread*METRIC_HALF_NUT_DEPTH_MULT
@@ -90,7 +92,7 @@ def getScrewHeadHeight(metric_thread, countersunk=False):
 
     return metric_thread
 
-def getScrewHeadDiameter(metric_thread):
+def getScrewHeadDiameter(metric_thread, countersunk=False):
     if metric_thread == 3:
         return 6
     return METRIC_HEAD_D_MULT * metric_thread
@@ -1815,13 +1817,21 @@ class CordWheel:
         cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[1]))
         return cutter
 
-    def getPulleySegment(self):
+    def getPulleySegment(self, front=True):
         '''
         like the segment, but sufficiently not like it to have its own method
         '''
         segment = self.pulley.getHalf()
 
         holes = cq.Workplane("XY").pushPoints(self.fixingPoints).circle(self.screwThreadMetric/2).extrude(self.pulley.getTotalThick())
+
+        # holes = cq.Workplane("XY")#.pushPoints(self.fixingPoints).makeCone(radius1=)
+
+        if front:
+            #countersunk screwhead holes
+            for fixingPoint in self.fixingPoints:
+                holes = holes.add(cq.Solid.makeCone(radius1=getScrewHeadDiameter(self.screwThreadMetric, countersunk=True)/2 + COUNTERSUNK_HEAD_WIGGLE, radius2=self.screwThreadMetric/2, height=getScrewHeadHeight(self.screwThreadMetric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE).translate((fixingPoint[0], fixingPoint[1], 0)))
+
         holes = holes.add(cq.Workplane("XY").circle(self.rodD/2).extrude(self.pulley.getTotalThick()))
         segment = segment.cut(holes)
 
@@ -1914,10 +1924,17 @@ class CordWheel:
         # holes for the screws that hold this together
         clickwheel = clickwheel.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
 
-        #cut out space for screwheads
-        # cutter = cq.Workplane("XY").pushPoints(self.fixingPoints).circle(getScrewHeadDiameter(self.screwThreadMetric) / 2).extrude(getScrewHeadHeight(self.screwThreadMetric))
-        cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getScrewHeadDiameter(self.screwThreadMetric), getScrewHeadHeight(self.screwThreadMetric)+LAYER_THICK).translate(self.fixingPoints[0]))
-        cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getScrewHeadDiameter(self.screwThreadMetric), getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK).translate(self.fixingPoints[1]))
+        if self.useFriction:
+            #space for a nut
+
+            cutter = cq.Workplane("XY")
+            for fixingPoint in self.fixingPoints:
+                cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, 0.2), self.ratchet.thick/2, sides=6).translate(fixingPoint))
+        else:
+            #cut out space for screwheads
+            # cutter = cq.Workplane("XY").pushPoints(self.fixingPoints).circle(getScrewHeadDiameter(self.screwThreadMetric) / 2).extrude(getScrewHeadHeight(self.screwThreadMetric))
+            cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getScrewHeadDiameter(self.screwThreadMetric), getScrewHeadHeight(self.screwThreadMetric)+LAYER_THICK).translate(self.fixingPoints[0]))
+            cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getScrewHeadDiameter(self.screwThreadMetric), getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK).translate(self.fixingPoints[1]))
         clickwheel = clickwheel.cut(cutter)
 
 
@@ -2025,8 +2042,8 @@ class CordWheel:
         else:
 
             if self.useFriction:
-                model = model.add(self.getPulleySegment().translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
-                model = model.add(self.getPulleySegment().mirror().translate((0,0,self.pulley.getTotalThick()/2)).translate((0, 0, self.ratchet.thick + self.clickWheelExtra + self.pulley.getTotalThick()/2)))
+                model = model.add(self.getPulleySegment(front=False).translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
+                model = model.add(self.getPulleySegment(front=True).mirror().translate((0,0,self.pulley.getTotalThick()/2)).translate((0, 0, self.ratchet.thick + self.clickWheelExtra + self.pulley.getTotalThick()/2)))
             else:
                 model = model.add(self.getCap().translate((0, 0, self.ratchet.thick + self.clickWheelExtra)))
                 model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.capThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
@@ -2061,7 +2078,11 @@ class CordWheel:
         if self.useFriction:
             out = os.path.join(path, "{}_cordwheel_pulley_segment.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getPulleySegment(), out)
+            exporters.export(self.getPulleySegment(front=False), out)
+
+            out = os.path.join(path, "{}_cordwheel_pulley_segment_front.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getPulleySegment(front=True), out)
         else:
 
             out = os.path.join(path, "{}_cordwheel_bottom_segment.stl".format(name))
