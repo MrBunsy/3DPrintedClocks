@@ -23,7 +23,7 @@ drop=2
 lock=2
 escapement = clock.Escapement(drop=drop, lift=lift, type="deadbeat",teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180)
+train=clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180, max_chain_wheel_d=28)
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.calculateRatios()
@@ -31,18 +31,22 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # train.setRatios([[64, 12], [63, 12], [60, 14]])
 # train.setRatios([[81, 12], [80, 9]])
 # train.setRatios([[108, 10], [80, 9]])
-train.setChainWheelRatio([74, 11])
+# train.setChainWheelRatio([74, 11])
+
+
 
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11, style=gearStyle, useFriction=True)
+train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=20, style=gearStyle, useKey=True)
+
+train.calculateChainWheelRatios()
 
 train.printInfo()
 
 pendulumSticksOut=8
 
-train.genGears(module_size=1.1,moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1.1,moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
 
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2)
@@ -55,7 +59,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 
 dial = clock.Dial(120)
 
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 06", style="vertical")
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 06", style="vertical", motionWorksAbove=True, heavy=True)
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)

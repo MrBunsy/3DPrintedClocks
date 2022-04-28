@@ -815,7 +815,10 @@ class GoingTrain:
             chainWheelCircumference = self.max_chain_wheel_d * math.pi
 
             # get the actual circumference (calculated from the length of chain segments)
-            chainWheelCircumference = self.chainWheel.circumference
+            if self.usingChain:
+                chainWheelCircumference = self.chainWheel.circumference
+            else:
+                chainWheelCircumference = self.cordWheel.diameter*math.pi
 
             turns = self.maxChainDrop / chainWheelCircumference
 
@@ -958,7 +961,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC"):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -1061,7 +1064,7 @@ class GoingTrain:
                     arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack)
                 else:
                     #just a normal gear
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*chainWheelPinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
 
                 if useNyloc:
                     #regardless of chains, we need a nyloc nut to fix the wheel to the rod
@@ -1747,9 +1750,14 @@ class CordWheel:
 
     If useFriction is true: this will be a hemp cord/rope (hemp should have more friction) with a counterweight and a V-shaped pulley.
     Apparently this can work, I'll find out! Should be nearer to a drop in replacement for the chain wheel
+    Didn't work.
+
+    With key (but not gear) plan is for the key square bit (need name) to be part of the main segement, with a cap that just slots on top
+    this makes the screws easier, hopefully
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC"):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5):
+
         self.diameter=diameter
         #thickness of one segment
         self.thick=thick
@@ -1776,6 +1784,12 @@ class CordWheel:
         self.style = style
 
         self.fixingDistance=self.diameter*0.3
+
+        if self.useKey and not self.useGear:
+            self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 3
+
+        # # at angle so it can fit nicely with the polygon for the key - but this then clashes with teh simple cord hole
+        # self.fixingPoints = [polar(math.pi / 4, self.fixingDistance), polar(math.pi + math.pi / 4, self.fixingDistance)]
         self.fixingPoints = [(self.fixingDistance,0), (-self.fixingDistance,0)]
         self.cordThick=cordThick
 
@@ -1791,9 +1805,13 @@ class CordWheel:
         print("cord wheel screw length between", minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
 
         #extra radius to add to stand off from a bearing
-        self.bearingLip=1
+        self.bearingLip=bearingLip
         self.bearingWiggleRoom = 0.1
         self.keyWiggleRoom = 0.2
+
+        #cap for key is extra chunky so there's space to put the nuts to hold it together
+        self.keyCapExtraHeight=2
+
         # self.keyHeight = 20
         if self.useGear:
             wheelTeeth = 30
@@ -1848,8 +1866,21 @@ class CordWheel:
             #end is the cap
             segment = self.getCap()
 
-
+        #where the cord wraps
         segment = segment.faces(">Z").workplane().circle(self.diameter/2).extrude(self.thick)
+
+
+
+        if not self.useGear and self.useKey:
+            #put the key on the top!
+
+            #space for the cap
+
+            # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
+            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)
+            #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
+            key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
+            segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)))
 
         #hole for the rod
         segment = segment.faces(">Z").circle(self.rodD/2).cutThruAll()
@@ -1862,22 +1893,46 @@ class CordWheel:
             #current plan is to put the screw heads in the ratchet, as this side gives us more wiggle room for screws of varying length
             segment = segment.cut(self.getNutHoles())
 
+
+
+
+
         cordHoleR = 1.5*self.cordThick/2
         cordHoleZ = self.capThick + cordHoleR
         if self.useGear:
             cordHoleZ = self.gearThick + cordHoleR
 
         #cut a hole so we can tie the cord
-        cutter = cq.Workplane("YZ").moveTo(self.diameter*0.25,cordHoleZ).circle(cordHoleR).extrude(self.diameter*4).translate((-self.diameter*2,0,0))
+        cordHole = cq.Workplane("YZ").moveTo(self.diameter*0.25,cordHoleZ).circle(cordHoleR).extrude(self.diameter*4).translate((-self.diameter*2,0,0))
 
-        segment = segment.cut(cutter)
+        segment = segment.cut(cordHole)
 
         return segment
 
-    def getCap(self, extraThick=0):
+    def getCap(self, top=False, extraThick=0):
         cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(self.capThick + extraThick)
+
+        holeR = self.rodD / 2
+        if self.useKey and not self.useGear and top:
+            holeR = self.bearingInnerD/2 + self.bearingWiggleRoom
+
+            #add small ring to keep this further away from the bearing
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearingInnerD/2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
+            #add space for countersunk screw heads
+            countersink = cq.Workplane("XY")
+            for fixingPoint in self.fixingPoints:
+                coneHeight = getScrewHeadHeight(self.screwThreadMetric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+                topR = getScrewHeadDiameter(self.screwThreadMetric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+                countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screwThreadMetric / 2,
+                                                height=coneHeight).translate((fixingPoint[0], fixingPoint[1], self.capThick + extraThick - coneHeight)))
+                #punch thorugh the top circle so the screw can get in
+                top = cq.Workplane("XY").circle(topR).extrude(self.beforeBearingExtraHeight).translate((fixingPoint[0], fixingPoint[1], self.capThick + extraThick))
+
+                countersink = countersink.add(top)
+            cap = cap.cut(countersink)
+
         # hole for the rod
-        cap = cap.faces(">Z").circle(self.rodD / 2).cutThruAll()
+        cap = cap.cut(cq.Workplane("XY").circle(holeR).extrude(self.capThick*10))
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
@@ -1888,19 +1943,30 @@ class CordWheel:
 
         return cap
 
+    def getKeyShape(self, shape):
+        '''
+        just part of the key
+        '''
+
+        keyCap = shape.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + 1).extrude(self.beforeBearingExtraHeight)
+        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight)
+        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom).extrude(self.keyKnobHeight)
+
+        return keyCap
+
+
     def getKeyCap(self):
         '''
         Cap for the top, but with a key as well
         This is not quite finished, no hole for the nuts, but I don't think I'm going to use it as I want to gear down for a key to pull 2.5kg
         '''
         # screwHeight =
-        extraHeight = 2
-        keyCap = self.getCap(extraThick=extraHeight)
+        #extra height so we have soemthign to hold the nuts
 
+        keyCap = self.getCap(extraThick=self.keyCapExtraHeight)
 
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).circle(self.bearingInnerD/2 + 1).extrude(self.beforeBearingExtraHeight)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom).extrude(self.keyKnobHeight)
+        keyCap = self.getKeyShape(keyCap)
+
 
         keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).circle(self.rodD/2).cutThruAll()
         return keyCap
@@ -1924,7 +1990,7 @@ class CordWheel:
         # holes for the screws that hold this together
         clickwheel = clickwheel.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
 
-        if self.useFriction:
+        if self.useFriction or (self.useKey and not self.useGear):
             #space for a nut
 
             cutter = cq.Workplane("XY")
@@ -2031,9 +2097,9 @@ class CordWheel:
     def getAssembled(self):
 
         model = self.getClickWheelForCord()
-        if self.useKey:
+        if self.useKey and not self.useGear:
             model = model.add(self.getSegment(False).translate((0,0,self.ratchet.thick + self.clickWheelExtra)))
-            model = model.add(self.getKeyCap().translate((0, 0, self.ratchet.thick + self.clickWheelExtra + self.thick + self.capThick)))
+            model = model.add(self.getCap(top=True).translate((0, 0, self.ratchet.thick + self.clickWheelExtra + self.thick + self.capThick)))
         elif self.useGear:
             model = model.add(self.getCap().translate((0, 0, self.ratchet.thick + self.clickWheelExtra)))
             model = model.add(self.getSegment(False).mirror().translate((0,0,self.thick + self.gearThick)).translate((0,0,self.ratchet.thick + self.capThick + self.clickWheelExtra)))
@@ -2061,8 +2127,7 @@ class CordWheel:
         '''
 
         if self.useKey:
-            raise ValueError("TODO height of key cord wheel")
-            # return self.ratchet.thick
+            return self.ratchet.thick + self.clickWheelExtra*2 + self.capThick*2 + self.thick
         elif self.useGear:
             return self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.gearThick + WASHER_THICK
 
@@ -2097,6 +2162,11 @@ class CordWheel:
                 out = os.path.join(path, "{}_cordwheel_top_segment.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.getSegment(True), out)
+
+            if self.useKey and not self.useGear:
+                out = os.path.join(path, "{}_cordwheel_top_cap.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.getCap(top=True), out)
 
         out = os.path.join(path, "{}_cordwheel_click.stl".format(name))
         print("Outputting ", out)
@@ -2620,7 +2690,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None, heavy=False):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -2635,6 +2705,8 @@ class ClockPlates:
         self.name = name
         #to get fixing positions
         self.dial = dial
+
+        self.motionWorksAbove=motionWorksAbove
 
         #is the weight heavy enough that we want to chagne the plate design?
         self.heavy = heavy
@@ -2825,7 +2897,7 @@ class ClockPlates:
             self.motionWorksRelativePos = (motionWorksPos[0] - self.bearingPositions[self.goingTrain.chainWheels][0], motionWorksPos[1] - self.bearingPositions[self.goingTrain.chainWheels][1])
         else:
             #motion works is directly below the minute rod
-            self.motionWorksRelativePos = [0, -motionWorksDistance]
+            self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
         if self.goingTrain.usingChain:
             self.chainHoleD = self.goingTrain.chainWheel.chain_width + 2
         else:
@@ -4815,7 +4887,7 @@ print("torque", torque, torque/0.037)
 
 ratchet = Ratchet()
 # cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
-cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useFriction=True)
+cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
 #
 #
 #
@@ -4825,8 +4897,8 @@ cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useFriction=True)
 # show_object(pulley.getHalf())
 
 # show_object(cordWheel.getSegment())
-show_object(cordWheel.getAssembled())
-
+# show_object(cordWheel.getAssembled())
+show_object(cordWheel.getCap(top=True))
 # show_object(cordWheel.getCap())
 
 
