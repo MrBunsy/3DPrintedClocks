@@ -1756,7 +1756,7 @@ class CordWheel:
     this makes the screws easier, hopefully
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24):
 
         self.diameter=diameter
         #thickness of one segment
@@ -1775,6 +1775,7 @@ class CordWheel:
         self.screwThreadMetric=screwThreadMetric
         #only if useKey is true will this be used
         self.bearingInnerD=bearingInnerD
+        self.bearingOuterD=bearingOuterD
         self.bearingHeight=bearingHeight
         self.keyKnobHeight=keyKnobHeight
         self.gearThick = gearThick
@@ -1882,6 +1883,9 @@ class CordWheel:
             key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
             segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)))
 
+            countersink = self.getScrewCountersinkCutter(self.thick + self.capThick*2)
+            segment = segment.cut(countersink)
+
         #hole for the rod
         segment = segment.faces(">Z").circle(self.rodD/2).cutThruAll()
 
@@ -1909,6 +1913,20 @@ class CordWheel:
 
         return segment
 
+    def getScrewCountersinkCutter(self, topOfScrewhead):
+        countersink = cq.Workplane("XY")
+        for fixingPoint in self.fixingPoints:
+            coneHeight = getScrewHeadHeight(self.screwThreadMetric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+            topR = getScrewHeadDiameter(self.screwThreadMetric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+            countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screwThreadMetric / 2,
+                                                            height=coneHeight).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead - coneHeight)))
+            # punch thorugh the top circle so the screw can get in
+            #self.beforeBearingExtraHeight
+            top = cq.Workplane("XY").circle(topR).extrude(100).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
+
+            countersink = countersink.add(top)
+        return countersink
+
     def getCap(self, top=False, extraThick=0):
         cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(self.capThick + extraThick)
 
@@ -1919,16 +1937,7 @@ class CordWheel:
             #add small ring to keep this further away from the bearing
             cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearingInnerD/2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
-            countersink = cq.Workplane("XY")
-            for fixingPoint in self.fixingPoints:
-                coneHeight = getScrewHeadHeight(self.screwThreadMetric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-                topR = getScrewHeadDiameter(self.screwThreadMetric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-                countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screwThreadMetric / 2,
-                                                height=coneHeight).translate((fixingPoint[0], fixingPoint[1], self.capThick + extraThick - coneHeight)))
-                #punch thorugh the top circle so the screw can get in
-                top = cq.Workplane("XY").circle(topR).extrude(self.beforeBearingExtraHeight).translate((fixingPoint[0], fixingPoint[1], self.capThick + extraThick))
-
-                countersink = countersink.add(top)
+            countersink = self.getScrewCountersinkCutter(self.capThick + extraThick)
             cap = cap.cut(countersink)
 
         # hole for the rod
@@ -2880,6 +2889,10 @@ class ClockPlates:
             for i in range(len(self.bearingPositions)):
                 self.bearingPositions[i][2] -= bottomZ
 
+        if self.bearingPositions[-1][2] == 0:
+            #the anchor would be directly up against the plate
+            self.bearingPositions[-1][2] = WASHER_THICK#self.anchorThick*0.25
+
         # print(self.bearingPositions)
         self.plateDistance=max(topZs) + self.wobble
 
@@ -3179,7 +3192,13 @@ class ClockPlates:
         if addExtraSupport:
             #a circle around the big hole to strengthen the plate
             #assumes plate has been tagged
-            plate = plate.workplaneFromTagged("base").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD*1.25).extrude(self.plateThick)
+            extraSupportSize = screwHeadD*1.25
+            supportCentre=[screwholePos[0], screwholePos[1]- slotLength]
+            if self.heavy:
+                extraSupportSize*=1.5
+                supportCentre[0] += (-1 if self.weightOnRightSide else 1) * extraSupportSize*0.25
+                supportCentre[1] += slotLength/2
+            plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(self.plateThick)
 
         #big hole
         plate = plate.faces(">Z").workplane().tag("top").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD / 2).cutThruAll()
@@ -3246,6 +3265,15 @@ class ClockPlates:
             dialFixings = self.dial.getFixingDistance()
             minuteY = self.bearingPositions[self.goingTrain.chainWheels][1]
             plate = plate.faces(">Z").workplane().pushPoints([(0, minuteY + dialFixings / 2), (0, minuteY - dialFixings / 2)]).circle(self.dial.fixingD / 2).cutThruAll()
+
+        # need an extra chunky hole for the big bearing that the key slots through
+        if not self.goingTrain.usingChain and self.goingTrain.cordWheel.useKey and not self.goingTrain.cordWheel.useGear:
+            cordWheel = self.goingTrain.cordWheel
+            # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
+            cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight)
+            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearingInnerD/2 + cordWheel.bearingLip).extrude(self.plateThick)
+
+            plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 
         return plate
 
@@ -4897,8 +4925,8 @@ cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
 # show_object(pulley.getHalf())
 
 # show_object(cordWheel.getSegment())
-# show_object(cordWheel.getAssembled())
-show_object(cordWheel.getCap(top=True))
+show_object(cordWheel.getAssembled())
+# show_object(cordWheel.getCap(top=True))
 # show_object(cordWheel.getCap())
 
 
