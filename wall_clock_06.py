@@ -38,7 +38,9 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=20, style=gearStyle, useKey=True)
+
+#thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
+train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=17, style=gearStyle, useKey=True)
 
 train.calculateChainWheelRatios()
 
@@ -46,7 +48,7 @@ train.printInfo()
 
 pendulumSticksOut=8
 
-train.genGears(module_size=1.1,moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1,moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
 
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2)

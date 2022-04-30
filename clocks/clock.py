@@ -820,7 +820,7 @@ class GoingTrain:
             else:
                 chainWheelCircumference = self.cordWheel.diameter*math.pi
 
-            turns = self.maxChainDrop / chainWheelCircumference
+            turns = self.poweredWheel.getTurnsForDrop(self.maxChainDrop)
 
             # find the ratio we need from the chain wheel to the minute wheel
             turnsPerHour = turns / self.hours
@@ -835,7 +835,7 @@ class GoingTrain:
             pinion_min = 10
             pinion_max = 20
             wheel_min = 20
-            wheel_max = 100
+            wheel_max = 120
 
             for p in range(pinion_min, pinion_max):
                 for w in range(wheel_min, wheel_max):
@@ -1800,14 +1800,17 @@ class CordWheel:
         self.ratchet = ratchet
         self.keyScrewHoleD = self.screwThreadMetric
 
-        minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
-        if self.useKey:
-            minScrewLength -= self.thick
-        print("cord wheel screw length between", minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
-
+        if not self.useGear and not self.useKey and not self.useFriction:
+            minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
+            if self.useKey:
+                minScrewLength -= self.thick
+            print("cord wheel screw length between", minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
+        elif self.useKey and not self.useGear and not self.useFriction:
+            minScrewLength = self.ratchet.thick/2 + self.capThick*2 + self.thick
+            print("cord wheel screw length between", minScrewLength, minScrewLength + self.ratchet.thick/2)
         #extra radius to add to stand off from a bearing
         self.bearingLip=bearingLip
-        self.bearingWiggleRoom = 0.1
+        self.bearingWiggleRoom = 0.05
         self.keyWiggleRoom = 0.2
 
         #cap for key is extra chunky so there's space to put the nuts to hold it together
@@ -2079,29 +2082,45 @@ class CordWheel:
 
         assuming the cord coils perfectly, make a reasonable estimate at runtime
         '''
+        (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo(cordLength)
+
+        print("layers of cord: {}, cord per hour: {:.1f}cm to {:.1f}cm".format(layers, (cordPerRotationPerLayer[-1] / minuteRatio) / 10, (cordPerRotationPerLayer[0] / minuteRatio) / 10))
+
+        #minute hand rotates once per hour, so this answer will be in hours
+        return (rotations * minuteRatio)
+
+    def getCordTurningInfo(self, cordLength):
+        '''
+        returns (rotations, layers, cordPerRotationPerLayer)
+        '''
         lengthSoFar = 0
         rotationsSoFar = 0
         coilsPerLayer = floor(self.thick / self.cordThick)
         layer = 0
-        cordPerRotationPerLayer=[]
+        cordPerRotationPerLayer = []
         while lengthSoFar < cordLength:
 
-            circumference = math.pi * (self.diameter + 2*(layer*self.cordThick + self.cordThick/2))
+            circumference = math.pi * (self.diameter + 2 * (layer * self.cordThick + self.cordThick / 2))
             cordPerRotationPerLayer.append(circumference)
             if lengthSoFar + circumference * coilsPerLayer < cordLength:
-                #assume this hole layer is used
+                # assume this hole layer is used
                 lengthSoFar += circumference * coilsPerLayer
                 rotationsSoFar += coilsPerLayer
             else:
-                #not all of this layer
+                # not all of this layer
                 lengthLength = cordLength - lengthSoFar
-                rotationsSoFar += lengthLength/circumference
+                rotationsSoFar += lengthLength / circumference
                 break
 
             layer += 1
-        print("layers of cord: {}, cord per hour: {:.1f}cm to {:.1f}cm".format(layer+1, (cordPerRotationPerLayer[-1] / minuteRatio)/10,(cordPerRotationPerLayer[0] / minuteRatio)/10))
-        #minute hand rotates once per hour, so this answer will be in hours
-        return (rotationsSoFar / minuteRatio)
+        return (rotationsSoFar, layer + 1, cordPerRotationPerLayer)
+
+
+    def getTurnsForDrop(self, cordLength):
+
+
+        return self.getCordTurningInfo(cordLength)[0]
+
 
     def getAssembled(self):
 
@@ -2263,6 +2282,9 @@ class ChainWheel:
         self.inner_width = width*1.2
 
         self.hole_distance = self.diameter*0.25
+
+    def getTurnsForDrop(self, chainDrop):
+        return chainDrop / self.circumference
 
     def getHeight(self):
         '''
@@ -4913,20 +4935,20 @@ print("torque", torque, torque/0.037)
 #
 # show_object(shell.getShell(False).translate((100,0,0)))
 
-ratchet = Ratchet()
-# cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
-cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
+# ratchet = Ratchet()
+# # cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
+# cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
+# #
+# #
+# #
 #
+# # pulley = Pulley(diameter=30, vShaped=False)
+# #
+# # show_object(pulley.getHalf())
 #
-#
-
-# pulley = Pulley(diameter=30, vShaped=False)
-#
-# show_object(pulley.getHalf())
-
-# show_object(cordWheel.getSegment())
-show_object(cordWheel.getAssembled())
-# show_object(cordWheel.getCap(top=True))
+# # show_object(cordWheel.getSegment())
+# show_object(cordWheel.getAssembled())
+# # show_object(cordWheel.getCap(top=True))
 # show_object(cordWheel.getCap())
 
 
