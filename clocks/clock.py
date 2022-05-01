@@ -1754,9 +1754,12 @@ class CordWheel:
 
     With key (but not gear) plan is for the key square bit (need name) to be part of the main segement, with a cap that just slots on top
     this makes the screws easier, hopefully
+
+
+    note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.1):
 
         self.diameter=diameter
         #thickness of one segment
@@ -1811,7 +1814,7 @@ class CordWheel:
         #extra radius to add to stand off from a bearing
         self.bearingLip=bearingLip
         self.bearingWiggleRoom = 0.05
-        self.keyWiggleRoom = 0.2
+        self.keyWiggleRoom = 0.3
 
         #cap for key is extra chunky so there's space to put the nuts to hold it together
         self.keyCapExtraHeight=2
@@ -2075,6 +2078,35 @@ class CordWheel:
         return key
 
 
+    def getKey(self):
+        '''
+        get the key that can wind the clock
+
+        regretting being so lax about the size of the key now, but nevermind:
+        key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
+        '''
+
+        keyWallThick = 2.5
+        #enough to cut out the key itself
+        keyWidth = keyWallThick*2 + self.bearingInnerD
+        keyLength= 100
+        keyThick = 5
+
+        key = cq.Workplane("XY").radiusArc((keyWidth,0),-keyWidth/2).lineTo(keyWidth,keyLength).radiusArc((0,keyLength),-keyWidth/2).close().extrude(keyThick)
+
+        #hole to screw in the knob
+        key = key.faces(">Z").workplane().tag("top").moveTo(keyWidth/2,keyLength).circle(self.screwThreadMetric/2).cutThruAll()
+
+        #key bit
+        key = key.workplaneFromTagged("top").moveTo(keyWidth/2,0).circle(0.999*keyWidth/2).extrude(self.keyKnobHeight)
+
+        keyHole = cq.Workplane("XY").moveTo(keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 - self.keyWiggleRoom).extrude(self.keyKnobHeight).translate((0,0,keyThick))
+
+        key = key.cut(keyHole)
+
+        return key
+
+
     def getRunTime(self, minuteRatio=1, cordLength=2000):
         '''
         minuteRatio is teeth of chain wheel divided by pinions of minute wheel, or just 1 if there aren't any chainwheels
@@ -2191,10 +2223,18 @@ class CordWheel:
                 print("Outputting ", out)
                 exporters.export(self.getSegment(True), out)
 
+
+
             if self.useKey and not self.useGear:
                 out = os.path.join(path, "{}_cordwheel_top_cap.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.getCap(top=True), out)
+
+                out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.getKey(), out)
+
+
 
         out = os.path.join(path, "{}_cordwheel_click.stl".format(name))
         print("Outputting ", out)
@@ -2560,7 +2600,7 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 
 class MotionWorks:
 
-    def __init__(self, holeD=3.6, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
+    def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
         '''
         if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
         '''
@@ -2585,7 +2625,7 @@ class MotionWorks:
         self.minuteHandSlotHeight = minuteHandThick
 
         self.wallThick = 1.5
-        self.space = 1
+        self.space = 0.5
         self.hourHandHolderD = self.minuteHandHolderD + self.space + self.wallThick*2
 
     def getHourHandHoleD(self):
@@ -3133,6 +3173,22 @@ class ClockPlates:
                 chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.pulley.getTotalThick()/2 + self.wobble / 2
                 leftZ = chainZ
                 rightZ = chainZ
+            elif self.goingTrain.cordWheel.useKey and not self.goingTrain.cordWheel.useGear:
+                #need one elongated hole for the cord
+                chainZTop = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick + self.wobble / 2
+                chainZBottom = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.wobble / 2
+
+                if absoluteZ:
+                    chainZTop += self.plateThick
+                    chainZBottom += self.plateThick
+
+                side = 1 if self.weightOnRightSide else -1
+
+                chainHole = cq.Workplane("XZ").moveTo(side*self.goingTrain.poweredWheel.diameter / 2 - self.chainHoleD/2, chainZTop-self.chainHoleD/2).radiusArc((side*self.goingTrain.poweredWheel.diameter / 2 +self.chainHoleD/2, chainZTop-self.chainHoleD/2), self.chainHoleD/2)\
+                    .lineTo(side*self.goingTrain.poweredWheel.diameter / 2 + self.chainHoleD/2, chainZBottom + self.chainHoleD/2).radiusArc((side*self.goingTrain.poweredWheel.diameter / 2 - self.chainHoleD/2, chainZBottom + self.chainHoleD/2), self.chainHoleD/2).close()\
+                    .extrude(1000)
+
+                return chainHole
             else:
                 #assuming a two-section cord wheel, one side coils up as the weight coils down
                 #cord, leaving enough space for the washer as well (which is hackily included in getTotalThickness()
@@ -4935,21 +4991,23 @@ print("torque", torque, torque/0.037)
 #
 # show_object(shell.getShell(False).translate((100,0,0)))
 
-# ratchet = Ratchet()
-# # cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
-# cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
-# #
-# #
-# #
+ratchet = Ratchet()
+# cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
+cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
 #
-# # pulley = Pulley(diameter=30, vShaped=False)
-# #
-# # show_object(pulley.getHalf())
 #
-# # show_object(cordWheel.getSegment())
+#
+
+# pulley = Pulley(diameter=30, vShaped=False)
+#
+# show_object(pulley.getHalf())
+
+# show_object(cordWheel.getSegment())
 # show_object(cordWheel.getAssembled())
-# # show_object(cordWheel.getCap(top=True))
+# show_object(cordWheel.getCap(top=True))
 # show_object(cordWheel.getCap())
+
+show_object(cordWheel.getKey())
 
 
 
