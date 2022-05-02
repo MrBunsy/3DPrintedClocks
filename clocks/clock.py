@@ -1759,7 +1759,7 @@ class CordWheel:
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.1):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2):
 
         self.diameter=diameter
         #thickness of one segment
@@ -1814,7 +1814,7 @@ class CordWheel:
         #extra radius to add to stand off from a bearing
         self.bearingLip=bearingLip
         self.bearingWiggleRoom = 0.05
-        self.keyWiggleRoom = 0.3
+        self.keyWiggleRoom = 0.75
 
         #cap for key is extra chunky so there's space to put the nuts to hold it together
         self.keyCapExtraHeight=2
@@ -1836,6 +1836,14 @@ class CordWheel:
 
         if self.useFriction:
             self.pulley = Pulley(diameter=diameter, style=None)
+
+        if self.useKey:
+            self.keyWallThick = 2.5
+            # enough to cut out the key itself
+            self.keyWidth = self.keyWallThick * 2 + self.bearingInnerD
+            self.keyLength = 40
+            self.keyHeight = 50
+            self.keyThick = 5
 
     def getNutHoles(self):
         cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).translate(self.fixingPoints[0]))
@@ -2080,32 +2088,46 @@ class CordWheel:
 
     def getKey(self):
         '''
-        get the key that can wind the clock
+        get the key that can wind the clock, this is one with a little arm and handle
 
-        regretting being so lax about the size of the key now, but nevermind:
+        Exact size of the key is based on the bearing and tolerance:
         key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
         '''
 
-        keyWallThick = 2.5
-        #enough to cut out the key itself
-        keyWidth = keyWallThick*2 + self.bearingInnerD
-        keyLength= 100
-        keyThick = 5
 
-        key = cq.Workplane("XY").radiusArc((keyWidth,0),-keyWidth/2).lineTo(keyWidth,keyLength).radiusArc((0,keyLength),-keyWidth/2).close().extrude(keyThick)
 
-        #hole to screw in the knob
-        key = key.faces(">Z").workplane().tag("top").moveTo(keyWidth/2,keyLength).circle(self.screwThreadMetric/2).cutThruAll()
+        key = cq.Workplane("XY").radiusArc((self.keyWidth,0),-self.keyWidth/2).lineTo(self.keyWidth,self.keyLength).radiusArc((0,self.keyLength),-self.keyWidth/2).close().extrude(self.keyThick)
+
+        #hole to screw in the knob (loose)
+        key = key.faces(">Z").workplane().tag("top").moveTo(self.keyWidth/2,self.keyLength).circle(self.screwThreadMetric/2 + 0.2).cutThruAll()
 
         #key bit
-        key = key.workplaneFromTagged("top").moveTo(keyWidth/2,0).circle(0.999*keyWidth/2).extrude(self.keyKnobHeight)
+        key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.keyHeight)
 
-        keyHole = cq.Workplane("XY").moveTo(keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 - self.keyWiggleRoom).extrude(self.keyKnobHeight).translate((0,0,keyThick))
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keyKnobHeight).translate((0,0,self.keyThick + self.keyHeight-self.keyKnobHeight))
 
         key = key.cut(keyHole)
 
         return key
 
+
+    def getKeyKnob(self):
+        r = self.bearingInnerD/2
+
+        screwLength = 30 - self.keyThick
+
+        # circle = cq.Workplane("XY").circle(r)
+        # knob = cq.Workplane("XZ").lineTo(r, 0).radiusArc((r*2,r),r).radiusArc((r*2,r*3),-r).lineTo(0,r*3).close().sweep(circle)
+        knob = cq.Workplane("XY").circle(self.keyWidth/2).extrude(screwLength)
+
+
+        nutHeightSpace = getNutHeight(self.screwThreadMetric,True)*2
+        screwHole = cq.Workplane("XY").circle(self.screwThreadMetric/2).extrude(screwLength*1.5)
+        screwHole = screwHole.add(cq.Workplane("XY").polygon(6,getNutContainingDiameter(self.screwThreadMetric,0.2)).extrude(nutHeightSpace).translate((0,0,screwLength-nutHeightSpace)))
+
+        knob = knob.cut(screwHole)
+
+        return knob
 
     def getRunTime(self, minuteRatio=1, cordLength=2000):
         '''
@@ -2233,6 +2255,10 @@ class CordWheel:
                 out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.getKey(), out)
+
+                out = os.path.join(path, "{}_cordwheel_key_knob.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.getKeyKnob(), out)
 
 
 
@@ -2626,7 +2652,8 @@ class MotionWorks:
 
         self.wallThick = 1.5
         self.space = 0.5
-        self.hourHandHolderD = self.minuteHandHolderD + self.space + self.wallThick*2
+        #old size of space so i can reprint without reprinting the hands
+        self.hourHandHolderD = self.minuteHandHolderD + 1 + self.wallThick*2
 
     def getHourHandHoleD(self):
         return self.hourHandHolderD
@@ -2702,13 +2729,16 @@ class MotionWorks:
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
+        taperStartZ = height - 10
 
+        if taperStartZ < 0:
+            taperStartZ = 0
 
         holeR = self.minuteHandHolderD / 2 + self.space / 2
 
         # return hour
         circle = cq.Workplane("XY").circle(bottomR)
-        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(midR,height/2).lineTo(topR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
+        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(midR,taperStartZ).lineTo(topR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
 
         hour = hour.add(shape)
         # return shape
@@ -5008,6 +5038,8 @@ cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
 # show_object(cordWheel.getCap())
 
 show_object(cordWheel.getKey())
+
+show_object(cordWheel.getKeyKnob().translate((50,0,0)))
 
 
 

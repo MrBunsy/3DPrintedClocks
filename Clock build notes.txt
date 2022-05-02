@@ -154,12 +154,12 @@ clock 04 has stopped being reliable after I got back from a week away. I can sho
 
 
 clock 06 (second attempt at an 8day)
-TODO second hand is too big! doesn't fit below the sticking out bit for the anchor.
+TODO second hand is too big! doesn't fit below the sticking out bit for the anchor. DONE (need to print)
 Everything's a bit tight for space on the front.
-TODO I think I need a larger hand avoider in order to leave enough space to reach the key.
+TODO I think I need a larger hand avoider in order to leave enough space to reach the key. DONE
 Printed back plate without the right holes for the cord, but seems to be working with cord over the side.
 Front plate required lots of filing to fit the large bearing for the key, I've guesstimated a better size for the next print.
 Seems to run with 2.5kg without a bob (yet), but I'll leave it going for a few days to find out!
 The motion works has a lot of play and has just slipped. Does the sunk-back screw not work?
 screw inside motion works should have countersunk space? On further observation, that screw is fine, it's because the motion works is now above not below the hands, so the play in the hour holder means it's too far away!
-TODO reduce play in motion works - doesn't need to be as loose as it is
+TODO reduce play in motion works - doesn't need to be as loose as it is DONE
