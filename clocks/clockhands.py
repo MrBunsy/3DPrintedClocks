@@ -3,6 +3,13 @@ from pathlib import Path
 from cadquery import exporters
 import math
 
+'''
+DEPRECATED - replaced with hands which wraps this up in a class
+
+'''
+
+
+
 if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
