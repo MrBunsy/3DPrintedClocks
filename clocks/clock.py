@@ -870,7 +870,7 @@ class ClockPlates:
         #original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
         #so instead, make it just big enough to contain the holes for the chains/cord
         # bottomPillarR= self.plateDistance/2
-        bottomPillarR = (self.goingTrain.poweredWheel.diameter + self.chainHoleD*2)/2
+        bottomPillarR = (self.goingTrain.poweredWheel.diameter + self.chainHoleD*2.5)/2
         topPillarR = holderWide/2
 
 
@@ -1023,6 +1023,7 @@ class ClockPlates:
                 leftZ = chainZ
                 rightZ = chainZ
             elif self.goingTrain.cordWheel.useKey and not self.goingTrain.cordWheel.useGear:
+                #cord wheel with a key (probably for an eight day)
                 #need one elongated hole for the cord
                 chainZTop = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick + self.wobble / 2
                 chainZBottom = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.wobble / 2
@@ -1032,9 +1033,10 @@ class ClockPlates:
                     chainZBottom += self.plateThick
 
                 side = 1 if self.weightOnRightSide else -1
+                chainX=side* (self.goingTrain.poweredWheel.diameter / 2 + self.chainHoleD*0.25 )
 
-                chainHole = cq.Workplane("XZ").moveTo(side*self.goingTrain.poweredWheel.diameter / 2 - self.chainHoleD/2, chainZTop-self.chainHoleD/2).radiusArc((side*self.goingTrain.poweredWheel.diameter / 2 +self.chainHoleD/2, chainZTop-self.chainHoleD/2), self.chainHoleD/2)\
-                    .lineTo(side*self.goingTrain.poweredWheel.diameter / 2 + self.chainHoleD/2, chainZBottom + self.chainHoleD/2).radiusArc((side*self.goingTrain.poweredWheel.diameter / 2 - self.chainHoleD/2, chainZBottom + self.chainHoleD/2), self.chainHoleD/2).close()\
+                chainHole = cq.Workplane("XZ").moveTo(chainX - self.chainHoleD/2, chainZTop-self.chainHoleD/2).radiusArc((chainX +self.chainHoleD/2, chainZTop-self.chainHoleD/2), self.chainHoleD/2)\
+                    .lineTo(chainX + self.chainHoleD/2, chainZBottom + self.chainHoleD/2).radiusArc((chainX - self.chainHoleD/2, chainZBottom + self.chainHoleD/2), self.chainHoleD/2).close()\
                     .extrude(1000)
 
                 return chainHole

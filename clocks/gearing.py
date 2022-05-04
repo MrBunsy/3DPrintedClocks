@@ -3,8 +3,15 @@ import cadquery as cq
 import os
 from cadquery import exporters
 
+from enum import Enum
+class GearStyle(Enum):
+    NONE = None
+    HAC = "HAC"
+    CIRCLES = "circles"
+    SIMPLE4 = "simple4"
 
-def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
+
+def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style=GearStyle.HAC):
     gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style, innerRadiusForStyle=ratchet.outsideDiameter*0.5)
 
     ratchetWheel = ratchet.getOuterWheel().translate((0,0,thick))
@@ -21,6 +28,21 @@ def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style="HAC"):
 
 
 class Gear:
+
+
+    @staticmethod
+    def cutStyle(gear, outerRadius, innerRadius = -1, style=None):
+        if style == GearStyle.HAC:
+            if innerRadius < outerRadius*0.5:
+                innerRadius=outerRadius*0.5
+            return Gear.cutHACStyle(gear,armThick=outerRadius*0.1, rimRadius=outerRadius-2, innerRadius=innerRadius*1.1)
+        if style == GearStyle.CIRCLES:
+            if innerRadius < 0:
+                innerRadius = 3
+            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius)
+
+        return gear
+
     @staticmethod
     def cutHACStyle(gear, armThick, rimRadius, innerRadius=-1):
         # vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
@@ -143,18 +165,17 @@ class Gear:
             rimThick = max(self.pitch_diameter * 0.035, 3)
             rimRadius = self.pitch_diameter / 2 - self.dedendum_factor * self.module - rimThick
 
-            armThick = rimThick
-            if style == "HAC":
-
-
-                gear = Gear.cutHACStyle(gear, armThick, rimRadius, innerRadius=innerRadiusForStyle)
-            elif style == "circles":
-                # innerRadius = self.innerRadiusForStyle
-                # if innerRadius < 0:
-                #     innerRadius = self.
-                gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
-
-
+            # armThick = rimThick
+            # if style == "HAC":
+            #
+            #
+            #     gear = Gear.cutHACStyle(gear, armThick, rimRadius, innerRadius=innerRadiusForStyle)
+            # elif style == "circles":
+            #     # innerRadius = self.innerRadiusForStyle
+            #     # if innerRadius < 0:
+            #     #     innerRadius = self.
+            #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
+            gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle, style=style)
 
         return gear
 

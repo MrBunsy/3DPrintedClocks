@@ -437,16 +437,16 @@ class Escapement:
         if not self.clockwiseFromPinionSide:
             gear = gear.mirror("YZ", (0,0,0))
 
-        rimThick = holeD*1.5
-        #have toyed with making the escape wheel more solid to see if it improves the tick sound. not convinced it does
-        rimRadius = self.innerRadius - holeD*0.5# - rimThick
-
-        armThick = rimThick
-        if style == "HAC":
-            gear = Gear.cutHACStyle(gear, armThick, rimRadius)
-        elif style == "circles":
-            gear = Gear.cutCirclesStyle(gear, outerRadius=rimRadius, innerRadius=innerRadiusForStyle)
-
+        # rimThick = holeD*1.5
+        # #have toyed with making the escape wheel more solid to see if it improves the tick sound. not convinced it does
+        # rimRadius = self.innerRadius - holeD*0.5# - rimThick
+        #
+        # armThick = rimThick
+        # if style == "HAC":
+        #     gear = Gear.cutHACStyle(gear, armThick, rimRadius)
+        # elif style == "circles":
+        #     gear = Gear.cutCirclesStyle(gear, outerRadius=rimRadius, innerRadius=innerRadiusForStyle)
+        gear = Gear.cutStyle(gear,outerRadius=self.innerRadius - holeD*0.5,innerRadius=innerRadiusForStyle, style=style)
         # hole = cq.Workplane("XY").circle(holeD/2).extrude(thick+2).translate((0,0,-1))
         #
         # gear = gear.cut(hole)

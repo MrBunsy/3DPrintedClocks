@@ -322,10 +322,11 @@ class Pulley:
         # if self.rodMetricSize > 0:
         #     shape = shape.faces(">Z").workplane().circle((self.rodMetricSize+LOOSE_FIT_ON_ROD)/2).cutThruAll()
 
-        if self.style == "HAC":
-            pulley = Gear.cutHACStyle(pulley,self.rodHoleD*0.75,self.diameter/2-self.rodHoleD*0.75, self.diameter/2)
-        elif self.style == "circles":
-            pulley = Gear.cutCirclesStyle(pulley, self.diameter/2-self.cordDiameter/2, innerRadius= self.rodHoleD, cantUseCutThroughAllBodgeThickness=self.getTotalThick())
+        # if self.style == "HAC":
+        #     pulley = Gear.cutHACStyle(pulley,self.rodHoleD*0.75,self.diameter/2-self.rodHoleD*0.75, self.diameter/2)
+        # elif self.style == "circles":
+        #     pulley = Gear.cutCirclesStyle(pulley, self.diameter/2-self.cordDiameter/2, innerRadius= self.rodHoleD, cantUseCutThroughAllBodgeThickness=self.getTotalThick())
+        pulley = Gear.cutStyle(pulley, outerRadius=self.diameter/2-self.cordDiameter/2, innerRadius=self.rodHoleD, style=self.style)
 
         return pulley
 
@@ -550,11 +551,11 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
-        if self.style == "HAC":
-            cap = Gear.cutHACStyle(cap,self.rodD*0.75,self.capDiameter/2-self.rodD*0.75, self.diameter/2 + self.cordThick)
-        elif self.style == "circles":
-            cap = Gear.cutCirclesStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius= self.diameter / 2 + self.cordThick)
-
+        # if self.style == "HAC":
+        #     cap = Gear.cutHACStyle(cap,self.rodD*0.75,self.capDiameter/2-self.rodD*0.75, self.diameter/2 + self.cordThick)
+        # elif self.style == "circles":
+        #     cap = Gear.cutCirclesStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius= self.diameter / 2 + self.cordThick)
+        cap = Gear.cutStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style)
         return cap
 
     def getKeyShape(self, shape):
