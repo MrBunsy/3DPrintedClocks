@@ -1,11 +1,4 @@
-# from clocks.clock import *
-# from clocks.hands import *
-import clocks
-from clocks import *
-from clocks import hands
-from clocks import escapements
 from clocks import clock
-# import clocks
 
 '''
 Another attempt at an eight day, this time symetric and using a cord wheel
@@ -28,7 +21,7 @@ gearStyle="circles"
 lift=4
 drop=2
 lock=2
-escapement = escapements.Escapement(drop=drop, lift=lift, type="deadbeat",teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+escapement = clock.Escapement(drop=drop, lift=lift, type="deadbeat",teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
 train = clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1800, chainAtBack=False,chainWheels=1, hours=180, max_chain_wheel_d=28)
 
@@ -62,7 +55,7 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,styl
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = escapements.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=120, bobD=80, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=120, bobD=80, bobThick=10, useNylocForAnchor=False)
 
 
 
@@ -71,7 +64,7 @@ dial = clock.Dial(120)
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 06", style="vertical", motionWorksAbove=True, heavy=True)
 
 
-hands = hands.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 

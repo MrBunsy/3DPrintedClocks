@@ -1,4 +1,4 @@
-import clocks.clock as clock
+from clocks import clock
 
 '''
 Wall clock 03 proved the new design of clock plates and that smaller gears can work.
