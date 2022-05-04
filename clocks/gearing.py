@@ -9,6 +9,7 @@ class GearStyle(Enum):
     HAC = "HAC"
     CIRCLES = "circles"
     SIMPLE4 = "simple4"
+    SIMPLE5 = "simple5"
 
 
 def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style=GearStyle.HAC):
@@ -40,6 +41,28 @@ class Gear:
             if innerRadius < 0:
                 innerRadius = 3
             return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius)
+        if style == GearStyle.SIMPLE4:
+            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=4)
+        if style == GearStyle.SIMPLE5:
+            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=5)
+
+        return gear
+    @staticmethod
+    def cutSimpleStyle(gear, outerRadius, innerRadius, arms=4):
+        armThick = outerRadius*0.15
+
+        thick = 100
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(thick)
+
+        dA=math.pi*2/arms
+
+        for arm in range(arms):
+            angle = arm*dA
+            #cut out arms
+            cutter = cutter.cut(cq.Workplane("XY").moveTo((outerRadius+innerRadius)/2,0).rect((outerRadius-innerRadius)*1.1,armThick).extrude(thick).rotate((0,0,1),(0,0,0),radToDeg(angle)))
+
+        gear = gear.cut(cutter)
 
         return gear
 

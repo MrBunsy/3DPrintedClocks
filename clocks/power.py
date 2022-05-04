@@ -351,7 +351,7 @@ class CordWheel:
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keyKnobHeight=15, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=25, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2):
 
         self.diameter=diameter
         #thickness of one segment
@@ -372,7 +372,7 @@ class CordWheel:
         self.bearingInnerD=bearingInnerD
         self.bearingOuterD=bearingOuterD
         self.bearingHeight=bearingHeight
-        self.keyKnobHeight=keyKnobHeight
+        self.keySquareBitHeight=keySquareBitHeight
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
         # self.screwLength=screwLength
@@ -486,7 +486,7 @@ class CordWheel:
             # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
             segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
-            key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
+            key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keySquareBitHeight)
             segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)))
 
             countersink = self.getScrewCountersinkCutter(self.thick + self.capThick*2)
@@ -565,7 +565,7 @@ class CordWheel:
 
         keyCap = shape.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + 1).extrude(self.beforeBearingExtraHeight)
         keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom).extrude(self.keyKnobHeight)
+        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom).extrude(self.keySquareBitHeight)
 
         return keyCap
 
@@ -651,12 +651,12 @@ class CordWheel:
         '''
         If using gear and key ,this is the square bit that will be out the front of the clock
         '''
-        key = cq.Workplane("XY").rect(self.keySize-self.keyWiggleRoom, self.keySize - self.keyWiggleRoom).extrude(self.keyKnobHeight + self.bearingHeight)
+        key = cq.Workplane("XY").rect(self.keySize-self.keyWiggleRoom, self.keySize - self.keyWiggleRoom).extrude(self.keySquareBitHeight + self.bearingHeight)
 
         key = key.faces(">Z").workplane().circle(self.keyScrewHoleD / 2).cutThruAll()
 
         nutHeight = getNutHeight(self.screwThreadMetric)
-        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwThreadMetric,0.2)).extrude(nutHeight).translate((0,0,self.keyKnobHeight + self.bearingHeight - nutHeight))
+        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwThreadMetric,0.2)).extrude(nutHeight).translate((0, 0, self.keySquareBitHeight + self.bearingHeight - nutHeight))
 
         key = key.cut(nutSpace)
 
@@ -696,7 +696,7 @@ class CordWheel:
         #key bit
         key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.keyHeight)
 
-        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keyKnobHeight).translate((0,0,self.keyThick + self.keyHeight-self.keyKnobHeight))
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keySquareBitHeight).translate((0, 0, self.keyThick + self.keyHeight - self.keySquareBitHeight))
 
         key = key.cut(keyHole)
 
