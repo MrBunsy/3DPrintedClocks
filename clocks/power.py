@@ -434,7 +434,7 @@ class CordWheel:
             # enough to cut out the key itself
             self.keyWidth = self.keyWallThick * 2 + self.bearingInnerD
             self.keyLength = 40
-            self.keyHeight = 50
+            self.keyHeight = 30
             self.keyThick = 5
 
     def getNutHoles(self):

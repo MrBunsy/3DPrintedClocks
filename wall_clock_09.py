@@ -7,6 +7,7 @@ clock 06 redone:
 Eight days, 1s tick with second hand.
 
 Trying to make this one as small as possible, and going to increase the threaded rod through the cord wheel to m4
+Turns out that I can't make it any smaller without reducing the rod size for the escape wheel. Parking this idea for now and just re-printing a finished clock 6
 '''
 outputSTL = False
 
@@ -53,7 +54,7 @@ train.printInfo()
 
 pendulumSticksOut=20
 
-train.genGears(module_size=0.8
+train.genGears(module_size=1
                ,moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
 
 
