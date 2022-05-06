@@ -5,25 +5,21 @@ from cadquery import exporters
 
 from enum import Enum
 class GearStyle(Enum):
-    NONE = None
-    HAC = "HAC"
+    SOLID = None
+    ARCS = "HAC"
     CIRCLES = "circles"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
 
 
-def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style=GearStyle.HAC):
+def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style=GearStyle.ARCS):
     gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style, innerRadiusForStyle=ratchet.outsideDiameter*0.5)
 
     ratchetWheel = ratchet.getOuterWheel().translate((0,0,thick))
 
-    #space for a nyloc nut
-
-    nutSpace = getHoleWithHole(holeD, getNutContainingDiameter(holeD), METRIC_HEAD_DEPTH_MULT*holeD, 6)
-    gearWheel = gearWheel.cut(nutSpace)
-
     #in case the ratchet wheel is larger than the space in the middle of whichever style is being used
-    gearWheel = gearWheel.add(cq.Workplane("XY").circle(ratchet.outsideDiameter/2).circle(holeD/2).extrude(thick))
+    #style has been given inner radius so this shouldn't be a problem anymore
+    # gearWheel = gearWheel.add(cq.Workplane("XY").circle(ratchet.outsideDiameter/2).circle(holeD/2).extrude(thick))
 
     return gearWheel.add(ratchetWheel)
 
@@ -33,7 +29,7 @@ class Gear:
 
     @staticmethod
     def cutStyle(gear, outerRadius, innerRadius = -1, style=None):
-        if style == GearStyle.HAC:
+        if style == GearStyle.ARCS:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
             return Gear.cutHACStyle(gear,armThick=outerRadius*0.1, rimRadius=outerRadius-2, innerRadius=innerRadius*1.1)
@@ -423,6 +419,9 @@ class Arbour:
         # if self.escapement is not None:
         #     return "Anchor"
         return "Unknown"
+
+    def getRodD(self):
+        return self.arbourD
 
 
     def getTotalThickness(self):

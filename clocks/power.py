@@ -885,6 +885,8 @@ class ChainWheel:
         '''
 
         self.holeD=holeD
+        #complete absolute bodge!
+        self.rodMetricSize=math.floor(holeD)
         self.screwD=screwD
         self.screwThreadLength=screwThreadLength
         self.bearing=bearing

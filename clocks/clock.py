@@ -477,7 +477,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style)]
+            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -593,24 +593,12 @@ class GoingTrain:
 # class PinionHole:
 #     def __init__(self):
 
-class BearingInfo():
-    '''
-    I'm undecided how to pass this info about
-    '''
-    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3):
-        self.bearingOuterD = bearingOuterD
-        # how much space we need to support the bearing (and how much space to leave for the arbour + screw0
-        self.bearingHolderLip = bearingHolderLip
-        self.bearingHeight = bearingHeight
-        self.inner=innerD
-
-
 class ClockPlates:
     '''
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, screwheadHeight=2.5, pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -631,6 +619,8 @@ class ClockPlates:
         #is the weight heavy enough that we want to chagne the plate design?
         self.heavy = heavy
 
+        self.fixingScrewsD = fixingScrewsD
+
         #just for the first prototype
         self.anchorHasNormalBushing=True
         self.motionWorks = motionWorks
@@ -640,15 +630,16 @@ class ClockPlates:
         self.anglesFromMinute = anglesFromMinute
         self.anglesFromChain=anglesFromChain
         self.plateThick=plateThick
+        #default for anchor, overriden by most arbours
         self.arbourD=arbourD
         #maximum dimention of the bearing
-        self.bearingOuterD=bearingOuterD
+        # self.bearingOuterD=bearingOuterD
         #how chunky to make the bearing holders
         self.bearingWallThick = 4
         #how much space we need to support the bearing (and how much space to leave for the arbour + screw0
-        self.bearingHolderLip=bearingHolderLip
-        self.bearingHeight = bearingHeight
-        self.screwheadHeight = screwheadHeight
+        # self.bearingHolderLip=bearingHolderLip
+        # self.bearingHeight = bearingHeight
+        self.screwheadHeight = getScrewHeadHeight(self.fixingScrewsD)
         self.pendulumAtTop = pendulumAtTop
         self.pendulumSticksOut = pendulumSticksOut
 
@@ -658,9 +649,9 @@ class ClockPlates:
         #TODO make some sort of object to hold all this info we keep passing around?
         self.anchorThick=self.pendulum.anchorThick
 
-        self.fixingScrewsD = fixingScrewsD
 
-        self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
+
+        # self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
 
         #if angles are not given, assume clock is entirely vertical
 
@@ -849,9 +840,9 @@ class ClockPlates:
         The screwhole is placed directly above the weight to make the clock easier to hang straight
 
         '''
-
+        bearingInfo = getBearingInfo(self.arbourD)
         #width of thin bit
-        holderWide =  self.bearingOuterD + self.bearingWallThick*2
+        holderWide =  bearingInfo.bearingOuterD + self.bearingWallThick*2
 
 
 
@@ -904,7 +895,7 @@ class ClockPlates:
                 if y > topY:
                     topY = y
         else:
-            anchorSpace = self.bearingOuterD / 2 + self.gearGap
+            anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
             topY = self.bearingPositions[-1][1] + anchorSpace
 
         bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - chainWheelR - bottomPillarR]
@@ -1061,44 +1052,55 @@ class ClockPlates:
 
         return chainHoles
 
-    def getBearingHolder(self, height, addSupport=True):
+    def getBearingHolder(self, height, addSupport=True, bearingInfo=None):
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
-
+        if bearingInfo is None:
+            bearingInfo = getBearingInfo(self.arbourD)
         wallThick = self.bearingWallThick
-        diameter = self.bearingOuterD + wallThick*2
-        holder = cq.Workplane("XY").circle(diameter/2).circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
+        diameter = bearingInfo.bearingOuterD + wallThick*2
+        holder = cq.Workplane("XY").circle(diameter/2).circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
 
 
-        holder = holder.faces(">Z").workplane().circle(diameter/2).circle(self.bearingOuterD/2).extrude(self.bearingHeight)
+        holder = holder.faces(">Z").workplane().circle(diameter/2).circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
         # extra support?
         if addSupport:
-            support = cq.Workplane("YZ").moveTo(-self.bearingOuterD/2,0).lineTo(-height-self.bearingOuterD/2,0).lineTo(-self.bearingOuterD/2,height).close().extrude(wallThick).translate([-wallThick/2,0,0])
+            support = cq.Workplane("YZ").moveTo(-bearingInfo.bearingOuterD/2,0).lineTo(-height-bearingInfo.bearingOuterD/2,0).lineTo(-bearingInfo.bearingOuterD/2,height).close().extrude(wallThick).translate([-wallThick/2,0,0])
             holder = holder.add(support)
 
         return holder
 
-    def getBearingPunch(self, bearingOnTop=True):
+    def getBearingPunch(self, bearingOnTop=True, bearingInfo=None):
         '''
         A shape that can be cut out of a clock plate to hold a bearing
         '''
+        if bearingInfo is None:
+            bearingInfo = getBearingInfo(self.arbourD)
 
         height = self.plateThick
 
         if bearingOnTop:
-            punch = cq.Workplane("XY").circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
-            punch = punch.faces(">Z").workplane().circle(self.bearingOuterD/2).extrude(self.bearingHeight)
+            punch = cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
+            punch = punch.faces(">Z").workplane().circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
         else:
-            punch = getHoleWithHole(self.holderInnerD,self.bearingOuterD, self.bearingHeight).faces(">Z").workplane().circle(self.holderInnerD/2).extrude(height - self.bearingHeight)
+            punch = getHoleWithHole(bearingInfo.innerD + bearingInfo.bearingHolderLip*2,bearingInfo.bearingOuterD, bearingInfo.bearingHeight).faces(">Z").workplane().circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
 
         return punch
 
     def punchBearingHoles(self, plate, back):
         for i, pos in enumerate(self.bearingPositions):
             if i == len(self.bearingPositions)-1 and not back and self.pendulumSticksOut > 0:
+                #until the anchor is an arbour
+                bearingInfo = getBearingInfo(self.arbourD)
                 #don't need three bearings for the anchor - it's not taking much weight! Just using one on the end of the pendulumSticksOut bit so it can't bend as easily
-                plate = plate.cut(cq.Workplane("XY").circle(self.holderInnerD/2).extrude(self.plateThick).translate((pos[0], pos[1], 0)))
+                plate = plate.cut(cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(self.plateThick).translate((pos[0], pos[1], 0)))
             else:
-                plate = plate.cut(self.getBearingPunch(back).translate((pos[0], pos[1], 0)))
+                if i < len(self.bearingPositions) - 1:
+                    bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
+                else:
+                    #anchor isn't an arbour (yet)
+                    bearingInfo = getBearingInfo(self.arbourD)
+
+                plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
@@ -1174,7 +1176,7 @@ class ClockPlates:
             plate = plate.add(extraBearingHolder)
 
         plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
-            self.arbourD / 2).cutThruAll()
+            self.fixingScrewsD / 2).cutThruAll()
 
         nutDeep = getNutHeight(self.fixingScrewsD, halfHeight=True)
         screwheadHeight = getScrewHeadHeight(self.fixingScrewsD)
@@ -1206,7 +1208,7 @@ class ClockPlates:
 
         return plate
 
-    def getArbourExtension(self, arbourID, top=True, arbourD=3, forModel=False):
+    def getArbourExtension(self, arbourID, top=True, rodD=3, forModel=False):
         '''
         Get little cylinders we can use as spacers to keep the gears in the right place on the rod
         arbour from -chainwheels to +ve wheels + 1 (for the anchor)
@@ -1221,6 +1223,8 @@ class ClockPlates:
         bearingPos = self.bearingPositions[arbourID + self.goingTrain.chainWheels]
         if arbourID < self.goingTrain.wheels:
             arbourThick = self.goingTrain.getArbour(arbourID).getTotalThickness()
+            #override default (TODO if anchor is an arbour, we don't need the default at all)
+            rodD = self.goingTrain.getArbour(arbourID).getRodD()
         else:
             #anchor!
             arbourThick = self.pendulum.anchorThick
@@ -1235,11 +1239,11 @@ class ClockPlates:
             length = bearingPos[2]
 
         if length > LAYER_THICK:
-            extendoArbour = cq.Workplane("XY").tag("base").circle(arbourD).circle(arbourD/2).extrude(length)
+            extendoArbour = cq.Workplane("XY").tag("base").circle(rodD).circle(rodD / 2).extrude(length)
 
             if flaredBase:
                 baseLength = min(2, length)
-                extendoArbour = extendoArbour.workplaneFromTagged("base").circle(arbourD*2).circle(arbourD).extrude(baseLength)
+                extendoArbour = extendoArbour.workplaneFromTagged("base").circle(rodD * 2).circle(rodD).extrude(baseLength)
                 if forModel:
                     extendoArbour = extendoArbour.mirror().translate((0,0,length))
 

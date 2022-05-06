@@ -243,3 +243,23 @@ def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
         errorTest = arcAngle - getAngleCovered(distances, testR)
 
     return testR
+
+
+class BearingInfo():
+    '''
+    I'm undecided how to pass this info about
+    '''
+    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3):
+        self.bearingOuterD = bearingOuterD
+        # how much space we need to support the bearing (and how much space to leave for the arbour + screw0
+        self.bearingHolderLip = bearingHolderLip
+        self.bearingHeight = bearingHeight
+        self.innerD=innerD
+
+
+
+def getBearingInfo(innerD):
+    if innerD == 3:
+        return BearingInfo()
+    if innerD == 4:
+        return BearingInfo(13, 2, 5, innerD)
