@@ -598,7 +598,7 @@ class ClockPlates:
     This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
     back to the reusable bits
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -630,6 +630,9 @@ class ClockPlates:
         self.anglesFromMinute = anglesFromMinute
         self.anglesFromChain=anglesFromChain
         self.plateThick=plateThick
+        self.backPlateThick = backPlateThick
+        if self.backPlateThick is None:
+            self.backPlateThick = self.plateThick
         #default for anchor, overriden by most arbours
         self.arbourD=arbourD
         #maximum dimention of the bearing
@@ -828,6 +831,11 @@ class ClockPlates:
         if self.style in ["round", "vertical"]:
             return self.getSimplePlate(back, getText)
 
+    def getPlateThick(self, back=True):
+        if back:
+            return self.backPlateThick
+        return self.plateThick
+
     def getSimplePlate(self, back=True, getText=False):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
@@ -844,7 +852,8 @@ class ClockPlates:
         #width of thin bit
         holderWide =  bearingInfo.bearingOuterD + self.bearingWallThick*2
 
-
+        if self.heavy:
+            holderWide*=1.2
 
         chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
 
@@ -852,17 +861,30 @@ class ClockPlates:
         if self.style=="round":
             radius = self.compactRadius + holderWide / 2
             #the ring that holds the gears
-            plate = plate.moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius).circle(radius - holderWide).extrude(self.plateThick)
+            plate = plate.moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius).circle(radius - holderWide).extrude(self.getPlateThick(back))
         elif self.style == "vertical":
             #rectangle that just spans from the top bearing to the bottom pillar (so we can vary the width of the bottom section later)
             plate = plate.moveTo(self.bearingPositions[0][0]-holderWide/2, self.bearingPositions[0][1] - chainWheelR).line(holderWide,0).\
-                lineTo(self.bearingPositions[-1][0]+holderWide/2, self.bearingPositions[-1][1]).line(-holderWide,0).close().extrude(self.plateThick)
+                lineTo(self.bearingPositions[-1][0]+holderWide/2, self.bearingPositions[-1][1]).line(-holderWide,0).close().extrude(self.getPlateThick(back))
 
         #original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
         #so instead, make it just big enough to contain the holes for the chains/cord
-        # bottomPillarR= self.plateDistance/2
-        bottomPillarR = (self.goingTrain.poweredWheel.diameter + self.chainHoleD*2.5)/2
+
+        plate = plate.tag("top")
+
+        minDistanceForChainHoles = (self.goingTrain.poweredWheel.diameter + self.chainHoleD * 2.5) / 2
+
+        bottomPillarR= minDistanceForChainHoles
+
+        if self.heavy:
+            bottomPillarR = self.plateDistance/2
+
+
+        if bottomPillarR < minDistanceForChainHoles:
+            bottomPillarR = minDistanceForChainHoles
         topPillarR = holderWide/2
+
+
 
 
 
@@ -885,6 +907,8 @@ class ClockPlates:
         #hole for hanging on the wall
         screwHolePos = (chainX , screwHoleY)
 
+        anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
+
         #find the Y position of the bottom of the top pillar
         topY = self.bearingPositions[0][1]
         if self.style == "round":
@@ -895,7 +919,7 @@ class ClockPlates:
                 if y > topY:
                     topY = y
         else:
-            anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
+
             topY = self.bearingPositions[-1][1] + anchorSpace
 
         bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - chainWheelR - bottomPillarR]
@@ -924,9 +948,10 @@ class ClockPlates:
         #just square, will pop a round bit on after
         plate = plate.lineTo(bottomPillarPos[0] + bottomBitWide/2, bottomPillarPos[1]).line(-bottomBitWide,0)
 
-        plate = plate.close().extrude(self.plateThick)
+        plate = plate.close().extrude(self.getPlateThick(back))
 
-        plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR).extrude(self.plateThick)
+        plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR).extrude(self.getPlateThick(back))
+
 
 
 
@@ -940,7 +965,7 @@ class ClockPlates:
         # link the top pillar to the rest of the plate
         plate = plate.workplaneFromTagged("base").moveTo(topOfPlate[0] - topPillarR, topOfPlate[1]) \
             .lineTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR) \
-            .lineTo(topOfPlate[0] + topPillarR, topOfPlate[1]).close().extrude(self.plateThick)
+            .lineTo(topOfPlate[0] + topPillarR, topOfPlate[1]).close().extrude(self.getPlateThick(back))
 
 
         plate = plate.tag("top")
@@ -953,11 +978,42 @@ class ClockPlates:
             #extra bit around the screwhole
             #r = self.goingTrain.chainWheel.diameter*1.25
             # plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]-7-11/2).circle(holderWide*0.75).extrude(self.plateThick)
-            backThick = max(self.plateThick-5, 4)
+            backThick = max(self.getPlateThick(back)-5, 4)
             plate = self.addScrewHole(plate, screwHolePos, backThick=backThick, screwHeadD=11, addExtraSupport=True)
             #the pillars
-            plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR*0.999).extrude(self.plateThick + self.plateDistance)
-            plate = plate.workplaneFromTagged("base").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.999).extrude(self.plateThick + self.plateDistance)
+
+            if self.heavy:
+                '''
+                beef up the bottom pillar
+                bottomPillarR^2 + x^2 = chainWheelR^2
+                x = sqrt(chainWheelR^2 - bottomPilarR^2)
+
+                '''
+                pillarTopZ = self.bearingPositions[0][1] - math.sqrt(chainWheelR ** 2 - bottomPillarR ** 2)
+
+                plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).radiusArc((bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]), -bottomPillarR). \
+                    lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopZ).radiusArc((bottomPillarPos[0] - bottomPillarR, pillarTopZ), chainWheelR).close().extrude(self.plateDistance)
+                # plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).lineTo(bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]). \
+                #     lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopZ).lineTo(bottomPillarPos[0] - bottomPillarR, -chainWheelR * 10).close().extrude(self.getPlateThick(back))
+            else:
+                plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR * 0.9999).extrude(self.plateDistance)
+
+            if self.heavy:
+                # if anchorSpace > topPillarR:
+                #     spaceR = anchorSpace
+                #     pillarBottomZ = self.bearingPositions[-1][1] - math.sqrt(anchorSpace**2 - topPillarR ** 2)
+                # else:
+                #     spaceR = topPillarR
+                #     pillarBottomZ = topPillarPos[1] - topPillarR*2
+                #
+                # plate = plate.workplaneFromTagged("top").moveTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR).lineTo(topPillarPos[0] + topPillarR, pillarBottomZ).\
+                #     radiusArc((topPillarPos[0] - topPillarR, pillarBottomZ),-spaceR).close().extrude(self.plateDistance)
+                sagitta = topPillarR*0.25
+                plate = plate.workplaneFromTagged("top").moveTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR).lineTo(topPillarPos[0] + topPillarR, topPillarPos[1]-topPillarR - sagitta).\
+                    sagittaArc((topPillarPos[0] - topPillarR, topPillarPos[1]-topPillarR-sagitta), -sagitta).close().extrude(self.plateDistance)
+                #line(-topPillarR*2,0)
+            else:
+                plate = plate.workplaneFromTagged("top").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.9999).extrude(self.plateDistance)
 
             textMultiMaterial = cq.Workplane("XY")
             textSize = topPillarR * 0.9
@@ -1020,8 +1076,8 @@ class ClockPlates:
                 chainZBottom = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.wobble / 2
 
                 if absoluteZ:
-                    chainZTop += self.plateThick
-                    chainZBottom += self.plateThick
+                    chainZTop += self.getPlateThick(back=True)
+                    chainZBottom += self.getPlateThick(back=True)
 
                 side = 1 if self.weightOnRightSide else -1
                 chainX=side* (self.goingTrain.poweredWheel.diameter / 2 + self.chainHoleD*0.25 )
@@ -1045,8 +1101,8 @@ class ClockPlates:
                     leftZ = bottomZ
 
         if absoluteZ:
-            leftZ += self.plateThick
-            rightZ += self.plateThick
+            leftZ += self.getPlateThick(back=True)
+            rightZ += self.getPlateThick(back=True)
 
         chainHoles = cq.Workplane("XZ").pushPoints([(self.goingTrain.poweredWheel.diameter / 2, rightZ), (-self.goingTrain.poweredWheel.diameter / 2, leftZ)]).circle(self.chainHoleD / 2).extrude(1000)
 
@@ -1069,14 +1125,14 @@ class ClockPlates:
 
         return holder
 
-    def getBearingPunch(self, bearingOnTop=True, bearingInfo=None):
+    def getBearingPunch(self, bearingOnTop=True, bearingInfo=None, back=True):
         '''
         A shape that can be cut out of a clock plate to hold a bearing
         '''
         if bearingInfo is None:
             bearingInfo = getBearingInfo(self.arbourD)
 
-        height = self.plateThick
+        height = self.getPlateThick(back)
 
         if bearingOnTop:
             punch = cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
@@ -1092,7 +1148,7 @@ class ClockPlates:
                 #until the anchor is an arbour
                 bearingInfo = getBearingInfo(self.arbourD)
                 #don't need three bearings for the anchor - it's not taking much weight! Just using one on the end of the pendulumSticksOut bit so it can't bend as easily
-                plate = plate.cut(cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(self.plateThick).translate((pos[0], pos[1], 0)))
+                plate = plate.cut(cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(self.getPlateThick(back)).translate((pos[0], pos[1], 0)))
             else:
                 if i < len(self.bearingPositions) - 1:
                     bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
@@ -1100,7 +1156,7 @@ class ClockPlates:
                     #anchor isn't an arbour (yet)
                     bearingInfo = getBearingInfo(self.arbourD)
 
-                plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo).translate((pos[0], pos[1], 0)))
+                plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
@@ -1129,7 +1185,7 @@ class ClockPlates:
                 extraSupportSize*=1.5
                 supportCentre[0] += (-1 if self.weightOnRightSide else 1) * extraSupportSize*0.25
                 supportCentre[1] += slotLength/2
-            plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(self.plateThick)
+            plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(self.getPlateThick(back=True))
 
         #big hole
         plate = plate.faces(">Z").workplane().tag("top").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD / 2).cutThruAll()
@@ -1140,8 +1196,8 @@ class ClockPlates:
 
         if backThick > 0:
             extraY = screwBodyD*0.5
-            cutter = cq.Workplane("XY").moveTo(screwholePos[0], screwholePos[1] + extraY).circle(screwHeadD/2).extrude(self.plateThick - backThick).translate((0,0,backThick))
-            cutter = cutter.add(cq.Workplane("XY").moveTo(screwholePos[0], screwholePos[1] - slotLength / 2 + extraY/2).rect(screwHeadD, slotLength+extraY).extrude(self.plateThick - backThick).translate((0, 0, backThick)))
+            cutter = cq.Workplane("XY").moveTo(screwholePos[0], screwholePos[1] + extraY).circle(screwHeadD/2).extrude(self.getPlateThick(back=True) - backThick).translate((0,0,backThick))
+            cutter = cutter.add(cq.Workplane("XY").moveTo(screwholePos[0], screwholePos[1] - slotLength / 2 + extraY/2).rect(screwHeadD, slotLength+extraY).extrude(self.getPlateThick(back=True) - backThick).translate((0, 0, backThick)))
             plate = plate.cut(cutter)
 
         return plate
@@ -1159,7 +1215,7 @@ class ClockPlates:
         '''
         stuff shared between all plate designs
         '''
-        plateThick = self.plateThick
+        plateThick = self.getPlateThick(back=False)
         # FRONT
 
         # note - works fine with the pendulum on the same rod as teh anchor, but I'm not sure about the long term use of ball bearings for just rocking back and forth
@@ -1182,7 +1238,7 @@ class ClockPlates:
         screwheadHeight = getScrewHeadHeight(self.fixingScrewsD)
         #ideally want a nut embedded on the top, but that can leave the plate a bit thin here
 
-        nutZ = max(screwheadHeight + 3, self.plateThick - nutDeep)
+        nutZ = max(screwheadHeight + 3, plateThick - nutDeep)
         nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.fixingScrewsD)).extrude(nutDeep).translate(
             (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], nutZ))
 
@@ -1202,7 +1258,7 @@ class ClockPlates:
             cordWheel = self.goingTrain.cordWheel
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
             cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight)
-            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearingInnerD/2 + cordWheel.bearingLip).extrude(self.plateThick)
+            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearingInnerD/2 + cordWheel.bearingLip).extrude(plateThick)
 
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 
@@ -1362,24 +1418,24 @@ class Assembly:
         bottomPlate = self.plates.getPlate(True)
         topPlate  = self.plates.getPlate(False)
 
-        clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.plateThick)))
+        clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.getPlateThick(back=True))))
 
         #the wheels
         for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
-            clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.plateThick + self.plates.wobble/2)))
+            clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
         #the chain wheel parts
         if self.goingTrain.usingChain:
-            clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
+            clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
             chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,(self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2))
 
             clock = clock.add(
-               chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.plateThick + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
+               chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
 
         else:
-            clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.plateThick + self.plates.wobble/2)))
+            clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
 
         anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
@@ -1387,7 +1443,7 @@ class Assembly:
         #the anchor is upside down for better printing, so flip it back
         anchor = self.pendulum.anchor.mirror("YZ", (0,0,0))
         #and rotate it into position
-        anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.plateThick + self.plates.wobble/2))
+        anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2))
         clock = clock.add(anchor)
 
         #where the nylock nut and spring washer would be
@@ -1406,7 +1462,7 @@ class Assembly:
         motionWorksModel = motionWorksModel.add(self.motionWorks.getHourHolder().translate((0,0,self.motionWorks.getCannonPinionBaseThick())))
         motionWorksModel = motionWorksModel.add(self.motionWorks.getMotionArbour().translate((self.plates.motionWorksRelativePos[0],self.plates.motionWorksRelativePos[1], self.motionWorks.getCannonPinionBaseThick()/2)))
 
-        clock = clock.add(motionWorksModel.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.plateThick*2 + self.plates.plateDistance + motionWorksZOffset)))
+        clock = clock.add(motionWorksModel.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset)))
 
 
 
@@ -1416,22 +1472,22 @@ class Assembly:
         hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
 
 
-        clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.plateThick*2 + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick)))
+        clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick)))
 
         clock = clock.add(hourHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
-                                                self.plates.plateThick * 2 + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick*3)))
+                                                self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick*3)))
 
         if self.goingTrain.escapement_time == 60:
             #second hand!! yay
             secondHand = self.hands.getHand(second=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
-            clock = clock.add(secondHand.translate((self.plates.bearingPositions[-2][0], self.plates.bearingPositions[-2][1], self.plates.plateThick*2 + self.plates.plateDistance+self.hands.secondFixing_thick )))
+            clock = clock.add(secondHand.translate((self.plates.bearingPositions[-2][0], self.plates.bearingPositions[-2][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick )))
 
 
         pendulumRodExtraZ = 2
 
         pendulumRodFixing = self.pendulum.getPendulumForRod().mirror().translate((0,0,self.pendulum.pendulumTopThick))
 
-        clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], self.plates.plateThick*2 + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ)))
+        clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ)))
 
         minuteToPendulum = (self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[self.goingTrain.chainWheels][1])
 
@@ -1440,7 +1496,7 @@ class Assembly:
             ring = self.pendulum.getHandAvoider()
             handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
             #ring is over the minute wheel/hands
-            clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],self.plates.plateThick * 2 + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
+            clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
 
 
 
@@ -1455,7 +1511,7 @@ class Assembly:
                     else:
                         z = self.pendulum.anchorThick + bearingPos[2]
                 if extensionShape is not None:
-                    clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.plateThick + self.plates.wobble/2)))
+                    clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
         #TODO pendulum bob and nut
 

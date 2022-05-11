@@ -29,7 +29,8 @@ class Gear:
 
     @staticmethod
     def cutStyle(gear, outerRadius, innerRadius = -1, style=None):
-        if style == GearStyle.ARCS:
+        #lots of old designs used a literal string "HAC"
+        if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
             return Gear.cutHACStyle(gear,armThick=outerRadius*0.1, rimRadius=outerRadius-2, innerRadius=innerRadius*1.1)

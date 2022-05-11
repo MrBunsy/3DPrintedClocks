@@ -164,6 +164,19 @@ The motion works has a lot of play and has just slipped. Does the sunk-back scre
 screw inside motion works should have countersunk space? On further observation, that screw is fine, it's because the motion works is now above not below the hands, so the play in the hour holder means it's too far away!
 TODO reduce play in motion works - doesn't need to be as loose as it is DONE
 
-TODO - adjust the hole for the cord in the latest design, need to take into account that it will have more than one layer of windings by shifting it further to the edge (and might need to make the pillar wider?)
+TODO - adjust the hole for the cord in the latest design, need to take into account that it will have more than one layer of windings by shifting it further to the edge (and might need to make the pillar wider?) DONE
 
-TODO - refactor gear style to just take inside and outside radius and style. Simplifies things for adding more styles and then can bring HAC back neatly.
+TODO - refactor gear style to just take inside and outside radius and style. Simplifies things for adding more styles and then can bring HAC back neatly. DONE
+
+reprint of clock 06 with the above fixed:
+threading the arbour extensions onto the rod is rediculiously hard. I could increase the inner diameter by 0.1 to eliminate that without making them too loose?
+Conversly, threading the anchor on is quite loose.
+bends too much with 3kg and the gears jam!!
+Ran for an hour with 1.2kg, currently running with ~2kg
+If it runs on the lighter weight, that's great, but I'd like to fix it for heavier weights anyway.
+Thoughts as to why?
+ - infil is at 0/90deg, not 51. Try 45deg next print?
+ - friction pads at bottom on the back? Could try without first
+
+ 
+Idea: can reduce thickness of the chain/cord wheel gear without making it wobbly by having the ratchet screwed onto the bottom and then the new top (actually the back) of the gear can include a beefed up arbour extension as part of the wheel. Can make it as thick as there's space for (will need to work out how to do that... will arbours have to become aware of each other?) and as long as there's space for (will arbours need to be aware of the plates?) Could the ClockPlate generate the completed arbours, since it already generates arbour extensions?
