@@ -180,3 +180,6 @@ Thoughts as to why?
 
  
 Idea: can reduce thickness of the chain/cord wheel gear without making it wobbly by having the ratchet screwed onto the bottom and then the new top (actually the back) of the gear can include a beefed up arbour extension as part of the wheel. Can make it as thick as there's space for (will need to work out how to do that... will arbours have to become aware of each other?) and as long as there's space for (will arbours need to be aware of the plates?) Could the ClockPlate generate the completed arbours, since it already generates arbour extensions?
+
+clock 06 again:
+Stops when the anchor's arbour extension rests against the front plate. Might want to bring the third bearing back purely to stop that? Or extend the arbour all the way through the front plate?

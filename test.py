@@ -1,41 +1,20 @@
-from clocks.cuckoo_bits import *
+from clocks.power import *
+
 
 if 'show_object' not in globals():
+    #don't output STL when we're in cadquery editor
+    outputSTL = True
     def show_object(*args, **kwargs):
         pass
 
+ratchet = Ratchet()
+# frictionCord = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet,useFriction=True, cordThick=4)
 
-# plate = chain_plate()
-# rod = pendulum_rod()
-# toyrod = pendulum_rod(max_length=150,hook_type="toy")
-# fixing = pendulum_bob_fixing()
-whistleObj = Whistle()
-# whistle = whistleObj.getWholeWhistle()
-# whistle_top = whistleObj.getWhistleTop()
-whistle_full = whistleObj.getWholeWhistle(False, True)
-# bellow_base = whistleObj.getBellowBase()
-# bellow_top = whistleObj.getBellowTop()
-# whistle_top=whistle.getWhistleTop()
-# toyback = cuckoo_back()
-# toy_dial = dial()
-# toy_dial_brown=dial(black=False)
+# show_object(frictionCord.getAssembled())
 
-# num = roman_numerals("VIIIX",10,cq.Workplane("XY"))
 
-# show_object(plate)
-# show_object(rod)
-# show_object(toyrod)
-# show_object(fixing)
-# show_object(whistle.getBody())
-# show_object(whistle_top)
-# show_object(whistle)
+cordwheel = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet, useKey=True, cordThick=2)
 
-show_object(whistle_full)
-# show_object(bellow_base)
-# show_object(bellow_top)
-# show_object(toyback)
-# show_object(toy_dial[0])
-# show_object(toy_dial[1])
-# if len(toy_dial) > 2:
-#     show_object(toy_dial[2])
-# show_object(num)
+
+# show_object(cordwheel.getAssembled())
+show_object(cordwheel.getKey(withKnob=False))

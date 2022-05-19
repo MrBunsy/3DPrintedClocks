@@ -351,7 +351,7 @@ class CordWheel:
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=25, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=25, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, keyHeight=60):
 
         self.diameter=diameter
         #thickness of one segment
@@ -433,8 +433,11 @@ class CordWheel:
             self.keyWallThick = 2.5
             # enough to cut out the key itself
             self.keyWidth = self.keyWallThick * 2 + self.bearingInnerD
-            self.keyLength = 40
-            self.keyHeight = 30
+            #this is the length of the handle of the key if it's knob-type
+            self.keyHandleLength = 40
+            #this is the length of the bit that will be slotted onto the keysquarebit
+            self.keyHeight = keyHeight
+            #thickness of the handle
             self.keyThick = 5
 
     def getNutHoles(self):
@@ -678,20 +681,36 @@ class CordWheel:
         return key
 
 
-    def getKey(self):
+    def getKey(self, withKnob=True):
         '''
         get the key that can wind the clock, this is one with a little arm and handle
 
         Exact size of the key is based on the bearing and tolerance:
         key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
+
+        if withKnob, it's like an old longcase key with handle. If not, it's like a mantle key
         '''
 
+        if withKnob:
+            #base for handle
+            key = cq.Workplane("XY").radiusArc((self.keyWidth,0),-self.keyWidth/2).lineTo(self.keyWidth, self.keyHandleLength).radiusArc((0, self.keyHandleLength), -self.keyWidth / 2).close().extrude(self.keyThick)
+            # hole to screw in the knob (loose)
+            key = key.faces(">Z").workplane().tag("top").moveTo(self.keyWidth / 2, self.keyHandleLength).circle(self.screwThreadMetric / 2 + 0.2).cutThruAll()
+        else:
+            key = cq.Workplane("XY").tag("top")
+
+            keyGripTall = min(self.keyHeight*0.3,15)
+            keyGripWide = self.keyWidth*2.5
+
+            # grippyBit = cq.Workplane("XZ").rect(keyGripWide,keyGripTall).extrude(self.keyWallThick)
+            r=keyGripWide*0.1
+
+            grippyBit = cq.Workplane("XZ").lineTo(keyGripWide/2,0).lineTo(keyGripWide/2,keyGripTall).tangentArcPoint((-r,r*1.25))\
+                .tangentArcPoint((0,keyGripTall),relative=False).mirrorY().extrude(self.keyThick)
+            # return grippyBit
+            key = key.add(grippyBit.translate((self.keyWidth/2,self.keyThick/2,0)))
 
 
-        key = cq.Workplane("XY").radiusArc((self.keyWidth,0),-self.keyWidth/2).lineTo(self.keyWidth,self.keyLength).radiusArc((0,self.keyLength),-self.keyWidth/2).close().extrude(self.keyThick)
-
-        #hole to screw in the knob (loose)
-        key = key.faces(">Z").workplane().tag("top").moveTo(self.keyWidth/2,self.keyLength).circle(self.screwThreadMetric/2 + 0.2).cutThruAll()
 
         #key bit
         key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.keyHeight)
@@ -844,9 +863,13 @@ class CordWheel:
                 print("Outputting ", out)
                 exporters.export(self.getCap(top=True), out)
 
-                out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
+                out = os.path.join(path, "{}_cordwheel_key_with_knob.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.getKey(), out)
+
+                out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.getKey(withKnob=False), out)
 
                 out = os.path.join(path, "{}_cordwheel_key_knob.stl".format(name))
                 print("Outputting ", out)
