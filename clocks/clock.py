@@ -459,6 +459,7 @@ class GoingTrain:
         # self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide)
         self.escapement.setDiameter(escapeWheelDiameter)
         self.escapement.clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide
+        self.escapement.escapeWheelClockwise=escapeWheelClockwise
         self.chainWheelArbours=[]
         if self.chainWheels > 0:
             # assuming one chain wheel for now
@@ -562,41 +563,9 @@ class GoingTrain:
         exporters.export(self.escapement.getTestRig(), out)
 
 
-
-
-    # def getWithPinion(self, pinion, clockwise=True, thick=5, holeD=5, style="HAC"):
-    #     base = self.getWheel3D(thick=thick,holeD=holeD, style=style)
-    #
-    #     top = pinion.get3D(thick=thick * 3, holeD=holeD, style=style).translate([0, 0, thick])
-    #
-    #     wheel = base.add(top)
-
-        # # face = ">Z" if clockwise else "<Z"
-        # #cut hole through both
-        # wheel = wheel.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(ratchetThick * 0.5).circle(holeD / 2).cutThruAll()
-
-# class FrictionCordWheel:
-#     '''
-#     CordWheel works, but is very wide as it needs space to coil two cords - one for the weight and one to pull it up.
-#
-#     Instead this will be a hemp cord/rope (hemp should have more friction) with a counterweight and a V-shaped pulley.
-#
-#     Apparently this can work, I'll find out! Should be nearer to a drop in replacement for the chain wheel
-#     '''
-#
-#     def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3):
-#         self.diameter=diameter
-#         self.cordDiameter=cordDiameter
-#         self.rodMetricSize=rodMetricSize
-#         self.screwMetricSize=screwMetricSize
-
-# class PinionHole:
-#     def __init__(self):
-
 class ClockPlates:
     '''
-    This was intended to be generic, but has become specific to each clock. Until the design is more settled, the only way to get old designs is going to be version control
-    back to the reusable bits
+    This took a while to settle - clocks before v4 will be unlikely to work anymore.
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
         '''
@@ -1295,7 +1264,7 @@ class ClockPlates:
             length = bearingPos[2]
 
         if length > LAYER_THICK:
-            extendoArbour = cq.Workplane("XY").tag("base").circle(rodD).circle(rodD / 2).extrude(length)
+            extendoArbour = cq.Workplane("XY").tag("base").circle(rodD).circle(rodD / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(length)
 
             if flaredBase:
                 baseLength = min(2, length)

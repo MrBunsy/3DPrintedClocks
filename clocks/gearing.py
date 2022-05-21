@@ -11,6 +11,12 @@ class GearStyle(Enum):
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
 
+class ArbourType(Enum):
+    WHEEL_AND_PINION = "WheelAndPinion"
+    CHAIN_WHEEL = "ChainWheel"
+    ESCAPE_WHEEL = "EscapeWheel"
+    ANCHOR = "Anchor"
+    UNKNOWN = "Unknown"
 
 def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style=GearStyle.ARCS):
     gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style, innerRadiusForStyle=ratchet.outsideDiameter*0.5)
@@ -371,7 +377,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None, anchor=None, endCapThick=1, style="HAC", distanceToNextArbour=-1, pinionAtFront=True):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None,endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -394,32 +400,26 @@ class Arbour:
         self.distanceToNextArbour=distanceToNextArbour
         self.nutSpaceMetric=None
         self.pinionOnTop=pinionAtFront
-        self.anchor = anchor
 
         if self.getType() == "Unknown":
             raise ValueError("Not a valid arbour")
 
-        # if self.getType() == "ChainWheel":
-        #     self.wheel.innerRadiusForStyle=self.ratchet.outsideDiameter*0.6
-        # elif self.getType() == "WheelAndPinion":
-        #     self.wheel.innerRadiusForStyle = self.pinion.getMaxRadius()+1
-
     def setNutSpace(self, nutMetricSize=3):
         '''
-        This arbour is fixed firmly to the rod, so needs space for a nyloc nut
+        This arbour is fixed firmly to the rod using a nyloc nut
         '''
         self.nutSpaceMetric=nutMetricSize
 
     def getType(self):
         if self.wheel is not None and self.pinion is not None:
-            return "WheelAndPinion"
+            return ArbourType.WHEEL_AND_PINION
         if self.wheel is not None and self.ratchet is not None and self.chainWheel is not None:
-            return "ChainWheel"
-        if self.wheel is None and self.escapement is not None:
-            return "EscapeWheel"
-        # if self.escapement is not None:
-        #     return "Anchor"
-        return "Unknown"
+            return ArbourType.CHAIN_WHEEL
+        if self.wheel is None and self.escapement is not None and self.pinion is not None:
+            return ArbourType.ESCAPE_WHEEL
+        if self.escapement is not None:
+            return ArbourType.ANCHOR
+        return ArbourType.UNKNOWN
 
     def getRodD(self):
         return self.arbourD
@@ -429,12 +429,12 @@ class Arbour:
         '''
         return total thickness of everything that will be on the rod
         '''
-        if self.getType() == "WheelAndPinion" or self.getType() == "EscapeWheel":
+        if self.getType() == ArbourType.WHEEL_AND_PINION or self.getType() == ArbourType.ESCAPE_WHEEL:
             return self.wheelThick + self.pinionThick + self.endCapThick
-        if self.getType() == "ChainWheel":
+        if self.getType() == ArbourType.CHAIN_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             return self.wheelThick + self.chainWheel.getHeight()
-        if self.getType() == "Anchor":
+        if self.getType() == ArbourType.ANCHOR:
             #wheel thick being used for anchor thick
             return self.wheelThick
 
@@ -448,8 +448,8 @@ class Arbour:
             return self.getTotalThickness() - self.wheelThick/2
 
     def getPinionCentreZ(self):
-        if self.getType() not in ["WheelAndPinion", "EscapeWheel"]:
-            raise ValueError("This does not have a pinion")
+        if self.getType() not in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
+            raise ValueError("This arbour (type {}) does not have a pinion".format(self.getType()))
         if self.pinionOnTop:
             return self.getTotalThickness() - self.endCapThick - self.pinionThick/2
         else:
@@ -465,10 +465,10 @@ class Arbour:
         if self.wheel is not None:
             #chain wheel, WheelAndPinion
             return self.wheel.getMaxRadius()
-        if self.getType() == "EscapeWheel":
+        if self.getType() == ArbourType.ESCAPE_WHEEL:
             return self.escapement.getWheelMaxR()
-        # if self.getType() == "Anchor":
-        #     return -1
+        if self.getType() == ArbourType.ANCHOR:
+            return self.escapement.getAnchorMaxR()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
     def getShape(self, forPrinting=True):
@@ -476,16 +476,15 @@ class Arbour:
         return a shape that can be exported to STL
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
         '''
-        if self.getType() == "WheelAndPinion":
+        if self.getType() == ArbourType.WHEEL_AND_PINION:
             shape = self.pinion.addToWheel(self.wheel, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
-        elif self.getType() == "EscapeWheel":
+        elif self.getType() == ArbourType.ESCAPE_WHEEL:
             shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
-        elif self.getType() == "ChainWheel":
+        elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = getWheelWithRatchet(self.ratchet,self.wheel,holeD=self.arbourD, thick=self.wheelThick, style=self.style)
         else:
-            # if self.getType() == "Anchor":
-            #     return self.escapement.getAnchorArbour
-            raise NotImplementedError("GetShape not yet implemented for arbour type {}".format(self.getType()))
+            if self.getType() == ArbourType.ANCHOR:
+                return self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick, forPrinting=forPrinting)
         if self.nutSpaceMetric is not None:
             #cut out a space for a nyloc nut
             deep = self.wheelThick * 0.25
@@ -494,7 +493,7 @@ class Arbour:
                 deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
             shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
 
-        if not forPrinting and not self.pinionOnTop:
+        if not forPrinting and not self.pinionOnTop and (self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]):
             #make it the right way around for placing in a model
             #rotate not mirror! otherwise the escape wheels end up backwards
             shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.getTotalThickness()))

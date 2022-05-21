@@ -25,6 +25,8 @@ WASHER_THICK = 0.5
 
 #extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
 NUT_WIGGLE_ROOM = 0.2
+#extra diameter to add to the arbour extension to make them easier to screw onto the threaded rod
+ARBOUR_WIGGLE_ROOM = 0.1
 
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.

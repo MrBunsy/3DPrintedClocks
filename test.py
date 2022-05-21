@@ -1,5 +1,5 @@
 from clocks.power import *
-
+from clocks.escapements import *
 
 if 'show_object' not in globals():
     #don't output STL when we're in cadquery editor
@@ -7,14 +7,20 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-ratchet = Ratchet()
-# frictionCord = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet,useFriction=True, cordThick=4)
+# ratchet = Ratchet()
+# # frictionCord = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet,useFriction=True, cordThick=4)
+#
+# # show_object(frictionCord.getAssembled())
+#
+#
+# cordwheel = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet, useKey=True, cordThick=2)
+#
+#
+# # show_object(cordwheel.getAssembled())
+# show_object(cordwheel.getKey(withKnob=False))
 
-# show_object(frictionCord.getAssembled())
 
 
-cordwheel = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet, useKey=True, cordThick=2)
+escapement = Escapement()
 
-
-# show_object(cordwheel.getAssembled())
-show_object(cordwheel.getKey(withKnob=False))
+show_object(escapement.getAnchor2D())

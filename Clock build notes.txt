@@ -183,3 +183,5 @@ Idea: can reduce thickness of the chain/cord wheel gear without making it wobbly
 
 clock 06 again:
 Stops when the anchor's arbour extension rests against the front plate. Might want to bring the third bearing back purely to stop that? Or extend the arbour all the way through the front plate?
+
+Why not use glue to hold the cap to the cord wheel? Then I don't need to worry about the screws and can use smaller diameters if required - would need to re-think how to attach the click

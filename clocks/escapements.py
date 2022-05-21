@@ -5,7 +5,7 @@ import os
 from cadquery import exporters
 
 class Escapement:
-    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, type="recoil", lift=4, drop=4, run=10, lock=2, clockwiseFromPinionSide=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
+    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, type="recoil", lift=4, drop=4, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
         Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
         Also from reading of The Modern Clock
@@ -45,7 +45,9 @@ class Escapement:
         self.toothTipAngle=degToRad(toothTipAngle)
         self.toothBaseAngle=degToRad(toothBaseAngle)
 
+        #note, these are bodgingly set in GoingTrain
         self.clockwiseFromPinionSide=clockwiseFromPinionSide
+        self.escapeWheelClockwise=escapeWheelClockwise
         self.run_deg = run
         self.run = degToRad(run)
 
@@ -117,6 +119,7 @@ class Escapement:
         draw the entry and exit pallets using the intersections of these lines
 
         draw the rest of the anchor depending on if it's recoil or deadbeat
+        NOTE - only deadbeat works at the moment, but since it's wonderfully reliable I don't see the need to revisit recoil
 
         '''
         anchor = cq.Workplane("XY").tag("anchorbase")
@@ -333,7 +336,14 @@ class Escapement:
 
         return anchor
 
-    def getAnchorArbour(self, holeD=3, anchorThick=10, clockwise=True, arbourLength=0, crutchLength=50, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0):
+    def getAnchorMaxR(self):
+        '''
+        To allow enough space in the clock plates and anywhere else, HACK HACK HACK for now
+        '''
+        #holeD * 2, which for now is always going to be six. To fix in future.
+        return 6
+
+    def getAnchorArbour(self, holeD=3, anchorThick=10, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0, forPrinting=True):
         '''
         Final plan: The crutch will be a solid part of the anchor, and a bolt will link it to a slot in the pendulum
         Thinking the anchor will be at the bottom of the clock, so the pendulum can be on the front
@@ -347,6 +357,8 @@ class Escapement:
         clockwise from the point of view of the side with the crutch - which may or may not be the front of the clock
 
         '''
+
+        clockwise = self.escapeWheelClockwise
 
         # crutchWidth = crutchBoltD*3
         crutchWidth = pendulumThick*4
@@ -364,12 +376,12 @@ class Escapement:
 
         #add a length for the arbour - if required
 
-        if crutchLength == 0 and nutMetricSize == 0:
+        if crutchLength == 0 and nutMetricSize == 0 and arbourLength == 0 and forPrinting:
             #if we've got no crutch or nyloc nut, deliberately reverse it so the side facing forwards is the side printed on the nice textured sheet
             clockwise = not clockwise
 
         #get the anchor the other way around so we can build on top of it, and centre it on the pinion
-        arbour = self.getAnchor3D(anchorThick, holeD, not clockwise).translate([0,-self.anchor_centre_distance,0])
+        arbour = self.getAnchor3D(anchorThick, holeD, clockwise).translate([0,-self.anchor_centre_distance,0])
 
         #clearly soemthing's wrong in the maths so anchorTopThickBase isn't being used as I'd hoped
         #bodgetime
@@ -477,7 +489,7 @@ class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
     '''
-    def __init__(self, escapement, length, clockwise=False, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True):
+    def __init__(self, escapement, length, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
@@ -493,7 +505,7 @@ class Pendulum:
         #space for a nut to hold the anchor to the rod
         self.nutMetricSize=nutMetricSize
 
-        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, clockwise=clockwise, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize if useNylocForAnchor else 0)
+        self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize if useNylocForAnchor else 0)
 
         self.crutchSlackWidth=crutchBoltD*1.5
         self.crutchSlackHeight = 30
