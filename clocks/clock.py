@@ -1057,10 +1057,11 @@ class ClockPlates:
 
                 return chainHole
             else:
+                #TODO make these elongated too - probably doesn't matter that much as it's only ever going to be a 1 day light weight
                 #assuming a two-section cord wheel, one side coils up as the weight coils down
                 #cord, leaving enough space for the washer as well (which is hackily included in getTotalThickness()
                 bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
-                topZ = bottomZ +  self.goingTrain.cordWheel.thick - self.goingTrain.cordWheel.capThick
+                topZ = bottomZ +  self.goingTrain.cordWheel.thick + self.goingTrain.cordWheel.capThick
 
                 if self.weightOnRightSide:
                     rightZ = bottomZ
