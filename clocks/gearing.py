@@ -43,7 +43,7 @@ class Gear:
         return gear
     @staticmethod
     def cutSimpleStyle(gear, outerRadius, innerRadius, arms=4):
-        armThick = outerRadius*0.15
+        armThick = outerRadius*0.2#0.15
 
         thick = 100
 

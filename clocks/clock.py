@@ -390,7 +390,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -407,7 +407,7 @@ class GoingTrain:
             chainWheelThick = thick
 
         if escapeWheelThick < 0:
-            escapeWheelThick = thick
+            escapeWheelThick = thick * (thicknessReduction**(self.wheels-1))
 
         # self.gearPinionLength=thick*3
         # self.chainGearPinionLength = chainWheelThick*2.5
@@ -417,7 +417,7 @@ class GoingTrain:
         # self.gearTotalThick = self.gearWheelThick + self.gearPinionLength + self.gearPinionEndCapLength
         # self.chainGearTotalThick
 
-        module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
+        # module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
         #the module of each wheel is slightly smaller than the preceeding wheel
         pairs = [WheelPinionPair(wheel[0],wheel[1],module_size* math.pow(moduleReduction, i)) for i,wheel in enumerate(self.trains[0]["train"])]
@@ -506,7 +506,7 @@ class GoingTrain:
 
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i), pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                 distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
                 #Trying this to ensure that the anchor doesn't end up against the back plate (or front plate)
@@ -1138,19 +1138,8 @@ class ClockPlates:
 
     def punchBearingHoles(self, plate, back):
         for i, pos in enumerate(self.bearingPositions):
-            if i == len(self.bearingPositions)-1 and not back and self.pendulumSticksOut > 0:
-                #until the anchor is an arbour
-                bearingInfo = getBearingInfo(self.arbourD)
-                #don't need three bearings for the anchor - it's not taking much weight! Just using one on the end of the pendulumSticksOut bit so it can't bend as easily
-                plate = plate.cut(cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(self.getPlateThick(back)).translate((pos[0], pos[1], 0)))
-            else:
-                if i < len(self.bearingPositions) - 1:
-                    bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
-                else:
-                    #anchor isn't an arbour (yet)
-                    bearingInfo = getBearingInfo(self.arbourD)
-
-                plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
+            bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
+            plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
@@ -1271,16 +1260,8 @@ class ClockPlates:
         flaredBase = False
 
         bearingPos = self.bearingPositions[arbourID + self.goingTrain.chainWheels]
-        if arbourID < self.goingTrain.wheels:
-            arbourThick = self.goingTrain.getArbour(arbourID).getTotalThickness()
-            #override default (TODO if anchor is an arbour, we don't need the default at all)
-            rodD = self.goingTrain.getArbour(arbourID).getRodD()
-        else:
-            #anchor!
-            arbourThick = self.pendulum.anchorThick
-            #the bearing is on the front of the plate! need something to stop it falling through the gap
-            if self.pendulumSticksOut > 0 and top:
-                flaredBase = True
+        arbourThick = self.goingTrain.getArbour(arbourID).getTotalThickness()
+        rodD = self.goingTrain.getArbour(arbourID).getRodD()
 
         length = 0
         if top:
