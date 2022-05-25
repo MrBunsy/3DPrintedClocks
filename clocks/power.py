@@ -363,7 +363,8 @@ class CordWheel:
         #if true this is like the chain wheel, using friction and a counterweight for a loop of cord over the wheel
         self.useFriction = useFriction
         #1mm felt too flimsy
-        self.capThick=2
+        #2mm was fine, but I'm trying to reduce depth as much as possible
+        self.capThick=1.6
         self.capDiameter = capDiameter
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
@@ -382,7 +383,9 @@ class CordWheel:
         self.fixingDistance=self.diameter*0.3
 
         if self.useKey and not self.useGear:
-            self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 3
+            #worked but I'm trying to reduce diameter and still work
+            #self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 3
+            self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 1
 
         # # at angle so it can fit nicely with the polygon for the key - but this then clashes with teh simple cord hole
         # self.fixingPoints = [polar(math.pi / 4, self.fixingDistance), polar(math.pi + math.pi / 4, self.fixingDistance)]
@@ -390,8 +393,8 @@ class CordWheel:
         self.cordThick=cordThick
 
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
-        self.clickWheelExtra=LAYER_THICK*2
-        self.beforeBearingExtraHeight= self.clickWheelExtra
+        self.clickWheelExtra=LAYER_THICK
+        self.beforeBearingExtraHeight= LAYER_THICK*2
         self.ratchet = ratchet
         self.keyScrewHoleD = self.screwThreadMetric
 
@@ -820,7 +823,7 @@ class CordWheel:
         '''
 
         if self.useKey:
-            return self.ratchet.thick + self.clickWheelExtra*2 + self.capThick*2 + self.thick
+            return self.ratchet.thick + self.clickWheelExtra + self.beforeBearingExtraHeight + self.capThick*2 + self.thick
         elif self.useGear:
             return self.ratchet.thick + self.clickWheelExtra + self.capThick + self.thick + self.gearThick + WASHER_THICK
 
@@ -1200,9 +1203,10 @@ class Ratchet:
 
         return wheel
 
-    def getOuterWheel(self):
+    def getOuterWheel(self, extraThick=0):
         '''
         contains the ratchet teeth, designed so it can be printed as part of the same object as a gear wheel
+        extrathicnkess can be added (useful for embedding inside the chain wheel)
         '''
         wheel = cq.Workplane("XY").circle(self.outsideDiameter/2)#.circle(self.outsideDiameter/2-self.outer_thick)
 
@@ -1220,7 +1224,7 @@ class Ratchet:
             # wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
             wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius * self.anticlockwise)
 
-        wheel = wheel.close().extrude(self.thick)
+        wheel = wheel.close().extrude(self.thick+extraThick)
 
 
         return wheel

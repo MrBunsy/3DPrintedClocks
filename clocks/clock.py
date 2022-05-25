@@ -359,7 +359,8 @@ class GoingTrain:
         self.genPowerWheelRatchet()
         #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
         #21.2 comes from a mistake on clock 07, but a happy mistake as it was a good size. keeping this for now
-        ratchetD = max(self.max_chain_wheel_d, 21.2)
+        #increasing since I'm now using the key would cord wheels and not sure I'll be going back to the other type any time soon
+        ratchetD = max(self.max_chain_wheel_d, 26)
         # ratchetD = 21.22065907891938
         self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
@@ -389,7 +390,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -481,7 +482,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style)]
+            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -781,6 +782,19 @@ class ClockPlates:
         self.plateDistance=max(topZs) + self.wobble
 
         print("Plate distance", self.plateDistance)
+
+        #configure stuff for the arbours, now we know their absolute positions
+        poweredWheel=self.goingTrain.getArbourWithConventionalNaming(0)
+        poweredWheelBracingR = poweredWheel.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(1).getMaxRadius() - self.gearGap
+
+        #no need for it to be massive
+        poweredWheelBracingR = min(10,poweredWheelBracingR)
+        poweredWheel.setArbourExtensionInfo(wheelSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
+        #NOTE - can't change this here as it was used in calculating the plate distance. Need to push this up to the user to set
+        # if poweredWheelBracingR > 5:
+        #     #could do more logic here all the way to completely embedding the ratchet inside the wheel?
+        #     poweredWheel.ratchetInsetness=0.5
+
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         #get position of motion works relative to the minute wheel
@@ -1415,7 +1429,13 @@ class Assembly:
                chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
 
         else:
-            clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
+            #cord
+            chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
+            cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2
+            if chainWheelArbour.ratchetInset:
+                cordWheelZ-= chainWheelArbour.ratchet.thick
+
+            clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
 
         anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2

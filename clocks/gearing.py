@@ -18,16 +18,7 @@ class ArbourType(Enum):
     ANCHOR = "Anchor"
     UNKNOWN = "Unknown"
 
-def getWheelWithRatchet(ratchet, gear, holeD=3, thick=5, style=GearStyle.ARCS):
-    gearWheel = gear.get3D(holeD=holeD, thick=thick, style=style, innerRadiusForStyle=ratchet.outsideDiameter*0.5)
 
-    ratchetWheel = ratchet.getOuterWheel().translate((0,0,thick))
-
-    #in case the ratchet wheel is larger than the space in the middle of whichever style is being used
-    #style has been given inner radius so this shouldn't be a problem anymore
-    # gearWheel = gearWheel.add(cq.Workplane("XY").circle(ratchet.outsideDiameter/2).circle(holeD/2).extrude(thick))
-
-    return gearWheel.add(ratchetWheel)
 
 
 class Gear:
@@ -377,7 +368,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None,endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -401,8 +392,25 @@ class Arbour:
         self.nutSpaceMetric=None
         self.pinionOnTop=pinionAtFront
 
+        #if true the ratchet must be less thick than the wheel
+        self.ratchetInset = ratchetInset
+
+        self.pinionSideExtension=0
+        self.wheelSideExtension=0
+        self.arbourExtensionMaxR=self.arbourD
+
         if self.getType() == "Unknown":
             raise ValueError("Not a valid arbour")
+
+    def setArbourExtensionInfo(self, pinionSide=0, wheelSide=0, maxR=0):
+        '''
+        This info is only known after the plates are configured, so retrospectively add it to the arbour.
+
+        Currently only used for the chain wheel to make it more rigid (using pinion to mean side with the chain/cord)
+        '''
+        self.pinionSideExtension=pinionSide
+        self.wheelSideExtension=wheelSide
+        self.arbourExtensionMaxR=maxR
 
     def setNutSpace(self, nutMetricSize=3):
         '''
@@ -433,7 +441,7 @@ class Arbour:
             return self.wheelThick + self.pinionThick + self.endCapThick
         if self.getType() == ArbourType.CHAIN_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
-            return self.wheelThick + self.chainWheel.getHeight()
+            return self.wheelThick + self.chainWheel.getHeight() - (self.ratchet.thick * (1 if self.ratchetInset else 0))
         if self.getType() == ArbourType.ANCHOR:
             #wheel thick being used for anchor thick
             return self.wheelThick
@@ -481,7 +489,7 @@ class Arbour:
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
             shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.CHAIN_WHEEL:
-            shape = getWheelWithRatchet(self.ratchet,self.wheel,holeD=self.arbourD, thick=self.wheelThick, style=self.style)
+            shape = self.getWheelWithRatchet(forPrinting=forPrinting)
         else:
             if self.getType() == ArbourType.ANCHOR:
                 return self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick, forPrinting=forPrinting)
@@ -501,6 +509,41 @@ class Arbour:
 
         return shape
 
+    def getWheelWithRatchet(self, forPrinting=True):
+        gearWheel = self.wheel.get3D(holeD=self.arbourD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=self.ratchet.outsideDiameter * 0.5)
+
+        if self.ratchetInset:
+            #note, if the ratchet is inset the wheel will need some other mechanism to keep it at right angles on the rod, like the wheelSideExtension set
+
+            #wondering if a washer will be useful? the bridged surface will be rough
+            holeDeep = self.ratchet.thick + WASHER_THICK
+
+            # ratchetHole = cq.Workplane("XY").circle(self.ratchet.outsideDiameter/2).extrude(holeDeep).translate((0,0,self.wheelThick - holeDeep))
+            #bare in mind this wheel is now upside down in the case of an inset ratchet
+            ratchetHole = getHoleWithHole(self.arbourD,self.ratchet.outsideDiameter,holeDeep).rotate((0,0,0),(1,0,0),180).translate((0,0,self.wheelThick))
+            gearWheel = gearWheel.cut(ratchetHole)
+        #to counteract the hole-in-hole if inset
+        extraThick = LAYER_THICK*4
+        if not self.ratchetInset:
+            extraThick = 0
+        ratchetWheel = self.ratchet.getOuterWheel(extraThick=extraThick).translate((0, 0, (self.wheelThick - self.ratchet.thick-extraThick) if self.ratchetInset else self.wheelThick))
+
+        if self.wheelSideExtension > 0:
+            #have it stand off from the bearing slightly
+            bearingStandoffHeight=LAYER_THICK*2
+
+            extendedArbour = cq.Workplane("XY").circle(self.arbourExtensionMaxR).extrude(self.wheelSideExtension-bearingStandoffHeight).circle(self.arbourD).extrude(bearingStandoffHeight)
+            #add hole for rod!
+            extendedArbour = extendedArbour.faces(">Z").circle(self.arbourD/2).cutThruAll()
+
+            ratchetWheel = ratchetWheel.add(extendedArbour.rotate((0,0,0),(1,0,0),180))
+
+        gearWheel = gearWheel.add(ratchetWheel)
+
+        if self.ratchetInset and forPrinting:
+            gearWheel = gearWheel.rotate((0,0,0),(1,0,0),180)
+
+        return gearWheel
 
 class MotionWorks:
 
