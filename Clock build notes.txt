@@ -185,3 +185,7 @@ clock 06 again:
 Stops when the anchor's arbour extension rests against the front plate. Might want to bring the third bearing back purely to stop that? Or extend the arbour all the way through the front plate?
 
 Why not use glue to hold the cap to the cord wheel? Then I don't need to worry about the screws and can use smaller diameters if required - would need to re-think how to attach the click
+
+IDEA - instead of the washer between anchor and back plate, why not put the escape wheel the other way around and then the anchor will be in the middle again?
+
+I have noticed the first version of clock 06 does bend, but still works. I think plate-distance reduction will be worth it

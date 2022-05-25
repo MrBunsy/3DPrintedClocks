@@ -4,8 +4,13 @@ import cadquery as cq
 import os
 from cadquery import exporters
 
+class EscapementType(Enum):
+    DEADBEAT = "deadbeat"
+    RECOIL = "recoil"
+    GRASSHOPPER = "grasshopper"
+
 class Escapement:
-    def __init__(self, teeth=42, diameter=100, anchorTeeth=None, type="recoil", lift=4, drop=4, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
+    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
         Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
         Also from reading of The Modern Clock
@@ -189,23 +194,23 @@ class Escapement:
         # entry pallet
         anchor = anchor.moveTo(entryPalletEndPos[0], entryPalletEndPos[1]).lineTo(entryPalletStartPos[0],entryPalletStartPos[1])
 
-        if self.type == "deadbeat":
+        if self.type == EscapementType.DEADBEAT:
             anchor = anchor.radiusArc(outerLeftPoint, entryPalletEndR+0.01)
 
         #just temp - need proper arm and centre
         anchor = anchor.lineTo(anchorCentreTop[0], anchorCentreTop[1]).lineTo(outerRightPoint[0], outerRightPoint[1])
 
-        if self.type == "deadbeat":
+        if self.type == EscapementType.DEADBEAT:
             anchor = anchor.radiusArc(exitPalletEndPos, exitPalletEndR)
 
         anchor = anchor.lineTo(exitPalletStartPos[0], exitPalletStartPos[1])
 
-        if self.type == "deadbeat":
+        if self.type == EscapementType.DEADBEAT:
             anchor = anchor.radiusArc(innerRightPoint, -exitPalletStartR)
 
         anchor = anchor.lineTo(anchorCentreBottom[0], anchorCentreBottom[1]).lineTo(innerLeftPoint[0], innerLeftPoint[1])
 
-        if self.type == "deadbeat":
+        if self.type == EscapementType.DEADBEAT:
             anchor = anchor.radiusArc(entryPalletEndPos, -entryPalletEndR)
 
 
@@ -408,13 +413,13 @@ class Escapement:
         dA = -math.pi*2/self.teeth
         toothTipArcAngle = self.toothTipWidth/diameterForPrinting
 
-        if self.type == "recoil":
+        if self.type == EscapementType.RECOIL:
             #based on the angle of the tooth being 20deg, but I want to calculate everyting in angles from the cetnre of the wheel
             #lazily assume arc along edge of inner wheel is a straight line
             toothAngle = math.pi*20/180
             toothTipAngle = 0
             toothBaseAngle = -math.atan(math.tan(toothAngle)*self.toothHeight/self.innerRadius)
-        else:
+        elif self.type == EscapementType.DEADBEAT:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
             toothTipAngle = -self.toothTipAngle#-math.pi*0.05
             toothBaseAngle = -self.toothBaseAngle#-math.pi*0.03
@@ -493,6 +498,7 @@ class Pendulum:
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
+        #NOTE - deprecated, trying to switch over to making the anchor another arbour
         self.anchorThick=anchorThick
 
         #nominal length of the pendulum

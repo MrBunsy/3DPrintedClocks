@@ -24,7 +24,7 @@ lock=1.5
 teeth = 48
 toothTipAngle = 4
 toothBaseAngle = 3
-escapement = clock.Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
+escapement = clock.Escapement(drop=drop, lift=lift ,teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
 train=clock.GoingTrain(pendulum_period=0.75,fourth_wheel=True,escapement=escapement, maxChainDrop=1700, chainAtBack=False,chainWheels=0, hours=30)
 train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1,loud=True)

@@ -95,6 +95,9 @@ class GoingTrain:
         #the last wheel is the escapement
         self.wheels = 4 if fourth_wheel else 3
 
+        #maybe make this overridable in genGears?
+        self.anchorThick = 12
+
         self.escapement=escapement
         if escapement is None:
             self.escapement = Escapement(teeth=escapement_teeth)
@@ -505,11 +508,18 @@ class GoingTrain:
                 arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                 distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
+                #Trying this to ensure that the anchor doesn't end up against the back plate (or front plate)
+                pinionAtFront = self.chainAtBack
+
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=escapeWheelThick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                       distanceToNextArbour=self.escapement.anchor_centre_distance, style=style, pinionAtFront=pinionAtFront))
 
             pinionAtFront = not pinionAtFront
+
+        #anchor is the last arbour
+        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD))
+
         self.wheelPinionPairs = pairs
         self.arbours = arbours
 
