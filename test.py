@@ -20,7 +20,14 @@ if 'show_object' not in globals():
 # show_object(cordwheel.getKey(withKnob=False))
 
 
+#
+# escapement = Escapement()
+#
+# show_object(escapement.getAnchor2D())
 
-escapement = Escapement()
 
-show_object(escapement.getAnchor2D())
+chainWheel = ChainWheel()
+ratchet = Ratchet()
+chainWheel.setRatchet(ratchet)
+
+show_object(chainWheel.getAssembled())

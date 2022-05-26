@@ -47,7 +47,7 @@ for the first clock and decide if I want to switch to something else later.
 
 class GoingTrain:
     gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23, escapement=None):
+    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23, escapement=None, escapeWheelPinionAtFront=None):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -60,6 +60,7 @@ class GoingTrain:
         max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
         escapement: Escapement object. If not provided, falls back to defaults with esacpement_teeth
 
+        escapeWheelPinionAtFront:  bool, override default
 
         Grand plan: auto generate gear ratios.
         Naming convention seems to be powered (spring/weight) wheel is first wheel, then minute hand wheel is second, etc, until the escapement
@@ -84,6 +85,11 @@ class GoingTrain:
         self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
 
         self.chainAtBack = chainAtBack
+        #to ensure the anchor isn't pressed up against the back (or front) plate
+        if escapeWheelPinionAtFront is None:
+            self.escapeWheelPinionAtFront = chainAtBack
+        else:
+            self.escapeWheelPinionAtFront=escapeWheelPinionAtFront
 
         #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
         self.chainWheels = chainWheels
@@ -449,7 +455,8 @@ class GoingTrain:
             chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
 
         #using != as XOR, so if an odd number of wheels, it's the same as chainAtBack. If it's an even number of wheels, it's the opposite
-        escapeWheelPinionAtFront =  chainWheelImaginaryPinionAtFront != ((self.wheels + self.chainWheels) % 2 == 0)
+        # escapeWheelPinionAtFront =  chainWheelImaginaryPinionAtFront != ((self.wheels + self.chainWheels) % 2 == 0)
+        escapeWheelPinionAtFront = self.escapeWheelPinionAtFront
 
         #only true if an odd number of wheels (note this IS wheels, not with chainwheels, as the minute wheel is always clockwise)
         escapeWheelClockwise = self.wheels %2 == 1
@@ -491,7 +498,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack)
+                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset)
                 else:
                     #just a normal gear
                     arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*chainWheelPinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
@@ -510,7 +517,7 @@ class GoingTrain:
                                 distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
                 #Trying this to ensure that the anchor doesn't end up against the back plate (or front plate)
-                pinionAtFront = self.chainAtBack
+                pinionAtFront = self.escapeWheelPinionAtFront
 
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=escapeWheelThick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
@@ -1040,10 +1047,10 @@ class ClockPlates:
         #     plate = plate.workplaneFromTagged("top").pushPoints(fixingPositions).cskHole(diameter=fixingScrewD, cskAngle=90, cskDiameter=getScrewHeadDiameter(fixingScrewD), depth=None)#.cutThruAll()
 
 
-
-        for fixingPos in fixingPositions:
-            #embedded nuts!
-            plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
+        if back:
+            for fixingPos in fixingPositions:
+                #embedded nuts!
+                plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
 
         return plate
 
@@ -1053,7 +1060,7 @@ class ClockPlates:
         this assumes an awful lot, it's likely to be a bit fragile
         '''
         if self.goingTrain.usingChain:
-            chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
+            chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
             leftZ = chainZ
             rightZ = chainZ
         else:
@@ -1401,22 +1408,26 @@ class Assembly:
             clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
         #the chain wheel parts
-        if self.goingTrain.usingChain:
-            clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
-
-            chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,(self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2))
-
-            clock = clock.add(
-               chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
-
-        else:
+        # if self.goingTrain.usingChain:
+        #     chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
+        #     chainWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2
+        #
+        #     clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
+        #
+        #     chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,(self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2))
+        #
+        #     clock = clock.add(
+        #        chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
+        #
+        # else:
             #cord
-            chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
-            cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2
-            if chainWheelArbour.ratchetInset:
-                cordWheelZ-= chainWheelArbour.ratchet.thick
+        #should work for both chain and cord
+        chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
+        cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2
+        if chainWheelArbour.ratchetInset:
+            cordWheelZ-= chainWheelArbour.ratchet.thick
 
-            clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
+        clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
 
         anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2

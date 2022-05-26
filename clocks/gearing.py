@@ -524,9 +524,11 @@ class Arbour:
             gearWheel = gearWheel.cut(ratchetHole)
         #to counteract the hole-in-hole if inset
         extraThick = LAYER_THICK*4
+        ratchetZ = (self.wheelThick - self.ratchet.thick-extraThick)
         if not self.ratchetInset:
             extraThick = 0
-        ratchetWheel = self.ratchet.getOuterWheel(extraThick=extraThick).translate((0, 0, (self.wheelThick - self.ratchet.thick-extraThick) if self.ratchetInset else self.wheelThick))
+            ratchetZ=self.wheelThick
+        ratchetWheel = self.ratchet.getOuterWheel(extraThick=extraThick).translate((0, 0, ratchetZ))
 
         if self.wheelSideExtension > 0:
             #have it stand off from the bearing slightly

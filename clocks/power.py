@@ -351,7 +351,7 @@ class CordWheel:
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=25, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, keyHeight=60):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, useGear=False, useFriction=False, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, keyHeight=60):
 
         self.diameter=diameter
         #thickness of one segment
@@ -373,6 +373,7 @@ class CordWheel:
         self.bearingInnerD=bearingInnerD
         self.bearingOuterD=bearingOuterD
         self.bearingHeight=bearingHeight
+        #this is the bit that sticks out the front of the clock. I suck at names
         self.keySquareBitHeight=keySquareBitHeight
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
@@ -975,8 +976,9 @@ class ChainWheel:
     def getHeight(self):
         '''
         Returns total height of the chain wheel, once assembled, including the ratchet
+        includes washer as this is considered part of the full assembly
         '''
-        return self.inner_width + self.wall_thick*2 + self.extra_height + self.ratchet.thick
+        return self.inner_width + self.wall_thick*2 + self.extra_height + self.ratchet.thick + WASHER_THICK
 
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
@@ -1100,6 +1102,16 @@ class ChainWheel:
             combined = combined.cut(screwHeadSpace)
 
         return combined
+
+    def getAssembled(self):
+
+
+
+        assembly = self.getWithRatchet(self.ratchet)
+
+        chainWheelTop = self.getHalf().rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight() - WASHER_THICK))
+
+        return assembly.add(chainWheelTop)
 
     def setRatchet(self, ratchet):
         self.ratchet=ratchet
