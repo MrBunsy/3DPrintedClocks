@@ -189,3 +189,5 @@ Why not use glue to hold the cap to the cord wheel? Then I don't need to worry a
 IDEA - instead of the washer between anchor and back plate, why not put the escape wheel the other way around and then the anchor will be in the middle again?
 
 I have noticed the first version of clock 06 does bend, but still works. I think plate-distance reduction will be worth it
+
+I've noticed teh hour hand is really very loose, especially when the motion works is positioned the otehr way up, as on the last two eight days. I'm wondering about tweaking the gears to try and improve this - it never got any attention as it "just worked" first time.

@@ -26,11 +26,15 @@ class Gear:
 
     @staticmethod
     def cutStyle(gear, outerRadius, innerRadius = -1, style=None):
+        '''
+        Could still do with a little more tidying up, outerRadius should be a few mm shy of the edge of teh gear to give a solid rim,
+        but innerRadius should be at the edge of whatever can't be cut into
+        '''
         #lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
-            return Gear.cutHACStyle(gear,armThick=outerRadius*0.1, rimRadius=outerRadius-2, innerRadius=innerRadius*1.1)
+            return Gear.cutHACStyle(gear,armThick=outerRadius*0.1, rimRadius=outerRadius-2, innerRadius=innerRadius*1.15)
         if style == GearStyle.CIRCLES:
             if innerRadius < 0:
                 innerRadius = 3
@@ -300,11 +304,14 @@ class WheelPinionPair:
     '''
 
     errorLimit=0.000001
-    def __init__(self, wheelTeeth, pinionTeeth, module=1.5):
+    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, drivenBackwards=False):
         '''
 
         :param teeth:
         :param radius:
+
+        if drivenBackwards, the pinion drives the wheel (like the motion works)
+        untested, uncertain if the idae has merit since I'm just tinkering (I've forgotten teh details of how all this works already)
         '''
         # self.wheelTeeth = wheelTeeth
         # self.pinionTeeth=pinionTeeth
@@ -324,6 +331,7 @@ class WheelPinionPair:
 
         wheel_addendum_factor = self.calcWheelAddendumFactor(pinionTeeth)
         # BS 978 via https://www.csparks.com/watchmaking/CycloidalGears/index.jxl says addendum radius factor is 1.4*addendum factor
+        #(this is aproximating the real curve, i think?)
         wheel_addendum_radius_factor=wheel_addendum_factor*1.4
         #TODO consider custom slop, this is from http://hessmer.org/gears/CycloidalGearBuilder.html
         wheel_dedendum_factor = math.pi/2
@@ -335,7 +343,7 @@ class WheelPinionPair:
         if pinionTeeth <= 10:
             pinion_tooth_factor = 1.05
         #https://www.csparks.com/watchmaking/CycloidalGears/index.jxl
-        if pinionTeeth == 6 or pinionTeeth == 7:
+        if pinionTeeth == 6 or pinionTeeth == 7 or drivenBackwards:
             pinion_addendum_factor=0.855
             pinion_addendum_radius_factor = 1.05
         elif pinionTeeth == 8 or pinionTeeth == 9:
@@ -349,7 +357,7 @@ class WheelPinionPair:
         self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor)
 
     def calcWheelAddendumFactor(self,pinionTeeth):
-        #http://hessmer.org/gears/CycloidalGearBuilder.html MIT licence
+        #this function ported from http://hessmer.org/gears/CycloidalGearBuilder.html MIT licence
         beta = 0.0
         theta = 1.0
         thetaNew = 0.0
@@ -530,7 +538,8 @@ class Arbour:
             ratchetZ=self.wheelThick
         ratchetWheel = self.ratchet.getOuterWheel(extraThick=extraThick).translate((0, 0, ratchetZ))
 
-        if self.wheelSideExtension > 0:
+        if self.ratchetInset and self.wheelSideExtension > 0:
+            #only extend out this way if the ratchet is inset - otherwise this is unprintable
             #have it stand off from the bearing slightly
             bearingStandoffHeight=LAYER_THICK*2
 
@@ -545,6 +554,8 @@ class Arbour:
         if self.ratchetInset and forPrinting:
             gearWheel = gearWheel.rotate((0,0,0),(1,0,0),180)
 
+        # if not self.ratchetInset and self.wheelSideExtension > 0:
+        #     print("UNPRINTABLE CHAIN WHEEL, cannot have bits sticking out both sides")
         return gearWheel
 
 class MotionWorks:
@@ -552,6 +563,14 @@ class MotionWorks:
     def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
         '''
         if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
+
+        TODO - hour hand is very loose with default gear settings
+
+        The modern clock:
+        'The meshing of the minute wheel and cannon pinion should be as deep as is consistent with perfect freedom, as should also that of the hour wheel
+         and minute pinion in order to prevent the hour hand from having too much shake, as the minute wheel and pinion are loose on the stud and the hour
+         wheel is loose on the cannon, so that a shallow depthing here will give considerable back lash, which is especially noticeable when winding.'
+
         '''
         self.holeD=holeD
         self.thick = thick
@@ -563,8 +582,8 @@ class MotionWorks:
         self.arbourDistance = module * (36 + 12) / 2
         secondModule = 2 * self.arbourDistance / (40 + 10)
         # print("module: {}, secondMOdule: {}".format(module, secondModule))
-        self.pairs = [WheelPinionPair(36,12, module), WheelPinionPair(40,10,secondModule)]
-
+        # self.pairs = [WheelPinionPair(36,12, module, drivenBackwards=True), WheelPinionPair(40,10,secondModule, drivenBackwards=True)]
+        self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
         self.cannonPinionThick = self.thick*2
 
         self.minuteHandHolderSize=minuteHandHolderSize
@@ -577,6 +596,16 @@ class MotionWorks:
         self.space = 0.5
         #old size of space so i can reprint without reprinting the hands
         self.hourHandHolderD = self.minuteHandHolderD + 1 + self.wallThick*2
+
+    def getAssembled(self, motionWorksRelativePos=None,minuteAngle=10):
+        if motionWorksRelativePos is None:
+            motionWorksRelativePos = [0, self.getArbourDistance()]
+
+        motionWorksModel = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+        motionWorksModel = motionWorksModel.add(self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick())))
+        motionWorksModel = motionWorksModel.add(self.getMotionArbour().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], self.getCannonPinionBaseThick() / 2)))
+
+        return motionWorksModel
 
     def getHourHandHoleD(self):
         return self.hourHandHolderD

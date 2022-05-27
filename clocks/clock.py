@@ -501,7 +501,11 @@ class GoingTrain:
                     arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset)
                 else:
                     #just a normal gear
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=self.chainWheelArbours[-1].wheelThick*chainWheelPinionThickMultiplier, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
+                    if self.chainWheels == 1:
+                        pinionThick = self.chainWheelArbours[-1].wheelThick * chainWheelPinionThickMultiplier
+                    else:
+                        pinionThick = self.chainWheelArbours[-1].wheelThick * pinionThickMultiplier
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
 
                 if useNyloc:
                     #regardless of chains, we need a nyloc nut to fix the wheel to the rod
@@ -510,10 +514,15 @@ class GoingTrain:
                 arbours.append(arbour)
 
             elif i < self.wheels-1:
+                pinionThick = arbours[-1].wheelThick * pinionThickMultiplier
+
+                if self.chainWheels == 0 and i == 1:
+                    #this pinion is for the chain wheel
+                    pinionThick = arbours[-1].wheelThick * chainWheelPinionThickMultiplier
 
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i), pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i), pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
                                 distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
                 #Trying this to ensure that the anchor doesn't end up against the back plate (or front plate)
@@ -1450,9 +1459,11 @@ class Assembly:
         secondAngle = -360 * (self.timeSeconds / 60)
 
         #motion work in place
-        motionWorksModel = self.motionWorks.getCannonPinion().rotate((0,0,0),(0,0,1), minuteAngle)
-        motionWorksModel = motionWorksModel.add(self.motionWorks.getHourHolder().translate((0,0,self.motionWorks.getCannonPinionBaseThick())))
-        motionWorksModel = motionWorksModel.add(self.motionWorks.getMotionArbour().translate((self.plates.motionWorksRelativePos[0],self.plates.motionWorksRelativePos[1], self.motionWorks.getCannonPinionBaseThick()/2)))
+        # motionWorksModel = self.motionWorks.getCannonPinion().rotate((0,0,0),(0,0,1), minuteAngle)
+        # motionWorksModel = motionWorksModel.add(self.motionWorks.getHourHolder().translate((0,0,self.motionWorks.getCannonPinionBaseThick())))
+        # motionWorksModel = motionWorksModel.add(self.motionWorks.getMotionArbour().translate((self.plates.motionWorksRelativePos[0],self.plates.motionWorksRelativePos[1], self.motionWorks.getCannonPinionBaseThick()/2)))
+
+        motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos,minuteAngle=minuteAngle)
 
         clock = clock.add(motionWorksModel.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset)))
 

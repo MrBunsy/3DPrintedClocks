@@ -20,11 +20,19 @@ if 'show_object' not in globals():
 clockName="wall_clock_04b"
 clockOutDir="out"
 
+# drop =1.5
+# lift =3
+# lock=1.5
+# escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+#
+#
+
+
 # crutchLength=100
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False, escapeWheelPinionAtFront=True)
+train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False, escapeWheelPinionAtFront=True)#, escapement=escapement)
 
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9)
 # train.setRatios([[81, 12], [80, 9]])
@@ -42,7 +50,7 @@ cicumference: 68.60000000000001, run time of:28.9hours
 '''
 pendulumSticksOut=20
 #keeping chain wheel slightly thicker so it might be less wonky on the rod?
-train.genGears(module_size=1,moduleReduction=0.85, thick=2, chainWheelThick=4, useNyloc=False, escapeWheelMaxD=0.75,ratchetInset=False)
+train.genGears(module_size=1,moduleReduction=0.85, thick=2, chainWheelThick=5, useNyloc=False, escapeWheelMaxD=0.75,ratchetInset=False)
 
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+40, )
