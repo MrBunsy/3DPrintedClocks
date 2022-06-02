@@ -237,7 +237,7 @@ class BallWheel:
     Use steel balls in a waterwheel-like wheel instead of a weight on a cord or chain.
     Shouldn't need a power maintainer. Might need some sort of stop works to avoid getting stuck half empty
 
-    stop works idea: sprung lever from the side, after where the ball drops in. If there's no ball there (or no ball falls on it), it would stop the wheel turning
+    stop works idea: sprung/weighted lever from the side, after where the ball drops in. If there's no ball there (or no ball falls on it), it would stop the wheel turning
     '''
 
     def __init__(self, ballDiameter=25.4, ballsAtOnce=10, ballWeight = 0.065):
@@ -258,6 +258,10 @@ class BallWheel:
         print("pitch diameter", self.pitchDiameter)
 
     def getTorque(self):
+        '''
+        Kg metre^2 per second squared
+        km^2s^-2
+        '''
         ballAngle = math.pi*2/(self.ballsAtOnce*2)
 
         torque = 0
@@ -265,10 +269,10 @@ class BallWheel:
         #from top to bottom, assuming clockwise for no particularily good reason
         for ball in range(self.ballsAtOnce):
             angle = math.pi/2 - ball*ballAngle
-            print("angle", radToDeg(angle))
+            # print("angle", radToDeg(angle))
 
             xDir = math.cos(angle)*self.pitchDiameter/2
-            print(xDir)
+            # print(xDir)
             xDirMetres = xDir/1000
             torque += xDirMetres * self.ballWeightKg * GRAVITY
 
@@ -770,7 +774,7 @@ class CordWheel:
         '''
         (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo(cordLength)
 
-        print("layers of cord: {}, cord per hour: {:.1f}cm to {:.1f}cm".format(layers, (cordPerRotationPerLayer[-1] / minuteRatio) / 10, (cordPerRotationPerLayer[0] / minuteRatio) / 10))
+        print("layers of cord: {}, cord per hour: {:.1f}cm to {:.1f}cm min diameter: {:.1f}mm".format(layers, (cordPerRotationPerLayer[-1] / minuteRatio) / 10, (cordPerRotationPerLayer[0] / minuteRatio) / 10, self.diameter))
 
         #minute hand rotates once per hour, so this answer will be in hours
         return (rotations * minuteRatio)

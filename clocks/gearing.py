@@ -304,14 +304,14 @@ class WheelPinionPair:
     '''
 
     errorLimit=0.000001
-    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, drivenBackwards=False):
+    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False):
         '''
 
         :param teeth:
         :param radius:
 
-        if drivenBackwards, the pinion drives the wheel (like the motion works)
-        untested, uncertain if the idae has merit since I'm just tinkering (I've forgotten teh details of how all this works already)
+        if loose arbours, then this is probably for hte motion works, where there's a lot of play and
+        they don't mesh well
         '''
         # self.wheelTeeth = wheelTeeth
         # self.pinionTeeth=pinionTeeth
@@ -330,6 +330,11 @@ class WheelPinionPair:
 
 
         wheel_addendum_factor = self.calcWheelAddendumFactor(pinionTeeth)
+
+        if looseArbours:
+            #extend the addendum a bit
+            wheel_addendum_factor*=1.2
+
         # BS 978 via https://www.csparks.com/watchmaking/CycloidalGears/index.jxl says addendum radius factor is 1.4*addendum factor
         #(this is aproximating the real curve, i think?)
         wheel_addendum_radius_factor=wheel_addendum_factor*1.4
@@ -343,7 +348,7 @@ class WheelPinionPair:
         if pinionTeeth <= 10:
             pinion_tooth_factor = 1.05
         #https://www.csparks.com/watchmaking/CycloidalGears/index.jxl
-        if pinionTeeth == 6 or pinionTeeth == 7 or drivenBackwards:
+        if pinionTeeth == 6 or pinionTeeth == 7 or looseArbours:
             pinion_addendum_factor=0.855
             pinion_addendum_radius_factor = 1.05
         elif pinionTeeth == 8 or pinionTeeth == 9:
@@ -560,11 +565,11 @@ class Arbour:
 
 class MotionWorks:
 
-    def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC"):
+    def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC", compensateLooseArbour=False):
         '''
         if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
 
-        TODO - hour hand is very loose with default gear settings
+        NOTE hour hand is very loose when motion works arbour is mounted above the cannon pinion. compensateLooseArbour attempts to compensate for this
 
         The modern clock:
         'The meshing of the minute wheel and cannon pinion should be as deep as is consistent with perfect freedom, as should also that of the hour wheel
@@ -582,8 +587,8 @@ class MotionWorks:
         self.arbourDistance = module * (36 + 12) / 2
         secondModule = 2 * self.arbourDistance / (40 + 10)
         # print("module: {}, secondMOdule: {}".format(module, secondModule))
-        # self.pairs = [WheelPinionPair(36,12, module, drivenBackwards=True), WheelPinionPair(40,10,secondModule, drivenBackwards=True)]
-        self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
+        self.pairs = [WheelPinionPair(36,12, module, looseArbours=compensateLooseArbour), WheelPinionPair(40,10,secondModule, looseArbours=compensateLooseArbour)]
+        # self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
         self.cannonPinionThick = self.thick*2
 
         self.minuteHandHolderSize=minuteHandHolderSize

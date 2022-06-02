@@ -64,7 +64,7 @@ pendulumSticksOut=20
 train.genGears(module_size=1,moduleReduction=0.875,  thick=2, thicknessReduction=0.9, chainWheelThick=5.5, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=1.75,ratchetInset=True)#, chainModuleIncrease=1.1)
 
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2)
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2, compensateLooseArbour=True)
 
 
 #trying a thicker anchor and glue rather than nyloc
