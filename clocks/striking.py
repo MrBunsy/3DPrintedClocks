@@ -6,7 +6,7 @@ class Snail:
     '''
     Part of the rack and snail, should be attached to the hour holder
     '''
-    def __init__(self, maxDiameter=40, minDiameter=10, thick=3):
+    def __init__(self, maxDiameter=40, minDiameter=12, thick=8):
         self.maxR=maxDiameter/2
         self.minR=minDiameter/2
         self.thick = thick
@@ -43,8 +43,10 @@ class Snail:
 
         return snail
 
-    def get3D(self):
-        snail = self.get2D().extrude(self.thick)
+    def get3D(self, extraThick=0):
+        #TODO consider a ramp so the rack can slide over the 1 o'clock ledge if it's not been raised for any reason?
+        #that mechanism hasn't been designed yet
+        snail = self.get2D().extrude(self.thick + extraThick)
 
         return snail
 
@@ -53,7 +55,7 @@ class StrikeTrigger:
     Would like a better name - this is the bit that raises a lever to trigger the hourly and half hourly strikes.
     Should be attached to the minute wheel
     '''
-    def __init__(self, minR=5, hourR=10, halfHourR=7.5):
+    def __init__(self, minR=10, hourR=20, halfHourR=15):
         self.minR=minR
         self.hourR=hourR
         self.halfHourR=halfHourR
@@ -81,4 +83,20 @@ class StrikeTrigger:
         trigger = cq.Workplane("XY").moveTo(self.minR, 0).radiusArc((0,self.minR),-self.minR).tangentArcPoint((-self.halfHourR,0),relative=False).\
             lineTo(-self.minR,0).radiusArc((0,-self.minR),-self.minR).tangentArcPoint((self.hourR,0),relative=False).close()
 
+        # .rotate((0,0,0),(0,0,1),90)
+        #hour is currently at 0deg (+ve x)
         return trigger
+
+class Rack:
+    def __init__(self, radius=60, snail=None, holeR=3.5):
+        self.radius=radius
+        self.hourNotchSize=3
+        self.holeR=holeR
+        if snail is not None:
+            self.hourNotchSize = (snail.maxDiameter - snail.minDiameter)/11
+
+    def get2D(self):
+        rack = cq.Workplane("XY")
+
+
+        return rack

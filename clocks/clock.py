@@ -594,7 +594,7 @@ class ClockPlates:
     '''
     This took a while to settle - clocks before v4 will be unlikely to work anymore.
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None, pendulumSticksOut=20, name="", dial=None, heavy=False, motionWorksAbove=False):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None, pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -613,7 +613,13 @@ class ClockPlates:
         self.motionWorksAbove=motionWorksAbove
 
         #is the weight heavy enough that we want to chagne the plate design?
+        #will result in wider plates up to the chain wheel
         self.heavy = heavy
+        #beef up the pillars as well
+        self.extraHeavy = extraHeavy
+
+        #is the weight danging from a pulley? (will affect screwhole and give space to tie other end of cord)
+        self.usingPulley = usingPulley
 
         self.fixingScrewsD = fixingScrewsD
 
@@ -861,7 +867,7 @@ class ClockPlates:
         #width of thin bit
         holderWide =  bearingInfo.bearingOuterD + self.bearingWallThick*2
 
-        if self.heavy:
+        if self.extraHeavy:
             holderWide*=1.2
 
         chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
@@ -904,17 +910,22 @@ class ClockPlates:
         if self.style == "round":
             screwHoleY = chainWheelR*1.4
         elif self.style == "vertical":
-            screwHoleY = self.bearingPositions[-3][1] + (self.bearingPositions[-2][1] - self.bearingPositions[-3][1])*0.6
+            if self.extraHeavy:
+                #just above chain wheel (see if this helps reduce the plate flexing)
+                screwHoleY = self.bearingPositions[0][1] + (self.bearingPositions[1][1] - self.bearingPositions[0][1]) * 0.6
+            else:
+                #just below escape wheel
+                screwHoleY = self.bearingPositions[-3][1] + (self.bearingPositions[-2][1] - self.bearingPositions[-3][1])*0.6
 
-        chainX = 0
+        weightX = 0
 
         weightOnSide = 1 if self.weightOnRightSide else -1
-        if self.heavy:
+        if self.heavy and not self.usingPulley:
             # line up the hole with the big heavy weight
-            chainX = weightOnSide*self.goingTrain.poweredWheel.diameter/2
+            weightX = weightOnSide*self.goingTrain.poweredWheel.diameter/2
 
         #hole for hanging on the wall
-        screwHolePos = (chainX , screwHoleY)
+        screwHolePos = (weightX , screwHoleY)
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
 
@@ -991,7 +1002,7 @@ class ClockPlates:
             plate = self.addScrewHole(plate, screwHolePos, backThick=backThick, screwHeadD=11, addExtraSupport=True)
             #the pillars
 
-            if self.heavy:
+            if self.extraHeavy:
                 '''
                 beef up the bottom pillar
                 bottomPillarR^2 + x^2 = chainWheelR^2
@@ -1010,7 +1021,8 @@ class ClockPlates:
             else:
                 plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR * 0.9999).extrude(self.plateDistance)
 
-            if self.heavy:
+            if self.extraHeavy:
+                #beef up the top pillar
                 # if anchorSpace > topPillarR:
                 #     spaceR = anchorSpace
                 #     pillarBottomZ = self.bearingPositions[-1][1] - math.sqrt(anchorSpace**2 - topPillarR ** 2)
@@ -1183,10 +1195,14 @@ class ClockPlates:
             #assumes plate has been tagged
             extraSupportSize = screwHeadD*1.25
             supportCentre=[screwholePos[0], screwholePos[1]- slotLength]
+
             if self.heavy:
                 extraSupportSize*=1.5
-                supportCentre[0] += (-1 if self.weightOnRightSide else 1) * extraSupportSize*0.25
-                supportCentre[1] += slotLength/2
+                supportCentre[1] += slotLength / 2
+                #bodge if the screwhole is off to one side
+                if screwholePos[0] != 0:
+                    supportCentre[0] += (-1 if screwholePos[0] > 0 else 1) * extraSupportSize*0.25
+            #
             plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(self.getPlateThick(back=True))
 
         #big hole

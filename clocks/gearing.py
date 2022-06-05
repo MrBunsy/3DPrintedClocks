@@ -565,11 +565,14 @@ class Arbour:
 
 class MotionWorks:
 
-    def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50, style="HAC", compensateLooseArbour=False):
+    def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50,
+                 style="HAC", compensateLooseArbour=False, snail=None, strikeTrigger=None, strikeHourAngleDeg=45):
         '''
         if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
 
         NOTE hour hand is very loose when motion works arbour is mounted above the cannon pinion. compensateLooseArbour attempts to compensate for this
+
+        If snail and strikeTrigger are provided, this motion works will be for a striking clock
 
         The modern clock:
         'The meshing of the minute wheel and cannon pinion should be as deep as is consistent with perfect freedom, as should also that of the hour wheel
@@ -581,6 +584,13 @@ class MotionWorks:
         self.thick = thick
         self.style=style
         self.cannonPinionLoose = cannonPinionLoose
+
+        self.strikeTrigger=strikeTrigger
+        #angle the hour strike should be at
+        self.strikeHourAngleDeg=strikeHourAngleDeg
+        self.snail=snail
+
+        self.pinionCapThick = thick/2
 
         #pinching ratios from The Modern Clock
         #adjust the module so the diameters work properly
@@ -624,14 +634,22 @@ class MotionWorks:
 
         '''
 
-        return self.thick + self.cannonPinionThick
+        thick = self.pinionCapThick*2 + self.cannonPinionThick
+
+        return thick
 
     def getCannonPinion(self):
 
-        base = cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.thick/2)
-        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick).translate((0,0,self.thick/2))
+        base = cq.Workplane("XY")
 
-        top = base.translate((0,0,self.thick/2+self.cannonPinionThick))
+        if self.strikeTrigger is not None:
+            base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0,0,0),(0,0,1),self.strikeHourAngleDeg).faces(">Z").workplane()
+
+
+        base = base.circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick)
+        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick).translate((0,0,self.pinionCapThick))
+
+        top = cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionThick))
 
         pinion = pinion.add(base).add(top)
 
@@ -679,8 +697,15 @@ class MotionWorks:
         midR = self.hourHandHolderD / 2
         bottomR = self.hourHandHolderD / 2
 
-        #TODO the sides need to slope in slightly to make the friction fit easier
-        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=self.style, innerRadiusForStyle=bottomR)
+
+        style=self.style
+        # if self.snail is not None:
+        #     style = None
+
+        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR)
+
+        if self.snail is not None:
+            hour = hour.add(self.snail.get3D(self.thick))
 
         height = self.minuteHolderTotalHeight - self.cannonPinionThick - self.thick - self.thick  - self.minuteHandSlotHeight - self.space
 
