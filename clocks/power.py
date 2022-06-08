@@ -322,7 +322,7 @@ class Pulley:
 
         self.hookThick = 10
         self.hookBottomGap = 3
-        self.hookSideGap = 0.4
+        self.hookSideGap = 1
 
         self.hookWide = 20
         #using a metal cuckoo chain hook to hold the weight, hoping it can stand up to 4kg
@@ -424,39 +424,21 @@ class Pulley:
         r = self.hookWide/2#*0.75
         pulleyHoleWide = self.getTotalThick() + self.hookSideGap * 2
 
-        # if False:
-        #     #I think switching to printing two halves will be stronger as I can print it so the layers are inline with the weight
-        #     hook = cq.Workplane("YZ").lineTo(axleHeight+extraHeight,0).radiusArc((axleHeight+extraHeight,hookWide),-r).lineTo(0,hookWide).radiusArc((0,0),-r).close().extrude(length).translate((-length/2,0,0))
-        #
-        #
-        #
-        #     pulleyHole = cq.Workplane("YZ").circle(self.getMaxRadius() + hookBottomGap).extrude(pulleyHoleWide).translate((-pulleyHoleWide/2,axleHeight,hookWide/2))
-        #
-        #     hook = hook.cut(pulleyHole)
-        #
-        #     #cut out hole for m4 rod for the pulley axle
-        #     rodHole = cq.Workplane("YZ").circle(self.bearing.innerD/2).extrude(1000).translate((-500,axleHeight,hookWide/2))
-        #
-        #     hook = hook.cut(rodHole)
-        #
-        #     #holes for the hook to slot in and be fixed in place
-        #
-        #     #translate so the hole is along the x axis
-        #     hook = hook.translate((0,-axleHeight,-hookWide/2))
-
         hook = cq.Workplane("XY").lineTo(axleHeight + extraHeight, 0).radiusArc((axleHeight + extraHeight, self.hookWide), -r).lineTo(0, self.hookWide).radiusArc((0, 0), -r).close().extrude(length/2)
 
         holeR = self.getMaxRadius() + self.hookBottomGap
 
         #leave two sticky out bits on the hook that will press right up to the inside of the bearing
-        pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.getTotalThick())\
-            .faces("<Z").workplane().circle(holeR).circle(self.bearing.innerSafeD/2).extrude(self.hookSideGap)
+        pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.getTotalThick()-self.bearingHolderThick)\
+             .faces("<Z").workplane().circle(holeR).circle(self.bearing.innerSafeD/2).extrude(self.hookSideGap+self.bearingHolderThick)
 
         #            .faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD).extrude(self.hookSideGap)\
 
         #.translate((axleHeight, self.hookWide/2, self.hookThick))
+        pulleyHole = pulleyHole.translate((axleHeight, self.hookWide/2, self.hookThick + self.hookSideGap+self.bearingHolderThick))
 
-        hook = hook.cut(pulleyHole.translate((axleHeight, self.hookWide/2, self.hookThick)))
+        # return pulleyHole
+        hook = hook.cut(pulleyHole)
 
         # cut out hole for m4 rod for the pulley axle
         rodHole = cq.Workplane("XY").circle(self.bearing.innerD / 2).extrude(1000).translate((axleHeight, self.hookWide/2, 0))
