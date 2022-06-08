@@ -3,6 +3,27 @@ import numpy as np
 from math import sin, cos, pi, floor
 import cadquery as cq
 
+from multiprocessing import Pool
+import multiprocessing
+
+
+
+def outputSTLMultithreaded(stlOutputters,clockName,clockOutDir):
+    def executeJob(outputter):
+        outputter.outputSTLs(clockName,clockOutDir)
+    p = Pool(multiprocessing.cpu_count() - 1)
+
+    options = {"class66": lambda: class66_jobs(),
+               "couplings": lambda: couplings_jobs(),
+               "wagons": lambda: wagon_jobs(),
+               "mwa": lambda: mwa_wagon_jobs(),
+               "wheels": lambda: wheel_jobs(),
+               "intermodal": lambda: intermodal_wagon_jobs(),
+               "mwagravel": lambda: mwa_wagon_jobs(True)
+               }
+
+    p.map(executeJob, stlOutputters)
+
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
 IMAGEMAGICK_CONVERT_PATH="C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
 
@@ -40,7 +61,7 @@ METRIC_NUT_WIDTH_MULT=2
 METRIC_NUT_DEPTH_MULT=0.77
 METRIC_HALF_NUT_DEPTH_MULT=0.57
 
-COUNTERSUNK_HEAD_WIGGLE = 0.3
+COUNTERSUNK_HEAD_WIGGLE = 0.2
 
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
     if halfHeight:
@@ -251,12 +272,16 @@ class BearingInfo():
     '''
     I'm undecided how to pass this info about
     '''
-    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3):
+    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25):
         self.bearingOuterD = bearingOuterD
-        # how much space we need to support the bearing (and how much space to leave for the arbour + screw0
+        # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
+        #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
+        #should probably refactor to outerSafeD
         self.bearingHolderLip = bearingHolderLip
         self.bearingHeight = bearingHeight
         self.innerD=innerD
+        #how large can something that comes into contact with the bearing (from the rod) be
+        self.innerSafeD = innerSafeD
 
 
 
@@ -264,4 +289,4 @@ def getBearingInfo(innerD):
     if innerD == 3:
         return BearingInfo()
     if innerD == 4:
-        return BearingInfo(13, 2, 5, innerD)
+        return BearingInfo(bearingOuterD=13, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)

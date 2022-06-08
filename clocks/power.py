@@ -284,7 +284,7 @@ class Pulley:
     Pulley wheel that can be re-used by all sorts of other things
     '''
 
-    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3, vShaped=False, style=None):
+    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3, screwsCountersunk=True, vShaped=False, style=None, bearing=None, bearingHolderThick=0.8):
         self.diameter=diameter
         self.cordDiameter=cordDiameter
         self.vShaped=vShaped
@@ -297,17 +297,51 @@ class Pulley:
         self.screwMetricSize=screwMetricSize
 
         self.edgeThick=cordDiameter*0.5
-        self.taper = cordDiameter*0.2
+        self.taperThick = cordDiameter * 0.2
+        #if not none, a BearingInfo for a bearing instead of a rod
+        self.bearing=bearing
+        self.bearingHolderThick=bearingHolderThick
+        self.screwsCountersunk=screwsCountersunk
+
+        screws = 3
+
+        self.screwPositions=[polar(angle,diameter*0.35) for angle in [i*math.pi*2/screws for i in range(screws)]]
+
+
+
+        if bearing is not None:
+            #see if we can adjust our total thickness to be the same as the bearing
+            totalThick = self.getTotalThick()
+            if totalThick < bearing.bearingHeight + self.bearingHolderThick*2 :
+                #too narrow
+                extraThickNeeded = (bearing.bearingHeight + self.bearingHolderThick*2) - totalThick
+                self.edgeThick+=extraThickNeeded/4
+                self.taperThick+=extraThickNeeded/4
+            else :
+                print("Can't fit bearing neatly inside pulley")
+
+        self.hookThick = 10
+        self.hookBottomGap = 3
+        self.hookSideGap = 0.4
+
+        self.hookWide = 20
+        #using a metal cuckoo chain hook to hold the weight, hoping it can stand up to 4kg
+        self.cuckooHookOuterD=13.2
+        self.cuckooHookThick = 0.9
 
     def getTotalThick(self):
-        return self.edgeThick*2 + self.taper*2 + self.cordDiameter
+        return self.edgeThick * 2 + self.taperThick * 2 + self.cordDiameter
 
-    def getHalf(self):
+    def getMaxRadius(self):
+        #needs to be kept consistent with bottomPos below
+        return self.diameter/2 + self.cordDiameter
+
+    def getHalf(self, top=False):
         radius = self.diameter/2
         #from the side
         bottomPos = (radius + self.cordDiameter, 0)
         topOfEdgePos = (radius + self.cordDiameter, self.edgeThick)
-        endOfTaperPos = (radius, self.edgeThick + self.taper)
+        endOfTaperPos = (radius, self.edgeThick + self.taperThick)
         topPos = (endOfTaperPos[0]-self.cordDiameter/2, endOfTaperPos[1] + self.cordDiameter/2)
 
         # edgeR = self.diameter/2 + self.cordDiameter/4
@@ -319,20 +353,160 @@ class Pulley:
         if self.vShaped:
             pulley = pulley.lineTo(topPos[0], topPos[1])
         else:
+            #pulley = pulley.tangentArcPoint(topPos, relative=False)
             pulley = pulley.radiusArc(topPos, self.cordDiameter/2)
 
         pulley = pulley.lineTo(0,topPos[1]).lineTo(0,0).close().sweep(circle)
+
+        holeD = self.rodHoleD
+        if self.bearing is not None:
+            holeD = self.bearing.bearingOuterD
+
         # TODO cut out rod hole and screwholes if needed
         # if self.rodMetricSize > 0:
         #     shape = shape.faces(">Z").workplane().circle((self.rodMetricSize+LOOSE_FIT_ON_ROD)/2).cutThruAll()
 
-        # if self.style == "HAC":
-        #     pulley = Gear.cutHACStyle(pulley,self.rodHoleD*0.75,self.diameter/2-self.rodHoleD*0.75, self.diameter/2)
-        # elif self.style == "circles":
-        #     pulley = Gear.cutCirclesStyle(pulley, self.diameter/2-self.cordDiameter/2, innerRadius= self.rodHoleD, cantUseCutThroughAllBodgeThickness=self.getTotalThick())
-        pulley = Gear.cutStyle(pulley, outerRadius=self.diameter/2-self.cordDiameter/2, innerRadius=self.rodHoleD, style=self.style)
+        pulley = Gear.cutStyle(pulley, outerRadius=self.diameter/2-self.cordDiameter/2, innerRadius=holeD/2, style=self.style)
+
+
+
+        # pulley = pulley.faces(">Z").workplane().circle(holeD/2).cutThroughAll()
+        hole = cq.Workplane("XY").circle(holeD/2).extrude(1000)
+
+        if self.bearing is not None:
+            hole = hole.translate((0,0,self.bearingHolderThick))
+            hole = hole.add(cq.Workplane("XY").circle(self.bearing.innerD/2+self.bearing.bearingHolderLip).extrude(1000))
+
+        pulley = pulley.cut(hole)
+
+        screwHoles = cq.Workplane("XY").tag("base")
+
+        for screwPos in self.screwPositions:
+            screwHoles = screwHoles.workplaneFromTagged("base").moveTo(screwPos[0], screwPos[1]).circle(self.screwMetricSize/2).extrude(1000)
+
+            if top:
+                if self.screwsCountersunk:
+                    #countersunk for screw heads
+                    screwHoles = screwHoles.add(cq.Solid.makeCone(radius1=getScrewHeadDiameter(self.screwMetricSize, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE, radius2=self.screwMetricSize / 2,
+                                                        height=getScrewHeadHeight(self.screwMetricSize, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE).translate(screwPos))
+                else:
+                    screwHoles = screwHoles.add(cq.Workplane("XY").moveTo(screwPos[0], screwPos[1]).circle(getScrewHeadDiameter(self.screwMetricSize, countersunk=False)/2 + NUT_WIGGLE_ROOM/2).extrude(getScrewHeadHeight(self.screwMetricSize, countersunk=False)))
+            else:
+                #space for a nut
+                #screwHoles = screwHoles.workplaneFromTagged("base").moveTo(screwPos[0], screwPos[1]).polygon(6, getNutContainingDiameter(self.screwMetricSize,0.2)).extrude(getNutHeight(self.screwMetricSize))
+                #rotate so flat side is towards centre. Assumes 3 screws....
+                screwHoles = screwHoles.add(cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwMetricSize, 0.2)).extrude(getNutHeight(self.screwMetricSize)).rotate((0,0,0),(0,0,1),360/12).translate(screwPos))
+
+        pulley = pulley.cut(screwHoles)
 
         return pulley
+
+    def getHookTotalThick(self):
+        return self.getTotalThick() + self.hookSideGap*2 + self.hookThick*2
+
+    def getHookHalf(self):
+        '''
+        Get a way to attach a weight to a pulley wheel
+        assumes we're using a bearing
+        '''
+
+
+
+        axleHeight = self.getMaxRadius() + self.hookBottomGap + self.hookThick*0.5
+
+        extraHeight = 0
+
+        length = self.getTotalThick() + self.hookSideGap*2 + self.hookThick*2
+
+        # hook = cq.Workplane("XY").lineTo(length/2,0).line(0,axleHeight+extraHeight).line(- thick,0).line(0,-(axleHeight + extraHeight - thick) ).lineTo(0,thick).mirrorY().extrude(wide)
+
+        #make a large block of a nice shape and cut out space for a pulley wheel
+        r = self.hookWide/2#*0.75
+        pulleyHoleWide = self.getTotalThick() + self.hookSideGap * 2
+
+        # if False:
+        #     #I think switching to printing two halves will be stronger as I can print it so the layers are inline with the weight
+        #     hook = cq.Workplane("YZ").lineTo(axleHeight+extraHeight,0).radiusArc((axleHeight+extraHeight,hookWide),-r).lineTo(0,hookWide).radiusArc((0,0),-r).close().extrude(length).translate((-length/2,0,0))
+        #
+        #
+        #
+        #     pulleyHole = cq.Workplane("YZ").circle(self.getMaxRadius() + hookBottomGap).extrude(pulleyHoleWide).translate((-pulleyHoleWide/2,axleHeight,hookWide/2))
+        #
+        #     hook = hook.cut(pulleyHole)
+        #
+        #     #cut out hole for m4 rod for the pulley axle
+        #     rodHole = cq.Workplane("YZ").circle(self.bearing.innerD/2).extrude(1000).translate((-500,axleHeight,hookWide/2))
+        #
+        #     hook = hook.cut(rodHole)
+        #
+        #     #holes for the hook to slot in and be fixed in place
+        #
+        #     #translate so the hole is along the x axis
+        #     hook = hook.translate((0,-axleHeight,-hookWide/2))
+
+        hook = cq.Workplane("XY").lineTo(axleHeight + extraHeight, 0).radiusArc((axleHeight + extraHeight, self.hookWide), -r).lineTo(0, self.hookWide).radiusArc((0, 0), -r).close().extrude(length/2)
+
+        holeR = self.getMaxRadius() + self.hookBottomGap
+
+        #leave two sticky out bits on the hook that will press right up to the inside of the bearing
+        pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.getTotalThick())\
+            .faces("<Z").workplane().circle(holeR).circle(self.bearing.innerSafeD/2).extrude(self.hookSideGap)
+
+        #            .faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD).extrude(self.hookSideGap)\
+
+        #.translate((axleHeight, self.hookWide/2, self.hookThick))
+
+        hook = hook.cut(pulleyHole.translate((axleHeight, self.hookWide/2, self.hookThick)))
+
+        # cut out hole for m4 rod for the pulley axle
+        rodHole = cq.Workplane("XY").circle(self.bearing.innerD / 2).extrude(1000).translate((axleHeight, self.hookWide/2, 0))
+
+        hook = hook.cut(rodHole)
+
+
+        #hole at the bottom for a screw to hold the pulley together and take the cuckoo hook to hold a weight
+
+        screwhole = cq.Workplane("XY").circle(self.bearing.innerD / 2).extrude(1000).translate((0,self.hookWide/2, 0))
+
+        hook = hook.cut(screwhole)
+
+
+
+
+        #translate so hole is at 0,0
+        hook = hook.translate((-axleHeight, -self.hookWide / 2,0))
+
+        cuckooHookHole = cq.Workplane("XY").moveTo(0,self.cuckooHookOuterD/2).radiusArc((0,-self.cuckooHookOuterD/2),self.cuckooHookOuterD/2).line(-100,0).line(0,self.cuckooHookOuterD).close().extrude(self.cuckooHookThick)
+
+        hook = hook.cut(cuckooHookHole.translate((0, 0, self.getHookTotalThick() / 2 - self.cuckooHookThick / 2)))
+
+        return hook
+
+    def getAssembled(self):
+        pulley = self.getHalf(top=False).add(self.getHalf(top=True).rotate((0,0,self.getTotalThick()/2),(1,0,self.getTotalThick()/2),180))
+
+        if self.bearing is not None:
+            # hook = self.getHookHalf()
+            # pulley = hook.add(pulley.translate((0,0,-self.getTotalThick()/2)).rotate((0,0,0),(0,1,0),90))
+
+            hook = self.getHookHalf().add(self.getHookHalf().rotate((0,0,self.getHookTotalThick()/2),(1,0,self.getHookTotalThick()/2),180))
+            pulley = hook.add(pulley.translate((0,0,self.getHookTotalThick()/2-self.getTotalThick()/2)))
+
+        return pulley
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_pulley_wheel_top.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHalf(top=True), out)
+
+        out = os.path.join(path, "{}_pulley_wheel_bottom.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHalf(top=False), out)
+
+        if self.bearing is not None:
+            out = os.path.join(path, "{}_pulley_hook_half.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getHookHalf(), out)
 
 class CordWheel:
     '''

@@ -947,6 +947,10 @@ class ClockPlates:
         #where the extra-wide bit of the plate stops
         topOfBottomBitPos = self.bearingPositions[0]
 
+        if self.heavy and self.usingPulley and back:
+            #instead of an extra circle around the screwhole, make the plate wider extend all the way up
+            topOfBottomBitPos = screwHolePos
+
 
         fixingPositions = [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
 
@@ -999,7 +1003,14 @@ class ClockPlates:
             #r = self.goingTrain.chainWheel.diameter*1.25
             # plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]-7-11/2).circle(holderWide*0.75).extrude(self.plateThick)
             backThick = max(self.getPlateThick(back)-5, 4)
-            plate = self.addScrewHole(plate, screwHolePos, backThick=backThick, screwHeadD=11, addExtraSupport=True)
+
+            extraSupport = True
+
+            if self.usingPulley and self.heavy:
+                #the back plate is wide enough to accomodate
+                extraSupport = False
+
+            plate = self.addScrewHole(plate, screwHolePos, backThick=backThick, screwHeadD=11, addExtraSupport=extraSupport)
             #the pillars
 
             if self.extraHeavy:
@@ -1056,7 +1067,10 @@ class ClockPlates:
 
 
 
-            chainHoles = self.getChainHoles(absoluteZ=True)
+            chainHoles = self.getChainHoles(absoluteZ=True, bottomPillarPos=bottomPillarPos, bottomPillarR=bottomPillarR)
+
+
+
             plate = plate.cut(chainHoles)
         else:
            plate = self.frontAdditionsToPlate(plate)
@@ -1078,10 +1092,12 @@ class ClockPlates:
 
         return plate
 
-    def getChainHoles(self, absoluteZ=False):
+    def getChainHoles(self, absoluteZ=False, bottomPillarPos=None, bottomPillarR=10):
         '''
         if absolute Z is false, these are positioned above the base plateThick
         this assumes an awful lot, it's likely to be a bit fragile
+
+        bottomPillarPos needed for screw for pulley cord
         '''
         if self.goingTrain.usingChain:
             chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
@@ -1109,6 +1125,27 @@ class ClockPlates:
                 chainHole = cq.Workplane("XZ").moveTo(chainX - self.chainHoleD/2, chainZTop-self.chainHoleD/2).radiusArc((chainX +self.chainHoleD/2, chainZTop-self.chainHoleD/2), self.chainHoleD/2)\
                     .lineTo(chainX + self.chainHoleD/2, chainZBottom + self.chainHoleD/2).radiusArc((chainX - self.chainHoleD/2, chainZBottom + self.chainHoleD/2), self.chainHoleD/2).close()\
                     .extrude(1000)
+
+                if self.usingPulley:
+                    pulleyX = -chainX
+                    #might want it as far back as possible?
+                    pulleyZ = chainZBottom + self.chainHoleD/2#(chainZTop + chainZBottom)/2
+                    #and one hole for the cord to be tied
+                    pulleyHole = cq.Workplane("XZ").moveTo(pulleyX, pulleyZ).circle(self.chainHoleD/2).extrude(1000)
+
+                    pulleyScrewHole = cq.Workplane("YZ").moveTo(bottomPillarPos[1], pulleyZ).circle(self.fixingScrewsD / 2).extrude(bottomPillarR)
+                    if False:
+
+                        #I like the idea of this for not having a screw sticking out the side, however it leaves very little material to hold the weight
+
+                        coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+                        topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+                        countersink = cq.Workplane("XY").add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2,height=coneHeight)).rotate((0,0,0),(0,1,0),90).translate((bottomPillarR-coneHeight,bottomPillarPos[1],pulleyZ))
+                        pulleyHole = pulleyHole.add(countersink)
+
+
+
+                    chainHole = chainHole.add(pulleyHole).add(pulleyScrewHole)
 
                 return chainHole
             else:
@@ -1201,7 +1238,8 @@ class ClockPlates:
                 supportCentre[1] += slotLength / 2
                 #bodge if the screwhole is off to one side
                 if screwholePos[0] != 0:
-                    supportCentre[0] += (-1 if screwholePos[0] > 0 else 1) * extraSupportSize*0.25
+                    #this can be a bit finnickity - I think if something lines up exactly wrong with the bearing holes?
+                    supportCentre[0] += (-1 if screwholePos[0] > 0 else 1) * extraSupportSize*0.5
             #
             plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(self.getPlateThick(back=True))
 
@@ -1412,7 +1450,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, dial=None, timeMins=10, timeHours=10, timeSeconds=0):
+    def __init__(self, plates, hands=None, dial=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None):
         self.plates = plates
         self.hands = hands
         self.dial=dial
@@ -1423,6 +1461,7 @@ class Assembly:
         self.timeMins = timeMins
         self.timeHours = timeHours
         self.timeSeconds = timeSeconds
+        self.pulley=pulley
 
     def getClock(self):
         bottomPlate = self.plates.getPlate(True)
@@ -1534,6 +1573,12 @@ class Assembly:
                         z = self.pendulum.anchorThick + bearingPos[2]
                 if extensionShape is not None:
                     clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
+
+        if self.pulley is not None:
+            #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
+            chainZ = self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.plates.wobble / 2
+            print("chain Z", chainZ)
+            clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 100, chainZ - self.pulley.getTotalThick()/2)))
 
         #TODO pendulum bob and nut
 

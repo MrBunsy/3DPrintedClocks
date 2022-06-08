@@ -58,6 +58,16 @@ if 'show_object' not in globals():
 # show_object(motionWorks.getAssembled())
 # show_object(motionWorks.getHourHolder())
 
-rack = Rack()
+# rack = Rack()
+#
+# show_object(rack.get2D())
 
-show_object(rack.get2D())
+pulley = Pulley(diameter=27.5, bearing=getBearingInfo(4))#, screwMetricSize=2, screwsCountersunk=False)
+
+# show_object(pulley.getHalf(False))
+# show_object(pulley.getHalf(True).translate((50,0,0)))
+# show_object(pulley.getHookHalf().translate((0,50,0)))
+show_object(pulley.getAssembled())
+
+
+print(pulley.getTotalThick())
