@@ -41,7 +41,7 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.genCordWheels(ratchetThick=2.5, rodMetricThread=4, cordThick=2, cordCoilThick=12, style=gearStyle, useKey=True)
+train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=2, cordCoilThick=12, style=gearStyle, useKey=True)
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s
@@ -62,8 +62,9 @@ train.printInfo()
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=0.875,  thick=2, thicknessReduction=0.9, chainWheelThick=5.5, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=1.75,ratchetInset=True)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1,moduleReduction=0.875,  thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=1.75,ratchetInset=True)#, chainModuleIncrease=1.1)
 
+train.getArbourWithConventionalNaming(0).printScrewLength()
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2, compensateLooseArbour=True)
 

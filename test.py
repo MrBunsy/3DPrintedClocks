@@ -62,12 +62,25 @@ if 'show_object' not in globals():
 #
 # show_object(rack.get2D())
 
-pulley = Pulley(diameter=27.5, bearing=getBearingInfo(4))#, screwMetricSize=2, screwsCountersunk=False)
+# pulley = Pulley(diameter=27.5, bearing=getBearingInfo(4), screwMetricSize=2, screwsCountersunk=False)
+#
+# # show_object(pulley.getHalf(False))
+# # show_object(pulley.getHalf(True).translate((50,0,0)))
+# # show_object(pulley.getHookHalf().translate((0,50,0)))
+# show_object(pulley.getAssembled())
+#
+#
+# print(pulley.getTotalThick())
 
-# show_object(pulley.getHalf(False))
-# show_object(pulley.getHalf(True).translate((50,0,0)))
-# show_object(pulley.getHookHalf().translate((0,50,0)))
-show_object(pulley.getAssembled())
+#the gear wheel from clock 10
+wheelPinionPair = WheelPinionPair(wheelTeeth=93, pinionTeeth=9, module=1)
+ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=13,totalD=52)
+cordWheel = CordWheel(ratchet=ratchet,diameter=21,capDiameter=52)
 
+poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchet=ratchet, ratchetInset=True, arbourD=4, chainWheel=cordWheel, style=GearStyle.SIMPLE5)
+poweredArbour.setArbourExtensionInfo(wheelSide=7,maxR=10,pinionSide=123)
+show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 
-print(pulley.getTotalThick())
+poweredArbour.printScrewLength()
+
+# show_object(poweredArbour.getExtraRatchet())

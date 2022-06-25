@@ -312,22 +312,23 @@ class Pulley:
         if bearing is not None:
             #see if we can adjust our total thickness to be the same as the bearing
             totalThick = self.getTotalThick()
-            if totalThick < bearing.bearingHeight + self.bearingHolderThick*2 :
+            bearingWiggleHeight=0.4
+            if totalThick < bearing.bearingHeight + self.bearingHolderThick*2 +bearingWiggleHeight:
                 #too narrow
-                extraThickNeeded = (bearing.bearingHeight + self.bearingHolderThick*2) - totalThick
+                extraThickNeeded = (bearing.bearingHeight + self.bearingHolderThick*2 + bearingWiggleHeight) - totalThick
                 self.edgeThick+=extraThickNeeded/4
                 self.taperThick+=extraThickNeeded/4
             else :
                 print("Can't fit bearing neatly inside pulley")
 
-        self.hookThick = 10
+        self.hookThick = 7.5
         self.hookBottomGap = 3
         self.hookSideGap = 1
 
-        self.hookWide = 20
+        self.hookWide = 16
         #using a metal cuckoo chain hook to hold the weight, hoping it can stand up to 4kg
-        self.cuckooHookOuterD=13.2
-        self.cuckooHookThick = 0.9
+        self.cuckooHookOuterD=14#13.2
+        self.cuckooHookThick = 1.2#0.9
 
     def getTotalThick(self):
         return self.edgeThick * 2 + self.taperThick * 2 + self.cordDiameter
@@ -390,12 +391,14 @@ class Pulley:
                     screwHoles = screwHoles.add(cq.Solid.makeCone(radius1=getScrewHeadDiameter(self.screwMetricSize, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE, radius2=self.screwMetricSize / 2,
                                                         height=getScrewHeadHeight(self.screwMetricSize, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE).translate(screwPos))
                 else:
-                    screwHoles = screwHoles.add(cq.Workplane("XY").moveTo(screwPos[0], screwPos[1]).circle(getScrewHeadDiameter(self.screwMetricSize, countersunk=False)/2 + NUT_WIGGLE_ROOM/2).extrude(getScrewHeadHeight(self.screwMetricSize, countersunk=False)))
+                    #cq.Workplane("XY").moveTo(screwPos[0], screwPos[1]).circle(getScrewHeadDiameter(self.screwMetricSize, countersunk=False)/2 + NUT_WIGGLE_ROOM/2).extrude(getScrewHeadHeight(self.screwMetricSize, countersunk=False))
+                    screwHoles = screwHoles.add(getHoleWithHole(innerD=self.screwMetricSize,outerD=getScrewHeadDiameter(self.screwMetricSize, countersunk=False),deep=getScrewHeadHeight(self.screwMetricSize, countersunk=False)).translate(screwPos))
             else:
                 #space for a nut
                 #screwHoles = screwHoles.workplaneFromTagged("base").moveTo(screwPos[0], screwPos[1]).polygon(6, getNutContainingDiameter(self.screwMetricSize,0.2)).extrude(getNutHeight(self.screwMetricSize))
                 #rotate so flat side is towards centre. Assumes 3 screws....
-                screwHoles = screwHoles.add(cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwMetricSize, 0.2)).extrude(getNutHeight(self.screwMetricSize)).rotate((0,0,0),(0,0,1),360/12).translate(screwPos))
+                # screwHoles = screwHoles.add(cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwMetricSize, 0.2)).extrude(getNutHeight(self.screwMetricSize)).rotate((0,0,0),(0,0,1),360/12).translate(screwPos))
+                screwHoles = screwHoles.add(getHoleWithHole(innerD=self.screwMetricSize,outerD=getNutContainingDiameter(self.screwMetricSize, NUT_WIGGLE_ROOM),deep=getNutHeight(self.screwMetricSize),sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(screwPos))
 
         pulley = pulley.cut(screwHoles)
 
@@ -1392,10 +1395,11 @@ class Ratchet:
 
         return wheel
 
-    def getOuterWheel(self, extraThick=0):
+    def getOuterWheel(self, extraThick=0, thick=0):
         '''
         contains the ratchet teeth, designed so it can be printed as part of the same object as a gear wheel
         extrathicnkess can be added (useful for embedding inside the chain wheel)
+        if thick is provided this overrides the expected thickness
         '''
         wheel = cq.Workplane("XY").circle(self.outsideDiameter/2)#.circle(self.outsideDiameter/2-self.outer_thick)
 
@@ -1413,7 +1417,11 @@ class Ratchet:
             # wheel = wheel.lineTo(math.cos(angle + dA) * self.toothRadius, math.sin(angle + dA) * self.toothRadius)
             wheel = wheel.radiusArc(polar(angle+dA, self.toothRadius), -self.toothRadius * self.anticlockwise)
 
-        wheel = wheel.close().extrude(self.thick+extraThick)
+        totalThick = self.thick + extraThick
+        if thick > 0:
+            totalThick = thick
+
+        wheel = wheel.close().extrude(totalThick)
 
 
         return wheel

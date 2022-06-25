@@ -570,20 +570,28 @@ class GoingTrain:
     #     return self.wheelPinionPairs[0]
 
     def outputSTLs(self, name="clock", path="../out"):
-        for i,arbour in enumerate(self.arbours):
+        #wheels, chainwheels
+        for i in range(self.wheels+self.chainWheels+1):
+            arbour = self.getArbourWithConventionalNaming(i)
             out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
             print("Outputting ",out)
             exporters.export(arbour.getShape(), out)
+            extras = arbour.getExtras()
+            for extraName in extras:
+                out = os.path.join(path, "{}_wheel_{}_{}.stl".format(name, i, extraName))
+                print("Outputting ", out)
+                exporters.export(extras[extraName], out)
 
         if self.usingChain:
             self.chainWheel.outputSTLs(name, path)
         else:
             self.cordWheel.outputSTLs(name, path)
 
-        for i,arbour in enumerate(self.chainWheelArbours):
-            out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
-            print("Outputting ", out)
-            exporters.export(arbour.getShape(), out)
+        # for i,arbour in enumerate(self.chainWheelArbours):
+        #     out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
+        #     print("Outputting ", out)
+        #     exporters.export(arbour.getShape(), out)
+
 
         out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
         print("Outputting ", out)
@@ -1490,9 +1498,7 @@ class Assembly:
             #cord
         #should work for both chain and cord
         chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
-        cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2
-        if chainWheelArbour.ratchetInset:
-            cordWheelZ-= chainWheelArbour.ratchet.thick
+        cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2 - chainWheelArbour.getRatchetInsetness()
 
         clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
@@ -1576,9 +1582,9 @@ class Assembly:
 
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
-            chainZ = self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.plates.wobble / 2
+            chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.plates.wobble / 2
             print("chain Z", chainZ)
-            clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 100, chainZ - self.pulley.getTotalThick()/2)))
+            clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
 
         #TODO pendulum bob and nut
 
