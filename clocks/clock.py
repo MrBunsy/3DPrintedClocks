@@ -393,7 +393,7 @@ class GoingTrain:
 
         runtime = self.poweredWheel.getRunTime(chainRatio,self.maxChainDrop)
 
-        print("runtime: {:.1f}hours. Chain wheel multiplier: {:.1f}".format(runtime, chainRatio))
+        print("runtime: {:.1f}hours over {:.1f}m. Chain wheel multiplier: {:.1f}".format(runtime, self.maxChainDrop/1000, chainRatio))
 
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1):
@@ -1503,7 +1503,7 @@ class Assembly:
         boltOnRatchet = chainWheelArbour.getExtraRatchet(forPrinting=False)
         if boltOnRatchet is not None:
             #.translate((0,0,chainWheelArbour.wheelThick))
-            clock = clock.add(boltOnRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.plates.getPlateThick(back=True))))
+            clock = clock.add(boltOnRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.plates.getPlateThick(back=True)+ self.plates.wobble/2)))
 
         clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
