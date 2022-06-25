@@ -589,7 +589,7 @@ class Arbour:
             return {'ratchet': self.getExtraRatchet()}
 
         return {}
-    def getExtraRatchet(self):
+    def getExtraRatchet(self, forPrinting=True):
         #returns None if the ratchet is fully embedded in teh wheel
         #otherwise returns a shape that can either be adapted to be bolted, or combined with the wheel
         # is there any more ratchet that will need to be printed or bolted on?
@@ -609,7 +609,12 @@ class Arbour:
                 # return cutter
                 ratchetWheel = ratchetWheel.cut(cutter)
 
-        return ratchetWheel.translate((0, 0, self.wheelThick))
+        ratchetWheel = ratchetWheel.translate((0, 0, self.wheelThick))
+
+        # if not forPrinting:
+        #     ratchetWheel = ratchetWheel.rotate((0,0,0),(1,0,0),180)
+
+        return ratchetWheel
 
     def printScrewLength(self):
         if self.getExtraRatchet() is not None:
@@ -626,7 +631,8 @@ class Arbour:
             ratchetHole = getHoleWithHole(self.arbourD,self.ratchet.outsideDiameter,holeDeep).rotate((0,0,0),(1,0,0),180).translate((0,0,self.wheelThick))
             gearWheel = gearWheel.cut(ratchetHole)
             ratchetZ = self.wheelThick - holeDeep
-            ratchetWheel = self.ratchet.getOuterWheel(thick=holeDeep).translate((0, 0, ratchetZ))
+            #extra layer thick so the hole-in-a-hole doesn't print with gaps at the edges
+            ratchetWheel = self.ratchet.getOuterWheel(thick=holeDeep+LAYER_THICK).translate((0, 0, ratchetZ-LAYER_THICK))
             gearWheel = gearWheel.add(ratchetWheel)
 
 
@@ -646,7 +652,8 @@ class Arbour:
             if self.getExtraRatchet() is not None:
                 #need screwholes to attach the rest of the ratchet
                 for holePos in self.boltPositions:
-                    gearWheel = gearWheel.faces(">Z").moveTo(holePos[0], holePos[1]).circle(self.screwSize/2).cutThruAll()
+                    cutter = cq.Workplane("XY").moveTo(holePos[0], holePos[1]).circle(self.screwSize/2).extrude(self.wheelThick)
+                    gearWheel = gearWheel.cut(cutter)
                     cutter = cq.Workplane("XY").moveTo(holePos[0],holePos[1]).polygon(nSides=6,diameter=getNutContainingDiameter(self.screwSize)+NUT_WIGGLE_ROOM).extrude(getNutHeight(self.screwSize))
                     gearWheel=gearWheel.cut(cutter)
 

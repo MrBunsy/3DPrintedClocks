@@ -1500,6 +1500,11 @@ class Assembly:
         chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
         cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2 - chainWheelArbour.getRatchetInsetness()
 
+        boltOnRatchet = chainWheelArbour.getExtraRatchet(forPrinting=False)
+        if boltOnRatchet is not None:
+            #.translate((0,0,chainWheelArbour.wheelThick))
+            clock = clock.add(boltOnRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.plates.getPlateThick(back=True))))
+
         clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
 
