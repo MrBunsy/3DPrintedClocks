@@ -32,15 +32,15 @@ train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement=escapem
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 
 # train.genCordWheels(ratchetThick=2.5, cordThick=1, cordCoilThick=8)
-train.genChainWheels(ratchetThick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+train.genChainWheels(ratchetThick=2.5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
 
 train.printInfo()
 
 pendulumSticksOut=8
 
-train.genGears(module_size=1.25,moduleReduction=0.875, thick=1.8, chainWheelThick=4.5, useNyloc=False, ratchetInset=True, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=2)
+train.genGears(module_size=1.25,moduleReduction=0.875, thick=2, thicknessReduction=0.9, chainWheelThick=2.5, useNyloc=False, ratchetInset=True, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3)
 
-
+train.getArbourWithConventionalNaming(0).printScrewLength()
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30 )
 
 
@@ -52,7 +52,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 07", style="vertical")
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 11", style="vertical")
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)

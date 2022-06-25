@@ -618,7 +618,10 @@ class Arbour:
 
     def printScrewLength(self):
         if self.getExtraRatchet() is not None:
-            print("Ratchet needs screws of length {}mm".format(self.wheelThick-self.getRatchetInsetness(toCarve=False) + self.ratchet.thick))
+            length = self.wheelThick-self.getRatchetInsetness(toCarve=False) + self.ratchet.thick
+            #TODO countersink optional
+            length -= getScrewHeadHeight(self.screwSize)
+            print("Ratchet needs screws of length {}mm".format(length))
 
     def getWheelWithRatchet(self, forPrinting=True):
         gearWheel = self.wheel.get3D(holeD=self.arbourD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=self.ratchet.outsideDiameter * 0.5)
