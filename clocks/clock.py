@@ -1348,15 +1348,15 @@ class ClockPlates:
         arbour from -chainwheels to +ve wheels + 1 (for the anchor)
 
         if for model, will return the way up needed to assemble the little model
-
+        arbourID is now conventially named
         returns None if no extension is needed
         '''
 
         flaredBase = False
 
-        bearingPos = self.bearingPositions[arbourID + self.goingTrain.chainWheels]
-        arbourThick = self.goingTrain.getArbour(arbourID).getTotalThickness()
-        rodD = self.goingTrain.getArbour(arbourID).getRodD()
+        bearingPos = self.bearingPositions[arbourID]
+        arbourThick = self.goingTrain.getArbourWithConventionalNaming(arbourID).getTotalThickness()
+        rodD = self.goingTrain.getArbourWithConventionalNaming(arbourID).getRodD()
 
         length = 0
         if top:
@@ -1390,7 +1390,7 @@ class ClockPlates:
         print("Outputting ", out)
         exporters.export(self.getPlate(True, True), out)
 
-        for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
+        for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
             for top in [True, False]:
                 extensionShape=self.getArbourExtension(arbour, top=top)
                 if extensionShape is not None:
@@ -1586,16 +1586,14 @@ class Assembly:
 
 
 
-        for arbour in range(-self.goingTrain.chainWheels, self.goingTrain.wheels+1):
-            bearingPos = self.plates.bearingPositions[arbour + self.goingTrain.chainWheels]
+        for arbour in range(self.goingTrain.wheels+1+self.goingTrain.chainWheels):
+            bearingPos = self.plates.bearingPositions[arbour]
             for top in [True, False]:
                 extensionShape=self.plates.getArbourExtension(arbour, top=top, forModel=True)
                 z =  0
                 if top:
-                    if arbour < self.goingTrain.wheels:
-                        z = self.goingTrain.getArbour(arbour).getTotalThickness() +  bearingPos[2]
-                    else:
-                        z = self.pendulum.anchorThick + bearingPos[2]
+                    z = self.goingTrain.getArbourWithConventionalNaming(arbour).getTotalThickness() +  bearingPos[2]
+
                 if extensionShape is not None:
                     clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 

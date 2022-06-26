@@ -1,6 +1,7 @@
 from clocks.power import *
 from clocks.escapements import *
 from clocks.striking import *
+from clocks.clock import *
 
 if 'show_object' not in globals():
     #don't output STL when we're in cadquery editor
@@ -72,15 +73,19 @@ if 'show_object' not in globals():
 #
 # print(pulley.getTotalThick())
 
-#the gear wheel from clock 10
-wheelPinionPair = WheelPinionPair(wheelTeeth=93, pinionTeeth=9, module=1)
-ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=13,totalD=52)
-cordWheel = CordWheel(ratchet=ratchet,diameter=21,capDiameter=52)
-
-poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchet=ratchet, ratchetInset=True, arbourD=4, chainWheel=cordWheel, style=GearStyle.SIMPLE5)
-poweredArbour.setArbourExtensionInfo(wheelSide=7,maxR=10,pinionSide=123)
-show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
-
-poweredArbour.printScrewLength()
+# #the gear wheel from clock 10
+# wheelPinionPair = WheelPinionPair(wheelTeeth=93, pinionTeeth=9, module=1)
+# ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=13,totalD=52)
+# cordWheel = CordWheel(ratchet=ratchet,diameter=21,capDiameter=52)
+#
+# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchet=ratchet, ratchetInset=True, arbourD=4, chainWheel=cordWheel, style=GearStyle.SIMPLE5)
+# poweredArbour.setArbourExtensionInfo(wheelSide=7,maxR=10,pinionSide=123)
+# show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
+#
+# poweredArbour.printScrewLength()
 
 # show_object(poweredArbour.getExtraRatchet())
+
+dial = Dial(outsideD=200)
+
+show_object(dial.getDial())
