@@ -957,6 +957,7 @@ class ClockPlates:
 
         if self.heavy and self.usingPulley and back:
             #instead of an extra circle around the screwhole, make the plate wider extend all the way up
+            #because the screwhole will be central when heavy and using a pulley
             topOfBottomBitPos = screwHolePos
 
 
@@ -1141,15 +1142,28 @@ class ClockPlates:
                     #and one hole for the cord to be tied
                     pulleyHole = cq.Workplane("XZ").moveTo(pulleyX, pulleyZ).circle(self.chainHoleD/2).extrude(1000)
 
-                    pulleyScrewHole = cq.Workplane("YZ").moveTo(bottomPillarPos[1], pulleyZ).circle(self.fixingScrewsD / 2).extrude(bottomPillarR)
-                    if False:
+                    #original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
+                    #so instead, put a screw in from the front
 
-                        #I like the idea of this for not having a screw sticking out the side, however it leaves very little material to hold the weight
+                    #this screw will provide something for the cord to be tied round
+                    pulleyScrewHole = cq.Workplane("XY").moveTo(pulleyX,bottomPillarPos[1]).circle(self.fixingScrewsD/2).extrude(10000)
+                    coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+                    topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+                    topZ=self.plateDistance
+                    if absoluteZ:
+                        topZ+=self.getPlateThick(back=True)
+                    pulleyScrewHole = pulleyScrewHole.add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2,height=coneHeight).translate((pulleyX, bottomPillarPos[1], topZ-coneHeight)))
 
-                        coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-                        topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-                        countersink = cq.Workplane("XY").add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2,height=coneHeight)).rotate((0,0,0),(0,1,0),90).translate((bottomPillarR-coneHeight,bottomPillarPos[1],pulleyZ))
-                        pulleyHole = pulleyHole.add(countersink)
+                    #
+                    # pulleyScrewHole = cq.Workplane("YZ").moveTo(bottomPillarPos[1], pulleyZ).circle(self.fixingScrewsD / 2).extrude(bottomPillarR)
+                    # if False:
+                    #
+                    #     #I like the idea of this for not having a screw sticking out the side, however it leaves very little material to hold the weight
+                    #
+                    #     coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+                    #     topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+                    #     countersink = cq.Workplane("XY").add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2,height=coneHeight)).rotate((0,0,0),(0,1,0),90).translate((bottomPillarR-coneHeight,bottomPillarPos[1],pulleyZ))
+                    #     pulleyHole = pulleyHole.add(countersink)
 
 
 

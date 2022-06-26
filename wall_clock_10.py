@@ -24,7 +24,7 @@ drop=2
 lock=2
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1750, chainAtBack=False,chainWheels=1, hours=180, max_chain_wheel_d=21)
+train = clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1900, chainAtBack=False,chainWheels=1, hours=180, max_chain_wheel_d=21)
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.calculateRatios()
@@ -92,7 +92,7 @@ pulley = clock.Pulley(diameter=26, bearing=clock.getBearingInfo(4), screwMetricS
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley)
 
-
+# show_object(plates.getPlate(back=True))
 show_object(assembly.getClock())
 
 if outputSTL:
