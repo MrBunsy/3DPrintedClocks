@@ -1471,30 +1471,6 @@ class Assembly:
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
             clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
-        #the chain wheel parts
-        # if self.goingTrain.usingChain:
-        #     chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
-        #     chainWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2
-        #
-        #     clock = clock.add(self.goingTrain.chainWheel.getWithRatchet(self.goingTrain.ratchet).translate(self.plates.bearingPositions[0]).translate((0,0,self.goingTrain.getArbour(-self.goingTrain.chainWheels).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
-        #
-        #     chainWheelTop =  self.goingTrain.chainWheel.getHalf().mirror().translate((0,0,(self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2))
-        #
-        #     clock = clock.add(
-        #        chainWheelTop.translate(self.plates.bearingPositions[0]).translate((0, 0, self.goingTrain.getArbourWithConventionalNaming(0).wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble / 2 + (self.goingTrain.chainWheel.getHeight() - self.goingTrain.ratchet.thick)/2 + self.goingTrain.ratchet.thick)))
-        #
-        # else:
-            #cord
-        #should work for both chain and cord
-        chainWheelArbour = self.goingTrain.getArbour(-self.goingTrain.chainWheels)
-        cordWheelZ = chainWheelArbour.wheelThick + self.plates.getPlateThick(back=True) + self.plates.wobble/2 - chainWheelArbour.getRatchetInsetness()
-
-        boltOnRatchet = chainWheelArbour.getExtraRatchet(forPrinting=False)
-        if boltOnRatchet is not None:
-            #.translate((0,0,chainWheelArbour.wheelThick))
-            clock = clock.add(boltOnRatchet.translate(self.plates.bearingPositions[0]).translate((0,0,self.plates.getPlateThick(back=True)+ self.plates.wobble/2)))
-
-        clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
 
         # anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
@@ -1516,18 +1492,13 @@ class Assembly:
         hourAngle = - 360 * (time_hour + time_min / 60) / 12
         secondAngle = -360 * (self.timeSeconds / 60)
 
-        #motion work in place
-        # motionWorksModel = self.motionWorks.getCannonPinion().rotate((0,0,0),(0,0,1), minuteAngle)
-        # motionWorksModel = motionWorksModel.add(self.motionWorks.getHourHolder().translate((0,0,self.motionWorks.getCannonPinionBaseThick())))
-        # motionWorksModel = motionWorksModel.add(self.motionWorks.getMotionArbour().translate((self.plates.motionWorksRelativePos[0],self.plates.motionWorksRelativePos[1], self.motionWorks.getCannonPinionBaseThick()/2)))
-
         motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos,minuteAngle=minuteAngle)
 
         clock = clock.add(motionWorksModel.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset)))
 
 
 
-        #hands on the motion work, showing the time set above
+        #hands on the motion work, showing the time
         #mirror them so the outline is visible (consistent with second hand)
         minuteHand = self.hands.getHand(hour=False).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
         hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
@@ -1559,26 +1530,13 @@ class Assembly:
             #ring is over the minute wheel/hands
             clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
 
-
-
-        # for arbour in range(self.goingTrain.wheels+1+self.goingTrain.chainWheels):
-        #     bearingPos = self.plates.bearingPositions[arbour]
-        #     for top in [True, False]:
-        #         extensionShape=self.plates.getArbourExtension(arbour, front=top, forModel=True)
-        #         z =  0
-        #         if top:
-        #             z = self.goingTrain.getArbourWithConventionalNaming(arbour).getTotalThickness() +  bearingPos[2]
-        #
-        #         if extensionShape is not None:
-        #             clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
-
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
             chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.plates.wobble / 2
             print("chain Z", chainZ)
             clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
 
-        #TODO pendulum bob and nut
+        #TODO pendulum bob and nut?
 
         #TODO weight?
 

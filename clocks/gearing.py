@@ -669,6 +669,17 @@ class Arbour:
         if self.needArbourExtension(front=False) and self.pinionAtFront:
             shape = shape.add(self.getArbourExtension(front=False).translate((0,0,-self.rearSideExtension)))
 
+        if self.getType() == ArbourType.CHAIN_WHEEL:
+            # should work for both chain and cord
+
+            boltOnRatchet = self.getExtraRatchet(forPrinting=False)
+            if boltOnRatchet is not None:
+                #already in the right place
+                shape = shape.add(boltOnRatchet)
+
+            shape = shape.add(self.chainWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
+
+
         return shape
 
     def needArbourExtension(self, front=True):
@@ -709,9 +720,14 @@ class Arbour:
 
         return extras
     def getExtraRatchet(self, forPrinting=True):
-        #returns None if the ratchet is fully embedded in teh wheel
-        #otherwise returns a shape that can either be adapted to be bolted, or combined with the wheel
-        # is there any more ratchet that will need to be printed or bolted on?
+        '''
+        returns None if the ratchet is fully embedded in teh wheel
+        otherwise returns a shape that can either be adapted to be bolted, or combined with the wheel
+
+        Note: shape is returned translated into the position relative to the chain wheel
+
+        '''
+
         ratchetOutsideWheelRequired = self.ratchet.thick - self.getRatchetInsetness(toCarve=False)
 
         if ratchetOutsideWheelRequired <= 0:
