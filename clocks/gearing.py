@@ -413,12 +413,12 @@ class Arbour:
         self.style=style
         self.distanceToNextArbour=distanceToNextArbour
         self.nutSpaceMetric=None
-        self.pinionOnTop=pinionAtFront
+        self.pinionAtFront=pinionAtFront
 
 
 
-        self.pinionSideExtension=0
-        self.wheelSideExtension=0
+        self.frontSideExtension=0
+        self.rearSideExtension=0
         self.arbourExtensionMaxR=self.arbourD
 
         if self.getType() == ArbourType.UNKNOWN:
@@ -442,14 +442,14 @@ class Arbour:
             #offsetting so it's in the middle of a click (where it's slightly wider)
             self.boltPositions=[polar(i*math.pi*2/bolts + math.pi/self.ratchet.ratchetTeeth, boltDistance) for i in range(bolts)]
 
-    def setArbourExtensionInfo(self, pinionSide=0, wheelSide=0, maxR=0):
+    def setArbourExtensionInfo(self, frontSide=0, rearSide=0, maxR=0):
         '''
         This info is only known after the plates are configured, so retrospectively add it to the arbour.
 
         Currently only used for the chain wheel to make it more rigid (using pinion to mean side with the chain/cord)
         '''
-        self.pinionSideExtension=pinionSide
-        self.wheelSideExtension=wheelSide
+        self.frontSideExtension=frontSide
+        self.rearSideExtension=rearSide
         self.arbourExtensionMaxR=maxR
 
     def setNutSpace(self, nutMetricSize=3):
@@ -521,7 +521,7 @@ class Arbour:
         '''
         Get the centre of the height of the wheel - which drives the next arbour
         '''
-        if self.pinionOnTop:
+        if self.pinionAtFront:
             return self.wheelThick / 2
         else:
             return self.getTotalThickness() - self.wheelThick/2
@@ -529,7 +529,7 @@ class Arbour:
     def getPinionCentreZ(self):
         if self.getType() not in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
             raise ValueError("This arbour (type {}) does not have a pinion".format(self.getType()))
-        if self.pinionOnTop:
+        if self.pinionAtFront:
             return self.getTotalThickness() - self.endCapThick - self.pinionThick/2
         else:
             return self.endCapThick + self.pinionThick/2
@@ -563,7 +563,7 @@ class Arbour:
             shape = self.getWheelWithRatchet(forPrinting=forPrinting)
         else:
             if self.getType() == ArbourType.ANCHOR:
-                return self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick, forPrinting=forPrinting)
+                shape = self.getAnchor(forPrinting=forPrinting)
         if self.nutSpaceMetric is not None:
             #cut out a space for a nyloc nut
             deep = self.wheelThick * 0.25
@@ -572,13 +572,42 @@ class Arbour:
                 deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
             shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
 
-        if not forPrinting and not self.pinionOnTop and (self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]):
+        if not forPrinting and not self.pinionAtFront and (self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]):
             #make it the right way around for placing in a model
             #rotate not mirror! otherwise the escape wheels end up backwards
             shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.getTotalThickness()))
 
 
         return shape
+
+    def getAnchor(self, forPrinting=True):
+
+        #want a square bit so we can use custom long spanners to set the beat
+        adjustableBitThick=4
+        #place it where there's most space
+
+        if self.rearSideExtension > adjustableBitThick:
+            #enough space to hide it at the back
+            onFront = False
+        else:
+            #where there's most space
+            onFront = self.frontSideExtension > self.rearSideExtension
+            #limit its size to the amount of space there is
+            adjustableBitThick = min(10, self.frontSideExtension if onFront else self.rearSideExtension)
+
+        remainingExtension = (self.frontSideExtension if onFront else self.rearSideExtension) - adjustableBitThick
+
+        anchor = self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick)#, forPrinting=forPrinting)
+
+        face = ">Z" if onFront else "<Z"
+
+        width = self.getRodD() * 2
+
+        #add the rest of the arbour extension
+        anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(adjustableBitThick).faces(face).workplane().moveTo(0,0)\
+            .circle(self.getRodD()).extrude(remainingExtension).faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
+
+        return anchor
 
     def getExtras(self):
         '''
@@ -644,9 +673,12 @@ class Arbour:
             #only extend out this way if the ratchet is inset - otherwise this is unprintable
             #have it stand off from the bearing slightly
 
-            if self.wheelSideExtension > 0:
+            if self.rearSideExtension > 0:
+                #limit to r of 1cm
+                extensionR = min(10,self.arbourExtensionMaxR)
+
                 bearingStandoffHeight = LAYER_THICK * 2
-                extendedArbour = cq.Workplane("XY").circle(self.arbourExtensionMaxR).extrude(self.wheelSideExtension-bearingStandoffHeight).faces(">Z").workplane().circle(self.arbourD).extrude(bearingStandoffHeight)
+                extendedArbour = cq.Workplane("XY").circle(extensionR).extrude(self.rearSideExtension - bearingStandoffHeight).faces(">Z").workplane().circle(self.arbourD).extrude(bearingStandoffHeight)
                 #add hole for rod!
                 extendedArbour = extendedArbour.faces(">Z").circle(self.arbourD/2).cutThruAll()
 

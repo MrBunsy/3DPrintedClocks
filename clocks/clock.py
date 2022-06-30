@@ -751,7 +751,7 @@ class ClockPlates:
                 #note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
                 drivingZ = self.goingTrain.getArbour(i).getWheelCentreZ()
                 self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
-                print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionOnTop, i, drivingZ), pos)
+                print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
             else:
                 r = self.goingTrain.getArbour(i - 1).distanceToNextArbour
                 print("r", r)
@@ -784,7 +784,7 @@ class ClockPlates:
                 # pos = list(np.add(self.bearingPositions[i-1],v))
                 pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
                 if i < self.goingTrain.wheels:
-                    print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionOnTop, i, r, angle), pos)
+                    print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
                 print("baseZ: ",baseZ, "drivingZ ", drivingZ)
 
                 self.bearingPositions.append(pos)
@@ -814,12 +814,23 @@ class ClockPlates:
         print("Plate distance", self.plateDistance)
 
         #configure stuff for the arbours, now we know their absolute positions
-        poweredWheel=self.goingTrain.getArbourWithConventionalNaming(0)
-        poweredWheelBracingR = poweredWheel.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(1).getMaxRadius() - self.gearGap
+        # poweredWheel=self.goingTrain.getArbourWithConventionalNaming(0)
+        # poweredWheelBracingR = poweredWheel.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(1).getMaxRadius() - self.gearGap
+        #
+        # #no need for it to be massive
+        # poweredWheelBracingR = min(10,poweredWheelBracingR)
+        # poweredWheel.setArbourExtensionInfo(rearSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
 
-        #no need for it to be massive
-        poweredWheelBracingR = min(10,poweredWheelBracingR)
-        poweredWheel.setArbourExtensionInfo(wheelSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
+        for i,bearingPos in enumerate(self.bearingPositions):
+            arbour = self.goingTrain.getArbourWithConventionalNaming(i)
+            if i < self.goingTrain.wheels + self.goingTrain.chainWheels - 2:
+                maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.gearGap
+            else:
+                maxR = 0
+            arbour.setArbourExtensionInfo(rearSide=bearingPos[2],maxR=maxR, frontSide=self.plateDistance-self.wobble-bearingPos[2] - arbour.getTotalThickness())
+
+
+
         #NOTE - can't change this here as it was used in calculating the plate distance. Need to push this up to the user to set
         # if poweredWheelBracingR > 5:
         #     #could do more logic here all the way to completely embedding the ratchet inside the wheel?
@@ -1492,7 +1503,7 @@ class Assembly:
         clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.getPlateThick(back=True))))
 
         #the wheels
-        for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels):
+        for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
             clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
@@ -1522,13 +1533,13 @@ class Assembly:
         clock = clock.add(self.goingTrain.poweredWheel.getAssembled().translate(self.plates.bearingPositions[0]).translate((0,0,cordWheelZ)))
 
 
-        anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
-
-        #the anchor is upside down for better printing, so flip it back
-        anchor = self.pendulum.anchor.mirror("YZ", (0,0,0))
-        #and rotate it into position
-        anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2))
-        clock = clock.add(anchor)
+        # anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
+        #
+        # #the anchor is upside down for better printing, so flip it back
+        # anchor = self.pendulum.anchor#.mirror("YZ", (0,0,0))
+        # #and rotate it into position
+        # anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2))
+        # clock = clock.add(anchor)
 
         #where the nylock nut and spring washer would be
         motionWorksZOffset = 3

@@ -348,7 +348,7 @@ class Escapement:
         #holeD * 2, which for now is always going to be six. To fix in future.
         return 6
 
-    def getAnchorArbour(self, holeD=3, anchorThick=10, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0, forPrinting=True):
+    def getAnchorArbour(self, holeD=3, anchorThick=10, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0):#, forPrinting=True):
         '''
         Final plan: The crutch will be a solid part of the anchor, and a bolt will link it to a slot in the pendulum
         Thinking the anchor will be at the bottom of the clock, so the pendulum can be on the front
@@ -381,9 +381,10 @@ class Escapement:
 
         #add a length for the arbour - if required
 
-        if crutchLength == 0 and nutMetricSize == 0 and arbourLength == 0 and forPrinting:
-            #if we've got no crutch or nyloc nut, deliberately reverse it so the side facing forwards is the side printed on the nice textured sheet
-            clockwise = not clockwise
+        #don't do this here, getting confusing
+        # if crutchLength == 0 and nutMetricSize == 0 and arbourLength == 0 and forPrinting:
+        #     #if we've got no crutch or nyloc nut, deliberately reverse it so the side facing forwards is the side printed on the nice textured sheet
+        #     clockwise = not clockwise
 
         #get the anchor the other way around so we can build on top of it, and centre it on the pinion
         arbour = self.getAnchor3D(anchorThick, holeD, clockwise).translate([0,-self.anchor_centre_distance,0])
@@ -493,6 +494,10 @@ class Escapement:
 class Pendulum:
     '''
     Class to generate the anchor&crutch arbour and pendulum parts
+    NOTE - the anchor is now usually accessed via being a special case of Arbour
+
+    plan: add a square bit to the anchor (probably in the Arbour class, part of the arbour extensions)
+    and make two special longish spanners in order to make setting the beat much easier (thinking ahead to fixing clock to the wall with two screws, will need ability to delicately adjust beat)
     '''
     def __init__(self, escapement, length, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True):
         self.escapement = escapement
