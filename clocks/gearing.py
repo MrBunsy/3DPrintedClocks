@@ -395,7 +395,9 @@ class Arbour:
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
         - escape wheel is pinion + escape wheel
-        - anchor is just the escapement anchor ( NOTE - NOT FULLY IMPLEMENTED)
+        - anchor is just the escapement anchor
+
+        NOTE currently assumes chain/cord is at the front - needs top be controlled by something like pinionAtFront
 
         Trying to store all the special logic for thicknesses and radii in one place
         '''
@@ -442,6 +444,13 @@ class Arbour:
             #offsetting so it's in the middle of a click (where it's slightly wider)
             self.boltPositions=[polar(i*math.pi*2/bolts + math.pi/self.ratchet.ratchetTeeth, boltDistance) for i in range(bolts)]
 
+
+        #anchor specific, will be refined once arbour extension info is provided
+        # want a square bit so we can use custom long spanners to set the beat
+        self.spannerBitThick = 4
+        self.spannerBitOnFront=False
+
+
     def setArbourExtensionInfo(self, frontSide=0, rearSide=0, maxR=0):
         '''
         This info is only known after the plates are configured, so retrospectively add it to the arbour.
@@ -451,6 +460,23 @@ class Arbour:
         self.frontSideExtension=frontSide
         self.rearSideExtension=rearSide
         self.arbourExtensionMaxR=maxR
+
+        #can now calculate the location and size of the spanner nut for the anchor
+        if self.getType() == ArbourType.ANCHOR:
+            # place it where there's most space
+
+            if self.rearSideExtension > self.spannerBitThick:
+                # enough space to hide it at the back
+                self.spannerBitOnFront = False
+            else:
+                # where there's most space
+                self.spannerBitOnFront = self.frontSideExtension > self.rearSideExtension
+                # limit its size to the amount of space there is
+                self.spannerBitThick = min(10, self.frontSideExtension if self.spannerBitOnFront else self.rearSideExtension)
+
+            #bit hacky, treat spanner bit like a pinion for the arbour extension stuff
+            self.pinionAtFront = self.spannerBitOnFront
+
 
     def setNutSpace(self, nutMetricSize=3):
         '''
@@ -572,6 +598,15 @@ class Arbour:
                 deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
             shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
 
+        # note, the included extension is always on the pinion side (unprintable otherwise)
+        if self.needArbourExtension(front=True) and self.pinionAtFront:
+            #need arbour extension on the front
+            shape = shape.add(self.getArbourExtension(front=True).translate((0,0,self.getTotalThickness())))
+
+        if self.needArbourExtension(front=False) and not self.pinionAtFront:
+            # need arbour extension on the rear
+            shape = shape.add(self.getArbourExtension(front=False).translate((0, 0, self.getTotalThickness())))
+
         if not forPrinting and not self.pinionAtFront and (self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]):
             #make it the right way around for placing in a model
             #rotate not mirror! otherwise the escape wheels end up backwards
@@ -582,42 +617,97 @@ class Arbour:
 
     def getAnchor(self, forPrinting=True):
 
-        #want a square bit so we can use custom long spanners to set the beat
-        adjustableBitThick=4
-        #place it where there's most space
-
-        if self.rearSideExtension > adjustableBitThick:
-            #enough space to hide it at the back
-            onFront = False
-        else:
-            #where there's most space
-            onFront = self.frontSideExtension > self.rearSideExtension
-            #limit its size to the amount of space there is
-            adjustableBitThick = min(10, self.frontSideExtension if onFront else self.rearSideExtension)
-
-        remainingExtension = (self.frontSideExtension if onFront else self.rearSideExtension) - adjustableBitThick
+        remainingExtension = (self.frontSideExtension if self.spannerBitOnFront else self.rearSideExtension) - self.spannerBitThick
 
         anchor = self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick)#, forPrinting=forPrinting)
 
-        face = ">Z" if onFront else "<Z"
+        face = ">Z" if self.spannerBitOnFront else "<Z"
 
         width = self.getRodD() * 2
 
         #add the rest of the arbour extension
-        anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(adjustableBitThick).faces(face).workplane().moveTo(0,0)\
+        anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick).faces(face).workplane().moveTo(0,0)\
             .circle(self.getRodD()).extrude(remainingExtension).faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
 
+
+        if forPrinting and not self.spannerBitOnFront:
+            #flip so it can be printed as-is
+            anchor=anchor.rotate((0,0,0),(0,1,0),180)
+
         return anchor
+
+    def getArbourExtension(self, front=True):
+        '''
+        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
+
+        returns None if no extension is needed
+        '''
+
+        length = self.frontSideExtension if front else self.rearSideExtension
+
+        if length >= LAYER_THICK:
+            extendoArbour = cq.Workplane("XY").tag("base").circle(self.getRodD()).circle(self.getRodD() / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(length)
+
+            return extendoArbour
+        return None
+
+    def getAssembled(self):
+        '''
+        return this arbour fully assembled, for the model rather than printing
+        (0,0,0) should be in the centre of the arbour, at the back of the wheel or pinion
+        this is because bearingPosition already has the rear extension included, so no need to replicate it here
+        '''
+
+        #get the main bit, the right way round
+        shape = self.getShape(forPrinting=False)
+
+        #pinion side extensions are now included in the arbour shape
+        #the chain wheel with a bolt on ratchet includes its own special arbour extension
+        #built in extensions are always on the pinion side
+        if self.needArbourExtension(front=True) and not self.pinionAtFront:
+            shape = shape.add(self.getArbourExtension(front=True).translate((0,0,self.getTotalThickness())))
+        if self.needArbourExtension(front=False) and self.pinionAtFront:
+            shape = shape.add(self.getArbourExtension(front=False).translate((0,0,-self.rearSideExtension)))
+
+        return shape
+
+    def needArbourExtension(self, front=True):
+
+        if front and self.frontSideExtension < LAYER_THICK:
+            return False
+        if (not front) and self.rearSideExtension < LAYER_THICK:
+            return False
+
+        if self.getType() == ArbourType.ANCHOR:
+            return not (front == self.spannerBitOnFront)
+
+        if self.getType() == ArbourType.CHAIN_WHEEL:
+            #assuming chain is at front
+            if front:
+                return False
+            else:
+                return not self.boltOnRatchet
+
+        return True
+
 
     def getExtras(self):
         '''
         are there any extra bits taht need printing for this arbour?
         returns {'name': shape,}
         '''
-        if self.getType() == ArbourType.CHAIN_WHEEL and self.getExtraRatchet() is not None:
-            return {'ratchet': self.getExtraRatchet()}
+        extras = {}
 
-        return {}
+        if self.getType() == ArbourType.CHAIN_WHEEL and self.getExtraRatchet() is not None:
+            extras['ratchet']= self.getExtraRatchet()
+
+        if self.pinionAtFront and self.needArbourExtension(front=False):
+            extras['arbour_extension_rear'] = self.getArbourExtension(front=False)
+        if not self.pinionAtFront and self.needArbourExtension(front=True):
+            extras['arbour_extension_front'] = self.getArbourExtension(front=True)
+
+
+        return extras
     def getExtraRatchet(self, forPrinting=True):
         #returns None if the ratchet is fully embedded in teh wheel
         #otherwise returns a shape that can either be adapted to be bolted, or combined with the wheel

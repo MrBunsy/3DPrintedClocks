@@ -1353,42 +1353,6 @@ class ClockPlates:
 
         return plate
 
-    def getArbourExtension(self, arbourID, top=True, rodD=3, forModel=False):
-        '''
-        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
-        arbour from -chainwheels to +ve wheels + 1 (for the anchor)
-
-        if for model, will return the way up needed to assemble the little model
-        arbourID is now conventially named
-        returns None if no extension is needed
-        '''
-
-        flaredBase = False
-
-        bearingPos = self.bearingPositions[arbourID]
-        arbourThick = self.goingTrain.getArbourWithConventionalNaming(arbourID).getTotalThickness()
-        rodD = self.goingTrain.getArbourWithConventionalNaming(arbourID).getRodD()
-
-        length = 0
-        if top:
-            length = self.plateDistance - arbourThick - bearingPos[2] - self.wobble
-        else:
-            length = bearingPos[2]
-
-        if length > LAYER_THICK:
-            extendoArbour = cq.Workplane("XY").tag("base").circle(rodD).circle(rodD / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(length)
-
-            if flaredBase:
-                baseLength = min(2, length)
-                extendoArbour = extendoArbour.workplaneFromTagged("base").circle(rodD * 2).circle(rodD).extrude(baseLength)
-                if forModel:
-                    extendoArbour = extendoArbour.mirror().translate((0,0,length))
-
-            return extendoArbour
-        return None
-
-
-
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
@@ -1401,13 +1365,13 @@ class ClockPlates:
         print("Outputting ", out)
         exporters.export(self.getPlate(True, True), out)
 
-        for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
-            for top in [True, False]:
-                extensionShape=self.getArbourExtension(arbour, top=top)
-                if extensionShape is not None:
-                    out = os.path.join(path, "{}_arbour_{}_{}_extension.stl".format(name, arbour, "top" if top else "bottom"))
-                    print("Outputting ", out)
-                    exporters.export(extensionShape, out)
+        # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
+        #     for top in [True, False]:
+        #         extensionShape=self.getArbourExtension(arbour, top=top)
+        #         if extensionShape is not None:
+        #             out = os.path.join(path, "{}_arbour_{}_{}_extension.stl".format(name, arbour, "top" if top else "bottom"))
+        #             print("Outputting ", out)
+        #             exporters.export(extensionShape, out)
 
 
 
@@ -1505,7 +1469,7 @@ class Assembly:
         #the wheels
         for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
-            clock = clock.add(arbour.getShape(False).translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
+            clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
         #the chain wheel parts
         # if self.goingTrain.usingChain:
@@ -1597,16 +1561,16 @@ class Assembly:
 
 
 
-        for arbour in range(self.goingTrain.wheels+1+self.goingTrain.chainWheels):
-            bearingPos = self.plates.bearingPositions[arbour]
-            for top in [True, False]:
-                extensionShape=self.plates.getArbourExtension(arbour, top=top, forModel=True)
-                z =  0
-                if top:
-                    z = self.goingTrain.getArbourWithConventionalNaming(arbour).getTotalThickness() +  bearingPos[2]
-
-                if extensionShape is not None:
-                    clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
+        # for arbour in range(self.goingTrain.wheels+1+self.goingTrain.chainWheels):
+        #     bearingPos = self.plates.bearingPositions[arbour]
+        #     for top in [True, False]:
+        #         extensionShape=self.plates.getArbourExtension(arbour, front=top, forModel=True)
+        #         z =  0
+        #         if top:
+        #             z = self.goingTrain.getArbourWithConventionalNaming(arbour).getTotalThickness() +  bearingPos[2]
+        #
+        #         if extensionShape is not None:
+        #             clock=clock.add(extensionShape.translate((bearingPos[0], bearingPos[1], z + self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
 
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
