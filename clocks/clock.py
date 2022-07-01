@@ -926,25 +926,9 @@ class ClockPlates:
 
 
 
-        if self.style == "round":
-            screwHoleY = chainWheelR*1.4
-        elif self.style == "vertical":
-            if self.extraHeavy:
-                #just above chain wheel (see if this helps reduce the plate flexing)
-                screwHoleY = self.bearingPositions[0][1] + (self.bearingPositions[1][1] - self.bearingPositions[0][1]) * 0.6
-            else:
-                #just below escape wheel
-                screwHoleY = self.bearingPositions[-3][1] + (self.bearingPositions[-2][1] - self.bearingPositions[-3][1])*0.6
 
-        weightX = 0
 
-        weightOnSide = 1 if self.weightOnRightSide else -1
-        if self.heavy and not self.usingPulley:
-            # line up the hole with the big heavy weight
-            weightX = weightOnSide*self.goingTrain.poweredWheel.diameter/2
 
-        #hole for hanging on the wall
-        screwHolePos = (weightX , screwHoleY)
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
 
@@ -966,10 +950,13 @@ class ClockPlates:
         #where the extra-wide bit of the plate stops
         topOfBottomBitPos = self.bearingPositions[0]
 
+        # just above chain wheel (see if this helps reduce the plate flexing)
+        bottomScrewHoleY = self.bearingPositions[0][1] + (self.bearingPositions[1][1] - self.bearingPositions[0][1]) * 0.6
+
         if self.heavy and self.usingPulley and back:
             #instead of an extra circle around the screwhole, make the plate wider extend all the way up
             #because the screwhole will be central when heavy and using a pulley
-            topOfBottomBitPos = screwHolePos
+            topOfBottomBitPos = (0, bottomScrewHoleY)
 
 
         fixingPositions = [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
@@ -1030,7 +1017,34 @@ class ClockPlates:
                 #the back plate is wide enough to accomodate
                 extraSupport = False
 
-            plate = self.addScrewHole(plate, screwHolePos, backThick=backThick, screwHeadD=11, addExtraSupport=extraSupport)
+            weightX = 0
+
+            weightOnSide = 1 if self.weightOnRightSide else -1
+            if self.heavy and not self.usingPulley:
+                # line up the hole with the big heavy weight
+                weightX = weightOnSide * self.goingTrain.poweredWheel.diameter / 2
+
+            screwHeadD = 11
+            if self.style == "round":
+                screwHoleY = chainWheelR * 1.4
+
+                plate = self.addScrewHole(plate, (weightX, screwHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
+
+            elif self.style == "vertical":
+                if self.extraHeavy:
+
+
+                    #below anchor
+                    topScrewHoleY = self.bearingPositions[-2][1]+ (self.bearingPositions[-1][1] - self.bearingPositions[-2][1]) * 0.6
+
+                    plate = self.addScrewHole(plate, (weightX, bottomScrewHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
+                    plate = self.addScrewHole(plate, (weightX, topScrewHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=True)
+                else:
+                    # just below escape wheel
+                    screwHoleY = self.bearingPositions[-3][1] + (self.bearingPositions[-2][1] - self.bearingPositions[-3][1]) * 0.6
+
+                    plate = self.addScrewHole(plate, (weightX, screwHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
+
             #the pillars
 
             if self.extraHeavy:

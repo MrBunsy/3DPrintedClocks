@@ -646,6 +646,7 @@ class Pendulum:
 
         #(0,0,0) is the rod from the anchor, the rod is along the z axis
 
+        #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
         holeStartY=-height*0.2
         holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + 1
         holeEndY = holeStartY - holeHeight
@@ -659,7 +660,7 @@ class Pendulum:
         pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
 
         #nut to hold to anchor rod
-        nutThick = METRIC_NUT_DEPTH_MULT * holeD
+        nutThick = getNutHeight(holeD, nyloc=True)
         nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
         pendulum = pendulum.cut(nutSpace)
 

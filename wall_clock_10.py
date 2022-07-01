@@ -26,7 +26,9 @@ escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorT
 
 train = clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1900, chainAtBack=False,chainWheels=1, hours=180, max_chain_wheel_d=21)
 
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
+moduleReduction=0.875
+
+train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 # train.calculateRatios()
 # train.setRatios([[60, 14], [63, 12], [64, 12]])
 # train.setRatios([[64, 12], [63, 12], [60, 14]])
@@ -59,14 +61,14 @@ layers of cord: 3, cord per hour: 1.1cm to 0.9cm
 runtime: 180.0hours. Chain wheel multiplier: 10.3
 
 '''
-train.setChainWheelRatio([93, 10])
+# train.setChainWheelRatio([93, 10])
 # train.calculateChainWheelRatios()
 
 train.printInfo()
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=0.875,  thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,ratchetInset=True)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,ratchetInset=True)#, chainModuleIncrease=1.1)
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
