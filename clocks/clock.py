@@ -1122,7 +1122,8 @@ class ClockPlates:
         if back:
             for fixingPos in fixingPositions:
                 #embedded nuts!
-                plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
+                #extra thick layer because plates are huge
+                plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6, layerThick=0.3).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
 
         return plate
 
@@ -1163,9 +1164,12 @@ class ClockPlates:
                 if self.usingPulley:
                     pulleyX = -chainX
                     #might want it as far back as possible?
-                    pulleyZ = chainZBottom + self.chainHoleD/2#(chainZTop + chainZBottom)/2
+                    #for now, as far FORWARDS as possible, because the 4kg weight is really wide!
+                    pulleyZ = chainZTop - self.chainHoleD/2#chainZBottom + self.chainHoleD/2#(chainZTop + chainZBottom)/2
                     #and one hole for the cord to be tied
                     pulleyHole = cq.Workplane("XZ").moveTo(pulleyX, pulleyZ).circle(self.chainHoleD/2).extrude(1000)
+
+                    print("chainZ min:", chainZBottom, "chainZ max:", chainZTop, "absoluteZ:",absoluteZ)
 
                     #original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
                     #so instead, put a screw in from the front
