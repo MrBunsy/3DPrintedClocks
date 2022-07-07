@@ -102,6 +102,8 @@ class Hands:
         if second:
             length = self.secondLength
             base_r = self.secondLength * 0.2
+            #don't let it be smaller than the rounded end!
+            base_r = max(base_r, self.length * 0.1/2)
 
             if self.style == "cuckoo":
                 base_r = self.secondLength * 0.12
