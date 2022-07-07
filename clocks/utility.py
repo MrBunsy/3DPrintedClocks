@@ -62,6 +62,7 @@ METRIC_NUT_DEPTH_MULT=0.77
 METRIC_HALF_NUT_DEPTH_MULT=0.57
 
 COUNTERSUNK_HEAD_WIGGLE = 0.2
+COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.1
 
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
     if halfHeight:
@@ -78,6 +79,8 @@ def getScrewHeadHeight(metric_thread, countersunk=False):
         if countersunk:
             return 1.86
         return 2.6
+    if metric_thread == 2:
+        return 1.2
 
     return metric_thread
 

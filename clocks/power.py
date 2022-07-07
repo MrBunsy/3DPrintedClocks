@@ -566,10 +566,10 @@ class CordWheel:
             minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
             if self.useKey:
                 minScrewLength -= self.thick
-            print("cord wheel screw length between", minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
+            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
         elif self.useKey and not self.useGear and not self.useFriction:
             minScrewLength = self.ratchet.thick/2 + self.capThick*2 + self.thick
-            print("cord wheel screw length between", minScrewLength, minScrewLength + self.ratchet.thick/2)
+            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
         #extra radius to add to stand off from a bearing
         self.bearingLip=bearingLip
         self.bearingWiggleRoom = 0.05

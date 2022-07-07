@@ -213,8 +213,11 @@ class Hands:
 
                     #this doesn't work for fancier shapes - I think it can't cope if there isn't space to extrude the shell without it overlapping itself?
                     #works fine for simple hands, not for cuckoo hands
-
-                    shell = hand.shell(-self.outline).translate((0,0,-self.outline))
+                    try:
+                        shell = hand.shell(-self.outline).translate((0,0,-self.outline))
+                    except:
+                        print("Unable to give outline to hand")
+                        return None
 
                     notOutline = hand.cut(shell)
                     # return notOutline
@@ -232,8 +235,10 @@ class Hands:
                     hand = hand.cut(notOutline)
 
                 else:
+                    outlineShape = self.getHand(hour, outline=True, second=second)
                     #chop out the outline from the shape
-                    hand = hand.cut(self.getHand(hour, outline=True, second=second))
+                    if outlineShape is not None:
+                        hand = hand.cut(outlineShape)
             else:
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
                 if outline:
@@ -291,6 +296,8 @@ class Hands:
             print("Outputting ", out)
             exporters.export(self.getHand(False, outline=True), out)
 
-            out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.getHand(hour=False, second=True, outline=True), out)
+            secondoutline = self.getHand(hour=False, second=True, outline=True)
+            if secondoutline is not None:
+                out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(secondoutline, out)

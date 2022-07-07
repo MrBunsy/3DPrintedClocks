@@ -191,3 +191,6 @@ IDEA - instead of the washer between anchor and back plate, why not put the esca
 I have noticed the first version of clock 06 does bend, but still works. I think plate-distance reduction will be worth it
 
 I've noticed teh hour hand is really very loose, especially when the motion works is positioned the otehr way up, as on the last two eight days. I'm wondering about tweaking the gears to try and improve this - it never got any attention as it "just worked" first time.
+
+
+IDEA - refactor so there's a Screw class which holds together all the useful info: thread size, head type (and sizes) and can produce cuttable shapes

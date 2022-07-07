@@ -366,7 +366,7 @@ class GoingTrain:
         #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
         #21.2 comes from a mistake on clock 07, but a happy mistake as it was a good size. keeping this for now
         #increasing since I'm now using the key would cord wheels and not sure I'll be going back to the other type any time soon
-        ratchetD = max(self.max_chain_wheel_d, 26)
+        ratchetD = self.max_chain_wheel_d*1.25#max(self.max_chain_wheel_d, 26)
         # ratchetD = 21.22065907891938
         self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
@@ -396,7 +396,7 @@ class GoingTrain:
         print("runtime: {:.1f}hours over {:.1f}m. Chain wheel multiplier: {:.1f}".format(runtime, self.maxChainDrop/1000, chainRatio))
 
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1, ratchetScrewsPanHead=True):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -489,7 +489,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset)]
+            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrewsPanHead=ratchetScrewsPanHead)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -498,7 +498,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset)
+                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrewsPanHead=ratchetScrewsPanHead)
                 else:
                     #just a normal gear
                     if self.chainWheels == 1:
@@ -918,18 +918,6 @@ class ClockPlates:
             bottomPillarR = minDistanceForChainHoles
         topPillarR = holderWide/2
 
-
-
-
-
-
-
-
-
-
-
-
-
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
 
         #find the Y position of the bottom of the top pillar
@@ -1041,7 +1029,7 @@ class ClockPlates:
                     plate = self.addScrewHole(plate, (weightX, topScrewHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=True)
                 else:
                     # just below escape wheel
-                    screwHoleY = self.bearingPositions[-3][1] + (self.bearingPositions[-2][1] - self.bearingPositions[-3][1]) * 0.6
+                    screwHoleY = self.bearingPositions[-2][1] + (self.bearingPositions[-1][1] - self.bearingPositions[-2][1]) * 0.6
 
                     plate = self.addScrewHole(plate, (weightX, screwHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
 
