@@ -1110,8 +1110,8 @@ class ClockPlates:
         if back:
             for fixingPos in fixingPositions:
                 #embedded nuts!
-                #extra thick layer because plates are huge
-                plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6, layerThick=0.3).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
+                #extra thick layer because plates are huge and usually printed with 0.3 layer height
+                plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
 
         return plate
 
@@ -1352,7 +1352,7 @@ class ClockPlates:
         if not self.goingTrain.usingChain and self.goingTrain.cordWheel.useKey and not self.goingTrain.cordWheel.useGear:
             cordWheel = self.goingTrain.cordWheel
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
-            cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight)
+            cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)
             cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearingInnerD/2 + cordWheel.bearingLip).extrude(plateThick)
 
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))

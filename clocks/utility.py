@@ -37,6 +37,7 @@ STEEL_SHOT_DENSITY=0.35/0.055
 
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
+LAYER_THICK_EXTRATHICK=0.3
 GRAVITY = 9.81
 
 #extra diameter to add to something that should be free to rotate over a rod
