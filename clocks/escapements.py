@@ -856,13 +856,14 @@ class Pendulum:
         print("Outputting ", out)
         exporters.export(self.anchor, out)
 
-        out = os.path.join(path, "{}_suspension.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getSuspension(), out)
-
-        out = os.path.join(path, "{}_pendulum_for_knife_edge.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getPendulumForKnifeEdge(), out)#,tolerance=0.01)
+        #these haven't been used since the very first prototype clock!
+        # out = os.path.join(path, "{}_suspension.stl".format(name))
+        # print("Outputting ", out)
+        # exporters.export(self.getSuspension(), out)
+        #
+        # out = os.path.join(path, "{}_pendulum_for_knife_edge.stl".format(name))
+        # print("Outputting ", out)
+        # exporters.export(self.getPendulumForKnifeEdge(), out)#,tolerance=0.01)
 
         out = os.path.join(path, "{}_pendulum_for_rod.stl".format(name))
         print("Outputting ", out)

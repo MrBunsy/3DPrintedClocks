@@ -870,6 +870,70 @@ class ClockPlates:
             return self.backPlateThick
         return self.plateThick
 
+    def getScrewHolePositions(self):
+        '''
+        returns [(x,y, supported),]
+        for where the holes to fix the clock to the wall will be
+
+        This logic is a bit of a mess, it was pulled out of the tangle in clock plates and could do with tidying up
+        '''
+        bottomScrewHoleY = self.bearingPositions[0][1] + (self.bearingPositions[1][1] - self.bearingPositions[0][1]) * 0.6
+
+        extraSupport = True
+        if self.usingPulley and self.heavy:
+            # the back plate is wide enough to accomodate
+            extraSupport = False
+
+        weightX = 0
+        weightOnSide = 1 if self.weightOnRightSide else -1
+        if self.heavy and not self.usingPulley:
+            # line up the hole with the big heavy weight
+            weightX = weightOnSide * self.goingTrain.poweredWheel.diameter / 2
+
+        if self.style == "round":
+            #screwHoleY = chainWheelR * 1.4
+            raise NotImplemented("Haven't fixed this for round clocks")
+
+        elif self.style == "vertical":
+            if self.extraHeavy:
+
+                # below anchor
+                topScrewHoleY = self.bearingPositions[-2][1] + (self.bearingPositions[-1][1] - self.bearingPositions[-2][1]) * 0.6
+                return [(weightX, bottomScrewHoleY, extraSupport), (weightX, topScrewHoleY, True)]
+            else:
+                # just below anchor
+                screwHoleY = self.bearingPositions[-2][1] + (self.bearingPositions[-1][1] - self.bearingPositions[-2][1]) * 0.6
+
+                return [(weightX, screwHoleY, extraSupport)]
+
+    def getDrillTemplate(self,drillHoleD=7):
+
+        screwHoles = self.getScrewHolePositions()
+
+        if len(screwHoles) <= 1:
+            raise ValueError("Can't make template without at least two screwholes")
+
+        ys = [hole[1] for hole in screwHoles]
+        xs = [hole[0] for hole in screwHoles]
+        maxY = max(ys)
+        minY = min(ys)
+        minX = min(xs)
+        maxX = max(xs)
+
+        minWidth = maxX - minX
+        minHeight = maxY - minY
+
+        border = drillHoleD*2
+        thick = 3
+
+        template = cq.Workplane("XY").moveTo(minX + minWidth/2, minY + minHeight/2).rect(minWidth + border*2, minHeight + border*2).extrude(thick)
+
+        for hole in screwHoles:
+            template = template.faces(">Z").workplane().moveTo(hole[0], hole[1]).circle(drillHoleD/2).cutThruAll()
+
+        return template
+
+
     def getSimplePlate(self, back=True, getText=False):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
@@ -938,8 +1002,9 @@ class ClockPlates:
         #where the extra-wide bit of the plate stops
         topOfBottomBitPos = self.bearingPositions[0]
 
-        # just above chain wheel (see if this helps reduce the plate flexing)
-        bottomScrewHoleY = self.bearingPositions[0][1] + (self.bearingPositions[1][1] - self.bearingPositions[0][1]) * 0.6
+        screwHolePositions = self.getScrewHolePositions()
+
+        bottomScrewHoleY = min([hole[1] for hole in screwHolePositions])
 
         if self.heavy and self.usingPulley and back:
             #instead of an extra circle around the screwhole, make the plate wider extend all the way up
@@ -1013,25 +1078,8 @@ class ClockPlates:
                 weightX = weightOnSide * self.goingTrain.poweredWheel.diameter / 2
 
             screwHeadD = 11
-            if self.style == "round":
-                screwHoleY = chainWheelR * 1.4
-
-                plate = self.addScrewHole(plate, (weightX, screwHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
-
-            elif self.style == "vertical":
-                if self.extraHeavy:
-
-
-                    #below anchor
-                    topScrewHoleY = self.bearingPositions[-2][1]+ (self.bearingPositions[-1][1] - self.bearingPositions[-2][1]) * 0.6
-
-                    plate = self.addScrewHole(plate, (weightX, bottomScrewHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
-                    plate = self.addScrewHole(plate, (weightX, topScrewHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=True)
-                else:
-                    # just below escape wheel
-                    screwHoleY = self.bearingPositions[-2][1] + (self.bearingPositions[-1][1] - self.bearingPositions[-2][1]) * 0.6
-
-                    plate = self.addScrewHole(plate, (weightX, screwHoleY), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=extraSupport)
+            for screwPos in screwHolePositions:
+                plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=screwPos[2])
 
             #the pillars
 
@@ -1370,6 +1418,12 @@ class ClockPlates:
         out = os.path.join(path, "{}_back_plate_textcolour.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getPlate(True, True), out)
+
+        if len(self.getScrewHolePositions()) > 1:
+            #need a template to help drill the screwholes!
+            out = os.path.join(path, "{}_drill_template_7mm.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getDrillTemplate(7), out)
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
