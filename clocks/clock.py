@@ -360,7 +360,7 @@ class GoingTrain:
 
         self.usingChain=True
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", useFriction=False ):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC"):
 
         self.genPowerWheelRatchet()
         #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
@@ -370,7 +370,7 @@ class GoingTrain:
         # ratchetD = 21.22065907891938
         self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
 
-        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, useFriction=useFriction)
+        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
         self.poweredWheel = self.cordWheel
         self.usingChain=False
 
@@ -1133,18 +1133,15 @@ class ClockPlates:
         this assumes an awful lot, it's likely to be a bit fragile
 
         bottomPillarPos needed for screw for pulley cord
+
+        TODO - get the cord/chain wheel to calculate the hard bits!! then they can be treated almost the same here
         '''
         if self.goingTrain.usingChain:
             chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
             leftZ = chainZ
             rightZ = chainZ
         else:
-            if self.goingTrain.cordWheel.useFriction:
-                #basically a chain wheel that uses friction instead of chain links
-                chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.pulley.getTotalThick()/2 + self.wobble / 2
-                leftZ = chainZ
-                rightZ = chainZ
-            elif self.goingTrain.cordWheel.useKey and not self.goingTrain.cordWheel.useGear:
+            if self.goingTrain.cordWheel.useKey:
                 #cord wheel with a key (probably for an eight day)
                 #need one elongated hole for the cord
                 chainZTop = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick + self.wobble / 2
@@ -1361,7 +1358,7 @@ class ClockPlates:
             plate = plate.faces(">Z").workplane().pushPoints([(0, minuteY + dialFixings / 2), (0, minuteY - dialFixings / 2)]).circle(self.dial.fixingD / 2).cutThruAll()
 
         # need an extra chunky hole for the big bearing that the key slots through
-        if not self.goingTrain.usingChain and self.goingTrain.cordWheel.useKey and not self.goingTrain.cordWheel.useGear:
+        if not self.goingTrain.usingChain and self.goingTrain.cordWheel.useKey:
             cordWheel = self.goingTrain.cordWheel
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
             cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)

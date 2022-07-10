@@ -53,10 +53,10 @@ if 'show_object' not in globals():
 # print("for one ball per half hour: {:.2f}".format(clock6torque*6))
 
 
-# snail = Snail()
-# trigger = StrikeTrigger()
-# motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-# show_object(motionWorks.getAssembled())
+snail = Snail()
+trigger = StrikeTrigger()
+motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
+show_object(motionWorks.getAssembled())
 # show_object(motionWorks.getHourHolder())
 
 # rack = Rack()
@@ -86,11 +86,17 @@ if 'show_object' not in globals():
 
 # show_object(poweredArbour.getExtraRatchet())
 
-pair = WheelPinionPair(80,10)
-
-arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.STEAMTRAIN)
-
-show_object(arbour.getShape())
+# pair = WheelPinionPair(80,10, module=1)
+#
+# arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.STEAMTRAIN)
+#
+# show_object(arbour.getShape())
+#
+# path = "out"
+# name="test_train"
+# out = os.path.join(path, "{}.stl".format(name))
+# print("Outputting ", out)
+# exporters.export(arbour.getShape(), out)
 
 # r1 = 50
 # r2 = 30

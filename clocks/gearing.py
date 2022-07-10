@@ -81,7 +81,7 @@ class Gear:
 
         cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
 
-        if withWeight:
+        if withWeight and outerRadius/innerRadius > 2:
             #infilled bit off to the left (in reality a counterweight to the bit that holds the rod)
             spokesShape = spokesShape.add(cq.Workplane("XY").moveTo(-outerRadius,0).rect(weightWide*2, outerRadius*2).extrude(cutterThick))
             # angle = degToRad(10)
