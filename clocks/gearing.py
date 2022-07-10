@@ -10,6 +10,10 @@ class GearStyle(Enum):
     CIRCLES = "circles"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
+    #unimplemented:
+    FLOWER = "flower"
+    SPOKES = "spokes"
+    HONEYCOMB = "honeycomb"
 
 '''
 ideas for new styles:
@@ -52,8 +56,36 @@ class Gear:
             return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=4)
         if style == GearStyle.SIMPLE5:
             return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=5)
+        if style == GearStyle.SPOKES:
+            return Gear.cutSpokesStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
 
         return gear
+
+
+    @staticmethod
+    def cutSpokesStyle(gear, outerRadius, innerRadius, pairs = 7):
+        armThick = outerRadius * 0.1
+
+        spokes = cq.Workplane("XY")
+
+        cutterThick = 100
+
+        # for i in range(pairs):
+        #     pair = cq.Workplane("XY").moveTo(-innerRadius, 0).rect(armThick, outerRadius*3).mirrorY().extrude(cutterThick)
+        #     spokes = spokes.add(pair.rotate((0,0,0), (0,0,1),i*360/pairs))
+
+        for i in range(pairs):
+            pair = cq.Workplane("XY").moveTo(-innerRadius, outerRadius/2).rect(armThick, outerRadius).mirrorY().extrude(cutterThick)
+            spokes = spokes.add(pair.rotate((0,0,0), (0,0,1),i*360/pairs))
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
+
+        cutter = cutter.cut(spokes)
+
+        gear = gear.cut(cutter)
+
+        return gear
+
     @staticmethod
     def cutSimpleStyle(gear, outerRadius, innerRadius, arms=4):
         armThick = outerRadius*0.2#0.15

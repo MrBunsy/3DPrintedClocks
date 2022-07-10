@@ -1059,23 +1059,8 @@ class ClockPlates:
         # slotLength = 7
 
         if back:
-            #extra bit around the screwhole
-            #r = self.goingTrain.chainWheel.diameter*1.25
-            # plate = plate.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]-7-11/2).circle(holderWide*0.75).extrude(self.plateThick)
+
             backThick = max(self.getPlateThick(back)-5, 4)
-
-            extraSupport = True
-
-            if self.usingPulley and self.heavy:
-                #the back plate is wide enough to accomodate
-                extraSupport = False
-
-            weightX = 0
-
-            weightOnSide = 1 if self.weightOnRightSide else -1
-            if self.heavy and not self.usingPulley:
-                # line up the hole with the big heavy weight
-                weightX = weightOnSide * self.goingTrain.poweredWheel.diameter / 2
 
             screwHeadD = 11
             for screwPos in screwHolePositions:
@@ -1103,20 +1088,9 @@ class ClockPlates:
                 plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR * 0.9999).extrude(self.plateDistance)
 
             if self.extraHeavy:
-                #beef up the top pillar
-                # if anchorSpace > topPillarR:
-                #     spaceR = anchorSpace
-                #     pillarBottomZ = self.bearingPositions[-1][1] - math.sqrt(anchorSpace**2 - topPillarR ** 2)
-                # else:
-                #     spaceR = topPillarR
-                #     pillarBottomZ = topPillarPos[1] - topPillarR*2
-                #
-                # plate = plate.workplaneFromTagged("top").moveTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR).lineTo(topPillarPos[0] + topPillarR, pillarBottomZ).\
-                #     radiusArc((topPillarPos[0] - topPillarR, pillarBottomZ),-spaceR).close().extrude(self.plateDistance)
                 sagitta = topPillarR*0.25
                 plate = plate.workplaneFromTagged("top").moveTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR).lineTo(topPillarPos[0] + topPillarR, topPillarPos[1]-topPillarR - sagitta).\
                     sagittaArc((topPillarPos[0] - topPillarR, topPillarPos[1]-topPillarR-sagitta), -sagitta).close().extrude(self.plateDistance)
-                #line(-topPillarR*2,0)
             else:
                 plate = plate.workplaneFromTagged("top").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR*0.9999).extrude(self.plateDistance)
 
@@ -1134,13 +1108,7 @@ class ClockPlates:
 
 
         if back:
-
-
-
             chainHoles = self.getChainHoles(absoluteZ=True, bottomPillarPos=bottomPillarPos, bottomPillarR=bottomPillarR)
-
-
-
             plate = plate.cut(chainHoles)
         else:
            plate = self.frontAdditionsToPlate(plate)
@@ -1148,11 +1116,7 @@ class ClockPlates:
         fixingScrewD = 3
 
         #screws to fix the plates together
-        # if back:
         plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
-        # else:
-        #can't get the countersinking to work
-        #     plate = plate.workplaneFromTagged("top").pushPoints(fixingPositions).cskHole(diameter=fixingScrewD, cskAngle=90, cskDiameter=getScrewHeadDiameter(fixingScrewD), depth=None)#.cutThruAll()
 
 
         if back:
@@ -1601,6 +1565,11 @@ class Assembly:
         #TODO weight?
 
         return clock
+
+    def getSpanner(self, size, length=180):
+        '''
+
+        '''
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))

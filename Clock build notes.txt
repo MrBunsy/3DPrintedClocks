@@ -194,3 +194,6 @@ I've noticed teh hour hand is really very loose, especially when the motion work
 
 
 IDEA - refactor so there's a Screw class which holds together all the useful info: thread size, head type (and sizes) and can produce cuttable shapes
+
+Clock 10:
+The standoff on the cordwheel cap needs to be taller - the thinner caps can be a bit wonky and then it is in contact with the front plate. Alternatively: go back to 2mm thick?

@@ -86,6 +86,12 @@ if 'show_object' not in globals():
 
 # show_object(poweredArbour.getExtraRatchet())
 
-dial = Dial(outsideD=200)
+pair = WheelPinionPair(80,10)
 
-show_object(dial.getDial())
+arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.SPOKES)
+
+show_object(arbour.getShape())
+
+# dial = Dial(outsideD=200)
+#
+# show_object(dial.getDial())
