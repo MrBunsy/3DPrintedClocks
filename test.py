@@ -88,10 +88,21 @@ if 'show_object' not in globals():
 
 pair = WheelPinionPair(80,10)
 
-arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.SPOKES)
+arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.STEAMTRAIN)
 
 show_object(arbour.getShape())
 
+# r1 = 50
+# r2 = 30
+# d = 60
+# # show_object(cq.Sketch().circle(r1).push([cq.Location(cq.Vector(0,d))]).circle(r2).hull())
+# # .located(cq.Location(cq.Vector(0,d)))
+#
+# show_object(cq.Workplane("XY").sketch()
+#     .arc((0,0),1.,0.,360.)
+#     .arc((1,10),0.5,0.,360.)
+#     # .segment((0.,2),(-1,3.))
+#     .hull().finalize().extrude(5))
 # dial = Dial(outsideD=200)
 #
 # show_object(dial.getDial())

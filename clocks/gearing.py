@@ -10,9 +10,10 @@ class GearStyle(Enum):
     CIRCLES = "circles"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
+    SPOKES = "spokes"
+    STEAMTRAIN = "steamtrain"
     #unimplemented:
     FLOWER = "flower"
-    SPOKES = "spokes"
     HONEYCOMB = "honeycomb"
 
 '''
@@ -58,21 +59,60 @@ class Gear:
             return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=5)
         if style == GearStyle.SPOKES:
             return Gear.cutSpokesStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
+        if style == GearStyle.STEAMTRAIN:
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
 
         return gear
 
+    @staticmethod
+    def cutSteamTrainStyle(gear, outerRadius, innerRadius, spokes=20, withWeight=True):
+        '''
+        Without the weight this could be a cartwheel
+        '''
+        armThick = outerRadius * 0.05
+        # weightR = (outerRadius + innerRadius)*0.8
+        weightWide = outerRadius*0.3
+        spokesShape = cq.Workplane("XY")
+        cutterThick = 100
+
+        for i in range(spokes):
+            spoke = cq.Workplane("XY").moveTo(0, outerRadius / 2).rect(armThick, outerRadius).extrude(cutterThick)
+            spokesShape = spokesShape.add(spoke.rotate((0, 0, 0), (0, 0, 1), i * 360 / spokes))
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
+
+        if withWeight:
+            #infilled bit off to the left (in reality a counterweight to the bit that holds the rod)
+            spokesShape = spokesShape.add(cq.Workplane("XY").moveTo(-outerRadius,0).rect(weightWide*2, outerRadius*2).extrude(cutterThick))
+            # angle = degToRad(10)
+            smallCircleR = innerRadius*0.75
+            smallCircleDistance = (innerRadius + outerRadius)*0.3
+            # spokesShape = spokesShape.add(cq.Sketch()..circle(innerRadius).located())
+
+            # start = polar(math.pi/2 - angle, innerRadius)
+            # middleRelative = polar(math.pi/2 - angle, smallCircleR)
+            # #circularish bit that would hold a rod!
+            # spokesShape = spokesShape.add(cq.Workplane("XY").mo)
+            #I really don't understand CQ sketches it turns out, but from copy-pasting and bodging an example I can hull two circles by magic:
+            spokesShape = spokesShape.add(cq.Workplane("XY").sketch()
+            .arc((0, 0), innerRadius, 0., 360.)
+            .arc((smallCircleDistance, 0), smallCircleR, 0., 360.)
+            .hull().finalize().extrude(cutterThick))
+
+        cutter = cutter.cut(spokesShape)
+
+        gear = gear.cut(cutter)
+
+        # gear = gear.faces(">Z").workplane().moveTo(0,0)
+
+        return gear
 
     @staticmethod
     def cutSpokesStyle(gear, outerRadius, innerRadius, pairs = 7):
         armThick = outerRadius * 0.1
 
         spokes = cq.Workplane("XY")
-
         cutterThick = 100
-
-        # for i in range(pairs):
-        #     pair = cq.Workplane("XY").moveTo(-innerRadius, 0).rect(armThick, outerRadius*3).mirrorY().extrude(cutterThick)
-        #     spokes = spokes.add(pair.rotate((0,0,0), (0,0,1),i*360/pairs))
 
         for i in range(pairs):
             pair = cq.Workplane("XY").moveTo(-innerRadius, outerRadius/2).rect(armThick, outerRadius).mirrorY().extrude(cutterThick)
@@ -221,7 +261,7 @@ class Gear:
         gear = gear.extrude(thick)
 
         if holeD > 0:
-            gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
+            gear = gear.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
 
         if self.iswheel:
             rimThick = max(self.pitch_diameter * 0.035, 3)
@@ -264,7 +304,7 @@ class Gear:
 
         arbour = base.add(top)
 
-        arbour = arbour.faces(topFace).workplane().circle(self.getMaxRadius()).extrude(capThick).circle(holeD / 2).cutThruAll()
+        arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(self.getMaxRadius()).extrude(capThick).faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
 
         if not front:
             #make sure big side is on the bottom.
