@@ -40,7 +40,7 @@ train.printInfo()
 
 pendulumSticksOut=30
 
-train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknessReduction=0.9, chainWheelThick=3, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,ratchetInset=True)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknessReduction=0.9, chainWheelThick=3, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,ratchetInset=True, ratchetScrewsPanHead=False)#, chainModuleIncrease=1.1)
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 

@@ -495,7 +495,7 @@ class Pulley:
 
 class CordWheel:
     '''
-    This will be a replacement for the chainwheel, instead of using a chain this will be clock cord.
+    This will be a replacement for the chainwheel, instead of using a chain this will be a coiled up clock cord.
     One end will be tied to the wheel and then the wheel wound up.
 
     Two options: use a key to wind it up, or have a double wheel and one half winds when the other unwinds, then you can tug the wound up side
@@ -503,23 +503,15 @@ class CordWheel:
 
     Made of two segments (one if using key) and a cap. Designed to be attached to the ratchet click wheel
 
-    If useFriction is true: this will be a hemp cord/rope (hemp should have more friction) with a counterweight and a V-shaped pulley.
-    Apparently this can work, I'll find out! Should be nearer to a drop in replacement for the chain wheel
-    Didn't work.
-
-    With key (but not gear) plan is for the key square bit (need name) to be part of the main segement, with a cap that just slots on top
-    this makes the screws easier, hopefully
-
-
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, keyHeight=60):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, windingKeyHeightFromPlate=60, windingKeyHandleLength=30):
 
         self.diameter=diameter
-        #thickness of one segment
+        #thickness of one segment (the bit where the cord coils up)
         self.thick=thick
-        #if true, a key can be used to wind this cord wheel
+        #if true, a key can be used to wind this cord wheel (if false, there are two cord winding segements)
         self.useKey=useKey
         #1mm felt too flimsy
         #2mm was fine, but I'm trying to reduce depth as much as possible
@@ -532,59 +524,55 @@ class CordWheel:
         self.bearingInnerD=bearingInnerD
         self.bearingOuterD=bearingOuterD
         self.bearingHeight=bearingHeight
-        #this is the bit that sticks out the front of the clock. I suck at names
+        #this is the square bit that sticks out the front of the clock. I suck at names
         self.keySquareBitHeight=keySquareBitHeight
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
-        # self.screwLength=screwLength
 
         self.style = style
 
+        #how far from the centre are the screws that hold this together
         self.fixingDistance=self.diameter*0.3
 
         if self.useKey:
-            #worked but I'm trying to reduce diameter and still work
-            #self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 3
             self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 1
 
-        # # at angle so it can fit nicely with the polygon for the key - but this then clashes with teh simple cord hole
-        # self.fixingPoints = [polar(math.pi / 4, self.fixingDistance), polar(math.pi + math.pi / 4, self.fixingDistance)]
         self.fixingPoints = [(self.fixingDistance,0), (-self.fixingDistance,0)]
         self.cordThick=cordThick
 
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
         self.clickWheelExtra=LAYER_THICK
-        self.beforeBearingExtraHeight= LAYER_THICK*2
+        #even the 2mm cap got a bit wonky, so ensure lots of clearence from the front plate
+        self.beforeBearingExtraHeight = 0.8
         self.ratchet = ratchet
         self.keyScrewHoleD = self.screwThreadMetric
 
-        if not self.useKey:
-            #two sections, one for winding up while the other winds down
+
+        if self.useKey:
+            minScrewLength = self.ratchet.thick/2 + self.capThick*2 + self.thick
+            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
+        else:
+            # two sections, one for winding up while the other winds down
             minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
             if self.useKey:
                 minScrewLength -= self.thick
             print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
-        elif self.useKey:
-            minScrewLength = self.ratchet.thick/2 + self.capThick*2 + self.thick
-            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
         #extra radius to add to stand off from a bearing
         self.bearingLip=bearingLip
         self.bearingWiggleRoom = 0.05
         self.keyWiggleRoom = 0.75
 
-        #cap for key is extra chunky so there's space to put the nuts to hold it together
-        self.keyCapExtraHeight=2
-
         if self.useKey:
             self.keyWallThick = 2.5
             # enough to cut out the key itself
             self.keyWidth = self.keyWallThick * 2 + self.bearingInnerD
-            #this is the length of the handle of the key if it's knob-type
-            self.keyHandleLength = 40
-            #this is the length of the bit that will be slotted onto the keysquarebit
-            self.keyHeight = keyHeight
+            #this is the length of the handle of the key if it's knob-type (needs to be short enough that it won't bump into the motion works, or else windingKeyHeightFromPlate needs to be
+            #long enough that we're above the motion works)
+            self.windingKeyHandleLength = windingKeyHandleLength
+            #this is how far from the front of the clock the winding handle of the key will be
+            self.windingKeyHeightFromPlate = windingKeyHeightFromPlate
             #thickness of the handle
-            self.keyThick = 5
+            self.windingKeyHandleThick = 5
 
     def getNutHoles(self):
 
@@ -699,40 +687,8 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
-        # if self.style == "HAC":
-        #     cap = Gear.cutHACStyle(cap,self.rodD*0.75,self.capDiameter/2-self.rodD*0.75, self.diameter/2 + self.cordThick)
-        # elif self.style == "circles":
-        #     cap = Gear.cutCirclesStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius= self.diameter / 2 + self.cordThick)
         cap = Gear.cutStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style)
         return cap
-
-    def getKeyShape(self, shape):
-        '''
-        just part of the key
-        '''
-
-        keyCap = shape.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + 1).extrude(self.beforeBearingExtraHeight)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight)
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom).extrude(self.keySquareBitHeight)
-
-        return keyCap
-
-
-    def getKeyCap(self):
-        '''
-        Cap for the top, but with a key as well
-        This is not quite finished, no hole for the nuts, but I don't think I'm going to use it as I want to gear down for a key to pull 2.5kg
-        '''
-        # screwHeight =
-        #extra height so we have soemthign to hold the nuts
-
-        keyCap = self.getCap(extraThick=self.keyCapExtraHeight)
-
-        keyCap = self.getKeyShape(keyCap)
-
-
-        keyCap = keyCap.faces(">Z").workplane().moveTo(0, 0).circle(self.rodD/2).cutThruAll()
-        return keyCap
 
     def getClickWheelForCord(self):
         clickwheel = self.ratchet.getInnerWheel()
@@ -772,7 +728,7 @@ class CordWheel:
 
         return clickwheel
 
-    def getKey(self, withKnob=True):
+    def getWindingKey(self, withKnob=True):
         '''
         winding key! this is one with a little arm and handle
 
@@ -784,39 +740,39 @@ class CordWheel:
 
         if withKnob:
             #base for handle
-            key = cq.Workplane("XY").radiusArc((self.keyWidth,0),-self.keyWidth/2).lineTo(self.keyWidth, self.keyHandleLength).radiusArc((0, self.keyHandleLength), -self.keyWidth / 2).close().extrude(self.keyThick)
+            key = cq.Workplane("XY").radiusArc((self.keyWidth,0),-self.keyWidth/2).lineTo(self.keyWidth, self.windingKeyHandleLength).radiusArc((0, self.windingKeyHandleLength), -self.keyWidth / 2).close().extrude(self.windingKeyHandleThick)
             # hole to screw in the knob (loose)
-            key = key.faces(">Z").workplane().tag("top").moveTo(self.keyWidth / 2, self.keyHandleLength).circle(self.screwThreadMetric / 2 + 0.2).cutThruAll()
+            key = key.faces(">Z").workplane().tag("top").moveTo(self.keyWidth / 2, self.windingKeyHandleLength).circle(self.screwThreadMetric / 2 + 0.2).cutThruAll()
         else:
             key = cq.Workplane("XY").tag("top")
 
-            keyGripTall = min(self.keyHeight*0.3,15)
+            keyGripTall = min(self.windingKeyHeightFromPlate * 0.3, 15)
             keyGripWide = self.keyWidth*2.5
 
             # grippyBit = cq.Workplane("XZ").rect(keyGripWide,keyGripTall).extrude(self.keyWallThick)
             r=keyGripWide*0.1
 
             grippyBit = cq.Workplane("XZ").lineTo(keyGripWide/2,0).lineTo(keyGripWide/2,keyGripTall).tangentArcPoint((-r,r*1.25))\
-                .tangentArcPoint((0,keyGripTall),relative=False).mirrorY().extrude(self.keyThick)
+                .tangentArcPoint((0,keyGripTall),relative=False).mirrorY().extrude(self.windingKeyHandleThick)
             # return grippyBit
-            key = key.add(grippyBit.translate((self.keyWidth/2,self.keyThick/2,0)))
+            key = key.add(grippyBit.translate((self.keyWidth / 2, self.windingKeyHandleThick / 2, 0)))
 
 
 
         #key bit
-        key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.keyHeight)
+        key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.windingKeyHeightFromPlate)
 
-        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keySquareBitHeight).translate((0, 0, self.keyThick + self.keyHeight - self.keySquareBitHeight))
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keySquareBitHeight).translate((0, 0, self.windingKeyHandleThick + self.windingKeyHeightFromPlate - self.keySquareBitHeight))
 
         key = key.cut(keyHole)
 
         return key
 
 
-    def getKeyKnob(self):
+    def getWindingKnob(self):
         r = self.bearingInnerD/2
 
-        screwLength = 30 - self.keyThick
+        screwLength = 30 - self.windingKeyHandleThick
 
         # circle = cq.Workplane("XY").circle(r)
         # knob = cq.Workplane("XZ").lineTo(r, 0).radiusArc((r*2,r),r).radiusArc((r*2,r*3),-r).lineTo(0,r*3).close().sweep(circle)
@@ -907,14 +863,28 @@ class CordWheel:
 
     def outputSTLs(self, name="clock", path="../out"):
 
-
-
         out = os.path.join(path, "{}_cordwheel_bottom_segment.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getSegment(False), out)
 
-        if not self.useKey:
-            #extra bits where the other cord coils up
+        if self.useKey:
+            out = os.path.join(path, "{}_cordwheel_top_cap.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getCap(top=True), out)
+
+            out = os.path.join(path, "{}_cordwheel_winder.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getWindingKey(), out)
+
+            out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getWindingKey(withKnob=False), out)
+
+            out = os.path.join(path, "{}_cordwheel_winder_knob.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getWindingKnob(), out)
+        else:
+            # extra bits where the other cord coils up
             out = os.path.join(path, "{}_cordwheel_cap.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.getCap(), out)
@@ -922,25 +892,6 @@ class CordWheel:
             out = os.path.join(path, "{}_cordwheel_top_segment.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.getSegment(True), out)
-
-        if self.useKey:
-            out = os.path.join(path, "{}_cordwheel_top_cap.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.getCap(top=True), out)
-
-            out = os.path.join(path, "{}_cordwheel_key_with_knob.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.getKey(), out)
-
-            out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.getKey(withKnob=False), out)
-
-            out = os.path.join(path, "{}_cordwheel_key_knob.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.getKeyKnob(), out)
-
-
 
         out = os.path.join(path, "{}_cordwheel_click.stl".format(name))
         print("Outputting ", out)
