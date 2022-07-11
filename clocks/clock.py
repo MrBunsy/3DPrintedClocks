@@ -1097,9 +1097,9 @@ class ClockPlates:
             textMultiMaterial = cq.Workplane("XY")
             textSize = topPillarR * 0.9
             textY = (self.bearingPositions[0][1] + fixingPositions[2][1])/2
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.5, textY), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.4, textY), textSize)
 
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.5, textY), textSize)
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.6, textY), textSize)
 
             if getText:
                 return textMultiMaterial
