@@ -506,7 +506,7 @@ class CordWheel:
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, windingKeyHeightFromPlate=60, windingKeyHandleLength=30):
+    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000):
 
         self.diameter=diameter
         #thickness of one segment (the bit where the cord coils up)
@@ -528,6 +528,9 @@ class CordWheel:
         self.keySquareBitHeight=keySquareBitHeight
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
+
+        #default length, in mm
+        self.cordLength=cordLength
 
         self.style = style
 
@@ -573,6 +576,52 @@ class CordWheel:
             self.windingKeyHeightFromPlate = windingKeyHeightFromPlate
             #thickness of the handle
             self.windingKeyHandleThick = 5
+
+    def getChainHoleD(self):
+        (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo()
+
+        return self.cordThick * layers * 1.25
+
+    def getChainPositionsFromTop(self):
+        '''
+        Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
+        but two coordinates [top, bottom] if the hole should be elongated.
+        For example: chain would be just two round holes at the same z height [ [(-3,-5)], [(3,-5)]]
+        Z coordinates are relative to the "front" of the chain wheel - the side furthest from the wheel
+        (this is because the ratchet could be inset and the wheel could be different thicknesses)
+
+         [ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
+
+
+        '''
+
+        (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo(cordLength=self.cordLength)
+
+        chainX = (self.diameter / 2 + self.cordThick * layers / 2)
+
+        if self.useKey:
+            #one hole only
+            chainZTop = -self.beforeBearingExtraHeight - self.capThick
+            chainZBottom = chainZTop - self.thick
+
+            side = 1 if self.ratchet.isClockwise() else -1
+            chainX *= side
+            #don't worry about the pulley hole, the plates will do that if needed
+            return [ [(chainX, chainZTop), (chainX, chainZBottom)] ]
+        else:
+            #make the weight segment the one nearer the wall to be consistent with old designs (idea was to ensure less flexing of plates, but as they've got closer this might
+            #make the weight a bit close to teh wall?)
+            weightSegmentBottomZ = - WASHER_THICK - self.capThick - self.thick - self.capThick - self.thick
+            weightSegmentTopZ = - WASHER_THICK - self.capThick - self.thick - self.capThick
+            windSegmentBottomZ = - WASHER_THICK - self.capThick - self.thick
+            windSegmentTopZ = - WASHER_THICK - self.capThick
+
+            if self.ratchet.isClockwise():
+                weightSide = 1
+            else:
+                weightSide = -1
+            return [ [ (chainX*weightSide, weightSegmentTopZ), (chainX*weightSide, weightSegmentBottomZ) ], [(chainX*weightSide*(-1), windSegmentTopZ), (chainX*weightSide*(-1), windSegmentBottomZ)] ]
+
 
     def getNutHoles(self):
 
@@ -801,10 +850,14 @@ class CordWheel:
         #minute hand rotates once per hour, so this answer will be in hours
         return (rotations * minuteRatio)
 
-    def getCordTurningInfo(self, cordLength):
+    def getCordTurningInfo(self, cordLength=-1):
         '''
         returns (rotations, layers, cordPerRotationPerLayer)
         '''
+
+        if cordLength < 0:
+            cordLength = self.cordLength
+
         lengthSoFar = 0
         rotationsSoFar = 0
         coilsPerLayer = floor(self.thick / self.cordThick)
@@ -908,14 +961,12 @@ class ChainWheel:
     Note it's fiddly to get the tolerance right, you want a larger tolerance value ot make it more reliable, but then you get a little 'clunk'
     every time a link leaves.
 
+    This needs a ratchet, but the ratchet is generated in the GonigTrain and then set with setRatchet until I feel like refactoring this
+    This whole thing really could do with an overhaul, but I don't expect to be using chains much in the future so it'll probably not happen
+
     '''
-    # def anglePerLink(self, radius):
-    #     return math.atan(((self.chain_thick + self.chain_inside_length)/2) / (radius + self.chain_thick/2))
 
-    # def getRadiusFromAnglePerLink(self, angle):
-    #     return ( (self.chain_thick + self.chain_inside_length)/2 ) / math.tan(angle/2) - self.chain_thick/2
-
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=2, screwThreadLength=10, bearing=None):
+    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=2, screwThreadLength=10):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
@@ -928,12 +979,6 @@ class ChainWheel:
         self.rodMetricSize=math.floor(holeD)
         self.screwD=screwD
         self.screwThreadLength=screwThreadLength
-        self.bearing=bearing
-        if bearing is None:
-            # I'd been pondering using bearings to reduce chance of hands turning backwards when winidn the chain
-            # I've changed  my mind and I think that having the minute wheel firmly attached to the minute rod will be sufficient to avoid the problem
-            self.useBearings = False
-
 
         self.chain_width = width
         self.chain_thick = wire_thick
@@ -971,16 +1016,29 @@ class ChainWheel:
         self.wall_thick = 1.5
         self.pocket_wall_thick = inside_length - wire_thick*4
 
-        if self.useBearings:
-            #so the bearing can fit in and still have space for the screws
-            self.extra_height=self.bearing.bearingHeight
-        else:
-            self.extra_height = 0
-
-
         self.inner_width = width*1.2
 
         self.hole_distance = self.diameter*0.25
+
+    def getChainHoleD(self):
+        return self.chain_width + 2
+
+    def getChainPositionsFromTop(self):
+        '''
+        Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
+        but two coordinates [top, bottom] if the hole should be elongated.
+        For example: chain would be just two round holes at the same z height [ [(-3,-5)], [(3,-5)]]
+        Z coordinates are relative to the "front" of the chain wheel - the side furthest from the wheel
+        (this is because the ratchet could be inset and the wheel could be different thicknesses)
+
+         [ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
+
+
+        '''
+
+        zOffset = - WASHER_THICK - self.wall_thick - self.inner_width/2
+
+        return [ [(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)] ]
 
     def getTurnsForDrop(self, chainDrop):
         return chainDrop / self.circumference
@@ -990,7 +1048,7 @@ class ChainWheel:
         Returns total height of the chain wheel, once assembled, including the ratchet
         includes washer as this is considered part of the full assembly
         '''
-        return self.inner_width + self.wall_thick*2 + self.extra_height + self.ratchet.thick + WASHER_THICK
+        return self.inner_width + self.wall_thick*2 + self.ratchet.thick + WASHER_THICK
 
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
@@ -1003,17 +1061,8 @@ class ChainWheel:
         '''
 
         halfWheel = cq.Workplane("XY")
-        extraHeight = 0
-        if not sideWithClicks:
-            extraHeight = self.extra_height
-            # halfWheel = halfWheel.circle(self.outerDiameter/2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
-        # else:
-        #     #not having a wall if we're going to be attached to the ratchet
-        #     # halfWheel = halfWheel.tag("inside")
-        #     #changed mind, it looks like the chain might catch a bit
-        #     halfWheel = halfWheel.circle(self.outerDiameter / 2).extrude(self.wall_thick*0.5).faces(">Z").workplane().tag("inside")
 
-        halfWheel = halfWheel.circle(self.outerDiameter / 2).extrude(self.wall_thick + extraHeight).faces(">Z").workplane().tag("inside")
+        halfWheel = halfWheel.circle(self.outerDiameter / 2).extrude(self.wall_thick).faces(">Z").workplane().tag("inside")
 
         # width = self.chain_width*1.2
 
@@ -1058,18 +1107,9 @@ class ChainWheel:
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
         halfWheel = halfWheel.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
-        if sideWithClicks or not self.useBearings:
+        if sideWithClicks:
             halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(self.screwD / 2).cutThruAll()
             halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(self.screwD / 2).cutThruAll()
-        else:
-            #don't need screw heads
-            holes = cq.Workplane("XY").pushPoints([(0, self.hole_distance), (0,-self.hole_distance)]).circle(self.screwD/2).extrude(200).translate((0,0,self.bearing.bearingHeight + LAYER_THICK*2))
-
-            halfWheel = halfWheel.cut(holes)
-
-        if not sideWithClicks and self.useBearings:
-            #space for the bearing
-            halfWheel = halfWheel.cut(getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight))
 
         if not sideWithClicks:
             #need space for the nuts
@@ -1091,27 +1131,24 @@ class ChainWheel:
 
         combined = clickwheel.add(chain)
 
-        if self.useBearings:
-            bearingHole = getHoleWithHole(self.holeD, self.bearing.bearingOuterD, self.bearing.bearingHeight)
-            combined = combined.cut(bearingHole)
+
+
+        totalHeight=self.inner_width + self.wall_thick*2 + ratchet.thick
+
+        #if I don't have screws long enough, sink them further into the click bit
+        headDepth = self.screwD*METRIC_HEAD_DEPTH_MULT
+        if self.screwThreadLength + headDepth < totalHeight:
+            headDepth +=totalHeight - (self.screwThreadLength + headDepth)
+            print("extra head depth: ", headDepth)
         else:
+            print("need M{} screw of length {}mm".format(self.screwD, totalHeight-headDepth))
 
-            totalHeight=self.inner_width + self.wall_thick*2 + self.extra_height + ratchet.thick
-
-            #if I don't have screws long enough, sink them further into the click bit
-            headDepth = self.screwD*METRIC_HEAD_DEPTH_MULT
-            if self.screwThreadLength + headDepth < totalHeight:
-                headDepth +=totalHeight - (self.screwThreadLength + headDepth)
-                print("extra head depth: ", headDepth)
-            else:
-                print("need M{} screw of length {}mm".format(self.screwD, totalHeight-headDepth))
-
-            #space for the heads of the screws
-            #general assumption: screw heads are double the diameter of the screw and the same depth as the screw diameter
-            screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,headDepth).translate((0,self.hole_distance,0))
-            screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, headDepth).translate((0, -self.hole_distance, 0)))
-            # return screwHeadSpace
-            combined = combined.cut(screwHeadSpace)
+        #space for the heads of the screws
+        #general assumption: screw heads are double the diameter of the screw and the same depth as the screw diameter
+        screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,headDepth).translate((0,self.hole_distance,0))
+        screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, headDepth).translate((0, -self.hole_distance, 0)))
+        # return screwHeadSpace
+        combined = combined.cut(screwHeadSpace)
 
         return combined
 
