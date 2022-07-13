@@ -498,15 +498,20 @@ class RopeWheel:
     Drop in replacement for chainwheel, but uses friction to hold a hemp rope
     '''
 
-    def __init__(self, diameter, ratchet, rodMetricSize=3, screwMetricSize=2, ropeThick=2.2):
+    def __init__(self, diameter, ratchetThick, ratchetMaxOuterD=-1, rodMetricSize=3, screw=None, ropeThick=2.2, wallThick=2):
         self.diameter=diameter
-        self.ratchet=ratchet
+
         self.rodMetricSize=rodMetricSize
-        self.screwMetricSize=screwMetricSize
+        self.screw = screw
+        if self.screw is None:
+            self.screw = MachineScrew(2)
         self.ropeThick=ropeThick
 
-        #min thickness
-        self.wallThick=2
+        self.screwPositions = [(-self.diameter*0.3, 0), (self.diameter*0.3, 0)]
+
+
+        #min thickness, adjustable to help with selecting screws
+        self.wallThick=wallThick
         #width of the opening the rope will slot into
         self.gulleyWide = self.ropeThick*1.5
         #how far our the gulley extends (extra diameter)
@@ -517,6 +522,18 @@ class RopeWheel:
         circumference = math.pi*diameter
         self.nibs= math.floor(0.5*circumference/ropeThick)
         self.nibThick = 1
+
+        ratchetOuterD = (self.diameter + self.extraRim*2)*2
+        if ratchetMaxOuterD > 0 and ratchetOuterD > ratchetMaxOuterD:
+            ratchetOuterD = ratchetMaxOuterD
+        self.ratchet = Ratchet(thick=ratchetThick, totalD=ratchetOuterD, innerRadius=self.diameter/2 - self.ropeThick/2 + self.extraRim)
+
+
+        if self.screw.countersunk:
+            screwLength = self.getHeight()-WASHER_THICK
+        else:
+            screwLength = self.getHeight() - WASHER_THICK - self.screw.getHeadHeight()
+        print("{} screw length {}".format(self.screw.getString(), screwLength))
 
     def getChainHoleD(self):
         return self.ropeThick + 2.5
@@ -554,19 +571,32 @@ class RopeWheel:
             ropeWheel = ropeWheel.add(nib.rotate((0,0,0), (0,0,1), radToDeg(angle)))
 
 
+
+
+        if not top:
+            ropeWheel = ropeWheel.translate((0,0,self.ratchet.thick)).add(self.ratchet.getInnerWheel())
+
         holeD = self.rodD
         # pulley = pulley.faces(">Z").workplane().circle(holeD/2).cutThroughAll()
         hole = cq.Workplane("XY").circle(holeD / 2).extrude(1000)
 
         ropeWheel = ropeWheel.cut(hole)
 
+
+
+        for pos in self.screwPositions:
+            if top:
+                cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True)
+            else:
+                cutter = self.screw.getCutter()
+
+            ropeWheel = ropeWheel.cut(cutter.translate(pos))
+
         return ropeWheel
 
     def getAssembled(self):
 
-        assembly = self.ratchet.getInnerWheel()
-
-        assembly = assembly.add(self.getHalf(top=False).translate((0,0,self.ratchet.thick)))
+        assembly = self.getHalf(top=False)
 
         assembly = assembly.add(self.getHalf(top=True).rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight()-WASHER_THICK)))
 
@@ -1289,6 +1319,9 @@ class Ratchet:
 
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
+
+    # @staticmethod
+    # def getRatchetWithInnerRadius
 
     def __init__(self, totalD=50, thick=5, powerAntiClockwise=True, innerRadius=0):
         # , chain_hole_distance=10, chain_hole_d = 3):

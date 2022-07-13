@@ -65,9 +65,30 @@ METRIC_HALF_NUT_DEPTH_MULT=0.57
 COUNTERSUNK_HEAD_WIGGLE = 0.2
 COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.1
 
+
+
+def getNutContainingDiameter(metric_thread, wiggleRoom=0):
+    '''
+    Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
+    but the poly() in cq requires:
+    "the size of the circle the polygon is inscribed into"
+
+    so this calculates that
+
+    '''
+
+    nutWidth = metric_thread * METRIC_NUT_WIDTH_MULT
+
+    if metric_thread == 3:
+        nutWidth = 5.4
+
+    nutWidth += wiggleRoom
+
+    return nutWidth / math.cos(math.pi / 6)
+
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
     if halfHeight:
-        return metric_thread*METRIC_HALF_NUT_DEPTH_MULT
+        return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
 
     if metric_thread == 3:
         if nyloc:
@@ -90,25 +111,69 @@ def getScrewHeadDiameter(metric_thread, countersunk=False):
         return 6
     return METRIC_HEAD_D_MULT * metric_thread
 
-
-def getNutContainingDiameter(metric_thread, wiggleRoom=0):
+class MachineScrew:
     '''
-    Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
-    but the poly() in cq requires:
-    "the size of the circle the polygon is inscribed into"
-
-    so this calculates that
-
+    Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
+    for screwholes
     '''
 
-    nutWidth = metric_thread*METRIC_NUT_WIDTH_MULT
+    def __init__(self, metric_thread=3, countersunk=False):
+        self.metric_thread=metric_thread
+        self.countersunk=countersunk
 
-    if metric_thread == 3:
-        nutWidth=5.4
+    def getCutter(self, length=1000, facingUp=True, layerThick=LAYER_THICK):
+        '''
+        Returns a (very long) model of a screw designed for cutting a hole in a shape
+        Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
+        if facingDown, then still in exactly the same shape and orentation, but using hole-in-hole for printing with bridging
+        '''
 
-    nutWidth+=wiggleRoom
+        screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
 
-    return nutWidth/math.cos(math.pi/6)
+        if self.countersunk:
+            screw.add(cq.Solid.makeCone(radius1=self.getHeadDiameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=self.metric_thread / 2,
+                                        height=self.getHeadHeight() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
+            #countersunk screw lengths seem to include the head
+            screw= screw.faces(">Z").workplane().circle(self.metric_thread/2).extrude(length - self.getHeadHeight())
+        else:
+            if facingUp:
+                screw = screw.circle(self.getHeadDiameter() / 2).extrude(self.getHeadHeight())
+            else:
+                screw = screw.add(getHoleWithHole(innerD=self.metric_thread, outerD=self.getHeadDiameter(), deep=self.getHeadHeight() ,layerThick=layerThick))
+            #pan head screw lengths do not include the head
+            screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
+
+        return screw
+
+    def getNutCutter(self, nyloc=False, half=False, withScrewLength=0, withBridging=False, layerThick=LAYER_THICK):
+
+        nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
+        nutD = getScrewHeadDiameter(self.metric_thread)
+        if withBridging:
+            nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = nutHeight, sides=6, layerThick=layerThick)
+        else:
+            nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(nutHeight)
+        if withScrewLength > 0:
+            nut = nut.faces(">Z").workplane().circle(self.metric_thread/2).extrude(withScrewLength-nutHeight)
+        return nut
+
+    def getString(self):
+        return "M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
+
+    def getHeadHeight(self,):
+        if self.metric_thread == 3:
+            if self.countersunk:
+                return 1.86
+            return 2.6
+        if self.metric_thread == 2:
+            return 1.2
+
+        return self.metric_thread
+
+    def getHeadDiameter(self):
+        if self.metric_thread == 3:
+            return 6
+        return METRIC_HEAD_D_MULT * self.metric_thread
 
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):
