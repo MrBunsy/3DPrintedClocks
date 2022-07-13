@@ -196,7 +196,7 @@ class WeightShell:
         #internal diameter
         self.diameter=diameter
         self.height = height
-        self.wallThick=1.2
+        self.wallThick=0.45
         #if True then (probably because it's too tall...) print in two sections that slot over top and bottom
         self.twoParts=twoParts
         self.holeD=holeD
@@ -493,6 +493,110 @@ class Pulley:
             print("Outputting ", out)
             exporters.export(self.getHookHalf(), out)
 
+class RopeWheel:
+    '''
+    Drop in replacement for chainwheel, but uses friction to hold a hemp rope
+    '''
+
+    def __init__(self, diameter, ratchet, rodMetricSize=3, screwMetricSize=2, ropeThick=2.2):
+        self.diameter=diameter
+        self.ratchet=ratchet
+        self.rodMetricSize=rodMetricSize
+        self.screwMetricSize=screwMetricSize
+        self.ropeThick=ropeThick
+
+        #min thickness
+        self.wallThick=2
+        #width of the opening the rope will slot into
+        self.gulleyWide = self.ropeThick*1.5
+        #how far our the gulley extends (extra diameter)
+        self.extraRim = self.ropeThick*3
+
+        self.rodD = rodMetricSize + LOOSE_FIT_ON_ROD
+
+        circumference = math.pi*diameter
+        self.nibs= math.floor(0.5*circumference/ropeThick)
+        self.nibThick = 1
+
+    def getChainHoleD(self):
+        return self.ropeThick + 2.5
+
+    def getHalf(self, top=False):
+        radius = self.diameter / 2 - self.ropeThick/2
+
+
+
+        # from the side
+        bottomPos = (radius + self.extraRim, 0)
+        topOfEdgePos = (radius + self.extraRim, self.wallThick)
+        middlePos = (radius, self.wallThick + self.gulleyWide/2)
+
+        # edgeR = self.diameter/2 + self.cordDiameter/4
+        # middleR = self.diameter/2 - self.cordDiameter/2
+
+        circle = cq.Workplane("XY").circle(self.diameter / 2)
+        ropeWheel = cq.Workplane("XZ").moveTo(bottomPos[0], bottomPos[1]).lineTo(topOfEdgePos[0], topOfEdgePos[1]).lineTo(middlePos[0], middlePos[1])
+
+
+        ropeWheel = ropeWheel.lineTo(0, middlePos[1]).lineTo(0, 0).close().sweep(circle)
+
+        offset = 0 if top else 0.5*math.pi*2/self.nibs
+        nibOuterX=radius + self.extraRim*0.9
+        nibInnerX = radius + self.extraRim*0.4
+        nibStart = radius*0.9
+        nibEdgeHeight = self.wallThick + self.gulleyWide*0.25
+        nibMiddleHeight = self.wallThick + self.gulleyWide*0.5
+        for i in range(self.nibs):
+            angle = i*math.pi*2/self.nibs + offset
+
+            nib = cq.Workplane("XZ").moveTo(nibStart,0).lineTo(nibOuterX,0).line(0,nibEdgeHeight).lineTo(nibInnerX,nibMiddleHeight).lineTo(nibStart,nibMiddleHeight).close().extrude(self.nibThick).translate((0,self.nibThick/2,0))
+            # return nib
+            ropeWheel = ropeWheel.add(nib.rotate((0,0,0), (0,0,1), radToDeg(angle)))
+
+
+        holeD = self.rodD
+        # pulley = pulley.faces(">Z").workplane().circle(holeD/2).cutThroughAll()
+        hole = cq.Workplane("XY").circle(holeD / 2).extrude(1000)
+
+        ropeWheel = ropeWheel.cut(hole)
+
+        return ropeWheel
+
+    def getAssembled(self):
+
+        assembly = self.ratchet.getInnerWheel()
+
+        assembly = assembly.add(self.getHalf(top=False).translate((0,0,self.ratchet.thick)))
+
+        assembly = assembly.add(self.getHalf(top=True).rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight()-WASHER_THICK)))
+
+        return assembly
+    def getHeight(self):
+
+        return self.wallThick*2 + self.gulleyWide + self.ratchet.thick + WASHER_THICK
+
+    def outputSTLs(self, name="clock", path="../out"):
+        '''
+        TODO
+        '''
+
+    def getChainPositionsFromTop(self):
+        '''
+        Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
+        but two coordinates [top, bottom] if the hole should be elongated.
+        For example: chain would be just two round holes at the same z height [ [(-3,-5)], [(3,-5)]]
+        Z coordinates are relative to the "front" of the chain wheel - the side furthest from the wheel
+        (this is because the ratchet could be inset and the wheel could be different thicknesses)
+
+         [ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
+
+
+        '''
+
+        zOffset = - WASHER_THICK - self.wallThick - self.gulleyWide / 2
+
+        return [[(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)]]
+
 class CordWheel:
     '''
     This will be a replacement for the chainwheel, instead of using a chain this will be a coiled up clock cord.
@@ -580,7 +684,8 @@ class CordWheel:
     def getChainHoleD(self):
         (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo()
 
-        return self.cordThick * layers * 1.25
+        #assume that the cord is going to squish a bit, so don't need to make this too excessive
+        return self.cordThick * layers
 
     def getChainPositionsFromTop(self):
         '''
@@ -597,7 +702,8 @@ class CordWheel:
 
         (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo(cordLength=self.cordLength)
 
-        chainX = (self.diameter / 2 + self.cordThick * layers / 2)
+        #not in the centre of hte layers, assuming that the cord will be fairly squashed, so offset slightly towards the wheel
+        chainX = (self.diameter / 2 + self.cordThick * layers *0.4)
 
         if self.useKey:
             #one hole only

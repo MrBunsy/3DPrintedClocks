@@ -1143,8 +1143,6 @@ class ClockPlates:
         These chain holes are relative to the front of the back plate - they do NOT take plate thickness or wobble into account
 
         bottomPillarPos needed for screw for pulley cord
-
-        TODO - get the cord/chain wheel to calculate the hard bits!! then they can be treated almost the same here
         '''
 
         holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
@@ -1156,14 +1154,15 @@ class ClockPlates:
             if len(holePosition) > 1:
                 #elongated hole
 
-                chainZTop = topZ + holePosition[0][1]
-                chainZBottom = topZ + holePosition[1][1]
+                chainZTop = topZ + holePosition[0][1] + self.wobble/2
+                chainZBottom = topZ + holePosition[1][1] - self.wobble/2
                 #assuming we're only ever elongated along the z axis
                 chainX = holePosition[0][0]
 
-                chainHole = cq.Workplane("XZ").moveTo(chainX - self.chainHoleD / 2, chainZTop - self.chainHoleD / 2).radiusArc((chainX + self.chainHoleD / 2, chainZTop - self.chainHoleD / 2), self.chainHoleD / 2) \
-                    .lineTo(chainX + self.chainHoleD / 2, chainZBottom + self.chainHoleD / 2).radiusArc((chainX - self.chainHoleD / 2, chainZBottom + self.chainHoleD / 2), self.chainHoleD / 2).close() \
-                    .extrude(1000)
+                # chainHole = cq.Workplane("XZ").moveTo(chainX - self.chainHoleD / 2, chainZTop - self.chainHoleD / 2).radiusArc((chainX + self.chainHoleD / 2, chainZTop - self.chainHoleD / 2), self.chainHoleD / 2) \
+                #     .lineTo(chainX + self.chainHoleD / 2, chainZBottom + self.chainHoleD / 2).radiusArc((chainX - self.chainHoleD / 2, chainZBottom + self.chainHoleD / 2), self.chainHoleD / 2).close() \
+                #     .extrude(1000)
+                chainHole = cq.Workplane("XZ").moveTo(chainX, (chainZTop + chainZBottom)/2).rect(self.chainHoleD, abs(chainZTop - chainZBottom) ).extrude(1000)
                 chainHoles.add(chainHole)
             else:
                 chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + topZ).circle(self.chainHoleD / 2).extrude(1000)
@@ -1191,88 +1190,6 @@ class ClockPlates:
             topZ = self.plateDistance
             pulleyScrewHole = pulleyScrewHole.add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2, height=coneHeight).translate((pulleyX, bottomPillarPos[1], topZ - coneHeight)))
             chainHoles.add(pulleyScrewHole)
-        return chainHoles
-
-        if self.goingTrain.usingChain:
-            chainZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - (self.goingTrain.chainWheel.getHeight() - self.goingTrain.chainWheel.ratchet.thick) / 2 + self.wobble/2
-            leftZ = chainZ
-            rightZ = chainZ
-        else:
-            if self.goingTrain.cordWheel.useKey:
-                #cord wheel with a key (probably for an eight day)
-                #need one elongated hole for the cord
-                chainZTop = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick + self.wobble / 2
-                chainZBottom = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.wobble / 2
-
-                if absoluteZ:
-                    chainZTop += self.getPlateThick(back=True)
-                    chainZBottom += self.getPlateThick(back=True)
-
-                side = 1 if self.weightOnRightSide else -1
-                chainX=side* (self.goingTrain.poweredWheel.diameter / 2 + self.chainHoleD*0.25 )
-
-                chainHole = cq.Workplane("XZ").moveTo(chainX - self.chainHoleD/2, chainZTop-self.chainHoleD/2).radiusArc((chainX +self.chainHoleD/2, chainZTop-self.chainHoleD/2), self.chainHoleD/2)\
-                    .lineTo(chainX + self.chainHoleD/2, chainZBottom + self.chainHoleD/2).radiusArc((chainX - self.chainHoleD/2, chainZBottom + self.chainHoleD/2), self.chainHoleD/2).close()\
-                    .extrude(1000)
-
-                if self.usingPulley:
-                    pulleyX = -chainX
-                    #might want it as far back as possible?
-                    #for now, as far FORWARDS as possible, because the 4kg weight is really wide!
-                    pulleyZ = chainZTop - self.chainHoleD/2#chainZBottom + self.chainHoleD/2#(chainZTop + chainZBottom)/2
-                    #and one hole for the cord to be tied
-                    pulleyHole = cq.Workplane("XZ").moveTo(pulleyX, pulleyZ).circle(self.chainHoleD/2).extrude(1000)
-
-                    print("chainZ min:", chainZBottom, "chainZ max:", chainZTop, "absoluteZ:",absoluteZ)
-
-                    #original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
-                    #so instead, put a screw in from the front
-
-                    #this screw will provide something for the cord to be tied round
-                    pulleyScrewHole = cq.Workplane("XY").moveTo(pulleyX,bottomPillarPos[1]).circle(self.fixingScrewsD/2).extrude(10000)
-                    coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-                    topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-                    topZ=self.plateDistance
-                    if absoluteZ:
-                        topZ+=self.getPlateThick(back=True)
-                    pulleyScrewHole = pulleyScrewHole.add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2,height=coneHeight).translate((pulleyX, bottomPillarPos[1], topZ-coneHeight)))
-
-                    #
-                    # pulleyScrewHole = cq.Workplane("YZ").moveTo(bottomPillarPos[1], pulleyZ).circle(self.fixingScrewsD / 2).extrude(bottomPillarR)
-                    # if False:
-                    #
-                    #     #I like the idea of this for not having a screw sticking out the side, however it leaves very little material to hold the weight
-                    #
-                    #     coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-                    #     topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-                    #     countersink = cq.Workplane("XY").add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2,height=coneHeight)).rotate((0,0,0),(0,1,0),90).translate((bottomPillarR-coneHeight,bottomPillarPos[1],pulleyZ))
-                    #     pulleyHole = pulleyHole.add(countersink)
-
-
-
-                    chainHole = chainHole.add(pulleyHole).add(pulleyScrewHole)
-
-                return chainHole
-            else:
-                #TODO make these elongated too - probably doesn't matter that much as it's only ever going to be a 1 day light weight
-                #assuming a two-section cord wheel, one side coils up as the weight coils down
-                #cord, leaving enough space for the washer as well (which is hackily included in getTotalThickness()
-                bottomZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.thick*1.5 - self.goingTrain.cordWheel.capThick*2 + self.wobble / 2
-                topZ = bottomZ +  self.goingTrain.cordWheel.thick + self.goingTrain.cordWheel.capThick
-
-                if self.weightOnRightSide:
-                    rightZ = bottomZ
-                    leftZ = topZ
-                else:
-                    rightZ = topZ
-                    leftZ = bottomZ
-
-        if absoluteZ:
-            leftZ += self.getPlateThick(back=True)
-            rightZ += self.getPlateThick(back=True)
-
-        chainHoles = cq.Workplane("XZ").pushPoints([(self.goingTrain.poweredWheel.diameter / 2, rightZ), (-self.goingTrain.poweredWheel.diameter / 2, leftZ)]).circle(self.chainHoleD / 2).extrude(1000)
-
         return chainHoles
 
     def getBearingHolder(self, height, addSupport=True, bearingInfo=None):

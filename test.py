@@ -53,10 +53,27 @@ if 'show_object' not in globals():
 # print("for one ball per half hour: {:.2f}".format(clock6torque*6))
 
 
-snail = Snail()
-trigger = StrikeTrigger()
-motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-show_object(motionWorks.getAssembled())
+# pulley = Pulley(diameter=30, vShaped=True)
+#
+# show_object(pulley.getAssembled())
+
+ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=21,totalD=70)
+ropeWheel = RopeWheel(diameter=30,ratchet=ratchet)
+
+# show_object(ropeWheel.getHalf())
+
+show_object(ropeWheel.getAssembled())
+
+# weightShell = WeightShell(50,200)
+#
+# show_object(weightShell.getShell())
+#
+# weightShell.outputSTLs("test","out")
+
+# snail = Snail()
+# trigger = StrikeTrigger()
+# motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
+# show_object(motionWorks.getAssembled())
 # show_object(motionWorks.getHourHolder())
 
 # rack = Rack()

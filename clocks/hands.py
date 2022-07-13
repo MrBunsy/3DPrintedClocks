@@ -2,6 +2,13 @@ from .utility import *
 import cadquery as cq
 import os
 from cadquery import exporters
+from enum import Enum
+
+# class HandStyle(Enum):
+#     SQUARE = "square"
+#     SIMPLE = "simple"
+#     SIMPLE_ROUND = "simple_rounded"
+#     CUCKOO = "cuckoo"
 
 class Hands:
     def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
@@ -83,6 +90,7 @@ class Hands:
             raise ValueError("Combination not supported yet")
 
         return hand
+   
 
     def getHand(self, hour=True, outline=False, second=False):
         '''
@@ -92,6 +100,7 @@ class Hands:
         '''
         base_r = self.base_r
         length = self.length
+        thick = self.thick
         # width = self.length * 0.3
         if hour:
             length = self.length * 0.8
@@ -104,24 +113,26 @@ class Hands:
             base_r = self.secondLength * 0.2
             #don't let it be smaller than the rounded end!
             base_r = max(base_r, self.length * 0.1/2)
+            #want second hand to be as light as possible for the surprisingly marginal 8-day with pulley
+            thick = 1
 
             if self.style == "cuckoo":
                 base_r = self.secondLength * 0.12
 
 
-        hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(self.thick)
+        hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(thick)
 
         if self.style == "simple":
             width = self.length * 0.1
-            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(self.thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(thick)
         elif self.style == "simple_rounded":
             width = self.length * 0.1
             # if second:
             #     width = length * 0.2
-            hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(self.thick)
+            hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(thick)
         elif self.style == "square":
             handWidth = self.length * 0.3 * 0.25
-            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(self.thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(thick)
         elif self.style == "cuckoo":
 
             end_d = self.length * 0.3 * 0.1
@@ -137,7 +148,7 @@ class Hands:
 
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.25, length*0.3).lineTo(end_d / 2, length).radiusArc(
             #     (-end_d / 2, length), -end_d / 2).lineTo(-width * 0.25, length*0.3).close().extrude(ratchetThick)
-            hand = hand.workplaneFromTagged("base").moveTo(width * 0.2, length * 0.3).lineTo(end_d / 2, length).threePointArc((0, length + end_d / 2), (-end_d / 2, length)).lineTo(-width * 0.2, length * 0.3).close().extrude(self.thick)
+            hand = hand.workplaneFromTagged("base").moveTo(width * 0.2, length * 0.3).lineTo(end_d / 2, length).threePointArc((0, length + end_d / 2), (-end_d / 2, length)).lineTo(-width * 0.2, length * 0.3).close().extrude(thick)
 
             # extra round bits towards the end of the hand
             little_sticky_out_dist = width * 0.3
@@ -153,13 +164,13 @@ class Hands:
                 stickyoutblobs = stickyoutblobs.moveTo(0 + math.cos(angle) * little_sticky_out_dist2, centrehole_y + little_sticky_out_d2 * 0.25 + math.sin(angle) * little_sticky_out_dist2).circle(little_sticky_out_d2)
                 # hand =  hand.workplaneFromTagged("base").moveTo(0+math.cos(angle+math.pi/2)*little_sticky_out_d/2,centrehole_y+math.sin(angle+math.pi/2)*little_sticky_out_d/2).lineTo()
                 # hand = hand.workplaneFromTagged("base").moveTo(0, centrehole_y).rot
-            hand = stickyoutblobs.mirrorY().extrude(self.thick)
+            hand = stickyoutblobs.mirrorY().extrude(thick)
 
             # hand = hand.workplaneFromTagged("base").moveTo(0, centrehole_y-centrehole_r).spline([(little_sticky_out_dist*1.6,centrehole_y-little_sticky_out_d*0.6),(little_sticky_out_dist*1.6,centrehole_y+little_sticky_out_d*0.2),(0,centrehole_y)],includeCurrent=True)\
             #     .mirrorY().extrude(ratchetThick)
             hand = hand.workplaneFromTagged("base").moveTo(0, little_sticky_out_y - little_sticky_out_d / 2 + little_sticky_out_d * 0.1).lineTo(little_sticky_out_dist, little_sticky_out_y - little_sticky_out_d / 2).threePointArc(
                 (little_sticky_out_dist + little_sticky_out_d / 2, little_sticky_out_y), (little_sticky_out_dist, little_sticky_out_y + little_sticky_out_d / 2)).line(-little_sticky_out_dist, 0) \
-                .mirrorY().extrude(self.thick)
+                .mirrorY().extrude(thick)
 
             petalend = (width * 0.6, length * 0.45)
 
@@ -167,11 +178,11 @@ class Hands:
             hand = hand.workplaneFromTagged("base").lineTo(width * 0.1, 0).spline([(petalend[0] * 0.3, petalend[1] * 0.1), (petalend[0] * 0.7, petalend[1] * 0.4), (petalend[0] * 0.6, petalend[1] * 0.75), petalend], includeCurrent=True) \
                 .line(0, length * 0.005).spline([(petalend[0] * 0.5, petalend[1] * 0.95), (0, petalend[1] * 0.8)], includeCurrent=True).mirrorY()
             # return hand
-            hand = hand.extrude(self.thick)
+            hand = hand.extrude(thick)
 
             # sticky out bottom bit for hour hand
             if hour and not second:
-                hand = hand.workplaneFromTagged("base").lineTo(width * 0.4, 0).lineTo(0, -width * 0.9).mirrorY().extrude(self.thick)
+                hand = hand.workplaneFromTagged("base").lineTo(width * 0.4, 0).lineTo(0, -width * 0.9).mirrorY().extrude(thick)
                 # return hand
             # cut bits out
             # roudn bit in centre of knobbly bit
@@ -200,7 +211,7 @@ class Hands:
             hand = hand.workplaneFromTagged("base").transformed(rotate=(0, 0,self. fixing_offset))
 
         # if second:
-        #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + self.thick)
+        #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + thick)
 
         hand = self.cutFixing(hand, hour, second)
 
@@ -225,7 +236,7 @@ class Hands:
                     # return notOutline
                     #chop off the mess above the first few layers that we want
 
-                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(self.thick*10).translate((0,0,self.outlineThick))
+                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(thick*10).translate((0,0,self.outlineThick))
 
 
 
@@ -253,7 +264,7 @@ class Hands:
                     return outline
                 else:
                     #make the whole hand bigger by the outline amount
-                    shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.thick-self.outlineThick).translate((0,0,self.outlineThick)))
+                    shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
 
 
 

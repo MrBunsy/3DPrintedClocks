@@ -12,6 +12,7 @@ class GearStyle(Enum):
     SIMPLE5 = "simple5"
     SPOKES = "spokes"
     STEAMTRAIN = "steamtrain"
+    CARTWHEEL = "cartwheel"
     #unimplemented:
     FLOWER = "flower"
     HONEYCOMB = "honeycomb"
@@ -23,6 +24,7 @@ ideas for new styles:
  - honeycomb
  - Voronoi Diagram
  - curved arms
+ - sine wave wraped around the circle?
 '''
 
 class ArbourType(Enum):
@@ -61,6 +63,8 @@ class Gear:
             return Gear.cutSpokesStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
         if style == GearStyle.STEAMTRAIN:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
+        if style == GearStyle.CARTWHEEL:
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
 
         return gear
 

@@ -19,7 +19,7 @@ if 'show_object' not in globals():
 
 clockName="wall_clock_12"
 clockOutDir="out"
-gearStyle=clock.GearStyle.SIMPLE5
+gearStyle=clock.GearStyle.CARTWHEEL
 
 # drop =1.5
 # lift =3
