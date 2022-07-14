@@ -513,9 +513,9 @@ class RopeWheel:
         #min thickness, adjustable to help with selecting screws
         self.wallThick=wallThick
         #width of the opening the rope will slot into
-        self.gulleyWide = self.ropeThick*1.5
+        self.gulleyWide = self.ropeThick*2
         #how far our the gulley extends (extra diameter)
-        self.extraRim = self.ropeThick*3
+        self.extraRim = self.ropeThick*4
 
         self.rodD = rodMetricSize + LOOSE_FIT_ON_ROD
 
@@ -558,6 +558,7 @@ class RopeWheel:
         ropeWheel = ropeWheel.lineTo(0, middlePos[1]).lineTo(0, 0).close().sweep(circle)
 
         offset = 0 if top else 0.5*math.pi*2/self.nibs
+        nibOuterOuterX = radius + self.extraRim * 0.95
         nibOuterX=radius + self.extraRim*0.9
         nibInnerX = radius + self.extraRim*0.4
         nibStart = radius*0.9
@@ -566,7 +567,7 @@ class RopeWheel:
         for i in range(self.nibs):
             angle = i*math.pi*2/self.nibs + offset
 
-            nib = cq.Workplane("XZ").moveTo(nibStart,0).lineTo(nibOuterX,0).line(0,nibEdgeHeight).lineTo(nibInnerX,nibMiddleHeight).lineTo(nibStart,nibMiddleHeight).close().extrude(self.nibThick).translate((0,self.nibThick/2,0))
+            nib = cq.Workplane("XZ").moveTo(nibStart,self.wallThick).lineTo(nibOuterOuterX,self.wallThick).lineTo(nibOuterX,nibEdgeHeight).lineTo(nibInnerX,nibMiddleHeight).lineTo(nibStart,nibMiddleHeight).close().extrude(self.nibThick).translate((0,self.nibThick/2,0))
             # return nib
             ropeWheel = ropeWheel.add(nib.rotate((0,0,0), (0,0,1), radToDeg(angle)))
 
@@ -606,9 +607,12 @@ class RopeWheel:
         return self.wallThick*2 + self.gulleyWide + self.ratchet.thick + WASHER_THICK
 
     def outputSTLs(self, name="clock", path="../out"):
-        '''
-        TODO
-        '''
+        out = os.path.join(path,"{}_ropen_wheel_with_click.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHalf(top=False), out)
+        out = os.path.join(path, "{}_rope_wheel_half.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getHalf(top=True), out)
 
     def getChainPositionsFromTop(self):
         '''

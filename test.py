@@ -58,9 +58,10 @@ if 'show_object' not in globals():
 # show_object(pulley.getAssembled())
 
 # ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=21,totalD=70)
-ropeWheel = RopeWheel(diameter=17,ratchetThick=3, screw=MachineScrew(2, countersunk=False))
+ropeWheel = RopeWheel(diameter=17,ratchetThick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.1)
 show_object(ropeWheel.getAssembled())
 
+ropeWheel.outputSTLs("test","out")
 
 # screw = MachineScrew()
 #

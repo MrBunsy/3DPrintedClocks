@@ -3,26 +3,6 @@ import numpy as np
 from math import sin, cos, pi, floor
 import cadquery as cq
 
-from multiprocessing import Pool
-import multiprocessing
-
-
-
-def outputSTLMultithreaded(stlOutputters,clockName,clockOutDir):
-    def executeJob(outputter):
-        outputter.outputSTLs(clockName,clockOutDir)
-    p = Pool(multiprocessing.cpu_count() - 1)
-
-    options = {"class66": lambda: class66_jobs(),
-               "couplings": lambda: couplings_jobs(),
-               "wagons": lambda: wagon_jobs(),
-               "mwa": lambda: mwa_wagon_jobs(),
-               "wheels": lambda: wheel_jobs(),
-               "intermodal": lambda: intermodal_wagon_jobs(),
-               "mwagravel": lambda: mwa_wagon_jobs(True)
-               }
-
-    p.map(executeJob, stlOutputters)
 
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
 IMAGEMAGICK_CONVERT_PATH="C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
@@ -137,20 +117,24 @@ class MachineScrew:
             screw= screw.faces(">Z").workplane().circle(self.metric_thread/2).extrude(length - self.getHeadHeight())
         else:
             if facingUp:
-                screw = screw.circle(self.getHeadDiameter() / 2).extrude(self.getHeadHeight())
+                screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
             else:
-                screw = screw.add(getHoleWithHole(innerD=self.metric_thread, outerD=self.getHeadDiameter(), deep=self.getHeadHeight() ,layerThick=layerThick))
+                screw = screw.add(getHoleWithHole(innerD=self.metric_thread, outerD=self.getHeadDiameter()+NUT_WIGGLE_ROOM, deep=self.getHeadHeight() ,layerThick=layerThick))
             #pan head screw lengths do not include the head
             screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
 
         return screw
 
-    def getNutCutter(self, nyloc=False, half=False, withScrewLength=0, withBridging=False, layerThick=LAYER_THICK):
-
+    def getNutCutter(self,height=-1, nyloc=False, half=False, withScrewLength=0, withBridging=False, layerThick=LAYER_THICK):
+        '''
+        if height is provided, use that, otherwise use the default height of a nut
+        '''
         nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
-        nutD = getScrewHeadDiameter(self.metric_thread)
+        if height < 0:
+            height = nutHeight
+        nutD = getScrewHeadDiameter(self.metric_thread) + NUT_WIGGLE_ROOM
         if withBridging:
-            nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = nutHeight, sides=6, layerThick=layerThick)
+            nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = height, sides=6, layerThick=layerThick)
         else:
             nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(nutHeight)
         if withScrewLength > 0:
