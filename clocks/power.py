@@ -278,6 +278,26 @@ class BallWheel:
 
         return torque
 
+    def getPower(self, rotationsPerHour=1/12):
+        '''
+        power = mass * gravity * distance / time
+
+        no need to faff around with torque and whatnot, treat the total mass of balls on the wheel as a single weight travelling at a set speed
+
+        return answer in microwatts
+        '''
+
+        #one ball falls the distance of the diameter in half a rotation
+        halfRotationsPerHour = rotationsPerHour*2
+
+        #time taken for one ball to enter and leave the wheel in seconds
+        timeForOneBall_s = 60*60/halfRotationsPerHour
+        print("timeforone ball", timeForOneBall_s)
+
+        power = self.ballsAtOnce * self.ballWeightKg * GRAVITY * self.pitchDiameter / timeForOneBall_s
+
+        return power*math.pow(1,6)
+
 
 class Pulley:
     '''
@@ -499,7 +519,14 @@ class RopeWheel:
     '''
 
     def __init__(self, diameter, ratchetThick, ratchetMaxOuterD=-1, rodMetricSize=3, screw=None, ropeThick=2.2, wallThick=2):
+
+        #diameter for the rope
         self.diameter=diameter
+
+        #rough guess based on the first printed wheel using 2.2mm hemp rope
+        self.innerDiameter = diameter - ropeThick*3
+
+        # TODO the rope doesn't get anywhere near this diameter! it's almost double. That's fine, so long as I can work out what the actual diameter is for the rope
 
         self.rodMetricSize=rodMetricSize
         self.screw = screw
@@ -507,7 +534,7 @@ class RopeWheel:
             self.screw = MachineScrew(2)
         self.ropeThick=ropeThick
 
-        self.screwPositions = [(-self.diameter*0.3, 0), (self.diameter*0.3, 0)]
+        self.screwPositions = [(-self.innerDiameter*0.4, 0), (self.innerDiameter*0.4, 0)]
 
 
         #min thickness, adjustable to help with selecting screws
@@ -519,14 +546,14 @@ class RopeWheel:
 
         self.rodD = rodMetricSize + LOOSE_FIT_ON_ROD
 
-        circumference = math.pi*diameter
+        circumference = math.pi*self.innerDiameter
         self.nibs= math.floor(0.5*circumference/ropeThick)
         self.nibThick = 1
 
-        ratchetOuterD = (self.diameter + self.extraRim*2)*2
+        ratchetOuterD = (self.innerDiameter + self.extraRim*2)*2
         if ratchetMaxOuterD > 0 and ratchetOuterD > ratchetMaxOuterD:
             ratchetOuterD = ratchetMaxOuterD
-        self.ratchet = Ratchet(thick=ratchetThick, totalD=ratchetOuterD, innerRadius=self.diameter/2 - self.ropeThick/2 + self.extraRim)
+        self.ratchet = Ratchet(thick=ratchetThick, totalD=ratchetOuterD, innerRadius=self.innerDiameter/2 - self.ropeThick/2 + self.extraRim)
 
 
         if self.screw.countersunk:
@@ -539,7 +566,7 @@ class RopeWheel:
         return self.ropeThick + 2.5
 
     def getHalf(self, top=False):
-        radius = self.diameter / 2 - self.ropeThick/2
+        radius = self.innerDiameter / 2 - self.ropeThick/2
 
 
 
@@ -548,10 +575,7 @@ class RopeWheel:
         topOfEdgePos = (radius + self.extraRim, self.wallThick)
         middlePos = (radius, self.wallThick + self.gulleyWide/2)
 
-        # edgeR = self.diameter/2 + self.cordDiameter/4
-        # middleR = self.diameter/2 - self.cordDiameter/2
-
-        circle = cq.Workplane("XY").circle(self.diameter / 2)
+        circle = cq.Workplane("XY").circle(self.innerDiameter / 2)
         ropeWheel = cq.Workplane("XZ").moveTo(bottomPos[0], bottomPos[1]).lineTo(topOfEdgePos[0], topOfEdgePos[1]).lineTo(middlePos[0], middlePos[1])
 
 
@@ -587,7 +611,7 @@ class RopeWheel:
 
         for pos in self.screwPositions:
             if top:
-                cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True)
+                cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True).rotate((0,0,0),(0,0,1),360/12)
             else:
                 cutter = self.screw.getCutter()
 
@@ -607,7 +631,7 @@ class RopeWheel:
         return self.wallThick*2 + self.gulleyWide + self.ratchet.thick + WASHER_THICK
 
     def outputSTLs(self, name="clock", path="../out"):
-        out = os.path.join(path,"{}_ropen_wheel_with_click.stl".format(name))
+        out = os.path.join(path,"{}_rope_wheel_with_click.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHalf(top=False), out)
         out = os.path.join(path, "{}_rope_wheel_half.stl".format(name))
@@ -628,7 +652,7 @@ class RopeWheel:
         '''
 
         zOffset = - WASHER_THICK - self.wallThick - self.gulleyWide / 2
-
+        #if the calculation of innerDiameter is right, then the rope will be diameter apart
         return [[(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)]]
 
 class CordWheel:

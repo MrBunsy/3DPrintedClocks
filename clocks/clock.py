@@ -46,8 +46,8 @@ for the first clock and decide if I want to switch to something else later.
 '''
 
 class GoingTrain:
-    gravity = 9.81
-    def __init__(self, pendulum_period=1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23, escapement=None, escapeWheelPinionAtFront=None):
+
+    def __init__(self, pendulum_period=-1, pendulum_length=-1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -82,8 +82,17 @@ class GoingTrain:
         #in seconds
         self.pendulum_period = pendulum_period
         #in metres
-        self.pendulum_length = self.gravity * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
+        self.pendulum_length = pendulum_length
 
+        if pendulum_length < 0 and pendulum_period > 0:
+            #calulate length from period
+            self.pendulum_length = GRAVITY * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
+        elif pendulum_period < 0 and pendulum_length > 0:
+            self.pendulum_period = 2 * math.pi * math.sqrt(pendulum_length / GRAVITY)
+        else:
+            raise ValueError("Must provide either pendulum length or perioud, not neither or both")
+
+        #note - this has become assumed in many places and will require work to the plates and layout of gears to undo
         self.chainAtBack = chainAtBack
         #to ensure the anchor isn't pressed up against the back (or front) plate
         if escapeWheelPinionAtFront is None:
@@ -108,28 +117,10 @@ class GoingTrain:
         if escapement is None:
             self.escapement = Escapement(teeth=escapement_teeth)
         #
-        self.escapement_time = pendulum_period * self.escapement.teeth
-        # self.escapement_teeth = escapement_teeth
-        # self.escapement_lift = 4
-        # self.escapement_drop = 2
-        # self.escapement_lock = 2
-        # self.escapement_type = "deadbeat"
+        self.escapement_time = self.pendulum_period * self.escapement.teeth
 
-        # self.min_pinion_teeth=min_pinion_teeth
-        # self.max_wheel_teeth=max_wheel_teeth
-        # self.pinion_max_teeth = pinion_max_teeth
-        # self.wheel_min_teeth = wheel_min_teeth
         self.trains=[]
 
-    # def setEscapementDetails(self, lift = None, drop = None, lock=None, type=None):
-    #     if lift is not None:
-    #         self.lift = lift
-    #     if drop is not None:
-    #         self.drop = drop
-    #     if lock is not None:
-    #         self.lock = lock
-    #     if type is not None:
-    #         self.type = type
 
     def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
         '''
@@ -235,12 +226,19 @@ class GoingTrain:
         return allTimes
 
     def setRatios(self, gearPinionPairs):
+        '''
+        Instead of calculating the gear train from scratch, use a predetermined one. Useful when using 4 wheels as those take a very long time to calculate
+        '''
         #keep in the format of the autoformat
         time={'train': gearPinionPairs}
 
         self.trains = [time]
 
     def calculateChainWheelRatios(self):
+        '''
+        Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
+        NOTE - does a terrible job with cord wheels as it doesn't take coiling multiple layers into account
+        '''
         if self.chainWheels == 0:
             '''
             nothing to do
@@ -317,7 +315,7 @@ class GoingTrain:
 
         return clockwiseFromFront
 
-    def genPowerWheelRatchet(self, ratchetThick=7.5):
+    def genPowerWheelRatchet(self):
         '''
         The ratchet and bits shared between chain and cord wheels
         '''
@@ -454,8 +452,7 @@ class GoingTrain:
             #the second wheel can actually fit on the same side as the ratchet
             chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
 
-        #using != as XOR, so if an odd number of wheels, it's the same as chainAtBack. If it's an even number of wheels, it's the opposite
-        # escapeWheelPinionAtFront =  chainWheelImaginaryPinionAtFront != ((self.wheels + self.chainWheels) % 2 == 0)
+        #this is a bit messy. leaving it alone for now, but basically we manually choose which way to have the escape wheel but by default it's at front (if the chain is also at the front)
         escapeWheelPinionAtFront = self.escapeWheelPinionAtFront
 
         #only true if an odd number of wheels (note this IS wheels, not with chainwheels, as the minute wheel is always clockwise)
@@ -525,7 +522,8 @@ class GoingTrain:
                 arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i), pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
                                 distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
-                #Trying this to ensure that the anchor doesn't end up against the back plate (or front plate)
+                #Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
+                #automating would require knowing how far apart the plates are, which we don't at this point, so just do it manually
                 pinionAtFront = self.escapeWheelPinionAtFront
 
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
@@ -1546,258 +1544,3 @@ class Assembly:
         out = os.path.join(path, "{}.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getClock(), out)
-
-# if 'show_object' not in globals():
-#     def show_object(*args, **kwargs):
-#         pass
-#
-# ballWheel = BallWheel()
-# torque = ballWheel.getTorque()
-# print("torque", torque, torque/0.037)
-
-#trial for 48 tooth wheel
-# drop = 1.5
-# lift = 2
-# lock = 1.5
-# teeth = 48
-# diameter = 65  # 64.44433859295404#61.454842805344896
-# toothTipAngle = 4
-# toothBaseAngle = 3
-# escapement = Escapement(drop=drop, lift=lift, type="deadbeat", diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
-
-# drop =1.5
-# lift =3
-# lock=1.5
-# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
-
-# animateEscapement(escapement, frames=100, period=1.5,overswing_deg=4)
-
-
-
-
-
-
-
-
-
-
-
-
-# getRadiusForPointsOnACircle([10,20,15], math.pi)
-#
-#
-# dial = Dial(120)
-#
-# show_object(dial.getDial())
-#
-# weight = Weight()
-#
-# show_object(weight.getHook())
-#
-# show_object(weight.getRing().translate((20,0,0)))
-#
-# show_object(weight.getWeight())
-#
-# weight.printInfo()
-#
-# print("Weight max: {:.2f}kg".format(weight.getMaxWeight()))
-# show_object(weight.getLid(forCutting=True))
-#
-# train=GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False)
-# train.calculateRatios()
-# train.printInfo()
-# train.genChainWheels()
-# # show_object(train.chainWheelWithRatchet)
-# # show_object(train.chainWheelHalf.translate((0,30,0)))
-# train.genGears(module_size=1.2,moduleReduction=0.85, ratchetThick=4)
-# # show_object(train.ratchet.getInnerWheel())
-# # show_object(train.arbours[0])
-#
-# motionWorks = MotionWorks(minuteHandHolderHeight=30)
-#
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=8)
-#
-#
-# # show_object(pendulum.getPendulumForRod())
-# # show_object(pendulum.getHandAvoider())
-# # show_object(pendulum.getBob())
-# show_object(pendulum.getBobNut())
-#
-#
-# plates = ClockPlates(train, motionWorks, pendulum,plateThick=10)
-# #
-# backplate = plates.getPlate(True)
-# frontplate = plates.getPlate(False)
-# show_object(backplate)
-# show_object(frontplate.translate((100,0,0)))
-
-# holepunch = getHoleWithHole(3,10,4)
-# show_object(holepunch)
-# shape = cq.Workplane("XY").circle(10).extrude(20)
-# shape = shape.cut(holepunch)
-#
-# show_object(shape)
-
-# escapement = Escapement(teeth=30, diameter=60)
-# pendulum = Pendulum(escapement, 0.388, anchorHoleD=3, anchorThick=8, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10)
-# show_object(pendulum.getPendulumForRod())
-# # show_object(pendulum.getBob())
-
-# # show_object(escapement.getAnchor3D())
-# show_object(escapement.getAnchorArbour(holeD=3, crutchLength=0, nutMetricSize=3))
-#
-# # hands = Hands(style="simple", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, outline=1, outlineSameAsBody=False)
-# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=5, hourfixing_d=5, length=100, thick=4, outline=1, outlineSameAsBody=False)
-# #
-# # show_object(hands.getHand(outline=False))
-# show_object(hands.getHandNut())
-# hands.outputSTLs(clockName, clockOutDir)
-
-##### =========== escapement testing ======================
-#drop of 1 and lift of 3 has good pallet angles with 42 teeth
-# drop =1.5
-# lift =2
-# lock=1.5
-# teeth = 48
-# diameter = 65# 64.44433859295404#61.454842805344896
-# toothTipAngle = 4
-# toothBaseAngle = 3
-# escapement = Escapement(drop=drop, lift=lift, type="deadbeat",diameter=diameter, teeth=teeth, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
-# # # escapement = Escapement(teeth=30, diameter=61.454842805344896, lift=4, lock=2, drop=2, anchorTeeth=None,
-# # #                              clockwiseFromPinionSide=False, type="deadbeat")
-# ##
-# svgOpt = opt={"showAxes":False,
-# "projectionDir": (0, 0, 1),
-# "width": 1280,
-# "height": 720,
-# }
-#
-# toothAngle = 360/teeth
-# toothAtEndOfExitPallet = radToDeg(math.pi/2 +escapement.anchorAngle/2) - (toothAngle/2 - drop)/2
-# wheel_angle = toothAtEndOfExitPallet#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-# anchor_angle = lift/2+lock/2#lift/2 + lock/2
-#
-# frames = 100
-# for frame in range(frames):
-#     wholeObject = escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
-#     exporters.export(wholeObject, "out/test_{:02d}.svg".format(frame), opt=svgOpt)
-#     # svgString = exporters.getSVG(exporters.toCompound(wholeObject), opts=svgOpt)
-#     # print(svgString)
-#     # show_object(wholeObject)
-
-
-
-
-# toothAngle = 360/teeth
-# toothAtEndOfExitPallet = radToDeg(math.pi/2 +escapement.anchorAngle/2) - (toothAngle/2 - drop)/2
-# wheel_angle = toothAtEndOfExitPallet#-3.8  -4.1  -2 #- radToDeg(escapement.toothAngle - escapement.drop)/2#-3.3 - drop - 3.5 -
-# anchor_angle = lift/2+lock/2#lift/2 + lock/2
-#
-# wholeObject = escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
-#
-# show_object(wholeObject)
-#
-# svgOpt = opt={"showAxes":False,
-# "projectionDir": (0, 0, 1),
-# "width": 1280,
-# "height": 720,
-# }
-#
-# exporters.export(wholeObject, "out/test.svg", opt=svgOpt)
-
-# show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1), anchor_angle))
-# show_object(escapement.getWheel2D().rotateAboutCenter((0,0,1), wheel_angle))
-
-# anchor = escapement.getAnchorArbour(holeD=3, anchorThick=10, clockwise=False, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, nutMetricSize=3)
-# # show_object(escapement.getAnchor3D())
-# show_object(anchor)
-# exporters.export(anchor, "../out/anchor_test.stl")
-# #
-# #
-
-# ### ============FULL CLOCK ============
-# # # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-# train=GoingTrain(pendulum_period=2,fourth_wheel=False,escapement_teeth=30, maxChainDrop=1800, chainAtBack=False)#,chainWheels=1, hours=180)
-# train.calculateRatios()
-# # train.setRatios([[64, 12], [63, 12], [60, 14]])
-# # train.setChainWheelRatio([74, 11])
-# # train.genChainWheels(ratchetThick=5)
-# pendulumSticksOut=25
-# # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-# train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
-# train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
-# motionWorks = MotionWorks(minuteHandHolderHeight=30)
-# #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-# pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, useNylocForAnchor=False)
-#
-#
-# #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-# plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="vertical")#, heavy=True)
-#
-# plate = plates.getPlate(True)
-# #
-# show_object(plate)
-#
-# show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
-# #
-# # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
-# hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-# assembly = Assembly(plates, hands=hands)
-#
-# show_object(assembly.getClock())
-# # #
-
-# # anchorAngle = math.atan2(plates.bearingPositions[-1][1] - plates.bearingPositions[-2][1], plates.bearingPositions[-1][0] - plates.bearingPositions[-2][0]) - math.pi / 2
-# # # anchorAngle=0
-# # anchor = pendulum.anchor.rotate((0,0,0),(0, 0, 1), radToDeg(anchorAngle))#.translate(plates.bearingPositions[-1]).translate((0, 0, plates.plateThick + plates.wobble / 2))
-# # show_object(anchor)
-#
-# # exporters.export(plate, "../out/platetest.stl")
-# #
-# # hands = Hands(minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, ratchetThick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-#
-# #
-# #
-# # show_object(plates.goingTrain.getArbour(0).getShape(False).translate((0,200,0)))
-
-# ============ hands ==================
-#
-# hands = Hands(style="simple_rounded",minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=80, thick=4, outline=1, outlineSameAsBody=False)
-# show_object(hands.getHand(True,True))
-# show_object(hands.getHand(True,False).translate((50,0,0)))
-# show_object(hands.getHand(hour=False,second=True).translate((-50,0,0)))
-
-#
-# shell = WeightShell(45,220, twoParts=True, holeD=5)
-#
-# show_object(shell.getShell())
-#
-# show_object(shell.getShell(False).translate((100,0,0)))
-#
-# ratchet = Ratchet()
-# # cordWheel = CordWheel(23,50, ratchet=ratchet, useGear=True, style="circles")
-# cordWheel = CordWheel(23,50, ratchet=ratchet, style="circles", useKey=True)
-# #
-# #
-# #
-#
-# # pulley = Pulley(diameter=30, vShaped=False)
-# #
-# # show_object(pulley.getHalf())
-#
-# # show_object(cordWheel.getSegment())
-# # show_object(cordWheel.getAssembled())
-# # show_object(cordWheel.getCap(top=True))
-# # show_object(cordWheel.getCap())
-#
-# show_object(cordWheel.getKey())
-#
-# show_object(cordWheel.getKeyKnob().translate((50,0,0)))
-#
-#
-
-# show_object(cordWheel.getClickWheelForCord(ratchet))
-# show_object(cordWheel.getCap().translate((0,0,ratchet.thick)))
-# show_object(cordWheel.getSegment(False).mirror().translate((0,0,cordWheel.thick)).translate((0,0,ratchet.thick + cordWheel.capThick)))
-# show_object(cordWheel.getSegment(True).mirror().translate((0,0,cordWheel.thick)).translate((0,0,ratchet.thick + cordWheel.capThick + cordWheel.thick)))
-

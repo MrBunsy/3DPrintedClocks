@@ -531,7 +531,7 @@ class Arbour:
         '''
         This info is only known after the plates are configured, so retrospectively add it to the arbour.
 
-        Currently only used for the chain wheel to make it more rigid (using pinion to mean side with the chain/cord)
+        Added the to pinion side (or the 'back' of the chainwheel if the ratchet is bolt-on)
         '''
         self.frontSideExtension=frontSide
         self.rearSideExtension=rearSide
@@ -897,12 +897,13 @@ class Arbour:
 
 class MotionWorks:
 
-    def __init__(self, holeD=3.5, thick=3, cannonPinionLoose=True, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50,
-                 style="HAC", compensateLooseArbour=False, snail=None, strikeTrigger=None, strikeHourAngleDeg=45):
+    def __init__(self, holeD=3.4, thick=3, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50,
+                 style="HAC", compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45):
         '''
-        if cannon pinion is loose, then the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
+        the the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
 
-        NOTE hour hand is very loose when motion works arbour is mounted above the cannon pinion. compensateLooseArbour attempts to compensate for this
+        NOTE hour hand is very loose when motion works arbour is mounted above the cannon pinion.
+         compensateLooseArbour attempts to compensate for this
 
         If snail and strikeTrigger are provided, this motion works will be for a striking clock
 
@@ -915,7 +916,6 @@ class MotionWorks:
         self.holeD=holeD
         self.thick = thick
         self.style=style
-        self.cannonPinionLoose = cannonPinionLoose
 
         self.strikeTrigger=strikeTrigger
         #angle the hour strike should be at
@@ -986,24 +986,13 @@ class MotionWorks:
         pinion = pinion.add(base).add(top)
 
 
-        if self.cannonPinionLoose:
-            #has an arm to hold the minute hand
-            pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD/2).extrude(self.minuteHolderTotalHeight-self.minuteHandSlotHeight-self.cannonPinionThick - self.thick)
-            pinion = pinion.faces(">Z").workplane().rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight)
+        #has an arm to hold the minute hand
+        pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD/2).extrude(self.minuteHolderTotalHeight-self.minuteHandSlotHeight-self.cannonPinionThick - self.thick)
+        pinion = pinion.faces(">Z").workplane().rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight)
 
         pinion = pinion.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
 
         return pinion
-
-    # def getArbour(self, wheel, pinion, holeD=0, thick=0, style="HAC"):
-    #     base = wheel.get3D(thick=thick, holeD=holeD, style=style)
-    #
-    #     top = pinion.get3D(thick=thick * 3, holeD=holeD, style=style).translate([0, 0, thick])
-    #
-    #     arbour = base.add(top)
-    #
-    #     arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(thick * 0.5).circle(holeD / 2).cutThruAll()
-    #     return arbour
 
     def getMotionArbour(self):
         #mini arbour that sits between the cannon pinion and the hour wheel

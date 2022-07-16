@@ -41,7 +41,10 @@ if 'show_object' not in globals():
 #
 # show_object(motionWorks.getAssembled())
 
-# ballWheel = BallWheel(ballsAtOnce=12)
+# ballWheel = BallWheel(ballsAtOnce=15)
+#
+# print(ballWheel.getPower(rotationsPerHour=1))
+
 #
 # print(ballWheel.getTorque())
 #
@@ -58,7 +61,10 @@ if 'show_object' not in globals():
 # show_object(pulley.getAssembled())
 
 # ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=21,totalD=70)
-ropeWheel = RopeWheel(diameter=17,ratchetThick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.1)
+
+#actual rope distance apart: 31.3mm
+
+ropeWheel = RopeWheel(diameter=17,ratchetThick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.2)
 show_object(ropeWheel.getAssembled())
 
 ropeWheel.outputSTLs("test","out")
