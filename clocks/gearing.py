@@ -466,7 +466,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, ratchet=None, chainWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, screwSize=2, ratchetScrewsPanHead=True):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, chainWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, screwSize=2, ratchetScrewsPanHead=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -482,8 +482,6 @@ class Arbour:
         self.wheelThick=wheelThick
         self.pinion=pinion
         self.pinionThick=pinionThick
-        #could get this via chainwheel?
-        self.ratchet=ratchet
         self.escapement=escapement
         self.endCapThick=endCapThick
         #the pocket chain wheel or cord wheel (needed only to calculate full height)
@@ -493,7 +491,9 @@ class Arbour:
         self.nutSpaceMetric=None
         self.pinionAtFront=pinionAtFront
 
-
+        self.ratchet = None
+        if self.chainWheel is not None:
+            self.ratchet=self.chainWheel.ratchet
 
         self.frontSideExtension=0
         self.rearSideExtension=0

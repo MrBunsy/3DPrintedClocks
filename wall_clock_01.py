@@ -16,7 +16,7 @@ clockOutDir="out"
 crutchLength=100
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
-train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100)
+train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement_teeth=30, maxWeightDrop=2100)
 
 train.calculateRatios()
 

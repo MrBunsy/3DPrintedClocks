@@ -4,6 +4,15 @@ import cadquery as cq
 import os
 from cadquery import exporters
 
+from enum import Enum
+class PowerType(Enum):
+    NOT_CONFIGURED = None
+    CHAIN = "chain"
+    #drop in for chain, using friction and a hemp rope
+    ROPE = "rope"
+    #thin synthetic cord, coiled multiple times
+    CORD = "cord"
+
 
 class Weight:
     '''
@@ -513,18 +522,96 @@ class Pulley:
             print("Outputting ", out)
             exporters.export(self.getHookHalf(), out)
 
+class PoweredWheel:
+    '''
+    Python doesn't have interfaces, but this is the interface for the powered wheel classes
+    '''
+
+    @staticmethod
+    def getMinDiameter():
+        '''
+        Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
+        '''
+        return 30
+
+    def __init__(self):
+        #diameter/circumference for the path the rope or chain takes. For the cord, this is the minimum diameter for the first layer of coils
+        self.diameter=30
+        self.circumference=math.pi * self.diameter
+        self.ratchet = Ratchet()
+        self.type = PowerType.NOT_CONFIGURED
+
+    def getChainHoleD(self):
+        '''
+        Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
+        '''
+
+    def getAssembled(self):
+        '''
+        return 3D model of fully assembled wheel with ratchet (for the model, not printing)
+        '''
+
+    def getHeight(self):
+        '''
+        returns total thickness of the assembled wheel, with ratchet. If it needs a washer, this is included in the height
+        '''
+
+    def outputSTLs(self, name="clock", path="../out"):
+        '''
+        save STL files to disc for all the objects required to print this wheel
+        '''
+
+    def getChainPositionsFromTop(self):
+        '''
+        Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
+        but two coordinates [top, bottom] if the hole should be elongated.
+        For example: chain would be just two round holes at the same z height [ [(-3,-5)], [(3,-5)]]
+        Z coordinates are relative to the "front" of the chain wheel - the side furthest from the wheel
+        (this is because the ratchet could be inset and the wheel could be different thicknesses)
+
+         [ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
+
+
+        '''
+
+    def getTurnsForDrop(self, maxChainDrop):
+        '''
+        Given a chain drop, return number of rotations of this wheel.
+        this is trivial for rope or chain, but not so much for the cord
+        '''
+
+    def getRunTime(self, minuteRatio=1, cordLength=2000):
+        '''
+        print information about runtime based on the info provided
+        '''
+
+
 class RopeWheel:
     '''
     Drop in replacement for chainwheel, but uses friction to hold a hemp rope
     '''
 
-    def __init__(self, diameter, ratchetThick, ratchetMaxOuterD=-1, rodMetricSize=3, screw=None, ropeThick=2.2, wallThick=2):
+    @staticmethod
+    def getMinDiameter():
+        '''
+        Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
+        '''
+        return 20
+
+    def __init__(self, diameter, ratchet_thick, rodMetricSize=3, screw=None, ropeThick=2.2, wallThick=2, power_clockwise=True):
 
         #diameter for the rope
         self.diameter=diameter
+        self.circumference = math.pi*diameter
+
+        self.type = PowerType.ROPE
+
+        #using just diamtere, aim 17 got
+
+        #aim: 17, got 22.3
 
         #rough guess based on the first printed wheel using 2.2mm hemp rope
-        self.innerDiameter = diameter - ropeThick*3
+        self.innerDiameter = diameter - ropeThick*5.5
 
         # TODO the rope doesn't get anywhere near this diameter! it's almost double. That's fine, so long as I can work out what the actual diameter is for the rope
 
@@ -533,8 +620,8 @@ class RopeWheel:
         if self.screw is None:
             self.screw = MachineScrew(2)
         self.ropeThick=ropeThick
-
-        self.screwPositions = [(-self.innerDiameter*0.4, 0), (self.innerDiameter*0.4, 0)]
+        distance = self.screw.metric_thread*2
+        self.screwPositions = [(-distance, 0), (distance, 0)]
 
 
         #min thickness, adjustable to help with selecting screws
@@ -550,10 +637,8 @@ class RopeWheel:
         self.nibs= math.floor(0.5*circumference/ropeThick)
         self.nibThick = 1
 
-        ratchetOuterD = (self.innerDiameter + self.extraRim*2)*2
-        if ratchetMaxOuterD > 0 and ratchetOuterD > ratchetMaxOuterD:
-            ratchetOuterD = ratchetMaxOuterD
-        self.ratchet = Ratchet(thick=ratchetThick, totalD=ratchetOuterD, innerRadius=self.innerDiameter/2 - self.ropeThick/2 + self.extraRim)
+        ratchetOuterD = self.diameter*2
+        self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
 
 
         if self.screw.countersunk:
@@ -561,6 +646,9 @@ class RopeWheel:
         else:
             screwLength = self.getHeight() - WASHER_THICK - self.screw.getHeadHeight()
         print("{} screw length {}".format(self.screw.getString(), screwLength))
+
+    def getTurnsForDrop(self, maxChainDrop):
+        return maxChainDrop/self.circumference
 
     def getChainHoleD(self):
         return self.ropeThick + 2.5
@@ -655,6 +743,11 @@ class RopeWheel:
         #if the calculation of innerDiameter is right, then the rope will be diameter apart
         return [[(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)]]
 
+    def getRunTime(self,minuteRatio=1,chainLength=2000):
+        #minute hand rotates once per hour, so this answer will be in hours
+        return minuteRatio*chainLength/self.circumference
+
+
 class CordWheel:
     '''
     This will be a replacement for the chainwheel, instead of using a chain this will be a coiled up clock cord.
@@ -668,7 +761,16 @@ class CordWheel:
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
     '''
 
-    def __init__(self, diameter, capDiameter, ratchet, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000):
+    @staticmethod
+    def getMinDiameter():
+        '''
+        Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
+        '''
+        return 21
+
+    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000):
+
+        self.type = PowerType.CORD
 
         self.diameter=diameter
         #thickness of one segment (the bit where the cord coils up)
@@ -678,7 +780,7 @@ class CordWheel:
         #1mm felt too flimsy
         #2mm was fine, but I'm trying to reduce depth as much as possible
         self.capThick=1.6
-        self.capDiameter = capDiameter
+        self.capDiameter = diameter*2
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
         self.screwThreadMetric=screwThreadMetric
@@ -709,7 +811,7 @@ class CordWheel:
         self.clickWheelExtra=LAYER_THICK
         #even the 2mm cap got a bit wonky, so ensure lots of clearence from the front plate
         self.beforeBearingExtraHeight = 0.8
-        self.ratchet = ratchet
+        self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise)
         self.keyScrewHoleD = self.screwThreadMetric
 
 
@@ -1130,13 +1232,21 @@ class ChainWheel:
 
     '''
 
-    def __init__(self, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5 ,screwD=2, screwThreadLength=10):
+    @staticmethod
+    def getMinDiameter():
+        '''
+        Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
+        '''
+        return 22
+
+    def __init__(self, ratchet_thick=4, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5, screwD=2, screwThreadLength=10, power_clockwise=True):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
 
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
         '''
+        self.type = PowerType.CHAIN
 
         self.holeD=holeD
         #complete absolute bodge!
@@ -1183,6 +1293,14 @@ class ChainWheel:
         self.inner_width = width*1.2
 
         self.hole_distance = self.diameter*0.25
+
+        self.power_clockwise = power_clockwise
+
+
+        self.ratchet = Ratchet(totalD=self.diameter * 2, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
+
+    def getTurnsForDrop(self, maxChainDrop):
+        return maxChainDrop / self.circumference
 
     def getChainHoleD(self):
         return self.chain_width + 2
@@ -1351,7 +1469,7 @@ class Ratchet:
     # @staticmethod
     # def getRatchetWithInnerRadius
 
-    def __init__(self, totalD=50, thick=5, powerAntiClockwise=True, innerRadius=0):
+    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0):
         # , chain_hole_distance=10, chain_hole_d = 3):
         # #distance of the screw holes on the chain wheel, so the ratchet wheel can be securely attached
         # self.chain_hole_distance = chain_hole_distance
@@ -1367,7 +1485,7 @@ class Ratchet:
         else:
             self.clickInnerRadius = innerRadius
 
-        self.anticlockwise = 1 if powerAntiClockwise else -1
+        self.anticlockwise = -1 if power_clockwise else 1
 
         self.toothLength = self.outsideDiameter*0.025
         self.toothAngle = degToRad(2)* self.anticlockwise

@@ -64,10 +64,14 @@ if 'show_object' not in globals():
 
 #actual rope distance apart: 31.3mm
 
-ropeWheel = RopeWheel(diameter=17,ratchetThick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.2)
+ropeWheel = RopeWheel(diameter=20, ratchet_thick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.2)
 show_object(ropeWheel.getAssembled())
 
-ropeWheel.outputSTLs("test","out")
+chainWheel = ChainWheel(ratchet_thick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+
+show_object(chainWheel.getAssembled().translate((50,0,0)))
+
+# ropeWheel.outputSTLs("test","out")
 
 # screw = MachineScrew()
 #

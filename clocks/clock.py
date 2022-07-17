@@ -47,7 +47,7 @@ for the first clock and decide if I want to switch to something else later.
 
 class GoingTrain:
 
-    def __init__(self, pendulum_period=-1, pendulum_length=-1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30,chainAtBack=True, maxChainDrop=1800, max_chain_wheel_d=23, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
+    def __init__(self, pendulum_period=-1, pendulum_length=-1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -100,11 +100,14 @@ class GoingTrain:
         else:
             self.escapeWheelPinionAtFront=escapeWheelPinionAtFront
 
+        self.powered_by = PowerType.NOT_CONFIGURED
+
         #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
         self.chainWheels = chainWheels
+        #to calculate sizes of the powered wheels and ratios later
         self.hours = hours
-        self.max_chain_wheel_d = max_chain_wheel_d
-        self.maxChainDrop = maxChainDrop
+        self.maxWeightDrop = maxWeightDrop
+        self.usePulley=usePulley
 
         #calculate ratios from minute hand to escapement
         #the last wheel is the escapement
@@ -125,7 +128,7 @@ class GoingTrain:
     def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
-        module recution used to caculate smallest possible wheels - assumes each wheel has a smaller module than the last
+        module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
         '''
 
         desired_minute_time = 60*60
@@ -234,25 +237,18 @@ class GoingTrain:
 
         self.trains = [time]
 
-    def calculateChainWheelRatios(self):
+    def calculatePoweredWheelRatios(self):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
         NOTE - does a terrible job with cord wheels as it doesn't take coiling multiple layers into account
         '''
         if self.chainWheels == 0:
             '''
-            nothing to do
+            nothing to do, the diameter is calculted in calculatePoweredWheelInfo
             '''
         elif self.chainWheels == 1:
-            chainWheelCircumference = self.max_chain_wheel_d * math.pi
 
-            # get the actual circumference (calculated from the length of chain segments)
-            if self.usingChain:
-                chainWheelCircumference = self.chainWheel.circumference
-            else:
-                chainWheelCircumference = self.cordWheel.diameter*math.pi
-
-            turns = self.poweredWheel.getTurnsForDrop(self.maxChainDrop)
+            turns = self.poweredWheel.getTurnsForDrop(self.maxWeightDrop)
 
             # find the ratio we need from the chain wheel to the minute wheel
             turnsPerHour = turns / self.hours
@@ -307,7 +303,7 @@ class GoingTrain:
         returns true if the weight dangles from the right side of the chain wheel (as seen from the front)
         '''
 
-        clockwise = self.ratchet.isClockwise()
+        clockwise = self.poweredWheel.ratchet.isClockwise()
         chainAtFront = not self.chainAtBack
 
         #XNOR
@@ -315,17 +311,21 @@ class GoingTrain:
 
         return clockwiseFromFront
 
-    def genPowerWheelRatchet(self):
+    def calculatePoweredWheelInfo(self, default_powered_wheel_diameter=20):
         '''
-        The ratchet and bits shared between chain and cord wheels
+        Calculate best diameter and direction of ratchet
         '''
         if self.chainWheels == 0:
-            self.chainWheelCircumference = self.maxChainDrop/self.hours
-            self.max_chain_wheel_d = self.chainWheelCircumference/math.pi
+            #no choice but to set diameter to what fits with the drop and hours
+            self.powered_wheel_circumference = self.maxWeightDrop / self.hours
+            self.powered_wheel_diameter = self.powered_wheel_circumference / math.pi
 
         elif self.chainWheels == 1:
-            self.chainWheelCircumference = self.max_chain_wheel_d * math.pi
-            #use provided max_chain_wheel_d and calculate the rest
+            #set the diameter to the minimum so the chain wheel gear ratio is as low as possible (TODO - do we always want this?)
+
+            self.powered_wheel_diameter = default_powered_wheel_diameter
+
+            self.powered_wheel_circumference = self.powered_wheel_diameter * math.pi
 
         # true for no chainwheels
         anticlockwise = self.chainAtBack
@@ -333,7 +333,7 @@ class GoingTrain:
         for i in range(self.chainWheels):
             anticlockwise = not anticlockwise
 
-        self.poweredWheelAnticlockwise = anticlockwise
+        self.powered_wheel_clockwise = not anticlockwise
 
     def genChainWheels(self, ratchetThick=7.5, holeD=3.3, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
         '''
@@ -345,32 +345,27 @@ class GoingTrain:
         longer to make it generic than just make it work
         '''
 
-        self.genPowerWheelRatchet()
+        self.calculatePoweredWheelInfo(ChainWheel.getMinDiameter())
 
 
-        self.chainWheel = ChainWheel(max_circumference=self.chainWheelCircumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
-        self.poweredWheel=self.chainWheel
+        self.poweredWheel = ChainWheel(ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, max_circumference=self.powered_wheel_circumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
 
-
-        self.ratchet = Ratchet(totalD=self.max_chain_wheel_d * 2, innerRadius=self.chainWheel.outerDiameter / 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
-
-        self.chainWheel.setRatchet(self.ratchet)
-
-        self.usingChain=True
+        self.calculatePoweredWheelRatios()
 
     def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC"):
 
-        self.genPowerWheelRatchet()
-        #slight hack, make this a little bit bigger as this works better with the standard 1 day clock (leaves enough space for the m3 screw heads)
-        #21.2 comes from a mistake on clock 07, but a happy mistake as it was a good size. keeping this for now
-        #increasing since I'm now using the key would cord wheels and not sure I'll be going back to the other type any time soon
-        ratchetD = self.max_chain_wheel_d*1.25#max(self.max_chain_wheel_d, 26)
-        # ratchetD = 21.22065907891938
-        self.ratchet = Ratchet(totalD=ratchetD * 2, thick=ratchetThick, powerAntiClockwise=self.poweredWheelAnticlockwise)
+        self.calculatePoweredWheelInfo(CordWheel.getMinDiameter())
+        self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
+        self.calculatePoweredWheelRatios()
 
-        self.cordWheel = CordWheel(self.max_chain_wheel_d, self.ratchet.outsideDiameter,self.ratchet,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
-        self.poweredWheel = self.cordWheel
-        self.usingChain=False
+    def genRopeWheels(self, ratchetThick = 3, rodMetricSize=3, wheelScrews=None, ropeThick=2.2, wallThick=2):
+
+        self.calculatePoweredWheelInfo(RopeWheel.getMinDiameter())
+
+        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter,ratchet_thick=ratchetThick, rodMetricSize=rodMetricSize, screw=wheelScrews, ropeThick=ropeThick, power_clockwise=self.powered_wheel_clockwise, wallThick=wallThick)
+
+        self.calculatePoweredWheelRatios()
+
 
     def setTrain(self, train):
         '''
@@ -389,9 +384,9 @@ class GoingTrain:
             print(self.chainWheelRatio)
             chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
 
-        runtime = self.poweredWheel.getRunTime(chainRatio,self.maxChainDrop)
+        runtime = self.poweredWheel.getRunTime(chainRatio, self.maxWeightDrop)
 
-        print("runtime: {:.1f}hours over {:.1f}m. Chain wheel multiplier: {:.1f}".format(runtime, self.maxChainDrop/1000, chainRatio))
+        print("runtime: {:.1f}hours over {:.1f}m. Chain wheel multiplier: {:.1f}".format(runtime, self.maxWeightDrop / 1000, chainRatio))
 
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1, ratchetScrewsPanHead=True):
@@ -446,7 +441,7 @@ class GoingTrain:
         #TODO - does this work when chain wheels are involved?
         secondWheelR = pairs[1].wheel.getMaxRadius()
         firstWheelR = pairs[0].wheel.getMaxRadius() + pairs[0].pinion.getMaxRadius()
-        ratchetOuterR = self.ratchet.outsideDiameter/2
+        ratchetOuterR = self.poweredWheel.ratchet.outsideDiameter/2
         space = firstWheelR - ratchetOuterR
         if secondWheelR < space - 3:
             #the second wheel can actually fit on the same side as the ratchet
@@ -486,7 +481,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrewsPanHead=ratchetScrewsPanHead)]
+            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrewsPanHead=ratchetScrewsPanHead)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -495,7 +490,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, ratchet=self.ratchet, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrewsPanHead=ratchetScrewsPanHead)
+                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrewsPanHead=ratchetScrewsPanHead)
                 else:
                     #just a normal gear
                     if self.chainWheels == 1:
@@ -580,10 +575,8 @@ class GoingTrain:
                 print("Outputting ", out)
                 exporters.export(extras[extraName], out)
 
-        if self.usingChain:
-            self.chainWheel.outputSTLs(name, path)
-        else:
-            self.cordWheel.outputSTLs(name, path)
+        self.poweredWheel.outputSTLs(name, path)
+
 
         # for i,arbour in enumerate(self.chainWheelArbours):
         #     out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
@@ -1330,8 +1323,8 @@ class ClockPlates:
             plate = plate.faces(">Z").workplane().pushPoints([(0, minuteY + dialFixings / 2), (0, minuteY - dialFixings / 2)]).circle(self.dial.fixingD / 2).cutThruAll()
 
         # need an extra chunky hole for the big bearing that the key slots through
-        if not self.goingTrain.usingChain and self.goingTrain.cordWheel.useKey:
-            cordWheel = self.goingTrain.cordWheel
+        if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
+            cordWheel = self.goingTrain.poweredWheel
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
             cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)
             cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearingInnerD/2 + cordWheel.bearingLip).extrude(plateThick)
@@ -1525,7 +1518,7 @@ class Assembly:
 
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
-            chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.cordWheel.capThick - self.goingTrain.cordWheel.thick + self.plates.wobble / 2
+            chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.wobble / 2
             print("chain Z", chainZ)
             clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
 

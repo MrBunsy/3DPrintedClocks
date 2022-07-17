@@ -32,7 +32,7 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1.25,fourth_wheel=False,escapement_teeth=30, maxChainDrop=2100, chainAtBack=False, escapeWheelPinionAtFront=True)#, escapement=escapement)
+train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement_teeth=30, maxWeightDrop=2100, chainAtBack=False, escapeWheelPinionAtFront=True)#, escapement=escapement)
 
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9)
 # train.setRatios([[81, 12], [80, 9]])

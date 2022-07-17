@@ -29,18 +29,15 @@ lift =3
 lock=1.5
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-# train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement=escapement, maxChainDrop=1600, chainAtBack=False,chainWheels=0, hours=30)
-train=clock.GoingTrain(pendulum_period=1,fourth_wheel=False,escapement=escapement, maxChainDrop=1600, chainAtBack=False,chainWheels=0, hours=30, max_chain_wheel_d=20)
-#, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4
-# train.setEscapementDetails(drop=1.5, lift=3, lock=1.5)
+train=clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, maxWeightDrop=2000, chainAtBack=False, chainWheels=0, hours=30)
 
 moduleReduction=0.9
-
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1,moduleReduction=moduleReduction)
 
 
 # train.genCordWheels(ratchetThick=2.2, cordThick=1, cordCoilThick=6, style=gearStyle)
-train.genChainWheels(ratchetThick=2.5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+# train.genChainWheels(ratchetThick=2.5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+train.genRopeWheels()
 
 train.printInfo()
 

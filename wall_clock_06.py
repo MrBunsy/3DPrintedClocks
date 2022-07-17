@@ -23,7 +23,7 @@ drop=2
 lock=2
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2,fourth_wheel=False,escapement=escapement , maxChainDrop=1675, chainAtBack=False,chainWheels=1, hours=180, max_chain_wheel_d=26)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1675, chainAtBack=False, chainWheels=1, hours=180, max_chain_wheel_d=26)
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.calculateRatios()
@@ -55,7 +55,7 @@ layers of cord: 3, cord per hour: 1.1cm to 0.9cm
 runtime: 180.0hours. Chain wheel multiplier: 10.3
 
 '''
-train.calculateChainWheelRatios()
+train.calculatePoweredWheelRatios()
 
 train.printInfo()
 
