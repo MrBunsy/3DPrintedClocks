@@ -124,6 +124,13 @@ class GoingTrain:
 
         self.trains=[]
 
+    def getCordUsage(self):
+        '''
+        how much rope or cord will actually be used, as opposed to how far the weight will drop
+        '''
+        if self.usePulley:
+            return 2*self.maxWeightDrop
+        return self.maxWeightDrop
 
     def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
         '''
@@ -248,7 +255,7 @@ class GoingTrain:
             '''
         elif self.chainWheels == 1:
 
-            turns = self.poweredWheel.getTurnsForDrop(self.maxWeightDrop)
+            turns = self.poweredWheel.getTurnsForDrop(self.getCordUsage())
 
             # find the ratio we need from the chain wheel to the minute wheel
             turnsPerHour = turns / self.hours
@@ -317,7 +324,7 @@ class GoingTrain:
         '''
         if self.chainWheels == 0:
             #no choice but to set diameter to what fits with the drop and hours
-            self.powered_wheel_circumference = self.maxWeightDrop / self.hours
+            self.powered_wheel_circumference = self.getCordUsage() / self.hours
             self.powered_wheel_diameter = self.powered_wheel_circumference / math.pi
 
         elif self.chainWheels == 1:
@@ -373,7 +380,8 @@ class GoingTrain:
         '''
         self.trains = [train]
 
-    def printInfo(self):
+
+    def printInfo(self, weight_kg=0.35):
         print(self.trains[0])
 
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
@@ -384,9 +392,14 @@ class GoingTrain:
             print(self.chainWheelRatio)
             chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
 
-        runtime = self.poweredWheel.getRunTime(chainRatio, self.maxWeightDrop)
+        runtime_hours = self.poweredWheel.getRunTime(chainRatio, self.getCordUsage())
 
-        print("runtime: {:.1f}hours over {:.1f}m. Chain wheel multiplier: {:.1f}".format(runtime, self.maxWeightDrop / 1000, chainRatio))
+        drop_m = self.maxWeightDrop/1000
+        power = weight_kg * GRAVITY * drop_m / (runtime_hours*60*60)
+        power_uW = power * math.pow(10, 6)
+
+        print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f}".format(runtime_hours, self.getCordUsage() / 1000,self.maxWeightDrop, chainRatio))
+        print("With a weight of {}kg, this results in a power usage of {:.2f}μW".format(weight_kg, power_uW))
 
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1, ratchetScrewsPanHead=True):

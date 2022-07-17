@@ -651,7 +651,7 @@ class RopeWheel:
         return maxChainDrop/self.circumference
 
     def getChainHoleD(self):
-        return self.ropeThick + 2.5
+        return self.ropeThick + 4
 
     def getHalf(self, top=False):
         radius = self.innerDiameter / 2 - self.ropeThick/2
@@ -780,7 +780,7 @@ class CordWheel:
         #1mm felt too flimsy
         #2mm was fine, but I'm trying to reduce depth as much as possible
         self.capThick=1.6
-        self.capDiameter = diameter*2
+        self.capDiameter = diameter*2.5
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
         self.screwThreadMetric=screwThreadMetric
