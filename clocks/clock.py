@@ -1446,7 +1446,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, dial=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None):
+    def __init__(self, plates, hands=None, dial=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, showPendulum=False, weights=None):
         self.plates = plates
         self.hands = hands
         self.dial=dial
@@ -1458,6 +1458,11 @@ class Assembly:
         self.timeHours = timeHours
         self.timeSeconds = timeSeconds
         self.pulley=pulley
+        self.showPendulum=showPendulum
+        #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)
+        self.weights=weights
+        if self.weights is None:
+            self.weights = []
 
     def getClock(self):
         bottomPlate = self.plates.getPlate(True)
@@ -1525,9 +1530,41 @@ class Assembly:
         clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], pendulumHolderBaseZ)))
 
         pendulumRodCentreZ = pendulumHolderBaseZ + self.pendulum.pendulumTopThick / 2
-        pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick/2
+        pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick / 2
+        pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
 
-        clock = clock.add(self.pendulum.getBob(hollow=False).translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length*1000 , pendulumBobBaseZ)))
+        if self.showPendulum:
+
+
+            clock = clock.add(self.pendulum.getBob(hollow=False).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
+
+            clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ + self.pendulum.bobThick/2)))
+
+
+        if len(self.weights) > 0:
+
+            weight = self.weights[0]
+            #line them up so I can see if they'll bump into each other
+            weightTopY = pendulumBobCentreY
+
+            holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
+
+            side = 1 if self.goingTrain.isWeightOnTheRight() else -1
+
+            #in X,Y,Z
+            weightPos = None
+
+            for holeInfo in holePositions:
+                if (holeInfo[0][0] > 0) == (side > 0):
+                    #hole for the weight
+                    weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + holeInfo[0][1])
+
+            if weightPos is not None:
+                weightShape = weight.getWeight().rotate((0,0,0), (1,0,0),-90)
+
+                clock = clock.add(weightShape.translate(weightPos))
+
+
 
         minuteToPendulum = (self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[self.goingTrain.chainWheels][1])
 

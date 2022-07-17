@@ -125,6 +125,9 @@ class MachineScrew:
 
         return screw
 
+    def getNutHeight(self, nyloc=False, half=False):
+        return getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
+
     def getNutCutter(self,height=-1, nyloc=False, half=False, withScrewLength=0, withBridging=False, layerThick=LAYER_THICK):
         '''
         if height is provided, use that, otherwise use the default height of a nut

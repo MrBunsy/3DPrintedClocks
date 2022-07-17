@@ -64,14 +64,20 @@ if 'show_object' not in globals():
 
 #actual rope distance apart: 31.3mm
 
-ropeWheel = RopeWheel(diameter=20, ratchet_thick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.2)
-show_object(ropeWheel.getAssembled())
-
-chainWheel = ChainWheel(ratchet_thick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
-
-show_object(chainWheel.getAssembled().translate((50,0,0)))
+# ropeWheel = RopeWheel(diameter=20, ratchet_thick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.2)
+# show_object(ropeWheel.getAssembled())
+#
+# chainWheel = ChainWheel(ratchet_thick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
+#
+# show_object(chainWheel.getAssembled().translate((50,0,0)))
 
 # ropeWheel.outputSTLs("test","out")
+
+
+pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+
+show_object(pendulum.getBob(hollow=True))
+# show_object(pendulum.getPendulumForRod())
 
 # screw = MachineScrew()
 #

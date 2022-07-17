@@ -62,18 +62,17 @@ plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumS
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=17)
-# hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
-
-#no weight for this clock, as it's going to probably be too heavy to make myself.
-
-assembly = clock.Assembly(plates, hands=hands)
-
-weight = clock.Weight(height=100, diameter=35)
+weight = clock.Weight(height=150, diameter=30)
 weight.printInfo()
 
-bigweight = clock.Weight(height=125, diameter=45)
-bigweight.printInfo()
+counterweight = clock.Weight(height=30, diameter=20)
+counterweight.printInfo()
+
+
+assembly = clock.Assembly(plates, hands=hands, showPendulum=True, weights=[weight, counterweight])
+
+
 
 show_object(assembly.getClock())
 
@@ -85,5 +84,5 @@ if outputSTL:
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
     weight.outputSTLs(clockName, clockOutDir)
-    bigweight.outputSTLs(clockName+"_big", clockOutDir)
+    counterweight.outputSTLs(clockName+"_counter", clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)

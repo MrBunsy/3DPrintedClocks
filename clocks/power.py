@@ -48,7 +48,7 @@ class Weight:
 
         self.hookInnerD = boltMetricSize*2.5
         self.hookOuterD = self.hookInnerD*1.5
-        self.hookThick = self.lidWidth * 0.5
+        self.hookThick = self.lidWidth * 0.75
 
     def printInfo(self):
         vol = self.getVolume_L()
@@ -637,7 +637,7 @@ class RopeWheel:
         self.nibs= math.floor(0.5*circumference/ropeThick)
         self.nibThick = 1
 
-        ratchetOuterD = self.diameter*2
+        ratchetOuterD = self.diameter*2.25
         self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
 
 
@@ -645,7 +645,8 @@ class RopeWheel:
             screwLength = self.getHeight()-WASHER_THICK
         else:
             screwLength = self.getHeight() - WASHER_THICK - self.screw.getHeadHeight()
-        print("RopeWheel needs: {} screw length {}".format(self.screw.getString(), screwLength))
+        #nut hole is extra deep by thickness of the ratchet
+        print("RopeWheel needs: {} screw length {}-{}".format(self.screw.getString(), screwLength, screwLength-self.ratchet.thick))
 
     def getTurnsForDrop(self, maxChainDrop):
         return maxChainDrop/self.circumference
@@ -698,8 +699,9 @@ class RopeWheel:
 
 
         for pos in self.screwPositions:
-            if top:
-                cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True).rotate((0,0,0),(0,0,1),360/12)
+            if not top:
+                #have a bigger hole than needed for the nut in the ratchet side, so we can get away with shorter screws
+                cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True, height=self.ratchet.thick + self.screw.getNutHeight()).rotate((0,0,0),(0,0,1),360/12)
             else:
                 cutter = self.screw.getCutter(withBridging=True)
 

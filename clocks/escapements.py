@@ -5,6 +5,7 @@ import os
 from cadquery import exporters
 
 class EscapementType(Enum):
+    #only one fully implemented is deadbeat, recoil has been broken since deadbeat was introduced
     DEADBEAT = "deadbeat"
     RECOIL = "recoil"
     GRASSHOPPER = "grasshopper"
@@ -688,35 +689,6 @@ class Pendulum:
 
         return pendulum
 
-    # def getPendulumForRod(self, holeD=3):
-    #     '''
-    #     Attaches to a threaded rod and provides something for the pendulum to slot over in a detachable way
-    #     '''
-    #
-    #     pendulum = cq.Workplane("XY")
-    #
-    #
-    #
-    #
-    #
-    #     nutD = getNutContainingDiameter(holeD)
-    #
-    #     wall_thick = (width - (nutD + 1))/2
-    #
-    #     pendulum = pendulum.rect(width, height ).extrude(self.pendulumTopThick)
-    #
-    #     #hole for rod
-    #     pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
-    #
-    #     #nut to hold to anchor rod
-    #     nutThick = METRIC_NUT_DEPTH_MULT * holeD
-    #     nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
-    #     pendulum = pendulum.cut(nutSpace)
-
-
-
-
-        return pendulum
 
     def getHandAvoider(self):
         '''
@@ -783,6 +755,11 @@ class Pendulum:
             weightHole = weightHole.add(lid.translate((0,0,self.bobThick-self.wallThick)))
 
             bob = bob.cut(weightHole)
+
+        #add a little S <--> F text
+        textSize = self.gapHeight
+        bob = bob.add(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gapWidth/2 - textSize*0.75, 0, self.bobThick)))
+        bob = bob.add(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gapWidth/2 + textSize*0.75, 0, self.bobThick)))
 
         return bob
 
