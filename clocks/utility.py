@@ -67,7 +67,8 @@ def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     return nutWidth / math.cos(math.pi / 6)
 
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
-    if halfHeight:
+    #ignore a request for a half height m2 as I don't think they exist
+    if metric_thread > 2 and halfHeight:
         return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
 
     if metric_thread == 3:
@@ -82,13 +83,16 @@ def getScrewHeadHeight(metric_thread, countersunk=False):
             return 1.86
         return 2.6
     if metric_thread == 2:
-        return 1.2
+        #TODO countersunk (1.2?)
+        return 1.7
 
     return metric_thread
 
 def getScrewHeadDiameter(metric_thread, countersunk=False):
     if metric_thread == 3:
         return 6
+    if metric_thread == 2:
+        return 3.9
     return METRIC_HEAD_D_MULT * metric_thread
 
 class MachineScrew:
@@ -123,6 +127,9 @@ class MachineScrew:
             #pan head screw lengths do not include the head
             screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
 
+        #extend out from the headbackwards too
+        screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(length)
+
         return screw
 
     def getNutHeight(self, nyloc=False, half=False):
@@ -139,28 +146,19 @@ class MachineScrew:
         if withBridging:
             nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = height, sides=6, layerThick=layerThick)
         else:
-            nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(nutHeight)
+            nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(height)
         if withScrewLength > 0:
-            nut = nut.faces(">Z").workplane().circle(self.metric_thread/2).extrude(withScrewLength-nutHeight)
+            nut = nut.faces(">Z").workplane().circle(self.metric_thread/2).extrude(withScrewLength-height)
         return nut
 
     def getString(self):
         return "M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
 
     def getHeadHeight(self,):
-        if self.metric_thread == 3:
-            if self.countersunk:
-                return 1.86
-            return 2.6
-        if self.metric_thread == 2:
-            return 1.2
-
-        return self.metric_thread
+        return getScrewHeadHeight(self.metric_thread)
 
     def getHeadDiameter(self):
-        if self.metric_thread == 3:
-            return 6
-        return METRIC_HEAD_D_MULT * self.metric_thread
+        return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
 
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):

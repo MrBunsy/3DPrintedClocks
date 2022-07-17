@@ -28,7 +28,7 @@ class Weight:
     #     # in litres
     #     volume = math.pi * r * r * h * 1000
 
-    def __init__(self, height=100, diameter=38, boltMetricSize=3, wallThick=2.7, boltThreadLength=30):
+    def __init__(self, height=100, diameter=38, wallThick=2.7, bolt = None):
         '''
         34mm diameter fits nicely with a 40mm m3 screw
         38mm diameter results in a weight of ~0.3kg
@@ -39,14 +39,15 @@ class Weight:
 
         self.height=height
         self.diameter=diameter
-        self.boltMetricSize=boltMetricSize
-        self.boltThreadLength=boltThreadLength
+        self.bolt=bolt
+        if self.bolt is None:
+            self.bolt = MachineScrew(3)
         self.wallThick=wallThick
         # self.baseThick=4
         self.slotThick = self.wallThick/3
         self.lidWidth = self.diameter * 0.3
 
-        self.hookInnerD = boltMetricSize*2.5
+        self.hookInnerD = self.bolt.metric_thread*2.5
         self.hookOuterD = self.hookInnerD*1.5
         self.hookThick = self.lidWidth * 0.75
 
@@ -109,29 +110,20 @@ class Weight:
         weight = weight.cut(lidHole)
 
         #something to be hooked onto - two sticky out bits with a machine screw through them
-        extraWidth = 0
 
         r = self.diameter/2
-        angle = math.acos((self.lidWidth/2 + extraWidth) / r)
+        angle = math.acos((self.lidWidth/2) / r)
         corner = polar(angle, r)
         # more cadquery fudgery with r
-        weight = weight.faces(">Z").workplane().moveTo(corner[0], corner[1]).radiusArc((corner[0], -corner[1]), r - 0.001).close().mirrorY().extrude(r)
+        weight = weight.faces(">Z").workplane().moveTo(corner[0], corner[1]).radiusArc((corner[0], -corner[1]), r - 0.00001).close().mirrorY().extrude(r)
 
 
-        nutD = getNutContainingDiameter(self.boltMetricSize, NUT_WIGGLE_ROOM)
-        nutHeight = getNutHeight(self.boltMetricSize) + 0.5
-        headHeight = getScrewHeadHeight(self.boltMetricSize) + 0.5
-        headD = getScrewHeadDiameter(self.boltMetricSize) + 0.5
-        screwHeight = r - nutD
 
-        largeCut = self.diameter
-        wiggleSpace = 1
-        boltSpace = self.boltThreadLength - nutHeight - wiggleSpace
+        screwHeight = r - self.bolt.getHeadDiameter()
 
-        extraCutter = 1
-        screwSpace = cq.Workplane("YZ").polygon(6,nutD).extrude(largeCut).faces(">X").workplane()\
-            .circle(self.boltMetricSize/2).extrude(boltSpace).faces(">X").workplane()\
-            .circle(headD/2).extrude(largeCut).translate((-largeCut - boltSpace/2,0,screwHeight + self.height))
+        screwSpace = self.bolt.getCutter().rotate((0,0,0),(0,1,0),90).translate((-r + self.bolt.getHeadHeight()/2,0,screwHeight + self.height))
+
+        screwSpace = screwSpace.add(self.bolt.getNutCutter(height=1000).rotate((0,0,0),(0,1,0),90).translate((r*0.6,0,screwHeight + self.height)))
 
         weight = weight.cut(screwSpace)
 

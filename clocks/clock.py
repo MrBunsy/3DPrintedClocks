@@ -494,7 +494,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(chainWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews)]
+            self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -503,7 +503,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(chainWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews)
+                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews)
                 else:
                     #just a normal gear
                     if self.chainWheels == 1:
@@ -1536,33 +1536,37 @@ class Assembly:
         if self.showPendulum:
 
 
-            clock = clock.add(self.pendulum.getBob(hollow=False).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
+            clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,0),(0,0,1),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
 
             clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ + self.pendulum.bobThick/2)))
 
 
         if len(self.weights) > 0:
+            for i, weight in enumerate(self.weights):
+                #line them up so I can see if they'll bump into each other
+                weightTopY = pendulumBobCentreY
 
-            weight = self.weights[0]
-            #line them up so I can see if they'll bump into each other
-            weightTopY = pendulumBobCentreY
+                holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
 
-            holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
+                #side the main weight is on
+                side = 1 if self.goingTrain.isWeightOnTheRight() else -1
 
-            side = 1 if self.goingTrain.isWeightOnTheRight() else -1
+                if i == 1:
+                    #counterweight
+                    side*=-1
 
-            #in X,Y,Z
-            weightPos = None
+                #in X,Y,Z
+                weightPos = None
 
-            for holeInfo in holePositions:
-                if (holeInfo[0][0] > 0) == (side > 0):
-                    #hole for the weight
-                    weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + holeInfo[0][1])
+                for holeInfo in holePositions:
+                    if (holeInfo[0][0] > 0) == (side > 0):
+                        #hole for the weight
+                        weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + holeInfo[0][1])
 
-            if weightPos is not None:
-                weightShape = weight.getWeight().rotate((0,0,0), (1,0,0),-90)
+                if weightPos is not None:
+                    weightShape = weight.getWeight().rotate((0,0,0), (1,0,0),-90)
 
-                clock = clock.add(weightShape.translate(weightPos))
+                    clock = clock.add(weightShape.translate(weightPos))
 
 
 

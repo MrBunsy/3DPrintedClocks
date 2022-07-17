@@ -466,7 +466,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, chainWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -484,16 +484,16 @@ class Arbour:
         self.pinionThick=pinionThick
         self.escapement=escapement
         self.endCapThick=endCapThick
-        #the pocket chain wheel or cord wheel (needed only to calculate full height)
-        self.chainWheel=chainWheel
+        #the pocket chain wheel or cord wheel (needed to calculate full height and a few tweaks)
+        self.poweredWheel=poweredWheel
         self.style=style
         self.distanceToNextArbour=distanceToNextArbour
         self.nutSpaceMetric=None
         self.pinionAtFront=pinionAtFront
 
         self.ratchet = None
-        if self.chainWheel is not None:
-            self.ratchet=self.chainWheel.ratchet
+        if self.poweredWheel is not None:
+            self.ratchet=self.poweredWheel.ratchet
 
         self.frontSideExtension=0
         self.rearSideExtension=0
@@ -564,7 +564,7 @@ class Arbour:
     def getType(self):
         if self.wheel is not None and self.pinion is not None:
             return ArbourType.WHEEL_AND_PINION
-        if self.wheel is not None and self.ratchet is not None and self.chainWheel is not None:
+        if self.wheel is not None and self.ratchet is not None and self.poweredWheel is not None:
             return ArbourType.CHAIN_WHEEL
         if self.wheel is None and self.escapement is not None and self.pinion is not None:
             return ArbourType.ESCAPE_WHEEL
@@ -615,7 +615,7 @@ class Arbour:
             return self.wheelThick + self.pinionThick + self.endCapThick
         if self.getType() == ArbourType.CHAIN_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
-            return self.wheelThick + self.chainWheel.getHeight() - self.getRatchetInsetness(toCarve=False)
+            return self.wheelThick + self.poweredWheel.getHeight() - self.getRatchetInsetness(toCarve=False)
         if self.getType() == ArbourType.ANCHOR:
             #wheel thick being used for anchor thick
             return self.wheelThick
@@ -757,7 +757,7 @@ class Arbour:
                 #already in the right place
                 shape = shape.add(boltOnRatchet)
 
-            shape = shape.add(self.chainWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
+            shape = shape.add(self.poweredWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
 
 
         return shape
@@ -886,7 +886,9 @@ class Arbour:
                     gearWheel = gearWheel.cut(cutter)
                     # cutter = cq.Workplane("XY").moveTo(holePos[0],holePos[1]).polygon(nSides=6,diameter=getNutContainingDiameter(self.screwSize)+NUT_WIGGLE_ROOM).extrude(getNutHeight(self.screwSize))
                     # gearWheel=gearWheel.cut(cutter)
-                    cutter = self.ratchetScrews.getNutCutter(withBridging=False)
+                    if self.wheelThick - self.ratchetScrews.getNutHeight(half=True) > 1:
+                        cutter = self.ratchetScrews.getNutCutter(withBridging=False, half=True).translate(holePos)
+                    #else screwing straight into the wheel seemed surprisingly secure, and if the wheel is that thin it probably isn't holding much weight anyway
                     gearWheel = gearWheel.cut(cutter)
 
 
