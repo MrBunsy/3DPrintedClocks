@@ -44,7 +44,7 @@ train.printInfo()
 pendulumSticksOut=8
 
 #module size of 0.85 looks printable without stringing!
-train.genGears(module_size=0.85,moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=2, useNyloc=False, ratchetInset=True, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3, style=gearStyle, ratchetScrewsPanHead=False)
+train.genGears(module_size=0.85,moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=2, useNyloc=False, ratchetInset=True, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3, style=gearStyle, ratchetScrews=clock.MachineScrew(2,countersunk=False))
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30, style=gearStyle)

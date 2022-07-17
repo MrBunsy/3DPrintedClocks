@@ -466,7 +466,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, chainWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, screwSize=2, ratchetScrewsPanHead=True):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, chainWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -513,13 +513,14 @@ class Arbour:
             self.wheelMinThick = 2.5
             self.bridgingThickBodge = 1
             bolts=4
-            self.screwSize=screwSize
             outerR = self.ratchet.outsideDiameter/2
             innerR = self.ratchet.toothRadius
             boltDistance = (outerR+innerR)/2
             #offsetting so it's in the middle of a click (where it's slightly wider)
             self.boltPositions=[polar(i*math.pi*2/bolts + math.pi/self.ratchet.ratchetTeeth, boltDistance) for i in range(bolts)]
-            self.ratchetScrewsPanHead = ratchetScrewsPanHead
+            self.ratchetScrews = ratchetScrews
+            if self.ratchetScrews is None:
+                self.ratchetScrews = MachineScrew(2, countersunk=False)
 
         #anchor specific, will be refined once arbour extension info is provided
         # want a square bit so we can use custom long spanners to set the beat
@@ -817,16 +818,18 @@ class Arbour:
         if self.boltOnRatchet:
             #add holes
             for holePos in self.boltPositions:
-                countersunk = not self.ratchetScrewsPanHead
-                ratchetWheel = ratchetWheel.faces(">Z").moveTo(holePos[0], holePos[1]).circle(self.screwSize/2).cutThruAll()
-                headHeight = getScrewHeadHeight(self.screwSize, countersunk=countersunk)
-                if not countersunk:
+                # countersunk = not self.ratchetScrewsPanHead
+                # ratchetWheel = ratchetWheel.faces(">Z").moveTo(holePos[0], holePos[1]).circle(self.screwSize/2).cutThruAll()
+                # headHeight = getScrewHeadHeight(self.screwSize, countersunk=countersunk)
+                # # if not countersunk:
+                # #
+                # #     cutter = cq.Workplane("XY").circle(getScrewHeadDiameter(self.screwSize,countersunk=countersunk)/2+0.1).extrude(headHeight).translate((holePos[0], holePos[1],ratchetOutsideWheelRequired-headHeight))
+                # # else:
+                # #     coneHeight = getScrewHeadHeight(self.screwSize, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE_SMALL
+                # #     topR = getScrewHeadDiameter(self.screwSize, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL
+                #     cutter = cq.Workplane("XY").add(cq.Solid.makeCone(radius2=topR, radius1=self.screwSize / 2, height=coneHeight).translate((holePos[0], holePos[1],ratchetOutsideWheelRequired-coneHeight)))
 
-                    cutter = cq.Workplane("XY").circle(getScrewHeadDiameter(self.screwSize,countersunk=countersunk)/2+0.1).extrude(headHeight).translate((holePos[0], holePos[1],ratchetOutsideWheelRequired-headHeight))
-                else:
-                    coneHeight = getScrewHeadHeight(self.screwSize, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE_SMALL
-                    topR = getScrewHeadDiameter(self.screwSize, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL
-                    cutter = cq.Workplane("XY").add(cq.Solid.makeCone(radius2=topR, radius1=self.screwSize / 2, height=coneHeight).translate((holePos[0], holePos[1],ratchetOutsideWheelRequired-coneHeight)))
+                cutter = self.ratchetScrews.getCutter(withBridging=False).rotate((0,0,0),(0,1,0),180).translate((holePos[0], holePos[1],ratchetOutsideWheelRequired))
                 # return cutter
                 ratchetWheel = ratchetWheel.cut(cutter)
 
@@ -840,9 +843,9 @@ class Arbour:
     def printScrewLength(self):
         if self.getExtraRatchet() is not None:
             length = self.wheelThick-self.getRatchetInsetness(toCarve=False) + self.ratchet.thick
-            if self.ratchetScrewsPanHead:
-                length -= getScrewHeadHeight(self.screwSize)
-            print("Ratchet needs {} screws (m{}) of length {}mm".format("panhead" if self.ratchetScrewsPanHead else "countersunk", self.screwSize,length))
+            if not self.ratchetScrews.countersunk:
+                length -= self.ratchetScrews.getHeadHeight()
+            print("Ratchet needs {} screws of length {}mm".format(self.ratchetScrews.getString(),length))
 
     def getWheelWithRatchet(self, forPrinting=True):
         gearWheel = self.wheel.get3D(holeD=self.arbourD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=self.ratchet.outsideDiameter * 0.5)
@@ -879,10 +882,13 @@ class Arbour:
             if self.getExtraRatchet() is not None:
                 #need screwholes to attach the rest of the ratchet
                 for holePos in self.boltPositions:
-                    cutter = cq.Workplane("XY").moveTo(holePos[0], holePos[1]).circle(self.screwSize/2).extrude(self.wheelThick)
+                    cutter = cq.Workplane("XY").moveTo(holePos[0], holePos[1]).circle(self.ratchetScrews.metric_thread/2).extrude(self.wheelThick)
                     gearWheel = gearWheel.cut(cutter)
-                    cutter = cq.Workplane("XY").moveTo(holePos[0],holePos[1]).polygon(nSides=6,diameter=getNutContainingDiameter(self.screwSize)+NUT_WIGGLE_ROOM).extrude(getNutHeight(self.screwSize))
-                    gearWheel=gearWheel.cut(cutter)
+                    # cutter = cq.Workplane("XY").moveTo(holePos[0],holePos[1]).polygon(nSides=6,diameter=getNutContainingDiameter(self.screwSize)+NUT_WIGGLE_ROOM).extrude(getNutHeight(self.screwSize))
+                    # gearWheel=gearWheel.cut(cutter)
+                    cutter = self.ratchetScrews.getNutCutter(withBridging=False)
+                    gearWheel = gearWheel.cut(cutter)
+
 
         else:
             gearWheel = gearWheel.add(self.getExtraRatchet().translate((0,0,self.wheelThick)))

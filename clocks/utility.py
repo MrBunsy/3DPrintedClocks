@@ -101,7 +101,7 @@ class MachineScrew:
         self.metric_thread=metric_thread
         self.countersunk=countersunk
 
-    def getCutter(self, length=1000, facingUp=True, layerThick=LAYER_THICK):
+    def getCutter(self, length=1000, withBridging=False, layerThick=LAYER_THICK):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -116,7 +116,7 @@ class MachineScrew:
             #countersunk screw lengths seem to include the head
             screw= screw.faces(">Z").workplane().circle(self.metric_thread/2).extrude(length - self.getHeadHeight())
         else:
-            if facingUp:
+            if not withBridging:
                 screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
             else:
                 screw = screw.add(getHoleWithHole(innerD=self.metric_thread, outerD=self.getHeadDiameter()+NUT_WIGGLE_ROOM, deep=self.getHeadHeight() ,layerThick=layerThick))

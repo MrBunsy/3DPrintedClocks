@@ -645,7 +645,7 @@ class RopeWheel:
             screwLength = self.getHeight()-WASHER_THICK
         else:
             screwLength = self.getHeight() - WASHER_THICK - self.screw.getHeadHeight()
-        print("{} screw length {}".format(self.screw.getString(), screwLength))
+        print("RopeWheel needs: {} screw length {}".format(self.screw.getString(), screwLength))
 
     def getTurnsForDrop(self, maxChainDrop):
         return maxChainDrop/self.circumference
@@ -701,7 +701,7 @@ class RopeWheel:
             if top:
                 cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True).rotate((0,0,0),(0,0,1),360/12)
             else:
-                cutter = self.screw.getCutter()
+                cutter = self.screw.getCutter(withBridging=True)
 
             ropeWheel = ropeWheel.cut(cutter.translate(pos))
 
