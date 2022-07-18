@@ -31,6 +31,7 @@ escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorT
 
 train=clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, maxWeightDrop=2000, chainAtBack=False, chainWheels=0, hours=30)
 
+#note, going below a module of 0.85 makes the pinions are bit hard to print - can do it, but I think it's worth sticking with 0.85 as an absolute minimum with a 0.4mm nozzle
 moduleReduction=0.9
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1,moduleReduction=moduleReduction)
 

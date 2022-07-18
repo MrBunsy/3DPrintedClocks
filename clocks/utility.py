@@ -142,7 +142,7 @@ class MachineScrew:
         nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
         if height < 0:
             height = nutHeight
-        nutD = getScrewHeadDiameter(self.metric_thread) + NUT_WIGGLE_ROOM
+        nutD = getNutContainingDiameter(self.metric_thread, NUT_WIGGLE_ROOM)
         if withBridging:
             nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = height, sides=6, layerThick=layerThick)
         else:

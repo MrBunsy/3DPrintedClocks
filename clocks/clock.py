@@ -973,7 +973,8 @@ class ClockPlates:
         plate = plate.tag("top")
         furthestX = max([ abs(holePos[0][0]) for holePos in self.goingTrain.poweredWheel.getChainPositionsFromTop() ])
 
-        minDistanceForChainHoles = (furthestX*2 + self.chainHoleD * 2.5) / 2
+        #juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
+        minDistanceForChainHoles = (furthestX*2 + self.chainHoleD + 5) / 2
 
         bottomPillarR= minDistanceForChainHoles
 
@@ -1226,7 +1227,7 @@ class ClockPlates:
             punch = cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
             punch = punch.faces(">Z").workplane().circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
         else:
-            punch = getHoleWithHole(bearingInfo.innerD + bearingInfo.bearingHolderLip*2,bearingInfo.bearingOuterD, bearingInfo.bearingHeight).faces(">Z").workplane().circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
+            punch = getHoleWithHole(bearingInfo.innerD + bearingInfo.bearingHolderLip*2,bearingInfo.bearingOuterD, bearingInfo.bearingHeight, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
 
         return punch
 
@@ -1326,7 +1327,7 @@ class ClockPlates:
 
         plate = plate.cut(nutSpace)
 
-        screwheadSpace =  getHoleWithHole(self.fixingScrewsD, getScrewHeadDiameter(self.fixingScrewsD)+0.5, screwheadHeight).translate((self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], 0))
+        screwheadSpace =  getHoleWithHole(self.fixingScrewsD, getScrewHeadDiameter(self.fixingScrewsD)+0.5, screwheadHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], 0))
 
         plate = plate.cut(screwheadSpace)
 
