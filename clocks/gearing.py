@@ -10,6 +10,7 @@ class GearStyle(Enum):
     CIRCLES = "circles"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
+    #spokes these don't print nicely with petg - very stringy
     SPOKES = "spokes"
     STEAMTRAIN = "steamtrain"
     CARTWHEEL = "cartwheel"

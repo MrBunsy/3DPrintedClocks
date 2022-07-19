@@ -642,13 +642,13 @@ class Pendulum:
 
         pendulum = cq.Workplane("XY")
 
-        width = holeD*4
-        height = holeD*6
+        width = 12#holeD*4
+        height = 26#holeD*6
 
         #(0,0,0) is the rod from the anchor, the rod is along the z axis
 
         #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
-        holeStartY=-height*0.2
+        holeStartY=-8#-height*0.2
         holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + 1
         holeEndY = holeStartY - holeHeight
 
