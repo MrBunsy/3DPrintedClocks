@@ -1,12 +1,13 @@
 from clocks import clock
 
 '''
-Repeat of Clock 10 but with improvements. Eight days, with pulley.
+Repeat of Clock 10 but with improvements. Eight days, with pulley. 1.2m drop
 
 Changes from clock 10 planned:
 
  - Pendulum needs to stick out further to cope with larger weights
  - Why not try a second hand without a visible hole?
+ - go back to slightly thicker gears to increase robustness (I'm worried about long term life of the clock and seen the escape wheel teeth bend) and make up for friction with longer drop
 
 '''
 outputSTL = False
@@ -19,7 +20,7 @@ if 'show_object' not in globals():
 
 clockName="wall_clock_12"
 clockOutDir="out"
-gearStyle=clock.GearStyle.CARTWHEEL
+gearStyle=clock.GearStyle.ARCS
 
 # drop =1.5
 # lift =3
@@ -29,18 +30,21 @@ drop=2
 lock=2
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1900, chainAtBack=False, chainWheels=1, hours=180, max_chain_wheel_d=21)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24)
 
 moduleReduction=0.9
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
-train.setChainWheelRatio([93, 10])
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=10, style=gearStyle, useKey=True)
-train.printInfo()
+# train.setChainWheelRatio([93, 10])
+
+train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=10, style=gearStyle, useKey=True, preferedDiameter=25)
+#override default until it calculates an ideally sized wheel
+train.calculatePoweredWheelRatios(wheel_max=100)
+train.printInfo(weight_kg=4)
 
 pendulumSticksOut=30
 
-train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=3, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, ratchetInset=True, ratchetScrews=False)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=3, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, ratchetInset=True)#, chainModuleIncrease=1.1)
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 

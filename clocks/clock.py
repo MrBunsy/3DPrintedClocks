@@ -244,10 +244,10 @@ class GoingTrain:
 
         self.trains = [time]
 
-    def calculatePoweredWheelRatios(self):
+    def calculatePoweredWheelRatios(self, pinion_min = 10, pinion_max = 20, wheel_min = 20, wheel_max = 120):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
-        NOTE - does a terrible job with cord wheels as it doesn't take coiling multiple layers into account
+        TODO currently this tries to choose the largest wheel possible so it can fit. ideally we want the smallest wheel that fits to reduce plate size
         '''
         if self.chainWheels == 0:
             '''
@@ -267,10 +267,7 @@ class GoingTrain:
 
             allGearPairCombos = []
 
-            pinion_min = 10
-            pinion_max = 20
-            wheel_min = 20
-            wheel_max = 120
+
 
             for p in range(pinion_min, pinion_max):
                 for w in range(wheel_min, wheel_max):
@@ -303,6 +300,9 @@ class GoingTrain:
             raise ValueError("Unsupported number of chain wheels")
 
     def setChainWheelRatio(self, pinionPair):
+        '''
+        Note, shouldn't need to use this anymore, and I think it's overriden when generating powered wheels anyway!
+        '''
         self.chainWheelRatio = pinionPair
 
     def isWeightOnTheRight(self):
@@ -359,9 +359,15 @@ class GoingTrain:
 
         self.calculatePoweredWheelRatios()
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC"):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1):
+        '''
+        If preferred diameter is provided, use that rather than the min diameter
+        '''
+        diameter = preferedDiameter
+        if diameter < 0:
+            diameter = CordWheel.getMinDiameter()
 
-        self.calculatePoweredWheelInfo(CordWheel.getMinDiameter())
+        self.calculatePoweredWheelInfo(diameter)
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
         self.calculatePoweredWheelRatios()
 
@@ -388,9 +394,11 @@ class GoingTrain:
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
         chainRatio = 1
+        chainRatios=[1]
         if self.chainWheels > 0:
             print(self.chainWheelRatio)
             chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
+            chainRatios=self.chainWheelRatio
 
         runtime_hours = self.poweredWheel.getRunTime(chainRatio, self.getCordUsage())
 
@@ -398,7 +406,7 @@ class GoingTrain:
         power = weight_kg * GRAVITY * drop_m / (runtime_hours*60*60)
         power_uW = power * math.pow(10, 6)
 
-        print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f}".format(runtime_hours, self.getCordUsage() / 1000,self.maxWeightDrop, chainRatio))
+        print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.getCordUsage() / 1000,self.maxWeightDrop, chainRatio, chainRatios))
         print("With a weight of {}kg, this results in a power usage of {:.2f}μW".format(weight_kg, power_uW))
 
 
@@ -1537,7 +1545,7 @@ class Assembly:
         if self.showPendulum:
 
 
-            clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,0),(0,0,1),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
+            clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
 
             clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ + self.pendulum.bobThick/2)))
 

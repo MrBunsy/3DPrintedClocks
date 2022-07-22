@@ -74,10 +74,24 @@ if 'show_object' not in globals():
 # ropeWheel.outputSTLs("test","out")
 
 
-pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+# pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+#
+# # show_object(pendulum.getBob(hollow=True))
+# show_object(pendulum.getPendulumForRod())
 
-# show_object(pendulum.getBob(hollow=True))
-show_object(pendulum.getPendulumForRod())
+# motionWorks = MotionWorks(minuteHandHolderHeight=30 )
+#
+# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False, outline=1.2)
+#
+# show_object(hands.getHand(hour=False))
+
+
+weight = Weight(height=150, diameter=35, wallThick=1.8)
+weight.printInfo()
+
+show_object(weight.getLid())
+
+weight.outputSTLs("temp", "out")
 
 
 # weight = Weight()

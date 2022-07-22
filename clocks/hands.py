@@ -113,8 +113,8 @@ class Hands:
             base_r = self.secondLength * 0.2
             #don't let it be smaller than the rounded end!
             base_r = max(base_r, self.length * 0.1/2)
-            #want second hand to be as light as possible for the surprisingly marginal 8-day with pulley
-            thick = 1
+            # #want second hand to be as light as possible for the surprisingly marginal 8-day with pulley
+            # thick = 1
 
             if self.style == "cuckoo":
                 base_r = self.secondLength * 0.12

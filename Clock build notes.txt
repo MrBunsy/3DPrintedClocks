@@ -186,14 +186,18 @@ Stops when the anchor's arbour extension rests against the front plate. Might wa
 
 Why not use glue to hold the cap to the cord wheel? Then I don't need to worry about the screws and can use smaller diameters if required - would need to re-think how to attach the click
 
-IDEA - instead of the washer between anchor and back plate, why not put the escape wheel the other way around and then the anchor will be in the middle again?
+IDEA - instead of the washer between anchor and back plate, why not put the escape wheel the other way around and then the anchor will be in the middle again? DONE (bit bodgey)
 
 I have noticed the first version of clock 06 does bend, but still works. I think plate-distance reduction will be worth it
 
-I've noticed teh hour hand is really very loose, especially when the motion works is positioned the otehr way up, as on the last two eight days. I'm wondering about tweaking the gears to try and improve this - it never got any attention as it "just worked" first time.
+I've noticed teh hour hand is really very loose, especially when the motion works is positioned the otehr way up, as on the last two eight days. I'm wondering about tweaking the gears to try and improve this - it never got any attention as it "just worked" first time. DONE
 
 
-IDEA - refactor so there's a Screw class which holds together all the useful info: thread size, head type (and sizes) and can produce cuttable shapes
+IDEA - refactor so there's a Screw class which holds together all the useful info: thread size, head type (and sizes) and can produce cuttable shapes DONE!
 
 Clock 10:
 The standoff on the cordwheel cap needs to be taller - the thinner caps can be a bit wonky and then it is in contact with the front plate. Alternatively: go back to 2mm thick?
+
+IDEA - to make the pendulum more rigid, increase space inside the pendulum-for-rod fixing (even more so!) so there's space to put an extra nut above the nyloc nut, to turn against it and really fix that in place. combined with the extra nuts on the outside of the hand-avoider, then the whole pendulum rod shouldn't rotate when adjustin the bob
+
+8 day clock thoughts: go back to minimum of 2mm thick gears and increase the drop when using a pulley instead. This might be more robust overall
