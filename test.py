@@ -161,9 +161,9 @@ pair = WheelPinionPair(80,10, module=1)
 
 arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.FLOWER)
 
-show_object(arbour.getShape())
+# show_object(arbour.getShape())
 
-# show_object(getGearDemo(justStyle=GearStyle.FLOWER))
+show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 
 #
 # path = "out"

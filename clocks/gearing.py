@@ -93,9 +93,13 @@ class Gear:
             armWidth = armToHoleRatio * pairWidth
             petalWidth = pairWidth * (1 - armToHoleRatio)
 
+        armOuterAngle=armWidth/outerRadius
+
         cutter = cq.Workplane("XY")
 
         cutterThick = 1000
+
+        outerTipR = innerRadius + (outerRadius - innerRadius)*0.4
 
         for p in range(petals):
 
@@ -112,6 +116,25 @@ class Gear:
             except:
                 print("unable to produce flower cutter:", innerRadius, outerRadius)
 
+            if petals > 10:
+                #the extra cut out bits will look messy, so don't bother with them
+                continue
+            outerStartAngle=tipAngle+armOuterAngle
+            outerEndAngle = tipAngle + math.pi*2/petals - armOuterAngle
+            outerTipAngle = (outerStartAngle + outerEndAngle)/2
+
+            outerStartPos = polar(outerStartAngle, outerRadius)
+            outerEndPos = polar(outerEndAngle, outerRadius)
+            outerTipPos = polar(outerTipAngle, outerTipR)
+
+            outercutter = cq.Workplane("XY").moveTo(outerStartPos[0], outerStartPos[1]).radiusArc(outerEndPos, -outerRadius - 0.1)
+            # outercutter = outercutter.lineTo(outerTipPos[0], outerTipPos[1])
+            # outercutter = outercutter.lineTo(outerStartPos[0], outerStartPos[1])
+            outercutter = outercutter.radiusArc(outerTipPos, petalRadius + armWidth)
+            outercutter = outercutter.radiusArc(outerStartPos, petalRadius + armWidth)
+            outercutter = outercutter.close().extrude(cutterThick)
+
+            cutter = cutter.add(outercutter)
 
 
         return gear.cut(cutter)
