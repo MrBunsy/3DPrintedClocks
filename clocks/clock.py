@@ -1609,3 +1609,68 @@ class Assembly:
         out = os.path.join(path, "{}.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getClock(), out)
+
+
+def getHandDemo(length = 120, perRow=3):
+    demo = cq.Workplane("XY")
+
+    motionWorks = MotionWorks(minuteHandHolderHeight=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+
+    for i,style in enumerate(HandStyle):
+        hands = Hands(style=style, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize + 0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1,
+                      outlineSameAsBody=False, secondLength=25)
+
+        x = length*(i%perRow)
+
+        y = (length*1.1)*math.floor(i/perRow)
+        demo = demo.add(hands.getHand(hour=True).translate((x, y)))
+        demo = demo.add(hands.getHand(hour=False).translate((x+length*0.3, y)))
+        try:
+            demo = demo.add(hands.getHand(second=True).translate((x-length*0.3, y)))
+        except:
+            print("Unable to generate second hand for {}".format(style.value))
+
+
+    return demo
+
+def getGearDemo(module=1, justStyle=None):
+    demo = cq.Workplane("XY")
+
+    train = GoingTrain(pendulum_period=2, fourth_wheel=False, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5 * 24)
+
+    moduleReduction = 0.9
+
+    train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
+    # train.setChainWheelRatio([93, 10])
+
+    train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=None, useKey=True, preferedDiameter=25)
+    # override default until it calculates an ideally sized wheel
+    train.calculatePoweredWheelRatios(wheel_max=100)
+
+    train.genGears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,
+                   ratchetInset=False)
+    demoArbours = [0, 1, 3]
+
+    gap = 10
+    space = max([ train.getArbourWithConventionalNaming(i).getMaxRadius()*2 for i in demoArbours]) + gap
+
+    x=0
+
+    for i,style in enumerate(GearStyle):
+        if justStyle is not None and style != justStyle:
+            continue
+        print(style.value)
+
+        y=0
+        for gear in demoArbours:
+            print(style.value, gear)
+
+            arbour = train.getArbourWithConventionalNaming(gear)
+            arbour.style = style
+            y += arbour.getMaxRadius() + gap
+            demo = demo.add(arbour.getShape().translate((x,y,0)))
+            y += arbour.getMaxRadius()
+
+        x += space
+
+    return demo

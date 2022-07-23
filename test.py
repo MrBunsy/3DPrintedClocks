@@ -85,13 +85,22 @@ if 'show_object' not in globals():
 #
 # show_object(hands.getHand(hour=False))
 
-motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
-hands = Hands(style=HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+# motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+#
+# hands = Hands(style=HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+#
+# show_object(hands.getHand(hour=True).translate((40,0)))
+# show_object(hands.getHand(hour=False))
+# show_object(hands.getHand(second=True).translate((-40,0)))
 
-show_object(hands.getHand(hour=True).translate((40,0)))
-show_object(hands.getHand(hour=False))
-show_object(hands.getHand(second=True).translate((-40,0)))
+
+
+
+
+
+
+# show_object(getHandDemo())
 
 # weight = Weight(height=150, diameter=35, wallThick=1.8)
 # weight.printInfo()
@@ -148,11 +157,14 @@ show_object(hands.getHand(second=True).translate((-40,0)))
 
 # show_object(poweredArbour.getExtraRatchet())
 
-# pair = WheelPinionPair(80,10, module=1)
-#
-# arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.STEAMTRAIN)
-#
-# show_object(arbour.getShape())
+pair = WheelPinionPair(80,10, module=1)
+
+arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.FLOWER)
+
+show_object(arbour.getShape())
+
+# show_object(getGearDemo(justStyle=GearStyle.FLOWER))
+
 #
 # path = "out"
 # name="test_train"

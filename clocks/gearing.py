@@ -16,7 +16,7 @@ class GearStyle(Enum):
     CARTWHEEL = "cartwheel"
     #unimplemented:
     FLOWER = "flower"
-    HONEYCOMB = "honeycomb"
+    # HONEYCOMB = "honeycomb"
 
 '''
 ideas for new styles:
@@ -66,8 +66,55 @@ class Gear:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
         if style == GearStyle.CARTWHEEL:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
+        if style == GearStyle.FLOWER:
+            return Gear.cutFlowerStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
 
         return gear
+
+    @staticmethod
+    def cutFlowerStyle(gear, outerRadius, innerRadius):
+
+        petals = 5
+
+        armToHoleRatio = 0.5
+
+        innerCircumference=math.pi*2*innerRadius
+
+        pairWidth = innerCircumference/petals
+        armWidth = armToHoleRatio*pairWidth
+        petalWidth = pairWidth*(1-armToHoleRatio)
+        #
+        petalRadius = (outerRadius - innerRadius)*0.75
+
+        #if this is a wheel with a relatively large inner radius (like a cord wheel), increase the number of petals
+        while petalRadius < petalWidth*1.5:
+            petals+=1
+            pairWidth = innerCircumference / petals
+            armWidth = armToHoleRatio * pairWidth
+            petalWidth = pairWidth * (1 - armToHoleRatio)
+
+        cutter = cq.Workplane("XY")
+
+        cutterThick = 1000
+
+        for p in range(petals):
+
+            startAngle = p*math.pi*2/petals
+            endAngle = startAngle + (1-armToHoleRatio)*math.pi*2/petals
+
+            tipAngle = (startAngle + endAngle)/2
+
+            startPos = polar(startAngle,innerRadius)
+            tipPos = polar(tipAngle, outerRadius)
+            endPos = polar(endAngle, innerRadius)
+            try:
+                cutter = cutter.add(cq.Workplane("XY").moveTo(startPos[0], startPos[1]).radiusArc(tipPos, -petalRadius).radiusArc(endPos, -petalRadius).radiusArc(startPos,innerRadius).close().extrude(cutterThick))
+            except:
+                print("unable to produce flower cutter:", innerRadius, outerRadius)
+
+
+
+        return gear.cut(cutter)
 
     @staticmethod
     def cutSteamTrainStyle(gear, outerRadius, innerRadius, spokes=20, withWeight=True):

@@ -11,6 +11,7 @@ class HandStyle(Enum):
     CUCKOO = "cuckoo"
     SPADE = "spade"
 
+
 class Hands:
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
         '''
@@ -82,9 +83,13 @@ class Hands:
 
     def cutFixing(self, hand, hour, second=False):
         if second and self.secondFixing == "rod":
-            #second hand, assuming threaded onto a threaded rod
-            hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + self.thick)
-            hand = hand.moveTo(0, 0).circle(self.secondFixing_d/2).cutThruAll()
+            #second hand, assuming threaded onto a threaded rod, hole doesn't extend all the way through
+            # hand = hand.moveTo(0, 0).circle(self.secondFixing_d / 2).cutThruAll()
+
+            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d / 2).extrude(self.thick/2).translate((0,0,self.thick/2)))
+
+            hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
+
             return hand
 
         if not hour and self.minuteFixing == "rectangle":
@@ -155,10 +160,18 @@ class Hands:
             handWidth = self.length*0.05
             if second:
                 handWidth = self.length * 0.025
+
             spadeBaseR = length*0.05*2
+
+            if hour and not second:
+                spadeBaseR*=1.4
+
             spadeTopLength = length*0.4
             spadeTipWidth = handWidth*0.5
             tipLength = length*0.1
+
+            # if second:
+            #     spadeTipWidth*=0.9
 
             # length = length - tipLength - spadeTopLength
 
