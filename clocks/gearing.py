@@ -16,6 +16,7 @@ class GearStyle(Enum):
     CARTWHEEL = "cartwheel"
     FLOWER = "flower"
     HONEYCOMB = "honeycomb"
+    HONEYCOMB_SMALL = "honeycomb_small"
 
 '''
 ideas for new styles:
@@ -69,14 +70,22 @@ class Gear:
             return Gear.cutFlowerStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
         if style == GearStyle.HONEYCOMB:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
+        if style == GearStyle.HONEYCOMB_SMALL:
+            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2, big=False)
 
         return gear
 
     @staticmethod
-    def cutHoneycombStyle(gear, outerRadius, innerRadius):
+    def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True):
 
-        #TODO choose sensibly
+        #TODO they're not equally spaced, slightly further apart in y axis than x! (need to readjust how I'm using padding)
+
         hexagonDiameter = outerRadius/3
+        if big:
+            hexagonDiameter = innerRadius*2
+
+            if innerRadius > outerRadius*0.5:
+                hexagonDiameter = outerRadius / 3
 
         if hexagonDiameter < 6:
             hexagonDiameter = 6
@@ -86,6 +95,8 @@ class Gear:
 
         if padding < 1.5:
             padding=1.5
+        #experimenting to reduce the tiny bits teh slicer likes to make
+        # padding = padding - (padding % EXTRUSION_WIDTH)
 
         hexagonHeight = hexagonDiameter*0.5*math.sin(math.pi*2/6)*2
 
@@ -98,12 +109,18 @@ class Gear:
         for i in range(-count, count):
             for j in range(-count*2, count*2):
                 offset = 0
-                if j % 2 == 0:
+                if j % 2 != 0:
                     offset = 0.5
-
-                x = (i-offset)*(hexagonDiameter + padding + hexagonSideLength)
+                #cos(60deg) is 0.5, so padding in x 1.5 bigger
+                x = (i-offset)*(hexagonDiameter + padding*1.5 + hexagonSideLength)
                 y = j*(hexagonHeight + padding)/2
 
+                #undecided if it looks better or worse with the slivers of hexagons on the edges
+                if math.sqrt(x*x + y*y) > outerRadius + padding:
+                    #skip if it's more than half outside
+                    continue
+                if x == 0 and y ==0:
+                    continue
 
                 honeycomb = honeycomb.add(cq.Workplane("XY").polygon(nSides=6,diameter=hexagonDiameter).extrude(cutterThick).translate((x, y)))
 
