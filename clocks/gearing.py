@@ -14,9 +14,8 @@ class GearStyle(Enum):
     SPOKES = "spokes"
     STEAMTRAIN = "steamtrain"
     CARTWHEEL = "cartwheel"
-    #unimplemented:
     FLOWER = "flower"
-    # HONEYCOMB = "honeycomb"
+    HONEYCOMB = "honeycomb"
 
 '''
 ideas for new styles:
@@ -68,8 +67,45 @@ class Gear:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
         if style == GearStyle.FLOWER:
             return Gear.cutFlowerStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
+        if style == GearStyle.HONEYCOMB:
+            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
 
         return gear
+
+    @staticmethod
+    def cutHoneycombStyle(gear, outerRadius, innerRadius):
+
+        #TODO choose sensibly
+        hexagonDiameter = outerRadius/3
+        hexagonSideLength = hexagonDiameter * math.sin(math.pi/6)
+        padding = outerRadius*0.075
+        hexagonHeight = hexagonDiameter*0.5*math.sin(math.pi*2/6)*2
+
+        cutterThick = 100
+
+        honeycomb = cq.Workplane("XY")#.circle(outerRadius).extrude(cutterThick)
+
+        count = math.ceil(outerRadius/hexagonDiameter) + 2
+
+        for i in range(-count, count):
+            for j in range(-count*2, count*2):
+                offset = 0
+                if j % 2 == 0:
+                    offset = 0.5
+
+                x = (i-offset)*(hexagonDiameter + padding + hexagonSideLength)
+                y = j*(hexagonHeight + padding)/2
+
+
+                honeycomb = honeycomb.add(cq.Workplane("XY").polygon(nSides=6,diameter=hexagonDiameter).extrude(cutterThick).translate((x, y)))
+
+        honeycomb = honeycomb.cut(cq.Workplane("XY").circle(innerRadius).extrude(cutterThick))
+
+        outerRing = cq.Workplane("XY").circle(outerRadius*2).circle(outerRadius).extrude(cutterThick)
+
+        honeycomb = honeycomb.cut(outerRing)
+
+        return gear.cut(honeycomb)
 
     @staticmethod
     def cutFlowerStyle(gear, outerRadius, innerRadius):
