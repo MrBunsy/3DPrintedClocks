@@ -77,8 +77,16 @@ class Gear:
 
         #TODO choose sensibly
         hexagonDiameter = outerRadius/3
+
+        if hexagonDiameter < 6:
+            hexagonDiameter = 6
+
         hexagonSideLength = hexagonDiameter * math.sin(math.pi/6)
         padding = outerRadius*0.075
+
+        if padding < 1.5:
+            padding=1.5
+
         hexagonHeight = hexagonDiameter*0.5*math.sin(math.pi*2/6)*2
 
         cutterThick = 100
@@ -219,8 +227,8 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutSpokesStyle(gear, outerRadius, innerRadius, pairs = 7):
-        armThick = outerRadius * 0.1
+    def cutSpokesStyle(gear, outerRadius, innerRadius, pairs = 11):
+        armThick = outerRadius * 0.05
 
         spokes = cq.Workplane("XY")
         cutterThick = 100
@@ -1065,7 +1073,7 @@ class MotionWorks:
 
         motionWorksModel = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         motionWorksModel = motionWorksModel.add(self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick())))
-        motionWorksModel = motionWorksModel.add(self.getMotionArbour().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], self.getCannonPinionBaseThick() / 2)))
+        motionWorksModel = motionWorksModel.add(self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], self.getCannonPinionBaseThick() / 2)))
 
         return motionWorksModel
 
@@ -1110,7 +1118,16 @@ class MotionWorks:
         return pinion
 
     def getMotionArbour(self):
+        # mini arbour that sits between the cannon pinion and the hour wheel
+        #this is an actual Arbour object
+        wheel = self.pairs[0].wheel
+        pinion = self.pairs[1].pinion
+
+        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.holeD, wheelThick=self.thick, pinionThick=self.thick * 3, endCapThick=self.thick/2, style=self.style)
+
+    def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
+        #this is just a cadquery shape
         wheel = self.pairs[0].wheel
         pinion = self.pairs[1].pinion
 
@@ -1122,9 +1139,6 @@ class MotionWorks:
 
         arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(self.thick * 0.5).circle(self.holeD / 2).cutThruAll()
         return arbour
-
-        return getArbour(self.pairs[0].wheel, self.pairs[1].pinion,holeD=self.holeD, thick = self.thick, style=self.style)
-
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
 
@@ -1183,7 +1197,7 @@ class MotionWorks:
 
         out = os.path.join(path, "{}_motion_arbour.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getMotionArbour(), out)
+        exporters.export(self.getMotionArbourShape(), out)
 
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)

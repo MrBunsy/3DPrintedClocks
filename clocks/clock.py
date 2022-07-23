@@ -1649,10 +1649,17 @@ def getGearDemo(module=1, justStyle=None):
 
     train.genGears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,
                    ratchetInset=False)
-    demoArbours = [0, 1, 3]
 
-    gap = 10
-    space = max([ train.getArbourWithConventionalNaming(i).getMaxRadius()*2 for i in demoArbours]) + gap
+    motionWorks = MotionWorks(minuteHandHolderHeight=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+
+    demoArboursNums = [0, 1, 3]
+
+    #get a chain wheel, a normal wheel, an escape wheel and part of the motion works for a good spread of sizes and inner radii
+    demoArbours = [train.getArbourWithConventionalNaming(i) for i in demoArboursNums]
+    demoArbours.append(motionWorks.getMotionArbour())
+
+    gap = 5
+    space = max([arbour.getMaxRadius()*2 for arbour in demoArbours]) + gap
 
     x=0
 
@@ -1662,10 +1669,7 @@ def getGearDemo(module=1, justStyle=None):
         print(style.value)
 
         y=0
-        for gear in demoArbours:
-            print(style.value, gear)
-
-            arbour = train.getArbourWithConventionalNaming(gear)
+        for arbour in demoArbours:
             arbour.style = style
             y += arbour.getMaxRadius() + gap
             demo = demo.add(arbour.getShape().translate((x,y,0)))
