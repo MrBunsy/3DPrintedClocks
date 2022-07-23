@@ -99,6 +99,16 @@ class Hands:
 
         return hand
    
+    def outLineIsSubtractive(self):
+        '''
+        If the outline is a negative shell from the outline provided by hand, return true
+        if the outline is a positive shell, return false (for hands with thin bits where there isn't enough width)
+        '''
+
+        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE]:
+            return False
+
+        return True
 
     def getHand(self, hour=True, outline=False, second=False):
         '''
@@ -139,8 +149,33 @@ class Hands:
                 width = self.length * 0.05
             hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(thick)
         elif self.style == HandStyle.SQUARE:
-            handWidth = self.length * 0.3 * 0.25
-            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(thick)
+            handWidth = base_r*2
+            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
+        elif self.style == HandStyle.SPADE:
+            handWidth = self.length*0.05
+            if second:
+                handWidth = self.length * 0.025
+            spadeBaseR = length*0.05*2
+            spadeTopLength = length*0.4
+            spadeTipWidth = handWidth*0.5
+            tipLength = length*0.1
+
+            # length = length - tipLength - spadeTopLength
+
+            armLength = length - tipLength - spadeTopLength
+
+            midPoint = (spadeBaseR*0.75,armLength + spadeTopLength*0.3)
+            tipBase = (spadeTipWidth/2,armLength + spadeTopLength)
+            tipEndSide = (spadeTipWidth/2,armLength + spadeTopLength + tipLength)
+            tip = (0,armLength + spadeTopLength + tipLength + spadeTipWidth/2)
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, armLength / 2).rect(handWidth, armLength).extrude(thick)
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, armLength-spadeBaseR).radiusArc((spadeBaseR, armLength), -spadeBaseR)\
+                .tangentArcPoint(midPoint, relative=False)\
+                .tangentArcPoint(tipBase, relative=False).tangentArcPoint(tipEndSide,relative=False).tangentArcPoint(tip, relative=False)\
+                .mirrorY().extrude(thick)
+
         elif self.style == HandStyle.CUCKOO:
 
             end_d = self.length * 0.3 * 0.1
@@ -228,7 +263,7 @@ class Hands:
             ignoreOutline = True
 
         if self.outline > 0 and not ignoreOutline:
-            if self.style != HandStyle.CUCKOO:
+            if self.outLineIsSubtractive():
                 if outline:
                     #use a negative shell to get a thick line just inside the edge of the hand
 
