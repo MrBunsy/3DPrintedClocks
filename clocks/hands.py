@@ -4,14 +4,15 @@ import os
 from cadquery import exporters
 from enum import Enum
 
-# class HandStyle(Enum):
-#     SQUARE = "square"
-#     SIMPLE = "simple"
-#     SIMPLE_ROUND = "simple_rounded"
-#     CUCKOO = "cuckoo"
+class HandStyle(Enum):
+    SQUARE = "square"
+    SIMPLE = "simple"
+    SIMPLE_ROUND = "simple_rounded"
+    CUCKOO = "cuckoo"
+    SPADE = "spade"
 
 class Hands:
-    def __init__(self, style="simple", minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
+    def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
         '''
 
         '''
@@ -22,6 +23,13 @@ class Hands:
         self.fixing_offset=fixing_offset
         self.length = length
         self.style=style
+
+        #backwards compat, support old strings
+        if isinstance(self.style, str):
+            for handStyle in HandStyle:
+                if self.style == handStyle.value:
+                    self.style = handStyle
+
         self.minuteFixing=minuteFixing
         self.minuteFixing_d1 = minuteFixing_d1
         self.minuteFixing_d2 = minuteFixing_d2
@@ -44,7 +52,7 @@ class Hands:
         #the found bit that attaches to the clock
         self.base_r = length * 0.12
 
-        if self.style == "square":
+        if self.style == HandStyle.SQUARE:
             self.base_r /= 2
 
         #ensure it's actually big enoguh to fit onto the fixing
@@ -116,24 +124,24 @@ class Hands:
             # #want second hand to be as light as possible for the surprisingly marginal 8-day with pulley
             # thick = 1
 
-            if self.style == "cuckoo":
+            if self.style == HandStyle.CUCKOO:
                 base_r = self.secondLength * 0.12
 
 
         hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(thick)
 
-        if self.style == "simple":
+        if self.style == HandStyle.SIMPLE:
             width = self.length * 0.1
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(thick)
-        elif self.style == "simple_rounded":
+        elif self.style == HandStyle.SIMPLE_ROUND:
             width = self.length * 0.1
-            # if second:
-            #     width = length * 0.2
+            if second:
+                width = self.length * 0.05
             hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(thick)
-        elif self.style == "square":
+        elif self.style == HandStyle.SQUARE:
             handWidth = self.length * 0.3 * 0.25
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(handWidth, length).extrude(thick)
-        elif self.style == "cuckoo":
+        elif self.style == HandStyle.CUCKOO:
 
             end_d = self.length * 0.3 * 0.1
             centrehole_y = length * 0.6
@@ -216,11 +224,11 @@ class Hands:
         hand = self.cutFixing(hand, hour, second)
 
         ignoreOutline = False
-        if self.style == "cuckoo" and second:
+        if self.style == HandStyle.CUCKOO and second:
             ignoreOutline = True
 
         if self.outline > 0 and not ignoreOutline:
-            if self.style != "cuckoo":
+            if self.style != HandStyle.CUCKOO:
                 if outline:
                     #use a negative shell to get a thick line just inside the edge of the hand
 

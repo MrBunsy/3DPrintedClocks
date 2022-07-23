@@ -37,7 +37,7 @@ moduleReduction=0.9
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 # train.setChainWheelRatio([93, 10])
 
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=10, style=gearStyle, useKey=True, preferedDiameter=25)
+train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25)
 #override default until it calculates an ideally sized wheel
 train.calculatePoweredWheelRatios(wheel_max=100)
 train.printInfo(weight_kg=4)
@@ -59,7 +59,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 #rear plate super thick mainly just to ensure there's enough space for the weight to not bump into the wall!
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 10", style="vertical", motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True)
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical", motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True)
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)

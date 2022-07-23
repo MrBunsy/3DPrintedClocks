@@ -1195,13 +1195,13 @@ class ClockPlates:
 
             # original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
             # so instead, put a screw in from the front
-
+            pulleyY =  bottomPillarPos[1]+bottomPillarR/2
             # this screw will provide something for the cord to be tied round
-            pulleyScrewHole = cq.Workplane("XY").moveTo(pulleyX, bottomPillarPos[1]).circle(self.fixingScrewsD / 2).extrude(10000)
+            pulleyScrewHole = cq.Workplane("XY").moveTo(pulleyX, pulleyY).circle(self.fixingScrewsD / 2).extrude(10000)
             coneHeight = getScrewHeadHeight(self.fixingScrewsD, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
             topR = getScrewHeadDiameter(self.fixingScrewsD, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
             topZ = self.plateDistance
-            pulleyScrewHole = pulleyScrewHole.add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2, height=coneHeight).translate((pulleyX, bottomPillarPos[1], topZ - coneHeight)))
+            pulleyScrewHole = pulleyScrewHole.add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrewsD / 2, height=coneHeight).translate((pulleyX, pulleyY, topZ - coneHeight)))
             chainHoles.add(pulleyScrewHole)
         return chainHoles
 

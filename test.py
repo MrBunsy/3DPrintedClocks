@@ -85,13 +85,20 @@ if 'show_object' not in globals():
 #
 # show_object(hands.getHand(hour=False))
 
+motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
-weight = Weight(height=150, diameter=35, wallThick=1.8)
-weight.printInfo()
+hands = Hands(style=HandStyle.SQUARE, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 
-show_object(weight.getLid())
+show_object(hands.getHand(hour=True).translate((40,0)))
+show_object(hands.getHand(hour=False))
+show_object(hands.getHand(second=True).translate((-40,0)))
 
-weight.outputSTLs("temp", "out")
+# weight = Weight(height=150, diameter=35, wallThick=1.8)
+# weight.printInfo()
+#
+# show_object(weight.getLid())
+#
+# weight.outputSTLs("temp", "out")
 
 
 # weight = Weight()
