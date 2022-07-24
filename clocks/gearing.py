@@ -77,9 +77,6 @@ class Gear:
 
     @staticmethod
     def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True):
-
-        #TODO they're not equally spaced, slightly further apart in y axis than x! (need to readjust how I'm using padding)
-
         hexagonDiameter = outerRadius/3
         if big:
             hexagonDiameter = innerRadius*2
@@ -90,14 +87,17 @@ class Gear:
         if hexagonDiameter < 6:
             hexagonDiameter = 6
 
-        hexagonSideLength = hexagonDiameter * math.sin(math.pi/6)
+
         padding = outerRadius*0.075
 
         if padding < 1.5:
             padding=1.5
         #experimenting to reduce the tiny bits teh slicer likes to make
-        # padding = padding - (padding % EXTRUSION_WIDTH)
+        padding = padding - (padding % EXTRUSION_WIDTH)
 
+        hexagonDiameter+=padding
+
+        hexagonSideLength = hexagonDiameter * math.sin(math.pi / 6)
         hexagonHeight = hexagonDiameter*0.5*math.sin(math.pi*2/6)*2
 
         cutterThick = 100
@@ -111,18 +111,17 @@ class Gear:
                 offset = 0
                 if j % 2 != 0:
                     offset = 0.5
-                #cos(60deg) is 0.5, so padding in x 1.5 bigger
-                x = (i-offset)*(hexagonDiameter + padding*1.5 + hexagonSideLength)
-                y = j*(hexagonHeight + padding)/2
+                x = (i-offset)*(hexagonDiameter + hexagonSideLength)
+                y = j*(hexagonHeight)/2
 
                 #undecided if it looks better or worse with the slivers of hexagons on the edges
-                if math.sqrt(x*x + y*y) > outerRadius + padding:
+                if math.sqrt(x*x + y*y) > outerRadius + padding*1.2:
                     #skip if it's more than half outside
                     continue
                 if x == 0 and y ==0:
                     continue
 
-                honeycomb = honeycomb.add(cq.Workplane("XY").polygon(nSides=6,diameter=hexagonDiameter).extrude(cutterThick).translate((x, y)))
+                honeycomb = honeycomb.add(cq.Workplane("XY").polygon(nSides=6,diameter=hexagonDiameter-padding).extrude(cutterThick).translate((x, y)))
 
         honeycomb = honeycomb.cut(cq.Workplane("XY").circle(innerRadius).extrude(cutterThick))
 
