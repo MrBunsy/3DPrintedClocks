@@ -74,10 +74,10 @@ if 'show_object' not in globals():
 # ropeWheel.outputSTLs("test","out")
 
 
-# pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
-#
-# # show_object(pendulum.getBob(hollow=True))
-# show_object(pendulum.getPendulumForRod())
+pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+
+# show_object(pendulum.getBob(hollow=True))
+show_object(pendulum.getPendulumForRod())
 
 # motionWorks = MotionWorks(minuteHandHolderHeight=30 )
 #
@@ -157,14 +157,14 @@ if 'show_object' not in globals():
 
 # show_object(poweredArbour.getExtraRatchet())
 
-pair = WheelPinionPair(80,10, module=1)
-
-arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.HONEYCOMB)
-
-# show_object(arbour.getShape())
-
-# show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB_SMALL))
-show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
+# pair = WheelPinionPair(80,10, module=1)
+#
+# arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.HONEYCOMB)
+#
+# # show_object(arbour.getShape())
+#
+# # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB_SMALL))
+# show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
 # show_object(getGearDemo(justStyle=GearStyle.SPOKES))
 # show_object(getGearDemo())
 

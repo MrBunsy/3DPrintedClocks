@@ -643,13 +643,16 @@ class Pendulum:
         pendulum = cq.Workplane("XY")
 
         width = 12#holeD*4
-        height = 26#holeD*6
+        height = 20#26#holeD*6
+
+        #I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
+        extraRodSpace=1
 
         #(0,0,0) is the rod from the anchor, the rod is along the z axis
 
         #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
-        holeStartY=-8#-height*0.2
-        holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + 1
+        holeStartY=-5#-8#-height*0.2
+        holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + getNutHeight(self.threadedRodM) + 1
         holeEndY = holeStartY - holeHeight
 
         nutD = getNutContainingDiameter(holeD)
@@ -670,11 +673,12 @@ class Pendulum:
         space = cq.Workplane("XY").moveTo(0,holeStartY-holeHeight/2).rect(width-wall_thick*2,holeHeight).extrude(self.pendulumTopThick).translate((0,0,LAYER_THICK*3))
         pendulum = pendulum.cut(space)
 
-        extraSpaceForRod = 0.2
+        extraSpaceForRod = 0.1
+        extraSpaceForNut = 0.2
         #
-        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2).circle(self.threadedRodM/2 + extraSpaceForRod/2).extrude(100)
+        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2 - extraRodSpace).circle(self.threadedRodM/2 + extraSpaceForRod/2).extrude(100)
         # add slot for rod to come in and out
-        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick).rect(self.threadedRodM + extraSpaceForRod, self.pendulumTopThick).extrude(100)
+        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick - extraRodSpace).rect(self.threadedRodM + extraSpaceForRod, self.pendulumTopThick).extrude(100)
 
         rod = rod.translate((0,holeStartY,0))
 
@@ -683,7 +687,7 @@ class Pendulum:
 
         pendulum = pendulum.cut(rod)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForRod).extrude(nutThick).translate((0,holeStartY-holeHeight,0))
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForNut).extrude(nutThick).translate((0,holeStartY-holeHeight,0))
         pendulum = pendulum.cut(nutSpace2)
 
 
