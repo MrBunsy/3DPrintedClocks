@@ -164,9 +164,9 @@ arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, p
 # show_object(arbour.getShape())
 
 # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB_SMALL))
-# show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
+show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
 # show_object(getGearDemo(justStyle=GearStyle.SPOKES))
-show_object(getGearDemo())
+# show_object(getGearDemo())
 
 #
 # path = "out"

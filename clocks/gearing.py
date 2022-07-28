@@ -88,12 +88,12 @@ class Gear:
             hexagonDiameter = 6
 
 
-        padding = outerRadius*0.075
-
+        # padding = outerRadius*0.075
+        padding = outerRadius * 0.1
         if padding < 1.5:
             padding=1.5
         #experimenting to reduce the tiny bits teh slicer likes to make
-        padding = padding - (padding % EXTRUSION_WIDTH)
+        # padding = padding - (padding % EXTRUSION_WIDTH) - 0.2
 
         hexagonDiameter+=padding
 
