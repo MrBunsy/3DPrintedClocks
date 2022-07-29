@@ -643,7 +643,7 @@ class Pendulum:
         pendulum = cq.Workplane("XY")
 
         width = 12#holeD*4
-        height = 20#26#holeD*6
+        height = 22#26#holeD*6
 
         #I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
         extraRodSpace=1
@@ -651,9 +651,8 @@ class Pendulum:
         #(0,0,0) is the rod from the anchor, the rod is along the z axis
 
         #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
-        holeStartY=-5#-8#-height*0.2
+        holeStartY=-getNutContainingDiameter(self.threadedRodM)*0.5-0.4#-5#-8#-height*0.2
         holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + getNutHeight(self.threadedRodM) + 1
-        holeEndY = holeStartY - holeHeight
 
         nutD = getNutContainingDiameter(holeD)
 
