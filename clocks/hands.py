@@ -150,8 +150,18 @@ class Hands:
         hand = cq.Workplane("XY").tag("base")
 
         if self.style == HandStyle.SIMPLE:
+
             width = self.length * 0.1
+            if second:
+                width = self.length * 0.05
+                # don't let it be smaller than the rounded end!
+                base_r = max(base_r, self.length * 0.1 / 2)
+
+
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(thick)
+
+
+
         elif self.style == HandStyle.SIMPLE_ROUND:
             width = self.length * 0.1
             if second:
@@ -161,6 +171,10 @@ class Hands:
 
             hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(thick)
         elif self.style == HandStyle.SQUARE:
+
+            if not second:
+                base_r = self.length * 0.08
+
             handWidth = base_r*2
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
         elif self.style == HandStyle.SYRINGE:
