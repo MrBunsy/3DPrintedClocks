@@ -93,9 +93,10 @@ class Hands:
             # hand = hand.moveTo(0, 0).circle(self.secondFixing_d / 2).cutThruAll()
 
             hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d / 2).extrude(self.thick/2).translate((0,0,self.thick/2)))
-
-            hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
-
+            try:
+                hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
+            except:
+                hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d * 0.99).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
             return hand
 
         if not hour and self.minuteFixing == "rectangle":
