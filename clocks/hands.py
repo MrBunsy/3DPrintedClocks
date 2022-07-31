@@ -165,6 +165,8 @@ class Hands:
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
         elif self.style == HandStyle.SWORD:
 
+            base_r = base_r*0.6
+
             base_width = base_r*2.5
             rear_length = length*0.3
 
