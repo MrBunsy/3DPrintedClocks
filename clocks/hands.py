@@ -17,9 +17,11 @@ class HandStyle(Enum):
 
 
 class Hands:
-    def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5, hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3):
+    def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
+                 hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
+                 chunky = False):
         '''
-
+        chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
         '''
         self.thick=thick
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
@@ -28,6 +30,8 @@ class Hands:
         self.fixing_offset=fixing_offset
         self.length = length
         self.style=style
+
+        self.chunky = chunky
 
         #backwards compat, support old strings
         if isinstance(self.style, str):
@@ -232,7 +236,14 @@ class Hands:
             circleR = self.length * 0.08
             circleY = length*0.75
 
-            base_r = self.length*0.075
+            if self.chunky:
+                handWidth = self.length*0.06
+                tipWidth = self.length*0.0125
+                circleR = self.length*0.1
+            else:
+                base_r = self.length*0.075
+
+
 
             if hour:
                 circleR = self.length*0.125
