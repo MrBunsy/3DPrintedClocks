@@ -397,7 +397,9 @@ class GoingTrain:
         chainRatios=[1]
         if self.chainWheels > 0:
             print(self.chainWheelRatio)
+            #how many turns per turn of the minute wheel
             chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
+            #the wheel/pinion tooth count
             chainRatios=self.chainWheelRatio
 
         runtime_hours = self.poweredWheel.getRunTime(chainRatio, self.getCordUsage())
@@ -407,8 +409,20 @@ class GoingTrain:
         power_uW = power * math.pow(10, 6)
 
         print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.getCordUsage() / 1000,self.maxWeightDrop, chainRatio, chainRatios))
-        print("With a weight of {}kg, this results in a power usage of {:.2f}μW".format(weight_kg, power_uW))
+        print("With a weight of {}kg, this results in an average power usage of {:.1f}μW".format(weight_kg, power_uW))
 
+        if self.poweredWheel.type == PowerType.CORD:
+            #because there are potentially multiple layers of cord on a cordwheel, power lever can vary enough for the clock to be viable when wound and not halfway through its run time!
+            #seen this on clock 10!
+
+            (rotations, layers, cordPerRotationPerLayer) = self.poweredWheel.getCordTurningInfo(self.maxWeightDrop*(2 if self.usePulley else 1))
+            #cord per rotation divided by chainRatio, gives speed in mm per hour, we want in m/s to calculate power
+            effective_weight = weight_kg / (2 if self.usePulley else 1)
+            min_weight_speed = (cordPerRotationPerLayer[0] / chainRatio) /(60*60*1000)
+            min_power = effective_weight * GRAVITY * min_weight_speed* math.pow(10, 6)
+            max_weight_speed = (cordPerRotationPerLayer[-1] / chainRatio) / (60 * 60 * 1000)
+            max_power = effective_weight * GRAVITY * max_weight_speed* math.pow(10, 6)
+            print("Cordwheel power varies from {:.1f}μW to {:.1f}μW".format(min_power, max_power))
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1, ratchetScrews=None):
         '''
@@ -1616,7 +1630,7 @@ class Assembly:
         exporters.export(self.getClock(), out)
 
 
-def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0):
+def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False):
     demo = cq.Workplane("XY")
 
     motionWorks = MotionWorks(minuteHandHolderHeight=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
@@ -1631,7 +1645,7 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
         if justStyle is not None and style != justStyle:
             continue
 
-        hands = Hands(style=style, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize + 0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=1,
+        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize + 0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=1,
                       outlineSameAsBody=False, secondLength=25)
 
         x = space*(i%perRow)
