@@ -3,7 +3,7 @@ import clocks.clock as clock
 '''
 Simple one day clock with shortest pendulum I can manage and first test of the ropewheel
 
-Attempting to reduce plate distance and size of the one day cord wheel clock
+Attempting to reduce plate distance and size of the one day clock
 
 '''
 outputSTL=False

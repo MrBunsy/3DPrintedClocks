@@ -500,12 +500,17 @@ class Pendulum:
     plan: add a square bit to the anchor (probably in the Arbour class, part of the arbour extensions)
     and make two special longish spanners in order to make setting the beat much easier (thinking ahead to fixing clock to the wall with two screws, will need ability to delicately adjust beat)
     '''
-    def __init__(self, escapement, length, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True):
+    def __init__(self, escapement, length, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True, handAvoiderHeight=-1):
         self.escapement = escapement
         self.crutchLength = crutchLength
         self.anchorAngle = anchorAngle
         #NOTE - deprecated, trying to switch over to making the anchor another arbour
         self.anchorThick=anchorThick
+        #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
+        self.handAvoiderHeight=handAvoiderHeight
+
+        if self.handAvoiderHeight < 0:
+            self.handAvoiderHeight = handAvoiderInnerD
 
         #nominal length of the pendulum
         self.length = length
@@ -692,24 +697,36 @@ class Pendulum:
 
         return pendulum
 
+    def handAvoiderIsCircle(self):
+        return self.handAvoiderHeight == self.handAvoiderInnerD
 
     def getHandAvoider(self):
         '''
         Get a circular part which attaches inline with pendulum rod, so it can go over the hands (for a front-pendulum)
         '''
         extraR=5
-        avoider = cq.Workplane("XY").circle(self.handAvoiderInnerD/2).circle(self.handAvoiderInnerD/2 + extraR).extrude(self.handAvoiderThick)
+        if self.handAvoiderIsCircle():
+            avoider = cq.Workplane("XY").circle(self.handAvoiderInnerD/2).circle(self.handAvoiderInnerD/2 + extraR).extrude(self.handAvoiderThick)
+        else:
+            avoider = cq.Workplane("XY").moveTo(-self.handAvoiderInnerD/2-extraR,0).line(0,self.handAvoiderHeight/2-self.handAvoiderInnerD/2).\
+                radiusArc((self.handAvoiderInnerD/2+extraR,self.handAvoiderHeight/2-self.handAvoiderInnerD/2), self.handAvoiderInnerD/2 + extraR).line(0,-self.handAvoiderHeight/2+self.handAvoiderInnerD/2).mirrorX().extrude(self.handAvoiderThick)
+
+            avoider = avoider.cut(cq.Workplane("XY").moveTo(-self.handAvoiderInnerD / 2, 0).line(0, self.handAvoiderHeight / 2-self.handAvoiderInnerD/2). \
+                radiusArc((self.handAvoiderInnerD / 2 , self.handAvoiderHeight / 2-self.handAvoiderInnerD/2), self.handAvoiderInnerD / 2).line(0, -self.handAvoiderHeight / 2+self.handAvoiderInnerD/2).mirrorX().extrude(self.handAvoiderThick))
+
+
 
         nutD = getNutContainingDiameter(self.threadedRodM)
         nutThick = METRIC_NUT_DEPTH_MULT * self.threadedRodM
 
-        nutSpace = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick/2).polygon(6, nutD).extrude(nutThick).translate((0, -self.handAvoiderInnerD/2+0.5, 0))
+        nutSpace = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick/2).polygon(6, nutD).extrude(nutThick).translate((0, -self.handAvoiderHeight/2+0.5, 0))
         avoider = avoider.cut(nutSpace)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.handAvoiderInnerD / 2 +nutThick - 0.5, 0))
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.handAvoiderHeight / 2 +nutThick - 0.5, 0))
         avoider = avoider.cut(nutSpace2)
 
-        avoider = avoider.faces(">Y").workplane().moveTo(0,self.handAvoiderThick/2).circle(self.threadedRodM/2).cutThruAll()
+        # avoider = avoider.faces(">Y").workplane().moveTo(0,self.handAvoiderThick/2).circle(self.threadedRodM/2).cutThruAll()
+        avoider = avoider.cut(cq.Workplane("XZ").circle(self.threadedRodM/2).extrude(self.handAvoiderHeight*4).translate((0,self.handAvoiderHeight,self.handAvoiderThick/2)))
 
         return avoider
 

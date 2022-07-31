@@ -10,6 +10,10 @@ class HandStyle(Enum):
     SIMPLE_ROUND = "simple_rounded"
     CUCKOO = "cuckoo"
     SPADE = "spade"
+    BREGUET = "breguet" # has circles
+    #SYRINGE
+    #SWORD
+    #ARROWS
 
 
 class Hands:
@@ -50,21 +54,23 @@ class Hands:
 
         self.hourFixing=hourFixing
         self.hourFixing_d = hourfixing_d
-        #the found bit that attaches to the clock
-        self.base_r = length * 0.12
+        #the round bit that attaches to the clock - this is just the default size for the cosmetics and various styles can override it
+        # self.base_r = length * 0.12
+        #
+        # if self.style == HandStyle.SQUARE:
+        #     self.base_r /= 2
+        #
+        # #ensure it's actually big enoguh to fit onto the fixing
+        # if self.base_r < minuteFixing_d1 * 0.7:
+        #     self.base_r = minuteFixing_d1 * 1.5 / 2
+        #
+        # if self.base_r < minuteFixing_d2 * 0.7:
+        #     self.base_r = minuteFixing_d2 * 1.5 / 2
+        #
+        # if self.base_r < hourfixing_d * 0.7:
+        #     self.base_r = hourfixing_d * 1.5 / 2
 
-        if self.style == HandStyle.SQUARE:
-            self.base_r /= 2
-
-        #ensure it's actually big enoguh to fit onto the fixing
-        if self.base_r < minuteFixing_d1 * 0.7:
-            self.base_r = minuteFixing_d1 * 1.5 / 2
-
-        if self.base_r < minuteFixing_d2 * 0.7:
-            self.base_r = minuteFixing_d2 * 1.5 / 2
-
-        if self.base_r < hourfixing_d * 0.7:
-            self.base_r = hourfixing_d * 1.5 / 2
+        # self.min_base_r = max(minuteFixing_d1 * 1.5 / 2,  minuteFixing_d2 * 1.5 / 2, hourfixing_d * 1.5 / 2)
 
     def getHandNut(self):
         #fancy bit to hide the actual nut
@@ -115,13 +121,17 @@ class Hands:
 
         return True
 
-    def getHand(self, hour=True, outline=False, second=False):
+    def getHand(self, hour=False, minute=False, second=False, outline=False):
         '''
-        if hour is true this ist he hour hand
-        if outline is true, this is just the bit of the shape that should be printed in a different colour
-        if second is true, this overrides hour and this is the second hand
+        #either hour, minute or second hand (for now?)
         '''
-        base_r = self.base_r
+
+        #default is minute hand
+
+        if not hour and not minute and not second:
+            minute = True
+
+        base_r = self.length * 0.12
         length = self.length
         thick = self.thick
         # width = self.length * 0.3
@@ -134,16 +144,10 @@ class Hands:
         if second:
             length = self.secondLength
             base_r = self.secondLength * 0.2
-            #don't let it be smaller than the rounded end!
-            base_r = max(base_r, self.length * 0.1/2)
-            # #want second hand to be as light as possible for the surprisingly marginal 8-day with pulley
-            # thick = 1
 
-            if self.style == HandStyle.CUCKOO:
-                base_r = self.secondLength * 0.12
+        ignoreOutline = False
 
-
-        hand = cq.Workplane("XY").tag("base").circle(radius=base_r).extrude(thick)
+        hand = cq.Workplane("XY").tag("base")
 
         if self.style == HandStyle.SIMPLE:
             width = self.length * 0.1
@@ -152,18 +156,56 @@ class Hands:
             width = self.length * 0.1
             if second:
                 width = self.length * 0.05
+                # don't let it be smaller than the rounded end!
+                base_r = max(base_r, self.length * 0.1 / 2)
+
             hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(thick)
         elif self.style == HandStyle.SQUARE:
             handWidth = base_r*2
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
+        elif self.style == HandStyle.BREGUET:
+
+            handWidth = self.length * 0.04
+            tipWidth = self.length*0.01
+
+            circleR = self.length * 0.08
+            circleY = length*0.75
+
+            base_r = self.length*0.075
+
+            if hour:
+                circleR = self.length*0.125
+                circleY = length*0.65
+            if second:
+                handWidth=self.length*0.03
+                circleR = self.length*0.04
+                circleY = - self.length*0.04*2.5
+                base_r = circleR
+                # ignoreOutline=True
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, abs(circleY / 2)).rect(handWidth, abs(circleY)).extrude(thick)
+            #some sizes are complaining the radius isn't long enough to complete the arc, so bodge it a bit
+            hand = hand.workplaneFromTagged("base").moveTo(-handWidth/2, abs(circleY)).lineTo(-tipWidth/2,length).radiusArc((tipWidth/2,length),tipWidth/2+0.01).lineTo(handWidth/2, abs(circleY)).close().extrude(thick)
+            if second:
+                hand = hand.workplaneFromTagged("base").moveTo(0, circleY / 2).rect(handWidth, abs(circleY)).extrude(thick)
+                hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(base_r).extrude(thick)
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, circleY).circle(circleR).extrude(thick)
+            hand = hand.faces(">Z").moveTo(0, circleY).circle(circleR-handWidth).cutThruAll()
+
+
+
         elif self.style == HandStyle.SPADE:
+            base_r = self.length * 0.075
             handWidth = self.length*0.05
             if second:
                 handWidth = self.length * 0.025
+                base_r = self.length*0.02
 
+            #for the bottom of the spade, not the usual baseR
             spadeBaseR = length*0.05*2
 
-            if hour and not second:
+            if hour:
                 spadeBaseR*=1.4
 
             spadeTopLength = length*0.4
@@ -197,6 +239,8 @@ class Hands:
             if second:
                 width = length*0.3
                 end_d = length * 0.3 * 0.1
+                ignoreOutline = True
+                base_r = self.secondLength * 0.12
             centrehole_r = width * 0.15
 
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).threePointArc((end_d *0.75, length/2),(end_d / 2, length)).radiusArc(
@@ -237,13 +281,13 @@ class Hands:
             hand = hand.extrude(thick)
 
             # sticky out bottom bit for hour hand
-            if hour and not second:
+            if hour:
                 hand = hand.workplaneFromTagged("base").lineTo(width * 0.4, 0).lineTo(0, -width * 0.9).mirrorY().extrude(thick)
                 # return hand
             # cut bits out
             # roudn bit in centre of knobbly bit
             hand = hand.moveTo(0, centrehole_y).circle(centrehole_r).cutThruAll()
-            heartbase = self.base_r + length * 0.025  # length*0.175
+            heartbase = base_r + length * 0.025  # length*0.175
 
             hearttop = length * 0.425
             heartheight = hearttop - heartbase
@@ -261,7 +305,21 @@ class Hands:
             except:
                 print("Unable to cut detail in cuckoo hand")
 
-        # fixing = self.hourFixing if hour else self.minuteFixing
+
+
+        #check it's big enough for the fixing to fit inside!
+        #note - currently assumes that minute and hour hands have the same size base circle, which is true of the current designs but may not be true of future designs.
+        if (minute or hour) and base_r < self.minuteFixing_d1 * 0.7:
+            base_r = self.minuteFixing_d1 * 1.5 / 2
+
+        if (minute or hour)  and base_r < self.minuteFixing_d2 * 0.7:
+            base_r = self.minuteFixing_d2 * 1.5 / 2
+
+        if (minute or hour)  and base_r < self.hourFixing_d * 0.7:
+            base_r = self.hourFixing_d * 1.5 / 2
+
+        hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
+
 
         if self.fixing_offset != 0:
             hand = hand.workplaneFromTagged("base").transformed(rotate=(0, 0,self. fixing_offset))
@@ -269,11 +327,10 @@ class Hands:
         # if second:
         #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + thick)
 
-        hand = self.cutFixing(hand, hour, second)
+        if not outline:
+            hand = self.cutFixing(hand, hour, second)
 
-        ignoreOutline = False
-        if self.style == HandStyle.CUCKOO and second:
-            ignoreOutline = True
+
 
         if self.outline > 0 and not ignoreOutline:
             if self.outLineIsSubtractive():
@@ -304,7 +361,7 @@ class Hands:
                     hand = hand.cut(notOutline)
 
                 else:
-                    outlineShape = self.getHand(hour, outline=True, second=second)
+                    outlineShape = self.getHand(hour=hour, minute=minute, second=second, outline=True)
                     #chop out the outline from the shape
                     if outlineShape is not None:
                         hand = hand.cut(outlineShape)
@@ -322,18 +379,9 @@ class Hands:
                     #make the whole hand bigger by the outline amount
                     shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
 
-
-
-                    # shell2 = hand.shell(self.outline+0.1).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick))
-
-                    # return shell2
-                    # hand = shell
                     hand = hand.add(shell)
                     hand = self.cutFixing(hand, hour, second)
                     return hand
-                    # shell2 = self.cutFixing(shell2, hour)
-                    #
-                    # hand = hand.cut(shell2)
 
 
         return hand
@@ -346,7 +394,7 @@ class Hands:
 
         out = os.path.join(path, "{}_minute_hand.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHand(hour=False), out)
+        exporters.export(self.getHand(minute=True), out)
 
         out = os.path.join(path, "{}_second_hand.stl".format(name))
         print("Outputting ", out)
@@ -359,13 +407,13 @@ class Hands:
         if self.outline > 0:
             out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(True, outline=True), out)
+            exporters.export(self.getHand(hour=True, outline=True), out)
 
             out = os.path.join(path, "{}_minute_hand_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(False, outline=True), out)
+            exporters.export(self.getHand(minute=True, outline=True), out)
 
-            secondoutline = self.getHand(hour=False, second=True, outline=True)
+            secondoutline = self.getHand(second=True, outline=True)
             if secondoutline is not None:
                 out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
                 print("Outputting ", out)

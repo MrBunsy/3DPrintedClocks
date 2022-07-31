@@ -176,7 +176,7 @@ class Gear:
             except:
                 print("unable to produce flower cutter:", innerRadius, outerRadius)
 
-            if petals > 10:
+            if petalWidth < 4 and petals > 10:
                 #the extra cut out bits will look messy, so don't bother with them
                 continue
             outerStartAngle=tipAngle+armOuterAngle

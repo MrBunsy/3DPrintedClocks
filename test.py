@@ -74,10 +74,12 @@ if 'show_object' not in globals():
 # ropeWheel.outputSTLs("test","out")
 
 
-pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
-
-# show_object(pendulum.getBob(hollow=True))
-show_object(pendulum.getPendulumForRod())
+# pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=50, bobD=70, bobThick=10, useNylocForAnchor=False, handAvoiderHeight=100)
+#
+# # show_object(pendulum.getBob(hollow=True))
+# # show_object(pendulum.getPendulumForRod())
+#
+# show_object(pendulum.getHandAvoider())
 
 # motionWorks = MotionWorks(minuteHandHolderHeight=30 )
 #
@@ -87,20 +89,14 @@ show_object(pendulum.getPendulumForRod())
 
 
 # motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
-#
-# hands = Hands(style=HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+# hands = Hands(style=HandStyle.BREGUET, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 #
 # show_object(hands.getHand(hour=True).translate((40,0)))
-# show_object(hands.getHand(hour=False))
+# show_object(hands.getHand(minute=True))
 # show_object(hands.getHand(second=True).translate((-40,0)))
 
 
-
-
-
-
-
-# show_object(getHandDemo())
+show_object(getHandDemo(assembled=True))
 
 # weight = Weight(height=150, diameter=35, wallThick=1.8)
 # weight.printInfo()
@@ -146,13 +142,16 @@ show_object(pendulum.getPendulumForRod())
 
 # #the gear wheel from clock 10
 # wheelPinionPair = WheelPinionPair(wheelTeeth=93, pinionTeeth=9, module=1)
-# ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=13,totalD=52)
-# cordWheel = CordWheel(ratchet=ratchet,diameter=21,capDiameter=52)
+# # ratchet = Ratchet(power_clockwise=False,thick=4,innerRadius=13,totalD=52)
+# cordWheel = CordWheel(diameter=25, rodMetricSize=6.1, useKey=True)
+# #
+# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchetInset=False, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
+# poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
+# # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 #
-# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchet=ratchet, ratchetInset=True, arbourD=4, chainWheel=cordWheel, style=GearStyle.SIMPLE5)
-# poweredArbour.setArbourExtensionInfo(wheelSide=7,maxR=10,pinionSide=123)
-# show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
-#
+# show_object(poweredArbour.getAssembled())
+
+
 # poweredArbour.printScrewLength()
 
 # show_object(poweredArbour.getExtraRatchet())
@@ -167,7 +166,7 @@ show_object(pendulum.getPendulumForRod())
 # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
 # show_object(getGearDemo(justStyle=GearStyle.SPOKES))
 # show_object(getGearDemo())
-
+# show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 #
 # path = "out"
 # name="test_train"

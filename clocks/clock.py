@@ -1513,7 +1513,7 @@ class Assembly:
 
         #hands on the motion work, showing the time
         #mirror them so the outline is visible (consistent with second hand)
-        minuteHand = self.hands.getHand(hour=False).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
+        minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
         hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
 
 
@@ -1582,11 +1582,16 @@ class Assembly:
         minuteToPendulum = (self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[self.goingTrain.chainWheels][1])
 
         if abs(minuteToPendulum[0]) < 50:
-            #assume we need the ring to go around the hands
+            #centre around the hands by default
+            ringY = self.plates.bearingPositions[self.goingTrain.chainWheels][1]
+            if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
+                #centre between the hands and the winding key
+                ringY =  (self.plates.bearingPositions[self.goingTrain.chainWheels][1] + self.plates.bearingPositions[0][1])/2
+
             ring = self.pendulum.getHandAvoider()
             handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
             #ring is over the minute wheel/hands
-            clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
+            clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
 
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
@@ -1611,24 +1616,56 @@ class Assembly:
         exporters.export(self.getClock(), out)
 
 
-def getHandDemo(length = 120, perRow=3):
+def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0):
     demo = cq.Workplane("XY")
 
     motionWorks = MotionWorks(minuteHandHolderHeight=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
+    space = length
+
+    if assembled:
+        space = length*2
+
     for i,style in enumerate(HandStyle):
-        hands = Hands(style=style, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize + 0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1,
+
+        if justStyle is not None and style != justStyle:
+            continue
+
+        hands = Hands(style=style, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize + 0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=1,
                       outlineSameAsBody=False, secondLength=25)
 
-        x = length*(i%perRow)
+        x = space*(i%perRow)
 
-        y = (length*1.1)*math.floor(i/perRow)
-        demo = demo.add(hands.getHand(hour=True).translate((x, y)))
-        demo = demo.add(hands.getHand(hour=False).translate((x+length*0.3, y)))
+        y = (space)*math.floor(i/perRow)
+
+        secondsHand = None
         try:
-            demo = demo.add(hands.getHand(second=True).translate((x-length*0.3, y)))
+            secondsHand =hands.getHand(second=True)
         except:
             print("Unable to generate second hand for {}".format(style.value))
+
+        if assembled:
+            #showing a time
+            minuteAngle = - 360 * (time_min / 60)
+            hourAngle = - 360 * (time_hour + time_min / 60) / 12
+            secondAngle = -360 * (time_sec / 60)
+
+            # hands on the motion work, showing the time
+            # mirror them so the outline is visible (consistent with second hand)
+            minuteHand = hands.getHand(minute=True).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+            hourHand = hands.getHand(hour=True).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+
+            demo = demo.add(minuteHand.translate((x, y, hands.thick)))
+            demo = demo.add(hourHand.translate((x, y, 0)))
+
+            if secondsHand is not None:
+                demo = demo.add(secondsHand.translate((x, y + length * 0.3)))
+
+        else:
+            demo = demo.add(hands.getHand(hour=True).translate((x, y)))
+            demo = demo.add(hands.getHand(minute=True).translate((x+length*0.3, y)))
+            if secondsHand is not None:
+                demo = demo.add(secondsHand.translate((x - length * 0.3, y)))
 
 
     return demo
