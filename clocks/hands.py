@@ -11,7 +11,7 @@ class HandStyle(Enum):
     CUCKOO = "cuckoo"
     SPADE = "spade"
     BREGUET = "breguet" # has circles
-    #SYRINGE
+    SYRINGE="syringe"
     SWORD="sword"
     #ARROWS
 
@@ -163,6 +163,40 @@ class Hands:
         elif self.style == HandStyle.SQUARE:
             handWidth = base_r*2
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
+        elif self.style == HandStyle.SYRINGE:
+
+
+
+            syringe_width = self.length*0.1
+            if hour:
+                syringe_width = self.length*0.15
+
+            if second:
+                syringe_width = length * 0.2
+
+            syringe_length = length * 0.7
+
+            syringe_startY = (length - syringe_length)/2
+
+            syringe_end_length = syringe_width/2
+
+            base_wide = syringe_width*0.25
+
+            tip_wide = syringe_width*0.1
+            base_r = base_r * 0.6
+            if second:
+                tip_wide = 1
+                syringe_width=base_r*2
+
+
+
+            if second:
+                hand = hand.workplaneFromTagged("base").moveTo(0,0).lineTo(-syringe_width/2,0)
+            else:
+                hand = hand.workplaneFromTagged("base").moveTo(0,0).lineTo(-base_wide/2,0)
+
+            hand = hand.lineTo(-syringe_width/2,syringe_startY).line(0,syringe_length-syringe_end_length)\
+                .lineTo(-tip_wide/2,syringe_startY + syringe_length).lineTo(-tip_wide/2,length).lineTo(0,length+tip_wide/2).mirrorY().extrude(thick)
         elif self.style == HandStyle.SWORD:
 
             base_r = base_r*0.6
@@ -329,6 +363,9 @@ class Hands:
 
         if (minute or hour)  and base_r < self.hourFixing_d * 0.7:
             base_r = self.hourFixing_d * 1.5 / 2
+
+        if second and base_r < self.secondFixing_d * 0.7:
+            base_r = self.secondFixing_d* 1.5 / 2
 
         hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
 
