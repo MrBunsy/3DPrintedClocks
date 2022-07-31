@@ -12,7 +12,7 @@ class HandStyle(Enum):
     SPADE = "spade"
     BREGUET = "breguet" # has circles
     #SYRINGE
-    #SWORD
+    SWORD="sword"
     #ARROWS
 
 
@@ -163,6 +163,16 @@ class Hands:
         elif self.style == HandStyle.SQUARE:
             handWidth = base_r*2
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
+        elif self.style == HandStyle.SWORD:
+
+            base_width = base_r*2.5
+            rear_length = length*0.3
+
+            if rear_length < base_r*2:
+                rear_length = base_r*2
+
+            hand = hand.workplaneFromTagged("base").moveTo(-base_width/2,0).lineTo(0,length).lineTo(base_width/2,0).lineTo(0,-rear_length).close().extrude(thick)
+
         elif self.style == HandStyle.BREGUET:
 
             handWidth = self.length * 0.04
