@@ -3,6 +3,7 @@ import cadquery as cq
 import os
 from cadquery import exporters
 from enum import Enum
+from .gearing import GearStyle,Gear
 
 class HandStyle(Enum):
     SQUARE = "square"
@@ -220,16 +221,14 @@ class Hands:
         elif self.style == HandStyle.CIRCLES:
 
             tip_r = length*0.05
-            base_r = length*0.2
+            base_r = self.length*0.2
+
+            if second:
+                base_r = length*0.2
 
             r_rate = (tip_r - base_r)/length
-            border = length*0.03
+            border = length*0.045
             overlap=border
-
-            if hour:
-                border*=1.25
-
-
             r = base_r
             y=0#-(base_r-overlap)
 
@@ -239,10 +238,14 @@ class Hands:
                 if y > 0:
                     y += r-overlap/2
                 hand = hand.workplaneFromTagged("base").moveTo(0, y).circle(r)
-                if not second:
+                if not second and y > base_r:
                     hand = hand.circle(r-border)
                 hand = hand.extrude(thick)
                 y+=r-overlap/2
+
+            #is this too much? # TODO line up cutter with hand!
+            hand = Gear.cutStyle(hand,base_r*0.9,self.hourFixing_d*0.7, style=GearStyle.CIRCLES)
+            base_r = self.hourFixing_d*0.6
 
 
             #circle on the other side (I'm sure there's a way to set up initial y to do this properly)
