@@ -11,10 +11,10 @@ class HandStyle(Enum):
     SIMPLE_ROUND = "simple_rounded"
     CUCKOO = "cuckoo"
     SPADE = "spade"
-    BREGUET = "breguet" # has circles
+    BREGUET = "breguet" # has a single circle on each hand
     SYRINGE="syringe"
     SWORD="sword"
-    CIRCLES="circles"
+    CIRCLES="circles" # very much inspired by the same clock on the horological journal that inspired the circle style gears
     #ARROWS
 
 
