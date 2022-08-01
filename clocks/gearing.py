@@ -347,7 +347,7 @@ class Gear:
             hasSmallCircles = smallCircleR > 2
 
             for circle in range(bigCircleCount):
-                angle = bigCircleAngle*circle
+                angle = bigCircleAngle*circle - bigCircleAngle/4
                 pos = polar(angle, innerRadius + ringSize/2)
 
                 if cantUseCutThroughAllBodgeThickness > 0:
