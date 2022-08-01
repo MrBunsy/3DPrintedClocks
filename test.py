@@ -88,15 +88,18 @@ if 'show_object' not in globals():
 # show_object(hands.getHand(hour=False))
 
 
-# motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
-# hands = Hands(style=HandStyle.BREGUET, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
-#
-# show_object(hands.getHand(hour=True).translate((40,0)))
-# show_object(hands.getHand(minute=True))
-# show_object(hands.getHand(second=True).translate((-40,0)))
+motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+hands = Hands(style=HandStyle.CIRCLES, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+show_object(hands.getHand(hour=True).translate((40,0)))
+show_object(hands.getHand(minute=True))
+show_object(hands.getHand(second=True).translate((-40,0)))
 
 
-show_object(getHandDemo(assembled=True, chunky=True))
+# show_object(getHandDemo(assembled=True, chunky=True))
+
+
+
+# show_object(getSpanner())
 
 # weight = Weight(height=150, diameter=35, wallThick=1.8)
 # weight.printInfo()
@@ -143,9 +146,9 @@ show_object(getHandDemo(assembled=True, chunky=True))
 # #the gear wheel from clock 10
 # wheelPinionPair = WheelPinionPair(wheelTeeth=93, pinionTeeth=9, module=1)
 # # ratchet = Ratchet(power_clockwise=False,thick=4,innerRadius=13,totalD=52)
-# cordWheel = CordWheel(diameter=25, rodMetricSize=6.1, useKey=True)
+# cordWheel = CordWheel(diameter=25, rodMetricSize=4, useKey=True)
 # #
-# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchetInset=False, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
+# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchetInset=False, arbourD=6.1, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
 # poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
 # # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 #

@@ -13,6 +13,11 @@ class EscapementType(Enum):
 class Escapement:
     def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
+        This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
+        because it ended up being more elegant to treat the anchor as the last arbour in the clock.
+
+
+
         Roughly following Mark Headrick's Clock and Watch Escapement Mechanics.
         Also from reading of The Modern Clock
         Type: "recoil", "deadbeat"
@@ -490,6 +495,22 @@ class Escapement:
 
         return testrig
 
+def getSpanner(size=4, thick=4, handle_length=150):
+    '''
+    Get a spanner for adjusting the anchor or pendulum fixing
+    spannerBitThick is 4 by default
+    centred on teh bit that turns
+    '''
+    
+    sizeWithWiggle = size + 0.2
+
+    strengthWidth = size*1.5
+    armSize = strengthWidth# + size/2
+
+    spanner = cq.Workplane("XY").moveTo(-sizeWithWiggle/2,sizeWithWiggle/2).line(-strengthWidth,0).line(0,-size - strengthWidth).line(strengthWidth*2 + sizeWithWiggle, 0).line(0, (strengthWidth + size) - armSize)\
+        .line(handle_length,0).line(0,armSize).lineTo(sizeWithWiggle/2,sizeWithWiggle/2).line(0,-sizeWithWiggle).line(-sizeWithWiggle,0).close().extrude(thick)
+
+    return spanner
 
 
 class Pendulum:

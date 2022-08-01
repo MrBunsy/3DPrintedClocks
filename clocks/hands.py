@@ -13,6 +13,7 @@ class HandStyle(Enum):
     BREGUET = "breguet" # has circles
     SYRINGE="syringe"
     SWORD="sword"
+    CIRCLES="circles"
     #ARROWS
 
 
@@ -216,6 +217,44 @@ class Hands:
 
             hand = hand.lineTo(-syringe_width/2,syringe_startY).line(0,syringe_length-syringe_end_length)\
                 .lineTo(-tip_wide/2,syringe_startY + syringe_length).lineTo(-tip_wide/2,length).lineTo(0,length+tip_wide/2).mirrorY().extrude(thick)
+        elif self.style == HandStyle.CIRCLES:
+
+            tip_r = length*0.05
+            base_r = length*0.2
+
+            r_rate = (tip_r - base_r)/length
+            border = length*0.03
+            overlap=border
+
+            if hour:
+                border*=1.25
+
+
+            r = base_r
+            y=0#-(base_r-overlap)
+
+            while y < length:
+
+                r=base_r + y*r_rate
+                if y > 0:
+                    y += r-overlap/2
+                hand = hand.workplaneFromTagged("base").moveTo(0, y).circle(r)
+                if not second:
+                    hand = hand.circle(r-border)
+                hand = hand.extrude(thick)
+                y+=r-overlap/2
+
+
+            #circle on the other side (I'm sure there's a way to set up initial y to do this properly)
+            #actually makes it quite hard to read the time!
+            # y=-(base_r-overlap/2)
+            # r = base_r + y * r_rate
+            # y -= r - overlap / 2
+            # hand = hand.workplaneFromTagged("base").moveTo(0, y).circle(r)
+            # if not second:
+            #     hand = hand.circle(r - border)
+            # hand = hand.extrude(thick)
+
         elif self.style == HandStyle.SWORD:
 
             base_r = base_r*0.6

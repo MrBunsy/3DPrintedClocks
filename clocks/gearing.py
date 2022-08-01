@@ -823,6 +823,9 @@ class Arbour:
 
         return shape
 
+    def getAnchorSpannerSize(self):
+        return self.getRodD() * 2
+
     def getAnchor(self, forPrinting=True):
 
         remainingExtension = (self.frontSideExtension if self.spannerBitOnFront else self.rearSideExtension) - self.spannerBitThick
@@ -831,7 +834,7 @@ class Arbour:
 
         face = ">Z" if self.spannerBitOnFront else "<Z"
 
-        width = self.getRodD() * 2
+        width = self.getAnchorSpannerSize()
 
         #add the rest of the arbour extension
         anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)

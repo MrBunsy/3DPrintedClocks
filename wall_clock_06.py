@@ -77,7 +77,7 @@ dial = clock.Dial(120)
 plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=10, pendulumSticksOut=pendulumSticksOut, name="Wall 06", style="vertical", motionWorksAbove=True, heavy=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+hands = clock.Hands(style=clock.HandStyle.CIRCLES, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 
