@@ -194,7 +194,7 @@ if 'show_object' not in globals():
 # show_object(dial.getDial())
 
 
-springArbour = SpringArbour()
+springArbour = SpringArbour(power_clockwise=True)
 
 show_object(springArbour.getArbour())
 path="out"

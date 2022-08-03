@@ -605,15 +605,26 @@ class SpringArbour:
         arbour = arbour.circle(self.diameter/2).extrude(self.spring_bit_height)
 
 
+        hook_r = self.diameter/3
+
         # hook_taper_height = (self.hook_height - self.hook_centre_height)/2
         #don't need to taper both ends, only the one that would be printing mid-air!
-        spring_hook = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=0, radius2=self.hook_deep,height = self.hook_taper_height))
-        spring_hook = spring_hook.faces(">Z").workplane().circle(self.hook_deep).extrude(self.spring.hook_height - self.hook_taper_height)
-        # spring_hook = spring_hook.add(cq.Solid.makeCone(radius2=0, radius1=self.hook_deep*0.99, height=hook_taper_height).translate((0,0,self.hook_height - hook_taper_height)))
-        # spring_hook = spring_hook.add(cq.Solid.makeCone(radius1=0, radius2=self.hook_deep, height=hook_taper_height).rotate((0,0,0),(1,0,0),180).translate((0,0,self.hook_height)))
-        spring_hook = spring_hook.cut(cq.Workplane("XY").moveTo(0,self.hook_deep).rect(self.hook_deep*2,self.hook_deep*2).extrude(self.spring.hook_height))
+        spring_hook = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=hook_r - self.hook_deep, radius2=hook_r,height = self.hook_taper_height))
+        spring_hook = spring_hook.faces(">Z").workplane().circle(hook_r).extrude(self.spring.hook_height - self.hook_taper_height)
 
-        spring_hook = spring_hook.translate((-self.diameter/2,0,self.spring_bit_height/2 - self.spring.hook_height/2 + self.ratchet_thick))
+        #I'm not sure it want it completely flat, I think slightly angled will help hold the spring more reliably?
+        #angle relative to completely flat
+        hook_angle = 10
+        #crudely create a large triangle that will chop away everything not needed
+        point = polar(degToRad(hook_angle),hook_r*200)
+
+        #cutting it flat
+        # spring_hook = spring_hook.cut(cq.Workplane("XY").moveTo(0,self.hook_deep).rect(self.hook_deep*2,self.hook_deep*2).extrude(self.spring.hook_height))
+        spring_hook = spring_hook.cut(cq.Workplane("XY").moveTo(0,0).lineTo(point[0],point[1]).lineTo(-point[0], point[1]).close().extrude(self.spring.hook_height))
+
+        clockwise = 1 if self.power_clockwise else -1
+
+        spring_hook = spring_hook.translate((clockwise*(self.hook_deep + (self.diameter/2 - hook_r)),0,self.spring_bit_height/2 - self.spring.hook_height/2 + self.ratchet_thick))
         #for some reason just adding results in a malformed STL, but cutting and then adding is much better?!
         spring_hook = spring_hook.cut(arbour)
 
@@ -629,6 +640,8 @@ class SpringArbour:
 
         arbour = arbour.faces(">Z").workplane().circle(self.metric_rod_size/2).cutThruAll()
 
+
+
         return arbour
 
 class LoopEndSpringArbour:
@@ -639,7 +652,7 @@ class LoopEndSpringArbour:
             spring = MainSpring()
         self.spring = spring
 
-class PoweredWheel:
+class WeightPoweredWheel:
     '''
     Python doesn't have interfaces, but this is the interface for the powered wheel classes (for weights! I forgot entirely about springs when I wrote this)
     '''
@@ -1661,7 +1674,8 @@ class Ratchet:
             clickEnd = polar(clickEndAngle, innerClickR)
             nextClickStart = polar(clickNextStartAngle, innerClickR)
 
-            wheel = wheel.radiusArc(clickInner, -innerR * self.anticlockwise).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR * self.anticlockwise).radiusArc(nextClickStart, innerClickR * self.anticlockwise)
+            wheel = wheel.radiusArc(clickInner, -innerR * self.anticlockwise).lineTo(clickTip[0], clickTip[1]).radiusArc(clickEnd, outerR * self.anticlockwise).\
+                radiusArc(nextClickStart, innerClickR * self.anticlockwise)
 
 
         wheel = wheel.close().extrude(self.thick)
