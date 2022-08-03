@@ -220,14 +220,16 @@ class Hands:
                 .lineTo(-tip_wide/2,syringe_startY + syringe_length).lineTo(-tip_wide/2,length).lineTo(0,length+tip_wide/2).mirrorY().extrude(thick)
         elif self.style == HandStyle.CIRCLES:
 
-            tip_r = length*0.05
+            tip_r = self.length*0.05
             base_r = self.length*0.2
-
+            border = self.length * 0.045
             if second:
                 base_r = length*0.2
+                tip_r = length * 0.05
+                border = length * 0.045
 
             r_rate = (tip_r - base_r)/length
-            border = length*0.045
+
             overlap=border
             r = base_r
             y=0#-(base_r-overlap)
