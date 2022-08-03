@@ -88,11 +88,12 @@ if 'show_object' not in globals():
 # show_object(hands.getHand(hour=False))
 
 
-motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
-hands = Hands(style=HandStyle.CIRCLES, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
-show_object(hands.getHand(hour=True).translate((40,0)))
-show_object(hands.getHand(minute=True))
-show_object(hands.getHand(second=True).translate((-40,0)))
+# motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+# hands = Hands(style=HandStyle.CIRCLES, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+#
+# show_object(hands.getHand(hour=True).translate((40,0)))
+# show_object(hands.getHand(minute=True))
+# show_object(hands.getHand(second=True).translate((-40,0)))
 
 
 # show_object(getHandDemo(assembled=True, chunky=True))
@@ -191,3 +192,13 @@ show_object(hands.getHand(second=True).translate((-40,0)))
 # dial = Dial(outsideD=200)
 #
 # show_object(dial.getDial())
+
+
+springArbour = SpringArbour()
+
+show_object(springArbour.getArbour())
+path="out"
+name="spring_arbour_test"
+out = os.path.join(path, "{}.stl".format(name))
+print("Outputting ", out)
+exporters.export(springArbour.getArbour(), out)

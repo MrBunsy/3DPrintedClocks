@@ -57,7 +57,7 @@ runtime: 180.0hours. Chain wheel multiplier: 10.3
 '''
 train.calculatePoweredWheelRatios()
 
-train.printInfo()
+train.printInfo(weight_kg=2.5)
 
 pendulumSticksOut=20
 

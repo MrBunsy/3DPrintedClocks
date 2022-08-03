@@ -34,7 +34,7 @@ escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorT
 # lock=2
 # escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24)
+train = clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)
 
 moduleReduction=1
 
@@ -44,8 +44,9 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25)
 #override default until it calculates an ideally sized wheel
 train.calculatePoweredWheelRatios(wheel_max=100)
-train.printInfo(weight_kg=4)
-
+#3.5 should be enough, but plan is to bump it up to 4 if it isn't
+train.printInfo(weight_kg=3.5)
+exit()
 pendulumSticksOut=30
 
 train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, ratchetInset=False)#, chainModuleIncrease=1.1)

@@ -332,7 +332,7 @@ class BearingInfo():
         self.bearingOuterD = bearingOuterD
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
         #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
-        #should probably refactor to outerSafeD
+        #should probably refactor to outerSafeD, this is how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
         self.bearingHolderLip = bearingHolderLip
         self.bearingHeight = bearingHeight
         self.innerD=innerD
@@ -342,7 +342,12 @@ class BearingInfo():
 
 
 def getBearingInfo(innerD):
+    '''
+    Get some stock bearings
+    '''
     if innerD == 3:
         return BearingInfo()
     if innerD == 4:
         return BearingInfo(bearingOuterD=13, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
+    if innerD == 10:
+        return BearingInfo(bearingOuterD=19, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)

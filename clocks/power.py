@@ -5,13 +5,18 @@ import os
 from cadquery import exporters
 
 from enum import Enum
+
 class PowerType(Enum):
     NOT_CONFIGURED = None
+    # === Weight types ===
     CHAIN = "chain"
     #drop in for chain, using friction and a hemp rope
     ROPE = "rope"
     #thin synthetic cord, coiled multiple times
     CORD = "cord"
+    # === Spring types ===
+    LOOP_END = "loop_end" # alarm or american spring clock style
+    BARREL = "barrel" # standard european spring clock
 
 
 class Weight:
@@ -514,9 +519,129 @@ class Pulley:
             print("Outputting ", out)
             exporters.export(self.getHookHalf(), out)
 
+class MainSpring:
+    '''
+    Class to represent the dimensions of a mainspring
+    '''
+    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True):
+        self.height=height
+        if hook_height < 0:
+            hook_height = height / 3
+        self.hook_height = hook_height
+        self.thick=thick
+        self.loop_end=loop_end
+
+
+class SpringArbour:
+
+    def __init__(self, metric_rod_size=3, spring=None, bearing=None, min_inner_diameter=4.5, power_clockwise=True, ratchet_thick=4):
+        '''
+        arbour that could go inside a barrel, or be used with a loop end spring
+        ends in just a flat base, so it can be used by either a loop end or barrel class later
+        top is designed to go through a bearing and end in a key, just like a key-wound cord wheel
+        '''
+
+        if spring is None:
+            #default, which is a smiths alarm clock loop end
+            spring = MainSpring()
+
+        self.spring = spring
+
+        #if zero, no ratchet
+        self.ratchet_thick=ratchet_thick
+
+        self.metric_rod_size = metric_rod_size
+        if bearing is None:
+            #default to a 10mm inner diameter bearing (I've got little cheap plastic ones of these)
+            bearing = getBearingInfo(10)
+        self.bearing = bearing
+        #the bit the inside of the spring wraps around, if it's too small then larger springs will struggle, but I imagine with the small
+        #alarm clock springs I'll usually be too big
+        self.min_inner_diameter = min_inner_diameter
+
+        self.min_wall_thick=1.5
+
+        self.diameter = self.metric_rod_size + self.min_wall_thick*2
+
+        self.spring_bit_height = self.spring.height/0.75
+
+        #smiths' alarm it's ~0.8 for a spring of ~0.25 (x3.2)
+        #for the astral, it's ~1.5 for a spring of ~0.4 (3.75)
+        self.hook_deep = self.spring.thick*3.5
+
+        # self.hook_centre_height = self.hook_height*0.6
+        #taper the bottom of the hook so it's printable
+        self.hook_taper_height = self.spring.hook_height*0.3
+
+        self.power_clockwise = power_clockwise
+        self.bearingWiggleRoom = 0.05
+        self.keySquareBitHeight = 20
+
+        #radius for that bit that slots inside the bearing
+        self.bearingBitR = self.bearing.innerD / 2 - self.bearingWiggleRoom
+
+        self.bearingStandoffThick=0.6
+
+        self.beforeBearingTaperHeight=0
+
+        if self.diameter < self.bearingBitR*2:
+            #need to taper up to the bearing, as it's bigger!
+            r = self.bearing.innerSafeD/2  - self.diameter/2
+            angle=degToRad(30)
+            self.beforeBearingTaperHeight = r * math.sqrt(1/math.sin(angle) - 1)
+
+        self.ratchet = None
+        if self.ratchet_thick > 0:
+            self.ratchet = Ratchet(totalD=self.diameter*4,thick=self.ratchet_thick, power_clockwise = self.power_clockwise)
+
+    def getArbour(self):
+        arbour = cq.Workplane("XY")
+
+        if self.ratchet is not None:
+            arbour = self.ratchet.getInnerWheel().faces(">Z").workplane().circle(self.diameter/2).extrude(self.spring_bit_height)
+
+        # return arbour
+
+        arbour = arbour.circle(self.diameter/2).extrude(self.spring_bit_height)
+
+
+        # hook_taper_height = (self.hook_height - self.hook_centre_height)/2
+        #don't need to taper both ends, only the one that would be printing mid-air!
+        spring_hook = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=0, radius2=self.hook_deep,height = self.hook_taper_height))
+        spring_hook = spring_hook.faces(">Z").workplane().circle(self.hook_deep).extrude(self.spring.hook_height - self.hook_taper_height)
+        # spring_hook = spring_hook.add(cq.Solid.makeCone(radius2=0, radius1=self.hook_deep*0.99, height=hook_taper_height).translate((0,0,self.hook_height - hook_taper_height)))
+        # spring_hook = spring_hook.add(cq.Solid.makeCone(radius1=0, radius2=self.hook_deep, height=hook_taper_height).rotate((0,0,0),(1,0,0),180).translate((0,0,self.hook_height)))
+        spring_hook = spring_hook.cut(cq.Workplane("XY").moveTo(0,self.hook_deep).rect(self.hook_deep*2,self.hook_deep*2).extrude(self.spring.hook_height))
+
+        spring_hook = spring_hook.translate((-self.diameter/2,0,self.spring_bit_height/2 - self.spring.hook_height/2 + self.ratchet_thick))
+        #for some reason just adding results in a malformed STL, but cutting and then adding is much better?!
+        spring_hook = spring_hook.cut(arbour)
+
+        arbour = arbour.add(spring_hook)
+
+        if self.beforeBearingTaperHeight > 0:
+            arbour = arbour.add(cq.Solid.makeCone(radius1=self.diameter/2, radius2=self.bearing.innerSafeD/2, height = self.beforeBearingTaperHeight).translate((0,0,self.spring_bit_height + self.ratchet_thick)))
+            arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.innerSafeD/2).extrude(self.bearingStandoffThick)
+
+        arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.innerD/2 - self.bearingWiggleRoom).extrude(self.bearing.bearingHeight)
+        # using polygon rather than rect so it calcualtes the size to fit in teh circle
+        arbour = arbour.faces(">Z").workplane().polygon(4, self.bearing.innerD - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
+
+        arbour = arbour.faces(">Z").workplane().circle(self.metric_rod_size/2).cutThruAll()
+
+        return arbour
+
+class LoopEndSpringArbour:
+
+    def __init__(self, spring=None):
+        if spring is None:
+            #default, which is a smiths alarm clock loop end
+            spring = MainSpring()
+        self.spring = spring
+
 class PoweredWheel:
     '''
-    Python doesn't have interfaces, but this is the interface for the powered wheel classes
+    Python doesn't have interfaces, but this is the interface for the powered wheel classes (for weights! I forgot entirely about springs when I wrote this)
     '''
 
     @staticmethod
