@@ -169,7 +169,7 @@ if 'show_object' not in globals():
 # # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB_SMALL))
 # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
 # show_object(getGearDemo(justStyle=GearStyle.SPOKES))
-# show_object(getGearDemo())
+show_object(getGearDemo())
 # show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 #
 # path = "out"
@@ -194,11 +194,11 @@ if 'show_object' not in globals():
 # show_object(dial.getDial())
 
 
-springArbour = SpringArbour(power_clockwise=True)
-
-show_object(springArbour.getArbour())
-path="out"
-name="spring_arbour_test"
-out = os.path.join(path, "{}.stl".format(name))
-print("Outputting ", out)
-exporters.export(springArbour.getArbour(), out)
+# springArbour = SpringArbour(power_clockwise=True)
+#
+# show_object(springArbour.getArbour())
+# path="out"
+# name="spring_arbour_test"
+# out = os.path.join(path, "{}.stl".format(name))
+# print("Outputting ", out)
+# exporters.export(springArbour.getArbour(), out)

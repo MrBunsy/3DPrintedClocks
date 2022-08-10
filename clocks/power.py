@@ -15,8 +15,7 @@ class PowerType(Enum):
     #thin synthetic cord, coiled multiple times
     CORD = "cord"
     # === Spring types ===
-    LOOP_END = "loop_end" # alarm or american spring clock style
-    BARREL = "barrel" # standard european spring clock
+    SPRING = "spring" # either loop end or barrel
 
 
 class Weight:
@@ -911,7 +910,13 @@ class CordWheel:
         self.useKey=useKey
         #1mm felt too flimsy
         #2mm was fine, but I'm trying to reduce depth as much as possible
+        #note - if the clock is leaning forwards even slightly, then the cord can put a lot of weight on the top cap, bending it and forcing it against the front plate
+        #beforeBearingExtraHeight helps compensate, but thicker caps do too
         self.capThick=1.6
+        self.topCapThick = self.capThick
+        if self.useKey:
+            #using as proxy for heavy
+            self.topCapThick = 2.4
         self.capDiameter = diameter*2.5
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
@@ -948,13 +953,14 @@ class CordWheel:
 
 
         if self.useKey:
-            minScrewLength = self.ratchet.thick/2 + self.capThick*2 + self.thick
+            minScrewLength = self.ratchet.thick/2 + self.capThick + self.topCapThick + self.thick
             print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
         else:
             # two sections, one for winding up while the other winds down
-            minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick * 2 + self.thick * 1.5
+            minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick + self.topCapThick + self.thick * 1.5
             if self.useKey:
                 minScrewLength -= self.thick
+            #I think this might assume caps all the same thickness? which is true when not using a key
             print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
         #extra radius to add to stand off from a bearing
         self.bearingLip=bearingLip
@@ -999,7 +1005,7 @@ class CordWheel:
 
         if self.useKey:
             #one hole only
-            chainZTop = -self.beforeBearingExtraHeight - self.capThick
+            chainZTop = -self.beforeBearingExtraHeight - self.topCapThick
             chainZBottom = chainZTop - self.thick
 
             side = 1 if self.ratchet.isClockwise() else -1
@@ -1009,10 +1015,10 @@ class CordWheel:
         else:
             #make the weight segment the one nearer the wall to be consistent with old designs (idea was to ensure less flexing of plates, but as they've got closer this might
             #make the weight a bit close to teh wall?)
-            weightSegmentBottomZ = - WASHER_THICK - self.capThick - self.thick - self.capThick - self.thick
-            weightSegmentTopZ = - WASHER_THICK - self.capThick - self.thick - self.capThick
-            windSegmentBottomZ = - WASHER_THICK - self.capThick - self.thick
-            windSegmentTopZ = - WASHER_THICK - self.capThick
+            weightSegmentBottomZ = - WASHER_THICK - self.topCapThick - self.thick - self.capThick - self.thick
+            weightSegmentTopZ = - WASHER_THICK - self.topCapThick - self.thick - self.capThick
+            windSegmentBottomZ = - WASHER_THICK - self.topCapThick - self.thick
+            windSegmentTopZ = - WASHER_THICK - self.topCapThick
 
             if self.ratchet.isClockwise():
                 weightSide = 1
@@ -1065,12 +1071,12 @@ class CordWheel:
             #space for the cap
 
             # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
-            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)
+            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
             key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keySquareBitHeight)
-            segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearingHeight + self.beforeBearingExtraHeight + self.capThick)))
+            segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)))
 
-            countersink = self.getScrewCountersinkCutter(self.thick + self.capThick*2)
+            countersink = self.getScrewCountersinkCutter(self.thick + self.capThick + self.topCapThick)
             segment = segment.cut(countersink)
 
         #hole for the rod
@@ -1117,7 +1123,8 @@ class CordWheel:
         return countersink
 
     def getCap(self, top=False, extraThick=0):
-        cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(self.capThick + extraThick)
+        capThick = self.topCapThick if top else self.capThick
+        cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(capThick + extraThick)
 
         holeR = self.rodD / 2
         if self.useKey and top:
@@ -1126,11 +1133,11 @@ class CordWheel:
             #add small ring to keep this further away from the bearing
             cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearingInnerD/2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
-            countersink = self.getScrewCountersinkCutter(self.capThick + extraThick)
+            countersink = self.getScrewCountersinkCutter(capThick + extraThick)
             cap = cap.cut(countersink)
 
         # hole for the rod
-        cap = cap.cut(cq.Workplane("XY").circle(holeR).extrude(self.capThick*10))
+        cap = cap.cut(cq.Workplane("XY").circle(holeR).extrude(capThick*10))
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
@@ -1308,9 +1315,9 @@ class CordWheel:
         '''
 
         if self.useKey:
-            return self.ratchet.thick + self.clickWheelExtra + self.beforeBearingExtraHeight + self.capThick*2 + self.thick
+            return self.ratchet.thick + self.clickWheelExtra + self.beforeBearingExtraHeight + self.capThick + self.topCapThick + self.thick
 
-        return self.ratchet.thick + self.clickWheelExtra + self.capThick*3 + self.thick*2 + WASHER_THICK
+        return self.ratchet.thick + self.clickWheelExtra + self.capThick*2 + self.topCapThick + self.thick*2 + WASHER_THICK
 
     def outputSTLs(self, name="clock", path="../out"):
 
