@@ -46,7 +46,7 @@ train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilTh
 train.calculatePoweredWheelRatios(wheel_max=100)
 #3.5 should be enough, but plan is to bump it up to 4 if it isn't
 train.printInfo(weight_kg=3.5)
-exit()
+# exit()
 pendulumSticksOut=30
 
 train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, ratchetInset=False)#, chainModuleIncrease=1.1)

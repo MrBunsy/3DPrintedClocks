@@ -197,6 +197,32 @@ class Escapement:
         innerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle, exitPalletStartR), anchorCentre))
         outerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle + armThickAngle, exitPalletEndR), anchorCentre))
 
+        '''
+        note - the locking faces are not equidistant (entryPalletStartR != exitPalletStartR). I don't know how necessary this actually is
+        the current design clearly works, although I'm not certain that the escape wheel rotates the same amount with a 'tick' as a 'tock'.
+        I'm also not convinced it's worth the effort - the current design works reliably and keeps as reasonable time as I would expect without temperature compensation
+        save this for a rainy day?
+
+        abbeyclock: "If the pallets were modified to make them with equidistant lock, the locking faces would be drawn on the same circle.
+        However, the pendulum would receive unequal impulses in each direction. A pallet with equidistant drop could also be designed, but it has no practical application in horology."
+        http://www.abbeyclock.com/aeb9.html
+        
+        So, in short, this is fine. equidistant lock is only required for watches according to abbeyclock (swiss or pin levers, I'm assuming) 
+        
+        
+        
+        other note:
+        from Title: On the Mathematical Theory and Practical Defects of Clock Escapements, with a Description of a New Escapement; and some Observations connected with the same Subjects, on the Construction of other Parts of Clocks for Astronomical and Scientific Purposes
+Authors: Mackenzie Bloxam, J.
+Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
+
+        "Hence the pendulum must be nearer to its vetical poisition, or position of rest, when the impulse begins, than when it ends;"
+        So the impulse should be given when the pendulum is vertical, which I think I knew already but hadn't thought about. I think that means I should be adjusting lock more carefully?
+        
+        Given that these are never going to be precision regulators, I think I can be happy enough with reliable and semi-accurate.
+        
+        '''
+
         # entry pallet
         anchor = anchor.moveTo(entryPalletEndPos[0], entryPalletEndPos[1]).lineTo(entryPalletStartPos[0],entryPalletStartPos[1])
 

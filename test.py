@@ -124,10 +124,10 @@ if 'show_object' not in globals():
 #
 # weightShell.outputSTLs("test","out")
 
-# snail = Snail()
-# trigger = StrikeTrigger()
-# motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-# show_object(motionWorks.getAssembled())
+snail = Snail()
+trigger = StrikeTrigger()
+motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
+show_object(motionWorks.getAssembled())
 # show_object(motionWorks.getHourHolder())
 
 # rack = Rack()
@@ -169,7 +169,7 @@ if 'show_object' not in globals():
 # # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB_SMALL))
 # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
 # show_object(getGearDemo(justStyle=GearStyle.SPOKES))
-show_object(getGearDemo())
+# show_object(getGearDemo())
 # show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 #
 # path = "out"

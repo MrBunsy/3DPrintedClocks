@@ -6,10 +6,12 @@ class Snail:
     '''
     Part of the rack and snail, should be attached to the hour holder
     '''
-    def __init__(self, maxDiameter=40, minDiameter=12, thick=8):
+    def __init__(self, maxDiameter=40, minDiameter=12, thick=8, wallThick=2):
         self.maxR=maxDiameter/2
         self.minR=minDiameter/2
         self.thick = thick
+        #making it not completely solid so it looks better and prints faster
+        self.wallThick = wallThick
         # self.gapDistance=minDiameter*0.05
 
 
@@ -47,6 +49,15 @@ class Snail:
         #TODO consider a ramp so the rack can slide over the 1 o'clock ledge if it's not been raised for any reason?
         #that mechanism hasn't been designed yet
         snail = self.get2D().extrude(self.thick + extraThick)
+
+        shellThick = self.thick-self.wallThick*2
+
+        #get a flat bit that we can use to chop away the inside
+        shell = snail.shell(-self.wallThick).translate((0, 0, -self.wallThick)).intersect(cq.Workplane("XY").rect(self.maxR*8, self.maxR*8).extrude(shellThick))
+
+        cutter = snail.cut(shell).cut(shell.translate((0,0,shellThick)))
+
+        snail = snail.cut(cutter)
 
         return snail
 
