@@ -629,6 +629,8 @@ class Arbour:
         self.frontSideExtension=0
         self.rearSideExtension=0
         self.arbourExtensionMaxR=self.arbourD
+        #so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
+        self.arbourBearingStandoff=LAYER_THICK*2
 
         if self.getType() == ArbourType.UNKNOWN:
             raise ValueError("Not a valid arbour")
@@ -838,8 +840,14 @@ class Arbour:
 
         #add the rest of the arbour extension
         anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)
-        if remainingExtension > 0:
-            anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
+        # if remainingExtension > 0:
+        #     anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
+        arbourExtension = self.getArbourExtension(front=self.spannerBitOnFront)
+        if self.spannerBitOnFront:
+            arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+        else:
+            arbourExtension = arbourExtension.rotate((0,0,0), (1,0,0), 180)
+        anchor = anchor.add(arbourExtension)
 
         anchor = anchor.faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
 
@@ -858,9 +866,17 @@ class Arbour:
         '''
 
         length = self.frontSideExtension if front else self.rearSideExtension
+        bearing = getBearingInfo(self.arbourD)
 
-        if length >= LAYER_THICK:
-            extendoArbour = cq.Workplane("XY").tag("base").circle(self.getRodD()).circle(self.getRodD() / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(length)
+        outerR = self.getRodD()
+        innerR = self.getRodD() / 2 + ARBOUR_WIGGLE_ROOM/2
+        tipR = bearing.innerSafeD/2
+        if tipR > outerR:
+            tipR = outerR
+
+        if length - self.arbourBearingStandoff >= LAYER_THICK:
+            extendoArbour = cq.Workplane("XY").tag("base").circle(outerR).circle(innerR).extrude(length-self.arbourBearingStandoff).\
+                faces(">Z").workplane().circle(tipR).circle(innerR).extrude(self.arbourBearingStandoff)
 
             return extendoArbour
         return None
@@ -881,7 +897,7 @@ class Arbour:
         if self.needArbourExtension(front=True) and not self.pinionAtFront:
             shape = shape.add(self.getArbourExtension(front=True).translate((0,0,self.getTotalThickness())))
         if self.needArbourExtension(front=False) and self.pinionAtFront:
-            shape = shape.add(self.getArbourExtension(front=False).translate((0,0,-self.rearSideExtension)))
+            shape = shape.add(self.getArbourExtension(front=False).rotate((0,0,0),(1,0,0),180))
 
         if self.getType() == ArbourType.CHAIN_WHEEL:
             # should work for both chain and cord
@@ -1007,7 +1023,10 @@ class Arbour:
                 extensionR = min(10,self.arbourExtensionMaxR)
 
                 bearingStandoffHeight = LAYER_THICK * 2
-                extendedArbour = cq.Workplane("XY").circle(extensionR).extrude(self.rearSideExtension - bearingStandoffHeight).faces(">Z").workplane().circle(self.arbourD).extrude(bearingStandoffHeight)
+                bearingStandoffR = getBearingInfo(self.arbourD).innerSafeD/2
+                if bearingStandoffR > extensionR:
+                    bearingStandoffR = extensionR
+                extendedArbour = cq.Workplane("XY").circle(extensionR).extrude(self.rearSideExtension - bearingStandoffHeight).faces(">Z").workplane().circle(bearingStandoffR).extrude(bearingStandoffHeight)
                 #add hole for rod!
                 extendedArbour = extendedArbour.faces(">Z").circle(self.arbourD/2).cutThruAll()
 

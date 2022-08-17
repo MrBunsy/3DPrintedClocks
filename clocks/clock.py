@@ -688,6 +688,7 @@ class ClockPlates:
 
         # how much space to leave around the edge of the gears for safety
         self.gearGap = 3
+        self.smallGearGap = 2
 
         #TODO make some sort of object to hold all this info we keep passing around?
         self.anchorThick=self.pendulum.anchorThick
@@ -854,7 +855,7 @@ class ClockPlates:
         for i,bearingPos in enumerate(self.bearingPositions):
             arbour = self.goingTrain.getArbourWithConventionalNaming(i)
             if i < self.goingTrain.wheels + self.goingTrain.chainWheels - 2:
-                maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.gearGap
+                maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.smallGearGap
             else:
                 maxR = 0
             arbour.setArbourExtensionInfo(rearSide=bearingPos[2],maxR=maxR, frontSide=self.plateDistance-self.wobble-bearingPos[2] - arbour.getTotalThickness())
