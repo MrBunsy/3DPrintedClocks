@@ -124,15 +124,17 @@ if 'show_object' not in globals():
 #
 # weightShell.outputSTLs("test","out")
 
-snail = Snail()
-trigger = StrikeTrigger()
-motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-show_object(motionWorks.getAssembled())
+# snail = Snail()
+# trigger = StrikeTrigger()
+# motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
+# show_object(motionWorks.getAssembled())
 # show_object(motionWorks.getHourHolder())
 
-# rack = Rack()
-#
-# show_object(rack.get2D())
+
+
+
+rack = Rack()
+show_object(rack.getRack())
 
 # pulley = Pulley(diameter=27.5, bearing=getBearingInfo(4), screwMetricSize=2, screwsCountersunk=False)
 #
