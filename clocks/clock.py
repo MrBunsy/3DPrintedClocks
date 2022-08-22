@@ -47,7 +47,7 @@ for the first clock and decide if I want to switch to something else later.
 
 class GoingTrain:
 
-    def __init__(self, pendulum_period=-1, pendulum_length=-1, fourth_wheel=False, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
+    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -94,6 +94,9 @@ class GoingTrain:
 
         #note - this has become assumed in many places and will require work to the plates and layout of gears to undo
         self.chainAtBack = chainAtBack
+        #likewise, this has been assumed, but I'm trying to undo those assumptions to use this
+        self.penulumAtFront = True
+        self.pendulumFixing = pendulumFixing
         #to ensure the anchor isn't pressed up against the back (or front) plate
         if escapeWheelPinionAtFront is None:
             self.escapeWheelPinionAtFront = chainAtBack
@@ -109,9 +112,15 @@ class GoingTrain:
         self.maxWeightDrop = maxWeightDrop
         self.usePulley=usePulley
 
+        if fourth_wheel is not None:
+            #old deprecated interface
+            self.wheels = 4 if fourth_wheel else 3
+        else:
+            self.wheels = wheels
+
         #calculate ratios from minute hand to escapement
         #the last wheel is the escapement
-        self.wheels = 4 if fourth_wheel else 3
+
 
         #maybe make this overridable in genGears?
         self.anchorThick = 12
@@ -174,6 +183,9 @@ class GoingTrain:
         #this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
         #one fewer pairs than wheels
         allcomboCount=len(allGearPairCombos)
+        if self.wheels == 2:
+            for pair_0 in range(allcomboCount):
+                allTrains.append([allGearPairCombos[pair_0]])
         if self.wheels == 3:
             for pair_0 in range(allcomboCount):
                 for pair_1 in range(allcomboCount):
@@ -563,7 +575,8 @@ class GoingTrain:
             pinionAtFront = not pinionAtFront
 
         #anchor is the last arbour
-        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD))
+        #"pinion" is the direction of the extended arbour for fixing to pendulum
+        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD, pinionAtFront=self.penulumAtFront, pendulumFixing=self.pendulumFixing))
 
         self.wheelPinionPairs = pairs
         self.arbours = arbours

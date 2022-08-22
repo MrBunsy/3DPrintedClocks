@@ -1,4 +1,5 @@
 from .utility import *
+from .escapements import *
 import cadquery as cq
 import os
 from cadquery import exporters
@@ -597,7 +598,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -620,6 +621,7 @@ class Arbour:
         self.style=style
         self.distanceToNextArbour=distanceToNextArbour
         self.nutSpaceMetric=None
+        #for the anchor, this is the side with the pendulum
         self.pinionAtFront=pinionAtFront
 
         self.ratchet = None
@@ -797,11 +799,13 @@ class Arbour:
             shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getWheelWithRatchet(forPrinting=forPrinting)
-        else:
-            if self.getType() == ArbourType.ANCHOR:
+        elif self.getType() == ArbourType.ANCHOR:
                 shape = self.getAnchor(forPrinting=forPrinting)
+        else:
+            raise ValueError("Cannot produce 3D model for type: {}".format(self.getType().value))
+
         if self.nutSpaceMetric is not None:
-            #cut out a space for a nyloc nut
+            #cut out a space for a nyloc nut - not used anymore, using superglue or avoiding need for it instead
             deep = self.wheelThick * 0.25
             if self.pinion is not None:
                 #can make this much deeper

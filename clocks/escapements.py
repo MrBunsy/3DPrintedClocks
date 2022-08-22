@@ -10,6 +10,16 @@ class EscapementType(Enum):
     RECOIL = "recoil"
     GRASSHOPPER = "grasshopper"
 
+class PendulumFixing(Enum):
+    #the first one, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod
+    FRICTION_ROD = "friction_rod"
+    #using a 10mm bearing for the front anchor arbour, a long extension from the anchour arbour will end in a square and the rod will slot onto this like the minute hand slots
+    #onto the cannon pinion
+    DIRECT_ARBOUR = "direct_arbour"
+    #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)
+    KNIFE_EDGE = "knife_edge"
+    #idea - 3D printed suspension spring, works for the ratchet, might work for this?
+
 class Escapement:
     def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
@@ -133,6 +143,11 @@ class Escapement:
         NOTE - only deadbeat works at the moment, but since it's wonderfully reliable I don't see the need to revisit recoil
 
         '''
+
+        if self.type == EscapementType.RECOIL:
+            #just in case I ever want this again?
+            return self.getAnchor2DOld()
+
         anchor = cq.Workplane("XY").tag("anchorbase")
         centreRadius = self.diameter * 0.09
 
