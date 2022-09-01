@@ -47,7 +47,7 @@ for the first clock and decide if I want to switch to something else later.
 
 class GoingTrain:
 
-    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD):
+    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -96,7 +96,6 @@ class GoingTrain:
         self.chainAtBack = chainAtBack
         #likewise, this has been assumed, but I'm trying to undo those assumptions to use this
         self.penulumAtFront = True
-        self.pendulumFixing = pendulumFixing
         #to ensure the anchor isn't pressed up against the back (or front) plate
         if escapeWheelPinionAtFront is None:
             self.escapeWheelPinionAtFront = chainAtBack
@@ -576,7 +575,7 @@ class GoingTrain:
 
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
-        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD, pinionAtFront=self.penulumAtFront, pendulumFixing=self.pendulumFixing))
+        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD, pinionAtFront=self.penulumAtFront))
 
         self.wheelPinionPairs = pairs
         self.arbours = arbours
@@ -1380,8 +1379,8 @@ class ClockPlates:
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
             cordWheel = self.goingTrain.poweredWheel
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
-            cordBearingHole = getHoleWithHole(cordWheel.bearingInnerD + cordWheel.bearingLip * 2, cordWheel.bearingOuterD, cordWheel.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)
-            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearingInnerD/2 + cordWheel.bearingLip).extrude(plateThick)
+            cordBearingHole = getHoleWithHole(cordWheel.bearing.innerD + cordWheel.bearing.bearingHolderLip * 2, cordWheel.bearing.bearingOuterD, cordWheel.bearing.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)
+            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearing.innerD/2 + cordWheel.bearing.bearingHolderLip).extrude(plateThick)
 
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 

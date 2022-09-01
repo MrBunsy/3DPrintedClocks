@@ -1,43 +1,10 @@
 from .utility import *
-from .escapements import *
+
 import cadquery as cq
 import os
 from cadquery import exporters
 
-from enum import Enum
-class GearStyle(Enum):
-    SOLID = None
-    ARCS = "HAC"
-    CIRCLES = "circles"
-    SIMPLE4 = "simple4"
-    SIMPLE5 = "simple5"
-    #spokes these don't print nicely with petg - very stringy
-    SPOKES = "spokes"
-    STEAMTRAIN = "steamtrain"
-    CARTWHEEL = "cartwheel"
-    FLOWER = "flower"
-    HONEYCOMB = "honeycomb"
-    HONEYCOMB_SMALL = "honeycomb_small"
-
-'''
-ideas for new styles:
- - bicycle sprockets
- - bicycle disc brakes (both ideas knicked from etsy quartz clocks)
- - honeycomb
- - Voronoi Diagram
- - curved arms
- - sine wave wraped around the circle?
-'''
-
-class ArbourType(Enum):
-    WHEEL_AND_PINION = "WheelAndPinion"
-    CHAIN_WHEEL = "ChainWheel"
-    ESCAPE_WHEEL = "EscapeWheel"
-    ANCHOR = "Anchor"
-    UNKNOWN = "Unknown"
-
-
-
+from .types import *
 
 class Gear:
 
@@ -598,7 +565,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -838,27 +805,31 @@ class Arbour:
 
         anchor = self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick)#, forPrinting=forPrinting)
 
-        face = ">Z" if self.spannerBitOnFront else "<Z"
+        if self.escapement.pendulumFixing == PendulumFixing.FRICTION_ROD:
+            #add a square bit to help adjust the beat usign a spanner.
+            #never really worked very well
 
-        width = self.getAnchorSpannerSize()
+            face = ">Z" if self.spannerBitOnFront else "<Z"
 
-        #add the rest of the arbour extension
-        anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)
-        # if remainingExtension > 0:
-        #     anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
-        arbourExtension = self.getArbourExtension(front=self.spannerBitOnFront)
-        if self.spannerBitOnFront:
-            arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
-        else:
-            arbourExtension = arbourExtension.rotate((0,0,0), (1,0,0), 180)
-        anchor = anchor.add(arbourExtension)
+            width = self.getAnchorSpannerSize()
 
-        anchor = anchor.faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
+            #add the rest of the arbour extension (overlapping with spanner bit, so we don't have to reproduce the logic with the bearing standoff)
+            anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)
+            # if remainingExtension > 0:
+            #     anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
+            arbourExtension = self.getArbourExtension(front=self.spannerBitOnFront)
+            if self.spannerBitOnFront:
+                arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+            else:
+                arbourExtension = arbourExtension.rotate((0,0,0), (1,0,0), 180)
+            anchor = anchor.add(arbourExtension)
+
+            anchor = anchor.faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
 
 
-        if forPrinting and not self.spannerBitOnFront:
-            #flip so it can be printed as-is
-            anchor=anchor.rotate((0,0,0),(0,1,0),180)
+            if forPrinting and not self.spannerBitOnFront:
+                #flip so it can be printed as-is
+                anchor=anchor.rotate((0,0,0),(0,1,0),180)
 
         return anchor
 

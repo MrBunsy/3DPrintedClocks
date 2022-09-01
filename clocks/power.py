@@ -890,6 +890,9 @@ class CordWheel:
     Made of two segments (one if using key) and a cap. Designed to be attached to the ratchet click wheel
 
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
+
+    TODO - for cord wheel with key, print the top cap the other way up and overlap over the main segment a tiny bit. This will hopefully stop
+    any posibility of the cord getting stuck in the gap. Other thoughts include using a 45/50deg overhang to print it all as one peice
     '''
 
     @staticmethod
@@ -899,7 +902,7 @@ class CordWheel:
         '''
         return 21
 
-    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearingInnerD=15, bearingHeight=5, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", bearingLip=2.5, bearingOuterD=24.2, windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000):
+    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000):
 
         self.type = PowerType.CORD
 
@@ -914,17 +917,41 @@ class CordWheel:
         #beforeBearingExtraHeight helps compensate, but thicker caps do too
         self.capThick=1.6
         self.topCapThick = self.capThick
-        if self.useKey:
-            #using as proxy for heavy
-            self.topCapThick = 2.4
-        self.capDiameter = diameter*2.5
+
+        # using as proxy for heavy
+        self.heavyDuty = self.useKey
+        self.fixingScrews = 2
+
+        self.topCapOverlap=0
+
+        if self.heavyDuty:
+            #trying to prevent the end cap warping and rubbing against front plate
+            #and there being a gap that the cord can get stuck down
+            self.topCapThick = 3
+
+            self.fixingScrews=3
+
+            #this is not fully implemented. I think I can get away with just using 3 screws and a thicker cap, and avoid this complication entirely
+            self.topCapOverlap = LAYER_THICK * 4
+            self.overlapSlotWide=self.diameter*0.075
+            self.overlapSlotWiggle=0.1
+
+        self.capDiameter = diameter*2#.5
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
         self.screwThreadMetric=screwThreadMetric
+
+        '''
+        bearingInnerD=15, bearingHeight=5, bearingLip=2.5, bearingOuterD=24.2,
+        '''
+
+        if bearing is None:
+            bearing = getBearingInfo(15)
+
         #only if useKey is true will this be used
-        self.bearingInnerD=bearingInnerD
-        self.bearingOuterD=bearingOuterD
-        self.bearingHeight=bearingHeight
+        self.bearing = bearing
+        # extra radius to add to stand off from a bearing
+        self.bearingWiggleRoom = 0.05
         #this is the square bit that sticks out the front of the clock. I suck at names
         self.keySquareBitHeight=keySquareBitHeight
         self.gearThick = gearThick
@@ -941,7 +968,7 @@ class CordWheel:
         if self.useKey:
             self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 1
 
-        self.fixingPoints = [(self.fixingDistance,0), (-self.fixingDistance,0)]
+        self.fixingPoints = [polar(a*math.pi*2/self.fixingScrews, self.fixingDistance) for a in range(self.fixingScrews)]#[(self.fixingDistance,0), (-self.fixingDistance,0)]
         self.cordThick=cordThick
 
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
@@ -962,15 +989,13 @@ class CordWheel:
                 minScrewLength -= self.thick
             #I think this might assume caps all the same thickness? which is true when not using a key
             print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
-        #extra radius to add to stand off from a bearing
-        self.bearingLip=bearingLip
-        self.bearingWiggleRoom = 0.05
+
         self.keyWiggleRoom = 0.75
 
         if self.useKey:
             self.keyWallThick = 2.5
             # enough to cut out the key itself
-            self.keyWidth = self.keyWallThick * 2 + self.bearingInnerD
+            self.keyWidth = self.keyWallThick * 2 + self.bearing.innerD
             #this is the length of the handle of the key if it's knob-type (needs to be short enough that it won't bump into the motion works, or else windingKeyHeightFromPlate needs to be
             #long enough that we're above the motion works)
             self.windingKeyHandleLength = windingKeyHandleLength
@@ -1055,7 +1080,7 @@ class CordWheel:
         return segment
 
     def getSegment(self, front=True):
-        #if front segment, the holes for screws/nuts will be different
+        #if front segment (only applies to non-key version), the holes for screws/nuts will be different
 
         #end is the cap
         segment = self.getCap()
@@ -1071,13 +1096,22 @@ class CordWheel:
             #space for the cap
 
             # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
-            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 - self.bearingWiggleRoom).extrude(self.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)
+            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.innerD / 2 - self.bearingWiggleRoom).extrude(self.bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
-            key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keySquareBitHeight)
-            segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)))
+            key = cq.Workplane("XY").polygon(4, self.bearing.innerD - self.bearingWiggleRoom*2).extrude(self.keySquareBitHeight)
+            segment = segment.add(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)))
+
+
+
+            if self.topCapOverlap > 0 and not front:
+                #overlapping slot
+                overlap = cq.Workplane("XY").circle(self.diameter / 2).circle(self.diameter / 2 - self.overlapSlotWide).extrude(self.topCapOverlap)
+                segment = segment.add(overlap.translate((0,0, self.capThick + self.thick)))
 
             countersink = self.getScrewCountersinkCutter(self.thick + self.capThick + self.topCapThick)
             segment = segment.cut(countersink)
+
+
 
         #hole for the rod
         segment = segment.faces(">Z").circle(self.rodD/2).cutThruAll()
@@ -1086,7 +1120,7 @@ class CordWheel:
         segment = segment.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric/2).cutThruAll()
 
         if front:
-            #base of this needs space for the nuts
+            #base of this needs space for the nuts (for the non-key version)
             #current plan is to put the screw heads in the ratchet, as this side gives us more wiggle room for screws of varying length
             segment = segment.cut(self.getNutHoles())
 
@@ -1128,13 +1162,18 @@ class CordWheel:
 
         holeR = self.rodD / 2
         if self.useKey and top:
-            holeR = self.bearingInnerD/2 + self.bearingWiggleRoom
+            holeR = self.bearing.innerD/2 + self.bearingWiggleRoom
 
             #add small ring to keep this further away from the bearing
-            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearingInnerD/2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearing.innerD/2 + self.bearing.bearingHolderLip).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
             countersink = self.getScrewCountersinkCutter(capThick + extraThick)
             cap = cap.cut(countersink)
+
+        if top and self.topCapOverlap > 0:
+            #overlap slot
+            cutter = cq.Workplane("XY").circle(self.diameter/2).circle(self.diameter/2 - self.overlapSlotWide - self.overlapSlotWiggle).extrude(self.topCapOverlap)
+            cap = cap.cut(cutter)
 
         # hole for the rod
         cap = cap.cut(cq.Workplane("XY").circle(holeR).extrude(capThick*10))
@@ -1216,7 +1255,7 @@ class CordWheel:
         #key bit
         key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.windingKeyHeightFromPlate)
 
-        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keySquareBitHeight).translate((0, 0, self.windingKeyHandleThick + self.windingKeyHeightFromPlate - self.keySquareBitHeight))
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearing.innerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keySquareBitHeight).translate((0, 0, self.windingKeyHandleThick + self.windingKeyHeightFromPlate - self.keySquareBitHeight))
 
         key = key.cut(keyHole)
 
@@ -1224,7 +1263,7 @@ class CordWheel:
 
 
     def getWindingKnob(self):
-        r = self.bearingInnerD/2
+        r = self.bearing.innerD/2
 
         screwLength = 30 - self.windingKeyHandleThick
 

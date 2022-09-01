@@ -351,3 +351,5 @@ def getBearingInfo(innerD):
         return BearingInfo(bearingOuterD=13, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 10:
         return BearingInfo(bearingOuterD=19, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
+    if innerD == 15:
+        return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD)

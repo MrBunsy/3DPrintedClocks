@@ -1,27 +1,15 @@
+import os
+
+from .types import *
+
 from .utility import *
 from .gearing import *
 import cadquery as cq
-import os
+
 from cadquery import exporters
 
-class EscapementType(Enum):
-    #only one fully implemented is deadbeat, recoil has been broken since deadbeat was introduced
-    DEADBEAT = "deadbeat"
-    RECOIL = "recoil"
-    GRASSHOPPER = "grasshopper"
-
-class PendulumFixing(Enum):
-    #the first one, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod
-    FRICTION_ROD = "friction_rod"
-    #using a 10mm bearing for the front anchor arbour, a long extension from the anchour arbour will end in a square and the rod will slot onto this like the minute hand slots
-    #onto the cannon pinion
-    DIRECT_ARBOUR = "direct_arbour"
-    #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)
-    KNIFE_EDGE = "knife_edge"
-    #idea - 3D printed suspension spring, works for the ratchet, might work for this?
-
 class Escapement:
-    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
+    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, pendulumFixing = PendulumFixing.FRICTION_ROD):
         '''
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
         because it ended up being more elegant to treat the anchor as the last arbour in the clock.
@@ -51,6 +39,9 @@ class Escapement:
 
         clockwiseFromPinionSide is for the escape wheel
         '''
+
+        #not sure where this best belongs, it's a bit out of place here, but no-where seems more obvious
+        self.pendulumFixing = pendulumFixing
 
         self.lift_deg = lift
         self.halfLift = 0.5*degToRad(lift)
