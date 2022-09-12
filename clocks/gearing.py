@@ -762,10 +762,24 @@ class Arbour:
         return a shape that can be exported to STL
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
         '''
+        needJustBearingStandoff = False
+        pinionThick = self.pinionThick
+        if self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
+
+            if (self.pinionAtFront and not self.needArbourExtension(front=True)) or ((not self.pinionAtFront) and not self.needArbourExtension(front=False)):
+                '''
+                pinion would be up against the clock plate
+                Reduce thickness of pinion a tiny bit and give it a standoff
+                this is a bodge - ideal would be to increase plate thickness
+                '''
+                pinionThick-=self.arbourBearingStandoff
+                needJustBearingStandoff=True
+
+
         if self.getType() == ArbourType.WHEEL_AND_PINION:
-            shape = self.pinion.addToWheel(self.wheel, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+            shape = self.pinion.addToWheel(self.wheel, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
-            shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+            shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getWheelWithRatchet(forPrinting=forPrinting)
         elif self.getType() == ArbourType.ANCHOR:
@@ -780,17 +794,22 @@ class Arbour:
                 #can make this much deeper
                 deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
             shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
-        shapetype = self.getType()
-        # note, the included extension is always on the pinion side (unprintable otherwise)
-        if self.needArbourExtension(front=True) and self.pinionAtFront:
-            #need arbour extension on the front
-            shape = shape.add(self.getArbourExtension(front=True).translate((0,0,self.getTotalThickness())))
 
-        if self.needArbourExtension(front=False) and not self.pinionAtFront:
+        # note, the included extension is always on the pinion side (unprintable otherwise)
+        if (self.needArbourExtension(front=True) or needJustBearingStandoff) and self.pinionAtFront:
+            #need arbour extension on the front
+            extendo = self.getArbourExtension(front=True).translate((0, 0, self.getTotalThickness()))
+            if needJustBearingStandoff:
+                extendo = extendo.translate((0,0, - self.arbourBearingStandoff))
+            shape = shape.add(extendo)
+
+        if (self.needArbourExtension(front=False) or needJustBearingStandoff) and not self.pinionAtFront:
             # need arbour extension on the rear
-            extendo = self.getArbourExtension(front=False)
-            if extendo is not None:
-                shape = shape.add(extendo.translate((0, 0, self.getTotalThickness())))
+            extendo = self.getArbourExtension(front=False).translate((0, 0, self.getTotalThickness()))
+            if needJustBearingStandoff:
+                extendo = extendo.translate((0,0, - self.arbourBearingStandoff))
+            shape = shape.add(extendo)
+
 
         if not forPrinting and not self.pinionAtFront and (self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]):
             #make it the right way around for placing in a model
@@ -860,15 +879,22 @@ class Arbour:
         length = self.frontSideExtension if front else self.rearSideExtension
         bearing = getBearingInfo(self.arbourD)
 
+        if length == 0 and front == self.pinionAtFront:
+            #bodge to always have a bearing standoff
+            length = self.arbourBearingStandoff
+
         outerR = self.getRodD()
         innerR = self.getRodD() / 2 + ARBOUR_WIGGLE_ROOM/2
         tipR = bearing.innerSafeD/2
         if tipR > outerR:
             tipR = outerR
 
-        if length - self.arbourBearingStandoff >= LAYER_THICK:
-            extendoArbour = cq.Workplane("XY").tag("base").circle(outerR).circle(innerR).extrude(length-self.arbourBearingStandoff).\
-                faces(">Z").workplane().circle(tipR).circle(innerR).extrude(self.arbourBearingStandoff)
+        if length - self.arbourBearingStandoff >= 0:
+            if length > self.arbourBearingStandoff:
+                extendoArbour = cq.Workplane("XY").tag("base").circle(outerR).circle(innerR).extrude(length-self.arbourBearingStandoff).faces(">Z").workplane()
+            else:
+                extendoArbour=cq.Workplane("XY")
+            extendoArbour = extendoArbour.circle(tipR).circle(innerR).extrude(self.arbourBearingStandoff)
 
             return extendoArbour
         return None
