@@ -628,6 +628,8 @@ class Arbour:
         # want a square bit so we can use custom long spanners to set the beat
         self.spannerBitThick = 4
         self.spannerBitOnFront=False
+        #turning off this for now, it wasn't useful
+        self.useSpanner=False
 
 
     def setArbourExtensionInfo(self, frontSide=0, rearSide=0, maxR=0):
@@ -641,7 +643,7 @@ class Arbour:
         self.arbourExtensionMaxR=maxR
 
         #can now calculate the location and size of the spanner nut for the anchor
-        if self.getType() == ArbourType.ANCHOR:
+        if self.getType() == ArbourType.ANCHOR and self.escapement.pendulumFixing == PendulumFixing.FRICTION_ROD and self.useSpanner:
             # place it where there's most space
 
             if self.rearSideExtension > self.spannerBitThick:
@@ -778,7 +780,7 @@ class Arbour:
                 #can make this much deeper
                 deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
             shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
-
+        shapetype = self.getType()
         # note, the included extension is always on the pinion side (unprintable otherwise)
         if self.needArbourExtension(front=True) and self.pinionAtFront:
             #need arbour extension on the front
@@ -786,7 +788,9 @@ class Arbour:
 
         if self.needArbourExtension(front=False) and not self.pinionAtFront:
             # need arbour extension on the rear
-            shape = shape.add(self.getArbourExtension(front=False).translate((0, 0, self.getTotalThickness())))
+            extendo = self.getArbourExtension(front=False)
+            if extendo is not None:
+                shape = shape.add(extendo.translate((0, 0, self.getTotalThickness())))
 
         if not forPrinting and not self.pinionAtFront and (self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]):
             #make it the right way around for placing in a model
@@ -803,33 +807,46 @@ class Arbour:
 
         remainingExtension = (self.frontSideExtension if self.spannerBitOnFront else self.rearSideExtension) - self.spannerBitThick
 
+        #just gets the anchor bit, in 3D, facing up/front with clockwisness all sorted
+        #everything is split a bit between escapement and arbour, TODO tidy up
         anchor = self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick)#, forPrinting=forPrinting)
 
         if self.escapement.pendulumFixing == PendulumFixing.FRICTION_ROD:
             #add a square bit to help adjust the beat usign a spanner.
             #never really worked very well
+            if self.useSpanner:
 
-            face = ">Z" if self.spannerBitOnFront else "<Z"
+                face = ">Z" if self.spannerBitOnFront else "<Z"
 
-            width = self.getAnchorSpannerSize()
+                width = self.getAnchorSpannerSize()
 
-            #add the rest of the arbour extension (overlapping with spanner bit, so we don't have to reproduce the logic with the bearing standoff)
-            anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)
-            # if remainingExtension > 0:
-            #     anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
-            arbourExtension = self.getArbourExtension(front=self.spannerBitOnFront)
-            if self.spannerBitOnFront:
-                arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+                #add the rest of the arbour extension (overlapping with spanner bit, so we don't have to reproduce the logic with the bearing standoff)
+                anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)
+                # if remainingExtension > 0:
+                #     anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
+                arbourExtension = self.getArbourExtension(front=self.spannerBitOnFront)
+                if self.spannerBitOnFront:
+                    arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+                else:
+                    arbourExtension = arbourExtension.rotate((0,0,0), (1,0,0), 180)
+                anchor = anchor.add(arbourExtension)
+
+                anchor = anchor.faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
+
+
+                if forPrinting and not self.spannerBitOnFront:
+                    #flip so it can be printed as-is
+                    anchor=anchor.rotate((0,0,0),(0,1,0),180)
             else:
-                arbourExtension = arbourExtension.rotate((0,0,0), (1,0,0), 180)
-            anchor = anchor.add(arbourExtension)
+                #no spanner, just a normal arbour extension
+                arbourExtension = self.getArbourExtension(front=True)
+                arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+                anchor = anchor.add(arbourExtension)
 
-            anchor = anchor.faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
-
-
-            if forPrinting and not self.spannerBitOnFront:
-                #flip so it can be printed as-is
-                anchor=anchor.rotate((0,0,0),(0,1,0),180)
+        elif self.escapement.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+            '''
+            Extend the arbour out through a larger bearing and end in a square (like the cannon pinion) that the pendulum end can slot over
+            '''
 
         return anchor
 
@@ -889,12 +906,12 @@ class Arbour:
 
     def needArbourExtension(self, front=True):
 
-        if front and self.frontSideExtension < LAYER_THICK:
+        if front and (self.frontSideExtension - self.arbourBearingStandoff < LAYER_THICK):
             return False
-        if (not front) and self.rearSideExtension < LAYER_THICK:
+        if (not front) and (self.rearSideExtension - self.arbourBearingStandoff < LAYER_THICK):
             return False
 
-        if self.getType() == ArbourType.ANCHOR:
+        if self.getType() == ArbourType.ANCHOR and self.useSpanner:
             return not (front == self.spannerBitOnFront)
 
         if self.getType() == ArbourType.CHAIN_WHEEL:

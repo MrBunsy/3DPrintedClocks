@@ -146,16 +146,16 @@ if 'show_object' not in globals():
 #
 # print(pulley.getTotalThick())
 
-#clock 12
-wheelPinionPair = WheelPinionPair(wheelTeeth=87, pinionTeeth=9, module=1.0495300312000941)
-# # ratchet = Ratchet(power_clockwise=False,thick=4,innerRadius=13,totalD=52)
-cordWheel = CordWheel(diameter=25, rodMetricSize=4, useKey=True, cordThick=1.5, thick=14)
+# #clock 12
+# wheelPinionPair = WheelPinionPair(wheelTeeth=87, pinionTeeth=9, module=1.0495300312000941)
+# # # ratchet = Ratchet(power_clockwise=False,thick=4,innerRadius=13,totalD=52)
+# cordWheel = CordWheel(diameter=25, rodMetricSize=4, useKey=True, cordThick=1.5, thick=14)
+# # #
+# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchetInset=False, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
+# poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
+# # # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 # #
-poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, ratchetInset=False, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
-poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
-# # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
-#
-show_object(poweredArbour.getAssembled())
+# show_object(poweredArbour.getAssembled())
 
 # show_object(poweredArbour.poweredWheel.getCap(top=True))
 # show_object(poweredArbour.poweredWheel.getSegment(front=False))

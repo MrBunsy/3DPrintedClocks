@@ -353,10 +353,13 @@ class GoingTrain:
 
         self.powered_wheel_clockwise = not anticlockwise
 
-    def genChainWheels(self, ratchetThick=7.5, holeD=3.3, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
+    def genChainWheels(self, ratchetThick=7.5, holeD=3.4, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
         '''
         HoleD of 3.5 is nice and loose, but I think it's contributing to making the chain wheel wonky - the weight is pulling it over a bit
         Trying 3.3, wondering if I'm going to want to go back to the idea of a brass tube in the middle
+        Gone back to 3.4 now that the arbour extension is part of the wheel, should be more stable and I don't want problems with the hands turning backwards when winding!
+        don't want it to be too loose so it doesn't butt up against the front plate.
+        TODO - provide metric thread and do this inside the chain wheel
 
         Generate the gear ratios for the wheels between chain and minute wheel
         again, I'd like to make this generic but the solution isn't immediately obvious and it would take

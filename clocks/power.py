@@ -891,8 +891,6 @@ class CordWheel:
 
     note - little cheap plastic bearings don't like being squashed, 24mm wasn't quite enough for the outer diameter.
 
-    TODO - for cord wheel with key, print the top cap the other way up and overlap over the main segment a tiny bit. This will hopefully stop
-    any posibility of the cord getting stuck in the gap. Other thoughts include using a 45/50deg overhang to print it all as one peice
     '''
 
     @staticmethod
@@ -923,6 +921,8 @@ class CordWheel:
         self.fixingScrews = 2
 
         self.topCapOverlap=0
+        # even the 2mm cap got a bit wonky, so ensure lots of clearence from the front plate
+        self.beforeBearingExtraHeight = 1
 
         if self.heavyDuty:
             #trying to prevent the end cap warping and rubbing against front plate
@@ -931,12 +931,15 @@ class CordWheel:
 
             self.fixingScrews=3
 
-            #this is not fully implemented. I think I can get away with just using 3 screws and a thicker cap, and avoid this complication entirely
-            self.topCapOverlap = LAYER_THICK * 4
+            #I think I might be able get away with just using 3 screws and a thicker cap, and avoid this complication entirely
+            #but it is implemented anyway, just might not print perfectly as the bridging hasn't been done
+            # self.topCapOverlap = LAYER_THICK * 4
+            self.topCapOverlap = 0
             self.overlapSlotWide=self.diameter*0.075
             self.overlapSlotWiggle=0.1
 
-        self.capDiameter = diameter*2#.5
+        #keeping large so there's space for the screws and screwheads
+        self.capDiameter = diameter*2.5
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
         self.screwThreadMetric=screwThreadMetric
@@ -973,8 +976,7 @@ class CordWheel:
 
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
         self.clickWheelExtra=LAYER_THICK
-        #even the 2mm cap got a bit wonky, so ensure lots of clearence from the front plate
-        self.beforeBearingExtraHeight = 0.8
+
         self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise)
         self.keyScrewHoleD = self.screwThreadMetric
 
