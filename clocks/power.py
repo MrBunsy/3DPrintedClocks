@@ -1419,7 +1419,7 @@ class ChainWheel:
         '''
         return 22
 
-    def __init__(self, ratchet_thick=4, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5, screwD=2, screwThreadLength=10, power_clockwise=True):
+    def __init__(self, ratchet_thick=4, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5, screw=None, screwThreadLength=10, power_clockwise=True):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
@@ -1430,8 +1430,10 @@ class ChainWheel:
 
         self.holeD=holeD
         #complete absolute bodge!
-        self.rodMetricSize=math.floor(holeD)
-        self.screwD=screwD
+        # self.rodMetricSize=math.floor(holeD)
+        self.screw = screw
+        if self.screw is None:
+            self.screw = MachineScrew(metric_thread=2, countersunk=True)
         self.screwThreadLength=screwThreadLength
 
         self.chain_width = width
@@ -1472,17 +1474,21 @@ class ChainWheel:
 
         self.inner_width = width*1.2
 
-        self.hole_distance = self.diameter*0.25
+        self.hole_distance = self.diameter*0.275#*0.25
+
+        self.hole_positions = [(0,-self.hole_distance), (0, self.hole_distance)]
 
         self.power_clockwise = power_clockwise
 
-
-        self.ratchet = Ratchet(totalD=self.diameter * 2, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
+        #larger than it used to be (and slightly larger than rope wheel) since we need more space for screwheads now the ratchet is screwed to teh wheel
+        ratchetOuterD = self.diameter * 2.5
+        self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
 
     def getTurnsForDrop(self, maxChainDrop):
         return maxChainDrop / self.circumference
 
     def getChainHoleD(self):
+        #diameter of the hole in the bottom of the plate for the chain to dangle through
         return self.chain_width + 2
 
     def getChainPositionsFromTop(self):
@@ -1570,14 +1576,18 @@ class ChainWheel:
 
         halfWheel = halfWheel.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
         if sideWithClicks:
-            halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(self.screwD / 2).cutThruAll()
-            halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(self.screwD / 2).cutThruAll()
+            # halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(self.screwD / 2).cutThruAll()
+            # halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(self.screwD / 2).cutThruAll()
+            for holePos in self.hole_positions:
+                halfWheel = halfWheel.faces(">Z").workplane().moveTo(holePos[0],holePos[1]).circle(self.screw.metric_thread / 2).cutThruAll()
+                #half the height for a nut so the screw length can vary
+                # halfWheel = halfWheel.cut(self.screw.getNutCutter(withBridging=True, height=(self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2).translate(holePos))
 
-        if not sideWithClicks:
-            #need space for the nuts
-            nutSpace = getHoleWithHole(self.screwD, getNutContainingDiameter(self.screwD), self.screwD*METRIC_HEAD_DEPTH_MULT, 6).translate((0, self.hole_distance, 0))
-            nutSpace = nutSpace.add(getHoleWithHole(self.screwD, getNutContainingDiameter(self.screwD), self.screwD*METRIC_HEAD_DEPTH_MULT, 6).translate((0, -self.hole_distance, 0)))
-            halfWheel = halfWheel.cut(nutSpace)
+        else:
+            #screw holes
+            for holePos in self.hole_positions:
+                # half the height for a nut so the screw length can vary
+                halfWheel = halfWheel.cut(self.screw.getCutter(withBridging=True).translate(holePos))
 
         return halfWheel
 
@@ -1587,30 +1597,36 @@ class ChainWheel:
         chain =self.getHalf(True).translate((0, 0, ratchet.thick))
 
         clickwheel = ratchet.getInnerWheel()
-
-        #holes for screws
-        clickwheel = clickwheel.faces(">Z").workplane().circle(self.holeD / 2).moveTo(0, self.hole_distance).circle(self.screwD / 2).moveTo(0, -self.hole_distance).circle(self.screwD / 2).cutThruAll()
-
         combined = clickwheel.add(chain)
 
+        #holes for screws
+        # clickwheel = clickwheel.faces(">Z").workplane().circle(self.holeD / 2).moveTo(0, self.hole_distance).circle(self.screwD / 2).moveTo(0, -self.hole_distance).circle(self.screwD / 2).cutThruAll()
+        for holePos in self.hole_positions:
+            combined = combined.faces(">Z").workplane().moveTo(holePos[0], holePos[1]).circle(self.screw.metric_thread / 2).cutThruAll()
+            # half the height for a nut so the screw length can vary
+            combined = combined.cut(self.screw.getNutCutter(withBridging=True, height=(self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2).translate(holePos))
+
+        combined = combined.faces(">Z").workplane().circle(self.holeD / 2).cutThruAll()
 
 
-        totalHeight=self.inner_width + self.wall_thick*2 + ratchet.thick
-
+        # totalHeight=self.inner_width + self.wall_thick*2 + ratchet.thick
+        #
         #if I don't have screws long enough, sink them further into the click bit
-        headDepth = self.screwD*METRIC_HEAD_DEPTH_MULT
-        if self.screwThreadLength + headDepth < totalHeight:
-            headDepth +=totalHeight - (self.screwThreadLength + headDepth)
-            print("extra head depth: ", headDepth)
-        else:
-            print("need M{} screw of length {}mm".format(self.screwD, totalHeight-headDepth))
-
-        #space for the heads of the screws
-        #general assumption: screw heads are double the diameter of the screw and the same depth as the screw diameter
-        screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,headDepth).translate((0,self.hole_distance,0))
-        screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, headDepth).translate((0, -self.hole_distance, 0)))
+        # headDepth = self.screwD*METRIC_HEAD_DEPTH_MULT
+        # if self.screwThreadLength + headDepth < totalHeight:
+        #     headDepth +=totalHeight - (self.screwThreadLength + headDepth)
+        #     print("extra head depth: ", headDepth)
+        # else:
+        #     print("need M{} screw of length {}mm".format(self.screwD, totalHeight-headDepth))
+        #
+        # #space for the heads of the screws
+        # #general assumption: screw heads are double the diameter of the screw and the same depth as the screw diameter
+        # screwHeadSpace = getHoleWithHole(self.screwD,self.screwD*2,headDepth).translate((0,self.hole_distance,0))
+        # screwHeadSpace =  screwHeadSpace.add(getHoleWithHole(self.screwD, self.screwD * 2, headDepth).translate((0, -self.hole_distance, 0)))
         # return screwHeadSpace
-        combined = combined.cut(screwHeadSpace)
+        # combined = combined.cut(screwHeadSpace)
+
+        print("Chain wheel, {} max length {}mm".format(self.screw.getString(), self.getHeight()))
 
         return combined
 

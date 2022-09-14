@@ -68,6 +68,8 @@ weight.printInfo()
 
 bigweight = clock.Weight(height=125, diameter=45)
 bigweight.printInfo()
+# show_object(train.getArbourWithConventionalNaming(0).getAssembled())
+# show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
 show_object(assembly.getClock())
 
