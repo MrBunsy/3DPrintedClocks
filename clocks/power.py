@@ -714,6 +714,11 @@ class WeightPoweredWheel:
         print information about runtime based on the info provided
         '''
 
+    def printScrewLength(self):
+        '''
+        print to console information on screws required to assemble
+        '''
+
 
 class RopeWheel:
     '''
@@ -770,6 +775,7 @@ class RopeWheel:
         self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
 
 
+    def printScrewLength(self):
         if self.screw.countersunk:
             screwLength = self.getHeight()-WASHER_THICK
         else:
@@ -980,18 +986,6 @@ class CordWheel:
         self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise)
         self.keyScrewHoleD = self.screwThreadMetric
 
-
-        if self.useKey:
-            minScrewLength = self.ratchet.thick/2 + self.capThick + self.topCapThick + self.thick
-            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
-        else:
-            # two sections, one for winding up while the other winds down
-            minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick + self.topCapThick + self.thick * 1.5
-            if self.useKey:
-                minScrewLength -= self.thick
-            #I think this might assume caps all the same thickness? which is true when not using a key
-            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
-
         self.keyWiggleRoom = 0.75
 
         if self.useKey:
@@ -1005,6 +999,19 @@ class CordWheel:
             self.windingKeyHeightFromPlate = windingKeyHeightFromPlate
             #thickness of the handle
             self.windingKeyHandleThick = 5
+
+    def printScrewLength(self):
+        if self.useKey:
+            minScrewLength = self.ratchet.thick/2 + self.capThick + self.topCapThick + self.thick
+            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
+        else:
+            # two sections, one for winding up while the other winds down
+            minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screwThreadMetric) + LAYER_THICK) + self.clickWheelExtra + self.capThick + self.topCapThick + self.thick * 1.5
+            if self.useKey:
+                minScrewLength -= self.thick
+            #I think this might assume caps all the same thickness? which is true when not using a key
+            print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength + getNutHeight(self.screwThreadMetric), minScrewLength + self.thick / 2 + self.capThick)
+
 
     def getChainHoleD(self):
         (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo()
@@ -1626,9 +1633,15 @@ class ChainWheel:
         # return screwHeadSpace
         # combined = combined.cut(screwHeadSpace)
 
-        print("Chain wheel, {} max length {}mm".format(self.screw.getString(), self.getHeight()))
+
 
         return combined
+
+    def printScrewLength(self):
+
+        minScrewLength = self.getHeight() - (self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2 - self.screw.getNutHeight()
+        print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.screw.getString(), self.getHeight(), minScrewLength))
+
 
     def getAssembled(self):
 

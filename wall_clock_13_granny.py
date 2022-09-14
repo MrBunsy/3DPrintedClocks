@@ -23,7 +23,7 @@ lift =3
 lock=1.5
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1700, chainAtBack=False, chainWheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1900, chainAtBack=False, chainWheels=0, hours=28)
 
 #, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4
 # train.setEscapementDetails(drop=1.5, lift=3, lock=1.5)
@@ -34,12 +34,12 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # 61 links/ft 1-day regula chain. copied from clock 04
 train.genChainWheels(ratchetThick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
 
-train.printInfo()
+
 
 pendulumSticksOut=8
 
-train.genGears(module_size=1.25,moduleReduction=0.875, thick=2.4, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=3)
-
+train.genGears(module_size=1.25,moduleReduction=0.875, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=3)
+train.printInfo()
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30 )
 

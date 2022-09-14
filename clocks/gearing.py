@@ -622,7 +622,7 @@ class Arbour:
             self.boltPositions=[polar(i*math.pi*2/bolts + math.pi/self.ratchet.ratchetTeeth, boltDistance) for i in range(bolts)]
             self.ratchetScrews = ratchetScrews
             if self.ratchetScrews is None:
-                self.ratchetScrews = MachineScrew(2, countersunk=False)
+                self.ratchetScrews = MachineScrew(2, countersunk=True)
 
         #anchor specific, will be refined once arbour extension info is provided
         # want a square bit so we can use custom long spanners to set the beat
