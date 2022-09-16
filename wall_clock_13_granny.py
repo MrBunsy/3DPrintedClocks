@@ -32,13 +32,13 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 
 # train.genCordWheels(ratchetThick=5, cordThick=1, cordCoilThick=11, style=gearStyle)
 # 61 links/ft 1-day regula chain. copied from clock 04
-train.genChainWheels(ratchetThick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
+train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
 
 
 
 pendulumSticksOut=8
 
-train.genGears(module_size=1.25,moduleReduction=0.875, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=3)
+train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=4)
 train.printInfo()
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30 )
@@ -62,6 +62,8 @@ hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteF
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
 assembly = clock.Assembly(plates, hands=hands)
+
+assembly.printInfo()
 
 weight = clock.Weight(height=100, diameter=35)
 weight.printInfo()

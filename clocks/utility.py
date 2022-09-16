@@ -69,9 +69,11 @@ def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     return nutWidth / math.cos(math.pi / 6)
 
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
-    #ignore a request for a half height m2 as I don't think they exist
     if metric_thread > 2 and halfHeight:
         return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
+
+    if metric_thread == 2 and halfHeight:
+        return 1.2
 
     if metric_thread == 3:
         if nyloc:

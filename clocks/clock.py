@@ -84,6 +84,8 @@ class GoingTrain:
         #in metres
         self.pendulum_length = pendulum_length
 
+        self.arbours = []
+
         if pendulum_length < 0 and pendulum_period > 0:
             #calulate length from period
             self.pendulum_length = GRAVITY * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
@@ -428,6 +430,8 @@ class GoingTrain:
         if len(self.arbours) > 0:
             self.getArbourWithConventionalNaming(0).printScrewLength()
             self.getArbourWithConventionalNaming(0).poweredWheel.printScrewLength()
+        else:
+            print("Generate gears to get screw information")
 
         if self.poweredWheel.type == PowerType.CORD:
             #because there are potentially multiple layers of cord on a cordwheel, power lever can vary enough for the clock to be viable when wound and not halfway through its run time!
@@ -1360,6 +1364,7 @@ class ClockPlates:
             extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
             plate = plate.add(extraBearingHolder)
 
+        #hole for screw to hold motion works arbour
         plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
             self.fixingScrewsD / 2).cutThruAll()
 
@@ -1510,6 +1515,15 @@ class Assembly:
         self.weights=weights
         if self.weights is None:
             self.weights = []
+
+    def printInfo(self):
+
+        # backThick = self.plates.getPlateThick(back=True) + self.plates.wobble/2
+
+        for holeInfo in self.goingTrain.poweredWheel.getChainPositionsFromTop():
+            #TODO improve this a bit for cordwheels which have a slot rather than just a hole
+            z = self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + self.plates.wobble/2 + holeInfo[0][1]
+            print("{} hole from wall = {}mm".format(self.goingTrain.poweredWheel.type.value, z))
 
     def getClock(self):
         bottomPlate = self.plates.getPlate(True)

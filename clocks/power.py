@@ -1487,7 +1487,6 @@ class ChainWheel:
 
         self.power_clockwise = power_clockwise
 
-        #larger than it used to be (and slightly larger than rope wheel) since we need more space for screwheads now the ratchet is screwed to teh wheel
         ratchetOuterD = self.diameter * 2.5
         self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
 
@@ -1610,6 +1609,16 @@ class ChainWheel:
         # clickwheel = clickwheel.faces(">Z").workplane().circle(self.holeD / 2).moveTo(0, self.hole_distance).circle(self.screwD / 2).moveTo(0, -self.hole_distance).circle(self.screwD / 2).cutThruAll()
         for holePos in self.hole_positions:
             combined = combined.faces(">Z").workplane().moveTo(holePos[0], holePos[1]).circle(self.screw.metric_thread / 2).cutThruAll()
+            # #to nearest 2mm
+            #
+            # heightForScrew = self.getHeight()
+            # if not self.screw.countersunk:
+            #     heightForScrew-=self.screw.getHeadHeight()
+            #
+            # nearestScrewLength = round(heightForScrew/2)*2
+            #TODO - work out best screw length and make nut holes only just as deep as they need.
+
+
             # half the height for a nut so the screw length can vary
             combined = combined.cut(self.screw.getNutCutter(withBridging=True, height=(self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2).translate(holePos))
 
@@ -1675,17 +1684,14 @@ class Ratchet:
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
 
-    # @staticmethod
-    # def getRatchetWithInnerRadius
+    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5):
 
-    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0):
-        # , chain_hole_distance=10, chain_hole_d = 3):
-        # #distance of the screw holes on the chain wheel, so the ratchet wheel can be securely attached
-        # self.chain_hole_distance = chain_hole_distance
-        # self.chain_hole_d = chain_hole_d
         self.outsideDiameter=totalD
 
-        self.outer_thick = self.outsideDiameter*0.1
+        self.outer_thick = outer_thick
+        if self.outer_thick < 0:
+            self.outer_thick = self.outsideDiameter*0.1
+
 
 
         self.clickInnerDiameter = self.outsideDiameter * 0.5
