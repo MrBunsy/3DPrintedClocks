@@ -1546,8 +1546,8 @@ class Assembly:
         # anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2))
         # clock = clock.add(anchor)
 
-        #where the nylock nut and spring washer would be
-        motionWorksZOffset = 3
+        #where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
+        motionWorksZOffset = 6
 
         time_min = self.timeMins
         time_hour = self.timeHours
