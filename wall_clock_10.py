@@ -24,7 +24,7 @@ drop=2
 lock=2
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1000, chainAtBack=False, chainWheels=1, hours=180, usePulley=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=180, usePulley=True)
 
 moduleReduction=0.875
 
@@ -46,7 +46,7 @@ train.setChainWheelRatio([93, 10])
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
 #thickness of 12 was just shy of using 20mm countersunk (I forgot I also shrunk the cap thickness) trying 13.5
 #Trying 10mm over drop of 1750mm
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=2, cordCoilThick=10, style=gearStyle, useKey=True, preferedDiameter=26)
+train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=2, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=32)#26
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s
@@ -61,14 +61,14 @@ layers of cord: 3, cord per hour: 1.1cm to 0.9cm
 runtime: 180.0hours. Chain wheel multiplier: 10.3
 
 '''
-# train.setChainWheelRatio([93, 10])
+train.setChainWheelRatio([93, 10])
 # train.calculateChainWheelRatios()
 
 train.printInfo(weight_kg=4)
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,ratchetInset=True)#, chainModuleIncrease=1.1)
+train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#,ratchetInset=True)#, chainModuleIncrease=1.1)
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
@@ -94,9 +94,16 @@ pulley = clock.Pulley(diameter=26, bearing=clock.getBearingInfo(4), screwMetricS
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley)
-
+assembly.printInfo()
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+
+# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getAssembled())
+# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getShape())
+# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getExtraRatchet())
+show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
+
+assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.printScrewLength()
 
 if outputSTL:
     #

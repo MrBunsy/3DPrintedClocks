@@ -1066,7 +1066,7 @@ class Arbour:
         else:
             gearWheel = gearWheel.add(self.getExtraRatchet().translate((0,0,self.wheelThick)))
 
-        if self.ratchetInset and forPrinting:
+        if self.boltOnRatchet and forPrinting:
             #put flat side down
             gearWheel = gearWheel.rotate((0,0,0),(1,0,0),180)
 

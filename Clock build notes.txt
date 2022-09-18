@@ -204,3 +204,9 @@ IDEA - to make the pendulum more rigid, increase space inside the pendulum-for-r
 
 Fixing keywound cord: try the 4mm pipe for the wheel, fixing the cord winder to the rod.
 Try making the end cap part of the print, using a 45deg slope outwards to a much smaller diameter cap - should stop the cord getting stuck down the gap and make the end cap much less likely to bend and rub up against the front plate
+
+clock 10 stopped working - the front cap of the cord wheel is wedged against the front plate from the cord coiled up behind it. I'm planning to re-print the whole cordwheel to try out the latest tweaks (and the steel pipe) to fix this clock without printing an entire new clock. Clock 10 from the tag:
+Plate distance 28.8
+[93, 10]
+layers of cord: 5, cord per hour: 1.3cm to 0.8cm min diameter: 21.0mm
+runtime: 191.9hours over 1.9m. Chain wheel multiplier: 9.3

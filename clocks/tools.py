@@ -43,6 +43,24 @@ def pivotBlock(height=50, length=100,thick=25):
 
     return block
 
-block = pivotBlock()
-show_object(block)
-exporters.export(block, "../out/pivot_block.stl")
+
+def cupWasher(innerD=3, topD=5.5, coutersinkDeep=2.5, height = 4.5):
+    wallThick = 2
+    washer = cq.Workplane("XY").circle(topD/2 + wallThick).circle(innerD/2).extrude(height)
+
+    countersink = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=innerD / 2, radius2=topD / 2,
+                                        height=coutersinkDeep))
+
+    washer = washer.cut(countersink.translate((0,0,height - coutersinkDeep)))
+
+    return washer
+
+
+
+washer = cupWasher()
+show_object(washer)
+exporters.export(washer, "../out/smiths_cupwasher.stl")
+
+# block = pivotBlock()
+# show_object(block)
+# exporters.export(block, "../out/pivot_block.stl")

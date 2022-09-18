@@ -328,7 +328,9 @@ def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
 
 class BearingInfo():
     '''
-    I'm undecided how to pass this info about
+    Like MachineScrew this is designed to be in place of passing around loads of info, just one object that represents different sizes of bearings
+
+    TODO - add and use safeouterD (where we can come into contact with the outside of the bearing without grating on the inner bit which will rotate)
     '''
     def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25):
         self.bearingOuterD = bearingOuterD

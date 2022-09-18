@@ -935,7 +935,7 @@ class CordWheel:
             #and there being a gap that the cord can get stuck down
             self.topCapThick = 3
 
-            self.fixingScrews=3
+            self.fixingScrews=4
 
             #I think I might be able get away with just using 3 screws and a thicker cap, and avoid this complication entirely
             #but it is implemented anyway, just might not print perfectly as the bridging hasn't been done
@@ -945,7 +945,7 @@ class CordWheel:
             self.overlapSlotWiggle=0.1
 
         #keeping large so there's space for the screws and screwheads
-        self.capDiameter = diameter*2.5
+        self.capDiameter = diameter*2#.5
         self.rodMetricSize = rodMetricSize
         self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
         self.screwThreadMetric=screwThreadMetric
@@ -983,7 +983,7 @@ class CordWheel:
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
         self.clickWheelExtra=LAYER_THICK
 
-        self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise)
+        self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.capDiameter/2 - 12.5)
         self.keyScrewHoleD = self.screwThreadMetric
 
         self.keyWiggleRoom = 0.75

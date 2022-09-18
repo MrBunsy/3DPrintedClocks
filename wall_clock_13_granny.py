@@ -65,11 +65,11 @@ assembly = clock.Assembly(plates, hands=hands)
 
 assembly.printInfo()
 
-weight = clock.Weight(height=100, diameter=35)
+weight = clock.Weight(height=120, diameter=35)
 weight.printInfo()
 
-bigweight = clock.Weight(height=125, diameter=45)
-bigweight.printInfo()
+# bigweight = clock.Weight(height=125, diameter=45)
+# bigweight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
@@ -83,5 +83,5 @@ if outputSTL:
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
     weight.outputSTLs(clockName, clockOutDir)
-    bigweight.outputSTLs(clockName+"_big", clockOutDir)
+    # bigweight.outputSTLs(clockName+"_big", clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
