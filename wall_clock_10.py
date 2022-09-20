@@ -1,8 +1,10 @@
 from clocks import clock
 
 '''
-Repeat of the eight day cord driven clock, attempting to reduce plate distance, reduce friction and increase strength
+Repeat of the eight day cord driven clock (clock 06), attempting to reduce plate distance, reduce friction and increase strength
 First attempt at using a pulley on the weight to reduce height needed
+
+This is working, but I had to re-do the cord wheel to increase drop rate and thicken the top cap. The ratio and diameter are overridden so I could reprint just that wheel.
 '''
 outputSTL = False
 

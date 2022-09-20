@@ -2,6 +2,23 @@ from clocks import clock
 
 '''
 Another attempt at an eight day, this time symetric and using a cord wheel
+
+Both printed versions of this work, with different issues. The top cap of the cord wheel isn't thick enough (so it bends and catches on teh front plate)
+
+06b is an attempt to reprint just the cord wheel to make use of the new thicker cap tested on clock 10, increase drop rate and 
+try out a loose wheel and fixed cord barrel.
+
+
+second printing of clock6, hopefully:
+chain wheel ratio: [103, 10]
+module 1
+cord wheel diameter: 26
+cap diameter 52
+
+plate distance 43.8
+
+setting escapeWheelPinionAtFront to true just so reprinted bits are compatible with the old design (could re-print all the gear train, but that seems unnecessary)
+
 '''
 outputSTL = False
 
@@ -11,7 +28,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_06"
+clockName="wall_clock_06b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 
@@ -23,7 +40,7 @@ drop=2
 lock=2
 escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1675, chainAtBack=False, chainWheels=1, hours=180)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=2090-270, chainAtBack=False, chainWheels=1, hours=24*7.25, escapeWheelPinionAtFront=True)
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.calculateRatios()
@@ -40,7 +57,7 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.genCordWheels(ratchetThick=5, rodMetricThread=4, cordThick=2, cordCoilThick=17, style=gearStyle, useKey=True,preferedDiameter=26)
+train.genCordWheels(ratchetThick=5, rodMetricThread=4, cordThick=2, cordCoilThick=16, style=gearStyle, useKey=True,preferedDiameter=29.5)
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s
@@ -55,9 +72,9 @@ layers of cord: 3, cord per hour: 1.1cm to 0.9cm
 runtime: 180.0hours. Chain wheel multiplier: 10.3
 
 '''
-train.calculatePoweredWheelRatios()
-
-train.printInfo(weight_kg=2.5)
+# train.calculatePoweredWheelRatios()
+train.setChainWheelRatio([103, 10])
+# train.printInfo(weight_kg=2.5)
 
 pendulumSticksOut=20
 
@@ -85,14 +102,20 @@ hands = clock.Hands(style=clock.HandStyle.CIRCLES, minuteFixing="square", minute
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=00)
 
+assembly.printInfo()
+train.printInfo(weight_kg=2.5)
+print("Plate distance: ", plates.plateDistance)
 
-show_object(assembly.getClock())
+show_object(train.getArbourWithConventionalNaming(0).getAssembled())
 
-if outputSTL:
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+#
+# show_object(assembly.getClock())
+#
+# if outputSTL:
+#     train.outputSTLs(clockName,clockOutDir)
+#     motionWorks.outputSTLs(clockName,clockOutDir)
+#     pendulum.outputSTLs(clockName, clockOutDir)
+#     dial.outputSTLs(clockName, clockOutDir)
+#     plates.outputSTLs(clockName, clockOutDir)
+#     hands.outputSTLs(clockName, clockOutDir)
+#     assembly.outputSTLs(clockName, clockOutDir)
