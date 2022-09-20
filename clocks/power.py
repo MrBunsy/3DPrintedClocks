@@ -1726,11 +1726,16 @@ class Ratchet:
         wheel = cq.Workplane("XY")
 
         thick = 1.25
+        #since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
+        #mostly affects ratchets with a larger inner radius and a not-so-large outer radius
+        #TODO proper maffs
+        innerThick=thick*2
 
         innerClickR = self.clickInnerRadius
 
         #arc aprox ratchetThick
         clickArcAngle = self.anticlockwise * thick / innerClickR
+        clickInnerArcAngle = self.anticlockwise * innerThick / innerClickR
         clickOffsetAngle = -(math.pi*2/self.clicks)*1 * self.anticlockwise
 
         dA = -math.pi*2 / self.clicks * self.anticlockwise
@@ -1745,7 +1750,7 @@ class Ratchet:
         for i in range(self.clicks):
             toothAngle = dA * i
             clickStartAngle = dA * i + clickOffsetAngle
-            clickEndAngle = clickStartAngle - clickArcAngle
+            clickEndAngle = clickStartAngle - clickInnerArcAngle#clickArcAngle
             clickNextStartAngle = clickStartAngle + dA
 
             clickTip = polar(toothAngle, self.toothRadius)

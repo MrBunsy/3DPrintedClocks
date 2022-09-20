@@ -857,10 +857,16 @@ class Arbour:
                     #flip so it can be printed as-is
                     anchor=anchor.rotate((0,0,0),(0,1,0),180)
             else:
-                #no spanner, just a normal arbour extension
+                #undecided here, textured sheet looks good on teh front, put supergluing the anchor's arbour extension on (which helps setting the beat as only one side can move) makes it a bit ugly
+                #no spanner, just a normal arbour extension, on the back, so the front is printed on the plate (looks better with the textured PETG)
                 arbourExtension = self.getArbourExtension(front=True)
                 arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
                 anchor = anchor.add(arbourExtension)
+                # arbourExtension = self.getArbourExtension(front=False)
+                # arbourExtension = arbourExtension.rotate((0,0,0),(1,0,0),180)#translate((0, 0, self.wheelThick))
+                # anchor = anchor.add(arbourExtension)
+                # if forPrinting:
+                #     anchor = anchor.rotate((0,0,0),(1,0,0),180)
 
         elif self.escapement.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
             '''

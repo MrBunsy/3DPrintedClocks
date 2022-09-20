@@ -64,7 +64,9 @@ runtime: 180.0hours. Chain wheel multiplier: 10.3
 train.setChainWheelRatio([93, 10])
 # train.calculateChainWheelRatios()
 
+train.printInfo(weight_kg=3.5)
 train.printInfo(weight_kg=4)
+train.printInfo(weight_kg=4.25)
 
 pendulumSticksOut=20
 
@@ -96,14 +98,14 @@ pulley = clock.Pulley(diameter=26, bearing=clock.getBearingInfo(4), screwMetricS
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley)
 assembly.printInfo()
 # show_object(plates.getPlate(back=True))
-# show_object(assembly.getClock())
+show_object(assembly.getClock())
 
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getShape())
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getExtraRatchet())
-show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
+# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
-assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.printScrewLength()
+# assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.printScrewLength()
 
 if outputSTL:
     #
