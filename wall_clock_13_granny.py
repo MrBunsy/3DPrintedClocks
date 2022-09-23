@@ -39,7 +39,7 @@ train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6
 pendulumSticksOut=25
 
 train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=4)
-train.printInfo()
+train.printInfo(weight_kg=0.425)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30, style=gearStyle)
 
@@ -65,7 +65,7 @@ assembly = clock.Assembly(plates, hands=hands)
 
 assembly.printInfo()
 
-weight = clock.Weight(height=120, diameter=35)
+weight = clock.Weight(height=130, diameter=35)
 weight.printInfo()
 
 # bigweight = clock.Weight(height=125, diameter=45)

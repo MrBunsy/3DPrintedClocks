@@ -575,7 +575,11 @@ class Arbour:
         NOTE currently assumes chain/cord is at the front - needs top be controlled by something like pinionAtFront
 
         Trying to store all the special logic for thicknesses and radii in one place
+
+
+        , looseOnRod=False
         '''
+        #diameter of the threaded rod. Usually assumed to also be the size of the hole
         self.arbourD=arbourD
         self.wheel=wheel
         self.wheelThick=wheelThick
@@ -590,10 +594,27 @@ class Arbour:
         self.nutSpaceMetric=None
         #for the anchor, this is the side with the pendulum
         self.pinionAtFront=pinionAtFront
+        #is this screwed (and optionally glued) to the threaded rod?
+        self.looseOnRod = False
+
+
 
         self.ratchet = None
         if self.poweredWheel is not None:
             self.ratchet=self.poweredWheel.ratchet
+
+        if self.getType() == ArbourType.CHAIN_WHEEL:
+            # currently this can only be used with the cord wheel
+            self.looseOnRod = not self.poweredWheel.looseOnRod
+
+        self.holeD = arbourD
+        if self.looseOnRod:
+            if self.arbourD == 4:
+                # assume steel pipe (currently only have pipe with a 4mm internal diameter)
+                #6.2 squeezes on and holds tight!
+                self.holeD = 6.2
+            else:
+                self.holeD = self.arbourD + LOOSE_FIT_ON_ROD
 
         self.frontSideExtension=0
         self.rearSideExtension=0
@@ -777,23 +798,15 @@ class Arbour:
 
 
         if self.getType() == ArbourType.WHEEL_AND_PINION:
-            shape = self.pinion.addToWheel(self.wheel, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
+            shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
-            shape = self.pinion.addToWheel(self.escapement, holeD=self.arbourD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
+            shape = self.pinion.addToWheel(self.escapement, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getWheelWithRatchet(forPrinting=forPrinting)
         elif self.getType() == ArbourType.ANCHOR:
                 shape = self.getAnchor(forPrinting=forPrinting)
         else:
             raise ValueError("Cannot produce 3D model for type: {}".format(self.getType().value))
-
-        if self.nutSpaceMetric is not None:
-            #cut out a space for a nyloc nut - not used anymore, using superglue or avoiding need for it instead
-            deep = self.wheelThick * 0.25
-            if self.pinion is not None:
-                #can make this much deeper
-                deep = min(self.wheelThick*0.75, getNutHeight(self.nutSpaceMetric, nyloc=True))
-            shape = shape.cut(getHoleWithHole(self.arbourD, getNutContainingDiameter(self.arbourD, NUT_WIGGLE_ROOM), deep , 6))
 
         # note, the included extension is always on the pinion side (unprintable otherwise)
         if (self.needArbourExtension(front=True) or needJustBearingStandoff) and self.pinionAtFront:
@@ -1022,10 +1035,12 @@ class Arbour:
             print("Ratchet needs {} screws of length {}mm".format(self.ratchetScrews.getString(),length))
 
     def getWheelWithRatchet(self, forPrinting=True):
-        gearWheel = self.wheel.get3D(holeD=self.arbourD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=self.ratchet.outsideDiameter * 0.5)
+        gearWheel = self.wheel.get3D(holeD=self.holeD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=self.ratchet.outsideDiameter * 0.5)
 
         holeDeep = self.getRatchetInsetness(toCarve=True)
         if holeDeep > 0:
+            #ratchet is inset (only used once and decided against it since)
+
             #note, if the ratchet is inset the wheel will need some other mechanism to keep it at right angles on the rod, like the wheelSideExtension set
 
             #bare in mind this wheel is now upside down in the case of an inset ratchet
@@ -1044,7 +1059,11 @@ class Arbour:
 
             if self.rearSideExtension > 0:
                 #limit to r of 1cm
-                extensionR = min(10,self.arbourExtensionMaxR)
+                maxR = 10
+                if self.looseOnRod:
+                    maxR = 15
+
+                extensionR = min(maxR,self.arbourExtensionMaxR)
 
                 bearingStandoffHeight = LAYER_THICK * 2
                 bearingStandoffR = getBearingInfo(self.arbourD).innerSafeD/2
@@ -1075,6 +1094,12 @@ class Arbour:
         if self.boltOnRatchet and forPrinting:
             #put flat side down
             gearWheel = gearWheel.rotate((0,0,0),(1,0,0),180)
+
+        if self.looseOnRod:
+            #cut a hole through the arbour extension too (until the arbour extension takes this into account, but it doesn't since this currently only applies to the cord wheel)
+            cutter = cq.Workplane("XY").circle(self.holeD/2).extrude(10000).translate((0,0,-5000))
+            gearWheel = gearWheel.cut(cutter)
+            print("Need steel rod of length {}mm".format(self.wheelThick + self.rearSideExtension))
 
         # if not self.ratchetInset and self.wheelSideExtension > 0:
         #     print("UNPRINTABLE CHAIN WHEEL, cannot have bits sticking out both sides")

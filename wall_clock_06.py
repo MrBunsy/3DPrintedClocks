@@ -57,7 +57,7 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.genCordWheels(ratchetThick=5, rodMetricThread=4, cordThick=2, cordCoilThick=16, style=gearStyle, useKey=True,preferedDiameter=29.5)
+train.genCordWheels(ratchetThick=5, rodMetricThread=4, cordThick=2, cordCoilThick=16, style=gearStyle, useKey=True,preferedDiameter=29.5, looseOnRod=False)
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s
@@ -106,16 +106,18 @@ assembly.printInfo()
 train.printInfo(weight_kg=2.5)
 print("Plate distance: ", plates.plateDistance)
 
-show_object(train.getArbourWithConventionalNaming(0).getAssembled())
+# show_object(train.getArbourWithConventionalNaming(0).getAssembled())
+show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
+# show_object(train.getArbourWithConventionalNaming(0).getShape())
 
 #
 # show_object(assembly.getClock())
 #
-# if outputSTL:
-#     train.outputSTLs(clockName,clockOutDir)
-#     motionWorks.outputSTLs(clockName,clockOutDir)
-#     pendulum.outputSTLs(clockName, clockOutDir)
-#     dial.outputSTLs(clockName, clockOutDir)
-#     plates.outputSTLs(clockName, clockOutDir)
-#     hands.outputSTLs(clockName, clockOutDir)
-#     assembly.outputSTLs(clockName, clockOutDir)
+if outputSTL:
+    train.outputSTLs(clockName,clockOutDir)
+    motionWorks.outputSTLs(clockName,clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
+    dial.outputSTLs(clockName, clockOutDir)
+    plates.outputSTLs(clockName, clockOutDir)
+    hands.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)

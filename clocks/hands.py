@@ -27,7 +27,8 @@ class Hands:
         '''
         self.thick=thick
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
-        self.outlineThick=LAYER_THICK
+        #one layer does work pretty well, but the elephant's foot is sometimes obvious and it's hard to keep the first layer of white perfect. So switching back to two
+        self.outlineThick=LAYER_THICK*2
         #how much to rotate the minute fixing by
         self.fixing_offset=fixing_offset
         self.length = length

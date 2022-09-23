@@ -50,3 +50,14 @@ class ArbourType(Enum):
     ESCAPE_WHEEL = "EscapeWheel"
     ANCHOR = "Anchor"
     UNKNOWN = "Unknown"
+
+class PowerType(Enum):
+    NOT_CONFIGURED = None
+    # === Weight types ===
+    CHAIN = "chain"
+    #drop in for chain, using friction and a hemp rope
+    ROPE = "rope"
+    #thin synthetic cord, coiled multiple times
+    CORD = "cord"
+    # === Spring types ===
+    SPRING = "spring" # either loop end or barrel

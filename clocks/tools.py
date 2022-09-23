@@ -57,9 +57,14 @@ def cupWasher(innerD=3, topD=5.5, coutersinkDeep=2.5, height = 4.5):
 
 
 
-washer = cupWasher()
-show_object(washer)
-exporters.export(washer, "../out/smiths_cupwasher.stl")
+# washer = cupWasher()
+# show_object(washer)
+# exporters.export(washer, "../out/smiths_cupwasher.stl")
+
+
+testForSteelTube = cq.Workplane("XY").circle(6.2-0.1).circle(6.2/2).extrude(15.6)
+exporters.export(testForSteelTube, "../out/testForSteelTube.stl")
+
 
 # block = pivotBlock()
 # show_object(block)

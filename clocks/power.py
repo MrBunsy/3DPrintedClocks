@@ -4,18 +4,7 @@ import cadquery as cq
 import os
 from cadquery import exporters
 
-from enum import Enum
 
-class PowerType(Enum):
-    NOT_CONFIGURED = None
-    # === Weight types ===
-    CHAIN = "chain"
-    #drop in for chain, using friction and a hemp rope
-    ROPE = "rope"
-    #thin synthetic cord, coiled multiple times
-    CORD = "cord"
-    # === Spring types ===
-    SPRING = "spring" # either loop end or barrel
 
 
 class Weight:
@@ -669,6 +658,7 @@ class WeightPoweredWheel:
         self.circumference=math.pi * self.diameter
         self.ratchet = Ratchet()
         self.type = PowerType.NOT_CONFIGURED
+        self.looseOnRod = False
 
     def getChainHoleD(self):
         '''
@@ -738,6 +728,7 @@ class RopeWheel:
         self.diameter=diameter
         self.circumference = math.pi*diameter
 
+        self.looseOnRod = False
         self.type = PowerType.ROPE
 
         #using just diamtere, aim 17 got
@@ -906,8 +897,12 @@ class CordWheel:
         '''
         return 21
 
-    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000):
+    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000, looseOnRod=True):
+        '''
+        looseOnRod - if True then the cord/chain/rope section of the wheel (this bit) is loose on the arbour. If true, then that is fixed and the actual gear wheel is loose on the arbour
+        for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings
 
+        '''
         self.type = PowerType.CORD
 
         self.diameter=diameter
@@ -947,7 +942,12 @@ class CordWheel:
         #keeping large so there's space for the screws and screwheads
         self.capDiameter = diameter*2#.5
         self.rodMetricSize = rodMetricSize
-        self.rodD=rodMetricSize+LOOSE_FIT_ON_ROD
+        self.holeD = rodMetricSize
+        self.looseOnRod = looseOnRod
+
+        if self.looseOnRod:
+            self.holeD += LOOSE_FIT_ON_ROD
+
         self.screwThreadMetric=screwThreadMetric
 
         '''
@@ -975,7 +975,7 @@ class CordWheel:
         self.fixingDistance=self.diameter*0.3
 
         if self.useKey:
-            self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 1
+            self.fixingDistance=self.diameter/2 - self.screwThreadMetric/2 - 1.5
 
         self.fixingPoints = [polar(a*math.pi*2/self.fixingScrews, self.fixingDistance) for a in range(self.fixingScrews)]#[(self.fixingDistance,0), (-self.fixingDistance,0)]
         self.cordThick=cordThick
@@ -1083,7 +1083,7 @@ class CordWheel:
             for fixingPoint in self.fixingPoints:
                 holes = holes.add(cq.Solid.makeCone(radius1=getScrewHeadDiameter(self.screwThreadMetric, countersunk=True)/2 + COUNTERSUNK_HEAD_WIGGLE, radius2=self.screwThreadMetric/2, height=getScrewHeadHeight(self.screwThreadMetric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE).translate((fixingPoint[0], fixingPoint[1], 0)))
 
-        holes = holes.add(cq.Workplane("XY").circle(self.rodD/2).extrude(self.pulley.getTotalThick()))
+        holes = holes.add(cq.Workplane("XY").circle(self.holeD/2).extrude(self.pulley.getTotalThick()))
         segment = segment.cut(holes)
 
         return segment
@@ -1123,7 +1123,7 @@ class CordWheel:
 
 
         #hole for the rod
-        segment = segment.faces(">Z").circle(self.rodD/2).cutThruAll()
+        segment = segment.faces(">Z").circle(self.holeD/2).cutThruAll()
 
         #holes for the screws that hold this together
         segment = segment.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric/2).cutThruAll()
@@ -1169,7 +1169,7 @@ class CordWheel:
         capThick = self.topCapThick if top else self.capThick
         cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(capThick + extraThick)
 
-        holeR = self.rodD / 2
+        holeR = self.holeD / 2
         if self.useKey and top:
             holeR = self.bearing.innerD/2 + self.bearingWiggleRoom
 
@@ -1189,7 +1189,7 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
-        cap = Gear.cutStyle(cap, self.capDiameter/2-self.rodD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style)
+        cap = Gear.cutStyle(cap, self.capDiameter/2-self.holeD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style)
         return cap
 
     def getClickWheelForCord(self):
@@ -1198,7 +1198,7 @@ class CordWheel:
         clickwheel = clickwheel.faces(">Z").workplane().circle(self.ratchet.clickInnerRadius*0.999).extrude(self.clickWheelExtra)
 
         # hole for the rod
-        clickwheel = clickwheel.faces(">Z").circle(self.rodD / 2).cutThruAll()
+        clickwheel = clickwheel.faces(">Z").circle(self.holeD / 2).cutThruAll()
 
         # holes for the screws that hold this together
         clickwheel = clickwheel.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
@@ -1434,7 +1434,7 @@ class ChainWheel:
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
         '''
         self.type = PowerType.CHAIN
-
+        self.looseOnRod = False
         self.holeD=holeD
         #complete absolute bodge!
         # self.rodMetricSize=math.floor(holeD)

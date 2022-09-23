@@ -375,7 +375,7 @@ class GoingTrain:
 
         self.calculatePoweredWheelRatios()
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, looseOnRod=True):
         '''
         If preferred diameter is provided, use that rather than the min diameter
         '''
@@ -384,7 +384,7 @@ class GoingTrain:
             diameter = CordWheel.getMinDiameter()
 
         self.calculatePoweredWheelInfo(diameter)
-        self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style)
+        self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
         self.calculatePoweredWheelRatios()
 
     def genRopeWheels(self, ratchetThick = 3, rodMetricSize=3, wheelScrews=None, ropeThick=2.2, wallThick=2):
@@ -451,6 +451,9 @@ class GoingTrain:
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
         if > 0 and < 1, escape wheel will be this fraction of the previous wheel
+
+
+
         '''
         arbours = []
         # ratchetThick = holeD*2
