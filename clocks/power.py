@@ -897,7 +897,7 @@ class CordWheel:
         '''
         return 21
 
-    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", windingKeyHeightFromPlate=60, windingKeyHandleLength=30, cordLength=2000, looseOnRod=True):
+    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", windingKeyHeightFromPlate=70, windingKeyHandleLength=30, cordLength=2000, looseOnRod=True):
         '''
         looseOnRod - if True then the cord/chain/rope section of the wheel (this bit) is loose on the arbour. If true, then that is fixed and the actual gear wheel is loose on the arbour
         for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings
@@ -988,6 +988,7 @@ class CordWheel:
 
         self.keyWiggleRoom = 0.75
 
+
         if self.useKey:
             self.keyWallThick = 2.5
             # enough to cut out the key itself
@@ -999,6 +1000,8 @@ class CordWheel:
             self.windingKeyHeightFromPlate = windingKeyHeightFromPlate
             #thickness of the handle
             self.windingKeyHandleThick = 5
+            self.keyHoleDeep = self.keySquareBitHeight - 5
+
 
     def printScrewLength(self):
         if self.useKey:
@@ -1264,7 +1267,8 @@ class CordWheel:
         #key bit
         key = key.workplaneFromTagged("top").moveTo(self.keyWidth/2,0).circle(0.999*self.keyWidth/2).extrude(self.windingKeyHeightFromPlate)
 
-        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearing.innerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keySquareBitHeight).translate((0, 0, self.windingKeyHandleThick + self.windingKeyHeightFromPlate - self.keySquareBitHeight))
+        #5mm shorter than the key as a bodge to stand off from the front plate
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearing.innerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(self.keyHoleDeep).translate((0, 0, self.windingKeyHandleThick + self.windingKeyHeightFromPlate - self.keyHoleDeep))
 
         key = key.cut(keyHole)
 

@@ -256,7 +256,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         entryPalletAngle = math.atan2(entryPalletEndPos[1] - entryPalletStartPos[1], entryPalletEndPos[0] - entryPalletStartPos[0])
 
-        print("Entry Pallet Angle", radToDeg(entryPalletAngle))
+        # print("Entry Pallet Angle", radToDeg(entryPalletAngle))
 
         return anchor
 
@@ -464,7 +464,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
             toothBaseAngle = -self.toothBaseAngle#-math.pi*0.03
             toothTipArcAngle*=-1
 
-        print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
+        # print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
 
         wheel = cq.Workplane("XY").moveTo(self.innerRadius, 0)
 

@@ -76,7 +76,7 @@ runtime: 180.0hours. Chain wheel multiplier: 10.3
 train.setChainWheelRatio([103, 10])
 # train.printInfo(weight_kg=2.5)
 
-pendulumSticksOut=20
+pendulumSticksOut=28
 
 train.genGears(module_size=1,moduleReduction=0.875,  thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
 

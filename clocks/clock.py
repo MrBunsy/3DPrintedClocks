@@ -239,7 +239,7 @@ class GoingTrain:
                 allTimes.append(train)
 
         allTimes.sort(key = lambda x: x["weighting"])
-        print(allTimes)
+        # print(allTimes)
 
         self.trains = allTimes
 
@@ -275,8 +275,8 @@ class GoingTrain:
 
             desiredRatio = 1 / turnsPerHour
 
-            print("Chain wheel turns per hour", turnsPerHour)
-            print("Chain wheel ratio to minute wheel", desiredRatio)
+            # print("Chain wheel turns per hour", turnsPerHour)
+            # print("Chain wheel ratio to minute wheel", desiredRatio)
 
             allGearPairCombos = []
 
@@ -285,7 +285,7 @@ class GoingTrain:
             for p in range(pinion_min, pinion_max):
                 for w in range(wheel_min, wheel_max):
                     allGearPairCombos.append([w, p])
-            print("ChainWheel: allGearPairCombos", len(allGearPairCombos))
+            # print("ChainWheel: allGearPairCombos", len(allGearPairCombos))
 
             allRatios = []
             for i in range(len(allGearPairCombos)):
@@ -306,7 +306,7 @@ class GoingTrain:
 
             allRatios.sort(key=lambda x: x["error"] - x["teeth"])  #
 
-            print(allRatios)
+            # print(allRatios)
 
             self.chainWheelRatio = allRatios[0]["pair"]
         else:
@@ -517,7 +517,7 @@ class GoingTrain:
 
         pinionAtFront = chainWheelImaginaryPinionAtFront
 
-        print("Escape wheel pinion at front: {}, clockwise (from front) {}, clockwise from pinion side: {} ".format(escapeWheelPinionAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPinionSide))
+        # print("Escape wheel pinion at front: {}, clockwise (from front) {}, clockwise from pinion side: {} ".format(escapeWheelPinionAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPinionSide))
         #escapment is now provided or configured in the constructor
         # self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide)
         self.escapement.setDiameter(escapeWheelDiameter)
@@ -773,7 +773,7 @@ class ClockPlates:
                 then calculate the relative angles so the logic for finding bearing locations still works
                 bit over complicated
                 '''
-                print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
+                # print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
                 nextAngleOnArc = angleOnArc + 2*math.asin(distances[i+self.goingTrain.chainWheels]/(2*arcRadius))*side
                 nextPos = polar(nextAngleOnArc, arcRadius)
 
@@ -798,7 +798,7 @@ class ClockPlates:
         #height of the centre of the wheel that will drive the next pinion
         drivingZ = 0
         for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
-            print(str(i))
+            # print(str(i))
             if  i == -self.goingTrain.chainWheels:
                 #the wheel with chain wheel ratchet
                 #assuming this is at the very back of the clock
@@ -808,20 +808,20 @@ class ClockPlates:
                 #note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
                 drivingZ = self.goingTrain.getArbour(i).getWheelCentreZ()
                 self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
-                print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
+                # print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
             else:
                 r = self.goingTrain.getArbour(i - 1).distanceToNextArbour
-                print("r", r)
+                # print("r", r)
                 #all the other going wheels up to and including the escape wheel
                 if i == self.goingTrain.wheels:
                     # the anchor
                     baseZ = drivingZ - self.anchorThick / 2
                     self.arbourThicknesses.append(self.anchorThick)
-                    print("is anchor")
+                    # print("is anchor")
                 else:
                     #any of the other wheels
                     # pinionAtBack = not pinionAtBack
-                    print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
+                    # print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
                     pinionToWheel = self.goingTrain.getArbour(i).getPinionToWheelZ()
                     pinionZ = self.goingTrain.getArbour(i).getPinionCentreZ()
                     baseZ = drivingZ - pinionZ
@@ -840,9 +840,9 @@ class ClockPlates:
                 lastPos = self.bearingPositions[-1]
                 # pos = list(np.add(self.bearingPositions[i-1],v))
                 pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
-                if i < self.goingTrain.wheels:
-                    print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
-                print("baseZ: ",baseZ, "drivingZ ", drivingZ)
+                # if i < self.goingTrain.wheels:
+                #     print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
+                # print("baseZ: ",baseZ, "drivingZ ", drivingZ)
 
                 self.bearingPositions.append(pos)
 
@@ -1236,7 +1236,7 @@ class ClockPlates:
             # and one hole for the cord to be tied
             pulleyHole = cq.Workplane("XZ").moveTo(pulleyX, pulleyZ).circle(self.chainHoleD / 2).extrude(1000)
             chainHoles.add(pulleyHole)
-            print("chainZ min:", chainZBottom, "chainZ max:", chainZTop)
+            # print("chainZ min:", chainZBottom, "chainZ max:", chainZTop)
 
             # original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
             # so instead, put a screw in from the front
@@ -1651,7 +1651,7 @@ class Assembly:
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
             chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.wobble / 2
-            print("chain Z", chainZ)
+            # print("chain Z", chainZ)
             clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
 
         #TODO pendulum bob and nut?

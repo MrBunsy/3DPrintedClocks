@@ -1099,7 +1099,7 @@ class Arbour:
             #cut a hole through the arbour extension too (until the arbour extension takes this into account, but it doesn't since this currently only applies to the cord wheel)
             cutter = cq.Workplane("XY").circle(self.holeD/2).extrude(10000).translate((0,0,-5000))
             gearWheel = gearWheel.cut(cutter)
-            print("Need steel rod of length {}mm".format(self.wheelThick + self.rearSideExtension))
+            print("Need steel tube of length {}mm".format(self.wheelThick + self.rearSideExtension))
 
         # if not self.ratchetInset and self.wheelSideExtension > 0:
         #     print("UNPRINTABLE CHAIN WHEEL, cannot have bits sticking out both sides")
