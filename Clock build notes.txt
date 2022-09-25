@@ -210,3 +210,6 @@ Plate distance 28.8
 [93, 10]
 layers of cord: 5, cord per hour: 1.3cm to 0.8cm min diameter: 21.0mm
 runtime: 191.9hours over 1.9m. Chain wheel multiplier: 9.3
+chainwheel: module 1, 93 teeth, thick 4mm
+
+IDEA: maybe a small m2 screw inside the hole in the cord wheel, so I can tie the end of teh cord to that rather than a messy knot around the whole wheel

@@ -9,7 +9,7 @@ import cadquery as cq
 from cadquery import exporters
 
 class Escapement:
-    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, pendulumFixing = PendulumFixing.FRICTION_ROD):
+    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
         because it ended up being more elegant to treat the anchor as the last arbour in the clock.
@@ -39,9 +39,6 @@ class Escapement:
 
         clockwiseFromPinionSide is for the escape wheel
         '''
-
-        #not sure where this best belongs, it's a bit out of place here, but no-where seems more obvious
-        self.pendulumFixing = pendulumFixing
 
         self.lift_deg = lift
         self.halfLift = 0.5*degToRad(lift)

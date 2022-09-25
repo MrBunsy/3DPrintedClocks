@@ -565,7 +565,8 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS, distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None):
+    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
+                 distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing = PendulumFixing.FRICTION_ROD):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -597,7 +598,7 @@ class Arbour:
         #is this screwed (and optionally glued) to the threaded rod?
         self.looseOnRod = False
 
-
+        self.pendulumFixing = pendulumFixing
 
         self.ratchet = None
         if self.poweredWheel is not None:
@@ -619,6 +620,8 @@ class Arbour:
         self.frontSideExtension=0
         self.rearSideExtension=0
         self.arbourExtensionMaxR=self.arbourD
+        self.frontPlateThick = 0
+        self.pendulumSticksOut = 0
         #so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
         self.arbourBearingStandoff=LAYER_THICK*2
 
@@ -653,18 +656,29 @@ class Arbour:
         self.useSpanner=False
 
 
-    def setArbourExtensionInfo(self, frontSide=0, rearSide=0, maxR=0):
+    def setPlateInfo(self, frontSideExtension=0, rearSideExtension=0, maxR=0, frontPlateThick=0, backPlateThick=0, pendulumSticksOut=0, pendulumAtFront=True, endshake=1, pendulumFixingBearing=None):
         '''
+        front/rear side extensions: how far from the front or back of this arbour to the front or back plate (excluding end shake aka "wobble")
+
+        maxR - how fat teh arbour can be while avoiding any other gears or parts of teh clock
+
         This info is only known after the plates are configured, so retrospectively add it to the arbour.
 
         Added the to pinion side (or the 'back' of the chainwheel if the ratchet is bolt-on)
         '''
-        self.frontSideExtension=frontSide
-        self.rearSideExtension=rearSide
+        self.frontSideExtension=frontSideExtension
+        self.rearSideExtension=rearSideExtension
         self.arbourExtensionMaxR=maxR
 
+        self.frontPlateThick=frontPlateThick
+        self.pendulumSticksOut=pendulumSticksOut
+        self.pendulumAtFront=pendulumAtFront
+        self.backPlateThick=backPlateThick
+        self.endshake=endshake
+        self.pendulumFixingBearing = pendulumFixingBearing
+
         #can now calculate the location and size of the spanner nut for the anchor
-        if self.getType() == ArbourType.ANCHOR and self.escapement.pendulumFixing == PendulumFixing.FRICTION_ROD and self.useSpanner:
+        if self.getType() == ArbourType.ANCHOR and self.pendulumFixing == PendulumFixing.FRICTION_ROD and self.useSpanner:
             # place it where there's most space
 
             if self.rearSideExtension > self.spannerBitThick:
@@ -843,7 +857,7 @@ class Arbour:
         #everything is split a bit between escapement and arbour, TODO tidy up
         anchor = self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick)#, forPrinting=forPrinting)
 
-        if self.escapement.pendulumFixing == PendulumFixing.FRICTION_ROD:
+        if self.pendulumFixing == PendulumFixing.FRICTION_ROD:
             #add a square bit to help adjust the beat usign a spanner.
             #never really worked very well
             if self.useSpanner:
@@ -881,10 +895,45 @@ class Arbour:
                 # if forPrinting:
                 #     anchor = anchor.rotate((0,0,0),(1,0,0),180)
 
-        elif self.escapement.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+        elif self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
             '''
             Extend the arbour out through a larger bearing and end in a square (like the cannon pinion) that the pendulum end can slot over
             '''
+            #note - copied and modified from the unfinished spring arbour
+            bearingWiggleRoom = 0.05
+            bearingStandoffThick = 0.6
+
+            # radius for that bit that slots inside the bearing
+            bearingBitR = self.pendulumFixingBearing.innerD / 2 - bearingWiggleRoom
+            diameter = self.arbourD*2
+            beforeBearingTaperHeight = 0
+            if diameter < bearingBitR * 2:
+                # need to taper up to the bearing, as it's bigger!
+                r = self.pendulumFixingBearing.innerSafeD / 2 - diameter / 2
+                angle = degToRad(30)
+                beforeBearingTaperHeight = r * math.sqrt(1 / math.sin(angle) - 1)
+
+            normalExtensionLength = self.frontSideExtension-beforeBearingTaperHeight-bearingStandoffThick
+            if normalExtensionLength <=0 :
+                raise ValueError("TODO work to enable really short anchor arbours")
+
+            arbour = cq.Workplane("XY").circle(diameter/2).extrude(normalExtensionLength)
+
+            if beforeBearingTaperHeight > 0:
+                arbour = arbour.add(cq.Solid.makeCone(radius1=diameter / 2, radius2=self.pendulumFixingBearing.innerSafeD / 2, height=beforeBearingTaperHeight).translate((0, 0, normalExtensionLength)))
+                arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.pendulumFixingBearing.innerSafeD / 2).extrude(bearingStandoffThick)
+
+            roundBitThick = self.frontPlateThick + self.endshake/2
+
+            arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.pendulumFixingBearing.innerD / 2 - bearingWiggleRoom).extrude(roundBitThick)
+            # using polygon rather than rect so it calcualtes the size to fit in teh circle
+            arbour = arbour.faces(">Z").workplane().polygon(4, self.pendulumFixingBearing.innerD - bearingWiggleRoom * 2).extrude(self.pendulumSticksOut+20)
+
+            arbour = arbour.rotate((0,0,0), (0,0,1), 45)
+
+            arbour = arbour.faces(">Z").workplane().circle(self.arbourD / 2).cutThruAll()
+
+            anchor = anchor.add(arbour.translate((0,0,self.wheelThick)))
 
         return anchor
 

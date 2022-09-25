@@ -23,6 +23,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_12"
 clockOutDir="out"
 gearStyle=clock.GearStyle.FLOWER
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
 
 drop =1.5
 lift =3
@@ -34,7 +35,7 @@ escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorT
 # lock=2
 # escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)
+train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)
 
 moduleReduction=1
 
@@ -49,28 +50,34 @@ train.printInfo(weight_kg=3.5)
 # exit()
 pendulumSticksOut=30
 
-train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, ratchetInset=False)#, chainModuleIncrease=1.1)
+train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 cordwheel = train.getArbourWithConventionalNaming(0)
+
+# show_object(cordwheel.poweredWheel.getSegment())
 
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2, compensateLooseArbour=True)
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=50, bobD=60, bobThick=10, useNylocForAnchor=False, handAvoiderHeight=100)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=50,
+                          bobD=60, bobThick=10, useNylocForAnchor=False, handAvoiderHeight=100)
 
 
 
 dial = clock.Dial(120)
 
 #back plate of 15 thick is only just enough for the 3.5kg weight in a shell! it won't be enough for 4kg
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical", motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True)
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical",
+                           motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True, pendulumFixing=pendulumFixing)
 
 
-hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))

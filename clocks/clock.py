@@ -446,7 +446,9 @@ class GoingTrain:
             max_power = effective_weight * GRAVITY * max_weight_speed* math.pow(10, 6)
             print("Cordwheel power varies from {:.1f}μW to {:.1f}μW".format(min_power, max_power))
 
-    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=True, chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1, ratchetScrews=None):
+    def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
+                 chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1,
+                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -589,7 +591,7 @@ class GoingTrain:
 
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
-        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD, pinionAtFront=self.penulumAtFront))
+        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD, pinionAtFront=self.penulumAtFront, pendulumFixing=pendulumFixing))
 
         self.wheelPinionPairs = pairs
         self.arbours = arbours
@@ -658,11 +660,21 @@ class ClockPlates:
     '''
     This took a while to settle - clocks before v4 will be unlikely to work anymore.
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None, pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False):
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None,
+                 pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD, pendulumFixingBearing=None):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
         '''
+
+        #how the pendulum is fixed to the anchor arbour.
+        self.pendulumFixing = pendulumFixing
+
+        #only used for the direct arbour pendulum
+        self.pendulumFixingBearing = pendulumFixingBearing
+        if self.pendulumFixingBearing is None:
+            #default to the 10mm bearing
+            self.pendulumFixingBearing = getBearingInfo(10)
 
         anglesFromMinute = None
         anglesFromChain = None
@@ -794,7 +806,7 @@ class ClockPlates:
         self.arbourThicknesses=[]
         #how much the arbours can wobble back and forth. aka End-shake.
         #2mm seemed a bit much
-        self.wobble = 1
+        self.endshake = 1
         #height of the centre of the wheel that will drive the next pinion
         drivingZ = 0
         for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
@@ -866,7 +878,7 @@ class ClockPlates:
             self.bearingPositions[-1][2] = WASHER_THICK#self.anchorThick*0.25
 
         # print(self.bearingPositions)
-        self.plateDistance=max(topZs) + self.wobble
+        self.plateDistance=max(topZs) + self.endshake
 
         print("Plate distance", self.plateDistance)
 
@@ -884,15 +896,9 @@ class ClockPlates:
                 maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.smallGearGap
             else:
                 maxR = 0
-            arbour.setArbourExtensionInfo(rearSide=bearingPos[2],maxR=maxR, frontSide=self.plateDistance-self.wobble-bearingPos[2] - arbour.getTotalThickness())
-
-
-
-        #NOTE - can't change this here as it was used in calculating the plate distance. Need to push this up to the user to set
-        # if poweredWheelBracingR > 5:
-        #     #could do more logic here all the way to completely embedding the ratchet inside the wheel?
-        #     poweredWheel.ratchetInsetness=0.5
-
+            arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
+                                frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
+                                pendulumFixingBearing=self.pendulumFixingBearing)
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         #get position of motion works relative to the minute wheel
@@ -1178,7 +1184,7 @@ class ClockPlates:
 
         if back:
             chainHoles = self.getChainHoles(bottomPillarPos=bottomPillarPos, bottomPillarR=bottomPillarR)
-            plate = plate.cut(chainHoles.translate((0,0,self.getPlateThick(back=True) + self.wobble/2)))
+            plate = plate.cut(chainHoles.translate((0, 0, self.getPlateThick(back=True) + self.endshake / 2)))
         else:
            plate = self.frontAdditionsToPlate(plate)
 
@@ -1212,8 +1218,8 @@ class ClockPlates:
             if len(holePosition) > 1:
                 #elongated hole
 
-                chainZTop = topZ + holePosition[0][1] + self.wobble/2
-                chainZBottom = topZ + holePosition[1][1] - self.wobble/2
+                chainZTop = topZ + holePosition[0][1] + self.endshake / 2
+                chainZBottom = topZ + holePosition[1][1] - self.endshake / 2
                 #assuming we're only ever elongated along the z axis
                 chainX = holePosition[0][0]
 
@@ -1287,6 +1293,11 @@ class ClockPlates:
     def punchBearingHoles(self, plate, back):
         for i, pos in enumerate(self.bearingPositions):
             bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
+
+            if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR and back == False and i == len(self.bearingPositions)-1:
+                bearingInfo = self.pendulumFixingBearing
+
+
             plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
@@ -1362,10 +1373,14 @@ class ClockPlates:
         # new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
         # no idea if it'll work without the rod bending!
 
-        if self.pendulumSticksOut > 0:
-            #trying this WITHOUT the support
+        if self.pendulumSticksOut > 0 and self.pendulumFixing == PendulumFixing.FRICTION_ROD:
+            #a cylinder that sticks out the front and holds a bearing on the end
             extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
             plate = plate.add(extraBearingHolder)
+
+
+
+
 
         #hole for screw to hold motion works arbour
         plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
@@ -1521,11 +1536,9 @@ class Assembly:
 
     def printInfo(self):
 
-        # backThick = self.plates.getPlateThick(back=True) + self.plates.wobble/2
-
         for holeInfo in self.goingTrain.poweredWheel.getChainPositionsFromTop():
             #TODO improve this a bit for cordwheels which have a slot rather than just a hole
-            z = self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + self.plates.wobble/2 + holeInfo[0][1]
+            z = self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + self.plates.endshake/2 + holeInfo[0][1]
             print("{} hole from wall = {}mm".format(self.goingTrain.poweredWheel.type.value, z))
 
     def getClock(self):
@@ -1537,7 +1550,7 @@ class Assembly:
         #the wheels
         for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
-            clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2)))
+            clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
 
 
 
@@ -1650,7 +1663,7 @@ class Assembly:
 
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
-            chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.wobble / 2
+            chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.endshake / 2
             # print("chain Z", chainZ)
             clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
 
