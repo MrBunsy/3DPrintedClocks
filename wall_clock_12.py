@@ -35,14 +35,14 @@ escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorT
 # lock=2
 # escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)
+train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1240, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)
 
 moduleReduction=1
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 # train.setChainWheelRatio([93, 10])
 
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, looseOnRod=False)
+train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, looseOnRod=False)
 #override default until it calculates an ideally sized wheel
 train.calculatePoweredWheelRatios(wheel_max=100)
 #3.5 should be enough, but plan is to bump it up to 4 if it isn't
@@ -57,9 +57,9 @@ train.getArbourWithConventionalNaming(0).printScrewLength()
 
 cordwheel = train.getArbourWithConventionalNaming(0)
 
-# show_object(cordwheel.poweredWheel.getSegment())
-
-
+# show_object(cordwheel.poweredWheel.getAssembled())
+# show_object(cordwheel.poweredWheel.getSegment(front=False))
+#
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2, compensateLooseArbour=True)
 
 

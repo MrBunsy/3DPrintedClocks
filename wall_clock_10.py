@@ -50,18 +50,22 @@ train.setChainWheelRatio([93, 10])
 #Trying 10mm over drop of 1750mm
 train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=2, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=32)#26
 '''
-with drop of 1.8m and max d of 28:
-pendulum length: 0.9939608115313336m period: 2s
-escapement time: 60s teeth: 30
-[102, 10]
-layers of cord: 3, cord per hour: 1.2cm to 0.9cm
-runtime: 179.6hours. Chain wheel multiplier: 10.2
+layers of cord: 5, cord per hour: 1.7cm to 1.1cm min diameter: 32.0mm
+runtime: 171.9hours using 2.4m of cord/chain for a weight drop of 1200. Chain wheel multiplier: 9.3 ([93, 10])
+With a weight of 4.25kg, this results in an average power usage of 80.9μW
+Generate gears to get screw information
+Cordwheel power varies from 66.5μW to 97.8μW
+Ratchet needs M2 (CS) screws of length 7.5mm
+Plate distance 28.8
+cord hole from wall = 35.3mm
 
-with 1675mm and 26mm diameter:
-[103, 10]
-layers of cord: 3, cord per hour: 1.1cm to 0.9cm
-runtime: 180.0hours. Chain wheel multiplier: 10.3
+With a weight of 3.5kg, this results in an average power usage of 66.6μW
+Generate gears to get screw information
+Cordwheel power varies from 54.8μW to 80.5μW
 
+With a weight of 4kg, this results in an average power usage of 76.1μW
+Generate gears to get screw information
+Cordwheel power varies from 62.6μW to 92.1μW
 '''
 train.setChainWheelRatio([93, 10])
 # train.calculateChainWheelRatios()

@@ -1295,6 +1295,7 @@ class ClockPlates:
             bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
 
             if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR and back == False and i == len(self.bearingPositions)-1:
+                #this is the front (TODO configurable) bearing for the anchor and the pendulum is using a direct arbour (which extends through a large bearing in the front plate)
                 bearingInfo = self.pendulumFixingBearing
 
 

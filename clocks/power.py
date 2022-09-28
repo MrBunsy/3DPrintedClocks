@@ -1141,16 +1141,17 @@ class CordWheel:
 
 
         cordHoleR = 1.5*self.cordThick/2
-        cordHoleZ = self.capThick + cordHoleR
+        #weird things happenign without the +0.001 with a 1mm cord
+        cordHoleZ = self.capThick + cordHoleR + 0.001
 
         cordHoleY = self.diameter*0.25
 
         #cut a hole so we can tie the cord
         cordHole = cq.Workplane("YZ").moveTo(cordHoleY,cordHoleZ).circle(cordHoleR).extrude(self.diameter*4).translate((-self.diameter*2,0,0))
 
-        #screw to tie the end of the cord to (NOTE - given the diameter of the hole, this is not feasible unless I buy some teeny tiny screws)
-        cordEndScrew = MachineScrew(metric_thread=2, countersunk=True)
-        cordHole = cordHole.add(cordEndScrew.getCutter(length=12).translate((self.diameter*0.25,cordHoleY,0)))
+        # #screw to tie the end of the cord to (NOTE - given the diameter of the hole, this is not feasible unless I buy some teeny tiny screws)
+        # cordEndScrew = MachineScrew(metric_thread=2, countersunk=True)
+        # cordHole = cordHole.add(cordEndScrew.getCutter(length=12).translate((self.diameter*0.25,cordHoleY,0)))
 
         segment = segment.cut(cordHole)
 
