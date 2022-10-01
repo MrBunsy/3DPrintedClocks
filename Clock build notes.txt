@@ -213,3 +213,6 @@ runtime: 191.9hours over 1.9m. Chain wheel multiplier: 9.3
 chainwheel: module 1, 93 teeth, thick 4mm
 
 IDEA: maybe a small m2 screw inside the hole in the cord wheel, so I can tie the end of teh cord to that rather than a messy knot around the whole wheel
+- maybe if I had some M1.5s or small
+
+IDEA - hour hand could slot onto a circular slot like the minute hand, it doesn't need the tapered bit and this makes it easier to be close to the minute hand.

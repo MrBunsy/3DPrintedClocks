@@ -114,6 +114,8 @@ class Gear:
         #
         petalRadius = (outerRadius - innerRadius)*0.75
 
+        if petalRadius < 0:
+            return gear
         #if this is a wheel with a relatively large inner radius (like a cord wheel), increase the number of petals
         while petalRadius < petalWidth*1.5:
             petals+=1

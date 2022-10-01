@@ -44,11 +44,12 @@ train.setChainWheelRatio([93, 10])
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
-#with drop of 1675
-#thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-#thickness of 12 was just shy of using 20mm countersunk (I forgot I also shrunk the cap thickness) trying 13.5
-#Trying 10mm over drop of 1750mm
-train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=2, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=32)#26
+#1mm cord retrofit, planning to print just a ring to retrofit the retrofit
+train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=1, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=39)
+
+#2mm cord retrofit, note this has a very wide range of power so doesn't work reliably towards the end of the week with 3.5kg
+#train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=2, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=32)
+
 '''
 layers of cord: 5, cord per hour: 1.7cm to 1.1cm min diameter: 32.0mm
 runtime: 171.9hours using 2.4m of cord/chain for a weight drop of 1200. Chain wheel multiplier: 9.3 ([93, 10])

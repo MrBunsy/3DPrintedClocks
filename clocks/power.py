@@ -940,7 +940,7 @@ class CordWheel:
             self.overlapSlotWiggle=0.1
 
         #keeping large so there's space for the screws and screwheads
-        self.capDiameter = diameter*2#.5
+        self.capDiameter = diameter + 30#diameter*2#.5
         self.rodMetricSize = rodMetricSize
         self.holeD = rodMetricSize
         self.looseOnRod = looseOnRod
@@ -1017,7 +1017,7 @@ class CordWheel:
 
 
     def getChainHoleD(self):
-        (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo()
+        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.getCordTurningInfo()
 
         #assume that the cord is going to squish a bit, so don't need to make this too excessive
         return self.cordThick * layers
@@ -1035,7 +1035,7 @@ class CordWheel:
 
         '''
 
-        (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo(cordLength=self.cordLength)
+        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.getCordTurningInfo(cordLength=self.cordLength)
 
         #not in the centre of hte layers, assuming that the cord will be fairly squashed, so offset slightly towards the wheel
         chainX = (self.diameter / 2 + self.cordThick * layers *0.4)
@@ -1307,16 +1307,16 @@ class CordWheel:
 
         assuming the cord coils perfectly, make a reasonable estimate at runtime
         '''
-        (rotations, layers, cordPerRotationPerLayer) = self.getCordTurningInfo(cordLength)
+        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.getCordTurningInfo(cordLength)
 
         print("layers of cord: {}, cord per hour: {:.1f}cm to {:.1f}cm min diameter: {:.1f}mm".format(layers, (cordPerRotationPerLayer[-1] / minuteRatio) / 10, (cordPerRotationPerLayer[0] / minuteRatio) / 10, self.diameter))
-
+        print("Cord used per layer: {}".format(cordPerLayer))
         #minute hand rotates once per hour, so this answer will be in hours
         return (rotations * minuteRatio)
 
     def getCordTurningInfo(self, cordLength=-1):
         '''
-        returns (rotations, layers, cordPerRotationPerLayer)
+        returns (rotations, layers, cordPerRotationPerLayer, cordPerLayer)
         '''
 
         if cordLength < 0:
@@ -1325,6 +1325,7 @@ class CordWheel:
         lengthSoFar = 0
         rotationsSoFar = 0
         coilsPerLayer = floor(self.thick / self.cordThick)
+        cordPerLayer=[]
         layer = 0
         cordPerRotationPerLayer = []
         while lengthSoFar < cordLength:
@@ -1332,17 +1333,19 @@ class CordWheel:
             circumference = math.pi * (self.diameter + 2 * (layer * self.cordThick + self.cordThick / 2))
             cordPerRotationPerLayer.append(circumference)
             if lengthSoFar + circumference * coilsPerLayer < cordLength:
-                # assume this hole layer is used
+                # assume this whole layer is used
                 lengthSoFar += circumference * coilsPerLayer
                 rotationsSoFar += coilsPerLayer
+                cordPerLayer.append(circumference * coilsPerLayer)
             else:
                 # not all of this layer
-                lengthLength = cordLength - lengthSoFar
-                rotationsSoFar += lengthLength / circumference
+                lengthLeft = cordLength - lengthSoFar
+                rotationsSoFar += lengthLeft / circumference
+                cordPerLayer.append(lengthLeft)
                 break
 
             layer += 1
-        return (rotationsSoFar, layer + 1, cordPerRotationPerLayer)
+        return (rotationsSoFar, layer + 1, cordPerRotationPerLayer, cordPerLayer)
 
 
     def getTurnsForDrop(self, cordLength):

@@ -437,7 +437,7 @@ class GoingTrain:
             #because there are potentially multiple layers of cord on a cordwheel, power lever can vary enough for the clock to be viable when wound and not halfway through its run time!
             #seen this on clock 10!
 
-            (rotations, layers, cordPerRotationPerLayer) = self.poweredWheel.getCordTurningInfo(self.maxWeightDrop*(2 if self.usePulley else 1))
+            (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.poweredWheel.getCordTurningInfo(self.maxWeightDrop*(2 if self.usePulley else 1))
             #cord per rotation divided by chainRatio, gives speed in mm per hour, we want in m/s to calculate power
             effective_weight = weight_kg / (2 if self.usePulley else 1)
             min_weight_speed = (cordPerRotationPerLayer[0] / chainRatio) /(60*60*1000)
