@@ -1586,10 +1586,13 @@ class Assembly:
         hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
 
 
-        clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick)))
+        minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset\
+                      + self.motionWorks.minuteHolderTotalHeight - self.hands.thick
+
+        clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
         clock = clock.add(hourHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
-                                                self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset + self.motionWorks.minuteHolderTotalHeight - self.hands.thick*3)))
+                                              minuteHandZ - self.motionWorks.hourHandSlotHeight - self.motionWorks.space)))
 
         if self.goingTrain.escapement_time == 60:
             #second hand!! yay

@@ -1198,7 +1198,9 @@ class MotionWorks:
         self.minuteHandHolderD = minuteHandHolderSize*math.sqrt(2)+0.5
         # print("minute hand holder D: {}".format(self.minuteHandHolderD))
         self.minuteHolderTotalHeight = minuteHandHolderHeight
+        self.distanceBetweenHands = minuteHandThick
         self.minuteHandSlotHeight = minuteHandThick
+        self.hourHandSlotHeight = minuteHandThick + self.distanceBetweenHands
 
         self.wallThick = 1.5
         self.space = 0.5
@@ -1216,7 +1218,16 @@ class MotionWorks:
         return motionWorksModel
 
     def getHourHandHoleD(self):
+        '''
+        get the size of the hole needed for the hand to slot onto the hour hand holder
+        '''
         return self.hourHandHolderD
+
+    def getMinuteHandSquareSize(self):
+        '''
+        Get the size of the square needed for the hand to slot onto the cannon pinion
+        '''
+        return self.minuteHandHolderSize + 0.2
 
     def getArbourDistance(self):
         return self.arbourDistance
@@ -1279,16 +1290,16 @@ class MotionWorks:
         return arbour
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
-
-        # want it tapered so an hour hand can be pushed down for a friction fit
-        topR = self.hourHandHolderD / 2 - 0.5
-        midR = self.hourHandHolderD / 2
-        bottomR = self.hourHandHolderD / 2
-
-
+        #this used to be tapered, but now is just a friction fit slot.
         style=self.style
         # if self.snail is not None:
         #     style = None
+
+        #fiddled the numbers so that fill isn't required to print
+        bottomR = self.hourHandHolderD / 2 + 0.7
+
+        #minute holder is -0.2 and is pretty snug, but this needs to be really snug
+        holderR = self.hourHandHolderD / 2 - 0.2
 
         hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR)
 
@@ -1299,16 +1310,16 @@ class MotionWorks:
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
-        taperStartZ = height - 10
+        handHolderStartZ = height - self.hourHandSlotHeight
 
-        if taperStartZ < 0:
-            taperStartZ = 0
+        if handHolderStartZ < 0:
+            handHolderStartZ = 0
 
         holeR = self.minuteHandHolderD / 2 + self.space / 2
 
         # return hour
         circle = cq.Workplane("XY").circle(bottomR)
-        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(midR,taperStartZ).lineTo(topR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
+        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(bottomR,handHolderStartZ).lineTo(holderR,handHolderStartZ).lineTo(holderR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
 
         hour = hour.add(shape)
         # return shape

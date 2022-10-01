@@ -124,11 +124,11 @@ if 'show_object' not in globals():
 #
 # weightShell.outputSTLs("test","out")
 
-# snail = Snail()
-# trigger = StrikeTrigger()
-# motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-# show_object(motionWorks.getAssembled())
-# show_object(motionWorks.getHourHolder())
+snail = Snail()
+trigger = StrikeTrigger()
+motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
+show_object(motionWorks.getAssembled())
+show_object(motionWorks.getHourHolder())
 
 
 
