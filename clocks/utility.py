@@ -177,6 +177,73 @@ def averageOfTwoPoints(a,b):
 def distanceBetweenTwoPoints(a,b):
     return math.sqrt(math.pow(a[0] - b[0],2) + math.pow(a[1] - b[1], 2))
 
+
+def getPreferredTangentThroughPoint(circle_centre, circle_r, point, clockwise=True):
+    '''
+    Get the tangent which is in the clockwise of anticlockwise direction from the point (relative to the circle)
+    '''
+    tangents = getTangentsThroughPoint(circle_centre, circle_r, point)
+
+    direct_line = Line(circle_centre, anotherPoint=point)
+
+    perpendicular = direct_line.get_perpendicular_direction(clockwise=clockwise)
+
+    centre_to_tangent = Line(circle_centre, anotherPoint=tangents[0].anotherPoint)
+
+    if centre_to_tangent.dir.dot(perpendicular) >= 0:
+        return tangents[0]
+    else:
+        return tangents[1]
+
+
+    # for tangent in tangents:
+    #     matches = True
+    #     if positiveX is not None:
+    #         if positiveX and tangent.anotherPoint[0] - circle_centre[0] <= 0:
+    #             matches = False
+    #     if positiveY is not None:
+    #         if positiveY and tangent.anotherPoint[1] - circle_centre[1] <= 0:
+    #             matches = False
+    #     if matches:
+    #         return tangent
+
+
+def getTangentsThroughPoint(circle_centre, circle_r, point):
+    '''
+    Given a circle centred at circle_centre, radius_r and a point outside the circle, return a Line which passes through the point and is a tangent to thecircle
+
+    https://math.stackexchange.com/a/3190374
+    '''
+    Cx, Cy = circle_centre
+    r = circle_r
+    Px, Py = point
+    # ################################ #
+    dx, dy = Px - Cx, Py - Cy
+    dxr, dyr = -dy, dx
+    d = math.sqrt(dx ** 2 + dy ** 2)
+    if d >= r:
+        rho = r / d
+        ad = rho ** 2
+        bd = rho * math.sqrt(1 - rho ** 2)
+        T1x = Cx + ad * dx + bd * dxr
+        T1y = Cy + ad * dy + bd * dyr
+        T2x = Cx + ad * dx - bd * dxr
+        T2y = Cy + ad * dy - bd * dyr
+
+        # print('The tangent points:')
+        # print('\tT1≡(%g,%g),  T2≡(%g,%g).' % (T1x, T1y, T2x, T2y))
+        if (d / r - 1) < 1E-8:
+            raise ValueError('P is on the circumference')
+        else:
+            # print('The equations of the lines P-T1 and P-T2:')
+            # print('\t%+g·y%+g·x%+g = 0' % (T1x - Px, Py - T1y, T1y * Px - T1x * Py))
+            # print('\t%+g·y%+g·x%+g = 0' % (T2x - Px, Py - T2y, T2y * Px - T2x * Py))
+            return [Line(point, anotherPoint=(T1x, T1y)), Line(point, anotherPoint=(T2x, T2y))]
+    else:
+        raise ValueError('''\
+    Point P≡(%g,%g) is inside the circle with centre C≡(%g,%g) and radius r=%g.
+    No tangent is possible...''' % (Px, Py, Cx, Cy, r))
+
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):
         '''
@@ -196,6 +263,8 @@ class Line:
             self.dir = (math.cos(angle), math.sin(angle))
         elif anotherPoint is not None:
             self.dir = (anotherPoint[0] - start[0], anotherPoint[1] - start[1])
+            #store for hackery
+            self.anotherPoint = anotherPoint
         else:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector
@@ -212,8 +281,10 @@ class Line:
 
         z = 1 if clockwise else -1
 
-        return  np.cross(self.dir, [0,0,z])
+        return  np.cross(self.dir, [0,0,z])[:-1]
 
+    def dot_product(self, b):
+        return np.dot(self.dir, b.dir)
 
     def intersection(self, b):
         '''

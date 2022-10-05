@@ -586,15 +586,15 @@ class GrasshopperEscapement:
         line_3 = Line((0,0), anotherPoint=D_start_of_exit_impulse)
         #[4] clockwise by half a tooth angle
         end_of_exit_impulse_angle = -self.tooth_angle/2
-        end_of_exit_impulse = polar(end_of_exit_impulse_angle, self.radius)
-        line_4 = Line((0,0), anotherPoint=end_of_exit_impulse)
+        C_end_of_exit_impulse = polar(end_of_exit_impulse_angle, self.radius)
+        line_4 = Line((0,0), anotherPoint=C_end_of_exit_impulse)
 
         #[5]
         minimum_tooth_space = math.floor(self.tooth_span)
         minimum_tooth_angle = minimum_tooth_space * math.pi*2 / self.teeth
         #I think this is end of the entry impulse?
-        end_of_entry_impulse = polar(0 + minimum_tooth_angle, self.radius)
-        line_5 = Line((0,0), anotherPoint=end_of_entry_impulse)
+        K_end_of_entry_impulse = polar(0 + minimum_tooth_angle, self.radius)
+        line_5 = Line((0,0), anotherPoint=K_end_of_entry_impulse)
 
         #[6]
         maximum_tooth_space = math.ceil(self.tooth_span)
@@ -662,7 +662,26 @@ class GrasshopperEscapement:
         step_two_figure_36 = step_two_figure_36.add(line_12.get2D(line_12_length))
         step_two_figure_36 = step_two_figure_36.add(cq.Workplane("XY").moveTo(Z[0], Z[1]).circle(circle_13_r))
 
-        return step_two_figure_36
+        # return step_two_figure_36
+
+        # =========== STEP THREE =========
+
+        #[14]
+        circle_14_r = circle_13_r * self.T
+
+        #[15]
+        line_15_end_of_entry_impulse = getPreferredTangentThroughPoint(Z, circle_14_r, K_end_of_entry_impulse, clockwise=True)
+
+        #[16]
+        line_16_end_of_exit_impulse = getPreferredTangentThroughPoint(Z, circle_14_r, C_end_of_exit_impulse, clockwise=True)
+
+        step_three_figure_37 = step_two_figure_36
+        step_three_figure_37 = step_three_figure_37.add(cq.Workplane("XY").moveTo(Z[0], Z[1]).circle(circle_14_r))
+        #hackery: anotherPoint is the tangent point
+        step_three_figure_37 = step_three_figure_37.add(line_15_end_of_entry_impulse.get2D(distanceBetweenTwoPoints(line_15_end_of_entry_impulse.start, line_15_end_of_entry_impulse.anotherPoint)))
+        step_three_figure_37 = step_three_figure_37.add(line_16_end_of_exit_impulse.get2D(distanceBetweenTwoPoints(line_16_end_of_exit_impulse.start, line_16_end_of_exit_impulse.anotherPoint)))
+
+        return step_three_figure_37
 
 class Pendulum:
     '''
