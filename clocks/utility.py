@@ -269,8 +269,12 @@ class Line:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector
         self.dir = np.divide(self.dir, np.linalg.norm(self.dir))
-    def get2D(self, length=100):
-        return cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0]*length, self.dir[1]*length)
+    def get2D(self, length=100, both_directions=False):
+        line = cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0]*length, self.dir[1]*length)
+        if both_directions:
+            line = line.add(cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(-self.dir[0]*length, -self.dir[1]*length))
+        return line
+
     # def getGradient(self):
     #     return self.dir[1] / self.dir[0]
 

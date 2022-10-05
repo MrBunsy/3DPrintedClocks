@@ -756,8 +756,53 @@ class GrasshopperEscapement:
         step_five_figure_39 = step_five_figure_39.add(line_30.get2D(20))
         step_five_figure_39 = step_five_figure_39.add(cq.Workplane("XY").moveTo(W[0], W[1]).circle(0.5))
 
-        return step_five_figure_39
+        # return step_five_figure_39
+        # ============= STEP SIX =============
 
+        line_31_VZ = Line(V, anotherPoint=Z)
+        line_32_JKmid_STmid = Line(averageOfTwoPoints(J_start_of_entry_impulse, K_end_of_entry_impulse), anotherPoint=averageOfTwoPoints(S,T))
+
+        PN_centre = line_31_VZ.intersection(line_32_JKmid_STmid)
+
+        line_33_PN = Line(PN_centre, direction=line_31_VZ.get_perpendicular_direction())
+
+        #For an escapement frame arbor axis at Z, point P is the entry pallet arm pivot location at the start of entry impulse and JP is the entry pallet arm active length.
+        P = line_33_PN.intersection(line_7_entry_start_of_impulse_action)
+        #For an escapement frame arbor axis at Z, point N is the entry pallet arm pivot location at the end of entry impulse and KN is the entry pallet arm active length.
+        N = line_33_PN.intersection(line_15_end_of_entry_impulse)
+
+
+
+        line_34_ZW = Line(Z, anotherPoint=W)
+        line_35_CDmid_QRmid = Line(averageOfTwoPoints(C_end_of_exit_impulse,D_start_of_exit_impulse), anotherPoint=averageOfTwoPoints(Q,R))
+        FG_centre = line_35_CDmid_QRmid.intersection(line_34_ZW)
+        line_36_FG = Line(FG_centre, direction=line_34_ZW.get_perpendicular_direction())
+
+        #could have been defined earlier, doesn't seem to have been (I think this one was 'obvious' previously)
+        line_21_DQ = Line(D_start_of_exit_impulse, anotherPoint=Q)
+        line_22_CR = Line(C_end_of_exit_impulse, anotherPoint=R)
+        F = line_36_FG.intersection(line_21_DQ)
+        G = line_36_FG.intersection(line_22_CR)
+
+        '''
+        ■ By virtue of universal properties of W (see APPENDIX), DF will match CG, FW will match GW and (therefore)
+        FZ will match GZ, thereby ensuring correct functioning of the exit geometry incorporating Z, D, C, F and G.
+        TODO check this has worked!
+        '''
+
+
+        step_six_figure_40 = step_five_figure_39
+        step_six_figure_40 = step_six_figure_40.add(line_31_VZ.get2D())
+        step_six_figure_40 = step_six_figure_40.add(line_32_JKmid_STmid.get2D())
+        step_six_figure_40 = step_six_figure_40.add(line_33_PN.get2D(length=5, both_directions=True))
+        step_six_figure_40 = step_six_figure_40.add(cq.Workplane("XY").moveTo(P[0], P[1]).circle(0.5))
+        step_six_figure_40 = step_six_figure_40.add(cq.Workplane("XY").moveTo(N[0], N[1]).circle(0.5))
+        step_six_figure_40 = step_six_figure_40.add(line_34_ZW.get2D())
+        step_six_figure_40 = step_six_figure_40.add(line_35_CDmid_QRmid.get2D())
+        step_six_figure_40 = step_six_figure_40.add(line_36_FG.get2D(length=5, both_directions=True))
+        step_six_figure_40 = step_six_figure_40.add(cq.Workplane("XY").moveTo(F[0], F[1]).circle(0.5))
+        step_six_figure_40 = step_six_figure_40.add(cq.Workplane("XY").moveTo(G[0], G[1]).circle(0.5))
+        return step_six_figure_40
 
 class Pendulum:
     '''
