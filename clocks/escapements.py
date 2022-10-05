@@ -576,7 +576,7 @@ class GrasshopperEscapement:
         self.tooth_angle = math.pi*2/self.teeth
 
 
-    def generate_geometry(self):
+    def generate_geometry(self, d_deg=11, active_length_entry_pallet_arm=10, active_length_exit_pallet_arm=7.5):
 
         #escape wheel centred on 0,0
         # ========== STEP ONE ===========
@@ -626,7 +626,7 @@ class GrasshopperEscapement:
 
         #[10]
         #arbitary to start with
-        d = degToRad(11)
+        d = degToRad(d_deg)
         #I think this will be the centre of the torque arms?
         line_10 = Line([0,0],d)
 
@@ -681,7 +681,46 @@ class GrasshopperEscapement:
         step_three_figure_37 = step_three_figure_37.add(line_15_end_of_entry_impulse.get2D(distanceBetweenTwoPoints(line_15_end_of_entry_impulse.start, line_15_end_of_entry_impulse.anotherPoint)))
         step_three_figure_37 = step_three_figure_37.add(line_16_end_of_exit_impulse.get2D(distanceBetweenTwoPoints(line_16_end_of_exit_impulse.start, line_16_end_of_exit_impulse.anotherPoint)))
 
-        return step_three_figure_37
+        # return step_three_figure_37
+
+        # ============ STEP FOUR =================
+
+        circle_17_r = active_length_entry_pallet_arm
+        circle_17_centre = J_start_of_entry_impulse
+        towardsS = polar(line_7_entry_start_of_impulse_action.getAngle(), circle_17_r)
+        S = (circle_17_centre[0] + towardsS[0], circle_17_centre[1] + towardsS[1])
+
+
+        circle_18_r = active_length_entry_pallet_arm
+        circle_18_centre = K_end_of_entry_impulse
+        towardsT = polar(line_15_end_of_entry_impulse.getAngle(), circle_18_r)
+        T = (circle_18_centre[0] + towardsT[0], circle_18_centre[1] + towardsT[1])
+
+        circle_19_centre = D_start_of_exit_impulse
+        circle_19_r = active_length_exit_pallet_arm
+        circle_20_centre = C_end_of_exit_impulse
+        circle_20_r = active_length_exit_pallet_arm
+
+        towardsQ = polar(line_8_exit_pallet_start_line_of_action.getAngle() + math.pi, circle_19_r)
+        Q = (circle_19_centre[0] + towardsQ[0], circle_19_centre[1] + towardsQ[1])
+
+        towardsR = polar(line_16_end_of_exit_impulse.getAngle() + math.pi, circle_20_r)
+        R = (circle_20_centre[0] + towardsR[0], circle_20_centre[1] + towardsR[1])
+
+        step_four_figure_38 = step_three_figure_37
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(circle_17_centre[0], circle_17_centre[1]).circle(circle_17_r))
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(circle_18_centre[0], circle_18_centre[1]).circle(circle_18_r))
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(S[0], S[1]).circle(0.5))
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(T[0], T[1]).circle(0.5))
+
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(circle_19_centre[0], circle_19_centre[1]).circle(circle_19_r))
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(circle_20_centre[0], circle_20_centre[1]).circle(circle_20_r))
+        step_four_figure_38 = step_four_figure_38.add(line_8_exit_pallet_start_line_of_action.get2D(-circle_19_r))
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(Q[0], Q[1]).circle(0.5))
+        step_four_figure_38 = step_four_figure_38.add(line_16_end_of_exit_impulse.get2D(-circle_20_r))
+        step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(R[0], R[1]).circle(0.5))
+
+        return step_four_figure_38
 
 class Pendulum:
     '''
