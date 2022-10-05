@@ -720,7 +720,44 @@ class GrasshopperEscapement:
         step_four_figure_38 = step_four_figure_38.add(line_16_end_of_exit_impulse.get2D(-circle_20_r))
         step_four_figure_38 = step_four_figure_38.add(cq.Workplane("XY").moveTo(R[0], R[1]).circle(0.5))
 
-        return step_four_figure_38
+        # return step_four_figure_38
+
+        # ========== STEP FIVE =================
+
+        #entry geometry
+        line_23_ST = Line(S, anotherPoint=T)
+        line_24_dir = line_23_ST.get_perpendicular_direction(clockwise=False)
+        line_24 = Line(averageOfTwoPoints(S,T), direction=line_24_dir)
+
+        line_25_JK = Line(J_start_of_entry_impulse, anotherPoint=K_end_of_entry_impulse)
+        line_26_dir = line_25_JK.get_perpendicular_direction(clockwise=False)
+        line_26 = Line(averageOfTwoPoints(J_start_of_entry_impulse, K_end_of_entry_impulse), direction=line_26_dir)
+
+        V = line_26.intersection(line_24)
+
+        #exit geometry
+
+        line_27_QR = Line(Q, anotherPoint=R)
+        line_28_dir = line_27_QR.get_perpendicular_direction(clockwise=False)
+        line_28 = Line(averageOfTwoPoints(Q,R), direction = line_28_dir)
+
+        line_29_DC = Line(D_start_of_exit_impulse, anotherPoint=C_end_of_exit_impulse)
+        line_30_dir = line_29_DC.get_perpendicular_direction(clockwise=False)
+        line_30 = Line(averageOfTwoPoints(D_start_of_exit_impulse, C_end_of_exit_impulse), direction=line_30_dir)
+
+        W = line_30.intersection(line_28)
+
+
+        step_five_figure_39 = step_four_figure_38
+        step_five_figure_39 = step_five_figure_39.add(line_24.get2D())
+        step_five_figure_39 = step_five_figure_39.add(line_26.get2D())
+        step_five_figure_39 = step_five_figure_39.add(cq.Workplane("XY").moveTo(V[0], V[1]).circle(0.5))
+        step_five_figure_39 = step_five_figure_39.add(line_28.get2D(20))
+        step_five_figure_39 = step_five_figure_39.add(line_30.get2D(20))
+        step_five_figure_39 = step_five_figure_39.add(cq.Workplane("XY").moveTo(W[0], W[1]).circle(0.5))
+
+        return step_five_figure_39
+
 
 class Pendulum:
     '''
