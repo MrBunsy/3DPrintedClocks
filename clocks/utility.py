@@ -170,9 +170,12 @@ def averageOfTwoPoints(a,b):
 
     avg = []
     points = len(a)
-    for i in points:
+    for i in range(points):
         avg.append((a[i] + b[i])/2)
     return avg
+
+def distanceBetweenTwoPoints(a,b):
+    return math.sqrt(math.pow(a[0] - b[0],2) + math.pow(a[1] - b[1], 2))
 
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):

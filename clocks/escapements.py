@@ -606,7 +606,7 @@ class GrasshopperEscapement:
 
 
         #[7]
-        line_7_entry_pallet_start_line_of_action = Line(J_start_of_entry_impulse, angle= J_angle + math.pi + self.an)
+        line_7_entry_start_of_impulse_action = Line(J_start_of_entry_impulse, angle= J_angle + math.pi + self.an)
 
         #[8]
         line_8_exit_pallet_start_line_of_action = Line(D_start_of_exit_impulse, angle = 0 + self.ax)
@@ -616,10 +616,10 @@ class GrasshopperEscapement:
         step_one_figure_35 = step_one_figure_35.add(line_4.get2D(self.radius))
         step_one_figure_35 = step_one_figure_35.add(line_5.get2D(self.radius))
         step_one_figure_35 = step_one_figure_35.add(line_6.get2D(self.radius))
-        step_one_figure_35 = step_one_figure_35.add(line_7_entry_pallet_start_line_of_action.get2D())
+        step_one_figure_35 = step_one_figure_35.add(line_7_entry_start_of_impulse_action.get2D())
         step_one_figure_35 = step_one_figure_35.add(line_8_exit_pallet_start_line_of_action.get2D())
 
-        return step_one_figure_35
+        # return step_one_figure_35
         # ============ STEP TWO ============
         #what happened to [9]?
 
@@ -628,21 +628,41 @@ class GrasshopperEscapement:
         #arbitary to start with
         d = degToRad(11)
         #I think this will be the centre of the torque arms?
-        radial_ten = Line([0,0],d)
+        line_10 = Line([0,0],d)
 
         #[11]
         # lines_8_and_10_intersect = radial_ten.intersection(line_8_exit_pallet_start_line_of_action)
-        # lines_7_and_10_intersect = radial_ten.intersection(line_7_entry_pallet_start_line_of_action)
+        # lines_7_and_10_intersect = radial_ten.intersection(line_7_entry_start_of_impulse_action)
 
-        intersection_of_lines_7_and_8 = line_7_entry_pallet_start_line_of_action.intersection(line_8_exit_pallet_start_line_of_action)
+        intersection_of_lines_7_and_8 = line_7_entry_start_of_impulse_action.intersection(line_8_exit_pallet_start_line_of_action)
 
-        average_direction_of_lines_7_and_8 = averageOfTwoPoints(line_7_entry_pallet_start_line_of_action.dir, line_8_exit_pallet_start_line_of_action.dir)
+        line_8_downwards = Line(line_8_exit_pallet_start_line_of_action.start, direction=[line_8_exit_pallet_start_line_of_action.dir[0]*-1, line_8_exit_pallet_start_line_of_action.dir[1]*-1])
+
+        average_direction_of_lines_7_and_8 = averageOfTwoPoints(line_7_entry_start_of_impulse_action.dir, line_8_downwards.dir)
         #line 11 bisects the acute angle between lines [7] and [8]
-        line_11 = Line(intersection_of_lines_7_and_8, average_direction_of_lines_7_and_8)
+        line_11 = Line(intersection_of_lines_7_and_8, direction=average_direction_of_lines_7_and_8)
         #[12]
-        # line_12 = Line(Z, line_7_entry_pallet_start_line_of_action.get_perpendicular_direction(clockwise=False))
+        # line_12 = Line(Z, line_7_entry_start_of_impulse_action.get_perpendicular_direction(clockwise=False))
 
+        Z = line_11.intersection(line_10)
 
+        #[12]
+
+        line_12 = Line(Z, direction=line_7_entry_start_of_impulse_action.get_perpendicular_direction(clockwise=False))
+
+        line_12_intersect_line_7_point = line_12.intersection(line_7_entry_start_of_impulse_action)
+
+        line_12_length = distanceBetweenTwoPoints(Z, line_12_intersect_line_7_point)
+
+        circle_13_r = line_12_length
+
+        step_two_figure_36 = step_one_figure_35
+        step_two_figure_36 = step_two_figure_36.add(line_10.get2D())
+        step_two_figure_36 = step_two_figure_36.add(line_11.get2D())
+        step_two_figure_36 = step_two_figure_36.add(line_12.get2D(line_12_length))
+        step_two_figure_36 = step_two_figure_36.add(cq.Workplane("XY").moveTo(Z[0], Z[1]).circle(circle_13_r))
+
+        return step_two_figure_36
 
 class Pendulum:
     '''
