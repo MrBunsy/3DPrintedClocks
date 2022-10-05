@@ -124,13 +124,19 @@ if 'show_object' not in globals():
 #
 # weightShell.outputSTLs("test","out")
 
-snail = Snail()
-trigger = StrikeTrigger()
-motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-show_object(motionWorks.getAssembled())
-show_object(motionWorks.getHourHolder())
+# snail = Snail()
+# trigger = StrikeTrigger()
+# motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
+# show_object(motionWorks.getAssembled())
+# show_object(motionWorks.getHourHolder())
 
+# a = Line((0,0), 0)
+#
+# print(a.get_perpendicular_direction(False))
 
+grasshopper = GrasshopperEscapement()
+
+show_object(grasshopper.generate_geometry())
 
 #
 # rack = Rack()

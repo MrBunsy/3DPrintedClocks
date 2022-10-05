@@ -164,6 +164,16 @@ class MachineScrew:
     def getHeadDiameter(self):
         return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
 
+def averageOfTwoPoints(a,b):
+    if len(a) != len(b):
+        raise ValueError("Points not same number of dimensions")
+
+    avg = []
+    points = len(a)
+    for i in points:
+        avg.append((a[i] + b[i])/2)
+    return avg
+
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):
         '''
@@ -187,9 +197,20 @@ class Line:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector
         self.dir = np.divide(self.dir, np.linalg.norm(self.dir))
-
+    def get2D(self, length=100):
+        return cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0]*length, self.dir[1]*length)
     # def getGradient(self):
     #     return self.dir[1] / self.dir[0]
+
+    def get_perpendicular_direction(self, clockwise=True):
+        '''
+        return a line which is perpendicular to this line
+        '''
+
+        z = 1 if clockwise else -1
+
+        return  np.cross(self.dir, [0,0,z])
+
 
     def intersection(self, b):
         '''
@@ -357,3 +378,12 @@ def getBearingInfo(innerD):
         return BearingInfo(bearingOuterD=19, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
         return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD)
+
+
+def getPendulumLength(pendulum_period):
+    pendulum_length = GRAVITY * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
+    return pendulum_length
+
+def getPendulumPeriod(pendulum_length):
+    pendulum_period = 2 * math.pi * math.sqrt(pendulum_length / GRAVITY)
+    return pendulum_period

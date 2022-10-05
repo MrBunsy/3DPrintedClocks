@@ -8,7 +8,7 @@ import cadquery as cq
 
 from cadquery import exporters
 
-class Escapement:
+class AnchorEscapement:
     def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True, escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4):
         '''
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
@@ -540,6 +540,108 @@ def getSpanner(size=4, thick=4, handle_length=150):
         .line(handle_length,0).line(0,armSize).lineTo(sizeWithWiggle/2,sizeWithWiggle/2).line(0,-sizeWithWiggle).line(-sizeWithWiggle,0).close().extrude(thick)
 
     return spanner
+
+class GrasshopperEscapement:
+
+    def __init__(self, diameter=100, pendulum_length=getPendulumLength(1), teeth=120, tooth_span=17.5, entry_angle_deg=90, T=3/2, mean_torque_arm_length=10, escaping_arc_deg=9.75):
+        '''
+        From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
+
+        entry angle is "The angle clockwise from the entry pallet arm line of action at the start of entry impulse to the escape wheel radial at the start of entry impulse"
+        and called 'an' in the doc
+
+        'ax' is the exit angle, which will just adjusted to control arc
+
+        T is the target end/start ratio (not quite sure what this means yet - I think ti's about the torque arm lengths
+
+        mean torque arm. The "torque arms" are the length of an arm where the torque is applied to the pendulum by the entry pallet start/end and exit pallet start/end
+
+        All angles are radians unless specifically called `_deg`
+
+        '''
+
+        #escape wheel pitch circle (end of teeth)
+        self.diameter=diameter
+        self.radius = diameter/2
+        self.pendulum_length=pendulum_length
+        self.teeth=teeth
+        self.tooth_span=tooth_span
+        self.an=degToRad(entry_angle_deg)
+        #initial value
+        self.ax=degToRad(90)
+        self.T=T
+        self.mean_torque_arm_length=mean_torque_arm_length
+        self.escaping_arc_deg=escaping_arc_deg
+
+        self.tooth_angle = math.pi*2/self.teeth
+
+
+    def generate_geometry(self):
+
+        #escape wheel centred on 0,0
+        # ========== STEP ONE ===========
+
+        #[3] At the start of exit impulse, the exit pallet nib locking corner is captured by an escape wheel tooth tip located at point D
+        D_start_of_exit_impulse = polar(0, self.radius)
+        line_3 = Line((0,0), anotherPoint=D_start_of_exit_impulse)
+        #[4] clockwise by half a tooth angle
+        end_of_exit_impulse_angle = -self.tooth_angle/2
+        end_of_exit_impulse = polar(end_of_exit_impulse_angle, self.radius)
+        line_4 = Line((0,0), anotherPoint=end_of_exit_impulse)
+
+        #[5]
+        minimum_tooth_space = math.floor(self.tooth_span)
+        minimum_tooth_angle = minimum_tooth_space * math.pi*2 / self.teeth
+        #I think this is end of the entry impulse?
+        end_of_entry_impulse = polar(0 + minimum_tooth_angle, self.radius)
+        line_5 = Line((0,0), anotherPoint=end_of_entry_impulse)
+
+        #[6]
+        maximum_tooth_space = math.ceil(self.tooth_span)
+        maxiumum_tooth_angle = maximum_tooth_space*math.pi*2 / self.teeth
+        #anticlockwise from end of exit impulse by maximum arc of teeth
+        J_angle = end_of_exit_impulse_angle + maxiumum_tooth_angle
+        J_start_of_entry_impulse = polar( J_angle, self.radius)
+        line_6 = Line((0,0), anotherPoint=J_start_of_entry_impulse)
+
+
+        #[7]
+        line_7_entry_pallet_start_line_of_action = Line(J_start_of_entry_impulse, angle= J_angle + math.pi + self.an)
+
+        #[8]
+        line_8_exit_pallet_start_line_of_action = Line(D_start_of_exit_impulse, angle = 0 + self.ax)
+
+        step_one_figure_35 = cq.Workplane("XY").circle(self.radius)
+        step_one_figure_35 = step_one_figure_35.add(line_3.get2D(self.radius))
+        step_one_figure_35 = step_one_figure_35.add(line_4.get2D(self.radius))
+        step_one_figure_35 = step_one_figure_35.add(line_5.get2D(self.radius))
+        step_one_figure_35 = step_one_figure_35.add(line_6.get2D(self.radius))
+        step_one_figure_35 = step_one_figure_35.add(line_7_entry_pallet_start_line_of_action.get2D())
+        step_one_figure_35 = step_one_figure_35.add(line_8_exit_pallet_start_line_of_action.get2D())
+
+        return step_one_figure_35
+        # ============ STEP TWO ============
+        #what happened to [9]?
+
+
+        #[10]
+        #arbitary to start with
+        d = degToRad(11)
+        #I think this will be the centre of the torque arms?
+        radial_ten = Line([0,0],d)
+
+        #[11]
+        # lines_8_and_10_intersect = radial_ten.intersection(line_8_exit_pallet_start_line_of_action)
+        # lines_7_and_10_intersect = radial_ten.intersection(line_7_entry_pallet_start_line_of_action)
+
+        intersection_of_lines_7_and_8 = line_7_entry_pallet_start_line_of_action.intersection(line_8_exit_pallet_start_line_of_action)
+
+        average_direction_of_lines_7_and_8 = averageOfTwoPoints(line_7_entry_pallet_start_line_of_action.dir, line_8_exit_pallet_start_line_of_action.dir)
+        #line 11 bisects the acute angle between lines [7] and [8]
+        line_11 = Line(intersection_of_lines_7_and_8, average_direction_of_lines_7_and_8)
+        #[12]
+        # line_12 = Line(Z, line_7_entry_pallet_start_line_of_action.get_perpendicular_direction(clockwise=False))
+
 
 
 class Pendulum:

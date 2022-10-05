@@ -28,7 +28,7 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.Escapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
 # lift=4
 # drop=2

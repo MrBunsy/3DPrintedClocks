@@ -45,6 +45,8 @@ I think this is similar to older cuckoos I've seen. It will result in a visible 
 for the first clock and decide if I want to switch to something else later. 
 '''
 
+
+
 class GoingTrain:
 
     def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
@@ -88,9 +90,9 @@ class GoingTrain:
 
         if pendulum_length < 0 and pendulum_period > 0:
             #calulate length from period
-            self.pendulum_length = GRAVITY * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
+            self.pendulum_length = getPendulumLength(pendulum_period)
         elif pendulum_period < 0 and pendulum_length > 0:
-            self.pendulum_period = 2 * math.pi * math.sqrt(pendulum_length / GRAVITY)
+            self.pendulum_period = getPendulumPeriod(pendulum_length)
         else:
             raise ValueError("Must provide either pendulum length or perioud, not neither or both")
 
@@ -128,7 +130,7 @@ class GoingTrain:
 
         self.escapement=escapement
         if escapement is None:
-            self.escapement = Escapement(teeth=escapement_teeth)
+            self.escapement = AnchorEscapement(teeth=escapement_teeth)
         #
         self.escapement_time = self.pendulum_period * self.escapement.teeth
 
