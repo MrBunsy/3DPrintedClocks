@@ -568,15 +568,65 @@ class GrasshopperEscapement:
         self.tooth_span=tooth_span
         self.an=degToRad(entry_angle_deg)
         #initial value
-        self.ax=degToRad(90)
+        ax=degToRad(90)
         self.T=T
         self.mean_torque_arm_length=mean_torque_arm_length
         self.escaping_arc_deg=escaping_arc_deg
 
+        self.diagrams = []
+
+
         self.tooth_angle = math.pi*2/self.teeth
 
+        #with ax=90 Iteration 52, testD: 12.220855468769212, errorTest: 1.9317880628477724e-14
+        d, En, Ex = self.balanceEscapingArcs(90)
 
-    def generate_geometry(self, d_deg=11, active_length_entry_pallet_arm=10, active_length_exit_pallet_arm=7.5):
+        print("Balanced escaping arc of {:.2f}deg with d of {:.4f}".format(radToDeg(En), d))
+
+
+
+    def balanceEscapingArcs(self, ax_deg=90):
+        # inspired by getRadiusForPointsOnAnArc, binary search to find best D, which balances the escaping arcs
+        # see BALANCING THE ESCAPING ARCS
+        iterations = 100
+
+        minD = 9
+        maxD = 14
+        testD = minD
+        En, Ex = self.generate_geometry(testD)
+        errorTest = Ex - En
+        lastTestD = 0
+
+        for i in range(iterations):
+            # print("Iteration {}, testR: {}, errorTest: {}".format(i,testR, errorTest))
+            if errorTest < 0:
+                # d is too small
+                minD = testD
+
+            if errorTest > 0:
+                # d is too large
+                maxD = testD
+
+            if errorTest == 0 or testD == lastTestD:
+                # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testD anymore
+                print("Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
+                # print("found after {} iterations".format(i))
+                break
+            lastTestD = testD
+            testD = (minD + maxD) / 2
+            En, Ex = self.generate_geometry(testD)
+            errorTest = Ex - En
+
+        return (testD, En, Ex)
+
+    def generate_geometry(self, d_deg=11, ax_deg=90):
+
+        #default to 90, can adjust to control the arc
+        ax = degToRad(ax_deg)
+
+        #these can apparently be arbitrary as the result comes out the same
+        active_length_entry_pallet_arm = 10
+        active_length_exit_pallet_arm = 7.5
 
         #escape wheel centred on 0,0
         # ========== STEP ONE ===========
@@ -609,7 +659,7 @@ class GrasshopperEscapement:
         line_7_entry_start_of_impulse_action = Line(J_start_of_entry_impulse, angle= J_angle + math.pi + self.an)
 
         #[8]
-        line_8_exit_pallet_start_line_of_action = Line(D_start_of_exit_impulse, angle = 0 + self.ax)
+        line_8_exit_pallet_start_line_of_action = Line(D_start_of_exit_impulse, angle = 0 + ax)
 
         step_one_figure_35 = cq.Workplane("XY").circle(self.radius)
         step_one_figure_35 = step_one_figure_35.add(line_3.get2D(self.radius))
@@ -802,7 +852,50 @@ class GrasshopperEscapement:
         step_six_figure_40 = step_six_figure_40.add(line_36_FG.get2D(length=5, both_directions=True))
         step_six_figure_40 = step_six_figure_40.add(cq.Workplane("XY").moveTo(F[0], F[1]).circle(0.5))
         step_six_figure_40 = step_six_figure_40.add(cq.Workplane("XY").moveTo(G[0], G[1]).circle(0.5))
-        return step_six_figure_40
+        # return step_six_figure_40
+
+
+        # ============= STEP SEVEN ==============
+        #This line represents the physical connection between the escapement frame arbor axis and the entry pallet arm pivot at the end of entry impulse
+        line_37_ZN = Line(Z, anotherPoint=N)
+        line_38_ZP = Line(Z, anotherPoint=P)
+
+        #. This is the escaping arc of the entry geometry.
+        En = line_38_ZP.getAngle() - line_37_ZN.getAngle()
+
+
+
+        line_39_ZF = Line(Z, anotherPoint=F)
+        line_40_ZG = Line(Z, anotherPoint=G)
+
+        Ex = line_40_ZG.getAngle() - line_39_ZF.getAngle()
+
+
+
+        step_seven_figure_40 = cq.Workplane("XY").circle(self.radius)
+        step_seven_figure_40 = step_seven_figure_40.add(line_3.get2D(self.radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_4.get2D(self.radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_5.get2D(self.radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_6.get2D(self.radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_10.get2D())
+        step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(Z[0], Z[1]).circle(0.5))
+        step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(P[0], P[1]).circle(0.5))
+        step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(N[0], N[1]).circle(0.5))
+        step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(F[0], F[1]).circle(0.5))
+        step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(G[0], G[1]).circle(0.5))
+
+        step_seven_figure_40 = step_seven_figure_40.add(line_37_ZN.get2D())
+        step_seven_figure_40 = step_seven_figure_40.add(line_38_ZP.get2D())
+
+        step_seven_figure_40 = step_seven_figure_40.add(line_39_ZF.get2D())
+        step_seven_figure_40 = step_seven_figure_40.add(line_40_ZG.get2D())
+
+
+        # return step_seven_figure_40
+
+        self.diagrams = [step_one_figure_35, step_two_figure_36, step_three_figure_37, step_four_figure_38, step_five_figure_39, step_six_figure_40, step_seven_figure_40]
+
+        return [En, Ex]
 
 class Pendulum:
     '''

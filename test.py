@@ -136,7 +136,9 @@ if 'show_object' not in globals():
 
 grasshopper = GrasshopperEscapement()
 
-show_object(grasshopper.generate_geometry())
+show_object(grasshopper.diagrams[-2])
+
+# show_object(grasshopper.generate_geometry())
 
 #
 # rack = Rack()
