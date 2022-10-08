@@ -543,7 +543,7 @@ def getSpanner(size=4, thick=4, handle_length=150):
 
 class GrasshopperEscapement:
 
-    def __init__(self, diameter=100, pendulum_length=getPendulumLength(1), teeth=120, tooth_span=17.5, entry_angle_deg=90, T=3/2, mean_torque_arm_length=10, escaping_arc_deg=9.75):
+    def __init__(self, diameter=152.4, pendulum_length=getPendulumLength(1), teeth=120, tooth_span=17.5, entry_angle_deg=90, T=3/2, mean_torque_arm_length=10, escaping_arc_deg=9.75, d=-1, ax_deg=-1):
         '''
         From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
 
@@ -558,42 +558,98 @@ class GrasshopperEscapement:
 
         All angles are radians unless specifically called `_deg`
 
+        If an escaping arc is provided this will calculate the best 'd' and 'ax' to provide that escaping arc. This is slow, so you can provide pre-calculated d and ax instead
+
         '''
 
         #escape wheel pitch circle (end of teeth)
+        #"For example, the 120 tooth escape wheel, at almost 150 mm in diameter"  - Perfecting the Harrison Twin Pivot Grasshopper Escapement
+        #Ken kuo's escapement animation on youtube has a diameter of 200mm
+        #different David Heskin document says it was 6" originally - so 152.4mm
         self.diameter=diameter
         self.radius = diameter/2
         self.pendulum_length=pendulum_length
         self.teeth=teeth
         self.tooth_span=tooth_span
         self.an=degToRad(entry_angle_deg)
-        #initial value
-        ax=degToRad(90)
         self.T=T
         self.mean_torque_arm_length=mean_torque_arm_length
-        self.escaping_arc_deg=escaping_arc_deg
+        # self.escaping_arc_deg=escaping_arc_deg
+        self.escaping_arc = degToRad(escaping_arc_deg)
 
         self.diagrams = []
 
+        #bits internally needed to generate an escaping arc that we want
+        # self.ax_deg=ax_deg
+        # self.d=d
 
         self.tooth_angle = math.pi*2/self.teeth
 
-        #with ax=90 Iteration 52, testD: 12.220855468769212, errorTest: 1.9317880628477724e-14
-        d, En, Ex = self.balanceEscapingArcs(90)
+        '''with ax=90
+        Iteration 52, testD: 12.220855468769212, errorTest: 1.9317880628477724e-14
+        Balanced escaping arc of 9.65deg with d of 12.2209
+        
+        or with acceptable error = 0.1
+        Iteration 6, testD: 12.203125, errorTest: -1.2386825430033e-05
+        Balanced escaping arc of 9.64deg with d of 12.2031
+        '''
 
-        print("Balanced escaping arc of {:.2f}deg with d of {:.4f}".format(radToDeg(En), d))
+        if ax_deg < 0 or d < 0:
+            #auto calculate the best settings to get the chosen escaping arc
+            # d, En, Ex = self.balanceEscapingArcs(91, 0.1)
+            ax_deg, d, En, Ex = self.chooseEscapingArc(acceptableError=0.01)
+            print("Balanced escaping arc of {:.2f}deg with d of {:.4f} and ax of {:.2f}".format(radToDeg(En), d, ax_deg))
 
+    def chooseEscapingArc(self, iterations = 100, acceptableError = 0.1):
+        '''
+        Fiddle with values of ax (exit angle) and balance the escaping arcs so we can choose what we want the escaping arc to be
 
+        uses same binary search idea as balanceEscapingArcs and getRadiusForPointsOnAnArc
 
-    def balanceEscapingArcs(self, ax_deg=90):
+        larger ax values seem to result in larger arcs
+        '''
+
+        #use acceptableError larger than zero to speed this up
+
+        iterations = 100
+        minAx=85
+        maxAx=95
+        testAx_deg=minAx
+        d, En, Ex = self.balanceEscapingArcs(testAx_deg, acceptableError)
+        errorTest=self.escaping_arc - En
+        lastTestAx = 0
+
+        for i in range(iterations):
+            print("chooseEscapingArc Iteration {}, testAx: {}, errorTest: {}".format(i,testAx_deg, errorTest))
+            if errorTest > 0:
+                # ax is too small
+                minAx = testAx_deg
+
+            if errorTest < 0:
+                # ax is too large
+                maxAx = testAx_deg
+
+            if errorTest == 0 or abs(testAx_deg - lastTestAx) <= acceptableError:
+                # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testD anymore
+                print("Iteration {}, testAx: {}, errorTest: {}".format(i,testAx_deg, errorTest))
+                # print("found after {} iterations".format(i))
+                d, En, Ex = self.balanceEscapingArcs(testAx_deg, acceptableError=0)
+                break
+            lastTestAx = testAx_deg
+            testAx_deg = (minAx + maxAx) / 2
+            d, En, Ex = self.balanceEscapingArcs(testAx_deg, acceptableError)
+            errorTest = self.escaping_arc - En
+
+        return (testAx_deg, d, En, Ex)
+
+    def balanceEscapingArcs(self, ax_deg=90, acceptableError=0, iterations = 100):
         # inspired by getRadiusForPointsOnAnArc, binary search to find best D, which balances the escaping arcs
         # see BALANCING THE ESCAPING ARCS
-        iterations = 100
 
         minD = 9
         maxD = 14
         testD = minD
-        En, Ex = self.generate_geometry(testD)
+        En, Ex = self.generate_geometry(testD, ax_deg=ax_deg)
         errorTest = Ex - En
         lastTestD = 0
 
@@ -607,14 +663,14 @@ class GrasshopperEscapement:
                 # d is too large
                 maxD = testD
 
-            if errorTest == 0 or testD == lastTestD:
+            if errorTest == 0 or abs(testD - lastTestD) <= acceptableError:
                 # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testD anymore
-                print("Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
+                print("balanceEscapingArcs Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
                 # print("found after {} iterations".format(i))
                 break
             lastTestD = testD
             testD = (minD + maxD) / 2
-            En, Ex = self.generate_geometry(testD)
+            En, Ex = self.generate_geometry(testD, ax_deg=ax_deg)
             errorTest = Ex - En
 
         return (testD, En, Ex)
@@ -627,6 +683,13 @@ class GrasshopperEscapement:
         #these can apparently be arbitrary as the result comes out the same
         active_length_entry_pallet_arm = 10
         active_length_exit_pallet_arm = 7.5
+
+        def circleAt(point, r=0.5, text=None):
+            circle = cq.Workplane("XY").moveTo(point[0], point[1]).circle(r)
+            if text is not None:
+                circle = circle.add(cq.Workplane("XY").text(text, fontsize=r*4, distance=0.1).translate((point[0] + r*2, point[1])))
+
+            return circle
 
         #escape wheel centred on 0,0
         # ========== STEP ONE ===========
@@ -893,7 +956,55 @@ class GrasshopperEscapement:
 
         # return step_seven_figure_40
 
-        self.diagrams = [step_one_figure_35, step_two_figure_36, step_three_figure_37, step_four_figure_38, step_five_figure_39, step_six_figure_40, step_seven_figure_40]
+        # ============= INSTANTANEOUS PALLET NIB LOCKING CORNER LIFTS ====================
+        #where the entry composer should keep the pallet arms - this where they come to rest after they "spring" away from the tooth
+
+        #Perfecting the Harrison Twin Pivot Grasshopper Escapement, an older publication from David Heskin, goes into slightly more detail but is slightly different
+
+        #K* is where the entry nib comes to rest: "derived from circular arcs through J centred at Z, through K centred at N"
+        circle_around_Z_to_J_r = distanceBetweenTwoPoints(Z, J_start_of_entry_impulse)
+        circle_around_N_r = distanceBetweenTwoPoints(K_end_of_entry_impulse, N)
+
+        Kstar_possibilities = get_circle_intersections(Z, circle_around_Z_to_J_r, N, circle_around_N_r)
+        #find the one that's nearest to K, not the one that's mirrored on the other size soemwhere
+        Kstar_possibility_distances = [distanceBetweenTwoPoints(K_end_of_entry_impulse, Kstar) for Kstar in Kstar_possibilities]
+        if Kstar_possibility_distances[0] < Kstar_possibility_distances[1]:
+            Kstar = Kstar_possibilities[0]
+        else:
+            Kstar = Kstar_possibilities[1]
+
+        # C* is where the exit nib comes to rest : "derived from circular arcs ... through Dcentred at Z and through C centred at G"
+        circle_around_Z_to_D_r = distanceBetweenTwoPoints(Z, D_start_of_exit_impulse)
+        circle_around_G_r = distanceBetweenTwoPoints(G, C_end_of_exit_impulse)
+        Cstar_posibilities = get_circle_intersections(Z, circle_around_Z_to_D_r, G, circle_around_G_r)
+
+        Cstar_possibility_distances = [distanceBetweenTwoPoints(C_end_of_exit_impulse, Cstar) for Cstar in Cstar_posibilities]
+        if Cstar_possibility_distances[0] < Cstar_possibility_distances[1]:
+            Cstar = Cstar_posibilities[0]
+        else:
+            Cstar = Cstar_posibilities[1]
+
+        diagram_for_points = cq.Workplane("XY")
+        diagram_for_points = diagram_for_points.add(cq.Workplane("XY").circle(self.radius))
+        diagram_for_points = diagram_for_points.add(line_6.get2D(length=self.radius))
+        diagram_for_points = diagram_for_points.add(line_5.get2D(length=self.radius))
+        diagram_for_points = diagram_for_points.add(line_3.get2D(length=self.radius))
+        diagram_for_points = diagram_for_points.add(line_4.get2D(length=self.radius))
+        diagram_for_points.add(circleAt(Z, text="Z"))
+        diagram_for_points = diagram_for_points.add(line_10.get2D(length=distanceBetweenTwoPoints((0,0), Z)))
+        diagram_for_points.add(circleAt(J_start_of_entry_impulse, text="J"))
+        diagram_for_points.add(circleAt(K_end_of_entry_impulse, text="K"))
+        diagram_for_points.add(circleAt(Kstar, text="K*"))
+        diagram_for_points.add(circleAt(P, text="P"))
+        diagram_for_points.add(circleAt(N, text="N"))
+        diagram_for_points.add(circleAt(C_end_of_exit_impulse, text="C"))
+        diagram_for_points.add(circleAt(D_start_of_exit_impulse, text="D"))
+        diagram_for_points.add(circleAt(F, text="F"))
+        diagram_for_points.add(circleAt(G, text="G"))
+        diagram_for_points.add(circleAt(Cstar, text="C*"))
+
+
+        self.diagrams = [step_one_figure_35, step_two_figure_36, step_three_figure_37, step_four_figure_38, step_five_figure_39, step_six_figure_40, step_seven_figure_40, diagram_for_points]
 
         return [En, Ex]
 

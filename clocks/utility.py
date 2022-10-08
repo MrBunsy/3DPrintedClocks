@@ -207,6 +207,50 @@ def getPreferredTangentThroughPoint(circle_centre, circle_r, point, clockwise=Tr
     #     if matches:
     #         return tangent
 
+# def getCircleIntersectionPoints(a_centre, a_r, b_centre, b_r):
+#     '''
+#     circle a centred at a_centre, radius a_r
+#     circle b centred at b_centre, radius b_r
+#     '''
+#
+#     dist = distanceBetweenTwoPoints(a_centre, b_centre)
+#
+#     if dist <= a_r + b_r and dist >= abs(a_r - b_r):
+#         #circles will intersect, not too far apart and not inside each other
+def get_circle_intersections(circle0_centre, r0, circle1_centre, r1):
+    '''
+    dervived from #https: // stackoverflow.com / a / 55817881 with little alteration
+    returns array of points
+    '''
+
+    # circle 1: (x0, y0), radius r0
+    # circle 2: (x1, y1), radius r1
+    x0, y0 = circle0_centre
+    x1, y1 = circle1_centre
+    d = math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+
+    # non intersecting
+    if d > r0 + r1:
+        return []
+    # One circle within other
+    if d < abs(r0 - r1):
+        return []
+    # coincident circles
+    if d == 0 and r0 == r1:
+        return []
+    else:
+        a = (r0 ** 2 - r1 ** 2 + d ** 2) / (2 * d)
+        h = math.sqrt(r0 ** 2 - a ** 2)
+        x2 = x0 + a * (x1 - x0) / d
+        y2 = y0 + a * (y1 - y0) / d
+        x3 = x2 + h * (y1 - y0) / d
+        y3 = y2 - h * (x1 - x0) / d
+
+        x4 = x2 - h * (y1 - y0) / d
+        y4 = y2 + h * (x1 - x0) / d
+
+        return [(x3, y3), (x4, y4)]
+
 
 def getTangentsThroughPoint(circle_centre, circle_r, point):
     '''

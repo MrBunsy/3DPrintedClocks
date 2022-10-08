@@ -97,7 +97,7 @@ if 'show_object' not in globals():
 
 
 # show_object(getHandDemo(assembled=True, chunky=True))
-
+# show_object(getGearDemo())
 
 
 # show_object(getSpanner())
@@ -134,9 +134,7 @@ if 'show_object' not in globals():
 #
 # print(a.get_perpendicular_direction(False))
 
-grasshopper = GrasshopperEscapement()
 
-show_object(grasshopper.diagrams[-2])
 
 # show_object(grasshopper.generate_geometry())
 
@@ -184,7 +182,15 @@ show_object(grasshopper.diagrams[-2])
 # show_object(getGearDemo(justStyle=GearStyle.SPOKES))
 # show_object(getGearDemo())
 # show_object(getGearDemo(justStyle=GearStyle.FLOWER))
-#
+# show_object(getGearDemo(justStyle=GearStyle.ARCS))
+
+
+grasshopper = GrasshopperEscapement(escaping_arc_deg=9.5)
+show_object(grasshopper.diagrams[-1])
+
+# show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
+
+
 # path = "out"
 # name="test_train"
 # out = os.path.join(path, "{}.stl".format(name))

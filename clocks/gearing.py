@@ -263,7 +263,7 @@ class Gear:
         else:
             #for more tightly controlled wheels were we need a certain amount of space in the centre
             #note, this is a bodge, I really need to calculate the sagitta of the outer circle so I can correctly calculate the desired inner sagitta
-            innerSagitta = (rimRadius - innerRadius)*0.675
+            innerSagitta = (rimRadius - innerRadius)*0.675#(innerRadius/rimRadius)**1.5#
 
         arms = 5
         #line it up so there's a nice arm a the bottom
@@ -622,6 +622,7 @@ class Arbour:
         self.frontSideExtension=0
         self.rearSideExtension=0
         self.arbourExtensionMaxR=self.arbourD
+        self.useArbourExtenders=False
         self.frontPlateThick = 0
         self.pendulumSticksOut = 0
         #so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
@@ -671,6 +672,8 @@ class Arbour:
         self.frontSideExtension=frontSideExtension
         self.rearSideExtension=rearSideExtension
         self.arbourExtensionMaxR=maxR
+        #the motion works never has this set
+        self.useArbourExtenders = True
 
         self.frontPlateThick=frontPlateThick
         self.pendulumSticksOut=pendulumSticksOut
@@ -803,7 +806,7 @@ class Arbour:
         pinionThick = self.pinionThick
         if self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
 
-            if (self.pinionAtFront and not self.needArbourExtension(front=True)) or ((not self.pinionAtFront) and not self.needArbourExtension(front=False)):
+            if ((self.pinionAtFront and not self.needArbourExtension(front=True)) or ((not self.pinionAtFront) and not self.needArbourExtension(front=False))) and self.useArbourExtenders:
                 '''
                 pinion would be up against the clock plate
                 Reduce thickness of pinion a tiny bit and give it a standoff
@@ -949,6 +952,10 @@ class Arbour:
         length = self.frontSideExtension if front else self.rearSideExtension
         bearing = getBearingInfo(self.arbourD)
 
+        if bearing is None:
+            #i think this can only happen for the motion works arbour at the moment, where we don't need standoffs anyway, so bodge for now
+            return None
+
         if length == 0 and front == self.pinionAtFront:
             #bodge to always have a bearing standoff
             length = self.arbourBearingStandoff
@@ -1001,6 +1008,8 @@ class Arbour:
         return shape
 
     def needArbourExtension(self, front=True):
+        if not self.useArbourExtenders:
+            return False
 
         if front and (self.frontSideExtension - self.arbourBearingStandoff < LAYER_THICK):
             return False
