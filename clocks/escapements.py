@@ -604,44 +604,30 @@ class GrasshopperEscapement:
             # d, En, Ex = self.balanceEscapingArcs(91, 0.1)
             ax_deg, d, En, Ex = self.chooseEscapingArc(acceptableError=acceptableError)
             print("Balanced escaping arc of {:.4f}deg with d of {:.8f} and ax of {:.8f}".format(radToDeg(En), d, ax_deg))
-            diameter, M = self.chooseDiameter(d_deg=d, ax_deg=ax_deg, acceptableError=acceptableError)
+            diameter, M = self.chooseDiameter(d_deg=d, ax_deg=ax_deg)
             print("Diameter of {:.8f} results in mean torque arm of {:.4f}".format(diameter, M))
             self.diameter = diameter
             self.radius = diameter / 2
         else:
+            #all variables provided, just use them
             self.generate_geometry(d_deg=d, ax_deg=ax_deg, diameter=diameter)
+            self.diameter = diameter
+            self.radius = diameter / 2
 
         self.checkGeometry()
 
-    def chooseDiameter(self, d_deg, ax_deg, iterations = 100, acceptableError = 0.1):
+    def chooseDiameter(self, d_deg, ax_deg):
         '''
         Once the escaping arcs are balanced, use this to get the mean torque arm length correct
+
+        linear scaling works fine for this - didn't need a binary search!
         '''
-        minD = 100
-        maxD = 300
-        testD = minD
+        testD = 100
         En, Ex, M = self.generate_geometry(ax_deg=ax_deg, d_deg=d_deg, diameter=testD)
-        errorTest = M - self.mean_torque_arm_length
-        lastTestD = 0
-
-        for i in range(iterations):
-            if errorTest < 0:
-                # d is too small
-                minD = testD
-
-            if errorTest > 0:
-                # d is too large
-                maxD = testD
-
-            if errorTest == 0 or abs(testD - lastTestD) <= acceptableError:
-                # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testD anymore
-                print("chooseDiameter Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
-                break
-            lastTestD = testD
-            testD = (minD + maxD) / 2
-            En, Ex, M = self.generate_geometry(ax_deg=ax_deg, d_deg=d_deg, diameter=testD)
-            errorTest = M - self.mean_torque_arm_length
-        return testD, M
+        MRatio = self.mean_torque_arm_length/M
+        diameter = testD * MRatio
+        En, Ex, M = self.generate_geometry(ax_deg=ax_deg, d_deg=d_deg, diameter=diameter)
+        return diameter, M
 
     def chooseEscapingArc(self, iterations = 100, acceptableError = 0.1):
         '''
