@@ -523,6 +523,19 @@ class Line:
     def getAngle(self):
         return math.atan2(self.dir[1], self.dir[0])
 
+    def getAngleBetweenLines(self, b, acute=True):
+        aAngle=self.getAngle()
+        bAngle=b.getAngle()
+        angle = abs(aAngle - bAngle)
+        if angle > math.pi/2:
+            angle = math.pi - angle
+
+        if acute:
+            return angle
+        else:
+            return math.pi - angle
+
+
     def intersection(self, b):
         '''
         https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line

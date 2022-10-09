@@ -578,6 +578,7 @@ class GrasshopperEscapement:
         self.escaping_arc = degToRad(escaping_arc_deg)
 
         self.diagrams = []
+        self.geometry = {}
 
         #bits internally needed to generate an escaping arc that we want
         # self.ax_deg=ax_deg
@@ -598,7 +599,9 @@ class GrasshopperEscapement:
             #auto calculate the best settings to get the chosen escaping arc
             # d, En, Ex = self.balanceEscapingArcs(91, 0.1)
             ax_deg, d, En, Ex = self.chooseEscapingArc(acceptableError=0.01)
-            print("Balanced escaping arc of {:.2f}deg with d of {:.4f} and ax of {:.2f}".format(radToDeg(En), d, ax_deg))
+            print("Balanced escaping arc of {:.2f}deg with d of {:.4f} and ax of {:.4f}".format(radToDeg(En), d, ax_deg))
+        else:
+            self.generate_geometry(d_deg=d, ax_deg=ax_deg)
 
     def chooseEscapingArc(self, iterations = 100, acceptableError = 0.1):
         '''
@@ -1003,10 +1006,71 @@ class GrasshopperEscapement:
         diagram_for_points.add(circleAt(G, text="G"))
         diagram_for_points.add(circleAt(Cstar, text="C*"))
 
+        self.geometry={}
+        #centre of escape wheel, just assumed until now
+        self.geometry["O"]=(0,0)
+        #entry nib start of impulse
+        self.geometry["J"]=J_start_of_entry_impulse
+        #entry nib end of impulse. Angle JOK is half a tooth
+        self.geometry["K"] = K_end_of_entry_impulse
+        #where the nib ends up just after being released. K* (relative to N) is where the exit composer should hold the entry pivot arm
+        self.geometry["Kstar"]=Kstar
+        #the entry pallet pivot point at start of impulse
+        self.geometry["P"]=P
+        #the entry pallet pivot point at end of impulse (when the nib swings from K to K*)
+        self.geometry["N"]=N
+        #The 'anchor' arbour pivot point - fixed to the clock.
+        self.geometry["Z"]=Z
+        #exit nib start of impulse
+        self.geometry["D"]=D_start_of_exit_impulse
+        #exit nib end of impulse. Angle DOC is half a tooth
+        self.geometry["C"]=C_end_of_exit_impulse
+        #where the exit nib ends up just after being released. C* (relative to G) is where the exit composer should hold the exit pivot arm
+        self.geometry["Cstar"]=Cstar
+        #exit pallet pivot point at start of exit impulse
+        self.geometry["F"]=F
+        #exit pallet pivot point at end of impulse
+        self.geometry["G"]=G
 
         self.diagrams = [step_one_figure_35, step_two_figure_36, step_three_figure_37, step_four_figure_38, step_five_figure_39, step_six_figure_40, step_seven_figure_40, diagram_for_points]
 
         return [En, Ex]
+
+    def checkGeometry(self, geometry=None, acceptableError=0.00001, loud=False):
+        if geometry is None:
+            geometry = self.geometry
+        #check 1: Angle COD should be the angle subtended by half an escape wheel tooth space
+        half_tooth_angle = (math.pi*2/self.teeth)/2
+        line_CO = Line(geometry["C"], anotherPoint=geometry["O"])
+        line_OD = Line(geometry["O"], anotherPoint=geometry["D"])
+        COD = line_CO.getAngleBetweenLines(line_OD)
+
+        assert abs(COD - half_tooth_angle) < acceptableError, "check 1: Angle COD should be the angle subtended by half an escape wheel tooth space"
+        if loud:
+            print("COD: {}deg, half tooth angle:{}deg".format(radToDeg(COD), radToDeg(half_tooth_angle)))
+
+        #check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned.
+        minimum_tooth_spaces = floor(self.tooth_span)*math.pi*2/self.teeth
+        line_DO = Line(geometry["D"], anotherPoint=geometry["O"])
+        line_OK = Line(geometry["O"], anotherPoint=geometry["K"])
+        DOK = line_DO.getAngleBetweenLines(line_OK)
+        assert abs(DOK - minimum_tooth_spaces) < acceptableError, "check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned."
+        if loud:
+            print("DOK: {}deg, minimum_tooth_spaces: {}deg".format(radToDeg(DOK), radToDeg(minimum_tooth_spaces)))
+
+        #check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned.
+        maximum_tooth_spaces = math.ceil(self.tooth_span)*math.pi*2/self.teeth
+        line_OJ = Line(geometry["O"], anotherPoint=geometry["J"])
+        COJ = line_CO.getAngleBetweenLines(line_OJ)
+        assert abs(COJ - maximum_tooth_spaces) < acceptableError, "check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned."
+        if loud:
+            print("COJ: {}deg, maximum_tooth_spaces: {}deg".format(radToDeg(COJ), radToDeg(maximum_tooth_spaces)))
+
+        #check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space
+        JOK = line_OJ.getAngleBetweenLines(line_OK)
+        assert abs(JOK - half_tooth_angle) < acceptableError, "check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space"
+        if loud:
+            print("JOK: {}deg, half tooth: {}deg".format(radToDeg(JOK), radToDeg(half_tooth_angle)))
 
 class Pendulum:
     '''

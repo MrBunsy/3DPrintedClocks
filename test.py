@@ -185,8 +185,9 @@ if 'show_object' not in globals():
 # show_object(getGearDemo(justStyle=GearStyle.ARCS))
 
 
-grasshopper = GrasshopperEscapement(escaping_arc_deg=9.5)
+grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
 show_object(grasshopper.diagrams[-1])
+grasshopper.checkGeometry(loud=True)
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 
