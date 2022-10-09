@@ -527,6 +527,8 @@ class Line:
         aAngle=self.getAngle()
         bAngle=b.getAngle()
         angle = abs(aAngle - bAngle)
+        while angle > math.pi:
+            angle -= math.pi
         if angle > math.pi/2:
             angle = math.pi - angle
 
@@ -535,6 +537,16 @@ class Line:
         else:
             return math.pi - angle
 
+    def getShortestDistanceToPoint(self, point):
+        '''
+        https://stackoverflow.com/a/39840218
+        '''
+        p1 = np.asarray(self.start)
+        p2 = np.asarray((self.start[0] + self.dir[0], self.start[1]+ self.dir[1]))
+        p3 = np.asarray(point)
+        d = np.linalg.norm(np.cross(p2 - p1, p1 - p3)) / np.linalg.norm(p2 - p1)
+
+        return d
 
     def intersection(self, b):
         '''
@@ -705,6 +717,9 @@ def getBearingInfo(innerD):
 
 
 def getPendulumLength(pendulum_period):
+    '''
+    in metres!
+    '''
     pendulum_length = GRAVITY * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
     return pendulum_length
 

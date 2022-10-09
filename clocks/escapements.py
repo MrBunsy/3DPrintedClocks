@@ -543,7 +543,7 @@ def getSpanner(size=4, thick=4, handle_length=150):
 
 class GrasshopperEscapement:
 
-    def __init__(self, diameter=152.4, pendulum_length=getPendulumLength(1), teeth=120, tooth_span=17.5, entry_angle_deg=90, T=3/2, mean_torque_arm_length=10, escaping_arc_deg=9.75, d=-1, ax_deg=-1):
+    def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, entry_angle_deg=90, T=3/2, mean_torque_arm_length=-1, escaping_arc_deg=9.75, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01):
         '''
         From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
 
@@ -566,14 +566,18 @@ class GrasshopperEscapement:
         #"For example, the 120 tooth escape wheel, at almost 150 mm in diameter"  - Perfecting the Harrison Twin Pivot Grasshopper Escapement
         #Ken kuo's escapement animation on youtube has a diameter of 200mm
         #different David Heskin document says it was 6" originally - so 152.4mm
-        self.diameter=diameter
-        self.radius = diameter/2
-        self.pendulum_length=pendulum_length
+        #This influences the mean torque arm! So it should be chosen with a binary search in order to get the preferred mean torque arm
+        # self.diameter=diameter
+        # self.radius = diameter/2
+        self.pendulum_length=pendulum_length_m*1000
         self.teeth=teeth
         self.tooth_span=tooth_span
         self.an=degToRad(entry_angle_deg)
         self.T=T
         self.mean_torque_arm_length=mean_torque_arm_length
+        if self.mean_torque_arm_length < 0:
+            #harrison's stipulation, "The mean  torque  arm  should be  one hundredth  of  the pendulum length"
+            self.mean_torque_arm_length = self.pendulum_length/100
         # self.escaping_arc_deg=escaping_arc_deg
         self.escaping_arc = degToRad(escaping_arc_deg)
 
@@ -595,13 +599,49 @@ class GrasshopperEscapement:
         Balanced escaping arc of 9.64deg with d of 12.2031
         '''
 
-        if ax_deg < 0 or d < 0:
-            #auto calculate the best settings to get the chosen escaping arc
+        if ax_deg < 0 or d < 0 or diameter < 0:
+            #auto calculate the best settings to get the chosen escaping arc and mean torque arm
             # d, En, Ex = self.balanceEscapingArcs(91, 0.1)
-            ax_deg, d, En, Ex = self.chooseEscapingArc(acceptableError=0.01)
-            print("Balanced escaping arc of {:.2f}deg with d of {:.4f} and ax of {:.4f}".format(radToDeg(En), d, ax_deg))
+            ax_deg, d, En, Ex = self.chooseEscapingArc(acceptableError=acceptableError)
+            print("Balanced escaping arc of {:.4f}deg with d of {:.8f} and ax of {:.8f}".format(radToDeg(En), d, ax_deg))
+            diameter, M = self.chooseDiameter(d_deg=d, ax_deg=ax_deg, acceptableError=acceptableError)
+            print("Diameter of {:.8f} results in mean torque arm of {:.4f}".format(diameter, M))
+            self.diameter = diameter
+            self.radius = diameter / 2
         else:
-            self.generate_geometry(d_deg=d, ax_deg=ax_deg)
+            self.generate_geometry(d_deg=d, ax_deg=ax_deg, diameter=diameter)
+
+        self.checkGeometry()
+
+    def chooseDiameter(self, d_deg, ax_deg, iterations = 100, acceptableError = 0.1):
+        '''
+        Once the escaping arcs are balanced, use this to get the mean torque arm length correct
+        '''
+        minD = 100
+        maxD = 300
+        testD = minD
+        En, Ex, M = self.generate_geometry(ax_deg=ax_deg, d_deg=d_deg, diameter=testD)
+        errorTest = M - self.mean_torque_arm_length
+        lastTestD = 0
+
+        for i in range(iterations):
+            if errorTest < 0:
+                # d is too small
+                minD = testD
+
+            if errorTest > 0:
+                # d is too large
+                maxD = testD
+
+            if errorTest == 0 or abs(testD - lastTestD) <= acceptableError:
+                # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testD anymore
+                print("chooseDiameter Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
+                break
+            lastTestD = testD
+            testD = (minD + maxD) / 2
+            En, Ex, M = self.generate_geometry(ax_deg=ax_deg, d_deg=d_deg, diameter=testD)
+            errorTest = M - self.mean_torque_arm_length
+        return testD, M
 
     def chooseEscapingArc(self, iterations = 100, acceptableError = 0.1):
         '''
@@ -613,8 +653,6 @@ class GrasshopperEscapement:
         '''
 
         #use acceptableError larger than zero to speed this up
-
-        iterations = 100
         minAx=85
         maxAx=95
         testAx_deg=minAx
@@ -652,7 +690,7 @@ class GrasshopperEscapement:
         minD = 9
         maxD = 14
         testD = minD
-        En, Ex = self.generate_geometry(testD, ax_deg=ax_deg)
+        En, Ex, M = self.generate_geometry(testD, ax_deg=ax_deg)
         errorTest = Ex - En
         lastTestD = 0
 
@@ -668,18 +706,19 @@ class GrasshopperEscapement:
 
             if errorTest == 0 or abs(testD - lastTestD) <= acceptableError:
                 # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testD anymore
-                print("balanceEscapingArcs Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
+                # print("balanceEscapingArcs Iteration {}, testD: {}, errorTest: {}".format(i, testD, errorTest))
                 # print("found after {} iterations".format(i))
                 break
             lastTestD = testD
             testD = (minD + maxD) / 2
-            En, Ex = self.generate_geometry(testD, ax_deg=ax_deg)
+            En, Ex, M = self.generate_geometry(testD, ax_deg=ax_deg)
             errorTest = Ex - En
 
         return (testD, En, Ex)
 
-    def generate_geometry(self, d_deg=11, ax_deg=90):
+    def generate_geometry(self, d_deg=11, ax_deg=90, diameter=152):
 
+        radius = diameter/2
         #default to 90, can adjust to control the arc
         ax = degToRad(ax_deg)
 
@@ -698,18 +737,18 @@ class GrasshopperEscapement:
         # ========== STEP ONE ===========
 
         #[3] At the start of exit impulse, the exit pallet nib locking corner is captured by an escape wheel tooth tip located at point D
-        D_start_of_exit_impulse = polar(0, self.radius)
+        D_start_of_exit_impulse = polar(0, radius)
         line_3 = Line((0,0), anotherPoint=D_start_of_exit_impulse)
         #[4] clockwise by half a tooth angle
         end_of_exit_impulse_angle = -self.tooth_angle/2
-        C_end_of_exit_impulse = polar(end_of_exit_impulse_angle, self.radius)
+        C_end_of_exit_impulse = polar(end_of_exit_impulse_angle, radius)
         line_4 = Line((0,0), anotherPoint=C_end_of_exit_impulse)
 
         #[5]
         minimum_tooth_space = math.floor(self.tooth_span)
         minimum_tooth_angle = minimum_tooth_space * math.pi*2 / self.teeth
         #I think this is end of the entry impulse?
-        K_end_of_entry_impulse = polar(0 + minimum_tooth_angle, self.radius)
+        K_end_of_entry_impulse = polar(0 + minimum_tooth_angle, radius)
         line_5 = Line((0,0), anotherPoint=K_end_of_entry_impulse)
 
         #[6]
@@ -717,7 +756,7 @@ class GrasshopperEscapement:
         maxiumum_tooth_angle = maximum_tooth_space*math.pi*2 / self.teeth
         #anticlockwise from end of exit impulse by maximum arc of teeth
         J_angle = end_of_exit_impulse_angle + maxiumum_tooth_angle
-        J_start_of_entry_impulse = polar( J_angle, self.radius)
+        J_start_of_entry_impulse = polar( J_angle, radius)
         line_6 = Line((0,0), anotherPoint=J_start_of_entry_impulse)
 
 
@@ -727,11 +766,11 @@ class GrasshopperEscapement:
         #[8]
         line_8_exit_pallet_start_line_of_action = Line(D_start_of_exit_impulse, angle = 0 + ax)
 
-        step_one_figure_35 = cq.Workplane("XY").circle(self.radius)
-        step_one_figure_35 = step_one_figure_35.add(line_3.get2D(self.radius))
-        step_one_figure_35 = step_one_figure_35.add(line_4.get2D(self.radius))
-        step_one_figure_35 = step_one_figure_35.add(line_5.get2D(self.radius))
-        step_one_figure_35 = step_one_figure_35.add(line_6.get2D(self.radius))
+        step_one_figure_35 = cq.Workplane("XY").circle(radius)
+        step_one_figure_35 = step_one_figure_35.add(line_3.get2D(radius))
+        step_one_figure_35 = step_one_figure_35.add(line_4.get2D(radius))
+        step_one_figure_35 = step_one_figure_35.add(line_5.get2D(radius))
+        step_one_figure_35 = step_one_figure_35.add(line_6.get2D(radius))
         step_one_figure_35 = step_one_figure_35.add(line_7_entry_start_of_impulse_action.get2D())
         step_one_figure_35 = step_one_figure_35.add(line_8_exit_pallet_start_line_of_action.get2D())
 
@@ -938,11 +977,11 @@ class GrasshopperEscapement:
 
 
 
-        step_seven_figure_40 = cq.Workplane("XY").circle(self.radius)
-        step_seven_figure_40 = step_seven_figure_40.add(line_3.get2D(self.radius))
-        step_seven_figure_40 = step_seven_figure_40.add(line_4.get2D(self.radius))
-        step_seven_figure_40 = step_seven_figure_40.add(line_5.get2D(self.radius))
-        step_seven_figure_40 = step_seven_figure_40.add(line_6.get2D(self.radius))
+        step_seven_figure_40 = cq.Workplane("XY").circle(radius)
+        step_seven_figure_40 = step_seven_figure_40.add(line_3.get2D(radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_4.get2D(radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_5.get2D(radius))
+        step_seven_figure_40 = step_seven_figure_40.add(line_6.get2D(radius))
         step_seven_figure_40 = step_seven_figure_40.add(line_10.get2D())
         step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(Z[0], Z[1]).circle(0.5))
         step_seven_figure_40 = step_seven_figure_40.add(cq.Workplane("XY").moveTo(P[0], P[1]).circle(0.5))
@@ -988,11 +1027,11 @@ class GrasshopperEscapement:
             Cstar = Cstar_posibilities[1]
 
         diagram_for_points = cq.Workplane("XY")
-        diagram_for_points = diagram_for_points.add(cq.Workplane("XY").circle(self.radius))
-        diagram_for_points = diagram_for_points.add(line_6.get2D(length=self.radius))
-        diagram_for_points = diagram_for_points.add(line_5.get2D(length=self.radius))
-        diagram_for_points = diagram_for_points.add(line_3.get2D(length=self.radius))
-        diagram_for_points = diagram_for_points.add(line_4.get2D(length=self.radius))
+        diagram_for_points = diagram_for_points.add(cq.Workplane("XY").circle(radius))
+        diagram_for_points = diagram_for_points.add(line_6.get2D(length=radius))
+        diagram_for_points = diagram_for_points.add(line_5.get2D(length=radius))
+        diagram_for_points = diagram_for_points.add(line_3.get2D(length=radius))
+        diagram_for_points = diagram_for_points.add(line_4.get2D(length=radius))
         diagram_for_points.add(circleAt(Z, text="Z"))
         diagram_for_points = diagram_for_points.add(line_10.get2D(length=distanceBetweenTwoPoints((0,0), Z)))
         diagram_for_points.add(circleAt(J_start_of_entry_impulse, text="J"))
@@ -1032,9 +1071,38 @@ class GrasshopperEscapement:
         #exit pallet pivot point at end of impulse
         self.geometry["G"]=G
 
+        self.geometry["ax"]=ax
+
+
+        '''
+        The mean torque arm circle is, i think, ultimately dervived from teh choice of diameter, so it needs to be calculated here so we can iterate the diameter to get it right!
+        the below copy-pasted and tweaked from the geometry check function
+        '''
+        geometry = self.geometry
+        line_PJ = Line(geometry["P"], anotherPoint=geometry["J"])
+        line_DF = Line(geometry["D"], anotherPoint=geometry["F"])
+        start_of_impulse_torque_circle_radius_entry = line_PJ.getShortestDistanceToPoint(geometry["Z"])
+        start_of_impulse_torque_circle_radius_exit = line_DF.getShortestDistanceToPoint(geometry["Z"])
+        line_KN = Line(geometry["K"], anotherPoint=geometry["N"])
+        line_GC = Line(geometry["G"], anotherPoint=geometry["C"])
+        end_of_impulse_torque_circle_radius_entry = line_KN.getShortestDistanceToPoint(geometry["Z"])
+        end_of_impulse_torque_circle_radius_exit = line_GC.getShortestDistanceToPoint(geometry["Z"])
+        # check 10b (there are two check 10s): EZ / HZ should match the designer-chosen end/start ratio, T. For Harrison compliant geometries, the ratio should be 3 / 2.
+        HZ = start_of_impulse_torque_circle_radius_entry
+        EZ = end_of_impulse_torque_circle_radius_entry
+        T = EZ / HZ
+        # check 12: In the final, scaled geometry, 0.5 (HZ + EZ) = dimension M in Fig. 46 should match the designer-chosen mean torque arm, M*
+        M = (EZ + HZ) / 2
+
+        self.geometry["M"] = M
+
+
+
+
+
         self.diagrams = [step_one_figure_35, step_two_figure_36, step_three_figure_37, step_four_figure_38, step_five_figure_39, step_six_figure_40, step_seven_figure_40, diagram_for_points]
 
-        return [En, Ex]
+        return [En, Ex, M]
 
     def checkGeometry(self, geometry=None, acceptableError=0.00001, loud=False):
         if geometry is None:
@@ -1044,33 +1112,132 @@ class GrasshopperEscapement:
         line_CO = Line(geometry["C"], anotherPoint=geometry["O"])
         line_OD = Line(geometry["O"], anotherPoint=geometry["D"])
         COD = line_CO.getAngleBetweenLines(line_OD)
-
-        assert abs(COD - half_tooth_angle) < acceptableError, "check 1: Angle COD should be the angle subtended by half an escape wheel tooth space"
         if loud:
             print("COD: {}deg, half tooth angle:{}deg".format(radToDeg(COD), radToDeg(half_tooth_angle)))
+        assert abs(COD - half_tooth_angle) < acceptableError, "check 1: Angle COD should be the angle subtended by half an escape wheel tooth space"
 
         #check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned.
         minimum_tooth_spaces = floor(self.tooth_span)*math.pi*2/self.teeth
         line_DO = Line(geometry["D"], anotherPoint=geometry["O"])
         line_OK = Line(geometry["O"], anotherPoint=geometry["K"])
         DOK = line_DO.getAngleBetweenLines(line_OK)
-        assert abs(DOK - minimum_tooth_spaces) < acceptableError, "check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned."
         if loud:
             print("DOK: {}deg, minimum_tooth_spaces: {}deg".format(radToDeg(DOK), radToDeg(minimum_tooth_spaces)))
+        assert abs(DOK - minimum_tooth_spaces) < acceptableError, "check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned."
 
         #check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned.
         maximum_tooth_spaces = math.ceil(self.tooth_span)*math.pi*2/self.teeth
         line_OJ = Line(geometry["O"], anotherPoint=geometry["J"])
         COJ = line_CO.getAngleBetweenLines(line_OJ)
-        assert abs(COJ - maximum_tooth_spaces) < acceptableError, "check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned."
         if loud:
             print("COJ: {}deg, maximum_tooth_spaces: {}deg".format(radToDeg(COJ), radToDeg(maximum_tooth_spaces)))
+        assert abs(COJ - maximum_tooth_spaces) < acceptableError, "check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned."
 
         #check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space
         JOK = line_OJ.getAngleBetweenLines(line_OK)
-        assert abs(JOK - half_tooth_angle) < acceptableError, "check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space"
         if loud:
             print("JOK: {}deg, half tooth: {}deg".format(radToDeg(JOK), radToDeg(half_tooth_angle)))
+        assert abs(JOK - half_tooth_angle) < acceptableError, "check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space"
+
+        #check 5: JP should equal KN (equal entry pallet arm active lengths at the start and end of impulse).
+        JP = distanceBetweenTwoPoints(geometry["J"], geometry["P"])
+        KN = distanceBetweenTwoPoints(geometry["K"], geometry["N"])
+        if loud:
+            print("JP: {}, KN: {}".format(JP, KN))
+        assert abs(JP - KN) < acceptableError, "check 5: JP should equal KN (equal entry pallet arm active lengths at the start and end of impulse)."
+
+        #check 6: DF should equal CG (equal exit pallet arm active lengths at the start and end of impulse).
+        DF = distanceBetweenTwoPoints(geometry["D"], geometry["F"])
+        CG = distanceBetweenTwoPoints(geometry["C"], geometry["G"])
+        if loud:
+            print("DF: {} CG: {}".format(DF, CG))
+        assert abs(DF - CG) < acceptableError, "check 6: DF should equal CG (equal exit pallet arm active lengths at the start and end of impulse)."
+
+        #check 7: PZ should equal NZ (entry pallet pivot to escapement frame axis at the start and end of impulse).
+        PZ = distanceBetweenTwoPoints(geometry["P"], geometry["Z"])
+        NZ = distanceBetweenTwoPoints(geometry["N"], geometry["Z"])
+        if loud:
+            print("PZ: {}, NZ: {}".format(PZ, NZ))
+        assert abs(PZ - NZ) < acceptableError, "check 7: PZ should equal NZ (entry pallet pivot to escapement frame axis at the start and end of impulse)."
+
+        #check 8: FZ should equal GZ (exit pallet pivot to escapement frame axis at the start and end of impulse).
+        FZ = distanceBetweenTwoPoints(geometry["F"], geometry["Z"])
+        GZ = distanceBetweenTwoPoints(geometry["G"], geometry["Z"])
+        if loud:
+            print("FZ: {}, GZ: {}".format(FZ, GZ))
+        assert abs(FZ - GZ) < acceptableError, "check 8: FZ should equal GZ (exit pallet pivot to escapement frame axis at the start and end of impulse)."
+
+        #check 9: Angle PJO should match the designer-chosen STEP ONE entry angle (self.an)
+        line_PJ = Line(geometry["P"], anotherPoint=geometry["J"])
+        PJO = line_PJ.getAngleBetweenLines(line_OJ)
+        if loud:
+            print("PJO: {}deg an: {}deg".format(radToDeg(PJO), radToDeg(self.an)))
+        assert abs(PJO - self.an) < acceptableError, " Angle PJO should match the designer-chosen STEP ONE entry angle (an)"
+
+        '''check 10: Angle HDO should almost match the designer-chosen STEP ONE initial exit angle. Within two
+        degrees is proposed, although opinions may differ. A greater deviation from the initial choice suggests
+        that an alteration to the mean span should be investigated, as explained on page 41.
+        '''
+        #I don't ever calculate H, but HDF are in a line, so use line DF instead of HD
+        line_DF = Line(geometry["D"], anotherPoint=geometry["F"])
+        HDO = line_DF.getAngleBetweenLines(line_DO)
+        if loud:
+            print("HDO/DFO: {}deg ax: {}deg".format(radToDeg(HDO), radToDeg(geometry["ax"])))
+        assert abs(HDO - geometry["ax"]) < degToRad(2), "check 10: Angle HDO should almost match the designer-chosen STEP ONE initial exit angle ax"
+
+        '''
+        check 11: Start of impulse lines of action JL and FH should be tangential to the smaller, green, start of impulse
+        torque arm circle and end of impulse lines of action KM and GE should be tangential to the larger, red,
+        end of impulse torque arm circle.
+        
+        Again, I've don't calculate L or H (points on the start of impulse torque circle), so I'll try and check that lines JP and FD pass at the right distance from Z
+        
+        I haven't written a "find the nearest point on the circle from a line" function, so I'll create a circle, find the tangent point that goes through D/P and check the angle between LP and JP is 0
+        ...I can't do that as I don't know what the radius is of the torque circle. I'll have to write that function or skip these tests for now
+        '''
+        start_of_impulse_torque_circle_radius_entry = line_PJ.getShortestDistanceToPoint(geometry["Z"])
+        start_of_impulse_torque_circle_radius_exit = line_DF.getShortestDistanceToPoint(geometry["Z"])
+        if loud:
+            print("Start of impulse torque circle radii: {} {}".format(start_of_impulse_torque_circle_radius_entry, start_of_impulse_torque_circle_radius_exit))
+
+        assert abs(start_of_impulse_torque_circle_radius_entry - start_of_impulse_torque_circle_radius_exit) < acceptableError, "start impulse torque circle radii not equal"
+
+        line_KN = Line(geometry["K"], anotherPoint=geometry["N"])
+        line_GC = Line(geometry["G"], anotherPoint=geometry["C"])
+        end_of_impulse_torque_circle_radius_entry = line_KN.getShortestDistanceToPoint(geometry["Z"])
+        end_of_impulse_torque_circle_radius_exit = line_GC.getShortestDistanceToPoint(geometry["Z"])
+        if loud:
+            print("End of impulse torque circle radii: {} {}".format(end_of_impulse_torque_circle_radius_entry, end_of_impulse_torque_circle_radius_exit))
+        assert abs(end_of_impulse_torque_circle_radius_entry - end_of_impulse_torque_circle_radius_exit) < acceptableError, "End impulse torque circle radii not equal"
+
+        #check 10b (there are two check 10s): EZ / HZ should match the designer-chosen end/start ratio, T. For Harrison compliant geometries, the ratio should be 3 / 2.
+        HZ = start_of_impulse_torque_circle_radius_entry
+        EZ = end_of_impulse_torque_circle_radius_entry
+        T = EZ/HZ
+        if loud:
+            print("calculated T: {} design T: {}".format(T, self.T))
+        assert abs(T - self.T) < acceptableError, " EZ / HZ should match the designer-chosen end/start ratio, T. For Harrison compliant geometries, the ratio should be 3 / 2"
+
+        #check 12: In the final, scaled geometry, 0.5 (HZ + EZ) = dimension M in Fig. 46 should match the designer-chosen mean torque arm, M*
+        M = (EZ + HZ)/2
+        if loud:
+            print("Calculated M: {}, design mean torque arm length: {}".format(M, self.mean_torque_arm_length))
+        assert abs(M - self.mean_torque_arm_length) < acceptableError, "In the final, scaled geometry, 0.5 (HZ + EZ) = dimension M in Fig. 46 should match the designer-chosen mean torque arm, M*"
+
+        #check 13: Escaping arcs NZP and FZG should both match the designer-chosen escaping arc, E*, with at least the designer-chosen degree of precision.
+        #I think this is a given, because of how I iterate the choice of d/ax to select the escaping arc
+        line_NZ = Line(geometry["N"], anotherPoint=geometry["Z"])
+        line_ZP = Line(geometry["Z"], anotherPoint=geometry["P"])
+        NZP = line_NZ.getAngleBetweenLines(line_ZP)
+
+        line_FZ = Line(geometry["F"], anotherPoint=geometry["Z"])
+        line_ZG = Line(geometry["Z"], anotherPoint=geometry["G"])
+        FZG = line_FZ.getAngleBetweenLines(line_ZG)
+
+        if loud:
+            print("Escaping angles, NZP: {}deg, FZG:{}deg design:{}deg".format(radToDeg(NZP), radToDeg(FZG), radToDeg(self.escaping_arc)))
+        assert abs(FZG - NZP) < acceptableError, "Escaping angles aren't balanced"
+        assert abs(FZG - self.escaping_arc) < degToRad(0.1), "Escaping arc isn't close to designed escaping arc"
 
 class Pendulum:
     '''

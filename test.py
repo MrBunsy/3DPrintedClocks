@@ -185,7 +185,13 @@ if 'show_object' not in globals():
 # show_object(getGearDemo(justStyle=GearStyle.ARCS))
 
 
-grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
+# grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
+'''
+Balanced escaping arc of 9.7500deg with d of 12.40705997 and ax of 90.26021004
+Diameter of 130.34328818 results in mean torque arm of 9.9396
+'''
+# grasshopper = GrasshopperEscapement(acceptableError=0.00001)
+grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34328818)
 show_object(grasshopper.diagrams[-1])
 grasshopper.checkGeometry(loud=True)
 
