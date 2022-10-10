@@ -543,18 +543,23 @@ def getSpanner(size=4, thick=4, handle_length=150):
 
 class GrasshopperEscapement:
 
-    def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, entry_angle_deg=90, T=3/2, mean_torque_arm_length=-1, escaping_arc_deg=9.75, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01):
+    def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
+                 mean_torque_arm_length=-1, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01, frame_thick=5, wheel_thick=5, pallet_thick=7, screws=None, arbourD=3, style=None):
         '''
         From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
 
-        entry angle is "The angle clockwise from the entry pallet arm line of action at the start of entry impulse to the escape wheel radial at the start of entry impulse"
-        and called 'an' in the doc
+        T is the torque arm lengths ratio, defaults to harrison's stipulation. The "torque arms" are the length of an arm where the torque is applied to the pendulum by the entry pallet start/end and exit pallet start/end
 
-        'ax' is the exit angle, which will just adjusted to control arc
+        the following three can be provided, but if they aren't, will be auto generated within acceptableError:
+         - 'ax' is the exit angle, which will just adjusted to control arc
+         - 'd' is used in construction of the geometry, adjusted to provide balanced escape arcs
+         - 'diameter' of the escape wheel. Automatically generated to provide the correct length mean torque arm
 
-        T is the target end/start ratio (not quite sure what this means yet - I think ti's about the torque arm lengths
-
-        mean torque arm. The "torque arms" are the length of an arm where the torque is applied to the pendulum by the entry pallet start/end and exit pallet start/end
+        For the construction of a 3D model (thick means in z direction here):
+         - frame_thick: how thick the escapement frame should be, enough to be rigid
+         - wheel_thick: how thick the escape wheel should be
+         - pallet_thick: how thick the pallet arms should be, aiming for wider than the wheel thickness
+         - screws: a MachineScrew to be used for pivot pins and composer stops
 
         All angles are radians unless specifically called `_deg`
 
@@ -562,17 +567,11 @@ class GrasshopperEscapement:
 
         '''
 
-        #escape wheel pitch circle (end of teeth)
-        #"For example, the 120 tooth escape wheel, at almost 150 mm in diameter"  - Perfecting the Harrison Twin Pivot Grasshopper Escapement
-        #Ken kuo's escapement animation on youtube has a diameter of 200mm
-        #different David Heskin document says it was 6" originally - so 152.4mm
-        #This influences the mean torque arm! So it should be chosen with a binary search in order to get the preferred mean torque arm
-        # self.diameter=diameter
-        # self.radius = diameter/2
         self.pendulum_length=pendulum_length_m*1000
         self.teeth=teeth
         self.tooth_span=tooth_span
-        self.an=degToRad(entry_angle_deg)
+        #I don't think there's actually anything to be gained from modifying this
+        self.an=degToRad(90)
         self.T=T
         self.mean_torque_arm_length=mean_torque_arm_length
         if self.mean_torque_arm_length < 0:
@@ -583,6 +582,17 @@ class GrasshopperEscapement:
 
         self.diagrams = []
         self.geometry = {}
+
+        self.frame_thick = frame_thick
+        self.wheel_thick = wheel_thick
+        self.pallet_thick = pallet_thick
+        self.pallet_arm_wide=3
+        self.screws = screws
+        self.arbourD=arbourD
+        self.style = style
+
+        if self.screws is None:
+            self.screws = MachineScrew(3)
 
         #bits internally needed to generate an escaping arc that we want
         # self.ax_deg=ax_deg
@@ -1224,6 +1234,221 @@ class GrasshopperEscapement:
             print("Escaping angles, NZP: {}deg, FZG:{}deg design:{}deg".format(radToDeg(NZP), radToDeg(FZG), radToDeg(self.escaping_arc)))
         assert abs(FZG - NZP) < acceptableError, "Escaping angles aren't balanced"
         assert abs(FZG - self.escaping_arc) < degToRad(0.1), "Escaping arc isn't close to designed escaping arc"
+
+    def getFrame(self):
+        '''
+        Get the anchor-like part (fully 3D) which attaches to the arbour
+        origin is at O, shape has been rotated so that Z is along the Y axis
+        frame is in the position of the entry pallet start of engagement
+        '''
+        holeD = self.arbourD
+        arm_wide = self.screws.metric_thread * 2
+
+        #make taller so it's rigid on the arbour
+        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD).extrude(self.frame_thick*2)
+
+        # entry  side
+        line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])
+        dir_ZP_perpendicular = line_ZP.get_perpendicular_direction()
+
+
+        frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
+        frame = frame.lineTo(self.geometry["P"][0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["P"][1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
+        endArc = (self.geometry["P"][0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["P"][1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
+        frame = frame.radiusArc(endArc, -arm_wide * 0.50001).lineTo(self.geometry["Z"][0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
+        frame = frame.close().extrude(self.frame_thick)
+
+        # cut hole for exit pallet pivot
+        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).extrude(self.frame_thick))
+
+
+        #exit side
+        line_ZG = Line(self.geometry["Z"], anotherPoint=self.geometry["G"])
+        dir_ZG_perpendicular = line_ZG.get_perpendicular_direction()
+
+        frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0] + dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["Z"][1] + dir_ZG_perpendicular[1]*arm_wide*0.5)
+        frame = frame.lineTo(self.geometry["G"][0] + dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] + dir_ZG_perpendicular[1]*arm_wide*0.5)
+        endArc = (self.geometry["G"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)
+        frame = frame.radiusArc(endArc, -arm_wide*0.50001).lineTo(self.geometry["Z"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["Z"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)
+        frame = frame.close().extrude(self.frame_thick)
+
+        # cut hole for exit pallet pivot
+        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread/2).extrude(self.frame_thick))
+
+
+        #cut hole for arbour
+        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD/2).extrude(self.frame_thick*2))
+
+
+
+
+        return frame
+
+    def rotateToUpright(self, part):
+        '''
+        take a part made from the geometry and realign so the frame arbour is at the top
+        '''
+        # rotate so that Z is at the top
+        line_OZ = Line(self.geometry["O"], anotherPoint=self.geometry["Z"])
+        part = part.rotate((0, 0, 0), (0, 0, 1), radToDeg((math.pi / 2 - line_OZ.getAngle())))
+
+        return part
+
+    def getPalletArm(self, nib_pos, pivot_pos):
+        '''
+        Assumes wheel rotates clockwise and both arms have their nibs left of the pivot point
+        '''
+        arm = cq.Workplane("XY").tag("base").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
+
+        #angle between line of arm and the nib
+        nib_offset_angle = degToRad(10)
+
+
+
+        line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
+        distance_to_nib = distanceBetweenTwoPoints(nib_pos, pivot_pos)
+        distance_to_counterweight = distance_to_nib * 0.4
+        #distance from pivot that the bend towards the nib starts
+        distance_nib_bend_start = distance_to_nib*0.8
+
+
+
+        nib_bend_r = (distance_to_nib - distance_nib_bend_start)
+
+        #angle that is along the tangent of the wheel
+        nib_tangent_angle = line_pivot_to_nib.getAngle()
+
+        nib_end_r = self.pallet_arm_wide*0.6
+
+        nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi/2, nib_end_r))
+        nib_top = np.add(nib_pos, polar(nib_tangent_angle - math.pi/6, nib_end_r))
+        arm_angle = line_pivot_to_nib.getAngle() - nib_offset_angle
+
+        line_along_arm = Line(pivot_pos, angle = arm_angle)
+
+        arm_bend_start = np.add(pivot_pos, np.multiply(line_along_arm.dir, distance_nib_bend_start))
+
+        bottom_of_pivot = np.add(pivot_pos, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
+        top_of_pivot = np.add(pivot_pos, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
+
+        #from pivot to the nib
+        arm = arm.workplaneFromTagged("base").moveTo(bottom_of_pivot[0], bottom_of_pivot[1])
+
+        bottom_of_bend_start = np.add(arm_bend_start, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
+        top_of_bend_start = np.add(arm_bend_start, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
+
+        arm = arm.lineTo(bottom_of_bend_start[0], bottom_of_bend_start[1])
+        arm = arm.radiusArc((nib_base[0], nib_base[1]), -( nib_bend_r + nib_end_r ))
+        arm = arm.lineTo(nib_pos[0], nib_pos[1])
+        arm = arm.lineTo(nib_top[0], nib_top[1])
+
+        arm = arm.radiusArc((top_of_bend_start[0], top_of_bend_start[1]), nib_bend_r + nib_end_r)
+        arm = arm.lineTo(top_of_pivot[0], top_of_pivot[1])
+
+        arm = arm.close().extrude(self.pallet_thick)
+
+        #from pivot to the counterweight
+        counteweight_pos = np.add(pivot_pos, np.multiply(line_along_arm.dir, -distance_to_counterweight))
+        bottom_of_counterweight = np.add(counteweight_pos, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
+        top_of_counterweight = np.add(counteweight_pos, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
+        arm = arm.workplaneFromTagged("base").moveTo(bottom_of_pivot[0], bottom_of_pivot[1]).lineTo(bottom_of_counterweight[0], bottom_of_counterweight[1])
+        arm = arm.lineTo(top_of_counterweight[0], top_of_counterweight[1]).lineTo(top_of_pivot[0], top_of_pivot[1])
+        arm = arm.close().extrude(self.pallet_thick)
+
+        #counterweight screw hole holder
+        arm = arm.moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
+
+        #
+        # # pallet_angle = line_pivot_to_nib.getAngle() - nib_angle
+        #
+
+        #
+        #
+        # #if the pallet arm continued into a straight line, this would be perpendicularily above the nib
+        # virtual_corner = polar(line_pivot_to_nib.getAngle() - nib_angle, distance_to_nib)
+        #
+        # bend_r = distanceBetweenTwoPoints(virtual_corner, nib_pos)
+        #
+        # distance_bend_start_from_pivot = math.cos(nib_angle) * distance_to_nib - bend_r
+        #
+        # line_pivot_to_virtual_corner = Line(pivot_pos, anotherPoint=virtual_corner)
+        #
+        # bend_start = (pivot_pos[0] + line_pivot_to_virtual_corner.dir[0]*distance_bend_start_from_pivot, pivot_pos[1] + line_pivot_to_virtual_corner.dir[1]*distance_bend_start_from_pivot)
+
+        # line_along_arm = Line(pivot_pos, angle=pallet_angle)
+        #
+        # start_of_bend = (pivot_pos[0] + line_along_arm.dir[0]*bend_start_from_pivot, pivot_pos[1] + line_along_arm.dir[1]*bend_start_from_pivot)
+        #
+        # start_of_bend_to_nib = Line(start_of_bend, anotherPoint=nib_pos)
+
+
+
+        arm = arm.cut(cq.Workplane("XY").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread / 2 + LOOSE_FIT_ON_ROD).extrude(self.pallet_thick))
+        arm = arm.cut(cq.Workplane("XY").moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread / 2).extrude(self.pallet_thick))
+
+        return arm
+
+    def getExitPalletArm(self):
+        return self.getPalletArm(self.geometry["Cstar"], self.geometry["G"])
+
+    def getEntryPalletArm(self):
+        return self.getPalletArm(self.geometry["J"], self.geometry["P"])
+
+    def getWheel(self):
+
+        #angles from O
+        tooth_base_angle=(math.pi*2/self.teeth)*0.3
+        tooth_tip_angle=(math.pi*2/self.teeth)/2
+        tooth_tip_width=1.2
+        tooth_tip_width_angle = tooth_tip_width/self.diameter
+        tooth_height = self.radius*0.1
+        inner_r = self.radius - tooth_height
+        tooth_angle = math.pi * 2 / self.teeth
+
+        wheel = cq.Workplane("XY")
+
+        start = polar(0, inner_r)
+        wheel = wheel.moveTo(start[0], start[1])
+
+
+        for tooth in range(self.teeth):
+            angle = -tooth*tooth_angle
+
+            start = polar(angle, inner_r)
+            tip_start = polar(angle - tooth_tip_angle + tooth_tip_width_angle/2, self.radius)
+            tip_end = polar(angle - tooth_tip_angle - tooth_tip_width_angle/2, self.radius)
+            base = polar(angle - tooth_base_angle, inner_r)
+            end = polar(angle - tooth_angle, inner_r)
+
+            wheel = wheel.lineTo(tip_start[0], tip_start[1])
+            wheel = wheel.radiusArc(tip_end, -self.radius)
+            wheel = wheel.lineTo(base[0], base[1])
+            wheel = wheel.radiusArc(end, -inner_r)
+
+        wheel = wheel.close().extrude(self.wheel_thick)
+
+        wheel = Gear.cutStyle(wheel, inner_r, self.arbourD, style=self.style)
+
+        wheel = wheel.cut(cq.Workplane("XY").circle(self.arbourD / 2).extrude(self.wheel_thick))
+
+        return wheel
+
+    def getAssembled(self):
+        grasshopper = self.getWheel().translate((0, 0, self.frame_thick + WASHER_THICK + (self.pallet_thick - self.wheel_thick) / 2))
+        grasshopper = grasshopper.add(self.rotateToUpright(self.getFrame()))
+        grasshopper = grasshopper.add(self.rotateToUpright((self.getExitPalletArm()).translate((0, 0, self.frame_thick + WASHER_THICK))))
+        grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryPalletArm()).translate((0, 0, self.frame_thick + WASHER_THICK))))
+        return grasshopper
+
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_grasshopper_wheel.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getWheel(), out)
+
+        out = os.path.join(path, "{}_grasshopper_frame.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getFrame(), out)
 
 class Pendulum:
     '''

@@ -3,6 +3,8 @@ from clocks.escapements import *
 from clocks.striking import *
 from clocks.clock import *
 
+outputSTL = False
+
 if 'show_object' not in globals():
     #don't output STL when we're in cadquery editor
     outputSTL = True
@@ -190,11 +192,18 @@ if 'show_object' not in globals():
 Balanced escaping arc of 9.7500deg with d of 12.40705997 and ax of 90.26021004
 Diameter of 130.34328818 results in mean torque arm of 9.9396
 '''
-grasshopper = GrasshopperEscapement(acceptableError=0.00001)
+# grasshopper = GrasshopperEscapement(acceptableError=0.00001)
 # grasshopper = GrasshopperEscapement(acceptableError=0.01)
-# grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34328818)
-show_object(grasshopper.diagrams[-1])
-grasshopper.checkGeometry(loud=True)
+grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, style=GearStyle.HONEYCOMB)
+# show_object(grasshopper.diagrams[-1])
+# grasshopper.checkGeometry(loud=True)
+
+# show_object(grasshopper.getEscapmentFrame())
+# show_object(grasshopper.getEscapementWheel())
+show_object(grasshopper.getAssembled())
+
+if outputSTL:
+    grasshopper.outputSTLs("grasshopper", "out")
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 
