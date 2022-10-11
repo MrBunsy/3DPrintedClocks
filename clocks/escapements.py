@@ -587,14 +587,14 @@ class GrasshopperEscapement:
         self.wheel_thick = wheel_thick
         self.pallet_thick = pallet_thick
         #angle from the arm to the nib, from the arm pivot, so the arm stays out the way of the wheel
-        self.nib_offset_angle = degToRad(10)
+        self.nib_offset_angle = degToRad(6)
         self.pallet_arm_wide=3
         self.screws = screws
         if self.screws is None:
             self.screws = MachineScrew(3)
         self.arbourD=arbourD
         self.style = style
-        self.composer_height=6
+        self.composer_height=7.5
         self.composer_thick=2
 
         #how much z between frame and the start of the composer, to leave space for screws and bits
@@ -1335,6 +1335,7 @@ class GrasshopperEscapement:
         '''
         Get the position of the contact point where the composer will rest on part of the arm
         It's then up to the composer and arm to meet that requirement
+        Plan is to use the screw that's through the end of the composer (as a weight) to rest on part of the arm
         '''
         pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
 
