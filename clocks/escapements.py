@@ -594,8 +594,16 @@ class GrasshopperEscapement:
             self.screws = MachineScrew(3)
         self.arbourD=arbourD
         self.style = style
-        self.composer_height=15
-        self.composer_thick=3
+        self.composer_height=6
+        self.composer_thick=2
+
+        #how much z between frame and the start of the composer, to leave space for screws and bits
+        self.composer_z_distance_from_frame = 10
+
+        self.loose_on_pivot = 0.2
+
+        #how much space along the threaded rod should be allowed to ensure the composer is loose
+        self.composer_pivot_space = 0.5
         self.composer_arm_wide=self.screws.metric_thread*2
 
 
@@ -1348,6 +1356,42 @@ class GrasshopperEscapement:
         like pallet arm, assumes wheel rotates clockwise and both arms have their nibs 'left' of the pivot point
         '''
 
+        pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+        line_along_arm = Line(pivot_pos, anotherPoint=pallet_arm_bend_start)
+
+        #make a shape which has the pivot_pos at (0,0) and assumes pallet arm is horizontal facing left, then rotate and translate into position
+        composer_length = distanceBetweenTwoPoints(pivot_pos, pallet_arm_bend_start)
+
+        #bottom chunky arm which attaches to the pivot
+        composer_arm = cq.Workplane("XY").tag("base").moveTo(-self.composer_arm_wide/2,0).radiusArc((self.composer_arm_wide/2, 0), -self.composer_arm_wide/2)\
+            .line(0, self.composer_height + self.composer_thick).line(-self.composer_arm_wide,0).close().extrude(self.composer_thick)
+
+        #top arm
+        composer = composer_arm.add(composer_arm.translate((0,0,self.pallet_thick + self.composer_thick + self.composer_pivot_space)))
+
+        #rest of composer
+
+        topLeftCorner = (-composer_length, self.composer_height + self.composer_thick)
+
+        #radiusArc((-(composer_length + self.composer_thick/2), self.pallet_arm_wide/2 + self.composer_thick/2), self.composer_thick/2).\
+        composer = composer.workplaneFromTagged("base").moveTo(self.composer_arm_wide/2, self.composer_height).lineTo(topLeftCorner[0]+self.composer_thick, topLeftCorner[1] - self.composer_thick).\
+            lineTo(topLeftCorner[0] + self.composer_thick,self.pallet_arm_wide/2).\
+            lineTo(topLeftCorner[0], self.pallet_arm_wide/2).\
+            lineTo(topLeftCorner[0], topLeftCorner[1]).lineTo(self.composer_arm_wide/2,self.composer_height + self.composer_thick).close().extrude(self.pallet_thick + self.composer_thick*2 + self.composer_pivot_space)
+
+
+        #hole to rotate around pivot
+        composer = composer.cut(cq.Workplane("XY").circle(self.screws.metric_thread/2 + self.loose_on_pivot/2).extrude(1000))
+        #hole to hold screw for weight
+        composer = composer.add(cq.Workplane("XY").moveTo(topLeftCorner[0] + self.composer_thick / 2, topLeftCorner[1] - self.composer_thick / 2).circle(self.screws.metric_thread).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
+        composer = composer.cut(cq.Workplane("XY").moveTo(topLeftCorner[0] + self.composer_thick/2, topLeftCorner[1] - self.composer_thick/2).circle(self.screws.metric_thread/2).extrude(1000))
+
+        #rotate and translate into place
+        composer = composer.rotate((0,0,0), (0,0,1), radToDeg(line_along_arm.getAngle()) - 180)
+        composer = composer.translate(pivot_pos)
+
+        return composer
+
     def getPalletArm(self, nib_pos, pivot_pos):
         '''
         Assumes wheel rotates clockwise and both arms have their nibs left of the pivot point
@@ -1431,7 +1475,7 @@ class GrasshopperEscapement:
 
 
 
-        arm = arm.cut(cq.Workplane("XY").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread / 2 + LOOSE_FIT_ON_ROD).extrude(self.pallet_thick))
+        arm = arm.cut(cq.Workplane("XY").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread / 2 + self.loose_on_pivot/2).extrude(self.pallet_thick))
         arm = arm.cut(cq.Workplane("XY").moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread / 2).extrude(self.pallet_thick))
 
         return arm
@@ -1439,8 +1483,15 @@ class GrasshopperEscapement:
     def getExitPalletArm(self):
         return self.getPalletArm(self.geometry["Cstar"], self.geometry["G"])
 
+    def getExitComposer(self):
+        return self.getComposer(self.geometry["Cstar"], self.geometry["G"])
+
     def getEntryPalletArm(self):
         return self.getPalletArm(self.geometry["J"], self.geometry["P"])
+
+    def getEntryComposer(self):
+        return self.getComposer(self.geometry["J"], self.geometry["P"])
+
 
     def getWheel(self):
 
@@ -1482,10 +1533,15 @@ class GrasshopperEscapement:
         return wheel
 
     def getAssembled(self):
-        grasshopper = self.getWheel().translate((0, 0, self.frame_thick + WASHER_THICK + (self.pallet_thick - self.wheel_thick) / 2))
+        composer_z = self.frame_thick + self.composer_z_distance_from_frame
+        pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
+        grasshopper = self.getWheel().translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2))
         grasshopper = grasshopper.add(self.rotateToUpright(self.getFrame()))
-        grasshopper = grasshopper.add(self.rotateToUpright((self.getExitPalletArm()).translate((0, 0, self.frame_thick + WASHER_THICK))))
-        grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryPalletArm()).translate((0, 0, self.frame_thick + WASHER_THICK))))
+
+        grasshopper = grasshopper.add(self.rotateToUpright((self.getExitPalletArm()).translate((0, 0, pallet_arm_z))))
+        grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryPalletArm()).translate((0, 0, pallet_arm_z))))
+        grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryComposer()).translate((0, 0, composer_z))))
+        grasshopper = grasshopper.add(self.rotateToUpright((self.getExitComposer()).translate((0, 0, composer_z))))
         return grasshopper
 
 
