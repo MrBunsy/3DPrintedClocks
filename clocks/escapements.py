@@ -586,13 +586,19 @@ class GrasshopperEscapement:
         self.frame_thick = frame_thick
         self.wheel_thick = wheel_thick
         self.pallet_thick = pallet_thick
+        #angle from the arm to the nib, from the arm pivot, so the arm stays out the way of the wheel
+        self.nib_offset_angle = degToRad(10)
         self.pallet_arm_wide=3
         self.screws = screws
-        self.arbourD=arbourD
-        self.style = style
-
         if self.screws is None:
             self.screws = MachineScrew(3)
+        self.arbourD=arbourD
+        self.style = style
+        self.composer_height=15
+        self.composer_thick=3
+        self.composer_arm_wide=self.screws.metric_thread*2
+
+
 
         #bits internally needed to generate an escaping arc that we want
         # self.ax_deg=ax_deg
@@ -1294,39 +1300,80 @@ class GrasshopperEscapement:
 
         return part
 
+    def getPalletArmBendStart(self, nib_pos, pivot_pos):
+        '''
+        Get the position of where the arm bends. Assume arm is a straight line of width self.pallet_arm_wide from pivot_pos to
+        arm_bend_start (returned)
+        '''
+        # angle between line of arm and the nib
+        nib_offset_angle = self.nib_offset_angle
+
+        line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
+        distance_to_nib = distanceBetweenTwoPoints(nib_pos, pivot_pos)
+        # distance from pivot that the bend towards the nib starts
+        distance_nib_bend_start = distance_to_nib * 0.8
+
+
+        # angle that is along the tangent of the wheel
+        nib_tangent_angle = line_pivot_to_nib.getAngle()
+        arm_angle = line_pivot_to_nib.getAngle() - nib_offset_angle
+
+        line_along_arm = Line(pivot_pos, angle=arm_angle)
+
+        arm_bend_start = np.add(pivot_pos, np.multiply(line_along_arm.dir, distance_nib_bend_start))
+        return arm_bend_start
+
+    def getComposerRestTipPos(self, nib_pos, pivot_pos):
+        '''
+        Get the position of the contact point where the composer will rest on part of the arm
+        It's then up to the composer and arm to meet that requirement
+        '''
+        pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+
+        line_along_arm = Line(pivot_pos, anotherPoint=pallet_arm_bend_start)
+
+        distance_to_bend = distanceBetweenTwoPoints(pivot_pos, pallet_arm_bend_start)
+
+        rest_distance = distance_to_bend*0.5
+
+        arm_angle = line_along_arm.getAngle()
+
+        rest_pos_base = np.add(pivot_pos, np.multiply(line_along_arm.dir, rest_distance))
+        rest_pos = np.add(rest_pos_base, polar(arm_angle - math.pi/2, self.composer_height))
+
+        return rest_pos
+
+    def getComposer(self, nib_pos, pivot_pos):
+        '''
+        like pallet arm, assumes wheel rotates clockwise and both arms have their nibs 'left' of the pivot point
+        '''
+
     def getPalletArm(self, nib_pos, pivot_pos):
         '''
         Assumes wheel rotates clockwise and both arms have their nibs left of the pivot point
         '''
         arm = cq.Workplane("XY").tag("base").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
 
-        #angle between line of arm and the nib
-        nib_offset_angle = degToRad(10)
-
-
-
         line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
         distance_to_nib = distanceBetweenTwoPoints(nib_pos, pivot_pos)
         distance_to_counterweight = distance_to_nib * 0.4
-        #distance from pivot that the bend towards the nib starts
-        distance_nib_bend_start = distance_to_nib*0.8
 
-
-
-        nib_bend_r = (distance_to_nib - distance_nib_bend_start)
-
-        #angle that is along the tangent of the wheel
+        # #angle that is along the tangent of the wheel
         nib_tangent_angle = line_pivot_to_nib.getAngle()
-
         nib_end_r = self.pallet_arm_wide*0.6
 
-        nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi/2, nib_end_r))
-        nib_top = np.add(nib_pos, polar(nib_tangent_angle - math.pi/6, nib_end_r))
-        arm_angle = line_pivot_to_nib.getAngle() - nib_offset_angle
 
-        line_along_arm = Line(pivot_pos, angle = arm_angle)
 
-        arm_bend_start = np.add(pivot_pos, np.multiply(line_along_arm.dir, distance_nib_bend_start))
+        arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+
+        nib_bend_r = (distance_to_nib - distanceBetweenTwoPoints(pivot_pos, arm_bend_start))
+
+        line_along_arm = Line(pivot_pos, anotherPoint=arm_bend_start)
+        arm_angle = line_along_arm.getAngle()
+
+        nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi / 2, nib_end_r))
+        nib_top = np.add(nib_pos, polar(nib_tangent_angle - math.pi / 6, nib_end_r))
+        nib_before_base = np.add(nib_pos, polar(arm_angle - math.pi, self.pallet_arm_wide/2))
 
         bottom_of_pivot = np.add(pivot_pos, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
         top_of_pivot = np.add(pivot_pos, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
@@ -1338,7 +1385,8 @@ class GrasshopperEscapement:
         top_of_bend_start = np.add(arm_bend_start, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
 
         arm = arm.lineTo(bottom_of_bend_start[0], bottom_of_bend_start[1])
-        arm = arm.radiusArc((nib_base[0], nib_base[1]), -( nib_bend_r + nib_end_r ))
+        arm = arm.radiusArc((nib_before_base[0], nib_before_base[1]), -( nib_bend_r - self.pallet_arm_wide/2 ))
+        arm = arm.tangentArcPoint((nib_base[0], nib_base[1]), relative=False)
         arm = arm.lineTo(nib_pos[0], nib_pos[1])
         arm = arm.lineTo(nib_top[0], nib_top[1])
 
