@@ -99,22 +99,35 @@ def getScrewHeadDiameter(metric_thread, countersunk=False):
         return 3.9
     return METRIC_HEAD_D_MULT * metric_thread
 
+SCREW_LENGTH_EXTRA = 2
+
 class MachineScrew:
     '''
     Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
     for screwholes
     '''
 
-    def __init__(self, metric_thread=3, countersunk=False):
+    def __init__(self, metric_thread=3, countersunk=False, length = -1):
         self.metric_thread=metric_thread
         self.countersunk=countersunk
+        #if length is provided, this represents a specific screw
+        self.length = length
 
-    def getCutter(self, length=1000, withBridging=False, layerThick=LAYER_THICK):
+    def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
-        if facingDown, then still in exactly the same shape and orentation, but using hole-in-hole for printing with bridging
+        if withBridging, then still in exactly the same shape and orentation, but using hole-in-hole for printing with bridging
         '''
+
+        if length < 0:
+            if self.length < 0:
+                #default to something really long
+                length = 1000
+            else:
+                #use the length that this screw represents, plus some wiggle
+                length = self.length + SCREW_LENGTH_EXTRA
+
 
         screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
 
@@ -124,11 +137,11 @@ class MachineScrew:
             #countersunk screw lengths seem to include the head
             screw= screw.faces(">Z").workplane().circle(self.metric_thread/2).extrude(length - self.getHeadHeight())
         else:
+            # pan head screw lengths do not include the head
             if not withBridging:
                 screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
             else:
                 screw = screw.add(getHoleWithHole(innerD=self.metric_thread, outerD=self.getHeadDiameter()+NUT_WIGGLE_ROOM, deep=self.getHeadHeight() ,layerThick=layerThick))
-            #pan head screw lengths do not include the head
             screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
 
         #extend out from the headbackwards too

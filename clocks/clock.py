@@ -661,9 +661,9 @@ class ClockPlates:
     '''
     This took a while to settle - clocks before v4 will be unlikely to work anymore.
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None,
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True):
+                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -700,8 +700,6 @@ class ClockPlates:
         #is the weight danging from a pulley? (will affect screwhole and give space to tie other end of cord)
         self.usingPulley = usingPulley
 
-        self.fixingScrewsD = fixingScrewsD
-
         #just for the first prototype
         self.anchorHasNormalBushing=True
         self.motionWorks = motionWorks
@@ -716,16 +714,17 @@ class ClockPlates:
             self.backPlateThick = self.plateThick
         #default for anchor, overriden by most arbours
         self.arbourD=arbourD
-        #maximum dimention of the bearing
-        # self.bearingOuterD=bearingOuterD
         #how chunky to make the bearing holders
         self.bearingWallThick = 4
-        #how much space we need to support the bearing (and how much space to leave for the arbour + screw0
-        # self.bearingHolderLip=bearingHolderLip
-        # self.bearingHeight = bearingHeight
-        self.screwheadHeight = getScrewHeadHeight(self.fixingScrewsD)
+
         self.pendulumAtTop = pendulumAtTop
+        #how far away from the relevant plate (front if pendulumAtFront) the pendulum should be
         self.pendulumSticksOut = pendulumSticksOut
+        #if this is 0 then pendulumAtFront is going to be needed
+        self.backPlateFromWall = backPlateFromWall
+        self.fixingScrews = fixingScrews
+        if self.fixingScrews is None:
+            self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True, length=25)
 
         # how much space to leave around the edge of the gears for safety
         self.gearGap = 3
@@ -917,7 +916,7 @@ class ClockPlates:
         self.weightOnRightSide = self.goingTrain.isWeightOnTheRight()
 
         #absolute z position
-        self.embeddedNutHeight = self.plateThick + self.plateDistance - 20
+        self.embeddedNutHeight = self.getPlateThick(back=True) + self.plateDistance  + self.getPlateThick(back=False) - (self.fixingScrews.length - 10)
 
 
     def getPlate(self, back=True, getText=False):
@@ -1189,14 +1188,21 @@ class ClockPlates:
         fixingScrewD = 3
 
         #screws to fix the plates together
-        plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
+        # plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
 
 
-        if back:
-            for fixingPos in fixingPositions:
+
+        for fixingPos in fixingPositions:
+
+            if back:
                 #embedded nuts!
                 #extra thick layer because plates are huge and usually printed with 0.3 layer height
                 plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
+
+                plate = plate.cut(self.fixingScrews.getCutter(length=10000).rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
+            else:
+                #front
+                plate = plate.cut(self.fixingScrews.getCutter(length=10000).rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0,0,self.getPlateThick(back=False))))
 
         return plate
 
@@ -1372,7 +1378,7 @@ class ClockPlates:
         # new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
         # no idea if it'll work without the rod bending!
 
-        if self.pendulumSticksOut > 0 and self.pendulumFixing == PendulumFixing.FRICTION_ROD:
+        if self.pendulumAtFront and self.pendulumSticksOut > 0 and self.pendulumFixing == PendulumFixing.FRICTION_ROD:
             #a cylinder that sticks out the front and holds a bearing on the end
             extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
             plate = plate.add(extraBearingHolder)
@@ -1380,24 +1386,16 @@ class ClockPlates:
 
 
 
+        motionWorksPos = (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1])
 
         #hole for screw to hold motion works arbour
-        plate = plate.faces(">Z").workplane().moveTo(self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1]).circle(
-            self.fixingScrewsD / 2).cutThruAll()
+        plate = plate.cut(self.fixingScrews.getCutter().translate(motionWorksPos))
 
-        nutDeep = getNutHeight(self.fixingScrewsD, halfHeight=True)
-        screwheadHeight = getScrewHeadHeight(self.fixingScrewsD)
-        #ideally want a nut embedded on the top, but that can leave the plate a bit thin here
-
-        nutZ = max(screwheadHeight + 3, plateThick - nutDeep)
-        nutSpace = cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.fixingScrewsD)).extrude(nutDeep).translate(
-            (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], nutZ))
+        #embedded nut on the front so we can tighten this screw in
+        nutDeep =  self.fixingScrews.getNutHeight(half=True)
+        nutSpace = self.fixingScrews.getNutCutter(half=True).translate(motionWorksPos).translate((0,0,self.getPlateThick(back=False) - nutDeep))
 
         plate = plate.cut(nutSpace)
-
-        screwheadSpace =  getHoleWithHole(self.fixingScrewsD, getScrewHeadDiameter(self.fixingScrewsD)+0.5, screwheadHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1], 0))
-
-        plate = plate.cut(screwheadSpace)
 
         if self.dial is not None:
             dialFixings = self.dial.getFixingDistance()
