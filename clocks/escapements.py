@@ -587,7 +587,7 @@ class GrasshopperEscapement:
         self.wheel_thick = wheel_thick
         self.pallet_thick = pallet_thick
         #angle from the arm to the nib, from the arm pivot, so the arm stays out the way of the wheel
-        self.nib_offset_angle = degToRad(6)
+        self.nib_offset_angle = degToRad(8)
         self.pallet_arm_wide=3
         self.screws = screws
         if self.screws is None:
@@ -1267,12 +1267,24 @@ class GrasshopperEscapement:
         line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])
         dir_ZP_perpendicular = line_ZP.get_perpendicular_direction()
 
+        entry_composer_rest = self.getComposerRestScrewCentrePos(self.geometry["J"], self.geometry["P"])
+        entry_composer_rest_distance = np.dot(np.subtract(entry_composer_rest, self.geometry["Z"]), line_ZP.dir)
+
+
+        entry_side_end = np.add(self.geometry["Z"], np.multiply(line_ZP.dir, entry_composer_rest_distance))#self.geometry["P"]#
 
         frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
-        frame = frame.lineTo(self.geometry["P"][0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["P"][1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
-        endArc = (self.geometry["P"][0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["P"][1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
+        frame = frame.lineTo(entry_side_end[0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, entry_side_end[1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
+        endArc = (entry_side_end[0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, entry_side_end[1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
         frame = frame.radiusArc(endArc, -arm_wide * 0.50001).lineTo(self.geometry["Z"][0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
         frame = frame.close().extrude(self.frame_thick)
+
+        line_entry_end_to_entry_composer_rest = Line(entry_side_end, anotherPoint=entry_composer_rest)
+        holder_r = self.screws.metric_thread*1.5
+        arm_to_rest_distance = distanceBetweenTwoPoints(entry_composer_rest, entry_side_end)
+        holder_circle_distance = arm_to_rest_distance + (holder_r - self.screws.metric_thread/2)
+        holder_circle_centre = np.add(entry_side_end, np.multiply(line_entry_end_to_entry_composer_rest.dir, holder_circle_distance))
+        frame = frame.cut(cq.Workplane("XY").moveTo(holder_circle_centre[0], holder_circle_centre[1]).circle(holder_r).extrude(self.frame_thick))
 
         # cut hole for exit pallet pivot
         frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).extrude(self.frame_thick))
