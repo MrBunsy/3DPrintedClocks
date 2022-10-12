@@ -806,26 +806,31 @@ class Arbour:
             return self.escapement.getAnchorMaxR()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
-    def getEscapeWheel(self):
+    def getEscapeWheel(self, pinionThick=-1):
+
+        if pinionThick < 0:
+            #this can be overriden for the bodge to ensure we don't press anything up against the inside of the plates
+            pinionThick = self.pinionThick
+
         if self.escapement.type == EscapementType.GRASSHOPPER:
 
             #escapement controls wheel thickness
             shape = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
 
             # pinion is on top of the wheel
-            pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
+            pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
             arbour = shape.add(pinion)
 
-            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
+            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
 
-            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + self.pinionThick + self.endCapThick))
+            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + pinionThick + self.endCapThick))
 
             return arbour
 
         else:
             # old bodge where it pretends to be a wheel
-            return self.pinion.addToWheel(self.escapement, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+            return self.pinion.addToWheel(self.escapement, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
 
 
 
@@ -851,7 +856,7 @@ class Arbour:
         if self.getType() == ArbourType.WHEEL_AND_PINION:
             shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
-            shape = self.getEscapeWheel()
+            shape = self.getEscapeWheel(pinionThick=pinionThick)
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getWheelWithRatchet(forPrinting=forPrinting)
         elif self.getType() == ArbourType.ANCHOR:
