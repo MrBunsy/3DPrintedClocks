@@ -534,7 +534,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
 
     def getWheel(self, style=None, arbour_or_pivot_r=-1, holeD=3):
-        return self.getWheel3D(thick = self.wheelThick, style=style,innerRadiusForStyle=innerRadius, holeD=holeD)
+        return self.getWheel3D(thick = self.wheelThick, style=style,innerRadiusForStyle=arbour_or_pivot_r, holeD=holeD)
 
     #hack to masquerade as a Gear, then we can use this with getArbour()
     def get3D(self, thick=5, holeD=5, style="HAC", innerRadiusForStyle=-1):

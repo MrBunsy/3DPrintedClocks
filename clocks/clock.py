@@ -652,9 +652,9 @@ class GoingTrain:
         # print("Outputting ", out)
         # exporters.export(self.escapement.getTestRig(), out)
 
-        out = os.path.join(path, "{}_anchor_spanner.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(getSpanner(thick=self.arbours[-1].spannerBitThick,size=self.arbours[-1].getAnchorSpannerSize()), out)
+        # out = os.path.join(path, "{}_anchor_spanner.stl".format(name))
+        # print("Outputting ", out)
+        # exporters.export(getSpanner(thick=self.arbours[-1].spannerBitThick,size=self.arbours[-1].getAnchorSpannerSize()), out)
 
 
 class ClockPlates:

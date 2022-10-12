@@ -812,26 +812,19 @@ class Arbour:
             #this can be overriden for the bodge to ensure we don't press anything up against the inside of the plates
             pinionThick = self.pinionThick
 
-        if self.escapement.type == EscapementType.GRASSHOPPER:
+        #escapement controls wheel thickness
+        shape = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
 
-            #escapement controls wheel thickness
-            shape = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
+        # pinion is on top of the wheel
+        pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
-            # pinion is on top of the wheel
-            pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
+        arbour = shape.add(pinion)
 
-            arbour = shape.add(pinion)
+        arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
 
-            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
+        arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + pinionThick + self.endCapThick))
 
-            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + pinionThick + self.endCapThick))
-
-            return arbour
-
-        else:
-            # old bodge where it pretends to be a wheel
-            return self.pinion.addToWheel(self.escapement, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
-
+        return arbour
 
 
     def getShape(self, forPrinting=True):
