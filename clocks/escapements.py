@@ -55,7 +55,7 @@ class AnchorEscapement:
         self.toothTipAngle=degToRad(toothTipAngle)
         self.toothBaseAngle=degToRad(toothBaseAngle)
 
-        #note, these are bodgingly set in GoingTrain
+        #note, these set in setGearTrainInfo() called by the GoingTrain
         self.clockwiseFromPinionSide=clockwiseFromPinionSide
         self.escapeWheelClockwise=escapeWheelClockwise
         self.run_deg = run
@@ -726,14 +726,20 @@ class GrasshopperEscapement:
 
         self.checkGeometry()
 
+        self.clockwiseFromPinionSide=True
+        self.clockwise = True
+
     def setGearTrainInfo(self, escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise):
         '''
         Once the gear train has been calculated, it needs to provide info to the escapement (mostly used by the anchor escapment, not sure there's anything
         that the grasshopper actually needs to adjust here)
         '''
         # self.escapement.setDiameter(escapeWheelDiameter)
-        # self.escapement.clockwiseFromPinionSide = escapeWheelClockwiseFromPinionSide
-        # self.escapement.escapeWheelClockwise = escapeWheelClockwise
+        #if this isn't true, we'll need to flip the escape wheel when it's printed as part of the arbour
+        self.clockwiseFromPinionSide = escapeWheelClockwiseFromPinionSide
+        self.clockwise = escapeWheelClockwise
+        if not self.clockwise:
+            raise ValueError("Grasshopper escapement not yet supported anticlockwise")
 
     def getDistanceBeteenArbours(self):
         return distanceBetweenTwoPoints(self.geometry["Z"],self.geometry["O"])
@@ -1697,11 +1703,13 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getAssembled(self, style=None):
+    def getAssembled(self, style=None, leave_out_wheel_and_frame=False):
+        grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
-        grasshopper = self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2))
-        grasshopper = grasshopper.add(self.rotateToUpright(self.getFrame(leave_in_situ=True)))
+        if not leave_out_wheel_and_frame:
+            grasshopper = grasshopper.add(self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
+            grasshopper = grasshopper.add(self.rotateToUpright(self.getFrame(leave_in_situ=True)))
 
         grasshopper = grasshopper.add(self.rotateToUpright((self.getExitPalletArm()).translate((0, 0, pallet_arm_z))))
         grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryPalletArm()).translate((0, 0, pallet_arm_z))))
@@ -1716,7 +1724,7 @@ class GrasshopperEscapement:
         '''
         REturn Z change between the bottom of the wheel and the bottom of the anchor
         '''
-        return -(self.getComposerZThick()/2 + self.composer_z_distance_from_frame + self.frame_thick)
+        return -(self.getComposerZThick()/2 + self.composer_z_distance_from_frame + self.frame_thick - self.wheel_thick/2)
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_grasshopper_wheel.stl".format(name))

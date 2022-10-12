@@ -813,12 +813,17 @@ class Arbour:
             pinionThick = self.pinionThick
 
         #escapement controls wheel thickness
-        shape = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
+        wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
+
+        if self.escapement.type == EscapementType.GRASSHOPPER and not self.escapement.clockwiseFromPinionSide:
+            #bodge, should try and tidy up how the escapements do this, but generally the anchor will be inside the plates (attached to a pinion) and the grasshopper won't be
+            #so this here is probably an edge case
+            wheel = wheel.mirror("YZ", (0,0,0))
 
         # pinion is on top of the wheel
         pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
-        arbour = shape.add(pinion)
+        arbour = wheel.add(pinion)
 
         arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
 
@@ -1033,6 +1038,13 @@ class Arbour:
 
             shape = shape.add(self.poweredWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
 
+        if self.getType() == ArbourType.ESCAPE_WHEEL and self.escapement.type == EscapementType.GRASSHOPPER:
+
+            z = self.escapement.getWheelBaseToAnchorBaseZ()
+            if not self.pinionAtFront:
+                z += self.pinionThick + self.endCapThick
+
+            shape = shape.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True).translate((0,0,z)))
 
         return shape
 

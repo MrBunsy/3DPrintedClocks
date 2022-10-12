@@ -877,9 +877,15 @@ class SimpleClockPlates:
 
         if self.bearingPositions[-1][2] == 0:
             #the anchor would be directly up against the plate
-            self.bearingPositions[-1][2] = WASHER_THICK#self.anchorThick*0.25
+            #move everything forwards by a washer thickness
+            #TODO not do this when escapement is on the front
+            #TODO consider doing this rather than the bodge where I make pinions smaller
+            # self.bearingPositions[-1][2] = WASHER_THICK#self.anchorThick*0.25
+            for i in range(len(self.bearingPositions)):
+                self.bearingPositions[i][2]+= WASHER_THICK
 
-        # print(self.bearingPositions)
+
+        print(self.bearingPositions)
         self.plateDistance=max(topZs) + self.endshake
 
         print("Plate distance", self.plateDistance)
@@ -1043,12 +1049,38 @@ class SimpleClockPlates:
 
         return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
 
-    def getWallStandoff(self, top=True):
+    def getTopWallStandoff(self):
         '''
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
         a large gap or the hand-avoider
+
+
+        NEW IDEA - make the pillars entirely separate pieces, this will make the print cleaner (no more strings from pillar to pillar)
+        and make it easier to screw the wall standoff to the back plate
         '''
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
+
+        fixingPositions = [(topPillarPos[0] , topPillarPos[1]-topPillarR / 2), (topPillarPos[0] , topPillarPos[1]+ topPillarR / 2)]
+
+        standoff = cq.Workplane("XY").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR).extrude(self.backPlateFromWall)
+
+        screwInBackPlate = self.fixingScrews.length - 10
+        nutFromEndOfScrew = 10
+        # nutZ
+
+        for fixingPos in fixingPositions:
+            plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True))
+
+            plate = plate.cut(self.fixingScrews.getCutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
+
+        return standoff
+
+    def getFrontPlateFixingScrewPositions(self):
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
+        return [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
+
+    # def getWallStandoffFixingPositions
 
     def getPlate(self, back=True, getText=False):
         '''
@@ -1221,10 +1253,10 @@ class SimpleClockPlates:
                 #extra thick layer because plates are huge and usually printed with 0.3 layer height
                 plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
 
-                plate = plate.cut(self.fixingScrews.getCutter(length=10000).rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
+                plate = plate.cut(self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
             else:
                 #front
-                plate = plate.cut(self.fixingScrews.getCutter(length=10000).rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0,0,self.getPlateThick(back=False))))
+                plate = plate.cut(self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0,0,self.getPlateThick(back=False))))
 
         return plate
 
