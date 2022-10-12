@@ -164,6 +164,9 @@ class MachineScrew:
     def getHeadDiameter(self):
         return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
 
+def npToSet(npVector):
+    return (npVector[0], npVector[1])
+
 def averageOfTwoPoints(a,b):
     if len(a) != len(b):
         raise ValueError("Points not same number of dimensions")
@@ -173,6 +176,12 @@ def averageOfTwoPoints(a,b):
     for i in range(points):
         avg.append((a[i] + b[i])/2)
     return avg
+
+# def differenceOfTwoPoints(a,b):
+#     '''
+#     returns a vector AB, from A to B (B - A)
+#     '''
+#     return
 
 def distanceBetweenTwoPoints(a,b):
     return math.sqrt(math.pow(a[0] - b[0],2) + math.pow(a[1] - b[1], 2))

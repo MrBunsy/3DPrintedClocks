@@ -47,7 +47,7 @@ class Gear:
     def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True):
         hexagonDiameter = outerRadius/3
         if big:
-            hexagonDiameter = innerRadius*2
+            hexagonDiameter = max(innerRadius*2, outerRadius/3)
 
             if innerRadius > outerRadius*0.5:
                 hexagonDiameter = outerRadius / 3
@@ -60,6 +60,7 @@ class Gear:
         padding = outerRadius * 0.1
         if padding < 1.5:
             padding=1.5
+        padding=1.5
         #experimenting to reduce the tiny bits teh slicer likes to make
         # padding = padding - (padding % EXTRUSION_WIDTH) - 0.2
 

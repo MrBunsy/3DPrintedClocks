@@ -594,13 +594,15 @@ class GrasshopperEscapement:
             self.screws = MachineScrew(3)
         self.arbourD=arbourD
         self.style = style
+        #I'd like to auto calculate this so the weight screw rests on top of the frame arm, but that can make things very complicated for the entry pallet
+        #so, the weight screw will still rest on the frame arm, but the frame arm will adapt its shape to ensure that happens
         self.composer_height=7.5
         self.composer_thick=2
 
         #how much z between frame and the start of the composer, to leave space for screws and bits
-        self.composer_z_distance_from_frame = 10
+        self.composer_z_distance_from_frame = WASHER_THICK+0.2
 
-        self.loose_on_pivot = 0.2
+        self.loose_on_pivot = 0.5
 
         #how much space along the threaded rod should be allowed to ensure the composer is loose
         self.composer_pivot_space = 0.5
@@ -1258,8 +1260,8 @@ class GrasshopperEscapement:
         holeD = self.arbourD
         arm_wide = self.screws.metric_thread * 2
 
-        #make taller so it's rigid on the arbour
-        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD).extrude(self.frame_thick*2)
+        #make taller so it's rigid on the arbour? Not sure how to do this iwthout it potentially clashing with pallet arms
+        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD).extrude(self.frame_thick)
 
         # entry  side
         line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])
@@ -1285,6 +1287,24 @@ class GrasshopperEscapement:
         endArc = (self.geometry["G"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)
         frame = frame.radiusArc(endArc, -arm_wide*0.50001).lineTo(self.geometry["Z"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["Z"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)
         frame = frame.close().extrude(self.frame_thick)
+
+        #exit composer rest
+        exit_composer_rest = self.getComposerRestScrewCentrePos(self.geometry["Cstar"], self.geometry["G"])
+        #negatives here because line ZG goes in the opposite way. we could let them cancel out, but this is clearer in terms of what we want to happen
+        exit_composer_rest_along_arm = -np.dot(np.subtract(exit_composer_rest, self.geometry["G"]), line_ZG.dir)
+        exit_composer_rest_base = np.add(self.geometry["G"], np.multiply(line_ZG.dir, -exit_composer_rest_along_arm))
+
+        exit_composer_rest_line = Line(exit_composer_rest_base, anotherPoint=exit_composer_rest)
+        exit_composer_rest_base_left = np.add(exit_composer_rest_base, np.multiply(line_ZG.dir, -arm_wide/2))
+        exit_composer_rest_base_right = np.add(exit_composer_rest_base, np.multiply(line_ZG.dir, arm_wide / 2))
+        exit_composer_rest_top_left = np.add(exit_composer_rest, np.multiply(line_ZG.dir, -arm_wide / 2))
+        exit_composer_rest_top_right = np.add(exit_composer_rest, np.multiply(line_ZG.dir, arm_wide / 2))
+        # exit_composer
+
+        #radiusArc(npToSet(exit_composer_rest_top_right), arm_wide/2)
+        #lineTo(exit_composer_rest_top_right[0], exit_composer_rest_top_right[1])
+        frame = frame.workplaneFromTagged("base").moveTo(exit_composer_rest_base_left[0], exit_composer_rest_base_left[1]).lineTo(exit_composer_rest_top_left[0], exit_composer_rest_top_left[1]).\
+            sagittaArc(npToSet(exit_composer_rest_top_right),-self.screws.metric_thread/2).lineTo(exit_composer_rest_base_right[0], exit_composer_rest_base_right[1]).close().extrude(self.frame_thick)
 
         # cut hole for exit pallet pivot
         frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread/2).extrude(self.frame_thick))
@@ -1331,26 +1351,28 @@ class GrasshopperEscapement:
         arm_bend_start = np.add(pivot_pos, np.multiply(line_along_arm.dir, distance_nib_bend_start))
         return arm_bend_start
 
-    def getComposerRestTipPos(self, nib_pos, pivot_pos):
+    def getComposerRestScrewCentrePos(self, nib_pos, pivot_pos):
         '''
-        Get the position of the contact point where the composer will rest on part of the arm
-        It's then up to the composer and arm to meet that requirement
-        Plan is to use the screw that's through the end of the composer (as a weight) to rest on part of the arm
+        In the top left corner of the composer is a screw to add weight. this screw will extend out the back of the composer so it will come into contact with the frame arm
+        This gets the position of the centre of that screw when the composer should be resting on that arm
+
+        from the composer (this is the outside of the composer):
+        topLeftCorner = (-composer_length, self.composer_height + self.composer_thick)
+        therefore the screw centre is :
+        (-(composer_length - self.composer_thick/2), self.composer_height + self.composer_thick/2)
         '''
         pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
 
         line_along_arm = Line(pivot_pos, anotherPoint=pallet_arm_bend_start)
 
-        distance_to_bend = distanceBetweenTwoPoints(pivot_pos, pallet_arm_bend_start)
-
-        rest_distance = distance_to_bend*0.5
+        composer_length = distanceBetweenTwoPoints(pivot_pos, pallet_arm_bend_start)
 
         arm_angle = line_along_arm.getAngle()
 
-        rest_pos_base = np.add(pivot_pos, np.multiply(line_along_arm.dir, rest_distance))
-        rest_pos = np.add(rest_pos_base, polar(arm_angle - math.pi/2, self.composer_height))
+        rest_pos_base = np.add(pivot_pos, np.multiply(line_along_arm.dir, composer_length - self.composer_thick/2))
+        rest_screw_pos = np.add(rest_pos_base, polar(arm_angle - math.pi/2, self.composer_height + self.composer_thick/2))
 
-        return rest_pos
+        return rest_screw_pos
 
     def getComposer(self, nib_pos, pivot_pos):
         '''
@@ -1406,6 +1428,7 @@ class GrasshopperEscapement:
         # #angle that is along the tangent of the wheel
         nib_tangent_angle = line_pivot_to_nib.getAngle()
         nib_end_r = self.pallet_arm_wide*0.6
+
 
 
 
