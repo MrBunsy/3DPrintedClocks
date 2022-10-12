@@ -9,6 +9,7 @@ class EscapementType(Enum):
     DEADBEAT = "deadbeat"
     RECOIL = "recoil"
     GRASSHOPPER = "grasshopper"
+    NOT_IMPLEMENTED = None
 
 class PendulumFixing(Enum):
     #the first reliable mechanism, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod

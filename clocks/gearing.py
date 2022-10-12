@@ -568,7 +568,7 @@ class WheelPinionPair:
         return addendumFactor
 
 class Arbour:
-    def __init__(self, arbourD, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
+    def __init__(self, arbourD=None, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
                  distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing = PendulumFixing.FRICTION_ROD):
         '''
         This represents a combination of wheel and pinion. But with special versions:
@@ -651,6 +651,14 @@ class Arbour:
             self.ratchetScrews = ratchetScrews
             if self.ratchetScrews is None:
                 self.ratchetScrews = MachineScrew(2, countersunk=True)
+
+        if self.getType() == ArbourType.ANCHOR:
+            #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
+            self.arbourD = self.escapement.getAnchorArbourD()
+            self.holeD = self.arbourD
+            self.wheelThick = self.escapement.getAnchorThick()
+        if self.getType() == ArbourType.ESCAPE_WHEEL:
+            self.wheelThick = self.escapement.getWheelThick()
 
         #anchor specific, will be refined once arbour extension info is provided
         # want a square bit so we can use custom long spanners to set the beat
@@ -798,6 +806,27 @@ class Arbour:
             return self.escapement.getAnchorMaxR()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
+    def getEscapeWheel(self):
+        if self.escapement.type == EscapementType.GRASSHOPPER:
+
+            #escapement controls wheel thickness
+            shape = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
+
+            # pinion is on top of the wheel
+            top = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.escapement.getWheelThick()])
+
+            arbour = shape.add(top)
+
+            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(1000))
+
+            return arbour
+
+        else:
+            # old bodge where it pretends to be a wheel
+            return self.pinion.addToWheel(self.escapement, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+
+
+
     def getShape(self, forPrinting=True):
         '''
         return a shape that can be exported to STL
@@ -820,7 +849,7 @@ class Arbour:
         if self.getType() == ArbourType.WHEEL_AND_PINION:
             shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
-            shape = self.pinion.addToWheel(self.escapement, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=pinionThick, capThick=self.endCapThick)
+            shape = self.getEscapeWheel()
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getWheelWithRatchet(forPrinting=forPrinting)
         elif self.getType() == ArbourType.ANCHOR:
@@ -859,9 +888,8 @@ class Arbour:
 
         remainingExtension = (self.frontSideExtension if self.spannerBitOnFront else self.rearSideExtension) - self.spannerBitThick
 
-        #just gets the anchor bit, in 3D, facing up/front with clockwisness all sorted
-        #everything is split a bit between escapement and arbour, TODO tidy up
-        anchor = self.escapement.getAnchorArbour(holeD=self.arbourD, anchorThick=self.wheelThick)#, forPrinting=forPrinting)
+        #just the anchor/frame shape, with nothing else that might be needed
+        anchor = self.escapement.getAnchor()
 
         if self.pendulumFixing == PendulumFixing.FRICTION_ROD:
             #add a square bit to help adjust the beat usign a spanner.

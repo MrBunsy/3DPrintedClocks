@@ -124,10 +124,6 @@ class GoingTrain:
         #calculate ratios from minute hand to escapement
         #the last wheel is the escapement
 
-
-        #maybe make this overridable in genGears?
-        self.anchorThick = 12
-
         self.escapement=escapement
         if escapement is None:
             self.escapement = AnchorEscapement(teeth=escapement_teeth)
@@ -524,9 +520,10 @@ class GoingTrain:
         # print("Escape wheel pinion at front: {}, clockwise (from front) {}, clockwise from pinion side: {} ".format(escapeWheelPinionAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPinionSide))
         #escapment is now provided or configured in the constructor
         # self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide)
-        self.escapement.setDiameter(escapeWheelDiameter)
-        self.escapement.clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide
-        self.escapement.escapeWheelClockwise=escapeWheelClockwise
+        # self.escapement.setDiameter(escapeWheelDiameter)
+        # self.escapement.clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide
+        # self.escapement.escapeWheelClockwise=escapeWheelClockwise
+        self.escapement.setGearTrainInfo(escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise)
         self.chainWheelArbours=[]
         if self.chainWheels > 0:
             # assuming one chain wheel for now
@@ -586,14 +583,16 @@ class GoingTrain:
                 pinionAtFront = self.escapeWheelPinionAtFront
 
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, wheelThick=escapeWheelThick, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
-                                      distanceToNextArbour=self.escapement.anchor_centre_distance, style=style, pinionAtFront=pinionAtFront))
+                #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
+                                      distanceToNextArbour=self.escapement.getDistanceBeteenArbours(), style=style, pinionAtFront=pinionAtFront))
 
             pinionAtFront = not pinionAtFront
 
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
-        arbours.append(Arbour(escapement=self.escapement, wheelThick=self.anchorThick, arbourD=holeD, pinionAtFront=self.penulumAtFront, pendulumFixing=pendulumFixing))
+        #this doesn't need arbourD or thickness as this is controlled by the escapement
+        arbours.append(Arbour(escapement=self.escapement, pinionAtFront=self.penulumAtFront, pendulumFixing=pendulumFixing))
 
         self.wheelPinionPairs = pairs
         self.arbours = arbours
@@ -649,9 +648,9 @@ class GoingTrain:
         #     exporters.export(arbour.getShape(), out)
 
 
-        out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.escapement.getTestRig(), out)
+        # out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
+        # print("Outputting ", out)
+        # exporters.export(self.escapement.getTestRig(), out)
 
         out = os.path.join(path, "{}_anchor_spanner.stl".format(name))
         print("Outputting ", out)
