@@ -29,21 +29,16 @@ escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, 
 
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1500, usePulley=True, chainAtBack=False, chainWheels=0, hours=28)
 
-#, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4
-# train.setEscapementDetails(drop=1.5, lift=3, lock=1.5)
-
 train.calculateRatios(max_wheel_teeth=50, min_pinion_teeth=9, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
-# train.genCordWheels(ratchetThick=5, cordThick=1, cordCoilThick=11, style=gearStyle)
 # 61 links/ft 1-day regula chain. copied from clock 04
 train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
 
-
-#25 should comfortably stick out in front of the motion works
+#planning to put hte pendulum on the back
 pendulumSticksOut=25
 
-train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=4, chainWheelPinionThickMultiplier=4)
-train.printInfo(weight_kg=0.425)
+train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
+train.printInfo(weight_kg=1)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30, style=gearStyle)
 
@@ -56,7 +51,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Granny", style="vertical")
+plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name=clockName, style="vertical", pendulumAtFront=False)
 
 
 hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)

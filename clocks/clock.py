@@ -662,7 +662,8 @@ class ClockPlates:
     This took a while to settle - clocks before v4 will be unlikely to work anymore.
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, fixingScrewsD=3, plateThick=5, backPlateThick=None,
-                 pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD, pendulumFixingBearing=None):
+                 pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
+                 pendulumFixingBearing=None, pendulumAtFront=True):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -670,6 +671,7 @@ class ClockPlates:
 
         #how the pendulum is fixed to the anchor arbour.
         self.pendulumFixing = pendulumFixing
+        self.pendulumAtFront = pendulumAtFront
 
         #only used for the direct arbour pendulum
         self.pendulumFixingBearing = pendulumFixingBearing
@@ -729,13 +731,7 @@ class ClockPlates:
         self.gearGap = 3
         self.smallGearGap = 2
 
-        #TODO make some sort of object to hold all this info we keep passing around?
-        self.anchorThick=self.pendulum.anchorThick
-
-
-
         # self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
-
         #if angles are not given, assume clock is entirely vertical
 
         if anglesFromMinute is None:
@@ -828,8 +824,9 @@ class ClockPlates:
                 #all the other going wheels up to and including the escape wheel
                 if i == self.goingTrain.wheels:
                     # the anchor
-                    baseZ = drivingZ - self.anchorThick / 2
-                    self.arbourThicknesses.append(self.anchorThick)
+                    escapement = self.goingTrain.getArbour(i).escapement
+                    baseZ = drivingZ - self.goingTrain.getArbour(i-1).wheelThick/2 + escapement.getWheelBaseToAnchorBaseZ()
+                    self.arbourThicknesses.append(escapement.getAnchorThick())
                     # print("is anchor")
                 else:
                     #any of the other wheels

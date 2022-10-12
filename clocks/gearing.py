@@ -813,11 +813,13 @@ class Arbour:
             shape = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
 
             # pinion is on top of the wheel
-            top = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.escapement.getWheelThick()])
+            pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
-            arbour = shape.add(top)
+            arbour = shape.add(pinion)
 
-            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(1000))
+            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
+
+            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + self.pinionThick + self.endCapThick))
 
             return arbour
 

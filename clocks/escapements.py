@@ -98,6 +98,12 @@ class AnchorEscapement:
     def getWheelThick(self):
         return self.wheelThick
 
+    def getWheelBaseToAnchorBaseZ(self):
+        '''
+        REturn Z change between the bottom of the wheel and the bottom of the anchor
+        '''
+        return -(self.anchorThick - self.wheelThick)/2
+
     def setGearTrainInfo(self, escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise):
         '''
         Once the gear train has been calculated, it needs to provide info to the escapement (mostly used by the anchor escapment, not sure there's anything
@@ -411,8 +417,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         '''
         To allow enough space in the clock plates and anywhere else, HACK HACK HACK for now
         '''
-        #holeD * 2, which for now is always going to be six. To fix in future.
-        return 6
+        return self.arbourD*2
 
     def getAnchorArbour(self, holeD=3, anchorThick=10, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0):#, forPrinting=True):
         '''
@@ -608,6 +613,11 @@ class EscapmentInterface:
     def getWheel(self, style=None, arbour_or_pivot_r=-1, holeD=3):
         return None
 
+    def getWheelBaseToAnchorBaseZ(self):
+        '''
+        REturn Z change between the bottom of the wheel and the bottom of the anchor
+        '''
+
     # def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1):
     #     '''
     #     old bodge, pretend to be a gear wheel and return the wheel
@@ -678,7 +688,7 @@ class GrasshopperEscapement:
 
         self.loose_on_pivot = 0.5
 
-        #how much space along the threaded rod should be allowed to ensure the composer is loose
+        #how much space along the threaded rod should be allowed to ensure the composer is loose (total space, half on each side of the pallet arm)
         self.composer_pivot_space = 0.5
         self.composer_arm_wide=self.screws.metric_thread*2
 
@@ -1636,7 +1646,10 @@ class GrasshopperEscapement:
         return self.wheel_thick
 
     def getAnchorThick(self):
-        return self.frame_thick
+        '''
+        Just the thickness of the bit which is on the arbour (in case I ever put the grasshopper between the plates)
+        '''
+        return self.frame_thick# + self.composer_z_distance_from_frame + self.composer_thick + self.pallet_thick + self.composer_thick + self.composer_pivot_space
 
     def getWheel(self, style=None, arbour_or_pivot_r=-1, holeD=3):
 
@@ -1696,6 +1709,14 @@ class GrasshopperEscapement:
         grasshopper = grasshopper.add(self.rotateToUpright((self.getExitComposer()).translate((0, 0, composer_z))))
         return grasshopper
 
+    def getComposerZThick(self):
+        return self.pallet_thick + self.composer_pivot_space + self.composer_thick*2
+
+    def getWheelBaseToAnchorBaseZ(self):
+        '''
+        REturn Z change between the bottom of the wheel and the bottom of the anchor
+        '''
+        return -(self.getComposerZThick()/2 + self.composer_z_distance_from_frame + self.frame_thick)
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_grasshopper_wheel.stl".format(name))
