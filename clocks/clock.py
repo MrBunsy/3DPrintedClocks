@@ -657,9 +657,14 @@ class GoingTrain:
         # exporters.export(getSpanner(thick=self.arbours[-1].spannerBitThick,size=self.arbours[-1].getAnchorSpannerSize()), out)
 
 
-class ClockPlates:
+class SimpleClockPlates:
     '''
     This took a while to settle - clocks before v4 will be unlikely to work anymore.
+
+    Given that the simple plate is the only working implementation, would it make more sense to turn this class into the SimpleClockPlates?
+
+    Any future plates are likely to be be very different in terms out laying out gears, and anything that is needed can always be spun out
+
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
@@ -919,10 +924,6 @@ class ClockPlates:
         self.embeddedNutHeight = self.getPlateThick(back=True) + self.plateDistance  + self.getPlateThick(back=False) - (self.fixingScrews.length - 10)
 
 
-    def getPlate(self, back=True, getText=False):
-        if self.style in ["round", "vertical"]:
-            return self.getSimplePlate(back, getText)
-
     def getPlateThick(self, back=True):
         if back:
             return self.backPlateThick
@@ -991,8 +992,19 @@ class ClockPlates:
 
         return template
 
+    def getPillarInfo(self):
+        '''
+        return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR)
+        '''
 
-    def getSimplePlate(self, back=True, getText=False):
+    def getWallStandoff(self, top=True):
+        '''
+        If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
+        if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
+        a large gap or the hand-avoider
+        '''
+
+    def getPlate(self, back=True, getText=False):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
         Designed to be flat up against the wall, with everything offset to avoid the wall and picture rail
@@ -1129,8 +1141,9 @@ class ClockPlates:
             backThick = max(self.getPlateThick(back)-5, 4)
 
             screwHeadD = 11
-            for screwPos in screwHolePositions:
-                plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=screwPos[2])
+            if self.backPlateFromWall == 0:
+                for screwPos in screwHolePositions:
+                    plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=screwPos[2])
 
             #the pillars
 
@@ -1154,7 +1167,7 @@ class ClockPlates:
                 try:
                     plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR).extrude(self.plateDistance)
                 except:
-                    plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR).extrude(self.plateDistance+self.getPlateThick(back=True))
+                    plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(bottomPillarR+0.01).extrude(self.plateDistance+self.getPlateThick(back=True))
 
             if self.extraHeavy:
                 sagitta = topPillarR*0.25

@@ -35,12 +35,12 @@ train.calculateRatios(max_wheel_teeth=50, min_pinion_teeth=9, wheel_min_teeth=30
 train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
 
 #planning to put hte pendulum on the back
-pendulumSticksOut=25
+pendulumSticksOut=20
 
 train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
 train.printInfo(weight_kg=1)
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30, style=gearStyle)
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=30, style=gearStyle)
 
 
 #trying a thicker anchor and glue rather than nyloc
@@ -51,26 +51,16 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.ClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clock 14", style="vertical", pendulumAtFront=False, backPlateFromWall=40)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clock 14", style="vertical", pendulumAtFront=False, backPlateFromWall=40)
 
 
 hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-# hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
-
-
-#no weight for this clock, as it's going to probably be too heavy to make myself.
-
 assembly = clock.Assembly(plates, hands=hands)
 
 assembly.printInfo()
 
 weight = clock.Weight(height=130, diameter=35)
 weight.printInfo()
-
-# bigweight = clock.Weight(height=125, diameter=45)
-# bigweight.printInfo()
-# show_object(train.getArbourWithConventionalNaming(0).getAssembled())
-# show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
 show_object(assembly.getClock())
 
