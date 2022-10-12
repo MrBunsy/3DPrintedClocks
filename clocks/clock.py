@@ -994,8 +994,54 @@ class SimpleClockPlates:
 
     def getPillarInfo(self):
         '''
-        return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR)
+        return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
         '''
+        bearingInfo = getBearingInfo(self.arbourD)
+        # width of thin bit
+        holderWide = bearingInfo.bearingOuterD + self.bearingWallThick * 2
+
+        if self.extraHeavy:
+            holderWide *= 1.2
+
+        chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
+
+        # original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
+        # so instead, make it just big enough to contain the holes for the chains/cord
+
+        furthestX = max([abs(holePos[0][0]) for holePos in self.goingTrain.poweredWheel.getChainPositionsFromTop()])
+
+        # juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
+        minDistanceForChainHoles = (furthestX * 2 + self.chainHoleD + 5) / 2
+
+        bottomPillarR = minDistanceForChainHoles
+
+        if self.heavy:
+            bottomPillarR = self.plateDistance / 2
+
+        if bottomPillarR < minDistanceForChainHoles:
+            bottomPillarR = minDistanceForChainHoles
+        topPillarR = holderWide / 2
+
+        anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
+
+        # find the Y position of the bottom of the top pillar
+        topY = self.bearingPositions[0][1]
+        if self.style == "round":
+            # find the highest point on the going train
+            # TODO for potentially large gears this might be lower if they're spaced right
+            for i in range(len(self.bearingPositions) - 1):
+                y = self.bearingPositions[i][1] + self.goingTrain.getArbourWithConventionalNaming(i).getMaxRadius() + self.gearGap
+                if y > topY:
+                    topY = y
+        else:
+
+            topY = self.bearingPositions[-1][1] + anchorSpace
+
+        bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - chainWheelR - bottomPillarR]
+        topPillarPos = [self.bearingPositions[0][0], topY + topPillarR]
+
+
+        return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
 
     def getWallStandoff(self, top=True):
         '''
@@ -1016,12 +1062,7 @@ class SimpleClockPlates:
         The screwhole is placed directly above the weight to make the clock easier to hang straight
 
         '''
-        bearingInfo = getBearingInfo(self.arbourD)
-        #width of thin bit
-        holderWide =  bearingInfo.bearingOuterD + self.bearingWallThick*2
-
-        if self.extraHeavy:
-            holderWide*=1.2
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
 
         chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
 
@@ -1039,39 +1080,7 @@ class SimpleClockPlates:
         #so instead, make it just big enough to contain the holes for the chains/cord
 
         plate = plate.tag("top")
-        furthestX = max([ abs(holePos[0][0]) for holePos in self.goingTrain.poweredWheel.getChainPositionsFromTop() ])
 
-        #juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
-        minDistanceForChainHoles = (furthestX*2 + self.chainHoleD + 5) / 2
-
-        bottomPillarR= minDistanceForChainHoles
-
-        if self.heavy:
-            bottomPillarR = self.plateDistance/2
-
-
-        if bottomPillarR < minDistanceForChainHoles:
-            bottomPillarR = minDistanceForChainHoles
-        topPillarR = holderWide/2
-
-        anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
-
-        #find the Y position of the bottom of the top pillar
-        topY = self.bearingPositions[0][1]
-        if self.style == "round":
-            #find the highest point on the going train
-            #TODO for potentially large gears this might be lower if they're spaced right
-            for i in range(len(self.bearingPositions)-1):
-                y = self.bearingPositions[i][1] + self.goingTrain.getArbourWithConventionalNaming(i).getMaxRadius() + self.gearGap
-                if y > topY:
-                    topY = y
-        else:
-
-            topY = self.bearingPositions[-1][1] + anchorSpace
-
-        bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - chainWheelR - bottomPillarR]
-        topPillarPos = [self.bearingPositions[0][0], topY + topPillarR]
-        #where the extra-wide bit of the plate stops
         topOfBottomBitPos = self.bearingPositions[0]
 
         screwHolePositions = self.getScrewHolePositions()
