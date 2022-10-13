@@ -728,6 +728,9 @@ class SimpleClockPlates:
         #how chunky to make the bearing holders
         self.bearingWallThick = 4
 
+        #for fixing to teh wall
+        self.wallFixingScrewHeadD = 11
+
         self.pendulumAtTop = pendulumAtTop
         #how far away from the relevant plate (front if pendulumAtFront) the pendulum should be
         self.pendulumSticksOut = pendulumSticksOut
@@ -1068,8 +1071,8 @@ class SimpleClockPlates:
 
 
         return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
-
-    def getWallStandoff(self, top=True, forPrinting=True):
+    
+    def getSinglePillarWallStandoff(self, top=True, forPrinting=True):
         '''
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
@@ -1106,7 +1109,40 @@ class SimpleClockPlates:
             standoff = standoff.translate((0,0,-self.backPlateFromWall))
 
         return standoff
+    
+    def getWallStandOff(self):
 
+        standoff = cq.Workplane("XY").tag("base").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(self.topPillarR).extrude(self.backPlateFromWall)
+        standoff = standoff.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(self.backPlateFromWall)
+
+        # plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=screwHolebackThick, screwHeadD=self.wallFixingScrewHeadD, addExtraSupport=screwPos[2])
+
+        back_wide = 10#self.wallFixingScrewHeadD+5
+        back_thick = 4
+
+        screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] - self.topPillarR - 8)
+        screwHoleSupportR = self.topPillarR#(self.wallFixingScrewHeadD + 6)/2
+        slotLength = 7
+
+
+        standoff = standoff.workplaneFromTagged("base").moveTo(self.topPillarPos[0] - back_wide/2, self.topPillarPos[1]).line(back_wide,0).\
+            lineTo(self.bottomPillarPos[0] + back_wide/2, self.bottomPillarPos[1]).line(-back_wide,0).close().extrude(back_thick)
+
+        standoff = standoff.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1] - slotLength).circle(screwHoleSupportR).extrude(back_thick)
+
+        standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0])/2, (screwHolePos[1] + self.topPillarPos[1]-slotLength)/2 ).\
+            rect(self.topPillarR*2, self.topPillarPos[1] - screwHolePos[1] + slotLength).extrude(back_thick)
+
+        standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
+        
+        for fixingPos in self.backPlateFixings:
+            standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, self.backPlateFromWall-self.backPlateWallStandoffThickForScrews)))
+
+        standoff = standoff.translate((0, 0, -self.backPlateFromWall))
+
+        return standoff
+
+    
     # def getFrontPlateFixingScrewPositions(self, top=None):
     #     '''
     #     Get positions of the screws that hold the front plate to the pillars
@@ -1229,10 +1265,10 @@ class SimpleClockPlates:
 
             screwHolebackThick = max(self.getPlateThick(back)-5, 4)
 
-            screwHeadD = 11
+
             if self.backPlateFromWall == 0:
                 for screwPos in screwHolePositions:
-                    plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=screwHolebackThick, screwHeadD=screwHeadD, addExtraSupport=screwPos[2])
+                    plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=screwHolebackThick, screwHeadD=self.wallFixingScrewHeadD, addExtraSupport=screwPos[2])
 
             #the pillars
 
@@ -1301,7 +1337,8 @@ class SimpleClockPlates:
                 #front
                 plate = plate.cut(self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0,0,self.getPlateThick(back=False))))
 
-        if self.backPlateFromWall > 0:
+        if back and self.backPlateFromWall > 0:
+            #holes for the embedded nuts and fixing screws for the standoff to attach
             nutZ = self.fixingScrews.length - self.backPlateWallStandoffThickForScrews - self.backPlateWallStandoffNutFromEndOfScrew
             for fixingPos in self.backPlateFixings:
                 plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, height=embeddedNutHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((0, 0, nutZ)).translate(fixingPos))
@@ -1534,6 +1571,11 @@ class SimpleClockPlates:
             print("Outputting ", out)
             exporters.export(self.getDrillTemplate(7), out)
 
+        if self.backPlateFromWall > 0:
+            out = os.path.join(path, "{}_wall_standoff.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getWallStandOff(), out)
+
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
         #         extensionShape=self.getArbourExtension(arbour, top=top)
@@ -1649,8 +1691,9 @@ class Assembly:
 
         if self.plates.backPlateFromWall > 0:
             #need wall standoffs
-            clock = clock.add(self.plates.getWallStandoff(top=True, forPrinting=False))
-            clock = clock.add(self.plates.getWallStandoff(top=False, forPrinting=False))
+            # clock = clock.add(self.plates.getSinglePillarWallStandoff(top=True, forPrinting=False))
+            # clock = clock.add(self.plates.getSinglePillarWallStandoff(top=False, forPrinting=False))
+            clock = clock.add(self.plates.getWallStandOff())
 
         #the wheels
         for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
