@@ -18,17 +18,18 @@ import datetime
 '''
 Long term plan: this will be a library of useful classes to generate all the components and bits of clock plates
 But another script will generate specific clock plates and arbours (note - the GoingTrain class has become a bit of a jack of all trades generating most of the arbours)
+(note - arbours have been spun out into their own class, but the goingtrain, arbours and plates are still fairly strongly coupled)
 
 Note: naming conventions I can find for clock gears seem to assume you always have the same number of gears between the chain and the minute hand
-this is blatantly false (I can see this just looking at the various clocks I have) so I'm adopting a different naming convention:
+this is blatantly false (I can see this just looking at the various clocks I have) so I originally adopted a different naming convention:
 
 The minute hand arbour is arbour 0.
 In the direction of the escapement is +=ve
 in the direction of the chain/spring wheel is -ve
 
-NOTE - although I thought it would be useful to always have the minute wheel as 0, it has actually proven to be more of a bother
+UPDATE - although I thought it would be useful to always have the minute wheel as 0, it has actually proven to be more of a bother
 A lot of operations require looping through all the bearings, and it would have been much easier to stick with the convention
-It's probably too late now to refactor, but worth thinking about for the future 
+getArbourWithConventionalNaming has been added to address this, but be aware that both are in play (although it should be clear which is being used) 
 
 
 So for a very simple clock where the minute arbour is also the chain wheel, there could be only three arbours: 0, 1 and 2 (the escape wheel itself)
@@ -40,9 +41,14 @@ The minute wheel is on a mini arbour with the hour pinion, which drives the hour
 The hour shaft fits over the minute arbour (on the clock face side) and the hour hand is friction fitted onto the hour shaft
 
 Current plan: the cannon pinion will be loose over the minute arbour, and have a little shaft for the minute hand.
-A nyloc nut underneath it and a normal nut on top of the minute hand will provide friction from the minute arbour to the motion work.
+A nyloc nut underneath it (or two nuts locked against each other) and a normal nut on top (found nyloc or two nuts locked works better, you can turn hands backwards) 
+of the minute hand will provide friction from the minute arbour to the motion work.
 I think this is similar to older cuckoos I've seen. It will result in a visible nut, but a more simple time train. Will try it
 for the first clock and decide if I want to switch to something else later. 
+update - it works really well, I'm planning to keep doing it until there's reason not to.
+
+
+Plan: spin out GoingTrain to gearing and a new file for the plates. keep this just for the clock assembly (and maybe dial and any future cases?)
 '''
 
 
@@ -731,6 +737,10 @@ class SimpleClockPlates:
         if self.fixingScrews is None:
             self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True, length=25)
 
+        #how much of the screw should be in the standoff, with the rest in the back plate
+        self.backPlateWallStandoffThickForScrews=self.plateThick
+        self.backPlateWallStandoffNutFromEndOfScrew = 10
+
         # how much space to leave around the edge of the gears for safety
         self.gearGap = 3
         self.smallGearGap = 2
@@ -929,6 +939,16 @@ class SimpleClockPlates:
         #absolute z position
         self.embeddedNutHeight = self.getPlateThick(back=True) + self.plateDistance  + self.getPlateThick(back=False) - (self.fixingScrews.length - 10)
 
+        self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.holderWide = self.getPillarInfo()
+        #fixing positions to screw front plate onto the pillars
+        self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
+        self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
+        self.frontPlateFixings = self.frontPlateTopFixings + self.frontPlateBottomFixings
+
+        #fixing positions to screw the wall standoffs onto the back plate/pillars only used if backPlateFromWall > 0
+        self.backPlateTopFixings = [(self.topPillarPos[0], self.topPillarPos[1]- self.topPillarR / 2), (self.topPillarPos[0], self.topPillarPos[1] + self.topPillarR / 2)]
+        self.backPlateBottomFixings = [(self.bottomPillarPos[0] + self.bottomPillarR * 0.5, self.bottomPillarPos[1]), (self.bottomPillarPos[0] - self.bottomPillarR * 0.5, self.bottomPillarPos[1])]
+        self.backPlateFixings = self.backPlateTopFixings + self.backPlateBottomFixings
 
     def getPlateThick(self, back=True):
         if back:
@@ -1049,36 +1069,64 @@ class SimpleClockPlates:
 
         return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
 
-    def getTopWallStandoff(self):
+    def getWallStandoff(self, top=True, forPrinting=True):
         '''
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
         a large gap or the hand-avoider
 
+        this is in position with the xy plate at the TOP of the standoff
 
         NEW IDEA - make the pillars entirely separate pieces, this will make the print cleaner (no more strings from pillar to pillar)
-        and make it easier to screw the wall standoff to the back plate
+        and make it easier to screw the wall standoff to the back plate?
+        note - this won't make it easier, but is a good idea to improve print quality
+
+        new new idea - I'm worried about them being a bit too flimsy, I might give them an equivilant to the back plate to hold them together and give the screwhole somewhere to go
+        doesn't need to be as thick or wide as the back plate
+
+        Going to test just pillar extensions and using the hand-avoider around the bottom pillar. If that's too unstable I might try a straddling bottom standoff with two half pillars
         '''
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
 
-        fixingPositions = [(topPillarPos[0] , topPillarPos[1]-topPillarR / 2), (topPillarPos[0] , topPillarPos[1]+ topPillarR / 2)]
+        pillarPos = self.topPillarPos if top else self.bottomPillarPos
+        pillarR = self.topPillarR if top else self.bottomPillarR
+        fixings = self.backPlateTopFixings if top else self.backPlateBottomFixings
 
-        standoff = cq.Workplane("XY").moveTo(topPillarPos[0], topPillarPos[1]).circle(topPillarR).extrude(self.backPlateFromWall)
+        standoff = cq.Workplane("XY").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude(self.backPlateFromWall)
 
-        screwInBackPlate = self.fixingScrews.length - 10
-        nutFromEndOfScrew = 10
-        # nutZ
 
-        for fixingPos in fixingPositions:
-            plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True))
 
-            plate = plate.cut(self.fixingScrews.getCutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
+        for fixingPos in fixings:
+            # plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True).translate((0,0,nutZ)).translate(fixingPos))
+
+            standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, self.backPlateFromWall-self.backPlateWallStandoffThickForScrews)))
+
+        if forPrinting:
+            standoff = standoff.rotate((0,0,0), (1,0,0), 180)
+        else:
+            standoff = standoff.translate((0,0,-self.backPlateFromWall))
 
         return standoff
 
-    def getFrontPlateFixingScrewPositions(self):
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
-        return [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
+    # def getFrontPlateFixingScrewPositions(self, top=None):
+    #     '''
+    #     Get positions of the screws that hold the front plate to the pillars
+    #     if top is None, return all of them
+    #     if top is True, return top pillar fixings
+    #     if top is False, return bottom pillar fixings
+    #     '''
+    #     topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
+    #     topFixings = [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1])]
+    #     bottomFixings = [(bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
+    #
+    #     if top is None:
+    #         fixings = []
+    #         fixings.append(topFixings)
+    #         fixings.append(bottomFixings)
+    #         return fixings
+    #     elif top:
+    #         return topFixings
+    #     else:
+    #         return bottomFixings
 
     # def getWallStandoffFixingPositions
 
@@ -1125,7 +1173,7 @@ class SimpleClockPlates:
             topOfBottomBitPos = (0, bottomScrewHoleY)
 
 
-        fixingPositions = [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
+        fixingPositions = self.frontPlateFixings# [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1]), (bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
 
 
         #supports all the combinations of round/vertical and chainwheels or not
@@ -1179,12 +1227,12 @@ class SimpleClockPlates:
 
         if back:
 
-            backThick = max(self.getPlateThick(back)-5, 4)
+            screwHolebackThick = max(self.getPlateThick(back)-5, 4)
 
             screwHeadD = 11
             if self.backPlateFromWall == 0:
                 for screwPos in screwHolePositions:
-                    plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=backThick, screwHeadD=screwHeadD, addExtraSupport=screwPos[2])
+                    plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=screwHolebackThick, screwHeadD=screwHeadD, addExtraSupport=screwPos[2])
 
             #the pillars
 
@@ -1239,24 +1287,25 @@ class SimpleClockPlates:
         else:
            plate = self.frontAdditionsToPlate(plate)
 
-        fixingScrewD = 3
-
-        #screws to fix the plates together
-        # plate = plate.faces(">Z").workplane().pushPoints(fixingPositions).circle(fixingScrewD / 2).cutThruAll()
-
-
-
+        #screws to fix the plates together, with embedded nuts in the pillars
+        embeddedNutHeight =self.fixingScrews.getNutHeight()*1.4
         for fixingPos in fixingPositions:
 
             if back:
                 #embedded nuts!
                 #extra thick layer because plates are huge and usually printed with 0.3 layer height
-                plate = plate.cut(getHoleWithHole(fixingScrewD,getNutContainingDiameter(fixingScrewD,NUT_WIGGLE_ROOM), getNutHeight(fixingScrewD)*1.4, sides=6, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
+                plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, height=embeddedNutHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
 
                 plate = plate.cut(self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
             else:
                 #front
                 plate = plate.cut(self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0,0,self.getPlateThick(back=False))))
+
+        if self.backPlateFromWall > 0:
+            nutZ = self.fixingScrews.length - self.backPlateWallStandoffThickForScrews - self.backPlateWallStandoffNutFromEndOfScrew
+            for fixingPos in self.backPlateFixings:
+                plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, height=embeddedNutHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((0, 0, nutZ)).translate(fixingPos))
+                plate = plate.cut(self.fixingScrews.getCutter().translate(fixingPos).translate((0,0,-self.backPlateWallStandoffThickForScrews)))
 
         return plate
 
@@ -1598,6 +1647,11 @@ class Assembly:
 
         clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.getPlateThick(back=True))))
 
+        if self.plates.backPlateFromWall > 0:
+            #need wall standoffs
+            clock = clock.add(self.plates.getWallStandoff(top=True, forPrinting=False))
+            clock = clock.add(self.plates.getWallStandoff(top=False, forPrinting=False))
+
         #the wheels
         for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
@@ -1652,10 +1706,12 @@ class Assembly:
 
         pendulumRodExtraZ = 2
 
-        pendulumRodFixing = self.pendulum.getPendulumForRod().mirror().translate((0,0,self.pendulum.pendulumTopThick))
+        pendulumRodFixing = self.pendulum.getPendulumForRod(forPrinting=False)
 
         pendulumHolderBaseZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ
 
+        if not self.plates.pendulumAtFront:
+            pendulumHolderBaseZ = -self.plates.pendulumSticksOut - self.pendulum.pendulumTopThick/2
 
 
         clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], pendulumHolderBaseZ)))
@@ -1700,20 +1756,29 @@ class Assembly:
                     clock = clock.add(weightShape.translate(weightPos))
 
 
-
+        #vector from minute wheel to the pendulum
         minuteToPendulum = (self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[self.goingTrain.chainWheels][1])
 
         if abs(minuteToPendulum[0]) < 50:
-            #centre around the hands by default
-            ringY = self.plates.bearingPositions[self.goingTrain.chainWheels][1]
-            if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
-                #centre between the hands and the winding key
-                ringY =  (self.plates.bearingPositions[self.goingTrain.chainWheels][1] + self.plates.bearingPositions[0][1])/2
-
             ring = self.pendulum.getHandAvoider()
-            handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
-            #ring is over the minute wheel/hands
-            clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
+            if self.plates.pendulumAtFront:
+                #if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
+
+                #centre around the hands by default
+                ringY = self.plates.bearingPositions[self.goingTrain.chainWheels][1]
+                if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
+                    #centre between the hands and the winding key
+                    ringY =  (self.plates.bearingPositions[self.goingTrain.chainWheels][1] + self.plates.bearingPositions[0][1])/2
+
+
+                handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
+                #ring is over the minute wheel/hands
+                clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
+            else:
+                #pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable)
+                ringCentre = self.plates.bottomPillarPos
+                clock = clock.add(ring.translate(ringCentre).translate((0,0,-self.plates.pendulumSticksOut - self.pendulum.handAvoiderThick/2)))
+
 
         if self.pulley is not None:
             #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key

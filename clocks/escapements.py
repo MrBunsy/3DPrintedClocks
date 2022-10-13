@@ -1883,7 +1883,7 @@ class Pendulum:
 
         return pendulum
 
-    def getPendulumForRod(self, holeD=3):
+    def getPendulumForRod(self, holeD=3, forPrinting=True):
         '''
         Will allow a threaded rod for the pendulum to be attached to threaded rod for the arbour
         '''
@@ -1937,6 +1937,9 @@ class Pendulum:
         nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForNut).extrude(nutThick).translate((0,holeStartY-holeHeight,0))
         pendulum = pendulum.cut(nutSpace2)
 
+
+        if not forPrinting:
+            pendulum = pendulum.mirror().translate((0, 0, self.pendulumTopThick))
 
         return pendulum
 

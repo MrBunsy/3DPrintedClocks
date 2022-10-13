@@ -44,7 +44,7 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=30, style=gearStyle)
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
 
@@ -54,7 +54,7 @@ dial = clock.Dial(120)
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clock 14", style="vertical", pendulumAtFront=False, backPlateFromWall=40)
 
 
-hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 assembly = clock.Assembly(plates, hands=hands)
 
 assembly.printInfo()

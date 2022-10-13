@@ -113,7 +113,7 @@ class MachineScrew:
         #if length is provided, this represents a specific screw
         self.length = length
 
-    def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK):
+    def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK, headSpaceLength=1000):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -145,7 +145,7 @@ class MachineScrew:
             screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
 
         #extend out from the headbackwards too
-        screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(length)
+        screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(headSpaceLength)
 
         return screw
 
