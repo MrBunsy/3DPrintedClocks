@@ -1005,7 +1005,7 @@ class CordWheel:
 
         self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.capDiameter/2 - 12.5)
         self.keyScrewHoleD = self.screwThreadMetric
-
+        self.power_clockwise = power_clockwise
         self.keyWiggleRoom = 0.75
 
 
