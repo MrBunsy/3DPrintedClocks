@@ -55,7 +55,8 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 
 class GoingTrain:
 
-    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800, escapement=None, escapeWheelPinionAtFront=None, usePulley=False):
+    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800,
+                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False, escapmentOnFront=False):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -67,8 +68,13 @@ class GoingTrain:
         maxChainDrop: maximum length of chain drop to meet hours required, in mm
         max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
         escapement: Escapement object. If not provided, falls back to defaults with esacpement_teeth
-
+        usePulley: if true, changes calculations for runtime
         escapeWheelPinionAtFront:  bool, override default
+        huygensMaintainingPower: bool, if true we're using a weight on a pulley with a single loop of chain/rope, going over a ratchet on the front of the clock and a counterweight on the other side from the main weight
+        #easiest to implement with a chain
+
+        escapmentOnFront: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
+
 
         Grand plan: auto generate gear ratios.
         Naming convention seems to be powered (spring/weight) wheel is first wheel, then minute hand wheel is second, etc, until the escapement
@@ -91,6 +97,9 @@ class GoingTrain:
         self.pendulum_period = pendulum_period
         #in metres
         self.pendulum_length = pendulum_length
+
+        self.huygensMaintainingPower = huygensMaintainingPower
+        self.escapmentOnFront = escapmentOnFront
 
         self.arbours = []
 
@@ -327,7 +336,7 @@ class GoingTrain:
         returns true if the weight dangles from the right side of the chain wheel (as seen from the front)
         '''
 
-        clockwise = self.poweredWheel.ratchet.isClockwise()
+        clockwise = self.poweredWheel.isClockwise()
         chainAtFront = not self.chainAtBack
 
         #XNOR
@@ -374,6 +383,9 @@ class GoingTrain:
 
         self.calculatePoweredWheelInfo(ChainWheel.getMinDiameter())
 
+        if self.huygensMaintainingPower:
+            #there is no ratchet with this setup
+            ratchetThick = 0
 
         self.poweredWheel = ChainWheel(ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, max_circumference=self.powered_wheel_circumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
 
@@ -387,6 +399,9 @@ class GoingTrain:
         if diameter < 0:
             diameter = CordWheel.getMinDiameter()
 
+        if self.huygensMaintainingPower:
+            raise ValueError("Cannot use cord wheel with huygens maintaining power")
+
         self.calculatePoweredWheelInfo(diameter)
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
         self.calculatePoweredWheelRatios()
@@ -394,6 +409,10 @@ class GoingTrain:
     def genRopeWheels(self, ratchetThick = 3, rodMetricSize=3, wheelScrews=None, ropeThick=2.2, wallThick=2):
 
         self.calculatePoweredWheelInfo(RopeWheel.getMinDiameter())
+
+        if self.huygensMaintainingPower:
+            #there is no ratchet with this setup
+            ratchetThick = 0
 
         self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter,ratchet_thick=ratchetThick, rodMetricSize=rodMetricSize, screw=wheelScrews, ropeThick=ropeThick, power_clockwise=self.powered_wheel_clockwise, wallThick=wallThick)
 
@@ -504,14 +523,15 @@ class GoingTrain:
         # chain wheel imaginary pinion (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
         chainWheelImaginaryPinionAtFront = self.chainAtBack
 
-        #TODO - does this work when chain wheels are involved?
-        secondWheelR = pairs[1].wheel.getMaxRadius()
-        firstWheelR = pairs[0].wheel.getMaxRadius() + pairs[0].pinion.getMaxRadius()
-        ratchetOuterR = self.poweredWheel.ratchet.outsideDiameter/2
-        space = firstWheelR - ratchetOuterR
-        if secondWheelR < space - 3:
-            #the second wheel can actually fit on the same side as the ratchet
-            chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
+        # #TODO - does this work when chain wheels are involved?
+        #this was an attempt to put the second wheel over the top of the powered wheel, if it fits, but now there are so many different setups I'm just disabling it
+        # secondWheelR = pairs[1].wheel.getMaxRadius()
+        # firstWheelR = pairs[0].wheel.getMaxRadius() + pairs[0].pinion.getMaxRadius()
+        # ratchetOuterR = self.poweredWheel.ratchet.outsideDiameter/2
+        # space = firstWheelR - ratchetOuterR
+        # if secondWheelR < space - 3:
+        #     #the second wheel can actually fit on the same side as the ratchet
+        #     chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
 
         #this is a bit messy. leaving it alone for now, but basically we manually choose which way to have the escape wheel but by default it's at front (if the chain is also at the front)
         escapeWheelPinionAtFront = self.escapeWheelPinionAtFront
@@ -548,7 +568,8 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize, distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews)]
+            self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize,
+                                           distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -557,7 +578,8 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews)
+                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance,
+                                    style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower)
                 else:
                     #just a normal gear
                     if self.chainWheels == 1:
@@ -647,6 +669,10 @@ class GoingTrain:
 
         self.poweredWheel.outputSTLs(name, path)
 
+        # if not self.huygensMaintainingPower:
+            #undecided, but I think I'm going to keep the STLs generated here
+            #if we are using huygens there powered wheel is permanently attached to a gear wheel, and is generated with the arbour
+
 
         # for i,arbour in enumerate(self.chainWheelArbours):
         #     out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
@@ -701,6 +727,14 @@ class SimpleClockPlates:
         self.dial = dial
 
         self.motionWorksAbove=motionWorksAbove
+
+        #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
+        #if false, it's between the plates like the rest of the gear train
+        #not sure much actually needs to change for the plates?
+        # self.escapementOnFront = goingTrain.escapementOnFront
+        #use the weight on a pulley with a single loop of chain/rope, going over a ratchet on the front of the clock and a counterweight on the other side from the main weight
+        #easiest to implement with a chain
+        self.huygensMaintainingPower = goingTrain.huygensMaintainingPower
 
         #is the weight heavy enough that we want to chagne the plate design?
         #will result in wider plates up to the chain wheel
@@ -1094,17 +1128,39 @@ class SimpleClockPlates:
         pillarR = self.topPillarR if top else self.bottomPillarR
         fixings = self.backPlateTopFixings if top else self.backPlateBottomFixings
 
-        standoff = cq.Workplane("XY").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude(self.backPlateFromWall)
+        pillarWallThick = 2
+        pillarInnerR = pillarR-pillarWallThick
+        standoff = cq.Workplane("XY").tag("base").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude(self.backPlateFromWall)
 
+        if top:
+            back_thick=5
+            screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] - self.topPillarR - 8)
+            screwHoleSupportR = self.topPillarR  # (self.wallFixingScrewHeadD + 6)/2
+            slotLength = 7
 
+            standoff = standoff.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1] - slotLength).circle(screwHoleSupportR).extrude(back_thick)
 
+            standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0]) / 2, (screwHolePos[1] + self.topPillarPos[1] - slotLength) / 2). \
+                rect(self.topPillarR * 2, self.topPillarPos[1] - screwHolePos[1] + slotLength).extrude(back_thick)
+
+            standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
+
+        screwStartZ = self.backPlateFromWall-self.backPlateWallStandoffThickForScrews
         for fixingPos in fixings:
             # plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True).translate((0,0,nutZ)).translate(fixingPos))
 
-            standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, self.backPlateFromWall-self.backPlateWallStandoffThickForScrews)))
+            standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, screwStartZ)))
+
+        # make the pillars mostly hollow (not the top one, otherwise it's unprintable with the screwhole attached, it's also smaller anyway)
+        #given lack of nice flat surface on the back to put the rubber pads, I think I'll just print them with low infill
+        # if not top:
+        #     #TODO - where to put the grippy bits so it doesn't slide about on the wall? Bit of bridging on top in a way that doesn't get in the way of screwholes?
+        #     standoff = standoff.cut(cq.Workplane("XY").moveTo(pillarPos[0], pillarPos[1]).circle(pillarInnerR).extrude(screwStartZ))
 
         if forPrinting:
-            standoff = standoff.rotate((0,0,0), (1,0,0), 180)
+            if not top:
+                standoff = standoff.rotate((0,0,0), (1,0,0), 180)
+            standoff = standoff.translate((-pillarPos[0], -pillarPos[1]))
         else:
             standoff = standoff.translate((0,0,-self.backPlateFromWall))
 
@@ -1112,21 +1168,24 @@ class SimpleClockPlates:
     
     def getWallStandOff(self):
 
+        pillarWallThick = 3
+        topPillarInnerR = self.topPillarR - pillarWallThick
+        bottomPillarInnerR = self.bottomPillarR - pillarWallThick
+
         standoff = cq.Workplane("XY").tag("base").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(self.topPillarR).extrude(self.backPlateFromWall)
         standoff = standoff.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(self.backPlateFromWall)
 
         # plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=screwHolebackThick, screwHeadD=self.wallFixingScrewHeadD, addExtraSupport=screwPos[2])
 
         back_wide = 10#self.wallFixingScrewHeadD+5
-        back_thick = 4
+        back_thick = 3
+
+        standoff = standoff.workplaneFromTagged("base").moveTo(self.topPillarPos[0] - back_wide / 2, self.topPillarPos[1]).line(back_wide, 0). \
+            lineTo(self.bottomPillarPos[0] + back_wide / 2, self.bottomPillarPos[1]).line(-back_wide, 0).close().extrude(back_thick)
 
         screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] - self.topPillarR - 8)
         screwHoleSupportR = self.topPillarR#(self.wallFixingScrewHeadD + 6)/2
         slotLength = 7
-
-
-        standoff = standoff.workplaneFromTagged("base").moveTo(self.topPillarPos[0] - back_wide/2, self.topPillarPos[1]).line(back_wide,0).\
-            lineTo(self.bottomPillarPos[0] + back_wide/2, self.bottomPillarPos[1]).line(-back_wide,0).close().extrude(back_thick)
 
         standoff = standoff.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1] - slotLength).circle(screwHoleSupportR).extrude(back_thick)
 
@@ -1134,12 +1193,23 @@ class SimpleClockPlates:
             rect(self.topPillarR*2, self.topPillarPos[1] - screwHolePos[1] + slotLength).extrude(back_thick)
 
         standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
-        
+
+        screwStartZ = self.backPlateFromWall-self.backPlateWallStandoffThickForScrews
+
         for fixingPos in self.backPlateFixings:
-            standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, self.backPlateFromWall-self.backPlateWallStandoffThickForScrews)))
+            standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, screwStartZ)))
+            # #put holeinhole and don't use the cut out screwhead space so we can make the pillars mostly hollow
+            # standoff = standoff.cut(getHoleWithHole(innerD=self.fixingScrews.metric_thread, outerD=self.fixingScrews.getHeadDiameter(), deep=0)
+            #                         .translate(fixingPos).translate((0, 0, screwStartZ-LAYER_THICK_EXTRATHICK*2)))
+
+        # #make the pillars mostly hollow
+        # standoff = standoff.cut(cq.Workplane("XY").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(topPillarInnerR).extrude(screwStartZ-LAYER_THICK_EXTRATHICK*2))
+        #
+        #
+        #
+        # standoff = standoff.cut(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(bottomPillarInnerR).extrude(screwStartZ-LAYER_THICK_EXTRATHICK*2))
 
         standoff = standoff.translate((0, 0, -self.backPlateFromWall))
-
         return standoff
 
     
@@ -1576,6 +1646,15 @@ class SimpleClockPlates:
             print("Outputting ", out)
             exporters.export(self.getWallStandOff(), out)
 
+            out = os.path.join(path, "{}_wall_top_standoff.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getSinglePillarWallStandoff(top=True), out)
+
+            out = os.path.join(path, "{}_wall_bottom_standoff.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getSinglePillarWallStandoff(top=False), out)
+
+
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
         #         extensionShape=self.getArbourExtension(arbour, top=top)
@@ -1691,9 +1770,9 @@ class Assembly:
 
         if self.plates.backPlateFromWall > 0:
             #need wall standoffs
-            # clock = clock.add(self.plates.getSinglePillarWallStandoff(top=True, forPrinting=False))
-            # clock = clock.add(self.plates.getSinglePillarWallStandoff(top=False, forPrinting=False))
-            clock = clock.add(self.plates.getWallStandOff())
+            clock = clock.add(self.plates.getSinglePillarWallStandoff(top=True, forPrinting=False))
+            clock = clock.add(self.plates.getSinglePillarWallStandoff(top=False, forPrinting=False))
+            # clock = clock.add(self.plates.getWallStandOff())
 
         #the wheels
         for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):

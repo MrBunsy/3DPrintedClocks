@@ -665,6 +665,11 @@ class WeightPoweredWheel:
         Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
         '''
 
+    def isClockwise(self):
+        '''
+        return true if this wheel is powered to rotate clockwise
+        '''
+
     def getAssembled(self):
         '''
         return 3D model of fully assembled wheel with ratchet (for the model, not printing)
@@ -691,6 +696,13 @@ class WeightPoweredWheel:
          [ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
 
 
+        '''
+
+    def getScrewPositions(self):
+        '''
+        return list of (x,y) positions, relative to the arbour, for screws that hold this wheel together.
+        Only really relevant for ones in two halves, like chain and rope
+        Used when we're not using a ratchet so the screwholes can line up with holes in the wheel
         '''
 
     def getTurnsForDrop(self, maxChainDrop):
@@ -765,6 +777,14 @@ class RopeWheel:
         ratchetOuterD = self.diameter*2.25
         self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
 
+    def isClockwise(self):
+        '''
+        return true if this wheel is powered to rotate clockwise
+        '''
+        return self.power_clockwise
+
+    def getScrewPositions(self):
+        return self.screwPositions
 
     def printScrewLength(self):
         if self.screw.countersunk:
@@ -1002,6 +1022,14 @@ class CordWheel:
             self.windingKeyHandleThick = 5
             self.keyHoleDeep = self.keySquareBitHeight - 5
 
+    def isClockwise(self):
+        '''
+        return true if this wheel is powered to rotate clockwise
+        '''
+        return self.power_clockwise
+
+    def getScrewPositions(self):
+        return self.fixingPoints
 
     def printScrewLength(self):
         if self.useKey:
@@ -1440,6 +1468,12 @@ class ChainWheel:
         '''
         return 22
 
+    def isClockwise(self):
+        '''
+        return true if this wheel is powered to rotate clockwise
+        '''
+        return self.power_clockwise
+
     def __init__(self, ratchet_thick=4, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5, screw=None, screwThreadLength=10, power_clockwise=True):
         '''
         0.2 tolerance worked but could be tighter
@@ -1502,7 +1536,10 @@ class ChainWheel:
         self.power_clockwise = power_clockwise
 
         ratchetOuterD = self.diameter * 2.5
-        self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
+        if ratchet_thick > 0:
+            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
+        else:
+            self.ratchet = None
 
     def getTurnsForDrop(self, maxChainDrop):
         return maxChainDrop / self.circumference
@@ -1536,13 +1573,16 @@ class ChainWheel:
         Returns total height of the chain wheel, once assembled, including the ratchet
         includes washer as this is considered part of the full assembly
         '''
-        return self.inner_width + self.wall_thick*2 + self.ratchet.thick + WASHER_THICK
+        thick = self.inner_width + self.wall_thick*2  + WASHER_THICK
+        if self.ratchet is not None:
+            thick += self.ratchet.thick
+        return thick
 
     def getRunTime(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
         return chainLength/((self.pockets*self.chain_inside_length*2)/minuteRatio)
 
-    def getHalf(self, sideWithClicks=False):
+    def getHalf(self, sideWithClicks=False, noScrewHoles=False):
         '''
         I'm hoping to be able to keep both halves identical - so long as there's space for the m3 screws and the m3 pinion then this should remain possible
         both halves are identical if we're not using bearings
@@ -1595,21 +1635,22 @@ class ChainWheel:
                 # lineTo(math.cos(angle+pocketA)*self.outerRadius, math.sin(angle+pocketA)*self.outerRadius).close().extrude(h1)
 
         halfWheel = halfWheel.faces(">Z").workplane().circle(self.holeD/2).cutThruAll()
-        if sideWithClicks:
-            # halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,self.hole_distance).circle(self.screwD / 2).cutThruAll()
-            # halfWheel = halfWheel.faces(">Z").workplane().moveTo(0,-self.hole_distance).circle(self.screwD / 2).cutThruAll()
-            for holePos in self.hole_positions:
-                halfWheel = halfWheel.faces(">Z").workplane().moveTo(holePos[0],holePos[1]).circle(self.screw.metric_thread / 2).cutThruAll()
-                #half the height for a nut so the screw length can vary
-                # halfWheel = halfWheel.cut(self.screw.getNutCutter(withBridging=True, height=(self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2).translate(holePos))
 
-        else:
-            #screw holes
-            for holePos in self.hole_positions:
-                # half the height for a nut so the screw length can vary
-                halfWheel = halfWheel.cut(self.screw.getCutter(withBridging=True).translate(holePos))
+        if not noScrewHoles:
+            if sideWithClicks:
+                #just plain holes through the middle for the screws
+                for holePos in self.hole_positions:
+                    halfWheel = halfWheel.faces(">Z").workplane().moveTo(holePos[0],holePos[1]).circle(self.screw.metric_thread / 2).cutThruAll()
+            else:
+                #screw holes and nut space
+                for holePos in self.hole_positions:
+                    # half the height for a nut so the screw length can vary
+                    halfWheel = halfWheel.cut(self.screw.getCutter(withBridging=True).translate(holePos))
 
-        return halfWheel
+            return halfWheel
+
+    def getScrewPositions(self):
+        return self.hole_positions
 
     def getWithRatchet(self, ratchet):
 
@@ -1661,7 +1702,9 @@ class ChainWheel:
         return combined
 
     def printScrewLength(self):
-
+        if self.ratchet is None:
+            print("No ratchet, can't estimate screw lenght")
+            return
         minScrewLength = self.getHeight() - (self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2 - self.screw.getNutHeight()
         print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.screw.getString(), self.getHeight(), minScrewLength))
 
@@ -1669,8 +1712,10 @@ class ChainWheel:
     def getAssembled(self):
 
 
-
-        assembly = self.getWithRatchet(self.ratchet)
+        if self.ratchet is not None:
+            assembly = self.getWithRatchet(self.ratchet)
+        else:
+            assembly = self.getHalf(sideWithClicks=True)
 
         chainWheelTop = self.getHalf().rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight() - WASHER_THICK))
 
@@ -1681,10 +1726,15 @@ class ChainWheel:
 
     def outputSTLs(self, name="clock", path="../out"):
 
-        out = os.path.join(path,"{}_chain_wheel_with_click.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getWithRatchet(self.ratchet), out)
-        out = os.path.join(path, "{}_chain_wheel_half.stl".format(name))
+        if self.ratchet is None:
+            out = os.path.join(path, "{}_chain_wheel_bottom_half.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getHalf(True), out)
+        else:
+            out = os.path.join(path,"{}_chain_wheel_with_click.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getWithRatchet(self.ratchet), out)
+        out = os.path.join(path, "{}_chain_wheel_top_half.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHalf(False), out)
 

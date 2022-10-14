@@ -27,7 +27,8 @@ gearStyle = clock.GearStyle.HONEYCOMB
 #pre-calculated good values for a 9.75 escaping arc
 escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
-train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1500, usePulley=True, chainAtBack=False, chainWheels=0, hours=28)
+train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
+                       chainAtBack=False, chainWheels=0, hours=28, huygensMaintainingPower=True, escapmentOnFront=True)
 
 train.calculateRatios(max_wheel_teeth=50, min_pinion_teeth=9, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 

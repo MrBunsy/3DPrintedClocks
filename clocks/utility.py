@@ -145,7 +145,8 @@ class MachineScrew:
             screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
 
         #extend out from the headbackwards too
-        screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(headSpaceLength)
+        if headSpaceLength > 0:
+            screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(headSpaceLength)
 
         return screw
 
