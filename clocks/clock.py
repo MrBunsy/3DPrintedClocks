@@ -386,6 +386,7 @@ class GoingTrain:
         if self.huygensMaintainingPower:
             #there is no ratchet with this setup
             ratchetThick = 0
+            #TODO check holeD?
 
         self.poweredWheel = ChainWheel(ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, max_circumference=self.powered_wheel_circumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
 
@@ -987,6 +988,17 @@ class SimpleClockPlates:
         self.backPlateBottomFixings = [(self.bottomPillarPos[0] + self.bottomPillarR * 0.5, self.bottomPillarPos[1]), (self.bottomPillarPos[0] - self.bottomPillarR * 0.5, self.bottomPillarPos[1])]
         self.backPlateFixings = self.backPlateTopFixings + self.backPlateBottomFixings
 
+        self.huygensWheel = None
+        if self.huygensMaintainingPower:
+            #need a powered wheel and ratchet on the front!
+            if self.goingTrain.poweredWheel.type == PowerType.CHAIN:
+                max_circumference = self.bottomPillarR*1*math.pi
+                self.huygensWheel = ChainWheel(ratchet_thick=5, max_circumference=max_circumference,wire_thick=self.goingTrain.poweredWheel.chain_thick,
+                                               width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
+                                               tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=3.5)
+            else:
+                raise ValueError("Huygens maintaining power only currently supported with chain wheels")
+
     def getPlateThick(self, back=True):
         if back:
             return self.backPlateThick
@@ -1414,6 +1426,14 @@ class SimpleClockPlates:
                 plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, height=embeddedNutHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((0, 0, nutZ)).translate(fixingPos))
                 plate = plate.cut(self.fixingScrews.getCutter().translate(fixingPos).translate((0,0,-self.backPlateWallStandoffThickForScrews)))
 
+        if self.huygensMaintainingPower:
+            #screw to hold the ratchetted chainwheel
+            plate = plate.cut(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.fixingScrews.metric_thread/2).extrude(1000))
+            if back:
+                #hold a nyloc nut
+                nutZ = self.getPlateThick(back=True) + self.plateDistance - self.fixingScrews.getNutHeight(nyloc=True)
+                plate = plate.cut(self.fixingScrews.getNutCutter(nyloc=True).translate(self.bottomPillarPos).translate((0,0,nutZ)))
+
         return plate
 
     def getChainHoles(self, bottomPillarPos, bottomPillarR):
@@ -1621,6 +1641,10 @@ class SimpleClockPlates:
 
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 
+        if self.huygensMaintainingPower:
+            #ratchet!
+            plate = plate.add(self.huygensWheel.ratchet.getOuterWheel().translate(self.bottomPillarPos).translate((0,0,self.getPlateThick(back=False))))
+
         return plate
 
     def outputSTLs(self, name="clock", path="../out"):
@@ -1763,6 +1787,10 @@ class Assembly:
             print("{} hole from wall = {}mm".format(self.goingTrain.poweredWheel.type.value, z))
 
     def getClock(self):
+        '''
+        Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
+        '''
+
         bottomPlate = self.plates.getPlate(True)
         topPlate  = self.plates.getPlate(False)
 
@@ -1907,6 +1935,11 @@ class Assembly:
             chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.endshake / 2
             # print("chain Z", chainZ)
             clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
+
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.plates.getPillarInfo()
+
+        if self.plates.huygensMaintainingPower:
+            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(bottomPillarPos).translate((0,0,self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance)))
 
         #TODO pendulum bob and nut?
 

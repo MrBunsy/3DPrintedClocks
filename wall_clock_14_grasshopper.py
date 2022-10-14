@@ -33,7 +33,7 @@ train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapem
 train.calculateRatios(max_wheel_teeth=50, min_pinion_teeth=9, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
 # 61 links/ft 1-day regula chain. copied from clock 04
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
+train.genChainWheels(ratchetThick=4, wire_thick=0.85, holeD=3, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
 
 #planning to put hte pendulum on the back
 pendulumSticksOut=20

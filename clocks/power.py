@@ -1474,7 +1474,8 @@ class ChainWheel:
         '''
         return self.power_clockwise
 
-    def __init__(self, ratchet_thick=4, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5, screw=None, screwThreadLength=10, power_clockwise=True):
+    def __init__(self, ratchet_thick=4, max_circumference=75, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15, holeD=3.5, screw=None, screwThreadLength=10,
+                 power_clockwise=True, ratchetOuterD=-1, ratchetOuterThick=5):
         '''
         0.2 tolerance worked but could be tighter
         Going for a pocket-chain-wheel as this should be easiest to print in two parts
@@ -1535,9 +1536,11 @@ class ChainWheel:
 
         self.power_clockwise = power_clockwise
 
-        ratchetOuterD = self.diameter * 2.5
+        if ratchetOuterD < 0:
+            ratchetOuterD = self.diameter * 2.5
+
         if ratchet_thick > 0:
-            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise)
+            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
         else:
             self.ratchet = None
 
