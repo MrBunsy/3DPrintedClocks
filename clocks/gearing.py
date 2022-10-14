@@ -634,6 +634,9 @@ class Arbour:
         if self.getType() == ArbourType.UNKNOWN:
             raise ValueError("Not a valid arbour")
 
+        #just to help debugging
+        self.type = self.getType()
+
         if self.getType() == ArbourType.CHAIN_WHEEL:
             #chain/cord wheel specific bits:
             # the ratchet on the chain/cord wheel can be bolted onto the outside, allowing it to be printable with the arbour extension as part of the
@@ -678,7 +681,8 @@ class Arbour:
         self.useSpanner=False
 
 
-    def setPlateInfo(self, frontSideExtension=0, rearSideExtension=0, maxR=0, frontPlateThick=0, backPlateThick=0, pendulumSticksOut=0, pendulumAtFront=True, endshake=1, pendulumFixingBearing=None):
+    def setPlateInfo(self, frontSideExtension=0, rearSideExtension=0, maxR=0, frontPlateThick=0, backPlateThick=0, pendulumSticksOut=0,
+                     pendulumAtFront=True, endshake=1, pendulumFixingBearing=None, escapementOnFront=False, plateDistance=0):
         '''
         front/rear side extensions: how far from the front or back of this arbour to the front or back plate (excluding end shake aka "wobble")
 
@@ -691,7 +695,7 @@ class Arbour:
         self.frontSideExtension=frontSideExtension
         self.rearSideExtension=rearSideExtension
         self.arbourExtensionMaxR=maxR
-        #the motion works never has this set
+        #the motion works never has this set, so if we're setting plate info we know we need it
         self.useArbourExtenders = True
 
         self.frontPlateThick=frontPlateThick
@@ -700,6 +704,8 @@ class Arbour:
         self.backPlateThick=backPlateThick
         self.endshake=endshake
         self.pendulumFixingBearing = pendulumFixingBearing
+        self.escapementOnFront = escapementOnFront
+        self.plateDistance = plateDistance
 
         #can now calculate the location and size of the spanner nut for the anchor
         if self.getType() == ArbourType.ANCHOR and self.pendulumFixing == PendulumFixing.FRICTION_ROD and self.useSpanner:
@@ -825,19 +831,28 @@ class Arbour:
         #escapement controls wheel thickness
         wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
 
-        if self.escapement.type == EscapementType.GRASSHOPPER and not self.escapement.clockwiseFromPinionSide:
-            #bodge, should try and tidy up how the escapements do this, but generally the anchor will be inside the plates (attached to a pinion) and the grasshopper won't be
-            #so this here is probably an edge case
-            wheel = wheel.mirror("YZ", (0,0,0))
 
-        # pinion is on top of the wheel
-        pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
-        arbour = wheel.add(pinion)
 
-        arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
 
-        arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + pinionThick + self.endCapThick))
+        if self.escapementOnFront:
+            #it's just teh wheel for now, but extended a bit to make it more sturdy
+            arbour = wheel.add(cq.Workplane("XY").circle(self.arbourD*2).circle(self.arbourD/2).extrude(15))
+        else:
+
+            if self.escapement.type == EscapementType.GRASSHOPPER and not self.escapement.clockwiseFromPinionSide:
+                # bodge, should try and tidy up how the escapements do this, but generally the anchor will be inside the plates (attached to a pinion) and the grasshopper won't be
+                # so this here is probably an edge case
+                wheel = wheel.mirror("YZ", (0, 0, 0))
+
+            # pinion is on top of the wheel
+            pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
+
+            arbour = wheel.add(pinion)
+
+            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
+
+            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + pinionThick + self.endCapThick))
 
         return arbour
 
@@ -906,43 +921,17 @@ class Arbour:
         #just the anchor/frame shape, with nothing else that might be needed
         anchor = self.escapement.getAnchor()
 
+        if self.escapementOnFront:
+            #nothing else to do
+            return anchor
+
         if self.pendulumFixing == PendulumFixing.FRICTION_ROD:
-            #add a square bit to help adjust the beat usign a spanner.
-            #never really worked very well
-            if self.useSpanner:
 
-                face = ">Z" if self.spannerBitOnFront else "<Z"
-
-                width = self.getAnchorSpannerSize()
-
-                #add the rest of the arbour extension (overlapping with spanner bit, so we don't have to reproduce the logic with the bearing standoff)
-                anchor = anchor.faces(face).workplane().moveTo(0,0).rect(width,width).extrude(self.spannerBitThick)
-                # if remainingExtension > 0:
-                #     anchor = anchor.faces(face).workplane().moveTo(0,0).circle(self.getRodD()).extrude(remainingExtension)
-                arbourExtension = self.getArbourExtension(front=self.spannerBitOnFront)
-                if self.spannerBitOnFront:
-                    arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
-                else:
-                    arbourExtension = arbourExtension.rotate((0,0,0), (1,0,0), 180)
-                anchor = anchor.add(arbourExtension)
-
-                anchor = anchor.faces(face).workplane().circle(self.getRodD()/2).cutThruAll()
-
-
-                if forPrinting and not self.spannerBitOnFront:
-                    #flip so it can be printed as-is
-                    anchor=anchor.rotate((0,0,0),(0,1,0),180)
-            else:
-                #undecided here, textured sheet looks good on teh front, put supergluing the anchor's arbour extension on (which helps setting the beat as only one side can move) makes it a bit ugly
-                #no spanner, just a normal arbour extension, on the back, so the front is printed on the plate (looks better with the textured PETG)
-                arbourExtension = self.getArbourExtension(front=True)
-                arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
-                anchor = anchor.add(arbourExtension)
-                # arbourExtension = self.getArbourExtension(front=False)
-                # arbourExtension = arbourExtension.rotate((0,0,0),(1,0,0),180)#translate((0, 0, self.wheelThick))
-                # anchor = anchor.add(arbourExtension)
-                # if forPrinting:
-                #     anchor = anchor.rotate((0,0,0),(1,0,0),180)
+            #undecided here, textured sheet looks good on teh front, put supergluing the anchor's arbour extension on (which helps setting the beat as only one side can move) makes it a bit ugly
+            #no spanner, just a normal arbour extension, on the back, so the front is printed on the plate (looks better with the textured PETG)
+            arbourExtension = self.getArbourExtension(front=True)
+            arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+            anchor = anchor.add(arbourExtension)
 
         elif self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
             '''
@@ -1079,6 +1068,23 @@ class Arbour:
 
         return True
 
+    def getPinionArbour(self):
+        '''
+        For an escape wheel out the front of the clock there's just a pinion on the arbour inside the clock
+        '''
+        longestExtensionIsFront = self.frontSideExtension > self.rearSideExtension
+
+        pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD).translate((0,0,self.endCapThick))
+        cap = cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick)
+        pinion = pinion.add(cap).add(cap.translate((0,0,self.endCapThick + self.pinionThick)))
+
+        arbourExtension = self.getArbourExtension(front=longestExtensionIsFront)
+
+        pinion = pinion.add(arbourExtension.translate((0,0,self.endCapThick*2 + self.pinionThick)))
+
+        return pinion
+
+
 
     def getExtras(self):
         '''
@@ -1089,6 +1095,20 @@ class Arbour:
 
         if self.getType() == ArbourType.CHAIN_WHEEL and self.getExtraRatchet() is not None:
             extras['ratchet']= self.getExtraRatchet()
+
+        if self.escapementOnFront and self.getType() in [ArbourType.ANCHOR, ArbourType.ESCAPE_WHEEL]:
+            '''
+            quite different logic for the bits that stick out the front.
+            Treating the arbour as the escape wheel and frame, and the "extras" as the bit between the plates
+            '''
+            if self.getType() == ArbourType.ANCHOR:
+                #in between the plates there's just a rod
+                extras['arbour_between_plates'] = cq.Workplane("XY").circle(self.arbourD).circle(self.arbourD/2).extrude(self.plateDistance)
+                #bail out before the extensions
+                return extras
+            elif self.getType() == ArbourType.ESCAPE_WHEEL:
+                #between the plates is the pinion
+                extras['pinion_between_plates'] = self.getPinionArbour()
 
         if self.pinionAtFront and self.needArbourExtension(front=False):
             extras['arbour_extension_rear'] = self.getArbourExtension(front=False)

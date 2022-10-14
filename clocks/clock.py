@@ -56,7 +56,7 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 class GoingTrain:
 
     def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800,
-                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False, escapmentOnFront=False):
+                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -72,8 +72,6 @@ class GoingTrain:
         escapeWheelPinionAtFront:  bool, override default
         huygensMaintainingPower: bool, if true we're using a weight on a pulley with a single loop of chain/rope, going over a ratchet on the front of the clock and a counterweight on the other side from the main weight
         #easiest to implement with a chain
-
-        escapmentOnFront: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
 
 
         Grand plan: auto generate gear ratios.
@@ -99,8 +97,6 @@ class GoingTrain:
         self.pendulum_length = pendulum_length
 
         self.huygensMaintainingPower = huygensMaintainingPower
-        self.escapmentOnFront = escapmentOnFront
-
         self.arbours = []
 
         if pendulum_length < 0 and pendulum_period > 0:
@@ -701,10 +697,13 @@ class SimpleClockPlates:
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None):
+                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
+
+        escapementOnFront: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
+
         '''
 
         #how the pendulum is fixed to the anchor arbour.
@@ -728,6 +727,8 @@ class SimpleClockPlates:
         self.dial = dial
 
         self.motionWorksAbove=motionWorksAbove
+
+        self.escapementOnFront = escapementOnFront
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
         #if false, it's between the plates like the rest of the gear train
@@ -876,9 +877,13 @@ class SimpleClockPlates:
                 #all the other going wheels up to and including the escape wheel
                 if i == self.goingTrain.wheels:
                     # the anchor
-                    escapement = self.goingTrain.getArbour(i).escapement
-                    baseZ = drivingZ - self.goingTrain.getArbour(i-1).wheelThick/2 + escapement.getWheelBaseToAnchorBaseZ()
-                    self.arbourThicknesses.append(escapement.getAnchorThick())
+                    if self.escapementOnFront:
+                        self.arbourThicknesses.append(0)
+                        #don't do anything else
+                    else:
+                        escapement = self.goingTrain.getArbour(i).escapement
+                        baseZ = drivingZ - self.goingTrain.getArbour(i-1).wheelThick/2 + escapement.getWheelBaseToAnchorBaseZ()
+                        self.arbourThicknesses.append(escapement.getAnchorThick())
                     # print("is anchor")
                 else:
                     #any of the other wheels
@@ -923,12 +928,12 @@ class SimpleClockPlates:
             for i in range(len(self.bearingPositions)):
                 self.bearingPositions[i][2] -= bottomZ
 
-        if self.bearingPositions[-1][2] == 0:
-            #the anchor would be directly up against the plate
+        if self.bearingPositions[-1][2] == 0 and not self.escapementOnFront:
+            #the anchor would be directly up against the back plate
             #move everything forwards by a washer thickness
-            #TODO not do this when escapement is on the front
+            #do not do this when escapement is on the front
             #TODO consider doing this rather than the bodge where I make pinions smaller
-            # self.bearingPositions[-1][2] = WASHER_THICK#self.anchorThick*0.25
+            #TODO same but in reverse if anchor is pressed up against the front plate
             for i in range(len(self.bearingPositions)):
                 self.bearingPositions[i][2]+= WASHER_THICK
 
@@ -954,7 +959,7 @@ class SimpleClockPlates:
                 maxR = 0
             arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
                                 frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
-                                pendulumFixingBearing=self.pendulumFixingBearing)
+                                pendulumFixingBearing=self.pendulumFixingBearing, plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         #get position of motion works relative to the minute wheel
@@ -1803,11 +1808,26 @@ class Assembly:
             # clock = clock.add(self.plates.getWallStandOff())
 
         #the wheels
-        for a in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
+        arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1
+        if self.plates.escapementOnFront:
+            #sort out anchor and escape wheel separately
+            arbours-=2
+        for a in range(arbours):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
             clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
 
 
+        if self.plates.escapementOnFront:
+            escapeWheelArbour =arbours
+            anchorArbour = arbours + 1
+            #escape wheel pinion inside plates
+            clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getPinionArbour().translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
+            #escape wheel itself on the front
+            frontZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
+            clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,frontZ)))
+            #anchor 'arbour' inside plates
+            # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate(
+            #     (0, 0, self.plates.getPlateThick(back=True) + self.plates.endshake / 2)))
 
         # anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
         #
