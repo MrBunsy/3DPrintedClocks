@@ -175,6 +175,9 @@ class MachineScrew:
     def getHeadHeight(self,):
         return getScrewHeadHeight(self.metric_thread)
 
+    def getNutContainingDiameter(self):
+        return getNutContainingDiameter(self.metric_thread, NUT_WIGGLE_ROOM)
+
     def getHeadDiameter(self):
         return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
 

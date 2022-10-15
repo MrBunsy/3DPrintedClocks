@@ -878,6 +878,7 @@ class SimpleClockPlates:
                 if i == self.goingTrain.wheels:
                     # the anchor
                     if self.escapementOnFront:
+                        #there is nothing between the plates for this
                         self.arbourThicknesses.append(0)
                         #don't do anything else
                     else:
@@ -894,9 +895,11 @@ class SimpleClockPlates:
                     baseZ = drivingZ - pinionZ
 
                     drivingZ = drivingZ + pinionToWheel
+                    # massive bodge here, the arbour doesn't know about the escapement being on the front yet
+                    self.goingTrain.getArbour(i).escapementOnFront = self.escapementOnFront
+                    arbourThick = self.goingTrain.getArbour(i).getTotalThickness()
 
-
-                    self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
+                    self.arbourThicknesses.append(arbourThick)
 
                 if i <= 0:
                     angle = self.anglesFromChain[i - 1 + self.goingTrain.chainWheels]
@@ -928,18 +931,25 @@ class SimpleClockPlates:
             for i in range(len(self.bearingPositions)):
                 self.bearingPositions[i][2] -= bottomZ
 
-        if self.bearingPositions[-1][2] == 0 and not self.escapementOnFront:
-            #the anchor would be directly up against the back plate
-            #move everything forwards by a washer thickness
-            #do not do this when escapement is on the front
-            #TODO consider doing this rather than the bodge where I make pinions smaller
-            #TODO same but in reverse if anchor is pressed up against the front plate
-            for i in range(len(self.bearingPositions)):
-                self.bearingPositions[i][2]+= WASHER_THICK
 
+        '''
+        something is always pressed up against both the front and back plate. If it's a powered wheel that's designed for that (the chain/rope wheel is designed to use a washer,
+        and the key-wound cord wheel is specially shaped) then that's not a problem.
+        
+        However if it's just a pinion (or a wheel - somehow?), or and anchor (although this should be avoided now by choosing where it goes) then that's extra friction
+        '''
+        extraFront = 0
+        extraBack = 0
+        if self.goingTrain.chainAtBack:
+            extraFront = LAYER_THICK*2
+        else:
+            extraBack = LAYER_THICK*2
+
+        for i in range(len(self.bearingPositions)):
+            self.bearingPositions[i][2]+= extraBack
 
         print(self.bearingPositions)
-        self.plateDistance=max(topZs) + self.endshake
+        self.plateDistance=max(topZs) + self.endshake + extraFront
 
         print("Plate distance", self.plateDistance)
 
