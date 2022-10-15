@@ -799,8 +799,6 @@ class Arbour:
             if self.escapementOnFront:
                 #no main shape, just two arbour extensions
                 return 0
-                # #treating one arbour extension as the main shape and the other as a normal extension
-                # return self.plateDistance/2
             else:
                 # wheel thick being used for anchor thick
                 return self.wheelThick
@@ -838,7 +836,7 @@ class Arbour:
             return self.escapement.getAnchorMaxR()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
-    def getEscapeWheel(self):
+    def getEscapeWheel(self, forPrinting=True):
 
         #escapement controls wheel thickness
         wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
@@ -850,7 +848,15 @@ class Arbour:
         if self.escapementOnFront:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
             #TODO extend back towards the front plate by the distance dictacted by the escapement
-            arbour = wheel.add(cq.Workplane("XY").circle(self.arbourD*2).circle(self.arbourD/2).extrude(15))
+            # arbour = wheel.add(cq.Workplane("XY").circle(self.arbourD*2).circle(self.arbourD/2).extrude(15))
+
+            extension = -self.escapement.getWheelBaseToAnchorBaseZ()
+            arbour = wheel.translate((0,0,extension))
+            arbour = arbour.add(cq.Workplane("XY").circle(self.arbourD * 2).circle(self.arbourD / 2).extrude(extension))
+
+            if forPrinting:
+                arbour = arbour.rotate((0,0,0),(1,0,0),180)
+
         else:
 
             if self.escapement.type == EscapementType.GRASSHOPPER and not self.escapement.clockwiseFromPinionSide:
@@ -925,7 +931,9 @@ class Arbour:
         anchor = self.escapement.getAnchor()
 
         if self.escapementOnFront:
-            #nothing else to do
+            #not much else to do
+            if not forPrinting:
+                anchor = anchor.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True, centreOnAnchor=True))
             return anchor
 
         if self.pendulumFixing == PendulumFixing.FRICTION_ROD:
@@ -1120,8 +1128,8 @@ class Arbour:
             Treating the arbour as the escape wheel and frame, and the "extras" as the bit between the plates
             '''
             if self.getType() == ArbourType.ANCHOR:
-                #in between the plates there's just a rod
-                extras['arbour_between_plates'] = cq.Workplane("XY").circle(self.arbourD).circle(self.arbourD/2).extrude(self.plateDistance)
+                #the main shape is two arbour extenders, so this is the real frame
+                extras['anchor'] = self.getAnchor()
                 #bail out before the extensions
                 return extras
             elif self.getType() == ArbourType.ESCAPE_WHEEL:

@@ -1703,7 +1703,7 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getAssembled(self, style=None, leave_out_wheel_and_frame=False):
+    def getAssembled(self, style=None, leave_out_wheel_and_frame=False, centreOnAnchor=False):
         grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
@@ -1715,6 +1715,10 @@ class GrasshopperEscapement:
         grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryPalletArm()).translate((0, 0, pallet_arm_z))))
         grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryComposer()).translate((0, 0, composer_z))))
         grasshopper = grasshopper.add(self.rotateToUpright((self.getExitComposer()).translate((0, 0, composer_z))))
+
+        if centreOnAnchor:
+            grasshopper = grasshopper.translate((0,-np.linalg.norm(self.geometry["Z"]),0))
+
         return grasshopper
 
     def getComposerZThick(self):

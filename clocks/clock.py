@@ -632,7 +632,10 @@ class GoingTrain:
     def getArbourWithConventionalNaming(self, i):
         '''
         Use the traditional naming of the chain wheel being zero
+        if -ve, count from the anchor backwards (like array indexing in python, so -1 is the anchor, -2 is the escape wheel)
         '''
+        if i < 0:
+            i = i + len(self.arbours) + len(self.chainWheelArbours)
         return self.getArbour(i - self.chainWheels)
 
     def getArbour(self, i):
@@ -1837,9 +1840,13 @@ class Assembly:
             # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getPinionArbour(forPrinting=False).translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
 
             # escapeArbourLongestExtensionIsFront = escapeWheelArbour.frontSideExtension > escapeWheelArbour.rearSideExtension
-            escapeWheelIndex = arbours-2
-            wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getExtras()["escape_wheel"]
+            escapeWheelIndex = -2
+            wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)#getExtras()["escape_wheel"]
             clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ)))
+
+            anchor = self.goingTrain.getArbourWithConventionalNaming(-1).getAnchor(forPrinting=False)#getExtras()["anchor"]
+            clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ)))
+
 
             #escape wheel itself on the front
             # frontZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
