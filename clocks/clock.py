@@ -951,6 +951,11 @@ class SimpleClockPlates:
         print(self.bearingPositions)
         self.plateDistance=max(topZs) + self.endshake + extraFront
 
+        if self.escapementOnFront:
+            #little bodge to try and make things easier (not sure if it does)
+            #the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
+            self.bearingPositions[-1][2] = self.plateDistance/2 - self.endshake/2
+
         print("Plate distance", self.plateDistance)
 
         #configure stuff for the arbours, now we know their absolute positions
@@ -1809,6 +1814,8 @@ class Assembly:
         bottomPlate = self.plates.getPlate(True)
         topPlate  = self.plates.getPlate(False)
 
+        frontOfClockZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
+
         clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.getPlateThick(back=True))))
 
         if self.plates.backPlateFromWall > 0:
@@ -1819,22 +1826,24 @@ class Assembly:
 
         #the wheels
         arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1
-        if self.plates.escapementOnFront:
-            #sort out anchor and escape wheel separately
-            arbours-=2
         for a in range(arbours):
             arbour = self.goingTrain.getArbourWithConventionalNaming(a)
             clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
 
 
         if self.plates.escapementOnFront:
-            escapeWheelArbour =arbours
-            anchorArbour = arbours + 1
+
             #escape wheel pinion inside plates
-            clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getPinionArbour().translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
+            # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getPinionArbour(forPrinting=False).translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
+
+            # escapeArbourLongestExtensionIsFront = escapeWheelArbour.frontSideExtension > escapeWheelArbour.rearSideExtension
+            escapeWheelIndex = arbours-2
+            wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getExtras()["escape_wheel"]
+            clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ)))
+
             #escape wheel itself on the front
-            frontZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
-            clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,frontZ)))
+            # frontZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
+            # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,frontZ)))
             #anchor 'arbour' inside plates
             # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate(
             #     (0, 0, self.plates.getPlateThick(back=True) + self.plates.endshake / 2)))

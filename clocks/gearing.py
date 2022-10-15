@@ -796,8 +796,14 @@ class Arbour:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             return self.wheelThick + self.poweredWheel.getHeight() - self.getRatchetInsetness(toCarve=False)
         if self.getType() == ArbourType.ANCHOR:
-            #wheel thick being used for anchor thick
-            return self.wheelThick
+            if self.escapementOnFront:
+                #no main shape, just two arbour extensions
+                return 0
+                # #treating one arbour extension as the main shape and the other as a normal extension
+                # return self.plateDistance/2
+            else:
+                # wheel thick being used for anchor thick
+                return self.wheelThick
 
     def getWheelCentreZ(self):
         '''
@@ -832,11 +838,7 @@ class Arbour:
             return self.escapement.getAnchorMaxR()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
-    def getEscapeWheel(self, pinionThick=-1):
-
-        if pinionThick < 0:
-            #this can be overriden for the bodge to ensure we don't press anything up against the inside of the plates
-            pinionThick = self.pinionThick
+    def getEscapeWheel(self):
 
         #escapement controls wheel thickness
         wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
@@ -847,6 +849,7 @@ class Arbour:
 
         if self.escapementOnFront:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
+            #TODO extend back towards the front plate by the distance dictacted by the escapement
             arbour = wheel.add(cq.Workplane("XY").circle(self.arbourD*2).circle(self.arbourD/2).extrude(15))
         else:
 
@@ -856,13 +859,13 @@ class Arbour:
                 wheel = wheel.mirror("YZ", (0, 0, 0))
 
             # pinion is on top of the wheel
-            pinion = self.pinion.get3D(thick=pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
+            pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
             arbour = wheel.add(pinion)
 
-            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + pinionThick)))
+            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
 
-            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + pinionThick + self.endCapThick))
+            arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + self.pinionThick + self.endCapThick))
 
         return arbour
 
@@ -875,10 +878,18 @@ class Arbour:
         if self.getType() == ArbourType.WHEEL_AND_PINION:
             shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
-            shape = self.getEscapeWheel(pinionThick=self.pinionThick)
+            if self.escapementOnFront:
+                shape = self.getPinionArbour(forPrinting=forPrinting)
+            else:
+                shape = self.getEscapeWheel()
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getPoweredWheel(forPrinting=forPrinting)
         elif self.getType() == ArbourType.ANCHOR:
+            if self.escapementOnFront:
+                #there's just a spacer, made up of two arbour extensions (so the bearing standoffs are always printed on top)
+                # shape = self.getArbourExtension(front=self.pinionAtFront)
+                shape = cq.Workplane("XY")
+            else:
                 shape = self.getAnchor(forPrinting=forPrinting)
         else:
             raise ValueError("Cannot produce 3D model for type: {}".format(self.getType().value))
@@ -977,6 +988,10 @@ class Arbour:
         length = self.frontSideExtension if front else self.rearSideExtension
         bearing = getBearingInfo(self.arbourD)
 
+        if self.getType() == ArbourType.ANCHOR and self.escapementOnFront:
+            #this is just a spacer split into two
+            length = self.plateDistance/2 - self.endshake/2
+
         if bearing is None:
             #i think this can only happen for the motion works arbour at the moment, where we don't need standoffs anyway, so bodge for now
             return None
@@ -1029,13 +1044,13 @@ class Arbour:
 
             shape = shape.add(self.poweredWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
 
-        if self.getType() == ArbourType.ESCAPE_WHEEL and self.escapement.type == EscapementType.GRASSHOPPER:
-
-            z = self.escapement.getWheelBaseToAnchorBaseZ()
-            if not self.pinionAtFront:
-                z += self.pinionThick + self.endCapThick
-
-            shape = shape.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True).translate((0,0,z)))
+        # if self.getType() == ArbourType.ESCAPE_WHEEL and self.escapement.type == EscapementType.GRASSHOPPER:
+        #
+        #     z = self.escapement.getWheelBaseToAnchorBaseZ()
+        #     if not self.pinionAtFront:
+        #         z += self.pinionThick + self.endCapThick
+        #
+        #     shape = shape.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True).translate((0,0,z)))
 
         return shape
 
@@ -1052,6 +1067,10 @@ class Arbour:
         if self.getType() == ArbourType.ANCHOR and self.useSpanner:
             return not (front == self.spannerBitOnFront)
 
+        # if self.getType() == ArbourType.ANCHOR and self.escapementOnFront:
+        #     #the extension on the front
+        #     return not front == self.pinionAtFront
+
         if self.getType() == ArbourType.CHAIN_WHEEL:
             #assuming chain is at front
             if front:
@@ -1061,19 +1080,25 @@ class Arbour:
 
         return True
 
-    def getPinionArbour(self):
+    def getPinionArbour(self, forPrinting=True):
         '''
         For an escape wheel out the front of the clock there's just a pinion on the arbour inside the clock
         '''
         longestExtensionIsFront = self.frontSideExtension > self.rearSideExtension
+        #we want to print the smallest extension as part of the pinion, because it's likely pressed up against the plate and so too small to thread on by itself
 
         pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD).translate((0,0,self.endCapThick))
-        cap = cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick)
+        cap = cq.Workplane("XY").circle(self.pinion.getMaxRadius()).circle(self.holeD/2).extrude(self.endCapThick)
         pinion = pinion.add(cap).add(cap.translate((0,0,self.endCapThick + self.pinionThick)))
 
-        arbourExtension = self.getArbourExtension(front=longestExtensionIsFront)
+        arbourExtension = self.getArbourExtension(front= not longestExtensionIsFront)
 
-        pinion = pinion.add(arbourExtension.translate((0,0,self.endCapThick*2 + self.pinionThick)))
+        thick = self.endCapThick*2 + self.pinionThick
+        pinion = pinion.add(arbourExtension.translate((0,0,thick)))
+
+        if not forPrinting:
+            if longestExtensionIsFront:
+                pinion = pinion.rotate((0,0,0),(1,0,0),180).translate((0,0,thick))
 
         return pinion
 
@@ -1100,8 +1125,8 @@ class Arbour:
                 #bail out before the extensions
                 return extras
             elif self.getType() == ArbourType.ESCAPE_WHEEL:
-                #between the plates is the pinion
-                extras['pinion_between_plates'] = self.getPinionArbour()
+                #main shape is the bit between the plates
+                extras['escape_wheel'] = self.getEscapeWheel()
 
         if self.pinionAtFront and self.needArbourExtension(front=False):
             extras['arbour_extension_rear'] = self.getArbourExtension(front=False)
