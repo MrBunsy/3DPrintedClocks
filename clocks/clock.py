@@ -1733,6 +1733,9 @@ class SimpleClockPlates:
             print("Outputting ", out)
             exporters.export(self.getSinglePillarWallStandoff(top=False), out)
 
+        if self.huygensMaintainingPower:
+            self.huygensWheel.outputSTLs(name+"_huygens_", path)
+
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:

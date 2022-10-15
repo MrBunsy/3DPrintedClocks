@@ -1815,7 +1815,7 @@ class Ratchet:
 
         self.anticlockwise = -1 if power_clockwise else 1
 
-        self.toothLength = self.outsideDiameter*0.025
+        self.toothLength = max(self.outsideDiameter*0.025, 1)
         self.toothAngle = degToRad(2)* self.anticlockwise
 
         self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
