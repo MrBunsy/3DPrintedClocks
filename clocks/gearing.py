@@ -597,6 +597,7 @@ class Arbour:
         self.distanceToNextArbour=distanceToNextArbour
         self.nutSpaceMetric=None
         #for the anchor, this is the side with the pendulum
+        #for the powered wheel, this is the side with the chain/rope/cord
         self.pinionAtFront=pinionAtFront
         #if using hyugens maintaining power then the chain wheel is directly fixed to the wheel, without a ratchet.
         self.useRatchet=useRatchet
@@ -612,7 +613,7 @@ class Arbour:
 
         if self.getType() == ArbourType.CHAIN_WHEEL:
             # currently this can only be used with the cord wheel
-            self.looseOnRod = not self.poweredWheel.looseOnRod
+            self.looseOnRod = (not self.poweredWheel.looseOnRod) and useRatchet
 
         self.holeD = arbourD
         if self.looseOnRod:
@@ -1278,6 +1279,12 @@ class Arbour:
 
         # if not self.ratchetInset and self.wheelSideExtension > 0:
         #     print("UNPRINTABLE CHAIN WHEEL, cannot have bits sticking out both sides")
+
+        if not self.pinionAtFront:
+            #chain is at the back
+            #I'm losing track of how many times we flip this now
+            gearWheel = gearWheel.rotate((0,0,0),(1,0,0),180).translate((0,0,self.getTotalThickness()))
+
         return gearWheel
 
 class MotionWorks:

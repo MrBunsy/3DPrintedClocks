@@ -565,7 +565,8 @@ class GoingTrain:
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
             self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize,
-                                           distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower)]
+                                           distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
+                                           useRatchet=not self.huygensMaintainingPower, pinionAtFront=not self.chainAtBack)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -950,14 +951,12 @@ class SimpleClockPlates:
             #check front plate
             canIgnoreFront = False
             canIgnoreBack = False
-            print(i)
             if self.goingTrain.getArbourWithConventionalNaming(i).getType() == ArbourType.CHAIN_WHEEL:
                 if self.goingTrain.chainAtBack:
                     canIgnoreBack = True
                 else:
                     #this is the part of the chain wheel with a washer, can ignore
                     canIgnoreFront = True
-            print(topZs[i])
             # topZ = self.goingTrain.getArbourWithConventionalNaming(i).getTotalThickness() + self.bearingPositions[i][2]
             if topZs[i] >= preliminaryPlateDistance - LAYER_THICK*2 and not canIgnoreFront:
                 #something that matters is pressed up against the top plate
@@ -977,7 +976,7 @@ class SimpleClockPlates:
         for i in range(len(self.bearingPositions)):
             self.bearingPositions[i][2]+= extraBack
 
-        print(self.bearingPositions)
+        # print(self.bearingPositions)
         self.plateDistance=max(topZs) + self.endshake + extraFront + extraBack
 
         if self.escapementOnFront:

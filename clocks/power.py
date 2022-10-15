@@ -1488,6 +1488,14 @@ class ChainWheel:
     This needs a ratchet, but the ratchet is generated in the GonigTrain and then set with setRatchet until I feel like refactoring this
     This whole thing really could do with an overhaul, but I don't expect to be using chains much in the future so it'll probably not happen
 
+    Hubert Hurr eight day chain works: wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15 (the default since it was my first clock)
+    Regula 1 day chain (61 LPF) works:  wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075
+    Regula 8 day chain (47 LPF 1.20mm diameter): wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075 - worked, but the chain stretch and the wheel failed with 2.5kg
+
+    Regular 8? day chain (47 LPF 1.05mm diameter) UNTESTED: wire_thick=1.05,width=4.4, inside_length=8.4-1.05*2, tolerance=0.075
+
+    TODO wrap all these up in a class like the screws and bearings, if I'm actually going to be using chains again
+
     '''
 
     @staticmethod
