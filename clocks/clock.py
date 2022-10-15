@@ -1041,10 +1041,11 @@ class SimpleClockPlates:
         if self.huygensMaintainingPower:
             #need a powered wheel and ratchet on the front!
             if self.goingTrain.poweredWheel.type == PowerType.CHAIN:
-                max_circumference = self.bottomPillarR*1*math.pi
+                max_circumference = self.bottomPillarR*1.25*math.pi
+                ratchetOuterThick = 3
                 self.huygensWheel = ChainWheel(ratchet_thick=5, max_circumference=max_circumference,wire_thick=self.goingTrain.poweredWheel.chain_thick,
                                                width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
-                                               tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=3.5)
+                                               tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
             else:
                 raise ValueError("Huygens maintaining power only currently supported with chain wheels")
 

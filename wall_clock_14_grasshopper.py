@@ -33,8 +33,12 @@ train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapem
 
 train.calculateRatios(max_wheel_teeth=50, min_pinion_teeth=9, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
+# Trying the thinner 47 LPF regula chain
+# train.genChainWheels(ratchetThick=4,  wire_thick=1.05,width=4.4, inside_length=8.4-1.05*2, tolerance=0.075, screwThreadLength=8)
+
+#for the first draft let's stick to a chain I know works, and hope that we're not over its weight limit
 # 61 links/ft 1-day regula chain. copied from clock 04
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, holeD=3, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
+train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
 
 #planning to put hte pendulum on the back
 pendulumSticksOut=20
@@ -54,7 +58,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clock 14", style="vertical", pendulumAtFront=False,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clk 14", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True)
 
 
