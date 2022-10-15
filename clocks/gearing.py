@@ -60,7 +60,7 @@ class Gear:
         padding = outerRadius * 0.1
         if padding < 1.5:
             padding=1.5
-        padding=1.5
+        padding=2
         #experimenting to reduce the tiny bits teh slicer likes to make
         # padding = padding - (padding % EXTRUSION_WIDTH) - 0.2
 
@@ -894,8 +894,8 @@ class Arbour:
         elif self.getType() == ArbourType.ANCHOR:
             if self.escapementOnFront:
                 #there's just a spacer, made up of two arbour extensions (so the bearing standoffs are always printed on top)
-                # shape = self.getArbourExtension(front=self.pinionAtFront)
-                shape = cq.Workplane("XY")
+                shape = self.getArbourExtension(front=self.pinionAtFront).rotate((0,0,0),(1,0,0),180)
+                # shape = cq.Workplane("XY")
             else:
                 shape = self.getAnchor(forPrinting=forPrinting)
         else:

@@ -669,6 +669,9 @@ class GoingTrain:
 
         self.poweredWheel.outputSTLs(name, path)
 
+        if self.escapement.type == EscapementType.GRASSHOPPER:
+            self.escapement.outputSTLs(name, path)
+
         # if not self.huygensMaintainingPower:
             #undecided, but I think I'm going to keep the STLs generated here
             #if we are using huygens there powered wheel is permanently attached to a gear wheel, and is generated with the arbour
@@ -1001,6 +1004,8 @@ class SimpleClockPlates:
                 maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.smallGearGap
             else:
                 maxR = 0
+            #hacky hack hack, I really think I should put escapementOnFront into GoingTrain
+            arbour.escapementOnFront = escapementOnFront
             arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
                                 frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
                                 pendulumFixingBearing=self.pendulumFixingBearing, plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)

@@ -1375,10 +1375,10 @@ class GrasshopperEscapement:
 
         '''
         holeD = self.arbourD
-        arm_wide = self.screws.metric_thread * 2
+        arm_wide = self.screws.metric_thread * 2.5
 
         #make taller so it's rigid on the arbour? Not sure how to do this iwthout it potentially clashing with pallet arms
-        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD).extrude(self.frame_thick)
+        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arm_wide/2).extrude(self.frame_thick)
 
         # entry  side
         line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])
@@ -1738,6 +1738,22 @@ class GrasshopperEscapement:
         out = os.path.join(path, "{}_grasshopper_frame.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getFrame(), out)
+
+        out = os.path.join(path, "{}_grasshopper_entry_pallet_arm.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getEntryPalletArm(), out)
+
+        out = os.path.join(path, "{}_grasshopper_exit_pallet_arm.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getExitPalletArm(), out)
+
+        out = os.path.join(path, "{}_grasshopper_entry_composer.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getEntryComposer(), out)
+
+        out = os.path.join(path, "{}_grasshopper_exit_composer.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getExitComposer(), out)
 
 class Pendulum:
     '''
