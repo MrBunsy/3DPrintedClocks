@@ -3,6 +3,7 @@ import clocks.clock as clock
 '''
 An attempt at a smaller (but still only 1.25s) pendulum, otherwise same as clock 07: one day, cord with second complication
 
+never saw light of day, I can't reliably get teh anchor escapement with enough teeth
 '''
 outputSTL=False
 

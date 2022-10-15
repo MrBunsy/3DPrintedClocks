@@ -5,7 +5,7 @@ Eight days, with pulley. 1.2m drop so it should have more power to play with tha
 
 Changes from clock 10 planned:
 
- - Pendulum needs to stick out further to cope with larger weights
+ - Pendulum needs to stick out further to cope with larger weights (or maybe put it at the back?)
  - Why not try a second hand without a visible hole?
  - go back to slightly thicker gears to increase robustness (I'm worried about long term life of the clock and seen the escape wheel teeth bend) and make up for friction with longer drop
 
