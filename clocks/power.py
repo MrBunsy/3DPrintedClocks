@@ -652,6 +652,12 @@ class WeightPoweredWheel:
         '''
         return 30
 
+    def getEncasingRadius(self):
+        '''
+        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+        '''
+        return 30
+
     def __init__(self):
         #diameter/circumference for the path the rope or chain takes. For the cord, this is the minimum diameter for the first layer of coils
         self.diameter=30
@@ -775,13 +781,27 @@ class RopeWheel:
         self.nibThick = 1
 
         ratchetOuterD = self.diameter*2.25
-        self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
+        if ratchet_thick > 0:
+            self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
+        else:
+            #not fully supported in rope wheel yet
+            self.ratchet = None
 
     def isClockwise(self):
         '''
         return true if this wheel is powered to rotate clockwise
         '''
         return self.power_clockwise
+
+    def getEncasingRadius(self):
+        '''
+        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+        '''
+        if self.ratchet is not None:
+            return self.ratchet.outsideDiameter/2
+        else:
+            #copypasted from getHalf - hacky.
+            return self.innerDiameter / 2 - self.ropeThick/2 + self.extraRim
 
     def getScrewPositions(self):
         return self.screwPositions
@@ -1003,6 +1023,9 @@ class CordWheel:
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
         self.clickWheelExtra=LAYER_THICK
 
+        if ratchet_thick <=0:
+            raise ValueError("Cannot make cord wheel without a ratchet")
+
         self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.capDiameter/2 - 12.5)
         self.keyScrewHoleD = self.screwThreadMetric
         self.power_clockwise = power_clockwise
@@ -1027,6 +1050,12 @@ class CordWheel:
         return true if this wheel is powered to rotate clockwise
         '''
         return self.power_clockwise
+
+    def getEncasingRadius(self):
+        '''
+        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+        '''
+        return self.ratchet.outsideDiameter/2
 
     def getScrewPositions(self):
         return self.fixingPoints
@@ -1543,6 +1572,15 @@ class ChainWheel:
             self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
         else:
             self.ratchet = None
+
+    def getEncasingRadius(self):
+        '''
+        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+        '''
+        if self.ratchet is not None:
+            return self.ratchet.outsideDiameter/2
+        else:
+            return self.outerRadius
 
     def getTurnsForDrop(self, maxChainDrop):
         return maxChainDrop / self.circumference

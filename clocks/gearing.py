@@ -932,7 +932,7 @@ class Arbour:
 
         if self.escapementOnFront:
             #not much else to do
-            if not forPrinting:
+            if not forPrinting and self.escapement.type == EscapementType.GRASSHOPPER:
                 anchor = anchor.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True, centreOnAnchor=True))
             return anchor
 
@@ -1102,7 +1102,8 @@ class Arbour:
         arbourExtension = self.getArbourExtension(front= not longestExtensionIsFront)
 
         thick = self.endCapThick*2 + self.pinionThick
-        pinion = pinion.add(arbourExtension.translate((0,0,thick)))
+        if arbourExtension is not None:
+            pinion = pinion.add(arbourExtension.translate((0,0,thick)))
 
         if not forPrinting:
             if longestExtensionIsFront:

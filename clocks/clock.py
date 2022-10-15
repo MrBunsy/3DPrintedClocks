@@ -520,15 +520,14 @@ class GoingTrain:
         # chain wheel imaginary pinion (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
         chainWheelImaginaryPinionAtFront = self.chainAtBack
 
-        # #TODO - does this work when chain wheels are involved?
         #this was an attempt to put the second wheel over the top of the powered wheel, if it fits, but now there are so many different setups I'm just disabling it
-        # secondWheelR = pairs[1].wheel.getMaxRadius()
-        # firstWheelR = pairs[0].wheel.getMaxRadius() + pairs[0].pinion.getMaxRadius()
-        # ratchetOuterR = self.poweredWheel.ratchet.outsideDiameter/2
-        # space = firstWheelR - ratchetOuterR
-        # if secondWheelR < space - 3:
-        #     #the second wheel can actually fit on the same side as the ratchet
-        #     chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
+        secondWheelR = pairs[1].wheel.getMaxRadius()
+        firstWheelR = pairs[0].wheel.getMaxRadius() + pairs[0].pinion.getMaxRadius()
+        poweredWheelEncasingRadius = self.poweredWheel.getEncasingRadius()#.ratchet.outsideDiameter/2
+        space = firstWheelR - poweredWheelEncasingRadius
+        if secondWheelR < space - 3:
+            #the second wheel can actually fit on the same side as the ratchet
+            chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
 
         #this is a bit messy. leaving it alone for now, but basically we manually choose which way to have the escape wheel but by default it's at front (if the chain is also at the front)
         escapeWheelPinionAtFront = self.escapeWheelPinionAtFront
@@ -940,23 +939,51 @@ class SimpleClockPlates:
         and the key-wound cord wheel is specially shaped) then that's not a problem.
         
         However if it's just a pinion (or a wheel - somehow?), or and anchor (although this should be avoided now by choosing where it goes) then that's extra friction
+        
+        TODO - I assumed that the chainwheel was alays the frontmost or backmost, but that isn't necessarily true.
         '''
+        needExtraFront = False
+        needExtraBack = False
+
+        preliminaryPlateDistance=max(topZs)
+        for i in range(len(self.bearingPositions)):
+            #check front plate
+            canIgnoreFront = False
+            canIgnoreBack = False
+            print(i)
+            if self.goingTrain.getArbourWithConventionalNaming(i).getType() == ArbourType.CHAIN_WHEEL:
+                if self.goingTrain.chainAtBack:
+                    canIgnoreBack = True
+                else:
+                    #this is the part of the chain wheel with a washer, can ignore
+                    canIgnoreFront = True
+            print(topZs[i])
+            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).getTotalThickness() + self.bearingPositions[i][2]
+            if topZs[i] >= preliminaryPlateDistance - LAYER_THICK*2 and not canIgnoreFront:
+                #something that matters is pressed up against the top plate
+                #could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
+                needExtraFront = True
+
+            if self.bearingPositions[i][2] == 0 and not canIgnoreBack:
+                needExtraBack = True
+
         extraFront = 0
         extraBack = 0
-        if self.goingTrain.chainAtBack:
+        if needExtraFront:
             extraFront = LAYER_THICK*2
-        else:
+        if needExtraBack:
             extraBack = LAYER_THICK*2
 
         for i in range(len(self.bearingPositions)):
             self.bearingPositions[i][2]+= extraBack
 
         print(self.bearingPositions)
-        self.plateDistance=max(topZs) + self.endshake + extraFront
+        self.plateDistance=max(topZs) + self.endshake + extraFront + extraBack
 
         if self.escapementOnFront:
             #little bodge to try and make things easier (not sure if it does)
             #the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
+            #so pretend it's placed exactly in the centre
             self.bearingPositions[-1][2] = self.plateDistance/2 - self.endshake/2
 
         print("Plate distance", self.plateDistance)
