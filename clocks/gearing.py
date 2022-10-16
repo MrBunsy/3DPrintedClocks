@@ -60,7 +60,8 @@ class Gear:
         padding = outerRadius * 0.1
         if padding < 1.5:
             padding=1.5
-        padding=2
+        #1.9 seems to result in no gaps and no fiddly bits with classic slicer and 0.4 nozzle
+        padding=1.9#2
         #experimenting to reduce the tiny bits teh slicer likes to make
         # padding = padding - (padding % EXTRUSION_WIDTH) - 0.2
 
@@ -726,6 +727,9 @@ class Arbour:
 
             #bit hacky, treat spanner bit like a pinion for the arbour extension stuff
             self.pinionAtFront = self.spannerBitOnFront
+        if self.escapementOnFront and self.getType() == ArbourType.ESCAPE_WHEEL:
+            #bodge, this is the pinion only arbour, we want the included arbour extension to be the shorted, so set pinionside to the shorted extension
+            self.pinionAtFront = self.frontSideExtension < self.rearSideExtension
 
 
     def setNutSpace(self, nutMetricSize=3):
@@ -1067,6 +1071,8 @@ class Arbour:
         if not self.useArbourExtenders:
             return False
 
+
+
         #not enough to print
         if front and self.frontSideExtension < self.arbourBearingStandoff:
             return False
@@ -1092,22 +1098,23 @@ class Arbour:
     def getPinionArbour(self, forPrinting=True):
         '''
         For an escape wheel out the front of the clock there's just a pinion on the arbour inside the clock
+
+        we've already calculated which extension to include in setPlateInfo (we're including teh shortest) so use pinionAtFront for which extension we're using here
         '''
-        longestExtensionIsFront = self.frontSideExtension > self.rearSideExtension
+        # longestExtensionIsFront = self.frontSideExtension > self.rearSideExtension
         #we want to print the smallest extension as part of the pinion, because it's likely pressed up against the plate and so too small to thread on by itself
 
         pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD).translate((0,0,self.endCapThick))
         cap = cq.Workplane("XY").circle(self.pinion.getMaxRadius()).circle(self.holeD/2).extrude(self.endCapThick)
         pinion = pinion.add(cap).add(cap.translate((0,0,self.endCapThick + self.pinionThick)))
 
-        arbourExtension = self.getArbourExtension(front= not longestExtensionIsFront)
+        arbourExtension = self.getArbourExtension(front= self.pinionAtFront)
 
         thick = self.endCapThick*2 + self.pinionThick
         if arbourExtension is not None:
             pinion = pinion.add(arbourExtension.translate((0,0,thick)))
 
-        if not forPrinting:
-            if longestExtensionIsFront:
+        if not forPrinting and not self.pinionAtFront:
                 pinion = pinion.rotate((0,0,0),(1,0,0),180).translate((0,0,thick))
 
         return pinion
