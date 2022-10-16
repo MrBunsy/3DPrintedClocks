@@ -692,7 +692,11 @@ class GrasshopperEscapement:
         self.composer_pivot_space = 0.5
         self.composer_arm_wide=self.screws.metric_thread*2.5
 
-
+        #how much closer to the escape wheel should the composers keep the pallet arms?
+        #first test revealed the exit pallet arm needed to be a tiny bit closer.
+        #might this be because things are slightly wonky with the escapement out the front?
+        self.exit_composer_extra_fudge = 0.6
+        self.entry_composer_extra_fudge = 0
 
         #bits internally needed to generate an escaping arc that we want
         # self.ax_deg=ax_deg
@@ -1503,7 +1507,7 @@ class GrasshopperEscapement:
 
         return rest_screw_pos
 
-    def getComposer(self, nib_pos, pivot_pos, forPrinting=True):
+    def getComposer(self, nib_pos, pivot_pos, forPrinting=True, extra_length_fudge=0):
         '''
         like pallet arm, assumes wheel rotates clockwise and both arms have their nibs 'left' of the pivot point
         '''
@@ -1529,11 +1533,11 @@ class GrasshopperEscapement:
 
         #rest of composer
         composer_total_thick = self.pallet_thick + self.composer_thick*2 + self.composer_pivot_space
-
+        #arm along the top
         composer = composer.workplaneFromTagged("base").moveTo(self.composer_arm_wide/2, top_left_corner[1]).lineTo(screw_position[0], screw_position[1] + around_screw_r).\
             line(0, - self.composer_thick).lineTo(self.composer_arm_wide/2, top_left_corner[1] - self.composer_thick).close().extrude(composer_total_thick)
-            # lineTo(screw_position[0] + self.composer_thick, top_left_corner[1] - around_screw_r).lineTo(self.composer_arm_wide/2,top_left_corner[1] - around_screw_r).close().extrude(self.pallet_thick + self.composer_thick*2 + self.composer_pivot_space)
-        composer = composer.workplaneFromTagged("base").moveTo(screw_position[0] - self.composer_thick/2, screw_position[1]).lineTo(screw_position[0] - self.composer_thick/2, self.pallet_arm_wide/2).\
+        #arm that holds the pallet in place
+        composer = composer.workplaneFromTagged("base").moveTo(screw_position[0] - self.composer_thick/2, screw_position[1]).lineTo(screw_position[0] - self.composer_thick/2, self.pallet_arm_wide/2 - extra_length_fudge).\
             line(self.composer_thick, 0).lineTo(screw_position[0] + self.composer_thick/2, screw_position[1]).close().extrude(composer_total_thick)
 
         #hole to rotate around pivot
@@ -1645,13 +1649,13 @@ class GrasshopperEscapement:
         return self.getPalletArm(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting)
 
     def getExitComposer(self, forPrinting=True):
-        return self.getComposer(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting)
+        return self.getComposer(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting, extra_length_fudge=self.exit_composer_extra_fudge)
 
     def getEntryPalletArm(self, forPrinting=True):
         return self.getPalletArm(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting)
 
     def getEntryComposer(self, forPrinting=True):
-        return self.getComposer(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting)
+        return self.getComposer(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting, extra_length_fudge=self.entry_composer_extra_fudge)
 
 
     def getWheelThick(self):

@@ -1437,7 +1437,7 @@ class MotionWorks:
         bottomR = self.hourHandHolderD / 2 + 0.7
 
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
-        holderR = self.hourHandHolderD / 2 - 0.2
+        holderR = self.hourHandHolderD / 2 - 0.1
 
         hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR)
 
