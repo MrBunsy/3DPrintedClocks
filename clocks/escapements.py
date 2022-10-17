@@ -694,9 +694,13 @@ class GrasshopperEscapement:
 
         #how much closer to the escape wheel should the composers keep the pallet arms?
         #first test revealed the exit pallet arm needed to be a tiny bit closer.
-        #might this be because things are slightly wonky with the escapement out the front?
-        self.exit_composer_extra_fudge = 0.6
-        self.entry_composer_extra_fudge = 0
+        #might this be because things are slightly wonky with the escapement out the front? - I'm leaning towards this thought
+        #I may be able to make up for this with larger nibs as well (or instead of?)
+
+        #note - the escape wheel was wonky! reliable at 0.6 on the exit now I've unwonked it
+        #still skipped occasionally. This combined with increasing the size of the nibs looks promising
+        self.exit_composer_extra_fudge = 1#0.6
+        self.entry_composer_extra_fudge = 0#0.8#0
 
         #bits internally needed to generate an escaping arc that we want
         # self.ax_deg=ax_deg
@@ -1564,11 +1568,15 @@ class GrasshopperEscapement:
 
         line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
         distance_to_nib = distanceBetweenTwoPoints(nib_pos, pivot_pos)
+        #I want this to be longer so the counterweight works better, but any larger than this and the entry arm will clash with any extra rod that stick through the frame
         distance_to_counterweight = distance_to_nib * 0.4
 
         # #angle that is along the tangent of the wheel
         nib_tangent_angle = line_pivot_to_nib.getAngle()
-        nib_end_r = self.pallet_arm_wide*0.6
+        # 0.6 works when there's no wonkyness in the frame and wheel
+        #0.8 looks awfully close on the preview, but I think when printed should be much better
+        #basically want these to be as big as possible to help make up for wonkyness from having the escapement out the front
+        nib_end_r = self.pallet_arm_wide*0.75#0.6
 
 
 

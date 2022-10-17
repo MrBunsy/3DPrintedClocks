@@ -411,7 +411,10 @@ class Gear:
 
         arbour = base.add(top)
 
-        arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(self.getMaxRadius()).extrude(capThick).faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
+        if capThick > 0:
+            arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(self.getMaxRadius()).extrude(capThick)
+
+        arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
 
         if not front:
             #make sure big side is on the bottom.
@@ -873,8 +876,8 @@ class Arbour:
             pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
             arbour = wheel.add(pinion)
-
-            arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
+            if self.endCapThick > 0:
+                arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
 
             arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + self.pinionThick + self.endCapThick))
 
@@ -1297,7 +1300,7 @@ class Arbour:
 class MotionWorks:
 
     def __init__(self, holeD=3.4, thick=3, module=1, minuteHandThick=3, minuteHandHolderSize=5, minuteHandHolderHeight=50,
-                 style="HAC", compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45):
+                 style="HAC", compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False):
         '''
         the the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
 
@@ -1315,6 +1318,7 @@ class MotionWorks:
         self.holeD=holeD
         self.thick = thick
         self.style=style
+        self.compact = compact
 
         self.strikeTrigger=strikeTrigger
         #angle the hour strike should be at
@@ -1322,6 +1326,8 @@ class MotionWorks:
         self.snail=snail
 
         self.pinionCapThick = thick/2
+        if self.compact:
+            self.pinionCapThick = 0
 
         #pinching ratios from The Modern Clock
         #adjust the module so the diameters work properly
@@ -1351,7 +1357,7 @@ class MotionWorks:
 
         motionWorksModel = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         motionWorksModel = motionWorksModel.add(self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick())))
-        motionWorksModel = motionWorksModel.add(self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], self.getCannonPinionBaseThick() / 2)))
+        motionWorksModel = motionWorksModel.add(self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], self.getCannonPinionBaseThick() / 2 - self.thick/2)))
 
         return motionWorksModel
 
@@ -1387,13 +1393,13 @@ class MotionWorks:
         if self.strikeTrigger is not None:
             base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0,0,0),(0,0,1),self.strikeHourAngleDeg).faces(">Z").workplane()
 
-
-        base = base.circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick)
+        if self.pinionCapThick > 0:
+            base = base.circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick)
         pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick).translate((0,0,self.pinionCapThick))
+        pinion = pinion.add(base)
+        if self.pinionCapThick > 0:
+            pinion = pinion.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionThick)))
 
-        top = cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionThick))
-
-        pinion = pinion.add(base).add(top)
 
 
         #has an arm to hold the minute hand
@@ -1410,22 +1416,22 @@ class MotionWorks:
         wheel = self.pairs[0].wheel
         pinion = self.pairs[1].pinion
 
-        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.holeD, wheelThick=self.thick, pinionThick=self.thick * 3, endCapThick=self.thick/2, style=self.style)
+        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.holeD, wheelThick=self.thick, pinionThick=self.thick * 2, endCapThick=self.pinionCapThick, style=self.style)
 
     def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
         #this is just a cadquery shape
-        wheel = self.pairs[0].wheel
-        pinion = self.pairs[1].pinion
-
-        base = wheel.get3D(thick=self.thick, holeD=self.holeD, style=self.style, innerRadiusForStyle= pinion.getMaxRadius())
-
-        top = pinion.get3D(thick=self.thick * 3, holeD=self.holeD, style=self.style).translate([0, 0, self.thick])
-
-        arbour = base.add(top)
-
-        arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(self.thick * 0.5).circle(self.holeD / 2).cutThruAll()
-        return arbour
+        # wheel = self.pairs[0].wheel
+        # pinion = self.pairs[1].pinion
+        #
+        # base = wheel.get3D(thick=self.thick, holeD=self.holeD, style=self.style, innerRadiusForStyle= pinion.getMaxRadius())
+        #
+        # top = pinion.get3D(thick=self.thick * 3, holeD=self.holeD, style=self.style).translate([0, 0, self.thick])
+        #
+        # arbour = base.add(top)
+        #
+        # arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(self.thick * 0.5).circle(self.holeD / 2).cutThruAll()
+        return self.getMotionArbour().getShape()
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
         #this used to be tapered, but now is just a friction fit slot.
@@ -1437,7 +1443,9 @@ class MotionWorks:
         bottomR = self.hourHandHolderD / 2 + 0.7
 
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
-        holderR = self.hourHandHolderD / 2 - 0.1
+        #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
+        # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
+        holderR = self.hourHandHolderD / 2 - 0.05
 
         hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR)
 
@@ -1460,12 +1468,6 @@ class MotionWorks:
         shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(bottomR,handHolderStartZ).lineTo(holderR,handHolderStartZ).lineTo(holderR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
 
         hour = hour.add(shape)
-        # return shape
-
-        #something very strange is going on with trying to combine shapes. once again cadquery doesn't quite do anything that makes sense.
-        # shape = cq.Workplane("XY").add(cq.Solid.makeCone(bottomR,topR,height))
-        # # shape= shape.faces(">Z").workplane().circle(self.minuteHandHolderD/2 + self.space/2).cutThruAll()
-        # hour = hour.add(shape)
 
         hole = cq.Workplane("XY").circle(holeR).extrude(height*2)
         hour = hour.cut(hole)
