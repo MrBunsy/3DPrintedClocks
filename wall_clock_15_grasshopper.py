@@ -31,7 +31,7 @@ escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, 
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
                        chainAtBack=False, chainWheels=0, hours=28, huygensMaintainingPower=True)
 
-train.calculateRatios(max_wheel_teeth=200, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
+train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
 # Trying the thinner 47 LPF regula chain
 # train.genChainWheels(ratchetThick=4,  wire_thick=1.05,width=4.4, inside_length=8.4-1.05*2, tolerance=0.075, screwThreadLength=8)
@@ -44,7 +44,7 @@ train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6
 pendulumSticksOut=20
 
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
+train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 train.printInfo(weight_kg=1)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=30, style=gearStyle, compact=True, thick=2)
@@ -56,7 +56,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clk 15", style="vertical", pendulumAtFront=False,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 15", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True, motionWorksAbove=True)
 
 

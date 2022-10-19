@@ -494,7 +494,7 @@ class GoingTrain:
         # self.chainGearPinionLength = chainWheelThick*2.5
 
 
-        self.gearPinionEndCapLength=thick*0.25
+        self.gearPinionEndCapLength=max(thick*0.25, 0.8)
         # self.gearTotalThick = self.gearWheelThick + self.gearPinionLength + self.gearPinionEndCapLength
         # self.chainGearTotalThick
 
@@ -1173,7 +1173,7 @@ class SimpleClockPlates:
 
         return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
     
-    def getSinglePillarWallStandoff(self, top=True, forPrinting=True):
+    def getSinglePillarWallStandoff(self, top=True, forPrinting=True, extraBearingForAnchor=True):
         '''
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
@@ -1200,8 +1200,14 @@ class SimpleClockPlates:
         standoff = cq.Workplane("XY").tag("base").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude(self.backPlateFromWall)
 
         if top:
-            back_thick=5
+            back_thick=self.getPlateThick(back=True)
+
+            screwHoleFromtop = 8
+
+
             screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] - self.topPillarR - 8)
+            if extraBearingForAnchor:
+                screwHolePos = (self.topPillarPos[0], self.bearingPositions[-1][1] - self.holderWide/2 - self.wallFixingScrewHeadD/2)
             screwHoleSupportR = self.topPillarR  # (self.wallFixingScrewHeadD + 6)/2
             slotLength = 7
 
@@ -1211,6 +1217,11 @@ class SimpleClockPlates:
                 rect(self.topPillarR * 2, self.topPillarPos[1] - screwHolePos[1] + slotLength).extrude(back_thick)
 
             standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
+
+            if extraBearingForAnchor and top:
+                bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-1).getRodD())
+
+                standoff = standoff.cut(self.getBearingPunch(bearingOnTop=True, back=True, bearingInfo=bearingInfo).translate((0, self.bearingPositions[-1][1], 0)))
 
         screwStartZ = self.backPlateFromWall-self.backPlateWallStandoffThickForScrews
         for fixingPos in fixings:
@@ -1234,7 +1245,9 @@ class SimpleClockPlates:
         return standoff
     
     def getWallStandOff(self):
-
+        '''
+        Get a combined peice for a wall standoff, undecided if to keep this as I've not used it and instead use the single pillar wall standoffs
+        '''
         pillarWallThick = 3
         topPillarInnerR = self.topPillarR - pillarWallThick
         bottomPillarInnerR = self.bottomPillarR - pillarWallThick
@@ -1444,6 +1457,9 @@ class SimpleClockPlates:
             textMultiMaterial = cq.Workplane("XY")
             textSize = topPillarR * 0.9
             textY = (self.bearingPositions[0][1] + fixingPositions[2][1])/2
+            if self.goingTrain.escapement.type == EscapementType.GRASSHOPPER:
+                #TODO check all the gaps and choose the largest, so we don't have to care about which escapemetn it is?
+                textY = (self.bearingPositions[-1][1] + self.bearingPositions[-2][1])/2
             plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.4, textY), textSize)
 
             plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.6, textY), textSize)
@@ -1588,7 +1604,7 @@ class SimpleClockPlates:
                 bearingInfo = self.pendulumFixingBearing
 
 
-            plate = plate.cut(self.getBearingPunch(back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
+            plate = plate.cut(self.getBearingPunch(bearingOnTop=back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
