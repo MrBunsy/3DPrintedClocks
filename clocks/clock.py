@@ -703,7 +703,7 @@ class SimpleClockPlates:
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False):
+                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -733,8 +733,10 @@ class SimpleClockPlates:
         self.dial = dial
 
         self.motionWorksAbove=motionWorksAbove
-
+        #escapement is on top of the front plate
         self.escapementOnFront = escapementOnFront
+        #only valid if escapementOnFront. This adds an extra front plate that goes up to the escape wheel, to add stability for the large grasshopper esacpe wheel
+        self.extraFrontPlate = extraFrontPlate
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
         #if false, it's between the plates like the rest of the gear train
@@ -981,12 +983,16 @@ class SimpleClockPlates:
 
         # print(self.bearingPositions)
         self.plateDistance=max(topZs) + self.endshake + extraFront + extraBack
-
+        self.extraFrontPlateDistance = 0
+        #mounting position (that's not the bottom pillar)
+        self.extraFrontPlateMountingPos = None
         if self.escapementOnFront:
             #little bodge to try and make things easier (not sure if it does)
             #the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
             #so pretend it's placed exactly in the centre
             self.bearingPositions[-1][2] = self.plateDistance/2 - self.endshake/2
+
+
 
         print("Plate distance", self.plateDistance)
 
@@ -1028,7 +1034,7 @@ class SimpleClockPlates:
 
         self.weightOnRightSide = self.goingTrain.isWeightOnTheRight()
 
-        #absolute z position
+        #absolute z position for the embedded nuts for the front plate to be held on (from before there was a wall standoff or an extra front plate)
         self.embeddedNutHeight = self.getPlateThick(back=True) + self.plateDistance  + self.getPlateThick(back=False) - (self.fixingScrews.length - 10)
 
         self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.holderWide = self.getPillarInfo()
@@ -1036,6 +1042,12 @@ class SimpleClockPlates:
         self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
         self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
         self.frontPlateFixings = self.frontPlateTopFixings + self.frontPlateBottomFixings
+
+        if self.escapementOnFront and self.extraFrontPlate:
+            escapeWheelTopZFromFront = -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ() + self.goingTrain.escapement.getWheelThick()
+
+            self.extraFrontPlateDistance = escapeWheelTopZFromFront + self.endshake
+            self.extraFrontPlateMountingPos = (self.bearingPositions[-2][0], self.bearingPositions[-2][1] - self.goingTrain.escapement.getWheelMaxR() - self.gearGap - self.holderWide / 2)
 
         #fixing positions to screw the wall standoffs onto the back plate/pillars only used if backPlateFromWall > 0
         self.backPlateTopFixings = [(self.topPillarPos[0], self.topPillarPos[1]- self.topPillarR / 2), (self.topPillarPos[0], self.topPillarPos[1] + self.topPillarR / 2)]
@@ -1316,6 +1328,42 @@ class SimpleClockPlates:
 
     # def getWallStandoffFixingPositions
 
+    def getExtraFrontPlate(self, forPrinting=True):
+        '''
+        Constructed with the front facing downwards, so it's on its back with the leggies facing up
+        '''
+        if not self.extraFrontPlate:
+            raise ValueError("There is no extra front plate")
+        if self.style != "vertical":
+            raise NotImplementedError("No support for extra front plate for anything other than vertical plates")
+
+        topY = self.bearingPositions[-2][1]
+        bottomY = self.bottomPillarPos[1]
+
+        thick = self.getPlateThick(back=False)
+
+        plate = cq.Workplane("XY").tag("base").moveTo(0,(topY+bottomY)/2).rect(self.holderWide,topY - bottomY).extrude(thick)
+
+        plate = plate.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(thick)
+
+        plate = plate.workplaneFromTagged("base").moveTo(0, topY).circle(self.holderWide/2).extrude(thick)
+
+        #bearing for the escape wheel
+        bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-2).getRodD())
+        plate = plate.cut(self.getBearingPunch(bearingOnTop=True,bearingInfo=bearingInfo, back=False).translate(self.bearingPositions[-2][0:2]))
+
+        handHoleR = self.motionWorks.hourHandHolderD/2 + 2
+        handsPos = self.bearingPositions[self.goingTrain.chainWheels]
+
+        plate = plate.workplaneFromTagged("base").moveTo(handsPos[0], handsPos[1]).circle(handHoleR+5).extrude(thick)
+        #hole for the motion works
+        plate = plate.cut(cq.Workplane("XY").moveTo(handsPos[0], handsPos[1]).circle(handHoleR).extrude(thick))
+
+        if not forPrinting:
+            plate = plate.rotate((0,0,0), (0,1,0), 180).translate((0,0,thick + self.extraFrontPlateDistance + self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance))
+
+        return plate
+
     def getPlate(self, back=True, getText=False):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
@@ -1474,7 +1522,12 @@ class SimpleClockPlates:
             chainHoles = self.getChainHoles(bottomPillarPos=bottomPillarPos, bottomPillarR=bottomPillarR)
             plate = plate.cut(chainHoles.translate((0, 0, self.getPlateThick(back=True) + self.endshake / 2)))
         else:
-           plate = self.frontAdditionsToPlate(plate)
+            #front
+            plate = self.frontAdditionsToPlate(plate)
+            if self.extraFrontPlate:
+                plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide/2).extrude(self.extraFrontPlateDistance).translate((0,0,self.getPlateThick(back=False))))
+                # self.extraFrontPlateMountingPos
+
 
         #screws to fix the plates together, with embedded nuts in the pillars
         embeddedNutHeight =self.fixingScrews.getNutHeight()*1.4
@@ -1716,6 +1769,7 @@ class SimpleClockPlates:
             #ratchet!
             plate = plate.add(self.huygensWheel.ratchet.getOuterWheel().translate(self.bottomPillarPos).translate((0,0,self.getPlateThick(back=False))))
 
+
         return plate
 
     def outputSTLs(self, name="clock", path="../out"):
@@ -1877,6 +1931,9 @@ class Assembly:
             clock = clock.add(self.plates.getSinglePillarWallStandoff(top=True, forPrinting=False))
             clock = clock.add(self.plates.getSinglePillarWallStandoff(top=False, forPrinting=False))
             # clock = clock.add(self.plates.getWallStandOff())
+
+        if self.plates.extraFrontPlate:
+            clock = clock.add(self.plates.getExtraFrontPlate(forPrinting=False))
 
         #the wheels
         arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1

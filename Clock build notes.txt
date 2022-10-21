@@ -223,5 +223,5 @@ DONE (but too loose!)
 - If I'd made the module size slightly larger, the motion works could be behind the escape wheel with just the hand in front! DONE
 - text on the back was hidden partly by wall offset - DONE
 - grasshopper is slightly wonky because it sticks out a way in front. I've worked around it by tweaking dimensions, so it runs as it is, but might want to but an extra plate (half plate?) on the front. I could hide the motion works behind it and even put a dial on it!
-- Need to make motino works more thin to fit behind escape wheel
+- Need to make motino works more thin to fit behind escape wheel - DONE
 - Improve the pulley - going to try using steel tube instead of a bearing. Also want to make it thinner. I think I can print the pulley wheel in one go too
