@@ -45,15 +45,21 @@ class Gear:
 
     @staticmethod
     def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True):
-        hexagonDiameter = outerRadius/3
+        hexagonDiameter = 10
         if big:
-            hexagonDiameter = max(innerRadius*2, outerRadius/3)
+            hexagonDiameter = outerRadius / 3
+            if hexagonDiameter < innerRadius*2 and innerRadius*2 < outerRadius*0.75:
+                # keep hexagon larger than the inner radius (looks better), unless that would result in a hexagon too big
+                hexagonDiameter = innerRadius*2
+            if hexagonDiameter > 25:
+                #too big looks like it's just spokes
+                hexagonDiameter = 25
 
-            if innerRadius > outerRadius*0.5:
-                hexagonDiameter = outerRadius / 3
+        if hexagonDiameter < 10:
+            hexagonDiameter = 10
 
-        if hexagonDiameter < 6:
-            hexagonDiameter = 6
+        # if hexagonDiameter < 6:
+        #     hexagonDiameter = 6
 
 
         # padding = outerRadius*0.075
@@ -85,15 +91,25 @@ class Gear:
                 y = j*(hexagonHeight)/2
 
                 #undecided if it looks better or worse with the slivers of hexagons on the edges
-                if math.sqrt(x*x + y*y) > outerRadius + padding*1.2:
-                    #skip if it's more than half outside
-                    continue
+                centreDistance = math.sqrt(x*x + y*y)
+                if centreDistance > outerRadius + padding*1.2:
+                    #we're more than half outside
+
+                    #skip if it's a small sliver that would be left behind
+                    if hexagonDiameter - (centreDistance - outerRadius) < 15:
+                        continue
                 if x == 0 and y ==0:
+                    #always skip the center hexagon
                     continue
 
                 honeycomb = honeycomb.add(cq.Workplane("XY").polygon(nSides=6,diameter=hexagonDiameter-padding).extrude(cutterThick).translate((x, y)))
-
-        honeycomb = honeycomb.cut(cq.Workplane("XY").circle(innerRadius).extrude(cutterThick))
+        try:
+            honeycomb = honeycomb.cut(cq.Workplane("XY").circle(innerRadius).extrude(cutterThick))
+        except:
+            '''
+            *shrug*
+            '''
+            print("failed to cut honeycomb")
 
         outerRing = cq.Workplane("XY").circle(outerRadius*2).circle(outerRadius).extrude(cutterThick)
 
@@ -847,7 +863,10 @@ class Arbour:
     def getEscapeWheel(self, forPrinting=True):
 
         #escapement controls wheel thickness
-        wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=self.pinion.getMaxRadius(), holeD=self.holeD)
+        arbour_or_pivot_r = self.pinion.getMaxRadius()
+        if self.escapementOnFront:
+            arbour_or_pivot_r = self.arbourD
+        wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=arbour_or_pivot_r, holeD=self.holeD)
 
 
 
