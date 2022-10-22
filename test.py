@@ -193,19 +193,28 @@ Diameter of 130.34328818 results in mean torque arm of 9.9396
 '''
 # grasshopper = GrasshopperEscapement(acceptableError=0.00001)
 # grasshopper = GrasshopperEscapement(acceptableError=0.01)
-grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
-# # show_object(grasshopper.diagrams[-1])
-# # grasshopper.checkGeometry(loud=True)
-#
-# # show_object(grasshopper.getEscapmentFrame())
-# # show_object(grasshopper.getEscapementWheel())
-show_object(grasshopper.getAssembled(style=GearStyle.HONEYCOMB))
+# grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+# # # show_object(grasshopper.diagrams[-1])
+# # # grasshopper.checkGeometry(loud=True)
+# #
+# # # show_object(grasshopper.getEscapmentFrame())
+# # # show_object(grasshopper.getEscapementWheel())
+# show_object(grasshopper.getAssembled(style=GearStyle.HONEYCOMB))
 #
 # if outputSTL:
 #     grasshopper.outputSTLs("grasshopper", "out")
 
 
 
+
+motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
+hands = Hands(style=HandStyle.SPADE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+
+# show_object(hands.getHand(hour=True,second=False))
+# show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
+
+show_object(hands.getHand(hour=False,second=True).translate((50,0,0)))
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 

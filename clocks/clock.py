@@ -983,9 +983,7 @@ class SimpleClockPlates:
 
         # print(self.bearingPositions)
         self.plateDistance=max(topZs) + self.endshake + extraFront + extraBack
-        self.extraFrontPlateDistance = 0
-        #mounting position (that's not the bottom pillar)
-        self.extraFrontPlateMountingPos = None
+
         if self.escapementOnFront:
             #little bodge to try and make things easier (not sure if it does)
             #the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
@@ -1043,11 +1041,20 @@ class SimpleClockPlates:
         self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
         self.frontPlateFixings = self.frontPlateTopFixings + self.frontPlateBottomFixings
 
+        self.extraFrontPlateDistance = 0
+        #mounting position (that's not the bottom pillar)
+        self.extraFrontPlateMountingPos = None
+        self.extraFrontPlateFixings = []
+
         if self.escapementOnFront and self.extraFrontPlate:
             escapeWheelTopZFromFront = -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ() + self.goingTrain.escapement.getWheelThick()
 
-            self.extraFrontPlateDistance = escapeWheelTopZFromFront + self.endshake
-            self.extraFrontPlateMountingPos = (self.bearingPositions[-2][0], self.bearingPositions[-2][1] - self.goingTrain.escapement.getWheelMaxR() - self.gearGap - self.holderWide / 2)
+            self.extraFrontPlateDistance = escapeWheelTopZFromFront + self.endshake*2
+            topSafe = self.bearingPositions[-2][1] - self.goingTrain.escapement.getWheelMaxR() - self.gearGap
+            bottomSafe = self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorks.getHourHolderMaxRadius() + self.gearGap
+            self.extraFrontPlateMountingPos = (self.bearingPositions[-2][0], (topSafe + bottomSafe)/2)
+            self.extraFrontPlateMountingLength = topSafe - bottomSafe
+            self.extraFrontPlateFixings =  [(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] - self.extraFrontPlateMountingLength/2 + self.holderWide / 4), (self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] + self.extraFrontPlateMountingLength/2 - self.holderWide / 4)]
 
         #fixing positions to screw the wall standoffs onto the back plate/pillars only used if backPlateFromWall > 0
         self.backPlateTopFixings = [(self.topPillarPos[0], self.topPillarPos[1]- self.topPillarR / 2), (self.topPillarPos[0], self.topPillarPos[1] + self.topPillarR / 2)]
@@ -1331,6 +1338,9 @@ class SimpleClockPlates:
     def getExtraFrontPlate(self, forPrinting=True):
         '''
         Constructed with the front facing downwards, so it's on its back with the leggies facing up
+
+        first idea was to make it all the way from the centre of the esacep wheel to the bottom pillar.
+         Now undecided and going to try a first attempt that goes from below the esacpe wheel only
         '''
         if not self.extraFrontPlate:
             raise ValueError("There is no extra front plate")
@@ -1338,26 +1348,48 @@ class SimpleClockPlates:
             raise NotImplementedError("No support for extra front plate for anything other than vertical plates")
 
         topY = self.bearingPositions[-2][1]
-        bottomY = self.bottomPillarPos[1]
+        # bottomY = self.bottomPillarPos[1]
+        bottomY = self.extraFrontPlateMountingPos[1]
 
         thick = self.getPlateThick(back=False)
 
+        #main rectangle
         plate = cq.Workplane("XY").tag("base").moveTo(0,(topY+bottomY)/2).rect(self.holderWide,topY - bottomY).extrude(thick)
-
-        plate = plate.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(thick)
-
+        #circle over bottom pillar
+        # plate = plate.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(thick)
+        #top circle
         plate = plate.workplaneFromTagged("base").moveTo(0, topY).circle(self.holderWide/2).extrude(thick)
 
         #bearing for the escape wheel
         bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-2).getRodD())
         plate = plate.cut(self.getBearingPunch(bearingOnTop=True,bearingInfo=bearingInfo, back=False).translate(self.bearingPositions[-2][0:2]))
 
-        handHoleR = self.motionWorks.hourHandHolderD/2 + 2
+        handHoleR = self.motionWorks.getHourHandHoleD()/2 + 2
         handsPos = self.bearingPositions[self.goingTrain.chainWheels]
 
-        plate = plate.workplaneFromTagged("base").moveTo(handsPos[0], handsPos[1]).circle(handHoleR+5).extrude(thick)
-        #hole for the motion works
-        plate = plate.cut(cq.Workplane("XY").moveTo(handsPos[0], handsPos[1]).circle(handHoleR).extrude(thick))
+        #pillar to attach to front plate
+        # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide / 2).extrude(self.extraFrontPlateDistance).translate((0, 0, thick)))
+        if self.extraFrontPlateMountingLength > self.holderWide:
+            #elongated circle
+            centreLength = self.extraFrontPlateMountingLength - self.holderWide
+            plate = plate.workplaneFromTagged("base").moveTo(self.extraFrontPlateMountingPos[0]-self.holderWide/2,self.extraFrontPlateMountingPos[1]+centreLength/2).\
+                radiusArc((self.extraFrontPlateMountingPos[0]+self.holderWide/2,self.extraFrontPlateMountingPos[1]+centreLength/2), self.holderWide/2).line(0,-centreLength).\
+                radiusArc((self.extraFrontPlateMountingPos[0]-self.holderWide/2,self.extraFrontPlateMountingPos[1]-centreLength/2), self.holderWide/2).close().extrude(self.extraFrontPlateDistance + thick)
+
+        else:
+            raise ValueError("Not enough space for a pillar to hold the extra front plate")
+        #
+        # #extra circle so not too flimsy around the motion works
+        # plate = plate.workplaneFromTagged("base").moveTo(handsPos[0], handsPos[1]).circle(handHoleR+5).extrude(thick)
+        # #hole for the motion works
+        # plate = plate.cut(cq.Workplane("XY").moveTo(handsPos[0], handsPos[1]).circle(handHoleR).extrude(thick))
+
+
+        for pos in self.extraFrontPlateFixings:
+            # plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).translate(pos).translate((0,0,-thick)))
+            plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).rotate((0,0,0),(1,0,0),180).translate(pos).translate((0, 0, thick + self.extraFrontPlateDistance + self.getPlateThick(back=False))))
+            plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(pos).translate((0,0,self.fixingScrews.length-10 - self.fixingScrews.getNutHeight())))
+
 
         if not forPrinting:
             plate = plate.rotate((0,0,0), (0,1,0), 180).translate((0,0,thick + self.extraFrontPlateDistance + self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance))
@@ -1525,8 +1557,10 @@ class SimpleClockPlates:
             #front
             plate = self.frontAdditionsToPlate(plate)
             if self.extraFrontPlate:
-                plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide/2).extrude(self.extraFrontPlateDistance).translate((0,0,self.getPlateThick(back=False))))
+                # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide/2).extrude(self.extraFrontPlateDistance).translate((0,0,self.getPlateThick(back=False))))
                 # self.extraFrontPlateMountingPos
+                for pos in self.extraFrontPlateFixings:
+                    plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).translate(pos))
 
 
         #screws to fix the plates together, with embedded nuts in the pillars
@@ -1803,6 +1837,11 @@ class SimpleClockPlates:
             print("Outputting ", out)
             exporters.export(self.getSinglePillarWallStandoff(top=False), out)
 
+        if self.extraFrontPlate:
+            out = os.path.join(path, "{}_extra_front_plate.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getExtraFrontPlate(), out)
+
         if self.huygensMaintainingPower:
             self.huygensWheel.outputSTLs(name+"_huygens", path)
 
@@ -1949,11 +1988,12 @@ class Assembly:
 
             # escapeArbourLongestExtensionIsFront = escapeWheelArbour.frontSideExtension > escapeWheelArbour.rearSideExtension
             escapeWheelIndex = -2
+            #double endshake on the extra front plate
             wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)#getExtras()["escape_wheel"]
-            clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ)))
+            clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ + self.plates.endshake)))
 
             anchor = self.goingTrain.getArbourWithConventionalNaming(-1).getAnchor(forPrinting=False)#getExtras()["anchor"]
-            clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ)))
+            clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake)))
 
 
             #escape wheel itself on the front

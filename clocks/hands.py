@@ -497,7 +497,10 @@ class Hands:
                     return outline
                 else:
                     #make the whole hand bigger by the outline amount
-                    shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
+                    try:
+                        shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
+                    except:
+                        shell = cq.Workplane("XY")
 
                     hand = hand.add(shell)
                     hand = self.cutFixing(hand, hour, second)

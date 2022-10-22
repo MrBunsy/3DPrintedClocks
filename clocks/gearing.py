@@ -66,8 +66,9 @@ class Gear:
         padding = outerRadius * 0.1
         if padding < 1.5:
             padding=1.5
-        #1.9 seems to result in no gaps and no fiddly bits with classic slicer and 0.4 nozzle
-        padding=1.9#2
+        #1.9 nearly seems to result in no gaps and no fiddly bits with classic slicer and 0.4 nozzle
+        #1.8 seems better
+        padding=1.8#2
         #experimenting to reduce the tiny bits teh slicer likes to make
         # padding = padding - (padding % EXTRUSION_WIDTH) - 0.2
 
@@ -1394,6 +1395,12 @@ class MotionWorks:
 
     def getArbourDistance(self):
         return self.arbourDistance
+
+    def getHourHolderMaxRadius(self):
+        return self.pairs[1].wheel.getMaxRadius()
+
+    def getArbourMaxRadius(self):
+        return self.pairs[0].wheel.getMaxRadius()
 
     def getCannonPinionBaseThick(self):
         '''

@@ -50,7 +50,7 @@ pendulumSticksOut=20
 train.genGears(module_size=1.4,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
 train.printInfo(weight_kg=0.75)
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2)
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2, module=0.8)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=70, bobThick=10, useNylocForAnchor=False)
 
@@ -63,7 +63,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pen
                                  backPlateFromWall=40, escapementOnFront=True, motionWorksAbove=False, extraFrontPlate=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+hands = clock.Hands(style=clock.HandStyle.SPADE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 assembly = clock.Assembly(plates, hands=hands)
 
