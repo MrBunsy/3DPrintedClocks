@@ -736,6 +736,7 @@ class SimpleClockPlates:
         #escapement is on top of the front plate
         self.escapementOnFront = escapementOnFront
         #only valid if escapementOnFront. This adds an extra front plate that goes up to the escape wheel, to add stability for the large grasshopper esacpe wheel
+        #not used yet, trying extending a bearing out the front to just behind the escape wheel first
         self.extraFrontPlate = extraFrontPlate
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
@@ -1780,10 +1781,12 @@ class SimpleClockPlates:
         plate = plate.cut(self.fixingScrews.getCutter().translate(motionWorksPos))
 
         #embedded nut on the front so we can tighten this screw in
-        nutDeep =  self.fixingScrews.getNutHeight(half=True)
-        nutSpace = self.fixingScrews.getNutCutter(half=True).translate(motionWorksPos).translate((0,0,self.getPlateThick(back=False) - nutDeep))
-
-        plate = plate.cut(nutSpace)
+        #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.
+        #if it's loose, use superglue.
+        # nutDeep =  self.fixingScrews.getNutHeight(half=True)
+        # nutSpace = self.fixingScrews.getNutCutter(half=True).translate(motionWorksPos).translate((0,0,self.getPlateThick(back=False) - nutDeep))
+        #
+        # plate = plate.cut(nutSpace)
 
         if self.dial is not None:
             dialFixings = self.dial.getFixingDistance()
@@ -1803,6 +1806,8 @@ class SimpleClockPlates:
             #ratchet!
             plate = plate.add(self.huygensWheel.ratchet.getOuterWheel().translate(self.bottomPillarPos).translate((0,0,self.getPlateThick(back=False))))
 
+        if self.escapementOnFront and not self.extraFrontPlate:
+            plate = plate.add(self.getBearingHolder(-self.goingTrain.escapement.getWheelBaseToAnchorBaseZ()).translate((self.bearingPositions[-2][0], self.bearingPositions[-2][1], self.getPlateThick(back=False))))
 
         return plate
 
@@ -1989,8 +1994,9 @@ class Assembly:
             # escapeArbourLongestExtensionIsFront = escapeWheelArbour.frontSideExtension > escapeWheelArbour.rearSideExtension
             escapeWheelIndex = -2
             #double endshake on the extra front plate
-            wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)#getExtras()["escape_wheel"]
-            clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ + self.plates.endshake)))
+            wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)
+            #note getWheelBaseToAnchorBaseZ is negative
+            clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ + self.plates.endshake -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ())))
 
             anchor = self.goingTrain.getArbourWithConventionalNaming(-1).getAnchor(forPrinting=False)#getExtras()["anchor"]
             clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake)))

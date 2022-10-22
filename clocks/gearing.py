@@ -597,10 +597,13 @@ class Arbour:
         - escape wheel is pinion + escape wheel
         - anchor is just the escapement anchor
 
-        NOTE currently assumes chain/cord is at the front - needs top be controlled by something like pinionAtFront
+        NOTE currently assumes chain/cord is at the front - needs to be controlled by something like pinionAtFront
 
         Trying to store all the special logic for thicknesses and radii in one place
 
+
+        Note - this is becoming a bit bloated with the inclusion of escapementOnFront. Would it be worth trimming this class down, and getting the plates
+        to produce the final shapes for all arbours/wheels? then lots of the special cases don't need to be dealt with here
 
         , looseOnRod=False
         '''
@@ -862,7 +865,6 @@ class Arbour:
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.getType()))
 
     def getEscapeWheel(self, forPrinting=True):
-
         #escapement controls wheel thickness
         arbour_or_pivot_r = self.pinion.getMaxRadius()
         if self.escapementOnFront:
@@ -878,12 +880,23 @@ class Arbour:
             #TODO extend back towards the front plate by the distance dictacted by the escapement
             # arbour = wheel.add(cq.Workplane("XY").circle(self.arbourD*2).circle(self.arbourD/2).extrude(15))
 
-            extension = -self.escapement.getWheelBaseToAnchorBaseZ()
-            arbour = wheel.translate((0,0,extension))
-            arbour = arbour.add(cq.Workplane("XY").circle(self.arbourD * 2).circle(self.arbourD / 2).extrude(extension))
+            extraArbourLength =10
+            arbour = wheel.faces(">Z").workplane().moveTo(0,0).circle(self.arbourD*2).circle(self.arbourD/2).extrude(extraArbourLength)
+            arbourThreadedRod = MachineScrew(metric_thread=self.arbourD)
+            #going to see if a nyloc nut is enough to secure the wheel to the arbour. Nyloc wasn't enough for the chainwheel, but this doesn't have a chain being dragged over it once a day
+            arbour = arbour.cut(arbourThreadedRod.getNutCutter(nyloc=True).translate((0,0,self.wheelThick+extraArbourLength - arbourThreadedRod.getNutHeight(nyloc=True))))
+            #original plan had been to extend the arbour to the front plate. Now the plan is to put an extra bearing on the front plate that sticks out,
+            # so this extension is just for stability and is out the front of the clock
+            # extension = -self.escapement.getWheelBaseToAnchorBaseZ()
+            # arbour = wheel.translate((0,0,extension))
+            # arbour = arbour.add(cq.Workplane("XY").circle(self.arbourD * 2).circle(self.arbourD / 2).extrude(extension))
+            #
+            # if forPrinting:
+            #     arbour = arbour.rotate((0,0,0),(1,0,0),180)
 
-            if forPrinting:
-                arbour = arbour.rotate((0,0,0),(1,0,0),180)
+            # if not forPrinting:
+            #     #move into position that's correct relative to the frame
+            #     arbour = arbour.translate((0,0,-self.escapement.getWheelBaseToAnchorBaseZ()))
 
         else:
 

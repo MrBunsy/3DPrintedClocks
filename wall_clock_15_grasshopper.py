@@ -47,10 +47,10 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.genGears(module_size=1.4,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
+train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
 train.printInfo(weight_kg=0.75)
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2, module=0.8)
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=70, bobThick=10, useNylocForAnchor=False)
 
@@ -60,10 +60,10 @@ dial = clock.Dial(120)
 
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 15", style="vertical", pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True, motionWorksAbove=False, extraFrontPlate=True)
+                                 backPlateFromWall=40, escapementOnFront=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.SPADE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+hands = clock.Hands(style=clock.HandStyle.SPADE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 assembly = clock.Assembly(plates, hands=hands)
 

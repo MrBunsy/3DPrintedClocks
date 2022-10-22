@@ -209,12 +209,12 @@ Diameter of 130.34328818 results in mean torque arm of 9.9396
 
 motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
 hands = Hands(style=HandStyle.SPADE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 
 # show_object(hands.getHand(hour=True,second=False))
 # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
 
-show_object(hands.getHand(hour=False,second=True).translate((50,0,0)))
+show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 
