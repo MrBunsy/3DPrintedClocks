@@ -1473,7 +1473,7 @@ class MotionWorks:
         return self.getMotionArbour().getShape()
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
-        #this used to be tapered, but now is just a friction fit slot.
+        #this used to be excessively tapered, but now a lightly tapered friction fit slot.
         style=self.style
         # if self.snail is not None:
         #     style = None
@@ -1484,7 +1484,8 @@ class MotionWorks:
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
         # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
-        holderR = self.hourHandHolderD / 2 - 0.05
+        holderR_base = self.hourHandHolderD / 2 + 0.1
+        holderR_top = self.hourHandHolderD / 2 - 0.2
 
         hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR)
 
@@ -1504,7 +1505,7 @@ class MotionWorks:
 
         # return hour
         circle = cq.Workplane("XY").circle(bottomR)
-        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(bottomR,handHolderStartZ).lineTo(holderR,handHolderStartZ).lineTo(holderR,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
+        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(bottomR,handHolderStartZ).lineTo(holderR_base,handHolderStartZ).lineTo(holderR_top,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
 
         hour = hour.add(shape)
 

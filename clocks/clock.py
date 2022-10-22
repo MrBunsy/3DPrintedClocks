@@ -1654,15 +1654,20 @@ class SimpleClockPlates:
         if bearingInfo is None:
             bearingInfo = getBearingInfo(self.arbourD)
         wallThick = self.bearingWallThick
-        diameter = bearingInfo.bearingOuterD + wallThick*2
-        holder = cq.Workplane("XY").circle(diameter/2).circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
+        # diameter = bearingInfo.bearingOuterD + wallThick*2
+        outerR = bearingInfo.bearingOuterD/2 + wallThick
+        innerInnerR = bearingInfo.innerD/2 + bearingInfo.bearingHolderLip
+        innerR = bearingInfo.bearingOuterD/2
+        # holder = cq.Workplane("XY").circle(diameter/2).circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
+        holder = cq.Workplane("XY").circle(outerR).extrude(height)
 
-
-        holder = holder.faces(">Z").workplane().circle(diameter/2).circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
+        # holder = holder.faces(">Z").workplane().circle(diameter/2).circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
         # extra support?
         if addSupport:
-            support = cq.Workplane("YZ").moveTo(-bearingInfo.bearingOuterD/2,0).lineTo(-height-bearingInfo.bearingOuterD/2,0).lineTo(-bearingInfo.bearingOuterD/2,height).close().extrude(wallThick).translate([-wallThick/2,0,0])
+            support = cq.Workplane("YZ").moveTo(0,0).lineTo(-height-outerR,0).lineTo(-outerR,height).lineTo(0,height).close().extrude(wallThick).translate((-wallThick/2,0,0))
             holder = holder.add(support)
+        holder = holder.cut(cq.Workplane("XY").circle(innerInnerR).extrude(height))
+        holder = holder.cut(cq.Workplane("XY").circle(innerR).extrude(bearingInfo.bearingHeight).translate((0,0,height - bearingInfo.bearingHeight)))
 
         return holder
 
