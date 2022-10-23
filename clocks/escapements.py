@@ -697,14 +697,12 @@ class GrasshopperEscapement:
         #might this be because things are slightly wonky with the escapement out the front? - I'm leaning towards this thought
         #I may be able to make up for this with larger nibs as well (or instead of?)
 
-        #note - the escape wheel was wonky! reliable at 0.6 on the exit now I've unwonked it
-        #still skipped occasionally. This combined with increasing the size of the nibs looks promising
-        self.exit_composer_extra_fudge = 1#0.6
+        #note - first design resulted in the escape wheel arbour drooping down a bit and anchor arbour pointing up a bit (from weight of pendulum)
+        # an exit composer fudge of 1mm and increasing the nib sizes made it reliable. However, there was more recoil on the exit side, maybe caused by this fudge?
+        #with extra bearing holders (at back for anchor arbour and extended out from for escape arbour) I'm hoping these fudges will no longer be needed
+        self.exit_composer_extra_fudge = 0#1
         self.entry_composer_extra_fudge = 0#0.8#0
 
-        #bits internally needed to generate an escaping arc that we want
-        # self.ax_deg=ax_deg
-        # self.d=d
 
         self.tooth_angle = math.pi*2/self.teeth
 
@@ -1384,9 +1382,14 @@ class GrasshopperEscapement:
         '''
         holeD = self.arbourD
         arm_wide = self.screws.metric_thread * 2.5
+        arbour_circle_r = self.screws.metric_thread * 3.5/2
 
         #make taller so it's rigid on the arbour? Not sure how to do this iwthout it potentially clashing with pallet arms
         frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arm_wide/2).extrude(self.frame_thick)
+
+        #larger around the arbour
+
+        frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arbour_circle_r).extrude(self.frame_thick)
 
         # entry  side
         line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])

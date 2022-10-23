@@ -293,9 +293,142 @@ class BallWheel:
         return power*math.pow(1,6)
 
 
-class Pulley:
+class LightweightPulley:
+    '''
+    This uses steel pipe or just plastic straight onto a threaded rod.
+    Intended to have the pulley print in one peice and be usable by chain or rope
+
+    By sheer fluke the first design fits with 25mm countersunk M3 screws
+    TODO deliberately match up design with screw lengths
+    '''
+
+    def __init__(self, diameter,rope_diameter=4, screws = None, use_steel_rod=True):
+        self.diameter=diameter
+        self.rope_diameter=rope_diameter
+        self.screws = screws
+
+        if self.screws is None:
+            self.screws = MachineScrew(3, countersunk=True)
+        self.wall_thick=1
+        self.slope_angle = math.pi / 3
+        #just made up - might be nice to do some maths to check that the rope/chain will fit nicely with the chosen slope
+        self.centre_wide = self.rope_diameter/2
+        self.use_steel_rod = use_steel_rod
+
+        self.hole_d = STEEL_TUBE_DIAMETER if self.use_steel_rod else screws.metric_thread
+
+        self.gap_size = WASHER_THICK + 0.5
+
+        self.holder_thick=5
+        self.holder_wide = self.screws.metric_thread*2.5
+
+        self.axle_holder_r = self.screws.metric_thread*2
+
+        '''
+        wall_thick at edges
+        rope_diameter/4 in centre (just a wild guess to see what it looks like)
+        __     __
+        | \___/ |   rope_diameter tall gap, 45deg slopes
+        |       |
+        
+        
+        |\
+        | \  length of the slope = self.rope_diameter/sin(slope_angle)  
+        |  \
+        '''
+        self.slope_length = self.rope_diameter / math.sin(self.slope_angle)
+
+
+        self.wheel_thick = self.wall_thick*2 + math.cos(self.slope_angle)*self.slope_length*2 + self.centre_wide
+
+        #using a cuckoo hook
+        self.hook_inner_r = 8
+        self.hook_thick = 1
+        print(self)
+
+    def get_wheel(self):
+        circle = cq.Workplane("XY").circle(self.diameter / 2)
+        '''
+        _____
+            |
+           /
+          /
+        |
+        |
+        \
+         \
+          \
+        ___|
+        '''
+        wheel_outline = cq.Workplane("XZ").moveTo(0,0).lineTo(self.diameter/2 + self.rope_diameter/2, 0).line(0, self.wall_thick).lineTo(self.diameter/2 - self.rope_diameter/2, self.wall_thick + math.cos(self.slope_angle)*self.slope_length)\
+            .line(0, self.centre_wide).lineTo(self.diameter/2 + self.rope_diameter/2, self.wheel_thick - self.wall_thick).line(0, self.wall_thick).lineTo(0, self.wheel_thick).close()
+
+        wheel = wheel_outline.sweep(circle)
+
+        wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d/2).extrude(self.wheel_thick))
+
+        return wheel
+
+    def get_holder_half(self, left=True):
+        holder = cq.Workplane("XY").tag("base")
+
+        centre_to_centre = self.diameter/2 + self.rope_diameter + self.holder_wide/2
+
+        holder = holder.moveTo(0,-centre_to_centre/2).rect(self.holder_wide,centre_to_centre).extrude(self.holder_thick)
+        holder = holder.workplaneFromTagged("base").moveTo(0,0).circle(self.axle_holder_r).extrude(self.holder_thick)
+        holder = holder.workplaneFromTagged("base").moveTo(0, -centre_to_centre).circle(self.axle_holder_r).extrude(self.holder_thick)
+        holder = holder.workplaneFromTagged("base").moveTo(0, -centre_to_centre).circle(self.holder_wide/2).extrude(self.get_total_thickness()/2)#-self.hook_thick/2)
+        # holder = holder.workplaneFromTagged("base").moveTo(0, -centre_to_centre).circle(self.hook_inner_r).extrude(self.get_total_thickness()/2)
+
+        #add a notch for the cuckoo hook to rest in
+        hook_cutter = cq.Workplane("XY").circle(100).circle(self.hook_inner_r).extrude(self.hook_thick).translate((0,-centre_to_centre - self.hook_inner_r + self.screws.metric_thread/2,self.get_total_thickness()/2 - self.hook_thick/2))
+
+        holder = holder.cut(hook_cutter)
+
+        screw_positions = [(0,0), (0, -centre_to_centre)]
+        upright = left
+        for pos in screw_positions:
+            screw_cutter = self.screws.getCutter(withBridging=True)
+            if upright:
+                screw_cutter = screw_cutter.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, self.get_total_thickness()))
+                screw_cutter = screw_cutter.add(self.screws.getNutCutter(nyloc=True, withBridging=True))
+
+            holder = holder.cut(screw_cutter.translate(pos))
+
+            upright = not upright
+
+        return holder
+
+    def get_total_thickness(self):
+        return self.holder_thick*2 + self.gap_size*2 + self.wheel_thick
+
+    def getAssembled(self):
+
+        wheel_base_z = self.holder_thick + self.gap_size
+
+        wheel = self.get_wheel().translate((0,0,wheel_base_z))
+
+        pulley = wheel.add(self.get_holder_half(True)).add(self.get_holder_half(False).rotate((0,0,0), (0,1,0), 180).translate((0,0,self.get_total_thickness())))
+
+        return pulley
+
+    def outputSTLs(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}_lightweight_pulley_wheel.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_wheel(), out)
+
+        out = os.path.join(path, "{}_lightweight_pulley_holder_a.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_holder_half(True), out)
+
+        out = os.path.join(path, "{}_lightweight_pulley_holder_b.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_holder_half(False), out)
+
+class BearingPulley:
     '''
     Pulley wheel that can be re-used by all sorts of other things
+    This is pretty heavy duty and uses a bearing to avoid friction
     '''
 
     def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3, screwsCountersunk=True, vShaped=False, style=None, bearing=None, bearingHolderThick=0.8):

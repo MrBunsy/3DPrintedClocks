@@ -79,7 +79,7 @@ hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFi
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))
-pulley = clock.Pulley(diameter=26, bearing=clock.getBearingInfo(4), screwMetricSize=2, screwsCountersunk=False)
+pulley = clock.BearingPulley(diameter=26, bearing=clock.getBearingInfo(4), screwMetricSize=2, screwsCountersunk=False)
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley, showPendulum=True)#weights=[clock.Weight(height=245,diameter=55)]

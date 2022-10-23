@@ -39,8 +39,8 @@ if 'show_object' not in globals():
 # show_object(chainWheel.getAssembled())
 
 
-motionWorks=MotionWorks(compensateLooseArbour=True, compact= True)
-show_object(motionWorks.getAssembled())
+# motionWorks=MotionWorks(compensateLooseArbour=True, compact= True)
+# show_object(motionWorks.getAssembled())
 
 # ballWheel = BallWheel(ballsAtOnce=15)
 #
@@ -57,9 +57,14 @@ show_object(motionWorks.getAssembled())
 # print("for one ball per half hour: {:.2f}".format(clock6torque*6))
 
 
-# pulley = Pulley(diameter=30, vShaped=True)
+# pulley = BearingPulley(diameter=30, vShaped=True)
 #
 # show_object(pulley.getAssembled())
+
+bob = LightweightPulley(30)
+
+# show_object(bob.get_wheel())
+show_object(bob.getAssembled())
 
 # ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=21,totalD=70)
 

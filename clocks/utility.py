@@ -27,6 +27,9 @@ LOOSE_FIT_ON_ROD = 0.3
 
 WASHER_THICK = 0.5
 
+#external diameter for 3 and 4mm internal diameter
+STEEL_TUBE_DIAMETER = 6.2
+
 #extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
 NUT_WIGGLE_ROOM = 0.2
 #extra diameter to add to the arbour extension to make them easier to screw onto the threaded rod

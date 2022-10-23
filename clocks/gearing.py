@@ -644,7 +644,7 @@ class Arbour:
             if self.arbourD == 4:
                 # assume steel pipe (currently only have pipe with a 4mm internal diameter)
                 #6.2 squeezes on and holds tight!
-                self.holeD = 6.2
+                self.holeD = STEEL_TUBE_DIAMETER
             else:
                 self.holeD = self.arbourD + LOOSE_FIT_ON_ROD
 
@@ -934,8 +934,9 @@ class Arbour:
         elif self.getType() == ArbourType.ANCHOR:
             if self.escapementOnFront:
                 #there's just a spacer, made up of two arbour extensions (so the bearing standoffs are always printed on top)
-                shape = self.getArbourExtension(front=self.pinionAtFront).rotate((0,0,0),(1,0,0),180)
-                # shape = cq.Workplane("XY")
+                # shape = self.getArbourExtension(front=self.pinionAtFront).rotate((0,0,0),(1,0,0),180)
+                #the extension will be added below
+                shape = cq.Workplane("XY")
             else:
                 shape = self.getAnchor(forPrinting=forPrinting)
         else:
@@ -972,9 +973,17 @@ class Arbour:
         anchor = self.escapement.getAnchor()
 
         if self.escapementOnFront:
+
+            #cut out a nut space, planning to clamp it between a nut included at the back and a nut on teh front
+            anchor = anchor.cut(MachineScrew(self.arbourD).getNutCutter(half=True))
+
             #not much else to do
             if not forPrinting and self.escapement.type == EscapementType.GRASSHOPPER:
+                #if for the model, include all the other bits
                 anchor = anchor.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True, centreOnAnchor=True))
+            else:
+                #if for printing, flip over so the front is on the print bed
+                anchor = anchor.rotate((0,0,0), (1,0,0), 180)
             return anchor
 
         if self.pendulumFixing == PendulumFixing.FRICTION_ROD:

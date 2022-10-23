@@ -1816,6 +1816,11 @@ class SimpleClockPlates:
 
         return plate
 
+    def get_diameter_for_pulley(self):
+        if self.huygensMaintainingPower:
+            #TODO
+            return 30
+
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)

@@ -52,7 +52,7 @@ train.printInfo(weight_kg=0.75)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=70, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
 
 
@@ -65,9 +65,12 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pen
 
 hands = clock.Hands(style=clock.HandStyle.SPADE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-assembly = clock.Assembly(plates, hands=hands)
+assembly = clock.Assembly(plates, hands=hands, timeHours=12)
 
 assembly.printInfo()
+
+pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
+print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
 weight = clock.Weight(height=130, diameter=35)
 weight.printInfo()
@@ -84,3 +87,4 @@ if outputSTL:
     weight.outputSTLs(clockName, clockOutDir)
     # bigweight.outputSTLs(clockName+"_big", clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
+    pulley.outputSTLs(clockName, clockOutDir)
