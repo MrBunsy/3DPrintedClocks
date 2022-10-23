@@ -342,12 +342,12 @@ class LightweightPulley:
         self.wheel_thick = self.wall_thick*2 + math.cos(self.slope_angle)*self.slope_length*2 + self.centre_wide
 
         #using a cuckoo hook
-        self.hook_inner_r = 8
+        self.hook_inner_r = 9/2
         self.hook_thick = 1
         print(self)
 
     def get_wheel(self):
-        circle = cq.Workplane("XY").circle(self.diameter / 2)
+        circle = cq.Workplane("XY").circle(self.diameter / 2 + self.rope_diameter/2)
         '''
         _____
             |
@@ -401,6 +401,9 @@ class LightweightPulley:
 
     def get_total_thickness(self):
         return self.holder_thick*2 + self.gap_size*2 + self.wheel_thick
+
+    def getTotalThick(self):
+        return self.get_total_thickness()
 
     def getAssembled(self):
 

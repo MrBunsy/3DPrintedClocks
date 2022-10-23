@@ -61,16 +61,16 @@ dial = clock.Dial(120)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 15", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True)
-
+pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
+print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
 hands = clock.Hands(style=clock.HandStyle.SPADE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-assembly = clock.Assembly(plates, hands=hands, timeHours=12)
+assembly = clock.Assembly(plates, hands=hands, timeHours=12, pulley=pulley)
 
 assembly.printInfo()
 
-pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
-print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
+
 
 weight = clock.Weight(height=130, diameter=35)
 weight.printInfo()

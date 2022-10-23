@@ -1817,9 +1817,20 @@ class SimpleClockPlates:
         return plate
 
     def get_diameter_for_pulley(self):
+
+        holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
+
         if self.huygensMaintainingPower:
-            #TODO
-            return 30
+
+            chainWheelTopZ = self.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() + self.getPlateThick(back=True) + self.endshake / 2
+            chainWheelChainZ = chainWheelTopZ + holePositions[0][0][1]
+            huygensChainPoses = self.huygensWheel.getChainPositionsFromTop()
+            #washer is under the chain wheel
+            huygensChainZ = self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance + self.huygensWheel.getHeight() + WASHER_THICK + huygensChainPoses[0][0][1]
+
+            return huygensChainZ - chainWheelChainZ
+        else:
+            return abs(holePositions[0][0] - holePositions[1][0])
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
@@ -2141,10 +2152,21 @@ class Assembly:
 
 
         if self.pulley is not None:
-            #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
-            chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.endshake / 2
-            # print("chain Z", chainZ)
-            clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0,self.plates.bearingPositions[0][1] - 120, chainZ - self.pulley.getTotalThick()/2)))
+
+            chainWheelTopZ = self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() + self.plates.getPlateThick(back=True) + self.plates.endshake / 2
+
+            chainZ = chainWheelTopZ + self.goingTrain.poweredWheel.getChainPositionsFromTop()[0][0][1]
+
+            pulleyY = self.plates.bottomPillarPos[1] - self.plates.bottomPillarR - self.pulley.diameter
+
+            if self.plates.huygensMaintainingPower:
+                pulley = self.pulley.getAssembled().translate((0,0,-self.pulley.getTotalThick()/2)).rotate((0,0,0), (0,1,0),90)
+                clock = clock. add(pulley.translate((self.goingTrain.poweredWheel.diameter/2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter/2)))
+            else:
+                # #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
+                # chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.endshake / 2
+                # print("chain Z", chainZ)
+                clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick()/2)))
 
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.plates.getPillarInfo()
 
