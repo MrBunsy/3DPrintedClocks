@@ -7,8 +7,8 @@ Most of the code is part of a library intended for generating complete clocks to
 
 See the wall_clock_* python scripts in the root directory for examples of generating complete clocks. Clocks 5 and earlier were from when the library was in a state of flux and are unlikely to work without checking out old tags. All later clocks will generate a preview if opened in the CadQuery editor. 
 
-![Clock 15 render](images/clock_15_grasshopper_render.png "Clock 15")
-![Clock 07 photo](images/clock_07_photo.jpg "Clock 7")
+![Clock 15 render](images/clock_15_grasshopper_render_small.png "Clock 15")
+![Clock 07 photo](images/clock_07_photo_small.jpg "Clock 7")
 
 ## Acknowledgements
 
