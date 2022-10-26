@@ -27,18 +27,21 @@ class GearStyle(Enum):
     CIRCLES = "circles"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
-    #spokes these don't print nicely with petg - very stringy
+    #spokes these don't print nicely with petg - very stringy (might be fine on anything other than the mini?)
     SPOKES = "spokes"
     STEAMTRAIN = "steamtrain"
     CARTWHEEL = "cartwheel"
     FLOWER = "flower"
     HONEYCOMB = "honeycomb"
     HONEYCOMB_SMALL = "honeycomb_small"
+    #just at the idea stage, psuedorandom with global seed?
+    SNOWFLAKE = "snowflake"
+
 
 '''
 ideas for new styles:
  - bicycle sprockets
- - bicycle disc brakes (both ideas knicked from etsy quartz clocks)
+ - bicycle disc brakes (both ideas nicked from etsy quartz clocks)
  - honeycomb
  - Voronoi Diagram
  - curved arms

@@ -9,6 +9,10 @@ hyugens maintaining power using a loop of chain (new)
 
 one day, but since we're using pulleys aiming for a drop of 1.5m
 
+This worked (went for drop of 1.2m in the end) but needed some fudging to the grasshopper dimensions because the escape wheel and frame both "droop" in different directions.
+There was also not enough space to put the motion works behind the escape wheel.
+clock 15 fixed this and is otherwise teh same design.
+
 '''
 outputSTL=False
 

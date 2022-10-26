@@ -1297,6 +1297,9 @@ class Arbour:
                 bearingStandoffR = getBearingInfo(self.arbourD).innerSafeD/2
                 if bearingStandoffR > extensionR:
                     bearingStandoffR = extensionR
+
+                if extensionR < self.arbourD:
+                    raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation")
                 extendedArbour = cq.Workplane("XY").circle(extensionR).extrude(self.rearSideExtension - bearingStandoffHeight).faces(">Z").workplane().circle(bearingStandoffR).extrude(bearingStandoffHeight)
                 #add hole for rod!
                 extendedArbour = extendedArbour.faces(">Z").circle(self.arbourD/2).cutThruAll()

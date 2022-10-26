@@ -46,7 +46,7 @@ train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThic
 #override default until it calculates an ideally sized wheel
 train.calculatePoweredWheelRatios(wheel_max=100)
 
-pendulumSticksOut=30
+pendulumSticksOut=15
 
 train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
@@ -58,20 +58,16 @@ cordwheel = train.getArbourWithConventionalNaming(0)
 # show_object(cordwheel.poweredWheel.getAssembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
 #
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2, compensateLooseArbour=True)
+motionWorks = clock.MotionWorks(minuteHandHolderHeight=30,style=gearStyle, thick=2, compensateLooseArbour=True)
 
-
-#trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=50,
-                          bobD=60, bobThick=10, useNylocForAnchor=False, handAvoiderHeight=100)
-
-
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
+                          bobD=60, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
 
 dial = clock.Dial(120)
 
 #back plate of 15 thick is only just enough for the 3.5kg weight in a shell! it won't be enough for 4kg
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical",
-                                 motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True, pendulumFixing=pendulumFixing)
+                                 motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True, pendulumFixing=pendulumFixing, pendulumAtFront=False, backPlateFromWall=pendulumSticksOut*2)
 
 
 hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

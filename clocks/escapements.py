@@ -10,7 +10,7 @@ from cadquery import exporters
 
 class AnchorEscapement:
     def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True,
-                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, wheelThick=3):
+                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, wheelThick=3, forceDiameter=False):
         '''
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
         because it ended up being more elegant to treat the anchor as the last arbour in the clock.
@@ -40,6 +40,9 @@ class AnchorEscapement:
 
         clockwiseFromPinionSide is for the escape wheel
         '''
+
+        #if true, do not allow the gear train to override the diameter. The default is that the escape wheel size is adjusted to fit best.
+        self.forceDiameter = forceDiameter
 
         self.lift_deg = lift
         self.halfLift = 0.5*degToRad(lift)
@@ -109,7 +112,8 @@ class AnchorEscapement:
         Once the gear train has been calculated, it needs to provide info to the escapement (mostly used by the anchor escapment, not sure there's anything
         that the grasshopper actually needs to adjust here)
         '''
-        self.setDiameter(escapeWheelDiameter)
+        if not self.forceDiameter:
+            self.setDiameter(escapeWheelDiameter)
         self.clockwiseFromPinionSide = escapeWheelClockwiseFromPinionSide
         self.escapeWheelClockwise = escapeWheelClockwise
 
@@ -625,6 +629,20 @@ class EscapmentInterface:
     #     raise NotImplementedError()
 
 class GrasshopperEscapement:
+
+    @staticmethod
+    def get_harrison_compliant_grasshopper():
+        '''
+        Return a grasshopper escapement which meets Harrison's stipulations as determined by David Heskin:
+        9.75 escaping arc
+        seconds pendulum
+        mean torque arms 1% of pendulum length
+        balanced escaping arcs
+        '''
+
+        #pre-calculated good values for a 9.75 escaping arc
+        return GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+
 
     def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
                  mean_torque_arm_length=-1, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01, frame_thick=10, wheel_thick=5, pallet_thick=7, screws=None, arbourD=3):

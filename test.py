@@ -61,10 +61,13 @@ if 'show_object' not in globals():
 #
 # show_object(pulley.getAssembled())
 
-bob = LightweightPulley(30)
+# bob = LightweightPulley(30)
+#
+# # show_object(bob.get_wheel())
+# show_object(bob.getAssembled())
 
-# show_object(bob.get_wheel())
-show_object(bob.getAssembled())
+weight = Weight(height=130, diameter=50)
+weight.printInfo()
 
 # ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=21,totalD=70)
 

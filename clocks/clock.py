@@ -1510,13 +1510,13 @@ class SimpleClockPlates:
                 x = sqrt(chainWheelR^2 - bottomPilarR^2)
 
                 '''
-                pillarTopZ = self.bearingPositions[0][1] - math.sqrt(chainWheelR ** 2 - bottomPillarR ** 2)
+                pillarTopY = self.bearingPositions[0][1] - math.sqrt(chainWheelR ** 2 - bottomPillarR ** 2)
                 try:
-                    plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).radiusArc((bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]), -bottomPillarR). \
-                        lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopZ).radiusArc((bottomPillarPos[0] - bottomPillarR, pillarTopZ), chainWheelR).close().extrude(self.plateDistance)
+                    plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).radiusArc((bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]), -bottomPillarR). \
+                        lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopY).radiusArc((bottomPillarPos[0] - bottomPillarR, pillarTopY), chainWheelR).close().extrude(self.plateDistance+self.getPlateThick(back=True))
                 except:
-                    plate = plate.workplaneFromTagged("top").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).radiusArc((bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]), -bottomPillarR*1.000001). \
-                        lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopZ).radiusArc((bottomPillarPos[0] - bottomPillarR, pillarTopZ), chainWheelR).close().extrude(self.plateDistance)
+                    plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).radiusArc((bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]), -bottomPillarR*1.000001). \
+                        lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopY).radiusArc((bottomPillarPos[0] - bottomPillarR, pillarTopY), chainWheelR).close().extrude(self.plateDistance+self.getPlateThick(back=True))
                 # plate = plate.workplaneFromTagged("base").moveTo(bottomPillarPos[0] - bottomPillarR, bottomPillarPos[1]).lineTo(bottomPillarPos[0] + bottomPillarR, bottomPillarPos[1]). \
                 #     lineTo(bottomPillarPos[0] + bottomPillarR, pillarTopZ).lineTo(bottomPillarPos[0] - bottomPillarR, -chainWheelR * 10).close().extrude(self.getPlateThick(back))
             else:
