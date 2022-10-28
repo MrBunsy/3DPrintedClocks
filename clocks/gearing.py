@@ -1,10 +1,15 @@
+import random
+
 from .utility import *
 
 import cadquery as cq
 import os
 from cadquery import exporters
+# from random import *
 
 from .types import *
+
+
 
 class Gear:
 
@@ -40,8 +45,61 @@ class Gear:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2, big=False)
+        if style == GearStyle.SNOWFLAKE:
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius * 0.9, innerRadius = innerRadius + 2)
 
         return gear
+
+    @staticmethod
+    def cutSnowflakeStyle(gear, outerRadius, innerRadius):
+        '''
+        Just random branching arms until I can think of something better
+        '''
+        halfR = (outerRadius + innerRadius)/2
+        gapSize = outerRadius - innerRadius
+
+        armThick = 4
+
+        branchThick = 3
+
+        cutterThick = 1000
+        snowflake=cq.Workplane("XY")
+
+        branches = random.randrange(3,6)
+        branchYs = [(branch+0.5) * gapSize/branches + innerRadius + random.randrange(-1,1)*gapSize/(branches*2) for branch in range(branches)]
+        branchLengths = [gapSize/2 for branch in range(branches)]
+        branchAngle = math.pi/3
+
+        for arm in range(6):
+            #arm from centre to edge, building from centre to top and rotating into place afterwards
+            armShape = cq.Workplane("XY").tag("base").moveTo(0, halfR).rect(armThick,gapSize*2).extrude(cutterThick)
+
+            for branch in range(branches):
+                branchStart = (0, branchYs[branch])
+                armShape = armShape.workplaneFromTagged("base").moveTo().circle(armThick*2).extrude(cutterThick)
+                # return armShape
+                branchEnd = np.add(branchStart, polar(math.pi/2 - branchAngle, branchLengths[branch]))
+                branchCentre = averageOfTwoPoints(branchStart, branchEnd)
+
+                branchShape = cq.Workplane("XY").rect(branchThick, branchLengths[branch]).extrude(cutterThick).rotate((0,0,0), (0,0,1),-radToDeg(branchAngle)).translate(branchCentre)
+                branchShape = branchShape.add(cq.Workplane("XY").rect(branchThick, branchLengths[branch]).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), radToDeg(branchAngle)).translate((-branchCentre[0], branchCentre[1])))
+                armShape = armShape.add(branchShape)
+
+                left = polar(math.pi/2 + branchAngle/2, outerRadius*2)
+                pizzaSlice = cq.Workplane("XY").lineTo(left[0], left[1]).lineTo(-left[0], left[1]).close().extrude(cutterThick)
+                # return pizzaSlice
+                armShape = armShape.intersect(pizzaSlice)
+
+
+
+            snowflake = snowflake.add(armShape.rotate((0,0,0), (0,0,1),arm * 360/6))
+
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
+
+        cutter = cutter.cut(snowflake)
+
+        return gear.cut(cutter)
 
     @staticmethod
     def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True):

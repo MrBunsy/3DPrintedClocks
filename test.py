@@ -2,6 +2,7 @@ from clocks.power import *
 from clocks.escapements import *
 from clocks.striking import *
 from clocks.clock import *
+from clocks.utility import *
 
 outputSTL = False
 
@@ -66,8 +67,8 @@ if 'show_object' not in globals():
 # # show_object(bob.get_wheel())
 # show_object(bob.getAssembled())
 
-weight = Weight(height=130, diameter=50)
-weight.printInfo()
+# weight = Weight(height=130, diameter=50)
+# weight.printInfo()
 
 # ratchet = Ratchet(powerAntiClockwise=True,thick=4,innerRadius=21,totalD=70)
 
@@ -193,25 +194,38 @@ weight.printInfo()
 # show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 # show_object(getGearDemo(justStyle=GearStyle.ARCS))
 
-
-# grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
-'''
-Balanced escaping arc of 9.7500deg with d of 12.40705997 and ax of 90.26021004
-Diameter of 130.34328818 results in mean torque arm of 9.9396
-'''
-# grasshopper = GrasshopperEscapement(acceptableError=0.00001)
-# grasshopper = GrasshopperEscapement(acceptableError=0.01)
-# grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
-# # # show_object(grasshopper.diagrams[-1])
-# # # grasshopper.checkGeometry(loud=True)
-# #
-# # # show_object(grasshopper.getEscapmentFrame())
-# # # show_object(grasshopper.getEscapementWheel())
-# show_object(grasshopper.getAssembled(style=GearStyle.HONEYCOMB))
+#
+# # grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
+# '''
+# Balanced escaping arc of 9.7500deg with d of 12.40705997 and ax of 90.26021004
+# Diameter of 130.34328818 results in mean torque arm of 9.9396
+# '''
+# # grasshopper = GrasshopperEscapement(acceptableError=0.00001)
+# grasshopper = GrasshopperEscapement(acceptableError=0.001, teeth=60, tooth_span=9.5, pendulum_length_m=getPendulumLength(1), mean_torque_arm_length=10, loud_checks=True, skip_failed_checks=True, ax_deg=89)
+# # grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+# # # # show_object(grasshopper.diagrams[-1])
+# # # # grasshopper.checkGeometry(loud=True)
+# # #
+# # # # show_object(grasshopper.getEscapmentFrame())
+# # # # show_object(grasshopper.getEscapementWheel())
+# show_object(grasshopper.getAssembled(style=GearStyle.FLOWER))
 #
 # if outputSTL:
 #     grasshopper.outputSTLs("grasshopper", "out")
 
+gear_random = random.seed(4)
+
+flakes = 9
+combinedFlake = cq.Workplane("XY")
+
+for flake in range(flakes):
+
+    r = 150 / 2
+
+    shape = Gear.cutStyle(cq.Workplane("XY").circle(r).extrude(3), outerRadius=r, innerRadius=10, style=GearStyle.SNOWFLAKE)
+    shape = shape.translate(((flake%3)*r*2.5,(floor(flake/3))*r*2.5))
+    combinedFlake = combinedFlake.add(shape)
+show_object(combinedFlake)
 
 
 

@@ -28,8 +28,8 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
-
+# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+escapement = clock.GrasshopperEscapement(acceptableError=0.001, teeth=60, tooth_span=9.5, pendulum_length_m=clock.getPendulumLength(1.5), mean_torque_arm_length=10, loud_checks=True, skip_failed_checks=True, ax_deg=89)
 # lift=4
 # drop=2
 # lock=2
@@ -67,7 +67,7 @@ dial = clock.Dial(120)
 
 #back plate of 15 thick is only just enough for the 3.5kg weight in a shell! it won't be enough for 4kg
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical",
-                                 motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True, pendulumFixing=pendulumFixing, pendulumAtFront=False, backPlateFromWall=pendulumSticksOut*2)
+                                 motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True, pendulumFixing=pendulumFixing, pendulumAtFront=False, backPlateFromWall=pendulumSticksOut*2, escapementOnFront=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
