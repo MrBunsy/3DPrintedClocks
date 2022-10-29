@@ -217,13 +217,19 @@ gear_random = random.seed(4)
 
 flakes = 9
 combinedFlake = cq.Workplane("XY")
-
+space = 150 / 2
 for flake in range(flakes):
 
-    r = 150 / 2
+    r = space
+
+    if flake > 2:
+        r = 50
+    if flake > 5:
+        r = 30
+
 
     shape = Gear.cutStyle(cq.Workplane("XY").circle(r).extrude(3), outerRadius=r, innerRadius=10, style=GearStyle.SNOWFLAKE)
-    shape = shape.translate(((flake%3)*r*2.5,(floor(flake/3))*r*2.5))
+    shape = shape.translate(((flake%3)*space*2.5,(floor(flake/3))*space*2.5))
     combinedFlake = combinedFlake.add(shape)
 show_object(combinedFlake)
 

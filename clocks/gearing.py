@@ -65,16 +65,26 @@ class Gear:
         cutterThick = 1000
         snowflake=cq.Workplane("XY")
 
-        branches = random.randrange(3,6)
-        branchYs = [(branch+0.5) * gapSize/branches + innerRadius + random.randrange(-1,1)*gapSize/(branches*2) for branch in range(branches)]
-        branchLengths = [gapSize/2 for branch in range(branches)]
+        brancheCount = random.randrange(3,6)
+        possibleBranchYs = [(branch+0.5) * gapSize/brancheCount + innerRadius + random.randrange(-1,1)*gapSize/(brancheCount*2) for branch in range(brancheCount)]
+
+        branchYs = [possibleBranchYs[0]]
+
+        lastY = possibleBranchYs[0]
+        for y in possibleBranchYs[1:]:
+            if y - lastY > branchThick*1.5:
+                branchYs.append(y)
+                lastY = y
+
+        branchLengths = [gapSize/2 for branch in branchYs]
         branchAngle = math.pi/3
+        brancheCount = len(branchLengths)
 
         for arm in range(6):
             #arm from centre to edge, building from centre to top and rotating into place afterwards
             armShape = cq.Workplane("XY").tag("base").moveTo(0, halfR).rect(armThick,gapSize*2).extrude(cutterThick)
 
-            for branch in range(branches):
+            for branch in range(brancheCount):
                 branchStart = (0, branchYs[branch])
                 armShape = armShape.workplaneFromTagged("base").moveTo().circle(armThick*2).extrude(cutterThick)
                 # return armShape
