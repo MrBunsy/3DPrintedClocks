@@ -213,37 +213,40 @@ if 'show_object' not in globals():
 # if outputSTL:
 #     grasshopper.outputSTLs("grasshopper", "out")
 
-gear_random = random.seed(4)
+if False:
+    gear_random = random.seed(4)
 
-flakes = 9
-combinedFlake = cq.Workplane("XY")
-space = 150 / 2
-for flake in range(flakes):
+    flakes = 9
+    combinedFlake = cq.Workplane("XY")
+    space = 150 / 2
+    for flake in range(flakes):
 
-    r = space
-    innerRadius = 10
-    if flake > 2:
-        r = 50
-    if flake > 5:
-        r = 30
-        innerRadius = 15
-
-
-    shape = Gear.cutStyle(cq.Workplane("XY").circle(r).extrude(3), outerRadius=r, innerRadius=innerRadius, style=GearStyle.SNOWFLAKE)
-    shape = shape.translate(((flake%3)*space*2.5,(floor(flake/3))*space*2.5))
-    combinedFlake = combinedFlake.add(shape)
-show_object(combinedFlake)
+        r = space
+        innerRadius = 10
+        if flake > 2:
+            r = 50
+        if flake > 5:
+            r = 30
+            innerRadius = 15
 
 
+        shape = Gear.cutStyle(cq.Workplane("XY").circle(r).extrude(3), outerRadius=r, innerRadius=innerRadius, style=GearStyle.SNOWFLAKE)
+        shape = shape.translate(((flake%3)*space*2.5,(floor(flake/3))*space*2.5))
+        combinedFlake = combinedFlake.add(shape)
+    show_object(combinedFlake)
 
-# motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
-# hands = Hands(style=HandStyle.SPADE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+
+
+
+motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
+hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 #
-# # show_object(hands.getHand(hour=True,second=False))
+show_object(hands.getHand(hour=True,second=False))
 # # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
 #
 # show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
+show_object(hands.getHand(hour=False).translate((50,0,0)))
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 

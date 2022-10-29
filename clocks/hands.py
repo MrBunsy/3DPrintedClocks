@@ -15,6 +15,7 @@ class HandStyle(Enum):
     SYRINGE="syringe"
     SWORD="sword"
     CIRCLES="circles" # very much inspired by the same clock on the horological journal that inspired the circle style gears
+    XMAS_TREE="xmas_tree"
     #ARROWS
 
 
@@ -185,9 +186,37 @@ class Hands:
 
             handWidth = base_r*2
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
+        elif self.style == HandStyle.XMAS_TREE:
+            trunkWidth = self.length * 0.075
+            leafyWidth = length*0.4
+            trunkEnd = length*0.4
+
+            #same as the spades
+            base_r = self.length * 0.075
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, trunkEnd/2).rect(trunkWidth, trunkEnd).extrude(thick)
+
+            #rate of change of leaf width with respect to height from the start of the leaf bit
+            dLeaf = 0.5*leafyWidth/(length - trunkEnd)
+
+            spikes = 4
+            spikeHeight = (length - trunkEnd)/spikes
+            sag = spikeHeight*0.2
+            ys = [trunkEnd + spikeHeight*spike for spike in range(spikes+1)]
+
+            for spike in range(spikes):
+                width = leafyWidth - dLeaf*spikeHeight*spike
+                left = (-width/2, ys[spike])
+                right = (width/2, ys[spike])
+                topLeft = (-width/4, ys[spike+1])
+                topRight = (width / 4, ys[spike + 1])
+                if spike == spikes-1:
+                    topLeft = topRight = (0, length)
+                hand = hand.workplaneFromTagged("base").moveTo(topLeft[0], topLeft[1]).sagittaArc(endPoint=left, sag=sag/2).sagittaArc(endPoint=right, sag=-sag).\
+                    sagittaArc(endPoint=topRight, sag=sag/2).close().extrude(thick)
+
+
         elif self.style == HandStyle.SYRINGE:
-
-
 
             syringe_width = self.length*0.1
             if hour:
