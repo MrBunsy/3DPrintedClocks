@@ -55,12 +55,16 @@ class Gear:
         '''
         Just random branching arms until I can think of something better
         '''
-        halfR = (outerRadius + innerRadius)/2
+        middleOfGapR = (outerRadius + innerRadius)/2
         gapSize = outerRadius - innerRadius
 
         armThick = 4
 
         branchThick = 3
+
+        if gapSize < 20:
+            branchThick = 1.8
+            armThick=2.4
 
         cutterThick = 1000
         snowflake=cq.Workplane("XY")
@@ -76,13 +80,20 @@ class Gear:
                 branchYs.append(y)
                 lastY = y
 
-        branchLengths = [gapSize/2 for branch in branchYs]
+        midBranch0 = polar(0,middleOfGapR)
+        midBranch1 = polar(math.pi/3,middleOfGapR)
+
+
+
+        branchlength = distanceBetweenTwoPoints(midBranch0, midBranch1)/2
+
+        branchLengths = [branchlength for branch in branchYs]
         branchAngle = math.pi/3
         brancheCount = len(branchLengths)
 
         for arm in range(6):
             #arm from centre to edge, building from centre to top and rotating into place afterwards
-            armShape = cq.Workplane("XY").tag("base").moveTo(0, halfR).rect(armThick,gapSize*2).extrude(cutterThick)
+            armShape = cq.Workplane("XY").tag("base").moveTo(0, middleOfGapR).rect(armThick,gapSize*2).extrude(cutterThick)
 
             for branch in range(brancheCount):
                 branchStart = (0, branchYs[branch])
