@@ -646,7 +646,7 @@ class GrasshopperEscapement:
 
     def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
                  mean_torque_arm_length=-1, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01, frame_thick=10, wheel_thick=5, pallet_thick=7, screws=None, arbourD=3,
-                 loud_checks=False, skip_failed_checks=False):
+                 loud_checks=False, skip_failed_checks=False, xmas=False):
         '''
         From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
 
@@ -670,11 +670,13 @@ class GrasshopperEscapement:
         loud_checks: if true then the geometry checking function will print out everything it is checking
         skip_failed_checks: if true then the geometry checking will just print, rather than assert, failures
 
+        xmas: a special addition to the frame (a star) to make this christmassy
         '''
 
         self.type = EscapementType.GRASSHOPPER
 
         self.skip_failed_checks = skip_failed_checks
+        self.xmas = xmas
 
         self.pendulum_length=pendulum_length_m*1000
         self.teeth=teeth
@@ -1493,12 +1495,44 @@ class GrasshopperEscapement:
         frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread/2).extrude(self.frame_thick))
 
 
+            # frame = frame.add(star)
+
+
+
         #cut hole for arbour
         frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD/2).extrude(self.frame_thick*2))
 
         if not leave_in_situ:
             #rotate and translate so it's upright with 0,0 where the arbour should be
             frame = self.rotateToUpright(frame).translate((0,-np.linalg.norm(self.geometry["Z"]),0))
+            if self.xmas:
+                star_thick=3
+                star_size = 75
+                star_arm_wide = star_size * 0.2
+                secondary_star_arm_length = star_size * 0.3
+                secondary_star_arm_wide = star_arm_wide*0.9
+
+                star = cq.Workplane("XY").tag("base").moveTo(-star_size/2,0).lineTo(0, star_arm_wide/2).lineTo(star_size/2, 0).lineTo(0, -star_arm_wide/2).close().extrude(star_thick)
+                star = star.workplaneFromTagged("base").moveTo(-star_arm_wide / 2, 0).lineTo(0, star_size / 2).lineTo(star_arm_wide / 2, 0).lineTo(0, -star_size/2).close().extrude(star_thick)
+
+                secondary_top_left = polar(math.pi*3/4,secondary_star_arm_length)
+                secondary_top = (0, secondary_star_arm_wide/2)
+                star = star.workplaneFromTagged("base").moveTo(secondary_top_left[0], secondary_top_left[1]).lineTo(secondary_top[0], secondary_top[1]).lineTo(-secondary_top_left[0], -secondary_top_left[1])\
+                    .lineTo(-secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
+
+                star = star.workplaneFromTagged("base").moveTo(-secondary_top_left[0], secondary_top_left[1]).lineTo(-secondary_top[0], secondary_top[1]).lineTo(secondary_top_left[0], -secondary_top_left[1]) \
+                    .lineTo(secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
+
+
+                # star = self.rotateToUpright(star.translate(self.geometry["Z"]))
+                star = star.translate((0, star_size/2 - arbour_circle_r, self.frame_thick - star_thick))
+                #the geometry is in the position of the start of entry pallet engaging, rotate so it's in the centre of the escaping arc
+                star = star.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.escaping_arc / 2))
+                #.translate(self.geometry["Z"])
+                frame = frame.add(star)
+                # recut hole for arbour
+                frame = frame.cut(cq.Workplane("XY").circle(holeD / 2).extrude(self.frame_thick * 2))
+
 
 
         return frame

@@ -188,8 +188,13 @@ class Hands:
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
         elif self.style == HandStyle.XMAS_TREE:
             trunkWidth = self.length * 0.075
-            leafyWidth = length*0.4
+            leafyWidth = length*0.5
             trunkEnd = length*0.4
+
+            if minute:
+                leafyWidth*=0.6
+            if hour:
+                trunkEnd*=0.9
 
             #same as the spades
             base_r = self.length * 0.075

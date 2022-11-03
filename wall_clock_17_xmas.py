@@ -20,10 +20,10 @@ random.seed(6)
 clockName="wall_clock_17_xmas"
 clockOutDir="out"
 gearStyle = clock.GearStyle.SNOWFLAKE
-
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
 
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, xmas=True)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
@@ -45,7 +45,7 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
+train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=1)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2)
@@ -58,7 +58,7 @@ dial = clock.Dial(120)
 
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 17", style="vertical", pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True)
+                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
@@ -70,8 +70,10 @@ assembly.printInfo()
 
 
 
-weight = clock.Weight(height=130, diameter=50)
-weight.printInfo()
+# weight = clock.Weight(height=130, diameter=50)
+# weight.printInfo()
+
+weight = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
 
 show_object(assembly.getClock())
 

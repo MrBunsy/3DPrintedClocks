@@ -186,43 +186,62 @@ class WeightShell:
     '''
     A shell to go around the large and ugly weights from cousins
     '''
-    def __init__(self, diameter, height, twoParts=True, holeD=5):
+    def __init__(self, diameter, height, twoParts=True, holeD=5, solidBottom=False):
         #internal diameter
         self.diameter=diameter
         self.height = height
-        self.wallThick=0.45
+        self.wallThick=0.9#0.45
         #if True then (probably because it's too tall...) print in two sections that slot over top and bottom
         self.twoParts=twoParts
         self.holeD=holeD
+        #if false, the bottom also has a hole to screw into the bottom of the weight
+        self.solidBottom=solidBottom
+
+        self.outerR = self.diameter / 2 + self.wallThick
 
     def getShell(self, top=True):
         shell = cq.Workplane("XY")
-        outerR = self.diameter/2 + self.wallThick
+
         height = self.height
         overlap = 3
         if self.twoParts:
             height=height/2 - overlap/2
 
-        shell = shell.circle(outerR).circle(self.holeD/2).extrude(self.wallThick)
-        shell = shell.faces(">Z").workplane().circle(outerR).circle(self.diameter/2).extrude(height)
+        shell = shell.circle(self.outerR).circle(self.holeD/2).extrude(self.wallThick)
+        shell = shell.faces(">Z").workplane().circle(self.outerR).circle(self.diameter/2).extrude(height+self.wallThick)
 
         if self.twoParts:
             if top:
-                shell = shell.faces(">Z").workplane().circle(outerR).circle(outerR - self.wallThick/2).extrude(overlap)
+                shell = shell.faces(">Z").workplane().circle(self.outerR).circle(self.outerR - self.wallThick/2).extrude(overlap)
             else:
-                shell = shell.faces(">Z").workplane().circle(outerR - self.wallThick / 2).circle(outerR - self.wallThick).extrude(overlap)
+                shell = shell.faces(">Z").workplane().circle(self.outerR - self.wallThick / 2).circle(self.outerR - self.wallThick).extrude(overlap)
 
         return shell
+
+    def getLid(self):
+        lid = cq.Workplane("XY").circle(self.outerR)
+
+        if self.solidBottom:
+            lid =  cq.Workplane("XY").circle(self.outerR-self.wallThick/2 - 0.2)
+        else:
+            lid = lid.circle(self.holeD / 2)
+        lid = lid.extrude(self.wallThick)
+
+        return lid
 
     def outputSTLs(self, name="clock", path="../out"):
 
         out = os.path.join(path, "{}_weight_shell_top.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getShell(True), out)
-
-        out = os.path.join(path, "{}_weight_shell_bottom.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getShell(False), out)
+        if self.twoParts:
+            out = os.path.join(path, "{}_weight_shell_bottom.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getShell(False), out)
+        else:
+            out = os.path.join(path, "{}_weight_lid.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.getLid(), out)
 
 
 

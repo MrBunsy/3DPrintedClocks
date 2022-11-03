@@ -222,6 +222,14 @@ DONE (but too loose!)
 - chain wheel attached to first wheel still had loose arbour hole, so I had to use superglue to get that arbour stable. DONE
 - If I'd made the module size slightly larger, the motion works could be behind the escape wheel with just the hand in front! DONE
 - text on the back was hidden partly by wall offset - DONE
-- grasshopper is slightly wonky because it sticks out a way in front. I've worked around it by tweaking dimensions, so it runs as it is, but might want to but an extra plate (half plate?) on the front. I could hide the motion works behind it and even put a dial on it! - decided on extended bearing holder
+- grasshopper is slightly wonky because it sticks out a way in front. I've worked around it by tweaking dimensions, so it runs as it is, but might want to but an extra plate (half plate?) on the front. I could hide the motion works behind it and even put a dial on it! - decided on extended bearing holder, which works
 - Need to make motino works more thin to fit behind escape wheel - DONE
-- Improve the pulley - going to try using steel tube instead of a bearing. Also want to make it thinner. I think I can print the pulley wheel in one go too
+- Improve the pulley - going to try using steel tube instead of a bearing. Also want to make it thinner. I think I can print the pulley wheel in one go too - DONE
+
+Idea for more reliable 8 day for giving away:
+- Standoff from the wall (with pendulum at back) which has two screws, but lower one adjustable (TODO how?) to set beat. Then either a way of fixing the clock to the back standoffs afterwards, or enough space to tighten the lower screw with the clock on the wall
+- if the standoffs are connected (which I think they'll need to be?) then the front clock needs to be detachable to add the pendulum
+
+Next grasshopper:
+- need directly fixed anchor, so it doesn't need setting in beat
+- put screw hole above top wall-standoff
