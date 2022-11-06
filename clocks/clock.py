@@ -1832,6 +1832,7 @@ class SimpleClockPlates:
 
             #designed with a washer to be put under the chain wheel to reduce friction (hopefully)
 
+
             #add an extra bit at the bottom so the chain can't easily fall off
             chainholeD = self.huygensWheel.getChainHoleD()
             holePositions = self.huygensWheel.getChainPositionsFromTop()

@@ -1772,14 +1772,12 @@ class ChainWheel:
     def getTurnsForDrop(self, chainDrop):
         return chainDrop / self.circumference
 
-    def getHeight(self, include_washer=True):
+    def getHeight(self):
         '''
         Returns total height of the chain wheel, once assembled, including the ratchet
         includes washer as this is considered part of the full assembly
         '''
         thick = self.inner_width + self.wall_thick*2  + WASHER_THICK
-        if not include_washer:
-            thick -= WASHER_THICK
         if self.ratchet is not None:
             thick += self.ratchet.thick
         return thick
