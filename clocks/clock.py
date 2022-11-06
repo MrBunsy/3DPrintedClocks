@@ -1074,7 +1074,10 @@ class SimpleClockPlates:
             else:
                 raise ValueError("Huygens maintaining power only currently supported with chain wheels")
 
-    def getPlateThick(self, back=True):
+    def getPlateThick(self, back=True, standoff=False):
+        if standoff:
+            #TODO separate value
+            return self.plateThick
         if back:
             return self.backPlateThick
         return self.plateThick
@@ -1220,27 +1223,28 @@ class SimpleClockPlates:
         standoff = cq.Workplane("XY").tag("base").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude(self.backPlateFromWall)
 
         if top:
-            back_thick=self.getPlateThick(back=True)
-
-            screwHoleFromtop = 8
-
-
-            screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] - self.topPillarR - 8)
-            if extraBearingForAnchor:
-                screwHolePos = (self.topPillarPos[0], self.bearingPositions[-1][1] - self.holderWide/2 - self.wallFixingScrewHeadD/2)
-            screwHoleSupportR = self.topPillarR  # (self.wallFixingScrewHeadD + 6)/2
+            back_thick=self.getPlateThick(standoff=True)
             slotLength = 7
 
-            standoff = standoff.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1] - slotLength).circle(screwHoleSupportR).extrude(back_thick)
+            #just above the pillar
+            #TODO consider putting the screwhole INSIDE the pillar?
+            screwHolePos = (self.topPillarPos[0],self.topPillarPos[1] + self.holderWide / 2 + self.wallFixingScrewHeadD / 2 + slotLength)
 
-            standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0]) / 2, (screwHolePos[1] + self.topPillarPos[1] - slotLength) / 2). \
-                rect(self.topPillarR * 2, self.topPillarPos[1] - screwHolePos[1] + slotLength).extrude(back_thick)
+            screwHoleSupportR = self.topPillarR  # (self.wallFixingScrewHeadD + 6)/2
+
+            #extend a back plate out to the screwhole
+            standoff = standoff.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1]).circle(screwHoleSupportR).extrude(back_thick)
+            standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0]) / 2, (screwHolePos[1] + self.topPillarPos[1]) / 2). \
+                rect(self.topPillarR * 2, self.topPillarPos[1] - screwHolePos[1]).extrude(back_thick)
 
             standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
 
             if extraBearingForAnchor and top:
                 bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-1).getRodD())
-
+                # extend a back plate out to the bearing holder
+                standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0]) / 2, (self.bearingPositions[-1][1] + self.topPillarPos[1]) / 2). \
+                    rect(self.topPillarR * 2, self.topPillarPos[1] - self.bearingPositions[-1][1]).extrude(back_thick)
+                standoff = standoff.workplaneFromTagged("base").moveTo(self.bearingPositions[-1][0], self.bearingPositions[-1][1]).circle(screwHoleSupportR).extrude(back_thick)
                 standoff = standoff.cut(self.getBearingPunch(bearingOnTop=True, back=True, bearingInfo=bearingInfo).translate((0, self.bearingPositions[-1][1], 0)))
 
         screwStartZ = self.backPlateFromWall-self.backPlateWallStandoffThickForScrews
@@ -1267,6 +1271,7 @@ class SimpleClockPlates:
     def getWallStandOff(self):
         '''
         Get a combined peice for a wall standoff, undecided if to keep this as I've not used it and instead use the single pillar wall standoffs
+        UNFINISHED
         '''
         pillarWallThick = 3
         topPillarInnerR = self.topPillarR - pillarWallThick
@@ -1691,13 +1696,29 @@ class SimpleClockPlates:
     def punchBearingHoles(self, plate, back):
         for i, pos in enumerate(self.bearingPositions):
             bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
+            bearingOnTop = back
+            if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR and i == len(self.bearingPositions)-1:
+                #this is the anchor arbour and we can't just use normal bearings
+                if self.escapementOnFront:
+                    '''
+                    need the bearings to be on the front of the front plate and back of the back plate
+                    '''
+                    if self.pendulumAtFront:
+                        raise ValueError("escapement and pendulum at front not supported with direct arbour (or at all?)")
+                    bearingInfo = self.pendulumFixingBearing
+                    plate=plate.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD/2 + self.bearingWallThick).extrude(self.getPlateThick(back=back))
 
-            if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR and back == False and i == len(self.bearingPositions)-1:
-                #this is the front (TODO configurable) bearing for the anchor and the pendulum is using a direct arbour (which extends through a large bearing in the front plate)
-                bearingInfo = self.pendulumFixingBearing
+                    bearingOnTop = not bearingOnTop
+                else:
+                    #escapement is between the plates
+                    if self.pendulumAtFront != back:
+                        #this is the front bearing for a pendulum that sticks out the front of the clock
+                        # or the back bearing for a pendulum that sticks out the back
+                        bearingInfo = self.pendulumFixingBearing
 
 
-            plate = plate.cut(self.getBearingPunch(bearingOnTop=back, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
+
+            plate = plate.cut(self.getBearingPunch(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
@@ -1711,7 +1732,7 @@ class SimpleClockPlates:
 
           /-\   circle of screwBodyD diameter (centre of the circle is the screwholePos)
           |  |  screwbodyD wide
-          |  |  distance between teh two circle centres is screwholeHeight
+          |  |  distance between teh two circle centres is slotLength
         /     \
         |     |  circle of screwHeadD diameter
         \_____/

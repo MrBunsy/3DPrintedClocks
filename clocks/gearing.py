@@ -63,7 +63,7 @@ class Gear:
         branchThick = 3
 
         if gapSize < 20:
-            branchThick = 1.8
+            branchThick = 1.7
             armThick=2.4
 
         cutterThick = 1000
