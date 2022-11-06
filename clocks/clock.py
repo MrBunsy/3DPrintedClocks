@@ -1829,8 +1829,40 @@ class SimpleClockPlates:
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 
         if self.huygensMaintainingPower:
-            #ratchet!
-            plate = plate.add(self.huygensWheel.ratchet.getOuterWheel().translate(self.bottomPillarPos).translate((0,0,self.getPlateThick(back=False))))
+
+            #designed with a washer to be put under the chain wheel to reduce friction (hopefully)
+
+            #add an extra bit at the bottom so the chain can't easily fall off
+            chainholeD = self.huygensWheel.getChainHoleD()
+            holePositions = self.huygensWheel.getChainPositionsFromTop()
+            relevantChainHoles = [ pair[0] for pair in holePositions ]
+
+            minThickAroundChainHole = 2
+
+            #self.huygensWheel.getHeight(include_washer=False)-self.huygensWheel.ratchet.thick#
+            extraHeight =relevantChainHoles[0][1] + self.huygensWheel.getHeight()-self.huygensWheel.ratchet.thick  + chainholeD/2 + minThickAroundChainHole
+            ratchetD = self.huygensWheel.ratchet.outsideDiameter
+            # ratchet for the chainwheel on the front of the clock
+            ratchet = self.huygensWheel.ratchet.getOuterWheel(extraThick=WASHER_THICK)
+
+            ratchet = ratchet.faces(">Z").workplane().circle(ratchetD/2).circle(self.huygensWheel.ratchet.toothRadius).extrude(extraHeight)
+
+            totalHeight = extraHeight + WASHER_THICK + self.huygensWheel.ratchet.thick
+
+
+            cutter = cq.Workplane("YZ").moveTo(-ratchetD/2,totalHeight).spline(includeCurrent=True,listOfXYTuple=[(ratchetD/2, totalHeight-extraHeight)], tangents=[(1,0),(1,0)])\
+                .lineTo(ratchetD/2,totalHeight).close().extrude(ratchetD).translate((-ratchetD/2,0,0))
+            for holePosition in holePositions:
+                #chainholes are relative to the assumed height of the chainwheel, which includes a washer
+                chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + (self.huygensWheel.getHeight() + WASHER_THICK)).circle(chainholeD / 2).extrude(1000)
+                cutter.add(chainHole)
+
+
+            ratchet = ratchet.cut(cutter)
+
+
+
+            plate = plate.add(ratchet.translate(self.bottomPillarPos).translate((0,0,self.getPlateThick(back=False))))
 
         if self.escapementOnFront and not self.extraFrontPlate:
             plate = plate.add(self.getBearingHolder(-self.goingTrain.escapement.getWheelBaseToAnchorBaseZ()).translate((self.bearingPositions[-2][0], self.bearingPositions[-2][1], self.getPlateThick(back=False))))
@@ -2192,7 +2224,7 @@ class Assembly:
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.plates.getPillarInfo()
 
         if self.plates.huygensMaintainingPower:
-            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(bottomPillarPos).translate((0,0,self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance)))
+            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(bottomPillarPos).translate((0,0,self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK)))
 
         #TODO pendulum bob and nut?
 
