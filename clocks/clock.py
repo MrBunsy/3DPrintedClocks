@@ -991,7 +991,7 @@ class SimpleClockPlates:
             #so pretend it's placed exactly in the centre
             self.bearingPositions[-1][2] = self.plateDistance/2 - self.endshake/2
 
-
+        self.arboursForPlate = []
 
         print("Plate distance", self.plateDistance)
 
@@ -1011,9 +1011,20 @@ class SimpleClockPlates:
                 maxR = 0
             #hacky hack hack, I really think I should put escapementOnFront into GoingTrain
             arbour.escapementOnFront = escapementOnFront
+            #deprecated way of doing it - passing loads of info to the Arbour class
             arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
                                 frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
                                 pendulumFixingBearing=self.pendulumFixingBearing, plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
+
+            bearing = getBearingInfo(arbour.arbourD)
+            if arbour.getType() == ArbourType.ANCHOR and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+                bearing = self.pendulumFixingBearing
+
+            #new way of doing it, new class for combining all this logic in once place
+            arbourForPlate = ArbourForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulumSticksOut,
+                                            pendulum_at_front=self.pendulumAtFront, bearing=bearing, escapement_on_front=self.escapementOnFront, back_from_wall=self.backPlateFromWall,
+                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing)
+            self.arboursForPlate.append(arbourForPlate)
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         #get position of motion works relative to the minute wheel
@@ -1081,6 +1092,12 @@ class SimpleClockPlates:
         if back:
             return self.backPlateThick
         return self.plateThick
+
+    def getPlateDistance(self):
+        '''
+        how much space there is between the front and back plates
+        '''
+        return self.plateDistance
 
     def getScrewHolePositions(self):
         '''
@@ -1176,6 +1193,8 @@ class SimpleClockPlates:
         topPillarR = holderWide / 2
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
+        if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+            anchorSpace = self.pendulumFixingBearing.bearingOuterD/2 + self.gearGap
 
         # find the Y position of the bottom of the top pillar
         topY = self.bearingPositions[0][1]
@@ -1701,14 +1720,16 @@ class SimpleClockPlates:
                 #this is the anchor arbour and we can't just use normal bearings
                 if self.escapementOnFront:
                     '''
-                    need the bearings to be on the front of the front plate and back of the back plate
+                    need the bearings to be on the back of front plate and back of the back plate
+                    so endshake will be between back of back plate and front of the wall standoff bearing holder
+                    this way there doesn't need to be a visible bearing on the front
                     '''
                     if self.pendulumAtFront:
                         raise ValueError("escapement and pendulum at front not supported with direct arbour (or at all?)")
                     bearingInfo = self.pendulumFixingBearing
                     plate=plate.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD/2 + self.bearingWallThick).extrude(self.getPlateThick(back=back))
-
-                    bearingOnTop = not bearingOnTop
+                    if back:
+                        bearingOnTop = False
                 else:
                     #escapement is between the plates
                     if self.pendulumAtFront != back:
@@ -1886,6 +1907,17 @@ class SimpleClockPlates:
         else:
             return abs(holePositions[0][0] - holePositions[1][0])
 
+    def getAnchorWithDirectPendulumFixing(self):
+        '''
+        For the direct pendulum fixing (where you can't set the beat) the anchor is heavily modified to fit the plates
+        so do this here where we have all the info
+
+        Planning to move more over to the plates to do than overload teh already messy Arbour class
+        '''
+
+        anchor = self.goingTrain.escapement.g
+
+
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
@@ -1925,6 +1957,12 @@ class SimpleClockPlates:
         if self.huygensMaintainingPower:
             self.huygensWheel.outputSTLs(name+"_huygens", path)
 
+        for i,arbourForPlate in enumerate(self.arboursForPlate):
+            shapes = arbourForPlate.get_shapes()
+            for shapeName in shapes.keys():
+                out = os.path.join(path, "{}_arbour_{}_{}.stl".format(name, i, shapeName))
+                print("Outputting ", out)
+                exporters.export(shapes[shapeName], out)
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
@@ -2055,42 +2093,24 @@ class Assembly:
             clock = clock.add(self.plates.getExtraFrontPlate(forPrinting=False))
 
         #the wheels
-        arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1
-        for a in range(arbours):
-            arbour = self.goingTrain.getArbourWithConventionalNaming(a)
-            clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
+        # arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1
+        # for a in range(arbours):
+        #     arbour = self.goingTrain.getArbourWithConventionalNaming(a)
+        #     clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
+        for a,arbour in enumerate(self.plates.arboursForPlate):
+            clock = clock.add(arbour.get_assembled())
 
-
-        if self.plates.escapementOnFront:
-
-            #escape wheel pinion inside plates
-            # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getPinionArbour(forPrinting=False).translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
-
-            # escapeArbourLongestExtensionIsFront = escapeWheelArbour.frontSideExtension > escapeWheelArbour.rearSideExtension
-            escapeWheelIndex = -2
-            #double endshake on the extra front plate
-            wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)
-            #note getWheelBaseToAnchorBaseZ is negative
-            clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ + self.plates.endshake -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ())))
-
-            anchor = self.goingTrain.getArbourWithConventionalNaming(-1).getAnchor(forPrinting=False)#getExtras()["anchor"]
-            clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake)))
-
-
-            #escape wheel itself on the front
-            # frontZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
-            # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate((0,0,frontZ)))
-            #anchor 'arbour' inside plates
-            # clock = clock.add(self.goingTrain.getArbourWithConventionalNaming(escapeWheelArbour).getShape().translate(self.plates.bearingPositions[escapeWheelArbour]).translate(
-            #     (0, 0, self.plates.getPlateThick(back=True) + self.plates.endshake / 2)))
-
-        # anchorAngle = math.atan2(self.plates.bearingPositions[-1][1] - self.plates.bearingPositions[-2][1], self.plates.bearingPositions[-1][0] - self.plates.bearingPositions[-2][0]) - math.pi/2
+        # if self.plates.escapementOnFront:
         #
-        # #the anchor is upside down for better printing, so flip it back
-        # anchor = self.pendulum.anchor#.mirror("YZ", (0,0,0))
-        # #and rotate it into position
-        # anchor = anchor.rotate((0,0,0),(0,0,1), radToDeg(anchorAngle)).translate(self.plates.bearingPositions[-1]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.wobble/2))
-        # clock = clock.add(anchor)
+        #     escapeWheelIndex = -2
+        #     #double endshake on the extra front plate
+        #     wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)
+        #     #note getWheelBaseToAnchorBaseZ is negative
+        #     clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ + self.plates.endshake -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ())))
+        #
+        #     anchor = self.goingTrain.getArbourWithConventionalNaming(-1).getAnchor(forPrinting=False)#getExtras()["anchor"]
+        #     clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake)))
+
 
         #where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
         motionWorksZOffset = 6

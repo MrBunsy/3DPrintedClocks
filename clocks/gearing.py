@@ -667,6 +667,134 @@ class WheelPinionPair:
         addendumFactor = pinionTeeth / 4.0 * (1.0 - k + math.sqrt( 1.0 + k * k - 2.0 * k * math.cos(theta)) )
         return addendumFactor
 
+
+class ArbourForPlate:
+
+    def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
+                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None):
+        '''
+        Given a basic Arbour and a specific plate class do the following:
+
+        Add arbour extensions where needed
+        Produce special pinion-only arbours for escapements on front
+        produce special extended arbours for escapement anchors which are using the direct arbour fixing
+
+
+        distance_from_back: how far from the back plate is the bottom of this arbour (the rearSideExtension as was in the old Arbour)
+        arbour_extension_max_radius: how much space around the arbour (not the bit with a wheel or pinion) there is, to calculate how thick the arbour extension could be
+
+        Note - there is only one plate type at the moment, but the aim is that this should be applicable to others in the future
+        as such, I'm trying not to tie it to the internals of SimpleClockPlates
+        '''
+        self.arbour = arbour
+        self.plates = plates
+
+        self.plate_distance = self.plates.getPlateDistance()
+        self.front_plate_thick = self.plates.getPlateThick(back=False)
+        self.back_plate_thick = self.plates.getPlateThick(back=True)
+        self.standoff_plate_thick = self.plates.getPlateThick(standoff=True)
+
+        self.arbour_extension_max_radius = arbour_extension_max_radius
+        self.pendulum_sticks_out = pendulum_sticks_out
+        self.pendulum_at_front = pendulum_at_front
+        self.back_from_wall = back_from_wall
+        self.endshake = endshake
+        self.bearing = bearing
+        #(x,y,z) from the clock plate. z is the base of the arbour, ignoring arbour extensions (this is from the days when the bearings were raised on little pillars, but is still useful for
+        #calculating where the arbour should be)
+        self.bearing_position = bearing_position
+        self.distance_from_back = bearing_position[2]
+        self.distance_from_front = self.plate_distance - self.arbour.getTotalThickness() - self.distance_from_back
+
+        self.pendulum_fixing = pendulum_fixing
+        if self.bearing is None:
+            self.bearing = getBearingInfo(3)
+        self.escapement_on_front = escapement_on_front
+
+        self.type = self.arbour.getType()
+
+        #for an escapement on the front, how far from the front plate is the anchor?
+        self.front_anchor_from_plate = 2 + self.endshake
+
+        #distance between back of back plate and front of front plate
+        self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick + self.endshake)
+
+    def get_anchor_shapes(self):
+        shapes = {}
+        anchor = self.arbour.escapement.getAnchor()
+        if self.pendulum_fixing != PendulumFixing.DIRECT_ARBOUR:
+            raise ValueError("Only direct arbour pendulum fixing supported currently")
+
+        #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
+        #if the anchor is between the plates then the end-shake is controlled by the extensions out each side of the anchor.
+        #if the anchor is on the front plate (assumed pendulum is at back), then the cylinder extends all the way through the plates and the square rod is at the back
+        #the end of the square rod controls one bit of end shake and there will be a collect that slots onto the rod to control the other
+
+        if self.escapement_on_front:
+
+
+            rear_bearing_standoff_height = 0.6
+
+            cylinder_r = self.bearing.innerD/2
+
+            cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
+
+            anchor_thick = self.arbour.escapement.getAnchorThick()
+
+            square_side_length = math.sqrt(2)*cylinder_r
+
+
+            rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
+
+            wall_bearing = getBearingInfo(self.arbour.arbourD)
+
+            # flip over so the front is on the print bed
+            anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
+            anchor = anchor.add(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
+            anchor = anchor.add(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).translate((0,0, anchor_thick + cylinder_length)))
+            anchor = anchor.add(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
+            #cut a hole through everything except a thin bit - so the rod isn't visible
+            anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height).translate((0,0,1)))
+            #TODO pendulum fixing collet and the end-shake limiting collet
+
+        else:
+            '''
+            anchor between the plates
+            '''
+            raise NotImplementedError("TODO: anchor between plates with direct pendulum fixing")
+
+        shapes["anchor"] = anchor
+        return shapes
+
+    def get_assembled(self):
+        '''
+        Get a model that is relative to the back of the back plate of the clock (so you should just be able to add it straight to the model)
+        '''
+
+        assembly = cq.Workplane("XY")
+        if self.type == ArbourType.ANCHOR:
+            shapes = self.get_shapes()
+            assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2)))
+            assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
+        else:
+            assembly = assembly.add(self.arbour.getAssembled())
+
+            assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
+
+        return assembly
+
+    def get_shapes(self):
+        '''
+        return a dict of name:shape for all the components needed for this arbour
+        always for printing, they will be arranged for the model in get_assembled()
+        '''
+        shapes = {}
+
+        if self.arbour.getType() == ArbourType.ANCHOR:
+            return self.get_anchor_shapes()
+
+        return shapes
+
 class Arbour:
     def __init__(self, arbourD=None, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
                  distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing = PendulumFixing.FRICTION_ROD, useRatchet=True):
@@ -676,13 +804,23 @@ class Arbour:
         - escape wheel is pinion + escape wheel
         - anchor is just the escapement anchor
 
+        This is being slowly refactored so it's purely theoretical and you need the ArbourForPlate to produce an STL that can be printed
+
+        its primary purpose is to help perform the layout of a gear train. Originally it was trying to store all the special logic for thicknesses and radii in one place
+
+
         NOTE currently assumes chain/cord is at the front - needs to be controlled by something like pinionAtFront
 
-        Trying to store all the special logic for thicknesses and radii in one place
 
 
         Note - this is becoming a bit bloated with the inclusion of escapementOnFront. Would it be worth trimming this class down, and getting the plates
         to produce the final shapes for all arbours/wheels? then lots of the special cases don't need to be dealt with here
+        Planning to do this, I think everythign that depends on setPlateInfo should be removed from this class
+        Then it can be given more options for getShape() - like option for pinion_only
+        the direct arbour anchor will be the first thing to be done in the plates instead of here, and the rest should be moved over slowly
+
+        Or maybe a new ArbourForPlate class? the input would be this Arbour and plate info, then it's explicit that this arbour is a theorical arbour used for calculating
+        the layout of the gear train, and ArbourForPlate is responsible for
 
         , looseOnRod=False
         '''
@@ -1052,14 +1190,14 @@ class Arbour:
         anchor = self.escapement.getAnchor()
 
         if self.escapementOnFront:
-
-            #cut out a nut space, planning to clamp it between a nut included at the back and a nut on teh front
-            anchor = anchor.cut(MachineScrew(self.arbourD).getNutCutter(half=True))
+            if self.pendulumFixing == PendulumFixing.FRICTION_ROD:
+                #cut out a nut space, planning to clamp it between a nut included at the back and a nut on teh front
+                anchor = anchor.cut(MachineScrew(self.arbourD).getNutCutter(half=True))
 
             #not much else to do
             if not forPrinting and self.escapement.type == EscapementType.GRASSHOPPER:
                 #if for the model, include all the other bits
-                anchor = anchor.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True, centreOnAnchor=True))
+                anchor = anchor.add(self.escapement.getAssembled(leave_out_wheel_and_frame=True, centre_on_anchor=True))
             else:
                 #if for printing, flip over so the front is on the print bed
                 anchor = anchor.rotate((0,0,0), (1,0,0), 180)

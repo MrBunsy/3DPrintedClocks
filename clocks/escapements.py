@@ -1422,6 +1422,7 @@ class GrasshopperEscapement:
         '''
         Get the anchor-like part (fully 3D) which attaches to the arbour
         rotated and translated so taht (0,0) is in the centre of its arbour
+        also rotated so that it lines up with the pendulum being vertical
 
 
         '''
@@ -1432,9 +1433,8 @@ class GrasshopperEscapement:
         #make taller so it's rigid on the arbour? Not sure how to do this iwthout it potentially clashing with pallet arms
         frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arm_wide/2).extrude(self.frame_thick)
 
-        #larger around the arbour
-
-        frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arbour_circle_r).extrude(self.frame_thick)
+        #larger around the arbour - do this instead in ArboursForPlate, where we have a better idea of how the escapement is laid out
+        # frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arbour_circle_r).extrude(self.frame_thick)
 
         # entry  side
         line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])
@@ -1505,6 +1505,10 @@ class GrasshopperEscapement:
         if not leave_in_situ:
             #rotate and translate so it's upright with 0,0 where the arbour should be
             frame = self.rotateToUpright(frame).translate((0,-np.linalg.norm(self.geometry["Z"]),0))
+
+            #rotate so it's aligned with a vertical pendulum
+            frame = frame.rotate((0, 0, 0), (0, 0, 1), radToDeg(-self.escaping_arc / 2))
+
             if self.xmas:
                 star_thick=3
                 star_size = 75
@@ -1525,9 +1529,11 @@ class GrasshopperEscapement:
 
 
                 # star = self.rotateToUpright(star.translate(self.geometry["Z"]))
-                star = star.translate((0, star_size/2 - arbour_circle_r, self.frame_thick - star_thick))
+                #arbour_circle_r isn't actually used anymore, so go for 10mm, which is the size of the inner d of the bearing used, so the tip of the bottom of the star lines up with the bottom of the
+                #circle around the arbour
+                star = star.translate((0, star_size/2 - 10/2, self.frame_thick - star_thick))
                 #the geometry is in the position of the start of entry pallet engaging, rotate so it's in the centre of the escaping arc
-                star = star.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.escaping_arc / 2))
+                # star = star.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.escaping_arc / 2))
                 #.translate(self.geometry["Z"])
                 frame = frame.add(star)
                 # recut hole for arbour
@@ -1801,7 +1807,7 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getAssembled(self, style=None, leave_out_wheel_and_frame=False, centreOnAnchor=False):
+    def getAssembled(self, style=None, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
@@ -1814,7 +1820,7 @@ class GrasshopperEscapement:
         grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryComposer(forPrinting=False)).translate((0, 0, composer_z))))
         grasshopper = grasshopper.add(self.rotateToUpright((self.getExitComposer(forPrinting=False)).translate((0, 0, composer_z))))
 
-        if centreOnAnchor:
+        if centre_on_anchor:
             grasshopper = grasshopper.translate((0,-np.linalg.norm(self.geometry["Z"]),0))
 
         return grasshopper

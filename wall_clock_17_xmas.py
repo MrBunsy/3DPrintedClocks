@@ -15,7 +15,8 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-random.seed(6)
+#random.seed(6)
+random.seed(7)
 
 clockName="wall_clock_17_xmas"
 clockOutDir="out"
@@ -56,8 +57,8 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 
 dial = clock.Dial(120)
 
-
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 17", style="vertical", pendulumAtFront=False,
+#need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="wall clock 17", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
