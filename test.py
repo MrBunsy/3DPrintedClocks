@@ -216,11 +216,11 @@ if 'show_object' not in globals():
 #     grasshopper.outputSTLs("grasshopper", "out")
 
 
-shell = WeightShell(diameter=38, height=120, twoParts=False)
+# shell = WeightShell(diameter=38, height=120, twoParts=False)
+#
+# show_object(shell.getShell())
 
-show_object(shell.getShell())
-
-if False:
+if True:
     gear_random = random.seed(4)
 
     flakes = 9

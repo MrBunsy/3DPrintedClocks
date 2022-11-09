@@ -60,23 +60,28 @@ class Gear:
 
         armThick = 4
 
-        branchThick = 3
+        branchThick = 2.4
+
+        branchDepth=2
 
         if gapSize < 20:
             branchThick = 1.7
             armThick=2.4
 
+        if gapSize < 40:
+            branchDepth = 1
+
         cutterThick = 1000
         snowflake=cq.Workplane("XY")
 
-        brancheCount = random.randrange(3,6)
-        possibleBranchYs = [(branch+0.5) * gapSize/brancheCount + innerRadius + random.randrange(-1,1)*gapSize/(brancheCount*2) for branch in range(brancheCount)]
+        branchesPerArm = random.randrange(3,6)
+        possibleBranchYs = [(branch+0.5) * gapSize/branchesPerArm + innerRadius + random.randrange(-1,1)*gapSize/(branchesPerArm*2) for branch in range(branchesPerArm)]
 
         branchYs = [possibleBranchYs[0]]
 
         lastY = possibleBranchYs[0]
         for y in possibleBranchYs[1:]:
-            if y - lastY > branchThick*1.5:
+            if y - lastY > branchThick*2:
                 branchYs.append(y)
                 lastY = y
 
@@ -89,27 +94,56 @@ class Gear:
 
         branchLengths = [branchlength for branch in branchYs]
         branchAngle = math.pi/3
-        brancheCount = len(branchLengths)
+        branchesPerArm = len(branchLengths)
+
+        branchLengthMultiplier =  0.2 + random.random()*0.3
+
+        def addBranches(shape, branchStart, branchLength, armAngle, branchThick, depth=0):
+            '''
+            from a point on an arm or branch, add a pair of branches
+            '''
+            shape = shape.workplaneFromTagged("base").moveTo(branchStart[0], branchStart[1]).circle(branchThick/2).extrude(cutterThick)
+            for i in [-1, 1]:
+                thisBranchAbsAngle=armAngle + i * branchAngle
+                branchEnd = np.add(branchStart, polar(thisBranchAbsAngle, branchLength))
+                branchCentre = averageOfTwoPoints(branchStart, branchEnd)
+                branchShape = cq.Workplane("XY").rect(branchLength, branchThick).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), radToDeg(thisBranchAbsAngle)).translate(branchCentre)
+                shape = shape.add(branchShape)
+                if depth < branchDepth-1:
+                    #find angle from centre
+                    endAngle = math.atan2(branchEnd[1], branchEnd[0])
+                    if abs(endAngle - armAngle) < branchAngle/2:
+                        nextBranchStart = branchCentre
+                        #only if the end of this branch isn't giong to be chopped off by the pizza slice
+                        shape = addBranches(shape, nextBranchStart, branchLength*branchLengthMultiplier, armAngle + i * branchAngle, branchThick, depth+1)
+
+            return shape
 
         for arm in range(6):
             #arm from centre to edge, building from centre to top and rotating into place afterwards
             armShape = cq.Workplane("XY").tag("base").moveTo(0, middleOfGapR).rect(armThick,gapSize*2).extrude(cutterThick)
 
-            for branch in range(brancheCount):
+            for branch in range(branchesPerArm):
                 branchStart = (0, branchYs[branch])
-                armShape = armShape.workplaneFromTagged("base").moveTo().circle(armThick*2).extrude(cutterThick)
-                # return armShape
-                branchEnd = np.add(branchStart, polar(math.pi/2 - branchAngle, branchLengths[branch]))
-                branchCentre = averageOfTwoPoints(branchStart, branchEnd)
+                armAngle = math.pi/2
 
-                branchShape = cq.Workplane("XY").rect(branchThick, branchLengths[branch]).extrude(cutterThick).rotate((0,0,0), (0,0,1),-radToDeg(branchAngle)).translate(branchCentre)
-                branchShape = branchShape.add(cq.Workplane("XY").rect(branchThick, branchLengths[branch]).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), radToDeg(branchAngle)).translate((-branchCentre[0], branchCentre[1])))
-                armShape = armShape.add(branchShape)
+                armShape = addBranches(armShape, branchStart, branchLengths[branch], armAngle, branchThick)
+                # #armShape = armShape.workplaneFromTagged("base").moveTo().circle(armThick*2).extrude(cutterThick)
+                # # return armShape
+                # branchEnd = np.add(branchStart, polar(math.pi/2 - branchAngle, branchLengths[branch]))
+                # branchCentre = averageOfTwoPoints(branchStart, branchEnd)
+                #
+                # branchShape = cq.Workplane("XY").rect(branchThick, branchLengths[branch]).extrude(cutterThick).rotate((0,0,0), (0,0,1),-radToDeg(branchAngle)).translate(branchCentre)
+                # branchShape = branchShape.add(cq.Workplane("XY").rect(branchThick, branchLengths[branch]).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), radToDeg(branchAngle)).translate((-branchCentre[0], branchCentre[1])))
+                # armShape = armShape.add(branchShape)
 
                 left = polar(math.pi/2 + branchAngle/2, outerRadius*2)
                 pizzaSlice = cq.Workplane("XY").lineTo(left[0], left[1]).lineTo(-left[0], left[1]).close().extrude(cutterThick)
                 # return pizzaSlice
                 armShape = armShape.intersect(pizzaSlice)
+
+                # if branchDepth > 1:
+                #     #TODO make this recursive? Or am I never going to go above 2?
 
 
 
@@ -718,6 +752,11 @@ class ArbourForPlate:
 
         #distance between back of back plate and front of front plate
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick + self.endshake)
+
+    def get_anchor_collet(self, bearing, square_side_length):
+        '''
+        get a collet that fits on the direct arbour anchor to prevent it sliding out and holds the pendulum
+        '''
 
     def get_anchor_shapes(self):
         shapes = {}

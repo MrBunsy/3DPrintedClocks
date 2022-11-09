@@ -15,7 +15,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-#random.seed(6)
+# random.seed(6)
 random.seed(7)
 
 clockName="wall_clock_17_xmas"
