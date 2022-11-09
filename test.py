@@ -220,7 +220,7 @@ if 'show_object' not in globals():
 #
 # show_object(shell.getShell())
 
-if True:
+if False:
     gear_random = random.seed(4)
 
     flakes = 9
@@ -243,7 +243,11 @@ if True:
     show_object(combinedFlake)
 
 
+holder = cq.Workplane("XY").rect(20,20).extrude(20)
 
+holder = holder.cut(Pendulum.get_pendulum_holder_cutter().translate((0,5,0)))
+
+show_object(holder)
 #
 # motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
 # hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
