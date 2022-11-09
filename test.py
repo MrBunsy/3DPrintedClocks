@@ -243,21 +243,21 @@ if False:
     show_object(combinedFlake)
 
 
-holder = cq.Workplane("XY").rect(20,20).extrude(20)
-
-holder = holder.cut(Pendulum.get_pendulum_holder_cutter().translate((0,5,0)))
-
-show_object(holder)
+# holder = cq.Workplane("XY").rect(20,20).extrude(20)
 #
-# motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
-# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-# #
-# show_object(hands.getHand(hour=True,second=False))
-# # # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
-# #
-# # show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
-# show_object(hands.getHand(hour=False).translate((50,0,0)))
+# holder = holder.cut(Pendulum.get_pendulum_holder_cutter().translate((0,5,0)))
+#
+# show_object(holder)
+#
+motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
+hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+#
+show_object(hands.getHand(hour=True,second=False, colour="brown"))
+# # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
+#
+# show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
+show_object(hands.getHand(hour=False).translate((50,0,0)))
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 

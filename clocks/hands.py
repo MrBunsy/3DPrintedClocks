@@ -130,16 +130,26 @@ class Hands:
 
         return True
 
-    def getHand(self, hour=False, minute=False, second=False, outline=False):
+    def getExtraColours(self):
+        #first colour is default
+        if self.style == HandStyle.XMAS_TREE:
+            #green leaves, red tinsel, brown trunk
+            return ["brown", "green"]#, "red",
+
+        return [None]
+
+    def getHand(self, hour=False, minute=False, second=False, outline=False, colour=None):
         '''
         #either hour, minute or second hand (for now?)
+        if provide a colour, return the layer for just that colour (for novelty hands with lots of colours)
         '''
 
         #default is minute hand
 
         if not hour and not minute and not second:
             minute = True
-
+        #draw a circle for the base of the hand
+        need_base_r = True
         base_r = self.length * 0.12
         length = self.length
         thick = self.thick
@@ -157,6 +167,13 @@ class Hands:
         ignoreOutline = False
 
         hand = cq.Workplane("XY").tag("base")
+
+
+        # if colour is None and len(self.getExtraColours()) > 0:
+        #     colour = self.getExtraColours()[0]
+
+        # if colour is not None:
+        #     ignoreOutline = True
 
         if self.style == HandStyle.SIMPLE:
 
@@ -199,6 +216,8 @@ class Hands:
             #same as the spades
             base_r = self.length * 0.075
 
+            leaves = cq.Workplane("XY").tag("base")
+
             hand = hand.workplaneFromTagged("base").moveTo(0, trunkEnd/2).rect(trunkWidth, trunkEnd).extrude(thick)
 
             #rate of change of leaf width with respect to height from the start of the leaf bit
@@ -217,8 +236,17 @@ class Hands:
                 topRight = (width / 4, ys[spike + 1])
                 if spike == spikes-1:
                     topLeft = topRight = (0, length)
-                hand = hand.workplaneFromTagged("base").moveTo(topLeft[0], topLeft[1]).sagittaArc(endPoint=left, sag=sag/2).sagittaArc(endPoint=right, sag=-sag).\
+                leaves = leaves.workplaneFromTagged("base").moveTo(topLeft[0], topLeft[1]).sagittaArc(endPoint=left, sag=sag/2).sagittaArc(endPoint=right, sag=-sag).\
                     sagittaArc(endPoint=topRight, sag=sag/2).close().extrude(thick)
+
+            if colour is None:
+                hand = hand.add(leaves)
+            elif colour == "brown":
+                hand = hand.cut(leaves)
+            elif colour == "green":
+                hand = leaves
+                need_base_r=False
+
 
 
         elif self.style == HandStyle.SYRINGE:
@@ -472,7 +500,8 @@ class Hands:
         if second and base_r < self.secondFixing_d * 0.7:
             base_r = self.secondFixing_d* 1.5 / 2
 
-        hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
+        if need_base_r:
+            hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
 
 
         if self.fixing_offset != 0:
@@ -542,17 +571,22 @@ class Hands:
 
 
     def outputSTLs(self, name="clock", path="../out"):
-        out = os.path.join(path, "{}_hour_hand.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getHand(hour=True), out)
 
-        out = os.path.join(path, "{}_minute_hand.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getHand(minute=True), out)
+        colours = self.getExtraColours()
 
-        out = os.path.join(path, "{}_second_hand.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getHand(second=True), out)
+        for colour in colours:
+            colour_string = "_"+colour if colour is not None else ""
+            out = os.path.join(path, "{}_hour_hand{}.stl".format(name, colour_string))
+            print("Outputting ", out)
+            exporters.export(self.getHand(hour=True, colour=colour), out)
+
+            out = os.path.join(path, "{}_minute_hand{}.stl".format(name, colour_string))
+            print("Outputting ", out)
+            exporters.export(self.getHand(minute=True, colour=colour), out)
+
+            out = os.path.join(path, "{}_second_hand{}.stl".format(name, colour_string))
+            print("Outputting ", out)
+            exporters.export(self.getHand(second=True, colour=colour), out)
 
         out = os.path.join(path, "{}_hand_nut.stl".format(name))
         print("Outputting ", out)
