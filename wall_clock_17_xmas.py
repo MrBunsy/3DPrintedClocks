@@ -1,6 +1,7 @@
 import random
-
+import os
 import clocks.clock as clock
+from cadquery import exporters
 
 '''
 second attempt at a grasshopper. Same as teh first attempt (clock 14) but with space to fit hands on properly and less drooping of the escape wheel and frame
@@ -38,6 +39,8 @@ train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=
 #for the first draft let's stick to a chain I know works, and hope that we're not over its weight limit
 # 61 links/ft 1-day regula chain. copied from clock 04
 train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
+# train.genChainWheels(ratchetThick=4,wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075, screwThreadLength=8, holeD=3)
+
 
 #pendulum is on the back
 pendulumSticksOut=20
@@ -53,10 +56,6 @@ motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, comp
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
-
-
-dial = clock.Dial(120)
-
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="xmas c17", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
@@ -70,11 +69,7 @@ assembly = clock.Assembly(plates, hands=hands, pulley=pulley)
 assembly.printInfo()
 
 
-
-# weight = clock.Weight(height=130, diameter=50)
-# weight.printInfo()
-
-weight = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
+weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
 
 show_object(assembly.getClock())
 
@@ -82,10 +77,12 @@ if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
-    weight.outputSTLs(clockName, clockOutDir)
-    # bigweight.outputSTLs(clockName+"_big", clockOutDir)
+    weight_shell.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
     pulley.outputSTLs(clockName, clockOutDir)
+
+    out = os.path.join(clockOutDir, "anchor_white.stl")
+    print("Outputting ", out)
+    exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)

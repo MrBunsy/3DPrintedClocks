@@ -4,6 +4,7 @@ from .types import *
 
 from .utility import *
 from .gearing import *
+from .decoration import *
 import cadquery as cq
 
 from cadquery import exporters
@@ -1510,32 +1511,28 @@ class GrasshopperEscapement:
             frame = frame.rotate((0, 0, 0), (0, 0, 1), radToDeg(-self.escaping_arc / 2))
 
             if self.xmas:
+                #this is a massive bodge doing it here, if I'm giong to make a habit of themed clocks I should create a more generic way of customising parts
                 star_thick=3
                 star_size = 75
-                star_arm_wide = star_size * 0.2
-                secondary_star_arm_length = star_size * 0.3
-                secondary_star_arm_wide = star_arm_wide*0.9
-
-                star = cq.Workplane("XY").tag("base").moveTo(-star_size/2,0).lineTo(0, star_arm_wide/2).lineTo(star_size/2, 0).lineTo(0, -star_arm_wide/2).close().extrude(star_thick)
-                star = star.workplaneFromTagged("base").moveTo(-star_arm_wide / 2, 0).lineTo(0, star_size / 2).lineTo(star_arm_wide / 2, 0).lineTo(0, -star_size/2).close().extrude(star_thick)
-
-                secondary_top_left = polar(math.pi*3/4,secondary_star_arm_length)
-                secondary_top = (0, secondary_star_arm_wide/2)
-                star = star.workplaneFromTagged("base").moveTo(secondary_top_left[0], secondary_top_left[1]).lineTo(secondary_top[0], secondary_top[1]).lineTo(-secondary_top_left[0], -secondary_top_left[1])\
-                    .lineTo(-secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
-
-                star = star.workplaneFromTagged("base").moveTo(-secondary_top_left[0], secondary_top_left[1]).lineTo(-secondary_top[0], secondary_top[1]).lineTo(secondary_top_left[0], -secondary_top_left[1]) \
-                    .lineTo(secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
+                star = get_star(star_thick=star_thick, star_size=star_size)
+                start_inset_thick = LAYER_THICK*2
+                star_inset = get_star(star_thick=start_inset_thick, star_size=star_size*0.7)
 
 
                 # star = self.rotateToUpright(star.translate(self.geometry["Z"]))
                 #arbour_circle_r isn't actually used anymore, so go for 10mm, which is the size of the inner d of the bearing used, so the tip of the bottom of the star lines up with the bottom of the
                 #circle around the arbour
                 star = star.translate((0, star_size/2 - 10/2, self.frame_thick - star_thick))
+                star_inset = star_inset.translate((0, star_size/2 - 10/2, self.frame_thick - start_inset_thick))
                 #the geometry is in the position of the start of entry pallet engaging, rotate so it's in the centre of the escaping arc
                 # star = star.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.escaping_arc / 2))
                 #.translate(self.geometry["Z"])
                 frame = frame.add(star)
+
+                frame = frame.cut(star_inset)
+                #bodgily save this
+                self.star_inset=star_inset
+
                 # recut hole for arbour
                 frame = frame.cut(cq.Workplane("XY").circle(holeD / 2).extrude(self.frame_thick * 2))
 
