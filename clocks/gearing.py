@@ -749,6 +749,9 @@ class ArbourForPlate:
 
         #for an escapement on the front, how far from the front plate is the anchor?
         self.front_anchor_from_plate = 2 + self.endshake
+        #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
+        self.collet_thick = 6
+        self.collet_screws = MachineScrew(2,countersunk=True)
 
         #distance between back of back plate and front of front plate
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick + self.endshake)
@@ -758,62 +761,91 @@ class ArbourForPlate:
         get a collet that fits on the direct arbour anchor to prevent it sliding out and holds the pendulum
         '''
 
+        outer_d = (bearing.innerSafeD + bearing.bearingOuterD)/2
+        height = self.collet_thick - LAYER_THICK*2
+
+        square_size = square_side_length+0.2
+
+
+        collet = cq.Workplane("XY").circle(outer_d/2).rect(square_size, square_size).extrude(height)
+        collet = collet.faces(">Z").workplane().circle(bearing.innerSafeD/2).rect(square_size, square_size).extrude(self.collet_thick - height)
+
+        collet = collet.cut(self.collet_screws.getCutter(length=outer_d/2).rotate((0,0,0),(1,0,0),-90).translate((0,-outer_d/2,self.collet_thick/2)))
+        collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.collet_thick / 2)))
+
+        return collet
+
     def get_anchor_shapes(self):
         shapes = {}
         anchor = self.arbour.escapement.getAnchor()
-        if self.pendulum_fixing != PendulumFixing.DIRECT_ARBOUR:
-            raise ValueError("Only direct arbour pendulum fixing supported currently")
-
-        #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
-        #if the anchor is between the plates then the end-shake is controlled by the extensions out each side of the anchor.
-        #if the anchor is on the front plate (assumed pendulum is at back), then the cylinder extends all the way through the plates and the square rod is at the back
-        #the end of the square rod controls one bit of end shake and there will be a collect that slots onto the rod to control the other
-
-        if self.escapement_on_front:
+        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR:
 
 
-            rear_bearing_standoff_height = 0.6
+            #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
+            #if the anchor is between the plates then the end-shake is controlled by the extensions out each side of the anchor.
+            #if the anchor is on the front plate (assumed pendulum is at back), then the cylinder extends all the way through the plates and the square rod is at the back
+            #the end of the square rod controls one bit of end shake and there will be a collect that slots onto the rod to control the other
 
-            cylinder_r = self.bearing.innerD/2
+            cylinder_r = self.bearing.innerD / 2
+            square_side_length = math.sqrt(2) * cylinder_r
 
-            cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
+            collet = self.get_anchor_collet(self.bearing, square_side_length)
 
-            anchor_thick = self.arbour.escapement.getAnchorThick()
+            shapes["collet"]=collet
 
-            square_side_length = math.sqrt(2)*cylinder_r
+            if self.escapement_on_front:
 
 
-            rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
+                rear_bearing_standoff_height = 0.6
 
-            wall_bearing = getBearingInfo(self.arbour.arbourD)
+                cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
 
-            # flip over so the front is on the print bed
-            anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
-            anchor = anchor.add(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
-            anchor = anchor.add(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).translate((0,0, anchor_thick + cylinder_length)))
-            anchor = anchor.add(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
-            #cut a hole through everything except a thin bit - so the rod isn't visible
-            anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height).translate((0,0,1)))
-            #TODO pendulum fixing collet and the end-shake limiting collet
+                anchor_thick = self.arbour.escapement.getAnchorThick()
 
+                rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
+
+                wall_bearing = getBearingInfo(self.arbour.arbourD)
+
+                # flip over so the front is on the print bed
+                anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
+                anchor = anchor.add(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
+                anchor = anchor.add(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).translate((0,0, anchor_thick + cylinder_length)))
+                anchor = anchor.add(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
+                #cut a hole through everything except a thin bit - so the rod isn't visible
+                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height).translate((0,0,1)))
+                #end-shake limiting collet screwhole
+
+                screwhole_z = anchor_thick + cylinder_length + self.collet_thick/2
+
+                anchor = anchor.cut(cq.Workplane("XZ").circle(self.collet_screws.metric_thread/2).extrude(square_side_length).translate((0,square_side_length, screwhole_z)))
+
+
+
+            else:
+                '''
+                anchor between the plates
+                '''
+                raise NotImplementedError("TODO: anchor between plates with direct pendulum fixing")
         else:
-            '''
-            anchor between the plates
-            '''
-            raise NotImplementedError("TODO: anchor between plates with direct pendulum fixing")
-
+            raise ValueError("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
         return shapes
 
     def get_assembled(self):
         '''
-        Get a model that is relative to the back of the back plate of the clock (so you should just be able to add it straight to the model)
+        Get a model that is relative to the back of the back plate of the clock and already in position (so you should just be able to add it straight to the model)
         '''
 
         assembly = cq.Workplane("XY")
+        shapes = self.get_shapes()
         if self.type == ArbourType.ANCHOR:
-            shapes = self.get_shapes()
-            assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2)))
+            if self.escapement_on_front:
+                assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2)))
+
+            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR:
+                collet = shapes["collet"]
+                assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
+
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         else:
             assembly = assembly.add(self.arbour.getAssembled())
