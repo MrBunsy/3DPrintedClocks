@@ -255,11 +255,12 @@ hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFix
 #
 show_object(hands.getHand(hour=True,second=False, colour="brown"))
 show_object(hands.getHand(hour=True,second=False, colour="green"))
-show_object(hands.getHand(hour=True,second=False, outline=True))
+# show_object(hands.getHand(hour=True,second=False, colour="red"))
+show_object(hands.getHand(hour=True, second=False, generate_outline=True))
 # # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
 #
 # show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
-show_object(hands.getHand(hour=False).translate((50,0,0)))
+# show_object(hands.getHand(hour=False).translate((50,0,0)))
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 

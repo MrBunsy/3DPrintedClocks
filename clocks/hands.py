@@ -125,7 +125,7 @@ class Hands:
         if the outline is a positive shell, return false (for hands with thin bits where there isn't enough width)
         '''
 
-        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE]:#, HandStyle.XMAS_TREE
+        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE, HandStyle.XMAS_TREE]:#, HandStyle.XMAS_TREE
             return False
 
         return True
@@ -134,11 +134,11 @@ class Hands:
         #first colour is default
         if self.style == HandStyle.XMAS_TREE:
             #green leaves, red tinsel, brown trunk
-            return ["brown", "green"]#, "red",
+            return ["brown", "green", "red"]
 
         return [None]
 
-    def getHand(self, hour=False, minute=False, second=False, outline=False, colour=None):
+    def getHand(self, hour=False, minute=False, second=False, generate_outline=False, colour=None):
         '''
         #either hour, minute or second hand (for now?)
         if provide a colour, return the layer for just that colour (for novelty hands with lots of colours)
@@ -207,7 +207,7 @@ class Hands:
             trunkWidth = self.length * 0.075
             leafyWidth = length*0.5
             trunkEnd = length*0.4
-
+            useTinsel = False
             if minute:
                 leafyWidth*=0.6
             if hour:
@@ -217,6 +217,7 @@ class Hands:
             base_r = self.length * 0.075
 
             leaves = cq.Workplane("XY").tag("base")
+            tinsel = cq.Workplane("XY").tag("base")
 
             hand = hand.workplaneFromTagged("base").moveTo(0, trunkEnd/2).rect(trunkWidth, trunkEnd).extrude(thick)
 
@@ -227,6 +228,7 @@ class Hands:
             spikeHeight = (length - trunkEnd)/spikes
             sag = spikeHeight*0.2
             ys = [trunkEnd + spikeHeight*spike for spike in range(spikes+1)]
+            tinselHeight = spikeHeight*0.3
 
             for spike in range(spikes):
                 width = leafyWidth - dLeaf*spikeHeight*spike
@@ -234,18 +236,35 @@ class Hands:
                 right = (width/2, ys[spike])
                 topLeft = (-width/4, ys[spike+1])
                 topRight = (width / 4, ys[spike + 1])
+                tinselTopLeft=(left[0], left[1] + tinselHeight)
+                tinselTopRight=(right[0], right[1] + tinselHeight)
                 if spike == spikes-1:
                     topLeft = topRight = (0, length)
                 leaves = leaves.workplaneFromTagged("base").moveTo(topLeft[0], topLeft[1]).sagittaArc(endPoint=left, sag=sag/2).sagittaArc(endPoint=right, sag=-sag).\
                     sagittaArc(endPoint=topRight, sag=sag/2).close().extrude(thick)
+                tinsel = tinsel.workplaneFromTagged("base").moveTo(tinselTopLeft[0], tinselTopLeft[1]).lineTo(left[0], left[1]).sagittaArc(endPoint=right, sag=-sag). \
+                    lineTo(tinselTopRight[0], tinselTopRight[1]).sagittaArc(endPoint=tinselTopLeft, sag=sag).close().extrude(thick)
+
+            #
+            tinsel = tinsel.intersect(leaves)
+            if useTinsel:
+
+                leaves = leaves.cut(tinsel)
 
             if colour is None:
                 hand = hand.add(leaves)
+                if useTinsel:
+                    hand = hand.add(tinsel)
             elif colour == "brown":
                 hand = hand.cut(leaves)
+                if useTinsel:
+                    hand = hand.cut(tinsel)
             elif colour == "green":
                 hand = leaves
                 need_base_r=False
+            elif colour == "red":
+                hand = tinsel
+                need_base_r = False
 
 
 
@@ -510,14 +529,21 @@ class Hands:
         # if second:
         #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + thick)
 
-        if not outline:
-            hand = self.cutFixing(hand, hour, second)
+        if not generate_outline:
+            try:
+                hand = self.cutFixing(hand, hour, second)
+            except:
+                pass
 
 
 
         if self.outline > 0 and not ignoreOutline:
             if self.outLineIsSubtractive():
-                if outline:
+                #the outline cuts into the hand shape
+
+                if generate_outline:
+                    #we are generating the outline - hand is currently the default hand shape
+
                     #use a negative shell to get a thick line just inside the edge of the hand
 
                     #this doesn't work for fancier shapes - I think it can't cope if there isn't space to extrude the shell without it overlapping itself?
@@ -528,44 +554,60 @@ class Hands:
                         print("Unable to give outline to hand")
                         return None
 
-                    notOutline = hand.cut(shell)
-                    # return notOutline
-                    #chop off the mess above the first few layers that we want
+                    # hand_minus_shell = hand.cut(shell)
 
-                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(thick*10).translate((0,0,self.outlineThick))
+                    slab_thick = self.outlineThick
 
+                    bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(slab_thick)
 
+                    outline = shell.intersect(bigSlab)
 
                     if self.outlineSameAsBody:
-                        notOutline = notOutline.cut(bigSlab)
+                        thin_not_outline = hand.intersect(bigSlab).cut(outline)
+                        outline_with_back_of_hand = hand.cut(thin_not_outline)
+                        try:
+                            outline_with_back_of_hand = self.cutFixing(outline_with_back_of_hand, hour, second)
+                        except:
+                            pass
+                        return outline_with_back_of_hand
                     else:
-                        notOutline = notOutline.add(bigSlab)
-
-                    hand = hand.cut(notOutline)
-                    hand = self.cutFixing(hand, hour, second)
-
+                        return outline
                 else:
-                    outlineShape = self.getHand(hour=hour, minute=minute, second=second, outline=True)
+                    outlineShape = self.getHand(hour=hour, minute=minute, second=second, generate_outline=True)
                     #chop out the outline from the shape
                     if outlineShape is not None:
                         hand = hand.cut(outlineShape)
-            else:
+            else:#positive shell - outline is outside the shape
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
-                if outline:
+                if generate_outline:
                     shell = hand.shell(self.outline)
-
-                    bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick)
+                    slabThick = self.outlineThick
+                    if self.outlineSameAsBody:
+                        slabThick = self.thick
+                    bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(slabThick)
 
                     outline = shell.intersect(bigSlab)
                     outline = self.cutFixing(outline, hour, second)
+
+                    if self.outlineSameAsBody:
+                        #add the hand, minus a thin layer on the front
+                        outline = outline.add(hand.cut(cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick)))
+                        outline = self.cutFixing(outline, hour, second)
+                        return outline
+
                     return outline
                 else:
-                    #make the whole hand bigger by the outline amount
-                    shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
+                    #this is the hand, minus the outline
+                    if self.outlineSameAsBody:
+                        bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick)
+                        hand = hand.intersect(bigSlab)
+                    else:
+                        #make the whole hand bigger by the outline amount
+                        shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
 
-                    hand = hand.add(shell)
-                    hand = self.cutFixing(hand, hour, second)
-                    return hand
+                        hand = hand.add(shell)
+                        hand = self.cutFixing(hand, hour, second)
+                        return hand
 
 
         return hand
@@ -596,13 +638,13 @@ class Hands:
         if self.outline > 0:
             out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(hour=True, outline=True), out)
+            exporters.export(self.getHand(hour=True, generate_outline=True), out)
 
             out = os.path.join(path, "{}_minute_hand_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(minute=True, outline=True), out)
+            exporters.export(self.getHand(minute=True, generate_outline=True), out)
 
-            secondoutline = self.getHand(second=True, outline=True)
+            secondoutline = self.getHand(second=True, generate_outline=True)
             if secondoutline is not None:
                 out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
                 print("Outputting ", out)
