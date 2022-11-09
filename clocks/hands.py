@@ -125,7 +125,7 @@ class Hands:
         if the outline is a positive shell, return false (for hands with thin bits where there isn't enough width)
         '''
 
-        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE]:
+        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE]:#, HandStyle.XMAS_TREE
             return False
 
         return True
@@ -542,6 +542,7 @@ class Hands:
                         notOutline = notOutline.add(bigSlab)
 
                     hand = hand.cut(notOutline)
+                    hand = self.cutFixing(hand, hour, second)
 
                 else:
                     outlineShape = self.getHand(hour=hour, minute=minute, second=second, outline=True)

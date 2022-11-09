@@ -251,9 +251,11 @@ if False:
 #
 motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
 hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
 #
 show_object(hands.getHand(hour=True,second=False, colour="brown"))
+show_object(hands.getHand(hour=True,second=False, colour="green"))
+show_object(hands.getHand(hour=True,second=False, outline=True))
 # # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
 #
 # show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
