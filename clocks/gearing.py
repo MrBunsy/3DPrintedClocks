@@ -65,7 +65,7 @@ class Gear:
         branchDepth=2
 
         if gapSize < 20:
-            branchThick = 1.7
+            branchThick = 1.65
             armThick=2.4
 
         if gapSize < 40:
@@ -752,26 +752,60 @@ class ArbourForPlate:
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
         self.collet_screws = MachineScrew(2,countersunk=True)
+        self.pendulum_holder_thick = 15
+        self.pendulum_fixing_extra_space = 0.2
 
         #distance between back of back plate and front of front plate
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick + self.endshake)
 
-    def get_anchor_collet(self, bearing, square_side_length):
+    def get_anchor_collet(self, square_side_length):
         '''
         get a collet that fits on the direct arbour anchor to prevent it sliding out and holds the pendulum
         '''
 
-        outer_d = (bearing.innerSafeD + bearing.bearingOuterD)/2
+        outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD)/2
         height = self.collet_thick - LAYER_THICK*2
 
-        square_size = square_side_length+0.2
+        square_size = square_side_length+self.pendulum_fixing_extra_space
 
 
         collet = cq.Workplane("XY").circle(outer_d/2).rect(square_size, square_size).extrude(height)
-        collet = collet.faces(">Z").workplane().circle(bearing.innerSafeD/2).rect(square_size, square_size).extrude(self.collet_thick - height)
+        collet = collet.faces(">Z").workplane().circle(self.bearing.innerSafeD/2).rect(square_size, square_size).extrude(self.collet_thick - height)
 
         collet = collet.cut(self.collet_screws.getCutter(length=outer_d/2).rotate((0,0,0),(1,0,0),-90).translate((0,-outer_d/2,self.collet_thick/2)))
         collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.collet_thick / 2)))
+
+        return collet
+
+    def get_pendulum_holder_collet(self, square_side_length):
+        '''
+        will slot over square bit of anchor arbour and screw in place
+        '''
+        #to be consistent with the endshake collet
+        outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
+
+        square_size = square_side_length + self.pendulum_fixing_extra_space
+
+        gap_between_square_and_pendulum_hole = self.collet_screws.getNutHeight(half=True) + 1 + self.collet_screws.getHeadHeight()
+
+        height = outer_d*2.5
+
+        r = outer_d/2
+
+        collet = cq.Workplane("XY").tag("base").circle(r).extrude(self.pendulum_holder_thick)
+        collet = collet.workplaneFromTagged("base").moveTo(0,r - height/2).rect(outer_d, height - outer_d).extrude(self.pendulum_holder_thick)
+        collet = collet.workplaneFromTagged("base").moveTo(0, outer_d - height).circle(r).extrude(self.pendulum_holder_thick)
+
+        #square bit that slots over arbour
+        collet = collet.cut(cq.Workplane("XY").rect(square_size, square_size).extrude(self.pendulum_holder_thick))
+
+        #means to hold end of pendulum made of threaded rod
+        collet = collet.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick/2).translate((0,-square_side_length/2-gap_between_square_and_pendulum_hole)))
+
+        #means to hold screw that will hold this in place
+        collet = collet.cut(self.collet_screws.getCutter(length=outer_d / 2, headSpaceLength=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
+        collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.pendulum_holder_thick / 2)))
+
 
         return collet
 
@@ -789,9 +823,10 @@ class ArbourForPlate:
             cylinder_r = self.bearing.innerD / 2
             square_side_length = math.sqrt(2) * cylinder_r
 
-            collet = self.get_anchor_collet(self.bearing, square_side_length)
+            collet = self.get_anchor_collet(square_side_length)
 
             shapes["collet"]=collet
+            shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length)
 
             if self.escapement_on_front:
 
@@ -845,6 +880,13 @@ class ArbourForPlate:
             if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR:
                 collet = shapes["collet"]
                 assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
+
+            pendulum_z = -self.pendulum_sticks_out
+
+            if self.pendulum_at_front:
+                pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
+
+            assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
 
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         else:

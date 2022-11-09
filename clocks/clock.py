@@ -2158,8 +2158,8 @@ class Assembly:
         if not self.plates.pendulumAtFront:
             pendulumHolderBaseZ = -self.plates.pendulumSticksOut - self.pendulum.pendulumTopThick/2
 
-
-        clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], pendulumHolderBaseZ)))
+        # if self.plates.pendulumFixing == PendulumFixing.FRICTION_ROD:
+        #     clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], pendulumHolderBaseZ)))
 
         pendulumRodCentreZ = pendulumHolderBaseZ + self.pendulum.pendulumTopThick / 2
         pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick / 2

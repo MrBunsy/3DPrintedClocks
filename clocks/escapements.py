@@ -2007,45 +2007,7 @@ class Pendulum:
 
         return pendulum
 
-    @staticmethod
-    def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
-        '''
-        a square hole with rod space below it that can hold the top of a pendulum, top of holder is at 0,0
-        '''
-        shape = cq.Workplane("XY")
-
-        #a square hole that can fit the end of the pendulum rod with two nuts on it
-        holeStartY = 0
-        holeHeight = getNutHeight(pendulum_rod_d, nyloc=True) + getNutHeight(pendulum_rod_d) + 1
-
-        nutD = getNutContainingDiameter(pendulum_rod_d)
-
-        width = nutD*1.5
-
-        space = cq.Workplane("XY").moveTo(0, holeStartY - holeHeight / 2).rect(width, holeHeight).extrude(1000).translate((0, 0, z - nutD - 1))
-        shape = shape.add(space)
-
-        # I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
-        extraRodSpace = 1
-
-        extraSpaceForRod = 0.1
-        extraSpaceForNut = 0.2
-        #
-        rod = cq.Workplane("XZ").tag("base").moveTo(0,z - extraRodSpace).circle(pendulum_rod_d / 2 + extraSpaceForRod / 2).extrude(100)
-        # add slot for rod to come in and out
-        rod = rod.workplaneFromTagged("base").moveTo(0, z - extraRodSpace+500).rect(pendulum_rod_d + extraSpaceForRod, 1000).extrude(100)
-
-        rod = rod.translate((0, holeStartY, 0))
-
-        shape = shape.add(rod)
-
-        nutThick = getNutHeight(pendulum_rod_d, nyloc=True)
-
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, z).polygon(6, nutD + extraSpaceForNut).extrude(nutThick).translate((0, holeStartY - holeHeight, 0))
-        shape = shape.add(nutSpace2)
-
-        return shape
 
     def getPendulumForRod(self, holeD=3, forPrinting=True):
         '''
