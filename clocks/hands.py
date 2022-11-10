@@ -134,7 +134,7 @@ class Hands:
         #first colour is default
         if self.style == HandStyle.XMAS_TREE:
             #green leaves, red tinsel, brown trunk
-            return ["brown", "green", "red"]
+            return ["brown", "green", "red", "gold"]
 
         return [None]
 
@@ -218,7 +218,8 @@ class Hands:
 
             leaves = cq.Workplane("XY").tag("base")
             tinsel = cq.Workplane("XY").tag("base")
-            # tinsel_circles = cq.Workplane("XY").tag("base")
+            baubles = cq.Workplane("XY").tag("base")
+            bauble_r = self.length*0.03
             tinsel_thick=length*0.02
 
             hand = hand.workplaneFromTagged("base").moveTo(0, trunkEnd/2).rect(trunkWidth, trunkEnd).extrude(thick)
@@ -251,16 +252,27 @@ class Hands:
 
             for circle_centre in tinsel_circle_centres:
                 circle_r = length-trunkEnd
-                tinsel=tinsel.moveTo(circle_centre[0], circle_centre[1]).circle(circle_r).circle(circle_r - tinsel_thick).extrude(thick)
+                tinsel=tinsel.workplaneFromTagged("base").moveTo(circle_centre[0], circle_centre[1]).circle(circle_r).circle(circle_r - tinsel_thick).extrude(thick)
+
+            bauble_positions = [(leafyWidth*0.1, length*0.5),(-leafyWidth*0.1, length*0.75)]
+
+            for pos in bauble_positions:
+                baubles =baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bauble_r).extrude(thick)
+                baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1]+base_r*0.3).rect(bauble_r*0.3,bauble_r).extrude(thick)
 
             #
             tinsel = tinsel.intersect(leaves)
             if useTinsel:
 
                 leaves = leaves.cut(tinsel)
+                # baubles = baubles.cut(tinsel)
+                tinsel = tinsel.cut(baubles)
+
+            leaves = leaves.cut(baubles)
 
             if colour is None:
                 hand = hand.add(leaves)
+                hand = hand.add(baubles)
                 if useTinsel:
                     hand = hand.add(tinsel)
             elif colour == "brown":
@@ -272,6 +284,9 @@ class Hands:
                 need_base_r=False
             elif colour == "red":
                 hand = tinsel
+                need_base_r = False
+            elif colour == "gold":
+                hand = baubles
                 need_base_r = False
 
 
