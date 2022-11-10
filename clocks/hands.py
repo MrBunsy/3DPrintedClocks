@@ -207,7 +207,7 @@ class Hands:
             trunkWidth = self.length * 0.075
             leafyWidth = length*0.5
             trunkEnd = length*0.4
-            useTinsel = False
+            useTinsel = True
             if minute:
                 leafyWidth*=0.6
             if hour:
@@ -218,6 +218,8 @@ class Hands:
 
             leaves = cq.Workplane("XY").tag("base")
             tinsel = cq.Workplane("XY").tag("base")
+            # tinsel_circles = cq.Workplane("XY").tag("base")
+            tinsel_thick=length*0.02
 
             hand = hand.workplaneFromTagged("base").moveTo(0, trunkEnd/2).rect(trunkWidth, trunkEnd).extrude(thick)
 
@@ -242,8 +244,14 @@ class Hands:
                     topLeft = topRight = (0, length)
                 leaves = leaves.workplaneFromTagged("base").moveTo(topLeft[0], topLeft[1]).sagittaArc(endPoint=left, sag=sag/2).sagittaArc(endPoint=right, sag=-sag).\
                     sagittaArc(endPoint=topRight, sag=sag/2).close().extrude(thick)
-                tinsel = tinsel.workplaneFromTagged("base").moveTo(tinselTopLeft[0], tinselTopLeft[1]).lineTo(left[0], left[1]).sagittaArc(endPoint=right, sag=-sag). \
-                    lineTo(tinselTopRight[0], tinselTopRight[1]).sagittaArc(endPoint=tinselTopLeft, sag=sag).close().extrude(thick)
+                # tinsel = tinsel.workplaneFromTagged("base").moveTo(tinselTopLeft[0], tinselTopLeft[1]).lineTo(left[0], left[1]).sagittaArc(endPoint=right, sag=-sag). \
+                #     lineTo(tinselTopRight[0], tinselTopRight[1]).sagittaArc(endPoint=tinselTopLeft, sag=sag).close().extrude(thick)
+
+            tinsel_circle_centres = [(leafyWidth*0.6, length),(-leafyWidth*0.6, length*1.2),(leafyWidth*0.6, length*1.4)]
+
+            for circle_centre in tinsel_circle_centres:
+                circle_r = length-trunkEnd
+                tinsel=tinsel.moveTo(circle_centre[0], circle_centre[1]).circle(circle_r).circle(circle_r - tinsel_thick).extrude(thick)
 
             #
             tinsel = tinsel.intersect(leaves)
