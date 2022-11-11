@@ -1146,6 +1146,8 @@ class CordWheel:
         self.screwThreadMetric=screwThreadMetric
 
         '''
+        measurements for the 15mm inner diameter bearing, needs the extra outer d so it's not too tight a fit - since it's plastic I don't want it squashed in like the metal ones
+        since I fear that might increase friction
         bearingInnerD=15, bearingHeight=5, bearingLip=2.5, bearingOuterD=24.2,
         '''
 
@@ -1396,7 +1398,7 @@ class CordWheel:
             holeR = self.bearing.innerD/2 + self.bearingWiggleRoom
 
             #add small ring to keep this further away from the bearing
-            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearing.innerD/2 + self.bearing.bearingHolderLip).extrude(self.beforeBearingExtraHeight)
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
             countersink = self.getScrewCountersinkCutter(capThick + extraThick)
             cap = cap.cut(countersink)

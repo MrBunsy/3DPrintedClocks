@@ -718,7 +718,7 @@ class BearingInfo():
 
     TODO - add and use safeouterD (where we can come into contact with the outside of the bearing without grating on the inner bit which will rotate)
     '''
-    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25):
+    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05):
         self.bearingOuterD = bearingOuterD
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
         #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
@@ -728,6 +728,11 @@ class BearingInfo():
         self.innerD=innerD
         #how large can something that comes into contact with the bearing (from the rod) be
         self.innerSafeD = innerSafeD
+        #TODO large parts of the code use `bearingInfo.innerD + bearingInfo.bearingHolderLip*2`, which contradicts my old comment above.
+        #need to measure some bearings and find out what was right! Then switch everything over to use innerSafeD and outerSafeD
+        self.outerSafeD = self.bearingOuterD - bearingHolderLip*2
+        #subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
+        self.innerDWiggleRoom = innerDWiggleRoom
 
 
 
@@ -774,7 +779,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
     width = nutD*1.5
 
-    space = cq.Workplane("XY").moveTo(0, holeStartY - holeHeight / 2).rect(width, holeHeight).extrude(1000).translate((0, 0, z - nutD - 1))
+    space = cq.Workplane("XY").moveTo(0, holeStartY - holeHeight / 2).rect(width, holeHeight).extrude(1000).translate((0, 0, z - nutD))
     shape = shape.add(space)
 
     # I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
