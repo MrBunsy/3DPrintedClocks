@@ -745,8 +745,10 @@ def getBearingInfo(innerD):
     if innerD == 4:
         return BearingInfo(bearingOuterD=13, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 10:
-        return BearingInfo(bearingOuterD=19, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
+        #19.2 is untested, using the extra 0.2 that worked from the 15mm ID plastic bearing
+        return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
+        #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD)
 
 
