@@ -5,9 +5,11 @@ import math
 import random
 import numpy as np
 
-if 'show_object' not in globals():
-    def show_object(*args, **kwargs):
-        pass
+from .utility import *
+
+# if 'show_object' not in globals():
+#     def show_object(*args, **kwargs):
+#         pass
 
 '''
 Plan is for a procedularily generated maple leaf, for use on pendulums or decoration of cuckoo clocks!
@@ -534,6 +536,69 @@ def toyPendulumBob(diameter=30, thick=7.5, withHoleD=2):
     return bob
 
 
+class HollyLeaf:
+
+    def __init__(self, length=40, seed=-1):
+        if seed >=0:
+            random.seed(seed)
+        self.length = length
+        self.width = length*random.uniform(0.6, 0.7)
+        self.spikes = random.randint(4,6)
+
+        #if we imagine the spikes of the leaf as being on a circle centred off to one side
+        #this is a circle of radius r, calculated by a sagitta of our choosing, s.
+        #the centre of the circle is therefore off to one side by r-s
+        #with the help of wiki:
+        s = self.width*random.uniform(0.4, 0.6)
+        l = self.length
+        self.edge_circle_r = s/2 + (l**2)/(8*s)
+        self.edge_circle_offset = self.edge_circle_r - s
+        self.edge_arc_angle = 2 * math.asin(l/(2*self.edge_circle_r))
+        self.spike_angle = self.edge_arc_angle / (self.spikes + 1)
+        self.spike_sagitta = 0.2* self.length / self.spikes
+
+    def get_2d(self):
+        leaf = cq.Workplane("XY")
+
+
+        # cq.Workplane("XZ").circle(withHoleD / 2).sagittaArc()
+
+
+        top_angle = math.pi/2 - (math.pi - self.edge_arc_angle)/2
+        angle = top_angle
+        leaf = leaf.moveTo(0,self.length)
+
+        centre = (0, self.length/2)
+        circle_centre = (centre[0] - self.edge_circle_offset, centre[1])
+        spike_points_RHS = []
+        for i in range(self.spikes):
+            #RHS
+            angle = top_angle - i * self.spike_angle
+            next_angle = top_angle - (i+1) * self.spike_angle
+            spike_pos = npToSet(np.add(circle_centre, polar(next_angle, self.edge_circle_r)))
+            spike_points = spike_points_RHS.append(spike_pos)
+
+
+        spike_points = spike_points_RHS[:]
+        spike_points.append((0,0))
+
+        for point in reversed(spike_points_RHS):
+            spike_points.append((-point[0], point[1]))
+
+        spike_points.append((0, self.length))
+
+        for point in spike_points:
+            # print(spike_pos)
+            leaf = leaf.sagittaArc(endPoint=point, sag=-self.spike_sagitta)
+            # leaf = leaf.add(cq.Workplane("XY").moveTo(circle_centre[0], circle_centre[1]).lineTo(spike_pos[0], spike_pos[1]))
+            # leaf = leaf.lineTo(spike_pos[0], spike_pos[1])
+
+        leaf = leaf.close()
+        # leaf = leaf.add(cq.Workplane("XY").moveTo(-self.edge_circle_offset, self.length/2).circle(self.edge_circle_r))
+        # leaf = leaf.extrude(10)
+        return leaf
+
+
 # leaf = maple2(55,withHoleD=2.5)
 # leaf_small = maple2(45,withHoleD=3)
 # crown_leaf2 = maple2(60,2)
@@ -541,9 +606,9 @@ def toyPendulumBob(diameter=30, thick=7.5, withHoleD=2):
 # leaf2 = customLeaf(length=30-0.75, thick=3,cut=False)
 # show_object(leaf2)
 
-bob=toyPendulumBob()
-show_object(bob)
-exporters.export(bob, "../out/toy_bob_with_leaf.stl")
+# bob=toyPendulumBob()
+# show_object(bob)
+# exporters.export(bob, "../out/toy_bob_with_leaf.stl")
 
 #exporters.export(leaf2, "../out/leaftest.stl")
 

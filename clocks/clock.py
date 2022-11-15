@@ -783,6 +783,7 @@ class SimpleClockPlates:
         self.backPlateFromWall = backPlateFromWall
         self.fixingScrews = fixingScrews
         if self.fixingScrews is None:
+            #longest pozihead countersunk screws I can easily get are 25mm long. I have some 40mm flathead which could be deployed if really needed
             self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True, length=25)
 
         #how much of the screw should be in the standoff, with the rest in the back plate
@@ -793,7 +794,6 @@ class SimpleClockPlates:
         self.gearGap = 3
         self.smallGearGap = 2
 
-        # self.holderInnerD=self.bearingOuterD - self.bearingHolderLip*2
         #if angles are not given, assume clock is entirely vertical
 
         if anglesFromMinute is None:
@@ -1045,7 +1045,7 @@ class SimpleClockPlates:
         self.weightOnRightSide = self.goingTrain.isWeightOnTheRight()
 
         #absolute z position for the embedded nuts for the front plate to be held on (from before there was a wall standoff or an extra front plate)
-        self.embeddedNutHeight = self.getPlateThick(back=True) + self.plateDistance  + self.getPlateThick(back=False) - (self.fixingScrews.length - 10)
+        self.embeddedNutHeightForFrontPlateFixings = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False) - (self.fixingScrews.length - 7.5)
 
         self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.holderWide = self.getPillarInfo()
         #fixing positions to screw front plate onto the pillars
@@ -1591,11 +1591,11 @@ class SimpleClockPlates:
         #screws to fix the plates together, with embedded nuts in the pillars
         embeddedNutHeight =self.fixingScrews.getNutHeight()*1.4
         for fixingPos in fixingPositions:
-
+            #holes and embedded nuts for the screws that hold the front plate to the back plate's pillars
             if back:
                 #embedded nuts!
                 #extra thick layer because plates are huge and usually printed with 0.3 layer height
-                plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, height=embeddedNutHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeight)))
+                plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, height=embeddedNutHeight, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeightForFrontPlateFixings)))
 
                 plate = plate.cut(self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
             else:
@@ -1680,9 +1680,8 @@ class SimpleClockPlates:
         wallThick = self.bearingWallThick
         # diameter = bearingInfo.bearingOuterD + wallThick*2
         outerR = bearingInfo.bearingOuterD/2 + wallThick
-        innerInnerR = bearingInfo.innerD/2 + bearingInfo.bearingHolderLip
+        innerInnerR = bearingInfo.outerSafeD/2
         innerR = bearingInfo.bearingOuterD/2
-        # holder = cq.Workplane("XY").circle(diameter/2).circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
         holder = cq.Workplane("XY").circle(outerR).extrude(height)
 
         # holder = holder.faces(">Z").workplane().circle(diameter/2).circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
@@ -1705,10 +1704,10 @@ class SimpleClockPlates:
         height = self.getPlateThick(back)
 
         if bearingOnTop:
-            punch = cq.Workplane("XY").circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
+            punch = cq.Workplane("XY").circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.bearingHeight)
             punch = punch.faces(">Z").workplane().circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
         else:
-            punch = getHoleWithHole(bearingInfo.innerD + bearingInfo.bearingHolderLip*2,bearingInfo.bearingOuterD, bearingInfo.bearingHeight, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.innerD/2 + bearingInfo.bearingHolderLip).extrude(height - bearingInfo.bearingHeight)
+            punch = getHoleWithHole(bearingInfo.outerSafeD,bearingInfo.bearingOuterD, bearingInfo.bearingHeight, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.bearingHeight)
 
         return punch
 
@@ -1844,8 +1843,8 @@ class SimpleClockPlates:
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
             cordWheel = self.goingTrain.poweredWheel
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
-            cordBearingHole = getHoleWithHole(cordWheel.bearing.innerD + cordWheel.bearing.bearingHolderLip * 2, cordWheel.bearing.bearingOuterD, cordWheel.bearing.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)
-            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearing.innerD/2 + cordWheel.bearing.bearingHolderLip).extrude(plateThick)
+            cordBearingHole = getHoleWithHole(cordWheel.bearing.outerSafeD, cordWheel.bearing.bearingOuterD, cordWheel.bearing.bearingHeight ,layerThick=LAYER_THICK_EXTRATHICK)
+            cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearing.outerSafeD/2).extrude(plateThick)
 
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 

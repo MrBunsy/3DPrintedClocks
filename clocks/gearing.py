@@ -755,8 +755,8 @@ class ArbourForPlate:
         self.pendulum_holder_thick = 15
         self.pendulum_fixing_extra_space = 0.2
 
-        #distance between back of back plate and front of front plate
-        self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick + self.endshake)
+        #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
+        self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
 
     def get_anchor_collet(self, square_side_length):
         '''

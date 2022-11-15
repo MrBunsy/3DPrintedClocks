@@ -190,7 +190,7 @@ class WeightShell:
         #internal diameter
         self.diameter=diameter
         self.height = height
-        self.wallThick=0.9#0.45
+        self.wallThick=0.875#0.45
         #if True then (probably because it's too tall...) print in two sections that slot over top and bottom
         self.twoParts=twoParts
         self.holeD=holeD
@@ -545,7 +545,7 @@ class BearingPulley:
 
         if self.bearing is not None:
             hole = hole.translate((0,0,self.bearingHolderThick))
-            hole = hole.add(cq.Workplane("XY").circle(self.bearing.innerD/2+self.bearing.bearingHolderLip).extrude(1000))
+            hole = hole.add(cq.Workplane("XY").circle(self.bearing.bearingOuterD/2).extrude(1000))
 
         pulley = pulley.cut(hole)
 

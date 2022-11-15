@@ -722,14 +722,13 @@ class BearingInfo():
         self.bearingOuterD = bearingOuterD
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
         #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
-        #should probably refactor to outerSafeD, this is how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
+        #deprecated, use outerSafeD, this was how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
         self.bearingHolderLip = bearingHolderLip
         self.bearingHeight = bearingHeight
         self.innerD=innerD
         #how large can something that comes into contact with the bearing (from the rod) be
         self.innerSafeD = innerSafeD
-        #TODO large parts of the code use `bearingInfo.innerD + bearingInfo.bearingHolderLip*2`, which contradicts my old comment above.
-        #need to measure some bearings and find out what was right! Then switch everything over to use innerSafeD and outerSafeD
+        #something that can touch the outside of the bearing can also touch the front/back of the bearing up to this diameter without fouling on anything that moves when it rotates
         self.outerSafeD = self.bearingOuterD - bearingHolderLip*2
         #subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
         self.innerDWiggleRoom = innerDWiggleRoom
@@ -741,7 +740,7 @@ def getBearingInfo(innerD):
     Get some stock bearings
     '''
     if innerD == 3:
-        return BearingInfo()
+        return BearingInfo(bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25)
     if innerD == 4:
         return BearingInfo(bearingOuterD=13, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 10:
