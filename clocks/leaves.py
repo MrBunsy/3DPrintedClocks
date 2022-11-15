@@ -600,13 +600,14 @@ class HollyLeaf:
 
 class Wreath:
 
-    def __init__(self, diameter=120, thick=5):
+    def __init__(self, diameter=120, thick=5, berry_diameter=8):
         self.diameter = diameter
         self.thick = thick
         self.leaf_length = diameter*0.2
         self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(30)]
+        self.berry_diameter = berry_diameter
 
-    def get_wreath(self):
+    def get_leaves(self):
         wreath = cq.Workplane("XY")
 
         angle = 0
@@ -618,6 +619,18 @@ class Wreath:
             wreath = wreath.add(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), radToDeg(-math.pi/2 + leaf_angle)).translate((pos[0], pos[1])))
 
         return wreath
+
+    def get_berries(self):
+        angle = 0.5 * math.pi * 2 / len(self.leaves)
+
+        berries = cq.Workplane("XY")
+
+        for leaf in self.leaves:
+            angle += math.pi * 2 / len(self.leaves)
+            pos = polar(angle + random.random()*0.1*math.pi * 2 / len(self.leaves), self.diameter / 2 + self.berry_diameter* random.uniform(0.5, 0.6))
+            berries = berries.moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
+
+        return berries
 
 # leaf = maple2(55,withHoleD=2.5)
 # leaf_small = maple2(45,withHoleD=3)

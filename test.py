@@ -271,14 +271,17 @@ if False:
 # holly_leaf = HollyLeaf()
 #
 # show_object(holly_leaf.get_2d())
-
-wreath = Wreath(diameter=120, thick=2)
+random.seed(1)
+wreath = Wreath(diameter=120, thick=1.6)
 
 # show_object(wreath.get_wreath())
 
 pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)
 
-pretty_hand_avoider = ItemWithCosmetics(shape = pend.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics={"green": wreath.get_wreath()})
+cosmetics={"green": wreath.get_leaves(),
+           "red": wreath.get_berries()}
+
+pretty_hand_avoider = ItemWithCosmetics(shape = pend.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":1.6})
 
 for shape in pretty_hand_avoider.get_models():
     show_object(shape)

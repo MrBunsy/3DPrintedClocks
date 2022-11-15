@@ -5,7 +5,7 @@ from cadquery import exporters
 
 
 class ItemWithCosmetics:
-    def __init__(self, shape, name, background_colour,cosmetics, offset = None, colour_thick=LAYER_THICK*2):
+    def __init__(self, shape, name, background_colour,cosmetics, offset = None, colour_thick=LAYER_THICK*2, colour_thick_overrides=None):
         '''
         Take a shape of a useful part of the clock and add the cosmetics to the front for printing with the single extruder multi material technique
         shape is a caqdquery 3d shape
@@ -24,6 +24,7 @@ class ItemWithCosmetics:
             offset = (0,0)
         self.offset = offset
         self.cosmetics = cosmetics
+        self.colour_thick_overrides = colour_thick_overrides
 
         self.generate_shapes()
 
@@ -33,7 +34,10 @@ class ItemWithCosmetics:
         for colour in self.cosmetics:
             cosmetic = self.cosmetics[colour].translate(self.offset)
             total_shape = total_shape.add(cosmetic)
-            thin = cosmetic.intersect(cq.Workplane("XY").rect(1000000, 1000000).extrude(self.colour_thick))
+            thick = self.colour_thick
+            if colour in self.colour_thick_overrides:
+                thick = self.colour_thick_overrides[colour]
+            thin = cosmetic.intersect(cq.Workplane("XY").rect(1000000, 1000000).extrude(thick))
             self.final_shapes[colour] = thin
 
         colours = self.cosmetics.keys()
