@@ -3,7 +3,8 @@ from clocks.escapements import *
 from clocks.striking import *
 from clocks.clock import *
 from clocks.utility import *
-from clocks.leaves import HollyLeaf
+from clocks.leaves import HollyLeaf, Wreath
+from clocks.cosmetics import *
 
 outputSTL = False
 
@@ -267,10 +268,23 @@ if False:
 # show_object(hands.getHand(hour=False, second=False, generate_outline=True).translate((50,0,0)))
 
 
-holly_leaf = HollyLeaf()
+# holly_leaf = HollyLeaf()
+#
+# show_object(holly_leaf.get_2d())
 
-show_object(holly_leaf.get_2d())
+wreath = Wreath(diameter=120, thick=2)
 
+# show_object(wreath.get_wreath())
+
+pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)
+
+pretty_hand_avoider = ItemWithCosmetics(shape = pend.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics={"green": wreath.get_wreath()})
+
+for shape in pretty_hand_avoider.get_models():
+    show_object(shape)
+
+if outputSTL:
+    pretty_hand_avoider.output_STLs(name="test", path="out")
 # show_object(cq.Workplane("XY").circle(10).extrude(10))
 
 # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))

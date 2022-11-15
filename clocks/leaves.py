@@ -555,7 +555,7 @@ class HollyLeaf:
         self.edge_circle_offset = self.edge_circle_r - s
         self.edge_arc_angle = 2 * math.asin(l/(2*self.edge_circle_r))
         self.spike_angle = self.edge_arc_angle / (self.spikes + 1)
-        self.spike_sagitta = 0.2* self.length / self.spikes
+        self.spike_sagitta = 0.15* self.length / self.spikes
 
     def get_2d(self):
         leaf = cq.Workplane("XY")
@@ -598,6 +598,26 @@ class HollyLeaf:
         # leaf = leaf.extrude(10)
         return leaf
 
+class Wreath:
+
+    def __init__(self, diameter=120, thick=5):
+        self.diameter = diameter
+        self.thick = thick
+        self.leaf_length = diameter*0.2
+        self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(30)]
+
+    def get_wreath(self):
+        wreath = cq.Workplane("XY")
+
+        angle = 0
+
+        for leaf in self.leaves:
+            angle += math.pi*2 / len(self.leaves)
+            leaf_angle = angle + random.uniform(-math.pi*0.05, math.pi*0.05)
+            pos = polar(angle, self.diameter/2)
+            wreath = wreath.add(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), radToDeg(-math.pi/2 + leaf_angle)).translate((pos[0], pos[1])))
+
+        return wreath
 
 # leaf = maple2(55,withHoleD=2.5)
 # leaf_small = maple2(45,withHoleD=3)
