@@ -73,7 +73,20 @@ weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidB
 
 show_object(assembly.getClock())
 
+leaf_thick=1.6
+pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR*2)
+
+pretty_bob = clock.ItemWithCosmetics(pendulum.getBob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
+
+wreath = clock.Wreath(diameter=pendulum.handAvoiderInnerD, thick=leaf_thick)
+cosmetics={"green": wreath.get_leaves(),
+           "red": wreath.get_berries()}
+
+pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
+
 if outputSTL:
+    pretty_bob.output_STLs(clockName,clockOutDir)
+    pretty_hand_avoider.output_STLs(clockName,clockOutDir)
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)

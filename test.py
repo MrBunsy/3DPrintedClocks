@@ -276,8 +276,8 @@ random.seed(1)
 #
 # # show_object(wreath.get_wreath())
 #
-pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)#, bobD=80, bobThick=10)
-# pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
+# pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120, bobD=80, bobThick=10)
+pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
 #
 # cosmetics={"green": wreath.get_leaves(),
@@ -296,13 +296,14 @@ pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)#, bobD=80, 
 # show_object(holly_sprig.get_leaves())
 # show_object(holly_sprig.get_berries())
 
-pud = ChristmasPudding(thick=1.6)
+leaf_thick = 1.6
+pud = ChristmasPudding(thick=leaf_thick, diameter=pend.bobR*2)
 cosmetics = pud.get_cosmetics()
 
 for colour in cosmetics:
     show_object(cosmetics[colour])
-bob = pend.getBob(hollow=False)
-pretty_bob = ItemWithCosmetics(bob, name="bob", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":1.6})
+bob = pend.getBob(hollow=True)
+pretty_bob = ItemWithCosmetics(bob, name="bob", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
 
 if outputSTL:
     pretty_bob.output_STLs(name="test", path="out")
