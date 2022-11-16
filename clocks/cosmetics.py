@@ -75,6 +75,7 @@ class ItemWithCosmetics:
 class ChristmasPudding:
     '''
     Centred at (0,0)
+    Note that the brown pudding appears to produce a malformed STL when a rectangle is cut in the centre. It still slices okay
     '''
     def __init__(self, diameter=100, thick=5, cut_rect_width=-1, cut_rect_height=-1):
         self.diameter = diameter
@@ -123,7 +124,8 @@ class ChristmasPudding:
         y_offset = 0
 
         if self.cut_rect_height > 0 and self.cut_rect_width > 0:
-            y_offset = self.cut_rect_height/2 + y_scale
+            #tiny offset so we don't touch the rect with the edge of a curve, trying to track down the cause of a malformed STL when cutting a rect
+            y_offset = self.cut_rect_height/2 + y_scale + 0.6
 
 
         for t in np.linspace(0, math.pi * peaks * 2, num=100):

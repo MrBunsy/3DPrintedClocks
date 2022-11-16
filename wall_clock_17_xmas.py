@@ -73,8 +73,8 @@ weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidB
 
 show_object(assembly.getClock())
 
-leaf_thick=1.6
-pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR*2, cut_rect_width=pendulum.gapWidth, cut_rect_height=pendulum.gapHeight)
+leaf_thick=1
+pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR*2, cut_rect_width=pendulum.gapWidth+0.1, cut_rect_height=pendulum.gapHeight+0.1)
 
 pretty_bob = clock.ItemWithCosmetics(pendulum.getBob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
 
