@@ -624,11 +624,21 @@ class Wreath:
         angle = 0.5 * math.pi * 2 / len(self.leaves)
 
         berries = cq.Workplane("XY")
+        berry_bunches = round(len(self.leaves)/3)
+        berry_arc_angle = self.berry_diameter/(self.diameter/2)
+        for bunch in range(berry_bunches):
+            angle += math.pi * 2 / berry_bunches
+            angle_0 = angle - berry_arc_angle*random.uniform(0.4,0.5)
+            angle_1 = angle + berry_arc_angle*random.uniform(0.4,0.5)
 
-        for leaf in self.leaves:
-            angle += math.pi * 2 / len(self.leaves)
-            pos = polar(angle + random.random()*0.1*math.pi * 2 / len(self.leaves), self.diameter / 2 + self.berry_diameter* random.uniform(0.5, 0.6))
-            berries = berries.moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
+            pos_0 = polar(angle_0, self.diameter / 2 + self.berry_diameter * random.uniform(0.5, 0.6))
+            pos_1 = polar(angle_1, self.diameter / 2 + self.berry_diameter * random.uniform(0.5, 0.6))
+            pos_2 = polar(angle, self.diameter / 2 + self.berry_diameter * random.uniform(0.5, 0.6) + self.berry_diameter*0.75)
+            positions = [pos_0, pos_1, pos_2]
+
+            berries_in_bunch = round(random.uniform(2,3))
+            for berry in range(berries_in_bunch):
+                berries = berries.moveTo(positions[berry][0], positions[berry][1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
 
         return berries
 
