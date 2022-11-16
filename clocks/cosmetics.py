@@ -76,16 +76,22 @@ class ChristmasPudding:
     '''
     Centred at (0,0)
     '''
-    def __init__(self, diameter=100, thick=5):
+    def __init__(self, diameter=100, thick=5, cut_rect_width=-1, cut_rect_height=-1):
         self.diameter = diameter
         self.sprig = HollySprig(thick=thick)
         self.thick = thick
+        #as this is intended for the bob, cut a hole for the bob nut
+        self.cut_rect_width =cut_rect_width
+        self.cut_rect_height =cut_rect_height
 
         self.sprig_offset = (0, self.diameter*0.4)
         self.leaves = self.sprig.get_leaves().translate(self.sprig_offset)
         self.berries = self.sprig.get_berries().translate(self.sprig_offset)
 
         self.icing = self.gen_icing()
+
+
+
 
 
         self.currents = self.gen_currents()
@@ -98,21 +104,34 @@ class ChristmasPudding:
         self.pud = self.pud.cut(self.icing).cut(self.currents)
         self.icing = self.icing.cut(self.leaves).cut(self.berries)
 
+        if self.cut_rect_height > 0 and self.cut_rect_width > 0:
+            rect_hole = cq.Workplane("XY").rect(self.cut_rect_width, self.cut_rect_height).extrude(self.thick)
+            self.currents = self.currents.cut(rect_hole)
+            self.pud = self.pud.cut(rect_hole)
+            self.icing = self.icing.cut(rect_hole)
+
+
 
     def gen_icing(self):
         points = []
 
-        peaks= 3
+        peaks= 3.5
 
         x_scale = self.diameter/(math.pi * peaks * 2)
         x_offset = - self.diameter/2
-        y_scale = self.diameter*0.075
+        y_scale = self.diameter*0.05
+        y_offset = 0
+
+        if self.cut_rect_height > 0 and self.cut_rect_width > 0:
+            y_offset = self.cut_rect_height/2 + y_scale
 
 
         for t in np.linspace(0, math.pi * peaks * 2, num=100):
-            points.append((t * x_scale + x_offset, math.sin(t)* y_scale))
+            points.append((t * x_scale + x_offset, math.sin(t)* y_scale + y_offset))
 
-        icing = cq.Workplane("XY").spline(listOfXYTuple=points).radiusArc((-self.diameter/2,0),-self.diameter/2).close().extrude(self.thick)
+        ##.radiusArc((-self.diameter/2,0),-self.diameter/2)
+        icing = cq.Workplane("XY").spline(listOfXYTuple=points).line(0,self.diameter).line(-self.diameter,0).close().extrude(self.thick)
+        icing = icing.intersect( cq.Workplane("XY").circle(self.diameter/2).extrude(self.thick))
 
         return icing
 

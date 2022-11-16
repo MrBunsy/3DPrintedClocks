@@ -295,9 +295,9 @@ pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crut
 #
 # show_object(holly_sprig.get_leaves())
 # show_object(holly_sprig.get_berries())
-
+pendulum = pend
 leaf_thick = 1.6
-pud = ChristmasPudding(thick=leaf_thick, diameter=pend.bobR*2)
+pud = ChristmasPudding(thick=leaf_thick, diameter=pend.bobR*2, cut_rect_width=pendulum.gapWidth, cut_rect_height=pendulum.gapHeight)
 cosmetics = pud.get_cosmetics()
 
 for colour in cosmetics:

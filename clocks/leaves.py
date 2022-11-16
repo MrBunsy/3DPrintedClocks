@@ -684,7 +684,7 @@ class Wreath:
         return wreath
 
     def gen_berries(self):
-        angle = 0.5 * math.pi * 2 / len(self.leaves)
+        angle = math.pi/2# 0.5 * math.pi * 2 / len(self.leaves)
 
         berries = cq.Workplane("XY")
         berry_bunches = round(len(self.leaves)/3)
