@@ -604,6 +604,8 @@ class HollySprig:
     '''
     a 2D pair of holly leaves with a small bunch of berries, intended to be added to the top of a decorative christmas pud
     centred around the bunch of berries
+
+    Randomly generated at object creation time, getting leaves and berries after that will always result in the same shapes
     '''
     def __init__(self, leaf_length=50, berry_diameter=8, thick=3):
         self.leaf_length = leaf_length
@@ -648,6 +650,8 @@ class HollySprig:
 class Wreath:
     '''
     a 2D holly wreath intended to be a cosmetic addition to the hand avoider
+
+    Randomly generated at object creation time, getting leaves and berries after that will always result in the same shapes
     '''
 
     def __init__(self, diameter=120, thick=5, berry_diameter=8):
@@ -656,8 +660,17 @@ class Wreath:
         self.leaf_length = diameter*0.2
         self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(30)]
         self.berry_diameter = berry_diameter
+        self.leaves_shape = self.gen_leaves()
+        self.berries_shape = self.gen_berries()
+        self.leaves_shape = self.leaves_shape.cut(self.berries_shape)
 
     def get_leaves(self):
+        return self.leaves_shape
+
+    def get_berries(self):
+        return self.berries_shape
+
+    def gen_leaves(self):
         wreath = cq.Workplane("XY")
 
         angle = 0
@@ -670,7 +683,7 @@ class Wreath:
 
         return wreath
 
-    def get_berries(self):
+    def gen_berries(self):
         angle = 0.5 * math.pi * 2 / len(self.leaves)
 
         berries = cq.Workplane("XY")

@@ -276,7 +276,9 @@ random.seed(1)
 #
 # # show_object(wreath.get_wreath())
 #
-# pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)
+pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)#, bobD=80, bobThick=10)
+# pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
+
 #
 # cosmetics={"green": wreath.get_leaves(),
 #            "red": wreath.get_berries()}
@@ -288,12 +290,34 @@ random.seed(1)
 #
 # if outputSTL:
 #     pretty_hand_avoider.output_STLs(name="test", path="out")
+#
+# holly_sprig = HollySprig()
+#
+# show_object(holly_sprig.get_leaves())
+# show_object(holly_sprig.get_berries())
 
-holly_sprig = HollySprig()
+pud = ChristmasPudding(thick=1.6)
+cosmetics = pud.get_cosmetics()
 
-show_object(holly_sprig.get_leaves())
-show_object(holly_sprig.get_berries())
+for colour in cosmetics:
+    show_object(cosmetics[colour])
+bob = pend.getBob(hollow=False)
+pretty_bob = ItemWithCosmetics(bob, name="bob", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":1.6})
 
+if outputSTL:
+    pretty_bob.output_STLs(name="test", path="out")
+
+# points = []
+#
+# x_scale = 1
+# y_scale = 1
+#
+# for t in np.linspace(0, math.pi*4, num=50):
+#     points.append((t*x_scale, math.sin(t*y_scale)))
+#
+# print(points)
+#
+# show_object(cq.Workplane("XY").spline(listOfXYTuple=points))
 
 # show_object(cq.Workplane("XY").circle(10).extrude(10))
 
