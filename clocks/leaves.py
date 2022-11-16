@@ -537,7 +537,9 @@ def toyPendulumBob(diameter=30, thick=7.5, withHoleD=2):
 
 
 class HollyLeaf:
-
+    '''
+    A randomly generated holly leaf. currently only a 2D outline
+    '''
     def __init__(self, length=40, seed=-1):
         if seed >=0:
             random.seed(seed)
@@ -598,7 +600,55 @@ class HollyLeaf:
         # leaf = leaf.extrude(10)
         return leaf
 
+class HollySprig:
+    '''
+    a 2D pair of holly leaves with a small bunch of berries, intended to be added to the top of a decorative christmas pud
+    centred around the bunch of berries
+    '''
+    def __init__(self, leaf_length=50, berry_diameter=8, thick=3):
+        self.leaf_length = leaf_length
+        self.berry_diameter = berry_diameter
+        self.thick = thick
+        self.leaves = self.gen_leaves()
+        self.berries = self.gen_berries()
+
+        self.leaves = self.leaves.cut(self.berries)
+
+    def get_leaves(self):
+        return self.leaves
+
+    def get_berries(self):
+        return self.berries
+
+    def gen_leaves(self):
+        leaves = cq.Workplane("XY")
+
+        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1),-50))
+        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0, 0, 0), (0, 0, 1), 50))
+
+        return leaves
+
+    def gen_berries(self):
+        berries = cq.Workplane("XY").tag("base")
+
+        total_berries = 3
+        berry_angle = math.pi*2/total_berries
+
+        for berry in range(total_berries):
+            angle = math.pi/2 + berry_angle*berry
+
+            pos = polar(angle, self.berry_diameter*0.55)
+
+            berries = berries.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
+
+        return berries
+
+
+
 class Wreath:
+    '''
+    a 2D holly wreath intended to be a cosmetic addition to the hand avoider
+    '''
 
     def __init__(self, diameter=120, thick=5, berry_diameter=8):
         self.diameter = diameter

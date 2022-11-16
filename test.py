@@ -3,7 +3,7 @@ from clocks.escapements import *
 from clocks.striking import *
 from clocks.clock import *
 from clocks.utility import *
-from clocks.leaves import HollyLeaf, Wreath
+from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 
 outputSTL = False
@@ -272,22 +272,29 @@ if False:
 #
 # show_object(holly_leaf.get_2d())
 random.seed(1)
-wreath = Wreath(diameter=120, thick=1.6)
+# wreath = Wreath(diameter=120, thick=1.6)
+#
+# # show_object(wreath.get_wreath())
+#
+# pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)
+#
+# cosmetics={"green": wreath.get_leaves(),
+#            "red": wreath.get_berries()}
+#
+# pretty_hand_avoider = ItemWithCosmetics(shape = pend.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":1.6})
+#
+# for shape in pretty_hand_avoider.get_models():
+#     show_object(shape)
+#
+# if outputSTL:
+#     pretty_hand_avoider.output_STLs(name="test", path="out")
 
-# show_object(wreath.get_wreath())
+holly_sprig = HollySprig()
 
-pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120)
+show_object(holly_sprig.get_leaves())
+show_object(holly_sprig.get_berries())
 
-cosmetics={"green": wreath.get_leaves(),
-           "red": wreath.get_berries()}
 
-pretty_hand_avoider = ItemWithCosmetics(shape = pend.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":1.6})
-
-for shape in pretty_hand_avoider.get_models():
-    show_object(shape)
-
-if outputSTL:
-    pretty_hand_avoider.output_STLs(name="test", path="out")
 # show_object(cq.Workplane("XY").circle(10).extrude(10))
 
 # show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
