@@ -869,6 +869,10 @@ class ArbourForPlate:
     def get_assembled(self):
         '''
         Get a model that is relative to the back of the back plate of the clock and already in position (so you should just be able to add it straight to the model)
+
+        This is slowly refactoring the complex logic from the Arbour class to here. the ultimate aim is for the arbour class to be unaware of the plates
+        and this class be the only one with interactions with the plates
+        (might be an edge case for the escape wheel on the front?)
         '''
 
         assembly = cq.Workplane("XY")
@@ -892,6 +896,12 @@ class ArbourForPlate:
             assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
 
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
+        elif self.type == ArbourType.ESCAPE_WHEEL:
+            assembly = assembly.add(self.arbour.getAssembled())
+            assembly = assembly.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
+
+            if self.escapement_on_front:
+                assembly = assembly.add(self.arbour.getEscapeWheel(forPrinting=False).translate((self.bearing_position[0], self.bearing_position[1],self.total_plate_thickness + self.front_anchor_from_plate - self.arbour.escapement.getWheelBaseToAnchorBaseZ())))
         else:
             assembly = assembly.add(self.arbour.getAssembled())
 
@@ -1406,6 +1416,7 @@ class Arbour:
 
             return extendoArbour
         return None
+
 
     def getAssembled(self):
         '''
