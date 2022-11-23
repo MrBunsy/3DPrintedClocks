@@ -124,8 +124,10 @@ class Hands:
         If the outline is a negative shell from the outline provided by hand, return true
         if the outline is a positive shell, return false (for hands with thin bits where there isn't enough width)
         '''
-
-        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE, HandStyle.XMAS_TREE]:#, HandStyle.XMAS_TREE
+        #sword is a bit too pointy, so trying to soften it
+        #xmas tree just looks bettery
+        #spade and cuckoo only work this way
+        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE, HandStyle.XMAS_TREE, HandStyle.SWORD]:
             return False
 
         return True

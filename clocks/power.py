@@ -910,6 +910,7 @@ class RopeWheel:
 
         #rough guess based on the first printed wheel using 2.2mm hemp rope
         self.innerDiameter = diameter - ropeThick*5.5
+        self.power_clockwise = power_clockwise
 
         # TODO the rope doesn't get anywhere near this diameter! it's almost double. That's fine, so long as I can work out what the actual diameter is for the rope
 

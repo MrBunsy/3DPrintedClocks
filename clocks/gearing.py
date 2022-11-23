@@ -875,8 +875,11 @@ class ArbourForPlate:
         shapes = self.get_shapes()
         if self.type == ArbourType.ANCHOR:
             if self.escapement_on_front:
-                assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2)))
-
+                assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180))
+                if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
+                    #move 'down' by frame thick because we've just rotated the frame above
+                    assembly = assembly.add(self.arbour.escapement.getAssembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0,0,-self.arbour.escapement.frame_thick)))
+                assembly = assembly.translate((0,0,self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2))
             if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR:
                 collet = shapes["collet"]
                 assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))

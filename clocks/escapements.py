@@ -1417,7 +1417,7 @@ class GrasshopperEscapement:
 
     def getAnchor(self):
         #comply with expected interface
-        return self.getFrame()
+        return self.getFrame(leave_in_situ=False)
 
     def getFrame(self, leave_in_situ=False):
         '''
@@ -1540,9 +1540,11 @@ class GrasshopperEscapement:
 
         return frame
 
-    def rotateToUpright(self, part):
+    def rotateToUpright(self, part, in_situ=True):
         '''
         take a part made from the geometry and realign so the frame arbour is at the top
+
+        if in-situ assume 0,0 is centre of the escaep wheel
         '''
         # rotate so that Z is at the top
         line_OZ = Line(self.geometry["O"], anotherPoint=self.geometry["Z"])
@@ -1808,17 +1810,28 @@ class GrasshopperEscapement:
         grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
+
+        def rotate_anchor(anchor_part):
+            # centre = (0, 0)
+            # if not centre_on_anchor:
+            centre = self.geometry["Z"]
+            anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), radToDeg(-self.escaping_arc / 2))
+            return anchor_part
+
         if not leave_out_wheel_and_frame:
             grasshopper = grasshopper.add(self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
-            grasshopper = grasshopper.add(self.rotateToUpright(self.getFrame(leave_in_situ=True)))
+            grasshopper = grasshopper.add(rotate_anchor(self.rotateToUpright(self.getFrame(leave_in_situ=True))))
 
-        grasshopper = grasshopper.add(self.rotateToUpright((self.getExitPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z))))
-        grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z))))
-        grasshopper = grasshopper.add(self.rotateToUpright((self.getEntryComposer(forPrinting=False)).translate((0, 0, composer_z))))
-        grasshopper = grasshopper.add(self.rotateToUpright((self.getExitComposer(forPrinting=False)).translate((0, 0, composer_z))))
+
+
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryComposer(forPrinting=False)).translate((0, 0, composer_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitComposer(forPrinting=False)).translate((0, 0, composer_z)))))
 
         if centre_on_anchor:
             grasshopper = grasshopper.translate((0,-np.linalg.norm(self.geometry["Z"]),0))
+
 
         return grasshopper
 
