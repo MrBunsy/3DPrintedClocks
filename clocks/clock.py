@@ -2135,16 +2135,16 @@ class Assembly:
 
         #hands on the motion work, showing the time
         #mirror them so the outline is visible (consistent with second hand)
-        minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
-        hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-
+        # minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
+        # hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+        hands = self.hands.getAssembled(time_minute = time_min, time_hour=time_hour, include_seconds=False ,gap_size = self.motionWorks.hourHandSlotHeight - self.hands.thick)
 
         minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset\
                       + self.motionWorks.minuteHolderTotalHeight - self.hands.thick
 
-        clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
+        # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
-        clock = clock.add(hourHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
+        clock = clock.add(hands.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
                                               minuteHandZ - self.motionWorks.hourHandSlotHeight - self.motionWorks.space)))
 
         if self.goingTrain.escapement_time == 60:
@@ -2298,17 +2298,18 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
         if assembled:
             #showing a time
-            minuteAngle = - 360 * (time_min / 60)
-            hourAngle = - 360 * (time_hour + time_min / 60) / 12
-            secondAngle = -360 * (time_sec / 60)
+            # minuteAngle = - 360 * (time_min / 60)
+            # hourAngle = - 360 * (time_hour + time_min / 60) / 12
+            # secondAngle = -360 * (time_sec / 60)
+            #
+            # # hands on the motion work, showing the time
+            # # mirror them so the outline is visible (consistent with second hand)
+            # minuteHand = hands.getHand(minute=True).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+            # hourHand = hands.getHand(hour=True).rotate((0, 0, 0), (0, 0, 1), hourAngle)
 
-            # hands on the motion work, showing the time
-            # mirror them so the outline is visible (consistent with second hand)
-            minuteHand = hands.getHand(minute=True).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
-            hourHand = hands.getHand(hour=True).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-
-            demo = demo.add(minuteHand.translate((x, y, hands.thick)))
-            demo = demo.add(hourHand.translate((x, y, 0)))
+            # demo = demo.add(minuteHand.translate((x, y, hands.thick)))
+            # demo = demo.add(hourHand.translate((x, y, 0)))
+            demo = demo.add(hands.getAssembled(include_seconds=False).translate((x, y, 0)))
 
             if secondsHand is not None:
                 demo = demo.add(secondsHand.translate((x, y + length * 0.3)))
