@@ -637,6 +637,31 @@ class Hands:
 
         return hand
 
+    def getAssembled(self, time_minute=10, time_hour=10, time_seconds=0):
+
+        minuteAngle = - 360 * (time_minute / 60)
+        hourAngle = - 360 * (time_hour + time_minute / 60) / 12
+        secondAngle = -360 * (time_seconds / 60)
+
+        minuteHand = cq.Workplane("XY")
+        hourHand = cq.Workplane("XY")
+        secondHand = cq.Workplane("XY")
+
+        for colour in self.getExtraColours():
+            minuteHand = minuteHand.add(self.getHand(minute=True, colour=colour))
+            hourHand = hourHand.add(self.getHand(hour=True, colour=colour))
+            secondHand = secondHand.add(self.getHand(second=True, colour = colour))
+
+        if self.outline > 0:
+            minuteHand = minuteHand.add(self.getHand(minute=True, generate_outline=True))
+            hourHand = hourHand.add(self.getHand(hour=True, generate_outline=True))
+            secondHand = secondHand.add(self.getHand(second = True, generate_outline=True))
+
+        minuteHand = minuteHand.mirror().translate((0, 0, self.thick*2)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+        hourHand = hourHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+        secondHand = secondHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle).translate((0,self.length*1.5,0))
+
+        return minuteHand.add(hourHand).add(secondHand)
 
     def outputSTLs(self, name="clock", path="../out"):
 

@@ -251,9 +251,12 @@ if False:
 #
 # show_object(holder)
 #
-# motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
+motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
 # hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
+
+hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1)
 # #
 # show_object(hands.getHand(hour=True,second=False, colour="brown"))
 # show_object(hands.getHand(hour=True,second=False, colour="green"))
@@ -267,6 +270,12 @@ if False:
 # show_object(hands.getHand(hour=False,second=False, colour="red").translate((50,0,0)))
 # show_object(hands.getHand(hour=False, second=False, generate_outline=True).translate((50,0,0)))
 
+# show_object(hands.getHand(hour=True,second=False))#.rotate((0,0,0),(0,0,1),90))
+#
+# show_object(hands.getHand(hour=False,second=True, generate_outline=True).translate((-50,0,0)))
+# show_object(hands.getHand(hour=False).translate((50,0,0)))
+
+show_object(hands.getAssembled())
 
 # holly_leaf = HollyLeaf()
 #
@@ -295,18 +304,18 @@ pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crut
 #
 # show_object(holly_sprig.get_leaves())
 # show_object(holly_sprig.get_berries())
-pendulum = pend
-leaf_thick = 1.6
-pud = ChristmasPudding(thick=leaf_thick, diameter=pend.bobR*2, cut_rect_width=pendulum.gapWidth, cut_rect_height=pendulum.gapHeight)
-cosmetics = pud.get_cosmetics()
-
-for colour in cosmetics:
-    show_object(cosmetics[colour])
-bob = pend.getBob(hollow=True)
-pretty_bob = ItemWithCosmetics(bob, name="bob", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
-
-if outputSTL:
-    pretty_bob.output_STLs(name="test", path="out")
+# pendulum = pend
+# leaf_thick = 1.6
+# pud = ChristmasPudding(thick=leaf_thick, diameter=pend.bobR*2, cut_rect_width=pendulum.gapWidth, cut_rect_height=pendulum.gapHeight)
+# cosmetics = pud.get_cosmetics()
+#
+# for colour in cosmetics:
+#     show_object(cosmetics[colour])
+# bob = pend.getBob(hollow=True)
+# pretty_bob = ItemWithCosmetics(bob, name="bob", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
+#
+# if outputSTL:
+#     pretty_bob.output_STLs(name="test", path="out")
 
 # points = []
 #
@@ -322,10 +331,7 @@ if outputSTL:
 
 # show_object(cq.Workplane("XY").circle(10).extrude(10))
 
-# show_object(hands.getHand(hour=True,second=False).rotate((0,0,0),(0,0,1),90))
-#
-# show_object(hands.getHand(hour=False,second=True, outline=True).translate((50,0,0)))
-# show_object(hands.getHand(hour=False).translate((50,0,0)))
+
 
 # show_object(cq.Workplane("XY").circle(10).add(cq.Workplane("XY").text("A", fontsize=10, distance=0.1)))
 
