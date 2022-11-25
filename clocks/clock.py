@@ -2357,14 +2357,16 @@ def getGearDemo(module=1, justStyle=None):
         if justStyle is not None and style != justStyle:
             continue
         print(style.value)
+        try:
+            y=0
+            for arbour in demoArbours:
+                arbour.style = style
+                y += arbour.getMaxRadius() + gap
+                demo = demo.add(arbour.getShape().translate((x,y,0)))
+                y += arbour.getMaxRadius()
 
-        y=0
-        for arbour in demoArbours:
-            arbour.style = style
-            y += arbour.getMaxRadius() + gap
-            demo = demo.add(arbour.getShape().translate((x,y,0)))
-            y += arbour.getMaxRadius()
-
-        x += space
+            x += space
+        except:
+            print("Failed to generate demo for {}".format(style.value))
 
     return demo

@@ -391,6 +391,7 @@ class Hands:
                 handWidth = self.length*0.06
                 tipWidth = self.length*0.0125
                 circleR = self.length*0.1
+                base_r=circleR
             else:
                 base_r = self.length*0.075
 
