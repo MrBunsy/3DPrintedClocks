@@ -740,11 +740,14 @@ def getBearingInfo(innerD):
     Get some stock bearings
     '''
     if innerD == 3:
-        return BearingInfo(bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25)
+        return BearingInfo(bearingOuterD=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25)
     if innerD == 4:
-        return BearingInfo(bearingOuterD=13, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
+        return BearingInfo(bearingOuterD=13.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
+    if innerD == 6:
+        #from e3d, not arrived yet, so placeholder for some values
+        return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=6, innerD=6, innerSafeD=7.5)
     if innerD == 10:
-        #19.2 is untested, using the extra 0.2 that worked from the 15mm ID plastic bearing
+        #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
         return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)

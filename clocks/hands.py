@@ -310,7 +310,7 @@ class Hands:
 
             base_wide = syringe_width*0.25
 
-            tip_wide = syringe_width*0.1
+            tip_wide = 3#syringe_width*0.1
             base_r = base_r * 0.6
             if second:
                 tip_wide = 1
@@ -660,7 +660,10 @@ class Hands:
         if self.outline > 0:
             minuteHand = minuteHand.add(self.getHand(minute=True, generate_outline=True))
             hourHand = hourHand.add(self.getHand(hour=True, generate_outline=True))
-            secondHand = secondHand.add(self.getHand(second = True, generate_outline=True))
+            try:
+                secondHand = secondHand.add(self.getHand(second = True, generate_outline=True))
+            except:
+                pass
 
         minuteHand = minuteHand.mirror().translate((0, 0, self.thick*2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         hourHand = hourHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)

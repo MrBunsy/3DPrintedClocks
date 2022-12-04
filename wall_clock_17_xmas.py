@@ -50,7 +50,7 @@ pendulumSticksOut=20
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
 train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
-train.printInfo(weight_kg=1)
+train.printInfo(weight_kg=0.5)
 
 motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2)
 
@@ -61,6 +61,8 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pen
                                  backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
+
+pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
 hands = clock.Hands(style=clock.HandStyle.XMAS_TREE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
@@ -85,8 +87,7 @@ cosmetics={"green": wreath.get_leaves(),
 pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
 
 if outputSTL:
-    pretty_bob.output_STLs(clockName,clockOutDir)
-    pretty_hand_avoider.output_STLs(clockName,clockOutDir)
+
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
@@ -95,7 +96,14 @@ if outputSTL:
     weight_shell.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
     pulley.outputSTLs(clockName, clockOutDir)
+    pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
+
+    pretty_bob.output_STLs(clockName, clockOutDir)
+    pretty_hand_avoider.output_STLs(clockName, clockOutDir)
 
     out = os.path.join(clockOutDir, "anchor_white.stl")
     print("Outputting ", out)
     exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
+
+    for i in ["_a", "_b", "_c"]:
+        train.outputSTLs(clockName+i, clockOutDir)

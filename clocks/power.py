@@ -334,7 +334,7 @@ class LightweightPulley:
         self.centre_wide = self.rope_diameter/2
         self.use_steel_rod = use_steel_rod
 
-        self.hole_d = STEEL_TUBE_DIAMETER if self.use_steel_rod else screws.metric_thread
+        self.hole_d = STEEL_TUBE_DIAMETER if self.use_steel_rod else self.screws.metric_thread + LOOSE_FIT_ON_ROD
 
         self.gap_size = WASHER_THICK + 0.5
 
@@ -1681,7 +1681,7 @@ class ChainWheel:
         self.looseOnRod = False
         self.holeD=holeD
         #complete absolute bodge!
-        # self.rodMetricSize=math.floor(holeD)
+        self.rodMetricSize=math.floor(holeD)
         self.screw = screw
         if self.screw is None:
             self.screw = MachineScrew(metric_thread=2, countersunk=True)

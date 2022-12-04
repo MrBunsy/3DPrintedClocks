@@ -862,6 +862,7 @@ class ArbourForPlate:
                 '''
                 raise NotImplementedError("TODO: anchor between plates with direct pendulum fixing")
         else:
+            #friction fitting pendulum
             raise ValueError("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
         return shapes

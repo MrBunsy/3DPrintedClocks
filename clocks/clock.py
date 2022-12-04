@@ -658,24 +658,24 @@ class GoingTrain:
 
     def outputSTLs(self, name="clock", path="../out"):
         '''
-        Going train no longer generates shapes - it provides only basic Arbours for the plates to turn into printable objects
+        Going train soon will no longer need to generates shapes - it provides only basic Arbours for the plates to turn into printable objects
         '''
-        # #wheels, chainwheels
-        # for i in range(self.wheels+self.chainWheels+1):
-        #     arbour = self.getArbourWithConventionalNaming(i)
-        #     out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
-        #     print("Outputting ",out)
-        #     exporters.export(arbour.getShape(), out)
-        #     extras = arbour.getExtras()
-        #     for extraName in extras:
-        #         out = os.path.join(path, "{}_wheel_{}_{}.stl".format(name, i, extraName))
-        #         print("Outputting ", out)
-        #         exporters.export(extras[extraName], out)
-        #
-        # self.poweredWheel.outputSTLs(name, path)
-        #
-        # if self.escapement.type == EscapementType.GRASSHOPPER:
-        #     self.escapement.outputSTLs(name, path)
+        #wheels, chainwheels
+        for i in range(self.wheels+self.chainWheels+1):
+            arbour = self.getArbourWithConventionalNaming(i)
+            out = os.path.join(path,"{}_wheel_{}.stl".format(name,i))
+            print("Outputting ",out)
+            exporters.export(arbour.getShape(), out)
+            extras = arbour.getExtras()
+            for extraName in extras:
+                out = os.path.join(path, "{}_wheel_{}_{}.stl".format(name, i, extraName))
+                print("Outputting ", out)
+                exporters.export(extras[extraName], out)
+
+        self.poweredWheel.outputSTLs(name, path)
+
+        if self.escapement.type == EscapementType.GRASSHOPPER:
+            self.escapement.outputSTLs(name, path)
 
         # if not self.huygensMaintainingPower:
             #undecided, but I think I'm going to keep the STLs generated here

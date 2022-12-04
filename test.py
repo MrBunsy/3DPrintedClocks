@@ -256,7 +256,7 @@ motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, 
 #                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
 
 hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1)
+                    length=120, thick=motionWorks.minuteHandSlotHeight, outline=1)
 # #
 # show_object(hands.getHand(hour=True,second=False, colour="brown"))
 # show_object(hands.getHand(hour=True,second=False, colour="green"))
