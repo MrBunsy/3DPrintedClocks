@@ -718,18 +718,20 @@ class BearingInfo():
 
     TODO - add and use safeouterD (where we can come into contact with the outside of the bearing without grating on the inner bit which will rotate)
     '''
-    def __init__(self, bearingOuterD=10, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05):
+    def __init__(self, bearingOuterD=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1):
         self.bearingOuterD = bearingOuterD
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
         #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
         #deprecated, use outerSafeD, this was how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
-        self.bearingHolderLip = bearingHolderLip
         self.bearingHeight = bearingHeight
         self.innerD=innerD
         #how large can something that comes into contact with the bearing (from the rod) be
         self.innerSafeD = innerSafeD
         #something that can touch the outside of the bearing can also touch the front/back of the bearing up to this diameter without fouling on anything that moves when it rotates
-        self.outerSafeD = self.bearingOuterD - bearingHolderLip*2
+        if outerSafeD < 0 and bearingHolderLip > 0 :
+            self.outerSafeD = self.bearingOuterD - bearingHolderLip*2
+        else:
+            self.outerSafeD = outerSafeD
         #subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
         self.innerDWiggleRoom = innerDWiggleRoom
 
@@ -744,8 +746,8 @@ def getBearingInfo(innerD):
     if innerD == 4:
         return BearingInfo(bearingOuterD=13.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 6:
-        #from e3d, not arrived yet, so placeholder for some values
-        return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=6, innerD=6, innerSafeD=7.5)
+        #these are really chunky, might need to get some which are less chunky
+        return BearingInfo(bearingOuterD=19.2, outerSafeD=12, bearingHeight=6, innerD=6, innerSafeD=8)
     if innerD == 10:
         #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
         return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)

@@ -94,6 +94,8 @@ This then needs to be threaded onto a piece of M3 threaded rod 80mm long, with a
 
 I recommend a small amount of superglue to ensure that the chain wheel can't slip on this threaded rod. This is important so that the hands can be set without the threaded rod moving.
 
+When assembling the full clock, make sure an M3 washer is on the front of the chain wheel, so it can't touch the plate.
+
 ### Second wheel arbour
 - wall_clock_17_xmas_wheel_1.stl
 - wall_clock_17_xmas_wheel_1_arbour_extension_front.stl
@@ -183,11 +185,13 @@ Screw a 25mm countersunk M3 machine screw into the front plate, from the back, b
 
 ## Assembling the gears and plates
 
-The bottom three arbours should be slotted into the bearings on the back plate first. Then slot the front plate onto the tops of the arbours. Use 25mm counter sunk M3 screws to attach the front plate to the back plate.
+The bottom three arbours should be slotted into the bearings on the back plate first. Don't forget to make sure an M3 washer is on the front of the chain wheel, so it can't touch the plate. Then slot the front plate onto the tops of the arbours. Use 25mm counter sunk M3 screws to attach the front plate to the back plate.
 
 Now you can thread the escape wheel (the largest gear) onto the front of the top threaded rod. It needs roughly 1mm of clearance from the front bearing. To secure this so it can't rotate independently, thread an extra M3 nut onto the front of the rod. Then tighten it against the nyloc nut. The escape wheel and pinion on this arbour should not be able to rotate independently of each other.
 
 Once the front plate is attached, the anchor should slot through from the front. Onto the back, slot first the collet (the side with a slightly raised inner circle should go with the raised circle pressed up against the bearing on the back of the back plate.) then slot the pendulum holder. Once the anchor is pushed all the way in, with the threaded rod slotting into the bearing in the top standoff, screw the collet in place. The pendulum holder needs to be roughly centred between the wall and back plate before tightening its screw.
+
+
 
 ### Hands
 - wall_clock_17_xmas_minute_hand_green.stl

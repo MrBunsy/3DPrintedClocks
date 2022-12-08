@@ -58,7 +58,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="clk 17", style="vertical", pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
+                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, pendulumFixingBearing = clock.getBearingInfo(10))
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 

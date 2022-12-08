@@ -738,7 +738,7 @@ class ArbourForPlate:
         #calculating where the arbour should be)
         self.bearing_position = bearing_position
         self.distance_from_back = bearing_position[2]
-        self.distance_from_front = self.plate_distance - self.arbour.getTotalThickness() - self.distance_from_back
+        self.distance_from_front = (self.plate_distance - self.endshake) - self.arbour.getTotalThickness() - self.distance_from_back
 
         self.pendulum_fixing = pendulum_fixing
         if self.bearing is None:
@@ -757,6 +757,9 @@ class ArbourForPlate:
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
+
+        # so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
+        self.arbour_bearing_standoff_length = LAYER_THICK * 2
 
     def get_anchor_collet(self, square_side_length):
         '''
@@ -823,44 +826,69 @@ class ArbourForPlate:
             cylinder_r = self.bearing.innerD / 2
             square_side_length = math.sqrt(2) * cylinder_r
 
-            collet = self.get_anchor_collet(square_side_length)
+            if cylinder_r < 5:
+                square_side_length = math.sqrt(2) * cylinder_r * 1.2
 
-            shapes["collet"]=collet
+
             shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length)
 
-            if self.escapement_on_front:
+            if not self.pendulum_at_front:
 
-
+                #bits out the back
                 rear_bearing_standoff_height = 0.6
+                rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
 
-                cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
+
+                '''
+                Esacpement on teh front and pendulum at the back (like grasshopper)
+                '''
+                if self.escapement_on_front:
+                    #cylinder passes through plates and out the front
+                    cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
+
+                    #need a collet on the back
+                    collet = self.get_anchor_collet(square_side_length)
+
+                    shapes["collet"] = collet
+
+                else:
+                    #cylinder passes only through the back plate and up to the anchor
+                    #no need for collet - still contained within two bearings like a normal arbour
+                    cylinder_length = self.back_plate_thick + self.endshake/2 + self.bearing_position[2]
+                    shapes["arbour_extension"] = self.get_arbour_extension(front=True)
 
                 anchor_thick = self.arbour.escapement.getAnchorThick()
 
-                rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
+
 
                 wall_bearing = getBearingInfo(self.arbour.arbourD)
 
                 # flip over so the front is on the print bed
                 anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
                 anchor = anchor.add(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
-                anchor = anchor.add(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).translate((0,0, anchor_thick + cylinder_length)))
+                anchor = anchor.add(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(rod_length)).translate((0,0, anchor_thick + cylinder_length)))
                 anchor = anchor.add(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
-                #cut a hole through everything except a thin bit - so the rod isn't visible
-                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height).translate((0,0,1)))
+
+                front_intact_thick = 0
+                if self.escapement_on_front:
+                    front_intact_thick = 1
+                #cut a hole through everything except an optional thin bit - so the rod isn't visible
+                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height).translate((0,0,front_intact_thick)))
                 #end-shake limiting collet screwhole
 
-                screwhole_z = anchor_thick + cylinder_length + self.collet_thick/2
-
-                anchor = anchor.cut(cq.Workplane("XZ").circle(self.collet_screws.metric_thread/2).extrude(square_side_length).translate((0,square_side_length, screwhole_z)))
-
-
+                if self.escapement_on_front:
+                    #need a hole for the collet on the back to screw into
+                    screwhole_z = anchor_thick + cylinder_length + self.collet_thick/2
+                    anchor = anchor.cut(cq.Workplane("XZ").circle(self.collet_screws.metric_thread/2).extrude(square_side_length).translate((0,square_side_length, screwhole_z)))
+                else:
+                    #anchor is between the plates, make 'base' of cylinder thicker so it can't go through the bearing
+                    anchor = anchor.add(cq.Workplane("XY").circle(self.bearing.innerSafeD/2).circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(self.distance_from_back + self.arbour.escapement.getAnchorThick()))
 
             else:
                 '''
-                anchor between the plates
+                I don't think I'm going to design many more with the pendulum on the front, so I'm not going to bother supporting that with a direct arbour unless I have to
                 '''
-                raise NotImplementedError("TODO: anchor between plates with direct pendulum fixing")
+                raise NotImplementedError("Unsuported escapement and pendulum combination!")
         else:
             #friction fitting pendulum
             raise ValueError("Only direct arbour pendulum fixing supported currently")
@@ -879,13 +907,19 @@ class ArbourForPlate:
         assembly = cq.Workplane("XY")
         shapes = self.get_shapes()
         if self.type == ArbourType.ANCHOR:
+            assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180))
+            if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
+                # move 'down' by frame thick because we've just rotated the frame above
+                assembly = assembly.add(self.arbour.escapement.getAssembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0, 0, -self.arbour.escapement.frame_thick)))
+
+
             if self.escapement_on_front:
-                assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180))
-                if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
-                    #move 'down' by frame thick because we've just rotated the frame above
-                    assembly = assembly.add(self.arbour.escapement.getAssembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0,0,-self.arbour.escapement.frame_thick)))
-                assembly = assembly.translate((0,0,self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2))
-            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR:
+                anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2
+            else:
+                anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbour.escapement.getAnchorThick()
+                assembly = assembly.add(shapes["arbour_extension"])
+            assembly = assembly.translate((0,0,anchor_assembly_end_z))
+            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR and self.escapement_on_front and not self.pendulum_at_front:
                 collet = shapes["collet"]
                 assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
 
@@ -921,6 +955,33 @@ class ArbourForPlate:
             return self.get_anchor_shapes()
 
         return shapes
+
+
+    def get_arbour_extension(self, front=True):
+        '''
+        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
+
+        Simple logic here, it may produce some which aren't needed
+        '''
+
+        length = self.distance_from_front if front else self.distance_from_back
+        bearing = getBearingInfo(self.arbour.getRodD())
+
+        outer_r = self.arbour.getRodD()
+        inner_r = self.arbour.getRodD() / 2 + ARBOUR_WIGGLE_ROOM/2
+        tip_r = bearing.innerSafeD/2
+        if tip_r > outer_r:
+            tip_r = outer_r
+
+        if length - self.arbour_bearing_standoff_length >= 0:
+            if length > self.arbour_bearing_standoff_length:
+                extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).circle(inner_r).extrude(length-self.arbour_bearing_standoff_length).faces(">Z").workplane()
+            else:
+                extendo_arbour=cq.Workplane("XY")
+            extendo_arbour = extendo_arbour.circle(tip_r).circle(inner_r).extrude(self.arbour_bearing_standoff_length)
+
+            return extendo_arbour
+        return None
 
 class Arbour:
     def __init__(self, arbourD=None, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
@@ -1635,7 +1696,7 @@ class Arbour:
 
                 boltR = np.linalg.norm(self.boltPositions[0])
                 #make sure it's possible to screw the ratchet or wheel on
-                if extensionR > boltR - self.ratchetScrews.getNutContainingDiameter()/2:
+                if self.useRatchet and extensionR > boltR - self.ratchetScrews.getNutContainingDiameter()/2:
                     extensionR = boltR - self.ratchetScrews.getNutContainingDiameter()/2
 
                 bearingStandoffHeight = LAYER_THICK * 2

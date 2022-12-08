@@ -724,8 +724,8 @@ class SimpleClockPlates:
         #only used for the direct arbour pendulum
         self.pendulumFixingBearing = pendulumFixingBearing
         if self.pendulumFixingBearing is None:
-            #default to the 10mm bearing
-            self.pendulumFixingBearing = getBearingInfo(10)
+            #default to the 6mm bearing (10mm adds a lot of friction, even dry, I'm hoping 6mm is better)
+            self.pendulumFixingBearing = getBearingInfo(6)
 
         anglesFromMinute = None
         anglesFromChain = None
@@ -1046,6 +1046,9 @@ class SimpleClockPlates:
             self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
 
         self.chainHoleD = self.goingTrain.poweredWheel.getChainHoleD()
+
+        if self.chainHoleD < 4:
+            self.chainHoleD = 4
 
         self.weightOnRightSide = self.goingTrain.isWeightOnTheRight()
 
