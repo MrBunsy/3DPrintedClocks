@@ -42,12 +42,19 @@ moduleReduction=1
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 # train.setChainWheelRatio([93, 10])
 
+#original test
 # train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=18, style=gearStyle, useKey=True, preferedDiameter=42.5, looseOnRod=False)
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=28, looseOnRod=False)
+#think this is promising for good compromise of size
+# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=28, looseOnRod=False)
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
+
 #override default until it calculates an ideally sized wheel
-train.calculatePoweredWheelRatios(wheel_max=100)
+# train.calculatePoweredWheelRatios(wheel_max=100)
+
+train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=50)
+
+
 
 pendulumSticksOut=20
 

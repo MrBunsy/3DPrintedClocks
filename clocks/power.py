@@ -819,7 +819,9 @@ class WeightPoweredWheel:
         self.circumference=math.pi * self.diameter
         self.ratchet = Ratchet()
         self.type = PowerType.NOT_CONFIGURED
+        #if false, the powered wheel is fixed to the rod and the gear wheel is loose.
         self.looseOnRod = False
+        self.arbour_d = 3
 
     def getChainHoleD(self):
         '''
@@ -886,6 +888,11 @@ class WeightPoweredWheel:
 class RopeWheel:
     '''
     Drop in replacement for chainwheel, but uses friction to hold a hemp rope
+
+    first attempt tried using "teeth" to grip the rope. It worked, but added a lot of friction and chewed up teh rope.
+    I've had a lot of success at retrofitting wheels with o-rings, so I want to try designing a wheel around using o-rings
+
+    This is now based on the lightweight pully - printed in one peice with a hole for a steel tube in the centre
     '''
 
     @staticmethod
@@ -895,53 +902,61 @@ class RopeWheel:
         '''
         return 20
 
-    def __init__(self, diameter, ratchet_thick, rodMetricSize=3, screw=None, ropeThick=2.2, wallThick=2, power_clockwise=True):
+    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=2, power_clockwise=True, o_ring_diameter=3, arbour_d=3, use_o_rings=1):
 
         #diameter for the rope
         self.diameter=diameter
         self.circumference = math.pi*diameter
 
-        self.looseOnRod = False
+        #plan: default to using steel tube
+        self.looseOnRod = True
         self.type = PowerType.ROPE
 
-        #using just diamtere, aim 17 got
+        self.slope_angle = math.pi / 3
+        self.rope_diameter = rope_diameter
+        self.o_ring_diameter = o_ring_diameter
+        self.use_o_rings = use_o_rings
 
-        #aim: 17, got 22.3
+        self.centre_wide = self.o_ring_diameter*self.use_o_rings
 
-        #rough guess based on the first printed wheel using 2.2mm hemp rope
-        self.innerDiameter = diameter - ropeThick*5.5
+        self.wall_thick = wall_thick
+        self.arbour_d = arbour_d
+
+        '''
+        |\
+        | \  length of the slope (the hypotenuse) = self.rope_diameter/sin(slope_angle)  
+        |  \
+        
+        height of rope_diameter
+        '''
+        self.outer_diameter = self.diameter + rope_diameter*2
+        self.slope_length = self.rope_diameter / math.sin(self.slope_angle)
+
+        self.extra_pipe_thick = 0.5
+
+        self.wheel_thick = self.wall_thick*2 + math.cos(self.slope_angle)*self.slope_length*2 + self.centre_wide
+
+
+        perpendicular_distance_from_centre_of_rope_to_centre_of_o_rings = math.sqrt((o_ring_diameter + rope_diameter) ** 2 - o_ring_diameter ** 2)
+
+        #nominal diameter of the centre of the o-rings
+        self.inner_diameter = diameter - perpendicular_distance_from_centre_of_rope_to_centre_of_o_rings
+
         self.power_clockwise = power_clockwise
-
-        # TODO the rope doesn't get anywhere near this diameter! it's almost double. That's fine, so long as I can work out what the actual diameter is for the rope
-
-        self.rodMetricSize=rodMetricSize
+        self.hole_d = hole_d
         self.screw = screw
         if self.screw is None:
             self.screw = MachineScrew(2)
-        self.ropeThick=ropeThick
-        distance = self.screw.metric_thread*2
-        self.screwPositions = [(-distance, 0), (distance, 0)]
 
 
-        #min thickness, adjustable to help with selecting screws
-        self.wallThick=wallThick
-        #width of the opening the rope will slot into
-        self.gulleyWide = self.ropeThick*2
-        #how far our the gulley extends (extra diameter)
-        self.extraRim = self.ropeThick*4
 
-        self.rodD = rodMetricSize + LOOSE_FIT_ON_ROD
-
-        circumference = math.pi*self.innerDiameter
-        self.nibs= math.floor(0.5*circumference/ropeThick)
-        self.nibThick = 1
-
-        ratchetOuterD = self.diameter*2.25
+        ratchet_outer_d = self.outer_diameter+20
         if ratchet_thick > 0:
-            self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchetOuterD, innerRadius=self.innerDiameter / 2 - self.ropeThick / 2 + self.extraRim, power_clockwise=power_clockwise)
+            self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchet_outer_d, innerRadius=self.outer_diameter/2, power_clockwise=power_clockwise)
         else:
-            #not fully supported in rope wheel yet
             self.ratchet = None
+
+        print("rope wheel needs steel pipe of length {}mm".format(self.wheel_thick + self.extra_pipe_thick))
 
     def isClockwise(self):
         '''
@@ -956,11 +971,10 @@ class RopeWheel:
         if self.ratchet is not None:
             return self.ratchet.outsideDiameter/2
         else:
-            #copypasted from getHalf - hacky.
-            return self.innerDiameter / 2 - self.ropeThick/2 + self.extraRim
+            return self.outer_diameter/2
 
     def getScrewPositions(self):
-        return self.screwPositions
+        return self.screw_positions
 
     def printScrewLength(self):
         if self.screw.countersunk:
@@ -974,81 +988,124 @@ class RopeWheel:
         return maxChainDrop/self.circumference
 
     def getChainHoleD(self):
-        return self.ropeThick + 4
+        return self.rope_diameter + 4
+    #
+    # def getHalf(self, top=False):
+    #     radius = self.inner_diameter / 2 - self.rope_thick / 2
+    #
+    #
+    #
+    #     # from the side
+    #     bottomPos = (radius + self.extra_rim, 0)
+    #     topOfEdgePos = (radius + self.extra_rim, self.wall_thick)
+    #     middlePos = (radius, self.wall_thick + self.gulley_wide / 2)
+    #
+    #     circle = cq.Workplane("XY").circle(self.inner_diameter / 2)
+    #     ropeWheel = cq.Workplane("XZ").moveTo(bottomPos[0], bottomPos[1]).lineTo(topOfEdgePos[0], topOfEdgePos[1]).lineTo(middlePos[0], middlePos[1])
+    #
+    #
+    #     ropeWheel = ropeWheel.lineTo(0, middlePos[1]).lineTo(0, 0).close().sweep(circle)
+    #
+    #     offset = 0 if top else 0.5*math.pi*2/self.nibs
+    #     nibOuterOuterX = radius + self.extra_rim * 0.95
+    #     nibOuterX= radius + self.extra_rim * 0.9
+    #     nibInnerX = radius + self.extra_rim * 0.4
+    #     nibStart = radius*0.9
+    #     nibEdgeHeight = self.wall_thick + self.gulley_wide * 0.25
+    #     nibMiddleHeight = self.wall_thick + self.gulley_wide * 0.5
+    #     for i in range(self.nibs):
+    #         angle = i*math.pi*2/self.nibs + offset
+    #
+    #         nib = cq.Workplane("XZ").moveTo(nibStart, self.wall_thick).lineTo(nibOuterOuterX, self.wall_thick).lineTo(nibOuterX, nibEdgeHeight).lineTo(nibInnerX, nibMiddleHeight).lineTo(nibStart, nibMiddleHeight).close().extrude(self.nibThick).translate((0, self.nibThick / 2, 0))
+    #         # return nib
+    #         ropeWheel = ropeWheel.add(nib.rotate((0,0,0), (0,0,1), radToDeg(angle)))
+    #
+    #
+    #
+    #
+    #     if not top:
+    #         ropeWheel = ropeWheel.translate((0,0,self.ratchet.thick)).add(self.ratchet.getInnerWheel())
+    #
+    #     holeD = self.rodD
+    #     # pulley = pulley.faces(">Z").workplane().circle(holeD/2).cutThroughAll()
+    #     hole = cq.Workplane("XY").circle(holeD / 2).extrude(1000)
+    #
+    #     ropeWheel = ropeWheel.cut(hole)
+    #
+    #
+    #
+    #     for pos in self.screw_positions:
+    #         if not top:
+    #             #have a bigger hole than needed for the nut in the ratchet side, so we can get away with shorter screws
+    #             cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True, height=self.ratchet.thick + self.screw.getNutHeight()).rotate((0,0,0),(0,0,1),360/12)
+    #         else:
+    #             cutter = self.screw.getCutter(withBridging=True)
+    #
+    #         ropeWheel = ropeWheel.cut(cutter.translate(pos))
+    #
+    #     return ropeWheel
 
-    def getHalf(self, top=False):
-        radius = self.innerDiameter / 2 - self.ropeThick/2
+    def get_wheel(self):
+        '''
+        get the wheel (without ratchet)
+        This is based on the lightweight pulley, but with two slots to hold o-rings
+        '''
+
+        circle = cq.Workplane("XY").circle(self.diameter / 2)
+        '''
+        ____
+           |
+          /
+         /
+        (
+        (
+         \
+          \
+           \
+        ___|
+        '''
+
+        slope_width = math.cos(self.slope_angle) * self.slope_length
+
+        wheel_outline = cq.Workplane("XZ").moveTo(0, 0).lineTo(self.outer_diameter/2, 0).line(0, self.wall_thick).lineTo(self.inner_diameter/2, self.wall_thick + slope_width)
+
+
+        for o in range(self.use_o_rings):
+            end_point = (self.inner_diameter/2, self.wall_thick + slope_width + self.o_ring_diameter * (o+1))
+            # wheel_outline = wheel_outline.radiusArc(end_point, self.o_ring_diameter/2)
+            #expecting o-ring to be slightly squashed, and this will hopefully help it print better
+            wheel_outline = wheel_outline.sagittaArc(end_point, self.o_ring_diameter*0.4)
+            # wheel_outline = wheel_outline.lineTo(end_point[0], end_point[1])
+
+        wheel_outline = wheel_outline.lineTo(self.outer_diameter / 2, self.wheel_thick - self.wall_thick).line(0, self.wall_thick).lineTo(0, self.wheel_thick).close()
+
+        wheel = wheel_outline.sweep(circle)
+
+        wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.wheel_thick))
 
 
 
-        # from the side
-        bottomPos = (radius + self.extraRim, 0)
-        topOfEdgePos = (radius + self.extraRim, self.wallThick)
-        middlePos = (radius, self.wallThick + self.gulleyWide/2)
+        return wheel
 
-        circle = cq.Workplane("XY").circle(self.innerDiameter / 2)
-        ropeWheel = cq.Workplane("XZ").moveTo(bottomPos[0], bottomPos[1]).lineTo(topOfEdgePos[0], topOfEdgePos[1]).lineTo(middlePos[0], middlePos[1])
+    def get_wheel_with_ratchet(self):
+        wheel = self.get_wheel().translate((0, 0, self.ratchet.thick)).add(self.ratchet.getInnerWheel())
 
+        wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d/2).extrude(self.getHeight()))
 
-        ropeWheel = ropeWheel.lineTo(0, middlePos[1]).lineTo(0, 0).close().sweep(circle)
+        return wheel
 
-        offset = 0 if top else 0.5*math.pi*2/self.nibs
-        nibOuterOuterX = radius + self.extraRim * 0.95
-        nibOuterX=radius + self.extraRim*0.9
-        nibInnerX = radius + self.extraRim*0.4
-        nibStart = radius*0.9
-        nibEdgeHeight = self.wallThick + self.gulleyWide*0.25
-        nibMiddleHeight = self.wallThick + self.gulleyWide*0.5
-        for i in range(self.nibs):
-            angle = i*math.pi*2/self.nibs + offset
-
-            nib = cq.Workplane("XZ").moveTo(nibStart,self.wallThick).lineTo(nibOuterOuterX,self.wallThick).lineTo(nibOuterX,nibEdgeHeight).lineTo(nibInnerX,nibMiddleHeight).lineTo(nibStart,nibMiddleHeight).close().extrude(self.nibThick).translate((0,self.nibThick/2,0))
-            # return nib
-            ropeWheel = ropeWheel.add(nib.rotate((0,0,0), (0,0,1), radToDeg(angle)))
-
-
-
-
-        if not top:
-            ropeWheel = ropeWheel.translate((0,0,self.ratchet.thick)).add(self.ratchet.getInnerWheel())
-
-        holeD = self.rodD
-        # pulley = pulley.faces(">Z").workplane().circle(holeD/2).cutThroughAll()
-        hole = cq.Workplane("XY").circle(holeD / 2).extrude(1000)
-
-        ropeWheel = ropeWheel.cut(hole)
-
-
-
-        for pos in self.screwPositions:
-            if not top:
-                #have a bigger hole than needed for the nut in the ratchet side, so we can get away with shorter screws
-                cutter = self.screw.getNutCutter(withScrewLength=100, withBridging=True, height=self.ratchet.thick + self.screw.getNutHeight()).rotate((0,0,0),(0,0,1),360/12)
-            else:
-                cutter = self.screw.getCutter(withBridging=True)
-
-            ropeWheel = ropeWheel.cut(cutter.translate(pos))
-
-        return ropeWheel
 
     def getAssembled(self):
 
-        assembly = self.getHalf(top=False)
+        return self.get_wheel_with_ratchet()
 
-        assembly = assembly.add(self.getHalf(top=True).rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight()-WASHER_THICK)))
-
-        return assembly
     def getHeight(self):
-
-        return self.wallThick*2 + self.gulleyWide + self.ratchet.thick + WASHER_THICK
+        return self.wheel_thick + self.extra_pipe_thick + self.ratchet.thick
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path,"{}_rope_wheel_with_click.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHalf(top=False), out)
-        out = os.path.join(path, "{}_rope_wheel_half.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getHalf(top=True), out)
+        exporters.export(self.get_wheel_with_ratchet(), out)
 
     def getChainPositionsFromTop(self):
         '''
@@ -1063,7 +1120,7 @@ class RopeWheel:
 
         '''
 
-        zOffset = - WASHER_THICK - self.wallThick - self.gulleyWide / 2
+        zOffset = -(self.wheel_thick)/2 - self.extra_pipe_thick
         #if the calculation of innerDiameter is right, then the rope will be diameter apart
         return [[(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)]]
 
@@ -1138,6 +1195,7 @@ class CordWheel:
         #keeping large so there's space for the screws and screwheads
         self.capDiameter = diameter + 30#diameter*2#.5
         self.rodMetricSize = rodMetricSize
+        self.arbour_d = rodMetricSize
         self.holeD = rodMetricSize
         self.looseOnRod = looseOnRod
 
@@ -1682,6 +1740,7 @@ class ChainWheel:
         self.holeD=holeD
         #complete absolute bodge!
         self.rodMetricSize=math.floor(holeD)
+        self.arbour_d = self.rodMetricSize
         self.screw = screw
         if self.screw is None:
             self.screw = MachineScrew(metric_thread=2, countersunk=True)
@@ -1955,8 +2014,12 @@ class Ratchet:
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
 
-    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5):
+    APROX_EXTRA_RADIUS_NEEDED=10
 
+    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5):
+        '''
+        innerRadius is the radius of the round bit of the click wheel
+        '''
         self.outsideDiameter=totalD
 
         self.outer_thick = outer_thick
@@ -1979,7 +2042,9 @@ class Ratchet:
         self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
         self.toothTipR = self.toothRadius - self.toothLength
 
-        self.clicks = 8
+        cicumference = math.pi*self.outsideDiameter
+
+        self.clicks = math.ceil(cicumference/10)#8
         #ratchetTeet must be a multiple of clicks
         self.ratchetTeeth = self.clicks*2
 

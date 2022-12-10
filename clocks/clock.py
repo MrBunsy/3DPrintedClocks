@@ -405,15 +405,19 @@ class GoingTrain:
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
         self.calculatePoweredWheelRatios()
 
-    def genRopeWheels(self, ratchetThick = 3, rodMetricSize=3, wheelScrews=None, ropeThick=2.2, wallThick=2):
+    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=2, preferedDiameter=-1):
 
-        self.calculatePoweredWheelInfo(RopeWheel.getMinDiameter())
+        diameter = preferedDiameter
+        if diameter < 0:
+            diameter = RopeWheel.getMinDiameter()
+
+        self.calculatePoweredWheelInfo(diameter)
 
         if self.huygensMaintainingPower:
             #there is no ratchet with this setup
             ratchetThick = 0
 
-        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter,ratchet_thick=ratchetThick, rodMetricSize=rodMetricSize, screw=wheelScrews, ropeThick=ropeThick, power_clockwise=self.powered_wheel_clockwise, wallThick=wallThick)
+        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, ratchet_thick=ratchetThick, arbour_d=arbour_d, rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick)
 
         self.calculatePoweredWheelRatios()
 
@@ -566,7 +570,7 @@ class GoingTrain:
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
-            self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.rodMetricSize,
+            self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
                                            distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
                                            useRatchet=not self.huygensMaintainingPower, pinionAtFront=not self.chainAtBack)]
             pinionAtFront = not pinionAtFront
@@ -577,7 +581,7 @@ class GoingTrain:
                 #minute wheel
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=holeD, distanceToNextArbour=pairs[i].centre_distance,
+                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d, distanceToNextArbour=pairs[i].centre_distance,
                                     style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower)
                 else:
                     #just a normal gear
@@ -1466,9 +1470,10 @@ class SimpleClockPlates:
 
         bottomScrewHoleY = min([hole[1] for hole in screwHolePositions])
 
-        if self.heavy and self.usingPulley and back:
+        if self.heavy and self.usingPulley and back and self.backPlateFromWall == 0:
             #instead of an extra circle around the screwhole, make the plate wider extend all the way up
             #because the screwhole will be central when heavy and using a pulley
+            #don't do this if we're offset from the wall
             topOfBottomBitPos = (0, bottomScrewHoleY)
 
 
