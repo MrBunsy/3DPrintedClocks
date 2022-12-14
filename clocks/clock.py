@@ -712,7 +712,7 @@ class SimpleClockPlates:
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False):
+                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -724,6 +724,9 @@ class SimpleClockPlates:
         #how the pendulum is fixed to the anchor arbour.
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
+
+        #does the chain/rope/cord pass through the bottom pillar?
+        self.chainThroughPillar = chainThroughPillar
 
         #only used for the direct arbour pendulum
         self.pendulumFixingBearing = pendulumFixingBearing
@@ -1200,7 +1203,7 @@ class SimpleClockPlates:
         if self.heavy:
             bottomPillarR = self.plateDistance / 2
 
-        if bottomPillarR < minDistanceForChainHoles:
+        if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar:
             bottomPillarR = minDistanceForChainHoles
         topPillarR = holderWide / 2
 
@@ -1728,6 +1731,8 @@ class SimpleClockPlates:
         for i, pos in enumerate(self.bearingPositions):
             bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
             bearingOnTop = back
+
+
             if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR and i == len(self.bearingPositions)-1:
                 #this is the anchor arbour and we can't just use normal bearings
                 if self.escapementOnFront:
@@ -1739,7 +1744,6 @@ class SimpleClockPlates:
                     if self.pendulumAtFront:
                         raise ValueError("escapement and pendulum at front not supported with direct arbour (or at all?)")
                     bearingInfo = self.pendulumFixingBearing
-                    plate=plate.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD/2 + self.bearingWallThick).extrude(self.getPlateThick(back=back))
                     if back:
                         bearingOnTop = False
                 else:
@@ -1749,8 +1753,9 @@ class SimpleClockPlates:
                         # or the back bearing for a pendulum that sticks out the back
                         bearingInfo = self.pendulumFixingBearing
 
-
-
+            if bearingInfo.bearingOuterD > self.holderWide - self.bearingWallThick*2:
+                #this is a chunkier bearing, make the plate bigger
+                plate = plate.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back))
             plate = plate.cut(self.getBearingPunch(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 

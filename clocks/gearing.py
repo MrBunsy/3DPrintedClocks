@@ -40,7 +40,7 @@ class Gear:
         if style == GearStyle.CARTWHEEL:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
         if style == GearStyle.FLOWER:
-            return Gear.cutFlowerStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
+            return Gear.cutFlowerStyle(gear, outerRadius=outerRadius-2, innerRadius=innerRadius)
         if style == GearStyle.HONEYCOMB:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
@@ -527,7 +527,7 @@ class Gear:
 
         # pinionThick = thick * pinionthicker
 
-        base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.getMaxRadius())
+        base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.getMaxRadius()+1)
 
         if front:
             #pinion is on top of the wheel
@@ -892,6 +892,7 @@ class ArbourForPlate:
         else:
             #friction fitting pendulum
             raise ValueError("Only direct arbour pendulum fixing supported currently")
+            # print("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
         return shapes
 

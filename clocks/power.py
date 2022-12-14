@@ -902,7 +902,7 @@ class RopeWheel:
         '''
         return 20
 
-    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=2, power_clockwise=True, o_ring_diameter=3, arbour_d=3, use_o_rings=1):
+    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1.5, power_clockwise=True, o_ring_diameter=3, arbour_d=3, use_o_rings=1):
 
         #diameter for the rope
         self.diameter=diameter
@@ -950,7 +950,7 @@ class RopeWheel:
 
 
 
-        ratchet_outer_d = self.outer_diameter+20
+        ratchet_outer_d = self.outer_diameter+Ratchet.APROX_EXTRA_RADIUS_NEEDED*2
         if ratchet_thick > 0:
             self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchet_outer_d, innerRadius=self.outer_diameter/2, power_clockwise=power_clockwise)
         else:
@@ -2014,7 +2014,7 @@ class Ratchet:
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
 
-    APROX_EXTRA_RADIUS_NEEDED=10
+    APROX_EXTRA_RADIUS_NEEDED=12
 
     def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5):
         '''
@@ -2064,8 +2064,9 @@ class Ratchet:
         thick = 1.25
         #since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
         #mostly affects ratchets with a larger inner radius and a not-so-large outer radius
+        #note - since adjusting number of clicks to the circumference, this isn't so exagerated
         #TODO proper maffs
-        innerThick=thick*2
+        innerThick=thick*1.1
 
         innerClickR = self.clickInnerRadius
 
