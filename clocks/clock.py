@@ -2296,7 +2296,7 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
         if justStyle is not None and style != justStyle:
             continue
 
-        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize + 0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=1,
+        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=1,
                       outlineSameAsBody=False, secondLength=25)
 
         x = space*(i%perRow)

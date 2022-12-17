@@ -720,10 +720,12 @@ class BearingInfo():
     '''
     def __init__(self, bearingOuterD=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1):
         self.bearingOuterD = bearingOuterD
+        self.outerD = bearingOuterD
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
         #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
         #deprecated, use outerSafeD, this was how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
         self.bearingHeight = bearingHeight
+        self.height = bearingHeight
         self.innerD=innerD
         #how large can something that comes into contact with the bearing (from the rod) be
         self.innerSafeD = innerSafeD

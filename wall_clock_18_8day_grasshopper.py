@@ -60,7 +60,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pen
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+hands = clock.Hands(style=clock.HandStyle.BREGUET, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
 assembly = clock.Assembly(plates, hands=hands, pulley=pulley)
 

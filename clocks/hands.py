@@ -110,6 +110,8 @@ class Hands:
         if not hour and self.minuteFixing == "rectangle":
             #minute hand, assuming square or rectangle
             hand = hand.moveTo(0, 0).rect(self.minuteFixing_d1, self.minuteFixing_d2).cutThruAll()
+        elif not hour and self.minuteFixing == "circle":
+            hand = hand.moveTo(0, 0).circle(self.minuteFixing_d1 / 2).cutThruAll()
         elif hour and self.hourFixing == "circle":
             #hour hand, assuming circular friction fit
             hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()

@@ -95,13 +95,13 @@ if 'show_object' not in globals():
 
 # motionWorks = MotionWorks(minuteHandHolderHeight=30 )
 #
-# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False, outline=1.2)
+# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False, outline=1.2)
 #
 # show_object(hands.getHand(hour=False))
 
 
 # motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
-# hands = Hands(style=HandStyle.CIRCLES, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+# hands = Hands(style=HandStyle.CIRCLES, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 #
 # show_object(hands.getHand(hour=True).translate((40,0)))
 # show_object(hands.getHand(minute=True))
@@ -251,12 +251,23 @@ if False:
 #
 # show_object(holder)
 #
-motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.HONEYCOMB, compact=True, thick=2, module=0.8)
-# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
+motionWorks = MotionWorks(minuteHandHolderHeight=40, style=GearStyle.SIMPLE5, compact=False, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
+# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
 
-hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=120, thick=motionWorks.minuteHandSlotHeight, outline=1)
+hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1)
+
+# show_object(motionWorks.getAssembled())
+
+show_object(hands.getAssembled())
+
+if outputSTL:
+    motionWorks.outputSTLs(name="test", path="out")
+
+#
+# hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+#                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1)
 # #
 # show_object(hands.getHand(hour=True,second=False, colour="brown"))
 # show_object(hands.getHand(hour=True,second=False, colour="green"))
@@ -274,19 +285,19 @@ hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixin
 #
 # show_object(hands.getHand(hour=False,second=True, generate_outline=True).translate((-50,0,0)))
 # show_object(hands.getHand(hour=False).translate((50,0,0)))
-
-show_object(hands.getAssembled())
-
-# holly_leaf = HollyLeaf()
 #
-# show_object(holly_leaf.get_2d())
-random.seed(1)
-# wreath = Wreath(diameter=120, thick=1.6)
+# show_object(hands.getAssembled())
 #
-# # show_object(wreath.get_wreath())
-#
-# pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120, bobD=80, bobThick=10)
-pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
+# # holly_leaf = HollyLeaf()
+# #
+# # show_object(holly_leaf.get_2d())
+# random.seed(1)
+# # wreath = Wreath(diameter=120, thick=1.6)
+# #
+# # # show_object(wreath.get_wreath())
+# #
+# # pend = Pendulum(escapement=None, length=1000, handAvoiderInnerD=120, bobD=80, bobThick=10)
+# pend = Pendulum(None, 1000, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
 #
 # cosmetics={"green": wreath.get_leaves(),

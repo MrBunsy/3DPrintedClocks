@@ -23,7 +23,7 @@ plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksO
 # show_object(plates.getPlate(False).translate((0,0,plates.plateDistance + plates.plateThick)))
 #
 # hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=3, hourfixing_d=5, length=100, thick=4, outline=0, outlineSameAsBody=False)
-hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.minuteHandHolderSize+0.2, hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+hands = Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 assembly = Assembly(plates, hands=hands)
 
 show_object(assembly.getClock())
