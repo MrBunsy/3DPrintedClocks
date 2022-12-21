@@ -251,22 +251,22 @@ if False:
 #
 # show_object(holder)
 #
-motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=False, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
-# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
-
-hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)
-
-show_object(motionWorks.getAssembled())
-
-# show_object(motionWorks.getCannonPinion())
-# show_object(motionWorks.getHourHolder())
-
-# show_object(hands.getAssembled())
-
-if outputSTL:
-    motionWorks.outputSTLs(name="test", path="out")
+# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=False, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
+# # hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+# #                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
+#
+# hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+#                      length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)
+#
+# show_object(motionWorks.getAssembled())
+#
+# # show_object(motionWorks.getCannonPinion())
+# # show_object(motionWorks.getHourHolder())
+#
+# # show_object(hands.getAssembled())
+#
+# if outputSTL:
+#     motionWorks.outputSTLs(name="test", path="out")
 
 #
 # hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -373,9 +373,9 @@ if outputSTL:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-# dial = Dial(outsideD=200)
-#
-# show_object(dial.getDial())
+dial = Dial(outsideD=200)
+
+show_object(dial.getDial())
 
 
 # springArbour = SpringArbour(power_clockwise=True)

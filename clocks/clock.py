@@ -718,7 +718,8 @@ class SimpleClockPlates:
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True):
+                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True,
+                 centred_second_hand=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -730,6 +731,9 @@ class SimpleClockPlates:
         #how the pendulum is fixed to the anchor arbour.
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
+
+        #second hand is centred on the motion works
+        self.centred_second_hand = centred_second_hand
 
         #does the chain/rope/cord pass through the bottom pillar?
         self.chainThroughPillar = chainThroughPillar
@@ -750,6 +754,7 @@ class SimpleClockPlates:
         #to get fixing positions
         self.dial = dial
 
+        #is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable
         self.motionWorksAbove=motionWorksAbove
         #escapement is on top of the front plate
         self.escapementOnFront = escapementOnFront
@@ -1044,19 +1049,8 @@ class SimpleClockPlates:
                                             endshake=self.endshake, pendulum_fixing=self.pendulumFixing)
             self.arboursForPlate.append(arbourForPlate)
 
-        motionWorksDistance = self.motionWorks.getArbourDistance()
-        #get position of motion works relative to the minute wheel
-        if style == "round":
-            #place the motion works on the same circle as the rest of the bearings
-            angle =  2*math.asin(motionWorksDistance/(2*self.compactRadius))
-            compactCentre = (0, self.compactRadius)
-            minuteAngle = math.atan2(self.bearingPositions[self.goingTrain.chainWheels][1] - compactCentre[1], self.bearingPositions[self.goingTrain.chainWheels][0] - compactCentre[0])
-            motionWorksPos = polar(minuteAngle - angle, self.compactRadius)
-            motionWorksPos=(motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
-            self.motionWorksRelativePos = (motionWorksPos[0] - self.bearingPositions[self.goingTrain.chainWheels][0], motionWorksPos[1] - self.bearingPositions[self.goingTrain.chainWheels][1])
-        else:
-            #motion works is directly below the minute rod
-            self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
+
+
 
         self.chainHoleD = self.goingTrain.poweredWheel.getChainHoleD()
 
@@ -1105,6 +1099,31 @@ class SimpleClockPlates:
                                                tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
             else:
                 raise ValueError("Huygens maintaining power only currently supported with chain wheels")
+
+        self.hands_position = self.bearingPositions[self.goingTrain.chainWheels][:2]
+
+        if self.centred_second_hand:
+            #adjust motion works size
+            distance_between_minute_wheel_and_seconds_wheel = np.linalg.norm(np.subtract(self.bearingPositions[self.goingTrain.chainWheels][:2], self.bearingPositions[-2][:2]))
+            self.motionWorks.calculateGears(arbourDistance= distance_between_minute_wheel_and_seconds_wheel/2)
+
+            #override motion works position
+            self.motionWorksAbove = not self.pendulumAtTop
+            self.hands_position = self.bearingPositions[-2][:2]
+
+        motionWorksDistance = self.motionWorks.getArbourDistance()
+        # get position of motion works relative to the minute wheel
+        if style == "round":
+            # place the motion works on the same circle as the rest of the bearings
+            angle = 2 * math.asin(motionWorksDistance / (2 * self.compactRadius))
+            compactCentre = (0, self.compactRadius)
+            minuteAngle = math.atan2(self.bearingPositions[self.goingTrain.chainWheels][1] - compactCentre[1], self.bearingPositions[self.goingTrain.chainWheels][0] - compactCentre[0])
+            motionWorksPos = polar(minuteAngle - angle, self.compactRadius)
+            motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
+            self.motionWorksRelativePos = (motionWorksPos[0] - self.bearingPositions[self.goingTrain.chainWheels][0], motionWorksPos[1] - self.bearingPositions[self.goingTrain.chainWheels][1])
+        else:
+            # motion works is directly below the minute rod
+            self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
 
     def getPlateThick(self, back=True, standoff=False):
         if standoff:
@@ -1851,9 +1870,9 @@ class SimpleClockPlates:
 
 
 
-        motionWorksPos = (self.bearingPositions[self.goingTrain.chainWheels][0] + self.motionWorksRelativePos[0], self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorksRelativePos[1])
+        motionWorksPos = npToSet(np.add(self.hands_position, self.motionWorksRelativePos))
 
-        #hole for screw to hold motion works arbour
+        #hole for screw to hold motion works arbour TODO - what if this is on top of a bearing?
         plate = plate.cut(self.fixingScrews.getCutter().translate(motionWorksPos))
 
         #embedded nut on the front so we can tighten this screw in
@@ -2154,7 +2173,7 @@ class Assembly:
 
         motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos,minuteAngle=minuteAngle)
 
-        clock = clock.add(motionWorksModel.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset)))
+        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset)))
 
 
 
@@ -2169,13 +2188,21 @@ class Assembly:
 
         # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
-        clock = clock.add(hands.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
+        clock = clock.add(hands.translate((self.plates.hands_position[0], self.plates.hands_position[1],
                                               minuteHandZ - self.motionWorks.hourHandSlotHeight)))
 
         if self.goingTrain.escapement_time == 60:
             #second hand!! yay
             secondHand = self.hands.getHand(second=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
-            clock = clock.add(secondHand.translate((self.plates.bearingPositions[-2][0], self.plates.bearingPositions[-2][1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick )))
+
+            secondHandPos = self.plates.bearingPositions[-2][:2]
+            secondHandPos.append(self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick)
+
+            if self.plates.centred_second_hand:
+                secondHandPos = self.plates.hands_position
+                secondHandPos.append(minuteHandZ + self.hands.thick + self.hands.secondFixing_thick)
+
+            clock = clock.add(secondHand.translate(secondHandPos))
 
 
         pendulumRodExtraZ = 2

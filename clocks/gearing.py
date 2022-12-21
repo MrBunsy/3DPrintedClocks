@@ -488,7 +488,18 @@ class Gear:
         # self.addendum_height = 0.95 * addendum_factor * module
 
     def getMaxRadius(self):
+        '''
+        radius that encompasses the outermost parts of the teeth
+        '''
         return self.pitch_diameter/2 + self.addendum_factor*self.module
+
+    def getMinRadius(self):
+        '''
+        you could cut a hole through the gear of this radius without touchign the teeth
+        '''
+        dedendum_height = self.dedendum_factor * self.module
+
+        return self.pitch_diameter/2 - dedendum_height
 
     def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1):
         gear = self.get2D()
@@ -1772,6 +1783,9 @@ class MotionWorks:
          and minute pinion in order to prevent the hour hand from having too much shake, as the minute wheel and pinion are loose on the stud and the hour
          wheel is loose on the cannon, so that a shallow depthing here will give considerable back lash, which is especially noticeable when winding.'
 
+
+         Note - bits of this get overriden by the plates (for the centred seconds hands). this is a bit of a hack
+
         '''
         self.arbourD = arbourD
         self.holeD=arbourD + 0.4
@@ -1789,17 +1803,16 @@ class MotionWorks:
         if self.compact:
             self.pinionCapThick = 0
 
+        self.module = module
+        self.compensateLooseArbour = compensateLooseArbour
+
+        self.calculateGears()
 
         self.bearing = bearing
 
         self.wallThick = 1.5
 
-        #pinching ratios from The Modern Clock
-        #adjust the module so the diameters work properly
-        self.arbourDistance = module * (36 + 12) / 2
-        secondModule = 2 * self.arbourDistance / (40 + 10)
-        # print("module: {}, secondMOdule: {}".format(module, secondModule))
-        self.pairs = [WheelPinionPair(36,12, module, looseArbours=compensateLooseArbour), WheelPinionPair(40,10,secondModule, looseArbours=compensateLooseArbour)]
+
         # self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
         self.cannonPinionPinionThick = self.thick * 2
 
@@ -1831,9 +1844,11 @@ class MotionWorks:
         self.bearingHolderThick = 0
 
         if self.bearing is not None:
-            self.bearingHolderThick = self.bearing.height
-            if self.compact:
-                self.bearingHolderThick += 1
+            if self.bearing.outerD > self.pairs[0].pinion.getMinRadius()*2 - 1:
+                #this bearing won't fit inside the cannon pinion
+                self.bearingHolderThick = self.bearing.height
+                if self.compact:
+                    self.bearingHolderThick += 1
             #we're big enough with the bearings, try to reduce size where we can
             self.wallThick = 1.2
 
@@ -1851,6 +1866,23 @@ class MotionWorks:
             extra_height = self.thick*2
 
         self.cannonPinionTotalHeight = extra_height + self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight + self.thick + self.cannonPinionBaseHeight
+
+    def calculateGears(self, arbourDistance=-1):
+        '''
+        If no arbour distance, use module size to calculate arbour distance, and set it.
+        If arbour distance provided, use it to calculate module size and set that
+        changes properties of this object
+        '''
+        # pinching ratios from The Modern Clock
+        # adjust the module so the diameters work properly
+        if arbourDistance < 0:
+            self.arbourDistance = self.module * (36 + 12) / 2
+        else:
+            self.module = arbourDistance / ((36 + 12) / 2)
+            self.arbourDistance = arbourDistance
+        secondModule = 2 * self.arbourDistance / (40 + 10)
+        print("module: {}, secondMOdule: {}".format(self.module, secondModule))
+        self.pairs = [WheelPinionPair(36, 12, self.module, looseArbours=self.compensateLooseArbour), WheelPinionPair(40, 10, secondModule, looseArbours=self.compensateLooseArbour)]
 
     def getAssembled(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
@@ -1918,10 +1950,10 @@ class MotionWorks:
 
         pinion = base
 
-        if self.bearing is not None:
+        if self.bearing is not None and self.bearingHolderThick > 0:
             # extend out the bottom for space for a slot on the bottom
             pinion = pinion.translate((0, 0, self.bearingHolderThick))
-            pinion = pinion.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearing.height))
+            pinion = pinion.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearingHolderThick))
 
         # has an arm to hold the minute hand
         pinion = pinion.add(cq.Workplane("XY").circle(self.minuteHandHolderD / 2).extrude(self.cannonPinionTotalHeight - self.cannonPinionBaseHeight - self.minuteHandSlotHeight).translate((0,0,self.cannonPinionBaseHeight)))
@@ -1965,7 +1997,7 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.holeD, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style)
+        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style)
 
     def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
