@@ -1935,8 +1935,8 @@ class MotionWorks:
             # minute holder is -0.2 and is pretty snug, but this needs to be really snug
             # -0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
             # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
-            holderR_base = self.minuteHandHolderSize / 2 + 0.1
-            holderR_top = self.minuteHandHolderSize / 2 - 0.2
+            holderR_base = self.minuteHandHolderSize / 2 + 0.05
+            holderR_top = self.minuteHandHolderSize / 2 - 0.15
 
             circle = cq.Workplane("XY").circle(holder_r)
             holder = cq.Workplane("XZ").lineTo(holderR_base, 0).lineTo(holderR_top, self.minuteHandSlotHeight).lineTo(0, self.minuteHandSlotHeight).close().sweep(circle)#.translate((0, 0, self.thick))
@@ -2002,11 +2002,11 @@ class MotionWorks:
         if self.snail is not None:
             hour = hour.add(self.snail.get3D(self.thick))
 
-        height = self.cannonPinionTotalHeight - self.cannonPinionBaseHeight - self.thick - self.space - self.minuteHandSlotHeight
+        top_z = self.cannonPinionTotalHeight  - self.space - self.minuteHandSlotHeight - self.cannonPinionBaseHeight
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
-        handHolderStartZ = height - self.hourHandSlotHeight
+        handHolderStartZ = top_z - self.hourHandSlotHeight
 
         if handHolderStartZ < 0.0001:
             #because CQ won't let you make shapes of zero height
@@ -2016,11 +2016,11 @@ class MotionWorks:
 
         # return hour
         circle = cq.Workplane("XY").circle(bottomR)
-        shape = cq.Workplane("XZ").moveTo(bottomR,0).lineTo(bottomR,handHolderStartZ).lineTo(holderR_base,handHolderStartZ).lineTo(holderR_top,height).lineTo(holeR,height).lineTo(holeR,0).close().sweep(circle).translate((0,0,self.thick))
+        shape = cq.Workplane("XZ").moveTo(bottomR,self.thick).lineTo(bottomR,handHolderStartZ).lineTo(holderR_base,handHolderStartZ).lineTo(holderR_top,top_z).lineTo(holeR,top_z).lineTo(holeR,self.thick).close().sweep(circle)
 
         hour = hour.add(shape)
 
-        hole = cq.Workplane("XY").circle(holeR).extrude(height*2)
+        hole = cq.Workplane("XY").circle(holeR).extrude(self.cannonPinionTotalHeight)
         hour = hour.cut(hole)
 
         #seems like we can't cut through all when we've added shapes? I'm sure this has worked elsewhere!

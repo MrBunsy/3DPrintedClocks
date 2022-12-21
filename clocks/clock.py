@@ -2170,7 +2170,7 @@ class Assembly:
         # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
         clock = clock.add(hands.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1],
-                                              minuteHandZ - self.motionWorks.hourHandSlotHeight - self.motionWorks.space)))
+                                              minuteHandZ - self.motionWorks.hourHandSlotHeight)))
 
         if self.goingTrain.escapement_time == 60:
             #second hand!! yay
