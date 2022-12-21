@@ -1798,7 +1798,7 @@ class MotionWorks:
         # print("module: {}, secondMOdule: {}".format(module, secondModule))
         self.pairs = [WheelPinionPair(36,12, module, looseArbours=compensateLooseArbour), WheelPinionPair(40,10,secondModule, looseArbours=compensateLooseArbour)]
         # self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
-        self.cannonPinionThick = self.thick*2
+        self.cannonPinionPinionThick = self.thick * 2
         #minuteHandHolderSize=5,
         #length of the edge of the square that holds the minute hand
         #(if minuteHandHolderIsSquare is false, then it's round and this is a diameter)
@@ -1879,7 +1879,7 @@ class MotionWorks:
 
         '''
 
-        thick = self.pinionCapThick*2 + self.cannonPinionThick + self.bearingHolderThick
+        thick = self.pinionCapThick * 2 + self.cannonPinionPinionThick + self.bearingHolderThick
 
 
         return thick
@@ -1895,13 +1895,13 @@ class MotionWorks:
 
         if self.pinionCapThick > 0:
             base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
-        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionThick).translate((0,0,self.pinionCapThick))
+        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick))
         pinion = pinion.add(base)
         if self.pinionCapThick > 0:
-            pinion = pinion.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionThick)))
+            pinion = pinion.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
 
         # has an arm to hold the minute hand
-        pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD / 2).extrude(self.minuteHolderTotalHeight - self.minuteHandSlotHeight - self.cannonPinionThick - self.thick)
+        pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD / 2).extrude(self.minuteHolderTotalHeight - self.minuteHandSlotHeight - self.cannonPinionPinionThick - self.thick)
 
 
         if self.minuteHandHolderIsSquare:
@@ -1981,7 +1981,7 @@ class MotionWorks:
         if self.snail is not None:
             hour = hour.add(self.snail.get3D(self.thick))
 
-        height = self.minuteHolderTotalHeight - self.cannonPinionThick - self.thick - self.thick  - self.minuteHandSlotHeight - self.space
+        height = self.minuteHolderTotalHeight - self.cannonPinionPinionThick - self.thick - self.thick - self.minuteHandSlotHeight - self.space
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 

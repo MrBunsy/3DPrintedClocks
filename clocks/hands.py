@@ -22,7 +22,7 @@ class HandStyle(Enum):
 class Hands:
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
                  hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
-                 chunky = False):
+                 chunky = False, second_hand_centred=False):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
         '''
@@ -34,6 +34,12 @@ class Hands:
         self.fixing_offset=fixing_offset
         self.length = length
         self.style=style
+        #if true, this second hand is centred through the motion works, and is longer and thinner than the minute hand.
+        #not supported for all styles
+        self.second_hand_centred = second_hand_centred
+
+        #try to make the second hand counterbalanced
+        self.second_hand_balanced = second_hand_centred
 
         self.chunky = chunky
 
@@ -146,6 +152,8 @@ class Hands:
         '''
         #either hour, minute or second hand (for now?)
         if provide a colour, return the layer for just that colour (for novelty hands with lots of colours)
+
+        if generate_outline is true this is just the shape of the hand used to generate an outline - this skips cutting a hole for the fixing
         '''
 
         #default is minute hand
@@ -165,8 +173,14 @@ class Hands:
             # if self.style == "square":
             #     width = width * 1.75
         if second:
-            length = self.secondLength
-            base_r = self.secondLength * 0.2
+
+            if self.second_hand_centred:
+                # length = self.length
+                base_r = self.secondFixing_d*2
+            else:
+                length = self.secondLength
+                base_r = self.secondLength * 0.2
+
 
         ignoreOutline = False
 
@@ -200,6 +214,18 @@ class Hands:
                 base_r = max(base_r, self.length * 0.1 / 2)
 
             hand = hand.workplaneFromTagged("base").moveTo(width/2, 0).line(0,length).radiusArc((-width/2,length),-width/2).line(0,-length).close().extrude(thick)
+
+
+            if second and self.second_hand_balanced:
+                area = length * width
+                #proportional to moment, assuming uniform thickness and ignoring the curved end and outline
+                moment = length/2 * area
+                counterweight_r = width*2.5
+                counterweight_distance = moment/(math.pi*(counterweight_r**2))
+
+                hand = hand.workplaneFromTagged("base").moveTo(0,-counterweight_distance/2).rect(width,counterweight_distance).extrude(thick)
+                hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance).circle(counterweight_r).extrude(thick)
+
         elif self.style == HandStyle.SQUARE:
 
             if not second:

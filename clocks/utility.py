@@ -737,7 +737,8 @@ class BearingInfo():
         #subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
         self.innerDWiggleRoom = innerDWiggleRoom
 
-
+    def get_string(self):
+        return "{inner}x{outer}x{thick}".format(inner = self.innerD, outer = self.outerD, thick=self.height)
 
 def getBearingInfo(innerD):
     '''

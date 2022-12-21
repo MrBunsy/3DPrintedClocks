@@ -405,7 +405,7 @@ class GoingTrain:
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
         self.calculatePoweredWheelRatios()
 
-    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=2, preferedDiameter=-1):
+    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=2, preferedDiameter=-1, use_steel_tube=True):
 
         diameter = preferedDiameter
         if diameter < 0:
@@ -417,7 +417,13 @@ class GoingTrain:
             #there is no ratchet with this setup
             ratchetThick = 0
 
-        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, ratchet_thick=ratchetThick, arbour_d=arbour_d, rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick)
+
+        if use_steel_tube:
+            hole_d = STEEL_TUBE_DIAMETER
+        else:
+            hole_d = arbour_d + LOOSE_FIT_ON_ROD
+
+        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, hole_d = hole_d, ratchet_thick=ratchetThick, arbour_d=arbour_d, rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick)
 
         self.calculatePoweredWheelRatios()
 
@@ -1714,10 +1720,16 @@ class SimpleClockPlates:
         '''
         A shape that can be cut out of a clock plate to hold a bearing
         '''
+
+
+
         if bearingInfo is None:
             bearingInfo = getBearingInfo(self.arbourD)
 
         height = self.getPlateThick(back)
+
+        if bearingInfo.height >= height:
+            raise ValueError("{} plate not thick enough to hold bearing: {}".format("Back" if back else "Front",bearingInfo.get_string()))
 
         if bearingOnTop:
             punch = cq.Workplane("XY").circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.bearingHeight)

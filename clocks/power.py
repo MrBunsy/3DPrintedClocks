@@ -932,7 +932,8 @@ class RopeWheel:
         self.outer_diameter = self.diameter + rope_diameter*2
         self.slope_length = self.rope_diameter / math.sin(self.slope_angle)
 
-        self.extra_pipe_thick = 0.5
+        #standoff from bearing
+        self.bearing_standoff_thick = 0.5
 
         self.wheel_thick = self.wall_thick*2 + math.cos(self.slope_angle)*self.slope_length*2 + self.centre_wide
 
@@ -956,7 +957,14 @@ class RopeWheel:
         else:
             self.ratchet = None
 
-        print("rope wheel needs steel pipe of length {}mm".format(self.wheel_thick + self.extra_pipe_thick))
+        print("rope wheel needs steel pipe of length {}mm".format(self.wheel_thick + self.bearing_standoff_thick))
+
+    def getScrewPositions(self):
+        '''
+        acn be printed in one peice, but still might want screw positions if we're being bolted to a wheel (eg huygen's)
+        '''
+        print("TODO screw positions for single-peice rope wheel")
+        return []
 
     def isClockwise(self):
         '''
@@ -1083,6 +1091,11 @@ class RopeWheel:
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.wheel_thick))
 
+        bearing_inner_safe_d = getBearingInfo(self.arbour_d).innerSafeD
+
+        if self.bearing_standoff_thick > 0 and bearing_inner_safe_d > self.hole_d:
+            wheel = wheel.add(cq.Workplane("XY").circle(bearing_inner_safe_d/2).circle(self.hole_d/2).extrude(self.bearing_standoff_thick).translate((0,0,self.wheel_thick)))
+
 
 
         return wheel
@@ -1092,6 +1105,8 @@ class RopeWheel:
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d/2).extrude(self.getHeight()))
 
+
+
         return wheel
 
 
@@ -1100,7 +1115,7 @@ class RopeWheel:
         return self.get_wheel_with_ratchet()
 
     def getHeight(self):
-        return self.wheel_thick + self.extra_pipe_thick + self.ratchet.thick
+        return self.wheel_thick + self.bearing_standoff_thick + self.ratchet.thick
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path,"{}_rope_wheel_with_click.stl".format(name))
@@ -1120,7 +1135,7 @@ class RopeWheel:
 
         '''
 
-        zOffset = -(self.wheel_thick)/2 - self.extra_pipe_thick
+        zOffset = -(self.wheel_thick)/2 - self.bearing_standoff_thick
         #if the calculation of innerDiameter is right, then the rope will be diameter apart
         return [[(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)]]
 
