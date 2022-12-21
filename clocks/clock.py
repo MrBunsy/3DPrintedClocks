@@ -2164,8 +2164,8 @@ class Assembly:
         # hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
         hands = self.hands.getAssembled(time_minute = time_min, time_hour=time_hour, include_seconds=False ,gap_size = self.motionWorks.hourHandSlotHeight - self.hands.thick)
 
-        minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset\
-                      + self.motionWorks.minuteHolderTotalHeight - self.hands.thick
+        minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset \
+                      + self.motionWorks.cannonPinionTotalHeight - self.hands.thick
 
         # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
@@ -2296,7 +2296,7 @@ class Assembly:
 def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False):
     demo = cq.Workplane("XY")
 
-    motionWorks = MotionWorks(minuteHandHolderHeight=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
     space = length
 
@@ -2365,7 +2365,7 @@ def getGearDemo(module=1, justStyle=None):
     train.genGears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,
                    ratchetInset=False)
 
-    motionWorks = MotionWorks(minuteHandHolderHeight=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
     demoArboursNums = [0, 1, 3]
 

@@ -53,7 +53,7 @@ pendulumSticksOut=20
 train.genGears(module_size=1,moduleReduction=0.85, thick=2, chainWheelThick=5, useNyloc=False, escapeWheelMaxD=0.75,ratchetInset=False)
 
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+40, )
+motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 40, )
 
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour

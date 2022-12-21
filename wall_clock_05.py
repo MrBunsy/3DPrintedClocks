@@ -42,7 +42,7 @@ pendulumSticksOut=0
 train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
 train.outputSTLs(clockName,clockOutDir)
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=30 )
+motionWorks = clock.MotionWorks(extra_height=30)
 motionWorks.outputSTLs(clockName,clockOutDir)
 
 #trying a thicker anchor and glue rather than nyloc

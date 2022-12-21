@@ -81,7 +81,7 @@ train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknes
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30,style=gearStyle, thick=2, compensateLooseArbour=True)
+motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2, compensateLooseArbour=True)
 
 
 #trying a thicker anchor and glue rather than nyloc

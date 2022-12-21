@@ -1751,9 +1751,12 @@ class Arbour:
 
 class MotionWorks:
 
-    def __init__(self, arbourD=3, thick=3, module=1, minuteHandThick=3, minuteHandHolderHeight=50,
+    def __init__(self, arbourD=3, thick=3, module=1, minuteHandThick=3, extra_height=0,
                  style="HAC", compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None):
         '''
+
+        minuteHolderTotalHeight - extra height above the minimum
+
         the the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
 
         if bearing is not none, it expects a BearingInfo object. This will provide space at the top and bottom of the cannon pinion for such a bearing
@@ -1799,6 +1802,7 @@ class MotionWorks:
         self.pairs = [WheelPinionPair(36,12, module, looseArbours=compensateLooseArbour), WheelPinionPair(40,10,secondModule, looseArbours=compensateLooseArbour)]
         # self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
         self.cannonPinionPinionThick = self.thick * 2
+
         #minuteHandHolderSize=5,
         #length of the edge of the square that holds the minute hand
         #(if minuteHandHolderIsSquare is false, then it's round and this is a diameter)
@@ -1819,7 +1823,7 @@ class MotionWorks:
             self.minuteHandHolderIsSquare = False
 
         # print("minute hand holder D: {}".format(self.minuteHandHolderD))
-        self.minuteHolderTotalHeight = minuteHandHolderHeight
+
         self.distanceBetweenHands = minuteHandThick
         self.minuteHandSlotHeight = minuteHandThick
         self.hourHandSlotHeight = minuteHandThick + self.distanceBetweenHands
@@ -1833,7 +1837,7 @@ class MotionWorks:
             #we're big enough with the bearings, try to reduce size where we can
             self.wallThick = 1.2
 
-
+        self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
         self.space = 0.5
         #old size of space so I can reprint without reprinting the hands (for the non-bearing version)
         self.hourHandHolderD = self.minuteHandHolderD + 1 + self.wallThick*2
@@ -1841,6 +1845,12 @@ class MotionWorks:
         if self.bearing is not None:
             #remove the backwards compatible bodge, we don't want this any bigger than it needs to be
             self.hourHandHolderD -= 1
+
+        if extra_height < self.thick*2:
+            #to ensure hour hand can't hit the top of the arbour
+            extra_height = self.thick*2
+
+        self.cannonPinionTotalHeight = extra_height + self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight + self.thick + self.cannonPinionBaseHeight
 
     def getAssembled(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
@@ -1890,22 +1900,35 @@ class MotionWorks:
 
         base = cq.Workplane("XY")
 
+
         if self.strikeTrigger is not None:
             base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0,0,0),(0,0,1),self.strikeHourAngleDeg).faces(">Z").workplane()
 
         if self.pinionCapThick > 0:
             base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
-        pinion = self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick))
-        pinion = pinion.add(base)
+
+        base = base.add(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
+
+
+
+
+
         if self.pinionCapThick > 0:
-            pinion = pinion.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
+            base = base.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
+
+        pinion = base
+
+        if self.bearing is not None:
+            # extend out the bottom for space for a slot on the bottom
+            pinion = pinion.translate((0, 0, self.bearingHolderThick))
+            pinion = pinion.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearing.height))
 
         # has an arm to hold the minute hand
-        pinion = pinion.faces(">Z").workplane().circle(self.minuteHandHolderD / 2).extrude(self.minuteHolderTotalHeight - self.minuteHandSlotHeight - self.cannonPinionPinionThick - self.thick)
+        pinion = pinion.add(cq.Workplane("XY").circle(self.minuteHandHolderD / 2).extrude(self.cannonPinionTotalHeight - self.cannonPinionBaseHeight - self.minuteHandSlotHeight).translate((0,0,self.cannonPinionBaseHeight)))
 
 
         if self.minuteHandHolderIsSquare:
-            pinion = pinion.faces(">Z").workplane().rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight)
+            pinion = pinion.add(cq.Workplane("XY").rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight).translate((0,0,self.cannonPinionTotalHeight-self.minuteHandSlotHeight)))
         else:
 
             holder_r = self.minuteHandHolderSize / 2
@@ -1917,20 +1940,18 @@ class MotionWorks:
 
             circle = cq.Workplane("XY").circle(holder_r)
             holder = cq.Workplane("XZ").lineTo(holderR_base, 0).lineTo(holderR_top, self.minuteHandSlotHeight).lineTo(0, self.minuteHandSlotHeight).close().sweep(circle)#.translate((0, 0, self.thick))
-            holder = holder.translate((0,0,self.minuteHolderTotalHeight - self.minuteHandSlotHeight))
+            holder = holder.translate((0, 0, self.cannonPinionTotalHeight- self.minuteHandSlotHeight))
 
             pinion = pinion.add(holder)
 
-        pinion = pinion.cut(cq.Workplane("XY").circle(self.holeD/2).extrude(self.minuteHolderTotalHeight))
+        pinion = pinion.cut(cq.Workplane("XY").circle(self.holeD/2).extrude(self.cannonPinionTotalHeight))
 
 
         if self.bearing is not None:
             #slot for bearing on top
-            pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outerD / 2).extrude(self.bearing.height).translate((0, 0, self.minuteHolderTotalHeight - self.bearing.height)))
+            pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outerD / 2).extrude(self.bearing.height).translate((0, 0, self.cannonPinionTotalHeight - self.bearing.height)))
 
-            #extend out the bottom for space for a slot on the bottom
-            pinion = pinion.translate((0,0,self.bearingHolderThick))
-            pinion = pinion.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearing.height))
+
             pinion = pinion.cut(getHoleWithHole(innerD=self.holeD, outerD=self.bearing.outerD, deep=self.bearing.height))
 
 
@@ -1981,14 +2002,15 @@ class MotionWorks:
         if self.snail is not None:
             hour = hour.add(self.snail.get3D(self.thick))
 
-        height = self.minuteHolderTotalHeight - self.cannonPinionPinionThick - self.thick - self.thick - self.minuteHandSlotHeight - self.space
+        height = self.cannonPinionTotalHeight - self.cannonPinionBaseHeight - self.thick - self.space - self.minuteHandSlotHeight
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
         handHolderStartZ = height - self.hourHandSlotHeight
 
-        if handHolderStartZ < 0:
-            handHolderStartZ = 0
+        if handHolderStartZ < 0.0001:
+            #because CQ won't let you make shapes of zero height
+            handHolderStartZ = 0.0001
 
         holeR = self.minuteHandHolderD / 2 + self.space / 2
 

@@ -50,7 +50,7 @@ pendulumSticksOut=20
 train.genGears(module_size=1,moduleReduction=1.1, thick=2.4, chainWheelThick=5, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=3)
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=40, style=gearStyle, compact=True, thick=2)
+motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 

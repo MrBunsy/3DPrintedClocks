@@ -40,7 +40,7 @@ pendulumSticksOut=8
 train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
 
 
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=pendulumSticksOut+30 )
+motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30)
 
 
 #trying a thicker anchor and glue rather than nyloc

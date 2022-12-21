@@ -68,7 +68,7 @@ cordwheel = train.getArbourWithConventionalNaming(0)
 # show_object(cordwheel.poweredWheel.getAssembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
 #
-motionWorks = clock.MotionWorks(minuteHandHolderHeight=30,style=gearStyle, thick=2, compensateLooseArbour=True)
+motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=2, compensateLooseArbour=True)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
