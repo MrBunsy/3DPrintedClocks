@@ -902,7 +902,8 @@ class RopeWheel:
         '''
         return 20
 
-    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1.5, power_clockwise=True, o_ring_diameter=3, arbour_d=3, use_o_rings=1):
+    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1.5, power_clockwise=True,
+                 o_ring_diameter=3, arbour_d=3, use_o_rings=1, ratchet_outer_d=-1):
 
         #diameter for the rope
         self.diameter=diameter
@@ -950,8 +951,9 @@ class RopeWheel:
             self.screw = MachineScrew(2)
 
 
-
-        ratchet_outer_d = self.outer_diameter+Ratchet.APROX_EXTRA_RADIUS_NEEDED*2
+        if ratchet_outer_d < 0:
+            ratchet_outer_d = self.outer_diameter+Ratchet.APROX_EXTRA_RADIUS_NEEDED*2
+        self.ratchet_thick = ratchet_thick
         if ratchet_thick > 0:
             self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchet_outer_d, innerRadius=self.outer_diameter/2, power_clockwise=power_clockwise)
         else:
@@ -981,16 +983,13 @@ class RopeWheel:
         else:
             return self.outer_diameter/2
 
-    def getScrewPositions(self):
-        return self.screw_positions
-
     def printScrewLength(self):
         if self.screw.countersunk:
             screwLength = self.getHeight()-WASHER_THICK
         else:
             screwLength = self.getHeight() - WASHER_THICK - self.screw.getHeadHeight()
         #nut hole is extra deep by thickness of the ratchet
-        print("RopeWheel needs: {} screw length {}-{}".format(self.screw.getString(), screwLength, screwLength-self.ratchet.thick))
+        print("RopeWheel needs: {} screw length {}-{}".format(self.screw.getString(), screwLength, screwLength-self.ratchet_thick))
 
     def getTurnsForDrop(self, maxChainDrop):
         return maxChainDrop/self.circumference
@@ -1111,16 +1110,18 @@ class RopeWheel:
 
 
     def getAssembled(self):
-
-        return self.get_wheel_with_ratchet()
+        if self.ratchet is not None:
+            return self.get_wheel_with_ratchet()
+        else:
+            return self.get_wheel()
 
     def getHeight(self):
-        return self.wheel_thick + self.bearing_standoff_thick + self.ratchet.thick
+        return self.wheel_thick + self.bearing_standoff_thick + self.ratchet_thick
 
     def outputSTLs(self, name="clock", path="../out"):
-        out = os.path.join(path,"{}_rope_wheel_with_click.stl".format(name))
+        out = os.path.join(path,"{}_rope_wheel.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_wheel_with_ratchet(), out)
+        exporters.export(self.getAssembled(), out)
 
     def getChainPositionsFromTop(self):
         '''
@@ -2037,6 +2038,7 @@ class Ratchet:
         '''
         self.outsideDiameter=totalD
 
+        #how wide the outer click wheel is
         self.outer_thick = outer_thick
         if self.outer_thick < 0:
             self.outer_thick = self.outsideDiameter*0.1

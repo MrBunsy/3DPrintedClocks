@@ -373,11 +373,11 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-dial = Dial(outsideD=200)
+# dial = Dial(outsideD=200)
+#
+# show_object(dial.getDial())
 
-show_object(dial.getDial())
-
-
+AnchorEscapement.get_with_45deg_pallets(teeth=30)
 # springArbour = SpringArbour(power_clockwise=True)
 #
 # show_object(springArbour.getArbour())

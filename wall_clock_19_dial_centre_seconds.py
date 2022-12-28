@@ -1,3 +1,5 @@
+import math
+
 import clocks.clock as clock
 
 '''
@@ -13,7 +15,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_granny"
+clockName="wall_clock_19"
 clockOutDir="out"
 gearStyle = clock.GearStyle.FLOWER
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
@@ -22,11 +24,13 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, anchorThick=6)
+moduleReduction=0.875
 
-train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=0, hours=30, usePulley=True)
+train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1400, chainAtBack=False, chainWheels=0, hours=30, usePulley=True, huygensMaintainingPower=True, escapeWheelPinionAtFront=True)
 
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
+#lie about module reduction, we don't want smallest possible clock, we want a clock where the 2nd arbour isn't too close to the motion works arbour
+train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=1)
 
 # train.genCordWheels(ratchetThick=5, cordThick=1, cordCoilThick=11, style=gearStyle)
 # 61 links/ft 1-day regula chain. copied from clock 04
@@ -34,8 +38,17 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 train.genRopeWheels(ratchetThick=4, ropeThick=2.2, use_steel_tube=False)
 
 pendulumSticksOut=25
+# was attemptign to get the second arbour to line up with where I want the arbour for the motion works - but I think this is actually impossible
+# to do without the gears overlapping
+# ratio_of_teeth = sum(train.trains[0]["train"][0]) / sum(train.trains[0]["train"][1])
+#
+# first_module_size = 1.25
+#
+# module_sizes = [first_module_size, first_module_size * ratio_of_teeth]
+module_sizes = None
 
-train.genGears(module_size=1.25,moduleReduction=0.875, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3, pendulumFixing=pendulumFixing)
+train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2,
+               pendulumFixing=pendulumFixing, module_sizes=module_sizes)
 train.printInfo(weight_kg=0.75)
 
 motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, bearing=clock.getBearingInfo(3), module=2)
@@ -48,13 +61,13 @@ dial = clock.Dial(120)
 
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock_19",
-                                 style="vertical", backPlateFromWall=40, usingPulley=True, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True)
+                                 style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
                     hourfixing_d=motionWorks.getHourHandHoleD(), length=90, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
 
-assembly = clock.Assembly(plates, hands=hands)
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=15)
 
 assembly.printInfo()
 

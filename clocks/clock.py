@@ -405,7 +405,7 @@ class GoingTrain:
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
         self.calculatePoweredWheelRatios()
 
-    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=2, preferedDiameter=-1, use_steel_tube=True):
+    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=3):
 
         diameter = preferedDiameter
         if diameter < 0:
@@ -423,7 +423,8 @@ class GoingTrain:
         else:
             hole_d = arbour_d + LOOSE_FIT_ON_ROD
 
-        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, hole_d = hole_d, ratchet_thick=ratchetThick, arbour_d=arbour_d, rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick)
+        self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, hole_d = hole_d, ratchet_thick=ratchetThick, arbour_d=arbour_d,
+                                      rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick, o_ring_diameter=o_ring_diameter)
 
         self.calculatePoweredWheelRatios()
 
@@ -440,6 +441,7 @@ class GoingTrain:
 
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
+        print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
         chainRatio = 1
         chainRatios=[1]
@@ -480,7 +482,7 @@ class GoingTrain:
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
                  chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1,
-                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD):
+                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -510,10 +512,12 @@ class GoingTrain:
         # self.gearTotalThick = self.gearWheelThick + self.gearPinionLength + self.gearPinionEndCapLength
         # self.chainGearTotalThick
 
-        # module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
+
+        if module_sizes is None:
+            module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
 
         #the module of each wheel is slightly smaller than the preceeding wheel
-        pairs = [WheelPinionPair(wheel[0],wheel[1],module_size* math.pow(moduleReduction, i)) for i,wheel in enumerate(self.trains[0]["train"])]
+        pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i]) for i,wheel in enumerate(self.trains[0]["train"])]
 
 
 
@@ -717,7 +721,7 @@ class SimpleClockPlates:
 
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
-                 pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, usingPulley=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
+                 pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True,
                  centred_second_hand=False):
         '''
@@ -777,7 +781,7 @@ class SimpleClockPlates:
         self.extraHeavy = extraHeavy
 
         #is the weight danging from a pulley? (will affect screwhole and give space to tie other end of cord)
-        self.usingPulley = usingPulley
+        self.usingPulley = goingTrain.usePulley
 
         #just for the first prototype
         self.anchorHasNormalBushing=True
@@ -1090,15 +1094,21 @@ class SimpleClockPlates:
 
         self.huygensWheel = None
         if self.huygensMaintainingPower:
+            max_circumference = self.bottomPillarR * 1.25 * math.pi
+            max_diameter = max_circumference/math.pi
+            ratchetOuterThick = 3
+            ratchet_thick=5
             #need a powered wheel and ratchet on the front!
             if self.goingTrain.poweredWheel.type == PowerType.CHAIN:
-                max_circumference = self.bottomPillarR*1.25*math.pi
-                ratchetOuterThick = 3
+
                 self.huygensWheel = ChainWheel(ratchet_thick=5, max_circumference=max_circumference,wire_thick=self.goingTrain.poweredWheel.chain_thick,
                                                width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
                                                tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
+            elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
+                self.huygensWheel = RopeWheel(diameter=max_diameter*0.75, ratchet_thick=ratchet_thick, rope_diameter=self.goingTrain.poweredWheel.rope_diameter, o_ring_diameter=self.goingTrain.poweredWheel.o_ring_diameter,
+                                              hole_d=self.goingTrain.poweredWheel.hole_d, ratchet_outer_d=self.bottomPillarR*2)
             else:
-                raise ValueError("Huygens maintaining power only currently supported with chain wheels")
+                raise ValueError("Huygens maintaining power not currently supported with {}".format(self.goingTrain.poweredWheel.type.value))
 
         self.hands_position = self.bearingPositions[self.goingTrain.chainWheels][:2]
 
@@ -1109,7 +1119,7 @@ class SimpleClockPlates:
 
             #override motion works position
             self.motionWorksAbove = not self.pendulumAtTop
-            self.hands_position = self.bearingPositions[-2][:2]
+            self.hands_position = [self.bearingPositions[-2][0],self.bearingPositions[-2][1]]
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         # get position of motion works relative to the minute wheel
@@ -2010,7 +2020,10 @@ class SimpleClockPlates:
             for shapeName in shapes.keys():
                 out = os.path.join(path, "{}_arbour_{}_{}.stl".format(name, i, shapeName))
                 print("Outputting ", out)
-                exporters.export(shapes[shapeName], out)
+                if shapes[shapeName] is not None:
+                    exporters.export(shapes[shapeName], out)
+                else:
+                    print("WARNING {} is None".format(shapeName))
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
@@ -2199,7 +2212,7 @@ class Assembly:
             secondHandPos.append(self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick)
 
             if self.plates.centred_second_hand:
-                secondHandPos = self.plates.hands_position
+                secondHandPos = self.plates.hands_position[:]
                 secondHandPos.append(minuteHandZ + self.hands.thick + self.hands.secondFixing_thick)
 
             clock = clock.add(secondHand.translate(secondHandPos))

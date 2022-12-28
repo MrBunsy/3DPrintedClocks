@@ -1,3 +1,4 @@
+import numpy as np
 import os
 
 from .types import *
@@ -10,8 +11,36 @@ import cadquery as cq
 from cadquery import exporters
 
 class AnchorEscapement:
+
+    @staticmethod
+    def get_with_45deg_pallets(teeth=30, type=EscapementType.DEADBEAT, lift_deg=3):
+        '''
+        Generate an anchor with pallets at 45 degrees, based only on the number of teeth
+
+        lift is the angle of pendulum swing, in degrees
+
+        drop is the rotation of the escape wheel between the teeth engaging the pallets - this is lost energy
+        from the weight/spring.
+
+        Lock "is the distance which the pallet has moved inside of the pitch circle of the escape wheel before being struck by the escape wheel tooth." (The Modern Clock)
+        We add lock to the design by changing the position of the pallets
+
+        Plan:
+        Aim to calculate lock based on tooth size (maybe?)
+        Use given lift where possible and report back the drop required to maintain that lift. Then I can decide how much lift to sacrifice to keep the clock reliable
+
+        '''
+
+        test_drop = 3
+        test_anchor = AnchorEscapement(teeth=teeth, type=EscapementType.DEADBEAT, lift=lift_deg, drop=test_drop)
+        test_anchor.getAnchor2D()
+        print(test_anchor.pallet_angles)
+        print(radToDeg(test_anchor.pallet_angles[0]), radToDeg(test_anchor.pallet_angles[1]))
+        diff = radToDeg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
+        print(diff, "degrees")
+
     def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True,
-                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, wheelThick=3, forceDiameter=False):
+                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, wheelThick=3, forceDiameter=False, anchorThick=12):
         '''
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
         because it ended up being more elegant to treat the anchor as the last arbour in the clock.
@@ -35,9 +64,11 @@ class AnchorEscapement:
 
         Lock "is the distance which the pallet has moved inside of the pitch circle of the escape wheel before being struck by the escape wheel tooth." (The Modern Clock)
         We add lock to the design by changing the position of the pallets
+        The length and shape of the teeth will dictate the maximum lock achievable without clashing
 
         run is how much the anchor continues to move towards the centre of the escape wheel after locking (or in the recoil, how much it recoils) in degrees
         only makes sense for deadbeat
+        Run is basically controlled by the weight/spring - it's how much power goes in. The value here is maximum run
 
         clockwiseFromPinionSide is for the escape wheel
         '''
@@ -90,8 +121,10 @@ class AnchorEscapement:
         self.setDiameter(diameter)
 
         self.arbourD = 3
-        self.anchorThick = 12
+        self.anchorThick = anchorThick
         self.wheelThick = wheelThick
+
+        self.pallet_angles = []
 
     def getAnchorArbourD(self):
         return self.arbourD
@@ -166,6 +199,8 @@ class AnchorEscapement:
         draw the rest of the anchor depending on if it's recoil or deadbeat
         NOTE - only deadbeat works at the moment, but since it's wonderfully reliable I don't see the need to revisit recoil
 
+        As a side effect, this function sets self.pallet_angles. TODO refactor to perform all the maths elsewhere
+
         '''
 
         if self.type == EscapementType.RECOIL:
@@ -173,7 +208,6 @@ class AnchorEscapement:
             return self.getAnchor2DOld()
 
         anchor = cq.Workplane("XY").tag("anchorbase")
-        centreRadius = self.diameter * 0.09
 
         anchorCentre = (0,self.anchor_centre_distance)
         wheelCentre = (0,0)
@@ -222,6 +256,13 @@ class AnchorEscapement:
 
         exitPalletStartPos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
         exitPalletEndPos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
+
+        # ========== pallet angles ==========
+
+        entryPalletDifference = np.subtract(entryPalletEndPos, entryPalletStartPos)
+        exitPalletDifference = np.subtract(exitPalletEndPos, exitPalletStartPos)
+
+        self.pallet_angles = [math.atan2(entryPalletDifference[1], entryPalletDifference[0]), math.atan2(exitPalletDifference[1], exitPalletDifference[0])]
 
         # ========== points on the anchor =========
 

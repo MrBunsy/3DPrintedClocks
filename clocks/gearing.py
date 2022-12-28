@@ -1431,7 +1431,9 @@ class Arbour:
 
             normalExtensionLength = self.frontSideExtension-beforeBearingTaperHeight-bearingStandoffThick
             if normalExtensionLength <=0 :
-                raise ValueError("TODO work to enable really short anchor arbours")
+                # raise ValueError("TODO work to enable really short anchor arbours")
+                print("TODO work to enable really short anchor arbours")
+                normalExtensionLength=0.1
 
             arbour = cq.Workplane("XY").circle(diameter/2).extrude(normalExtensionLength)
 
@@ -1706,10 +1708,11 @@ class Arbour:
                 # if extensionR > 10:
                 #    extensionR = 10
 
-                boltR = np.linalg.norm(self.boltPositions[0])
-                #make sure it's possible to screw the ratchet or wheel on
-                if self.useRatchet and extensionR > boltR - self.ratchetScrews.getNutContainingDiameter()/2:
-                    extensionR = boltR - self.ratchetScrews.getNutContainingDiameter()/2
+                if len(self.boltPositions) > 0:
+                    boltR = np.linalg.norm(self.boltPositions[0])
+                    #make sure it's possible to screw the ratchet or wheel on
+                    if self.useRatchet and extensionR > boltR - self.ratchetScrews.getNutContainingDiameter()/2:
+                        extensionR = boltR - self.ratchetScrews.getNutContainingDiameter()/2
 
                 bearingStandoffHeight = LAYER_THICK * 2
                 bearingStandoffR = getBearingInfo(self.arbourD).innerSafeD/2
