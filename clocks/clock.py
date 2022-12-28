@@ -58,7 +58,7 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 class GoingTrain:
 
     def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800,
-                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False):
+                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False, minuteWheelRatio = 1):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -73,7 +73,10 @@ class GoingTrain:
         usePulley: if true, changes calculations for runtime
         escapeWheelPinionAtFront:  bool, override default
         huygensMaintainingPower: bool, if true we're using a weight on a pulley with a single loop of chain/rope, going over a ratchet on the front of the clock and a counterweight on the other side from the main weight
-        #easiest to implement with a chain
+        easiest to implement with a chain
+
+        minuteWheelRatio: usually 1 - so the minute wheel (chain wheel as well on a 1-day clock) rotates once an hour. If less than one, this "minute wheel" rotates less than once per hour.
+        this makes sense (at the moment) only on a centred-second-hand clock where we have another set of wheels linking the "minute wheel" and the motion works
 
 
         Grand plan: auto generate gear ratios.
@@ -97,6 +100,8 @@ class GoingTrain:
         self.pendulum_period = pendulum_period
         #in metres
         self.pendulum_length = pendulum_length
+
+        self.minuteWheelRatio = minuteWheelRatio
 
         self.huygensMaintainingPower = huygensMaintainingPower
         self.arbours = []
@@ -159,10 +164,6 @@ class GoingTrain:
         module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
         '''
 
-        desired_minute_time = 60*60
-        #[ {time:float, wheels:[[wheelteeth,piniontheeth],]} ]
-        options = []
-
         pinion_min=min_pinion_teeth
         pinion_max=pinion_max_teeth
         wheel_min=wheel_min_teeth
@@ -179,6 +180,8 @@ class GoingTrain:
          seems reasonable to me
         '''
         allGearPairCombos = []
+
+        targetTime = 60*60/self.minuteWheelRatio
 
         for p in range(pinion_min,pinion_max):
             for w in range(wheel_min, wheel_max):
@@ -243,7 +246,7 @@ class GoingTrain:
                     break
                 lastSize = size
             totalTime = totalRatio*self.escapement_time
-            error = 60*60-totalTime
+            error = targetTime-totalTime
 
             train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting }
             if fits and  abs(error) < max_error and not intRatio:
@@ -282,7 +285,7 @@ class GoingTrain:
             turns = self.poweredWheel.getTurnsForDrop(self.getCordUsage())
 
             # find the ratio we need from the chain wheel to the minute wheel
-            turnsPerHour = turns / self.hours
+            turnsPerHour = turns / (self.hours * self.minuteWheelRatio)
 
             desiredRatio = 1 / turnsPerHour
 
@@ -348,7 +351,7 @@ class GoingTrain:
         '''
         if self.chainWheels == 0:
             #no choice but to set diameter to what fits with the drop and hours
-            self.powered_wheel_circumference = self.getCordUsage() / self.hours
+            self.powered_wheel_circumference = self.getCordUsage() / (self.hours * self.minuteWheelRatio)
             self.powered_wheel_diameter = self.powered_wheel_circumference / math.pi
 
         elif self.chainWheels == 1:
@@ -443,9 +446,10 @@ class GoingTrain:
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
         print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
-        chainRatio = 1
+        chainRatio = self.minuteWheelRatio
         chainRatios=[1]
         if self.chainWheels > 0:
+            #TODO if - for some reason - the minuteWheelRatio isn't 1, this logic needs checking
             print(self.chainWheelRatio)
             #how many turns per turn of the minute wheel
             chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
@@ -1105,8 +1109,8 @@ class SimpleClockPlates:
                                                width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
                                                tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
             elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
-                self.huygensWheel = RopeWheel(diameter=max_diameter*0.75, ratchet_thick=ratchet_thick, rope_diameter=self.goingTrain.poweredWheel.rope_diameter, o_ring_diameter=self.goingTrain.poweredWheel.o_ring_diameter,
-                                              hole_d=self.goingTrain.poweredWheel.hole_d, ratchet_outer_d=self.bottomPillarR*2)
+                self.huygensWheel = RopeWheel(diameter=max_diameter*0.95, ratchet_thick=ratchet_thick, rope_diameter=self.goingTrain.poweredWheel.rope_diameter, o_ring_diameter=self.goingTrain.poweredWheel.o_ring_diameter,
+                                              hole_d=self.goingTrain.poweredWheel.hole_d, ratchet_outer_d=self.bottomPillarR*2, ratchet_outer_thick=ratchetOuterThick)
             else:
                 raise ValueError("Huygens maintaining power not currently supported with {}".format(self.goingTrain.poweredWheel.type.value))
 
@@ -1233,10 +1237,10 @@ class SimpleClockPlates:
         # juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
         minDistanceForChainHoles = (furthestX * 2 + self.chainHoleD + 5) / 2
 
-        bottomPillarR = minDistanceForChainHoles
-
-        if self.heavy:
-            bottomPillarR = self.plateDistance / 2
+        # bottomPillarR = minDistanceForChainHoles
+        #
+        # if self.heavy:
+        bottomPillarR = self.plateDistance / 2
 
         if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar:
             bottomPillarR = minDistanceForChainHoles
@@ -1700,7 +1704,9 @@ class SimpleClockPlates:
                 chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + topZ).circle(self.chainHoleD / 2).extrude(1000)
                 chainHoles.add(chainHole)
 
-        if self.usingPulley:
+        if self.usingPulley and self.goingTrain.poweredWheel.type == PowerType.CORD:
+            #hole for cord to be tied in
+
             chainX = holePositions[0][0][0]
             chainZTop = topZ + holePositions[0][0][1]
             pulleyX = -chainX
