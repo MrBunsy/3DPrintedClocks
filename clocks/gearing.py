@@ -794,9 +794,12 @@ class ArbourForPlate:
     def get_pendulum_holder_collet(self, square_side_length):
         '''
         will slot over square bit of anchor arbour and screw in place
+        for the direct arbours without suspension spring
         '''
         #to be consistent with the endshake collet
         outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
+        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
+            outer_d = DIRECT_ARBOUR_D*2
 
         square_size = square_side_length + self.pendulum_fixing_extra_space
 
@@ -826,7 +829,7 @@ class ArbourForPlate:
     def get_anchor_shapes(self):
         shapes = {}
         anchor = self.arbour.escapement.getAnchor()
-        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR:
+        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR or self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
 
 
             #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
@@ -835,6 +838,8 @@ class ArbourForPlate:
             #the end of the square rod controls one bit of end shake and there will be a collect that slots onto the rod to control the other
 
             cylinder_r = self.bearing.innerD / 2
+            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
+                cylinder_r = DIRECT_ARBOUR_D/2
             square_side_length = math.sqrt(2) * cylinder_r
 
             if cylinder_r < 5:
@@ -898,6 +903,7 @@ class ArbourForPlate:
             else:
                 '''
                 I don't think I'm going to design many more with the pendulum on the front, so I'm not going to bother supporting that with a direct arbour unless I have to
+                TODO - would be useful to have old designs working again
                 '''
                 raise NotImplementedError("Unsuported escapement and pendulum combination!")
         else:

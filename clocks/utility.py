@@ -35,6 +35,8 @@ NUT_WIGGLE_ROOM = 0.2
 #extra diameter to add to the arbour extension to make them easier to screw onto the threaded rod
 ARBOUR_WIGGLE_ROOM = 0.1
 
+DIRECT_ARBOUR_D = 6
+
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.
 METRIC_HEAD_D_MULT=1.9

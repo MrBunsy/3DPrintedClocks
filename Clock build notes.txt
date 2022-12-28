@@ -233,3 +233,6 @@ Idea for more reliable 8 day for giving away:
 Next grasshopper:
 - need directly fixed anchor, so it doesn't need setting in beat
 - put screw hole above top wall-standoff
+
+
+IDEA - for huygens maintaining power with the rope/chain wheel attached to the wheel - print in one peice where possible? and just use old arbour extension. Might only work with rope wheel which can be printed in one peice.

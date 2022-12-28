@@ -903,15 +903,17 @@ class RopeWheel:
         return 20
 
     def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1.5, power_clockwise=True,
-                 o_ring_diameter=3, arbour_d=3, use_o_rings=1, ratchet_outer_d=-1, ratchet_outer_thick=5):
+                 o_ring_diameter=3, arbour_d=3, use_o_rings=1, ratchet_outer_d=-1, ratchet_outer_thick=5, need_bearing_standoff=True):
 
         #diameter for the rope
         self.diameter=diameter
         self.circumference = math.pi*diameter
 
-        #plan: default to using steel tube
+        #note, this actually has no effect on anything at the moment and is only for maintaining interface with other powered wheels
         self.looseOnRod = True
         self.type = PowerType.ROPE
+
+        self.need_bearing_standoff = need_bearing_standoff
 
         self.slope_angle = math.pi / 3
         self.rope_diameter = rope_diameter

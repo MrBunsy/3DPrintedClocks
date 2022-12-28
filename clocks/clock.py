@@ -495,6 +495,7 @@ class GoingTrain:
 
 
         '''
+        self.pendulumFixing = pendulumFixing
         arbours = []
         # ratchetThick = holeD*2
         #thickness of just the wheel
@@ -736,7 +737,7 @@ class SimpleClockPlates:
 
         '''
 
-        #how the pendulum is fixed to the anchor arbour.
+        #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
 
@@ -749,8 +750,11 @@ class SimpleClockPlates:
         #only used for the direct arbour pendulum
         self.pendulumFixingBearing = pendulumFixingBearing
         if self.pendulumFixingBearing is None:
-            #default to the 6mm bearing (10mm adds a lot of friction, even dry, I'm hoping 6mm is better)
-            self.pendulumFixingBearing = getBearingInfo(6)
+            if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+                #default to the 6mm bearing (10mm adds a lot of friction, even dry, I'm hoping 6mm is better)
+                self.pendulumFixingBearing = getBearingInfo(6)
+            else:
+                self.pendulumFixingBearing = getBearingInfo(arbourD)
 
         anglesFromMinute = None
         anglesFromChain = None
@@ -1780,8 +1784,10 @@ class SimpleClockPlates:
             bearingOnTop = back
 
 
-            if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR and i == len(self.bearingPositions)-1:
+
+            if self.pendulumFixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS] and i == len(self.bearingPositions)-1:
                 #this is the anchor arbour and we can't just use normal bearings
+                needs_pendulum_bearing = False
                 if self.escapementOnFront:
                     '''
                     need the bearings to be on the back of front plate and back of the back plate
@@ -1791,6 +1797,7 @@ class SimpleClockPlates:
                     if self.pendulumAtFront:
                         raise ValueError("escapement and pendulum at front not supported with direct arbour (or at all?)")
                     bearingInfo = self.pendulumFixingBearing
+                    needs_pendulum_bearing = True
                     if back:
                         bearingOnTop = False
                 else:
@@ -1799,6 +1806,10 @@ class SimpleClockPlates:
                         #this is the front bearing for a pendulum that sticks out the front of the clock
                         # or the back bearing for a pendulum that sticks out the back
                         bearingInfo = self.pendulumFixingBearing
+                        needs_pendulum_bearing = True
+
+                if needs_pendulum_bearing and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
+                    plate = plate.cut(cq.Workplane("XY").circle(DIRECT_ARBOUR_D/2 + 2).extrude(self.getPlateThick(back=back)).translate((pos[0], pos[1], 0)))
 
             if bearingInfo.bearingOuterD > self.holderWide - self.bearingWallThick*2:
                 #this is a chunkier bearing, make the plate bigger
