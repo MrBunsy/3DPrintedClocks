@@ -40,7 +40,7 @@ class Gear:
         if style == GearStyle.CARTWHEEL:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
         if style == GearStyle.FLOWER:
-            return Gear.cutFlowerStyle(gear, outerRadius=outerRadius-2, innerRadius=innerRadius)
+            return Gear.cutFlowerStyle(gear, outerRadius=outerRadius-2.8, innerRadius=innerRadius)
         if style == GearStyle.HONEYCOMB:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
@@ -528,6 +528,17 @@ class Gear:
             gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle, style=style)
 
         return gear
+
+    def getSTLModifierShape(self, thick, offset_z=0, min_inner_r=1.5):
+        '''
+        return a shape that covers just the teeth to help apply tweaks to the slicing settings
+        '''
+
+        inner_r = self.getMinRadius() - 1.8
+        if inner_r < min_inner_r:
+            inner_r = min_inner_r
+
+        return cq.Workplane("XY").circle(self.getMaxRadius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
     def addToWheel(self,wheel, holeD=0, thick=4, front=True, style="HAC", pinionThick=8, capThick=2):
         '''
@@ -1339,6 +1350,15 @@ class Arbour:
 
         return arbour
 
+    def getSTLModifierPinionShape(self):
+        '''
+        return a shape that covers the teeth of the pinions for apply tweaks to the slicing settings
+        '''
+
+        if self.getType() == ArbourType.WHEEL_AND_PINION:
+            return self.pinion.getSTLModifierShape(thick=self.pinionThick, offset_z=self.wheelThick, min_inner_r=self.arbourD/2)
+
+        return None
 
     def getShape(self, forPrinting=True):
         '''
@@ -1355,6 +1375,7 @@ class Arbour:
         elif self.getType() == ArbourType.CHAIN_WHEEL:
             shape = self.getPoweredWheel(forPrinting=forPrinting)
         elif self.getType() == ArbourType.ANCHOR:
+            # NOTE - this should now be driven from ArbourForPlate
             if self.escapementOnFront:
                 #there's just a spacer, made up of two arbour extensions (so the bearing standoffs are always printed on top)
                 # shape = self.getArbourExtension(front=self.pinionAtFront).rotate((0,0,0),(1,0,0),180)
@@ -1924,6 +1945,12 @@ class MotionWorks:
     def getArbourMaxRadius(self):
         return self.pairs[0].wheel.getMaxRadius()
 
+    def getHandHolderHeight(self):
+        '''
+        get distance from base of the cannon pinion to the beginning of the hand holders (base of hour hand)
+        '''
+        return self.cannonPinionTotalHeight - (self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight)
+
     def getCannonPinionBaseThick(self):
         '''
         get the thickness of the pinion + caps at the bottom of the cannon pinion ( and bearing holder)
@@ -1934,6 +1961,35 @@ class MotionWorks:
 
 
         return thick
+
+    def getCannonPinionPinion(self, with_snail=False):
+        '''
+        For the centred seconds hands I'm driving the motion works arbour from the minute arbour. To keep the gearing correct, use the same pinion as the cannon pinion!
+        '''
+
+        pinion_max_r = self.pairs[0].pinion.getMaxRadius()
+
+        base = cq.Workplane("XY")
+
+        if self.strikeTrigger is not None:
+            base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0, 0, 0), (0, 0, 1), self.strikeHourAngleDeg).faces(">Z").workplane()
+
+        if self.pinionCapThick > 0:
+            base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
+
+        base = base.add(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
+
+        if self.pinionCapThick > 0:
+            base = base.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
+
+        pinion = base
+
+        return pinion
+
+    def getCannonPinionPinionSTLModifier(self):
+
+        return self.pairs[0].pinion.getSTLModifierShape(thick=self.cannonPinionPinionThick, offset_z=self.pinionCapThick)
+
 
     def getCannonPinion(self):
 
@@ -1957,7 +2013,7 @@ class MotionWorks:
         if self.pinionCapThick > 0:
             base = base.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
 
-        pinion = base
+        pinion = self.getCannonPinionPinion(with_snail=True)
 
         if self.bearing is not None and self.bearingHolderThick > 0:
             # extend out the bottom for space for a slot on the bottom
@@ -2079,6 +2135,16 @@ class MotionWorks:
         out = os.path.join(path, "{}_motion_arbour.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getMotionArbourShape(), out)
+
+        out = os.path.join(path, "{}_motion_arbour_pinion_modifier.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getMotionArbour().getSTLModifierPinionShape(), out)
+
+
+        out = os.path.join(path, "{}_motion_cannon_pinion_modifier.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getCannonPinionPinionSTLModifier(), out)
+
 
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)

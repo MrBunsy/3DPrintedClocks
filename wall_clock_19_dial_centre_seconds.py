@@ -17,14 +17,14 @@ if 'show_object' not in globals():
 
 clockName="wall_clock_19"
 clockOutDir="out"
-gearStyle = clock.GearStyle.FLOWER
+gearStyle = clock.GearStyle.HONEYCOMB_SMALL
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, anchorThick=6)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, anchorThick=10)
 moduleReduction=0.875
 
 #minute wheel ratio so we can use a pinion of 10 teeth to turn the standard motion works arbour and keep the cannon pinion rotating once an hour
@@ -49,25 +49,27 @@ pendulumSticksOut=25
 # module_sizes = [first_module_size, first_module_size * ratio_of_teeth]
 module_sizes = None
 
-train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2,
+train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3,
                pendulumFixing=pendulumFixing, module_sizes=module_sizes)
 train.printInfo(weight_kg=0.75)
 
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, bearing=clock.getBearingInfo(3), module=2)
+# have printed with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
+motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, bearing=clock.getBearingInfo(3), module=2, compensateLooseArbour=False)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
 
-dial = clock.Dial(120)
+dial = clock.Dial(180)
 
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock_19",
-                                 style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillar=True)
+                                 style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillar=True,
+                                 dial=dial)
 
 
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=90, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
+                    hourfixing_d=motionWorks.getHourHandHoleD(), length=80, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=15)
 

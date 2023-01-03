@@ -741,6 +741,8 @@ class SimpleClockPlates:
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
 
+        self.dial = dial
+
         #second hand is centred on the motion works
         self.centred_second_hand = centred_second_hand
 
@@ -828,6 +830,11 @@ class SimpleClockPlates:
         # how much space to leave around the edge of the gears for safety
         self.gearGap = 3
         self.smallGearGap = 2
+
+
+        #height of dial from top of front plate
+
+        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.dial.thick - 8
 
         #if angles are not given, assume clock is entirely vertical
 
@@ -2080,7 +2087,7 @@ class Dial:
 
         innerR = r*0.8
 
-        dial = cq.Workplane("XY").circle(r).circle(innerR).extrude(self.thick)
+        dial = cq.Workplane("XY").circle(r).circle(innerR).extrude(self.thick - lineThick)
 
         dial = dial.faces(">Z").workplane().tag("top")
 
@@ -2124,10 +2131,10 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, dial=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, showPendulum=False, weights=None):
+    def __init__(self, plates, hands=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, showPendulum=False, weights=None):
         self.plates = plates
         self.hands = hands
-        self.dial=dial
+        self.dial= plates.dial
         self.goingTrain = plates.goingTrain
         self.arbourCount = self.goingTrain.chainWheels + self.goingTrain.wheels
         self.pendulum = self.plates.pendulum
@@ -2191,7 +2198,7 @@ class Assembly:
 
 
         #where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
-        motionWorksZOffset = 6
+        motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
 
         time_min = self.timeMins
         time_hour = self.timeHours
@@ -2202,9 +2209,16 @@ class Assembly:
         secondAngle = -360 * (self.timeSeconds / 60)
 
         motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos,minuteAngle=minuteAngle)
+        motionWorksZ = frontOfClockZ + motionWorksZOffset
 
-        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset)))
+        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], motionWorksZ)))
 
+        if self.plates.centred_second_hand:
+            clock = clock.add(self.motionWorks.getCannonPinionPinion().translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], motionWorksZ )))
+
+
+        if self.dial is not None:
+            clock = clock.add(self.dial.getDial().translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + frontOfClockZ)))
 
 
         #hands on the motion work, showing the time

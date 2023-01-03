@@ -37,6 +37,9 @@ ARBOUR_WIGGLE_ROOM = 0.1
 
 DIRECT_ARBOUR_D = 6
 
+#for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
+TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT = 6
+
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.
 METRIC_HEAD_D_MULT=1.9
