@@ -840,7 +840,7 @@ class ArbourForPlate:
     def get_anchor_shapes(self):
         shapes = {}
         anchor = self.arbour.escapement.getAnchor()
-        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR or self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
+        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR,PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS]:
 
 
             #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod

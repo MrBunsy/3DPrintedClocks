@@ -726,7 +726,7 @@ class SimpleClockPlates:
 
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
-                 pendulumSticksOut=20, name="", dial=None, heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
+                 pendulumSticksOut=20, name="", dial_diameter=-1, heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True,
                  centred_second_hand=False, pillars_separate=False):
         '''
@@ -741,7 +741,7 @@ class SimpleClockPlates:
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
 
-        self.dial = dial
+        self.dial_diameter = dial_diameter
 
         #are the main pillars attached to the back plate or independent? currently needs backPlateFromWall to create wall standoffs in order to screw to back plate
         self.pillars_separate = pillars_separate
@@ -768,8 +768,6 @@ class SimpleClockPlates:
         self.style=style
         #to print on the back
         self.name = name
-        #to get fixing positions
-        self.dial = dial
 
         #is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable
         self.motionWorksAbove=motionWorksAbove
@@ -835,9 +833,9 @@ class SimpleClockPlates:
         self.smallGearGap = 2
 
 
-        #height of dial from top of front plate
 
-        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.dial.thick - 8
+
+
 
         #if angles are not given, assume clock is entirely vertical
 
@@ -1087,6 +1085,14 @@ class SimpleClockPlates:
         self.chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
 
         self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.holderWide = self.getPillarInfo()
+
+        # height of dial from top of front plate
+        dial_thick = 2
+        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 8
+        self.dial = None
+        if self.dial_diameter > 0:
+
+            self.dial = Dial(outside_d= self.dial_diameter,support_length=self.dial_z, support_d=self.holderWide, thick=dial_thick)
         #fixing positions to screw front plate onto the pillars
         self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
         self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
@@ -1631,13 +1637,7 @@ class SimpleClockPlates:
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0,0, -self.getPlateThick(back=False) - self.plateDistance)))
 
-        if self.huygensMaintainingPower:
-            #screw to hold the ratchetted chainwheel
-            plate = plate.cut(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.fixingScrews.metric_thread/2).extrude(1000))
-            if back:
-                #hold a nyloc nut
-                nutZ = self.getPlateThick(back=True) + self.plateDistance - self.fixingScrews.getNutHeight(nyloc=True)
-                plate = plate.cut(self.fixingScrews.getNutCutter(nyloc=True).translate(self.bottomPillarPos).translate((0,0,nutZ)))
+
 
         return plate
 
@@ -1671,6 +1671,13 @@ class SimpleClockPlates:
             for fixingPos in self.backPlateFixings:
                 cutter = cutter.add(self.fixingScrews.getNutCutter(withBridging=True, height=embedded_nut_hole_height, layerThick=LAYER_THICK_EXTRATHICK).translate((0, 0, nutZ)).translate(fixingPos))
                 cutter = cutter.add(self.fixingScrews.getCutter().translate(fixingPos).translate((0, 0, screw_head_z_relative_to_back_plate)))
+
+        if self.huygensMaintainingPower:
+            #screw to hold the ratchetted chainwheel
+            cutter = cutter.add(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.fixingScrews.metric_thread/2).extrude(1000))
+            #hold a nyloc nut
+            nutZ = self.getPlateThick(back=True) + self.plateDistance - self.fixingScrews.getNutHeight(nyloc=True)
+            cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=True).translate(self.bottomPillarPos).translate((0,0,nutZ)))
 
         return cutter
 
@@ -1916,8 +1923,7 @@ class SimpleClockPlates:
 
     def frontAdditionsToPlate(self, plate):
         '''
-        (originaly) stuff shared between all plate designs
-        now it's just another place to put some stuff, needs tidy up
+        stuff only needed to be added to the front plate
         '''
         plateThick = self.getPlateThick(back=False)
         # FRONT
@@ -1952,29 +1958,18 @@ class SimpleClockPlates:
         # plate = plate.cut(nutSpace)
 
         if self.dial is not None:
-            dialFixings = self.dial.getFixingDistance()
-            minuteY = self.hands_position[1]
-            plate = plate.faces(">Z").workplane().pushPoints([(0, minuteY + dialFixings / 2), (0, minuteY - dialFixings / 2)]).circle(self.dial.fixingD / 2).cutThruAll()
 
-        #this has to be on the rod itself!
-        # if self.centred_second_hand:
-        #     #something for the bearing in the bottom of the cannon pinion to rest against
-        #     main_height = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT# - LAYER_THICK*2
-        #     escape_wheel_arbour_d = self.arboursForPlate[-2].arbour.arbourD
-        #
-        #     bearing = getBearingInfo(escape_wheel_arbour_d)
-        #
-        #     #hole from the bearing punch
-        #     base_inner_r = bearing.outerSafeD/2
-        #     base_outer_r = bearing.outerSafeD
-        #
-        #     top_inner_r =escape_wheel_arbour_d/2 + 0.6
-        #     top_outer_r = bearing.innerSafeDAtAPush/2
-        #     pillar = cq.Solid.makeCone(radius1=base_outer_r, radius2=top_outer_r, height=main_height).cut(cq.Solid.makeCone(radius1=base_inner_r, radius2=top_inner_r, height=main_height))
-        #
-        #     # pillar = cq.Workplane("XY").circle(escape_wheel_arbour_d).circle(inner_r).extrude(main_height)
-        #     # pillar = pillar.faces(">Z").workplane().circle(.innerSafeD/2).circle(inner_r).extrude(LAYER_THICK*2)
-        #     plate = plate.add(pillar.translate((self.hands_position[0], self.hands_position[1], self.getPlateThick(back=False))))
+            if self.dial_diameter/2 + self.hands_position[1] > self.topPillarPos[1]:
+                # off the top of teh clock
+                # TODO make this more robust
+
+                dial_support_pos = (self.hands_position[0], self.hands_position[1] + self.dial_diameter/2- self.dial.dial_width/2)
+                plate = plate.add(cq.Workplane("XY").circle(self.holderWide/2).extrude(plateThick).translate(dial_support_pos))
+                plate = plate.add(cq.Workplane("XY").rect(self.holderWide, dial_support_pos[1] - self.topPillarPos[1]).extrude(plateThick).translate((self.topPillarPos[0], (self.topPillarPos[1]+dial_support_pos[1])/2)))
+
+            dial_fixing_positions = [npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
+            for pos in dial_fixing_positions:
+                plate = plate.cut(self.dial.fixing_screws.getCutter(loose=True,withBridging=True).translate(pos))
 
 
         # need an extra chunky hole for the big bearing that the key slots through
@@ -2056,6 +2051,10 @@ class SimpleClockPlates:
 
 
     def outputSTLs(self, name="clock", path="../out"):
+
+        if self.dial is not None:
+            self.dial.outputSTLs(name, path)
+
         out = os.path.join(path, "{}_front_plate.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getPlate(False), out)
@@ -2127,68 +2126,116 @@ class SimpleClockPlates:
 
 class Dial:
     '''
-    WIP
+    TODO - should really be created by the plates class
+
+    using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outsideD, hollow=True, style="simple", fixingD=3, supportLength=0):
-        self.outsideD=outsideD
-        self.hollow = hollow
+    def __init__(self, outside_d, style="simple", fixing_screws=None, support_length=0, thick=3, fixing_only_at_top=True, support_d=20):
+        self.outside_d=outside_d
         self.style = style
-        self.fixingD=fixingD
-        self.supportLength=supportLength
-        self.thick = 3
+        self.fixing_screws = fixing_screws
+        if self.fixing_screws is None:
+            self.fixing_screws = MachineScrew(metric_thread=3, countersunk=True, length=25)
+        self.support_length=support_length
+        self.support_d = support_d
+        self.thick = thick
+        self.fixing_only_at_top = fixing_only_at_top
 
-    def getFixingDistance(self):
-        return self.outsideD - self.fixingD*4
+        self.dial_width = self.outside_d * 0.1
+        if self.dial_width < self.support_d:
+            self.dial_width = self.support_d
+        self.inner_r = self.outside_d/2 - self.dial_width
 
-    def getDial(self):
-        r = self.outsideD / 2
+        self.calc_fixing_positions()
 
-        bigLineThick=3
-        smallLineThick=1
+    def calc_fixing_positions(self):
 
-        bigAngle = math.asin((bigLineThick/2)/r)*2
-        smallAngle = math.asin((smallLineThick / 2) / r) * 2
+        self.fixing_positions = [(-self.support_d/4, self.outside_d/2 - self.dial_width/2), (self.support_d/4, self.outside_d/2 - self.dial_width/2)]
 
-        lineThick = LAYER_THICK*2
+        if not self.fixing_only_at_top:
+            self.fixing_positions += [(-self.support_d/4, -(self.outside_d/2 - self.dial_width/2)), (self.support_d/4, -(self.outside_d/2 - self.dial_width/2))]
 
-        innerR = r*0.8
+    #
+    # def set_support_info(self, support_length, support_d):
+    #     '''
+    #     Bit messy, this is only known from the plates.
+    #     '''
+    #     self.support_length = support_length
+    #     self.support_d = support_d
+    #
+    #
+    #     if self.support_d > self.dial_width:
+    #         self.dial_width = self.support_d
+    #
+    #     self.calc_fixing_positions()
 
-        dial = cq.Workplane("XY").circle(r).circle(innerR).extrude(self.thick - lineThick)
+    def get_fixing_positions(self):
+        return self.fixing_positions
 
-        dial = dial.faces(">Z").workplane().tag("top")
+    def get_detail(self):
+        '''
+        get the bits to be printed in a different colour
+        '''
+        r = self.outside_d / 2
+        from_edge = self.outside_d * 0.01
+        line_inner_r = self.inner_r + from_edge
+        line_outer_r = r - from_edge
 
         lines = 60
 
-        dA = math.pi*2/lines
+        dA = math.pi * 2 / lines
 
-        fromEdge = self.outsideD*0.01
+        line_thick = LAYER_THICK * 2
 
-        lineInnerR = innerR + fromEdge
-        lineOuterR = r - fromEdge
+        big_line_thick = 3
+        small_line_thick = 1
+        #the angle the line spreads out over
+        big_angle = math.asin((big_line_thick / 2) / r) * 2
+        small_angle = math.asin((small_line_thick / 2) / r) * 2
+
+        detail = cq.Workplane("XY").tag("base")
 
         for i in range(lines):
             big = i % 5 == 0
-            # big=True
-            lineAngle = bigAngle if big else smallAngle
-            angle = math.pi/2 - i*dA
+            line_angle = big_angle if big else small_angle
+            angle = math.pi / 2 - i * dA
 
-            # if not big:
-            #     continue
+            bottom_left = polar(angle - line_angle / 2, line_inner_r)
+            bottom_right = polar(angle + line_angle / 2, line_inner_r)
+            top_right = polar(angle + line_angle / 2, line_outer_r)
+            top_left = polar(angle - line_angle / 2, line_outer_r)
+            detail = detail.workplaneFromTagged("base").moveTo(bottom_left[0], bottom_left[1]).radiusArc(bottom_right, line_inner_r).lineTo(top_right[0], top_right[1]).radiusArc(top_left, line_outer_r).close().extrude(line_thick)
 
-            bottomLeft=polar(angle - lineAngle/2, lineInnerR)
-            bottomRight=polar(angle + lineAngle/2, lineInnerR)
-            topRight=polar(angle + lineAngle/2, lineOuterR)
-            topLeft=polar(angle - lineAngle / 2, lineOuterR)
-            #keep forgetting cq does not line shapes that line up perfectly, so have a 0.001 bodge... again
-            dial = dial.workplaneFromTagged("top").moveTo(bottomLeft[0], bottomLeft[1]).radiusArc(bottomRight, 0.001-innerR).lineTo(topRight[0], topRight[1]).radiusArc(topLeft, r-0.001).close().extrude(lineThick)
-            # dial = dial.workplaneFromTagged("top").moveTo(bottomLeft[0], bottomLeft[1]).lineTo(bottomRight[0], bottomRight[1]).lineTo(topRight[0], topRight[1]).lineTo(topLeft[0], topLeft[1]).close().extrude(lineThick)
+        return detail
+
+    def get_dial(self):
+        r = self.outside_d / 2
+
+        dial = cq.Workplane("XY").circle(r).circle(self.inner_r).extrude(self.thick)
+
+        dial = dial.cut(self.get_detail())
+
+        if self.support_length > 0:
+            support = cq.Workplane("XY").circle(self.support_d/2).extrude(self.support_length)
+
+            dial = dial.add(support.translate((0,r - self.dial_width/2, self.thick)))
+            if not self.fixing_only_at_top:
+                dial = dial.add(support.translate((0, -(r - self.dial_width / 2), self.thick)))
+
+            for fixing_pos in self.fixing_positions:
+                dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
+
 
         return dial
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_dial.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getDial(), out)
+        exporters.export(self.get_dial(), out)
+
+        out = os.path.join(path, "{}_dial_detail.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_detail(), out)
 
 class Assembly:
     '''
@@ -2288,7 +2335,8 @@ class Assembly:
 
 
         if self.dial is not None:
-            clock = clock.add(self.dial.getDial().translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + frontOfClockZ)))
+            dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180)
+            clock = clock.add(dial.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + frontOfClockZ)))
 
 
         #hands on the motion work, showing the time

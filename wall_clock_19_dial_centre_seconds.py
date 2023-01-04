@@ -59,24 +59,23 @@ motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, bearing=clock.
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
+dial_diameter = 175
 
-dial = clock.Dial(175)
 
-
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock_19",
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock 19",
                                  style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillar=True,
-                                 dial=dial, pillars_separate=True)
-
+                                 dial_diameter=dial_diameter, pillars_separate=True)
+pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
                     hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=15)
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=15, pulley=pulley_no_pipe)
 
 assembly.printInfo()
 
-weight = clock.Weight(height=130, diameter=35)
-weight.printInfo()
+# weight = clock.Weight(height=130, diameter=35)
+# weight.printInfo()
 
 # bigweight = clock.Weight(height=125, diameter=45)
 # bigweight.printInfo()
@@ -89,9 +88,9 @@ if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
-    weight.outputSTLs(clockName, clockOutDir)
+    # weight.outputSTLs(clockName, clockOutDir)
     # bigweight.outputSTLs(clockName+"_big", clockOutDir)
+    pulley_no_pipe.outputSTLs(clockName + "_no_pipe", clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)

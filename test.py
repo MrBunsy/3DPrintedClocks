@@ -362,6 +362,24 @@ if False:
 # print("Outputting ", out)
 # exporters.export(arbour.getShape(), out)
 
+screw = MachineScrew(metric_thread=3, length=20)
+
+show_object(screw.get_nut_for_die_cutting())
+
+show_object(screw.get_screw_for_thread_cutting().translate((0,20,0)))
+
+
+if outputSTL:
+    path = "out"
+    name = "test"
+    out = os.path.join(path, "{}_nut.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(screw.get_nut_for_die_cutting(), out)
+
+    out = os.path.join(path, "{}_screw.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(screw.get_screw_for_thread_cutting(), out)
+
 # r1 = 50
 # r2 = 30
 # d = 60

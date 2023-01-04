@@ -25,6 +25,8 @@ GRAVITY = 9.81
 #extra diameter to add to something that should be free to rotate over a rod
 LOOSE_FIT_ON_ROD = 0.3
 
+LOOSE_SCREW = 0.2
+
 WASHER_THICK = 0.5
 
 #external diameter for 3 and 4mm internal diameter
@@ -111,6 +113,16 @@ def getScrewHeadDiameter(metric_thread, countersunk=False):
 
 SCREW_LENGTH_EXTRA = 2
 
+
+def get_diameter_for_die_cutting(M):
+    if M == 2:
+        return 1.6
+    if M == 3:
+        return 2.5
+    if M == 4:
+        return 3.3
+    raise ValueError("Hole size not known for M{}".format(M))
+
 class MachineScrew:
     '''
     Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
@@ -123,7 +135,26 @@ class MachineScrew:
         #if length is provided, this represents a specific screw
         self.length = length
 
-    def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK, headSpaceLength=1000):
+    def get_nut_for_die_cutting(self):
+        '''
+        Not sure I ever really need this, just curious
+        '''
+        return cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).circle(MachineScrew.get_diameter_for_die_cutting() / 2).extrude(self.getNutHeight())
+
+    def get_screw_for_thread_cutting(self):
+        '''
+        Pretty sure I won't need this either
+        '''
+        length = self.length
+        if length < 0:
+            length = 30
+        screw = cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).extrude(self.getHeadHeight()).circle(self.metric_thread/2).extrude(length)
+        return screw
+
+    def get_diameter_for_die_cutting(self):
+        return get_diameter_for_die_cutting(self.metric_thread)
+
+    def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK, headSpaceLength=1000, loose=False, for_tap_die=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -138,21 +169,27 @@ class MachineScrew:
                 #use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
 
+        r = self.metric_thread/2
+
+        if loose:
+            r+= LOOSE_SCREW/2
+        if for_tap_die:
+            r=self.get_diameter_for_die_cutting()/2
 
         screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
 
         if self.countersunk:
-            screw.add(cq.Solid.makeCone(radius1=self.getHeadDiameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=self.metric_thread / 2,
+            screw.add(cq.Solid.makeCone(radius1=self.getHeadDiameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=self.metric_thread/2,
                                         height=self.getHeadHeight() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
             #countersunk screw lengths seem to include the head
-            screw= screw.faces(">Z").workplane().circle(self.metric_thread/2).extrude(length - self.getHeadHeight())
+            screw= screw.add(cq.Workplane("XY").circle(r).extrude(length))
         else:
             # pan head screw lengths do not include the head
             if not withBridging:
                 screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
             else:
-                screw = screw.add(getHoleWithHole(innerD=self.metric_thread, outerD=self.getHeadDiameter()+NUT_WIGGLE_ROOM, deep=self.getHeadHeight() ,layerThick=layerThick))
-            screw = screw.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(length)
+                screw = screw.add(getHoleWithHole(innerD=r*2, outerD=self.getHeadDiameter()+NUT_WIGGLE_ROOM, deep=self.getHeadHeight() ,layerThick=layerThick))
+            screw = screw.faces(">Z").workplane().circle(r).extrude(length)
 
         #extend out from the headbackwards too
         if headSpaceLength > 0:
