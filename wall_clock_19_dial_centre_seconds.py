@@ -53,14 +53,14 @@ train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chain
                pendulumFixing=pendulumFixing, module_sizes=module_sizes)
 train.printInfo(weight_kg=0.75)
 
-# have printed with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
+# have accidentally printed hour holder with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
 motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, bearing=clock.getBearingInfo(3), module=2, compensateLooseArbour=False)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
 
-dial = clock.Dial(180)
+dial = clock.Dial(175)
 
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock_19",
@@ -69,7 +69,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pen
 
 
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=80, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
+                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=15)
 

@@ -408,7 +408,7 @@ class GoingTrain:
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
         self.calculatePoweredWheelRatios()
 
-    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=3):
+    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2):
 
         diameter = preferedDiameter
         if diameter < 0:
@@ -427,7 +427,7 @@ class GoingTrain:
             hole_d = arbour_d + LOOSE_FIT_ON_ROD
 
         self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, hole_d = hole_d, ratchet_thick=ratchetThick, arbour_d=arbour_d,
-                                      rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick, o_ring_diameter=o_ring_diameter)
+                                      rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick, o_ring_diameter=o_ring_diameter, need_bearing_standoff=True)
 
         self.calculatePoweredWheelRatios()
 
@@ -1120,7 +1120,9 @@ class SimpleClockPlates:
                                                width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
                                                tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
             elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
-                self.huygensWheel = RopeWheel(diameter=max_diameter*0.95, ratchet_thick=ratchet_thick, rope_diameter=self.goingTrain.poweredWheel.rope_diameter, o_ring_diameter=self.goingTrain.poweredWheel.o_ring_diameter,
+                huygens_diameter = max_diameter*0.95
+                print("Huygens wheel diameter",huygens_diameter)
+                self.huygensWheel = RopeWheel(diameter=huygens_diameter, ratchet_thick=ratchet_thick, rope_diameter=self.goingTrain.poweredWheel.rope_diameter, o_ring_diameter=get_o_ring_thick(huygens_diameter - self.goingTrain.poweredWheel.rope_diameter*2),
                                               hole_d=self.goingTrain.poweredWheel.hole_d, ratchet_outer_d=self.bottomPillarR*2, ratchet_outer_thick=ratchetOuterThick)
             else:
                 raise ValueError("Huygens maintaining power not currently supported with {}".format(self.goingTrain.poweredWheel.type.value))
@@ -1883,7 +1885,8 @@ class SimpleClockPlates:
 
     def frontAdditionsToPlate(self, plate):
         '''
-        stuff shared between all plate designs
+        (originaly) stuff shared between all plate designs
+        now it's just another place to put some stuff, needs tidy up
         '''
         plateThick = self.getPlateThick(back=False)
         # FRONT
@@ -1919,8 +1922,29 @@ class SimpleClockPlates:
 
         if self.dial is not None:
             dialFixings = self.dial.getFixingDistance()
-            minuteY = self.bearingPositions[self.goingTrain.chainWheels][1]
+            minuteY = self.hands_position[1]
             plate = plate.faces(">Z").workplane().pushPoints([(0, minuteY + dialFixings / 2), (0, minuteY - dialFixings / 2)]).circle(self.dial.fixingD / 2).cutThruAll()
+
+        #this has to be on the rod itself!
+        # if self.centred_second_hand:
+        #     #something for the bearing in the bottom of the cannon pinion to rest against
+        #     main_height = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT# - LAYER_THICK*2
+        #     escape_wheel_arbour_d = self.arboursForPlate[-2].arbour.arbourD
+        #
+        #     bearing = getBearingInfo(escape_wheel_arbour_d)
+        #
+        #     #hole from the bearing punch
+        #     base_inner_r = bearing.outerSafeD/2
+        #     base_outer_r = bearing.outerSafeD
+        #
+        #     top_inner_r =escape_wheel_arbour_d/2 + 0.6
+        #     top_outer_r = bearing.innerSafeDAtAPush/2
+        #     pillar = cq.Solid.makeCone(radius1=base_outer_r, radius2=top_outer_r, height=main_height).cut(cq.Solid.makeCone(radius1=base_inner_r, radius2=top_inner_r, height=main_height))
+        #
+        #     # pillar = cq.Workplane("XY").circle(escape_wheel_arbour_d).circle(inner_r).extrude(main_height)
+        #     # pillar = pillar.faces(">Z").workplane().circle(.innerSafeD/2).circle(inner_r).extrude(LAYER_THICK*2)
+        #     plate = plate.add(pillar.translate((self.hands_position[0], self.hands_position[1], self.getPlateThick(back=False))))
+
 
         # need an extra chunky hole for the big bearing that the key slots through
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:

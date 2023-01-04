@@ -983,6 +983,16 @@ class ArbourForPlate:
         if self.arbour.getType() == ArbourType.ANCHOR:
             return self.get_anchor_shapes()
 
+        if self.arbour.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
+
+            #TODO refactor everything into this class
+            shapes["wheel"]=self.arbour.getShape()
+            extras = self.arbour.getExtras()
+            for extraName in extras:
+                shapes[extraName]=extras[extraName]
+
+            shapes["pinion_STL_modifier"]=self.arbour.getSTLModifierPinionShape()
+
         return shapes
 
 
@@ -1126,6 +1136,11 @@ class Arbour:
             self.ratchetScrews = ratchetScrews
             if self.ratchetScrews is None:
                 self.ratchetScrews = MachineScrew(2, countersunk=True)
+
+            self.combine_with_powered_wheel = False
+            if not self.useRatchet and self.poweredWheel.type == PowerType.ROPE:
+                #this can be printed in one peice, so combine with the wheel and use a standard arbour extension
+                self.combine_with_powered_wheel = True
 
         if self.getType() == ArbourType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
@@ -1547,7 +1562,8 @@ class Arbour:
                 #already in the right place
                 shape = shape.add(boltOnRatchet)
 
-            shape = shape.add(self.poweredWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
+            if not self.combine_with_powered_wheel:
+                shape = shape.add(self.poweredWheel.getAssembled().translate((0, 0, self.wheelThick - self.getRatchetInsetness())))
 
         # if self.getType() == ArbourType.ESCAPE_WHEEL and self.escapement.type == EscapementType.GRASSHOPPER:
         #
@@ -1583,6 +1599,8 @@ class Arbour:
             if front:
                 return False
             else:
+                if self.combine_with_powered_wheel:
+                    return True
                 return not self.boltOnRatchet
 
         return True
@@ -1724,7 +1742,13 @@ class Arbour:
             #only extend out this way if the ratchet is inset (or there is not ratchet!) - otherwise this is unprintable
             #have it stand off from the bearing slightly
 
-            if self.rearSideExtension > 0:
+            use_rear_side_extension = True
+
+            if self.combine_with_powered_wheel:
+                gearWheel = gearWheel.add(self.poweredWheel.getAssembled().translate((0,0,self.wheelThick)))
+
+            if self.rearSideExtension > 0 and not self.combine_with_powered_wheel:
+                #rear side extension
                 #limit to r of 1cm
                 maxR = 10
                 if self.looseOnRod:
@@ -2064,6 +2088,9 @@ class MotionWorks:
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
         return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style)
 
+    def getMotionArboutPinionSTLModifier(self):
+        return self.pairs[1].pinion.getSTLModifierShape(thick=self.thick * 2 + self.pinionCapThick, offset_z=self.thick)
+
     def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
         #this is just a cadquery shape
@@ -2145,6 +2172,9 @@ class MotionWorks:
         print("Outputting ", out)
         exporters.export(self.getCannonPinionPinionSTLModifier(), out)
 
+        out = os.path.join(path, "{}_motion_arbour_pinion_modifier.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getMotionArboutPinionSTLModifier(), out)
 
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)

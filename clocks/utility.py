@@ -38,7 +38,9 @@ ARBOUR_WIGGLE_ROOM = 0.1
 DIRECT_ARBOUR_D = 6
 
 #for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
+#includes a bit of slack
 TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT = 6
+
 
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.
@@ -723,7 +725,7 @@ class BearingInfo():
 
     TODO - add and use safeouterD (where we can come into contact with the outside of the bearing without grating on the inner bit which will rotate)
     '''
-    def __init__(self, bearingOuterD=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1):
+    def __init__(self, bearingOuterD=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1, innerSafeDAtAPush=-1):
         self.bearingOuterD = bearingOuterD
         self.outerD = bearingOuterD
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
@@ -734,6 +736,10 @@ class BearingInfo():
         self.innerD=innerD
         #how large can something that comes into contact with the bearing (from the rod) be
         self.innerSafeD = innerSafeD
+        #for times when I really need to push the limits rather than play it safe
+        self.innerSafeDAtAPush = innerSafeDAtAPush
+        if self.innerSafeDAtAPush < 0:
+            self.innerSafeDAtAPush = self.innerSafeD
         #something that can touch the outside of the bearing can also touch the front/back of the bearing up to this diameter without fouling on anything that moves when it rotates
         if outerSafeD < 0 and bearingHolderLip > 0 :
             self.outerSafeD = self.bearingOuterD - bearingHolderLip*2
@@ -750,7 +756,7 @@ def getBearingInfo(innerD):
     Get some stock bearings
     '''
     if innerD == 3:
-        return BearingInfo(bearingOuterD=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25)
+        return BearingInfo(bearingOuterD=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerSafeDAtAPush=5.2)
     if innerD == 4:
         return BearingInfo(bearingOuterD=13.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 6:
@@ -763,6 +769,15 @@ def getBearingInfo(innerD):
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD)
 
+
+def get_o_ring_thick(total_diameter):
+    # #hack
+    # return 2.2
+    return 2
+    #TODO when I build up a selection of o-rings tinker with this
+    if total_diameter > 20:
+        return 3
+    return 2
 
 def getPendulumLength(pendulum_period):
     '''

@@ -902,8 +902,8 @@ class RopeWheel:
         '''
         return 20
 
-    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1.5, power_clockwise=True,
-                 o_ring_diameter=3, arbour_d=3, use_o_rings=1, ratchet_outer_d=-1, ratchet_outer_thick=5, need_bearing_standoff=True):
+    def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1, power_clockwise=True,
+                 o_ring_diameter=3, arbour_d=3, use_o_rings=1, ratchet_outer_d=-1, ratchet_outer_thick=5, need_bearing_standoff=False):
 
         #diameter for the rope
         self.diameter=diameter
@@ -915,7 +915,7 @@ class RopeWheel:
 
         self.need_bearing_standoff = need_bearing_standoff
 
-        self.slope_angle = math.pi / 3
+        self.slope_angle = math.pi / 4
         self.rope_diameter = rope_diameter
         self.o_ring_diameter = o_ring_diameter
         self.use_o_rings = use_o_rings
@@ -937,6 +937,8 @@ class RopeWheel:
 
         #standoff from bearing
         self.bearing_standoff_thick = 0.5
+        if not self.need_bearing_standoff:
+            self.bearing_standoff_thick = 0
 
         self.wheel_thick = self.wall_thick*2 + math.cos(self.slope_angle)*self.slope_length*2 + self.centre_wide
 
