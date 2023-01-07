@@ -362,23 +362,23 @@ if False:
 # print("Outputting ", out)
 # exporters.export(arbour.getShape(), out)
 
-screw = MachineScrew(metric_thread=3, length=20)
-
-show_object(screw.get_nut_for_die_cutting())
-
-show_object(screw.get_screw_for_thread_cutting().translate((0,20,0)))
-
-
-if outputSTL:
-    path = "out"
-    name = "test"
-    out = os.path.join(path, "{}_nut.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(screw.get_nut_for_die_cutting(), out)
-
-    out = os.path.join(path, "{}_screw.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(screw.get_screw_for_thread_cutting(), out)
+# screw = MachineScrew(metric_thread=3, length=20)
+#
+# show_object(screw.get_nut_for_die_cutting())
+#
+# show_object(screw.get_screw_for_thread_cutting().translate((0,20,0)))
+#
+#
+# if outputSTL:
+#     path = "out"
+#     name = "test"
+#     out = os.path.join(path, "{}_nut.stl".format(name))
+#     print("Outputting ", out)
+#     exporters.export(screw.get_nut_for_die_cutting(), out)
+#
+#     out = os.path.join(path, "{}_screw.stl".format(name))
+#     print("Outputting ", out)
+#     exporters.export(screw.get_screw_for_thread_cutting(), out)
 
 # r1 = 50
 # r2 = 30
@@ -395,7 +395,7 @@ if outputSTL:
 #
 # show_object(dial.getDial())
 
-AnchorEscapement.get_with_45deg_pallets(teeth=30)
+# AnchorEscapement.get_with_45deg_pallets(teeth=30)
 # springArbour = SpringArbour(power_clockwise=True)
 #
 # show_object(springArbour.getArbour())
@@ -404,3 +404,13 @@ AnchorEscapement.get_with_45deg_pallets(teeth=30)
 # out = os.path.join(path, "{}.stl".format(name))
 # print("Outputting ", out)
 # exporters.export(springArbour.getArbour(), out)
+
+
+motionWorks = MotionWorks(extra_height=20, style=None, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
+
+hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+                    second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3))
+
+
+show_object(hands.getHand(hour=False, minute=False, second=True, generate_outline=True))

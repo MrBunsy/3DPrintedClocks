@@ -1986,9 +1986,10 @@ class MotionWorks:
 
         return thick
 
-    def getCannonPinionPinion(self, with_snail=False):
+    def getCannonPinionPinion(self, with_snail=False, standalone=False):
         '''
         For the centred seconds hands I'm driving the motion works arbour from the minute arbour. To keep the gearing correct, use the same pinion as the cannon pinion!
+        if standalone, this is for the centred seconds hands where we're driving the motion works arbour from the minute wheel
         '''
 
         pinion_max_r = self.pairs[0].pinion.getMaxRadius()
@@ -2007,6 +2008,9 @@ class MotionWorks:
             base = base.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
 
         pinion = base
+
+        if standalone:
+            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbourD + LOOSE_FIT_ON_ROD)/2).extrude(10000))
 
         return pinion
 
@@ -2167,6 +2171,10 @@ class MotionWorks:
         print("Outputting ", out)
         exporters.export(self.getMotionArbour().getSTLModifierPinionShape(), out)
 
+        #only needed for prototype with centred seconds hand
+        out = os.path.join(path, "{}_motion_cannon_pinion_pinion_standalone.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getCannonPinionPinion(standalone=True), out)
 
         out = os.path.join(path, "{}_motion_cannon_pinion_modifier.stl".format(name))
         print("Outputting ", out)

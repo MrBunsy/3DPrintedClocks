@@ -139,7 +139,7 @@ class MachineScrew:
         '''
         Not sure I ever really need this, just curious
         '''
-        return cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).circle(MachineScrew.get_diameter_for_die_cutting() / 2).extrude(self.getNutHeight())
+        return cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).circle(self.get_diameter_for_die_cutting() / 2).extrude(self.getNutHeight())
 
     def get_screw_for_thread_cutting(self):
         '''
@@ -805,6 +805,7 @@ def getBearingInfo(innerD):
     if innerD == 15:
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD)
+    return None
 
 
 def get_o_ring_thick(total_diameter):

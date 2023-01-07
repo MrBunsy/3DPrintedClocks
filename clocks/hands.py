@@ -27,6 +27,8 @@ class Hands:
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
         '''
         self.thick=thick
+        #something doesn't behave how I'd expect with thin and narrow hands
+        self.secondThick= thick#*0.75
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
         #one layer does work pretty well, but the elephant's foot is sometimes obvious and it's hard to keep the first layer of white perfect. So switching back to two
         self.outlineThick=LAYER_THICK*2
@@ -37,6 +39,7 @@ class Hands:
         #if true, this second hand is centred through the motion works, and is longer and thinner than the minute hand.
         #not supported for all styles
         self.second_hand_centred = second_hand_centred
+        self.seconds_hand_through_hole = second_hand_centred
 
         #try to make the second hand counterbalanced
         self.second_hand_balanced = second_hand_centred
@@ -52,6 +55,7 @@ class Hands:
         self.minuteFixing=minuteFixing
         self.minuteFixing_d1 = minuteFixing_d1
         self.minuteFixing_d2 = minuteFixing_d2
+        #"rod"
         self.secondFixing=secondFixing
         self.secondFixing_d = secondFixing_d
         self.secondFixing_thick = self.thick
@@ -103,14 +107,27 @@ class Hands:
 
     def cutFixing(self, hand, hour, second=False):
         if second and self.secondFixing == "rod":
-            #second hand, assuming threaded onto a threaded rod, hole doesn't extend all the way through
+            #second hand, assuming threaded onto a threaded rod, hole doesn't extend all the way through unless centred seconds hand
             # hand = hand.moveTo(0, 0).circle(self.secondFixing_d / 2).cutThruAll()
 
-            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d / 2).extrude(self.thick/2).translate((0,0,self.thick/2)))
-            try:
-                hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
-            except:
-                hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d * 0.99).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
+            z_offset =self.secondThick/2
+            if self.seconds_hand_through_hole:
+                z_offset = 0
+
+            bearing_standoff_thick = 0
+            #mega hacky, review if I ever want to try a 2mm arbour for the escape wheel
+            bearing = getBearingInfo(3)
+
+            if bearing is not None:
+                bearing_standoff_thick =  LAYER_THICK*2
+
+            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d / 2).extrude(self.secondThick - z_offset).translate((0,0,z_offset)))
+            # try:
+            hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick - bearing_standoff_thick).translate((0,0,self.secondThick)))
+            if bearing is not None:
+                hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.innerSafeD/2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
+            # except:
+            #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d * 0.99).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
             return hand
 
         if not hour and self.minuteFixing == "rectangle":
@@ -173,7 +190,7 @@ class Hands:
             # if self.style == "square":
             #     width = width * 1.75
         if second:
-
+            thick = self.secondThick
             if self.second_hand_centred:
                 # length = self.length
                 base_r = self.secondFixing_d*2
@@ -609,7 +626,7 @@ class Hands:
                         return None
 
                     # hand_minus_shell = hand.cut(shell)
-
+                    # return shell
                     slab_thick = self.outlineThick
 
                     bigSlab = cq.Workplane("XY").rect(length*3, length*3).extrude(slab_thick)
@@ -637,7 +654,7 @@ class Hands:
                     shell = hand.shell(self.outline)
                     slabThick = self.outlineThick
                     if self.outlineSameAsBody:
-                        slabThick = self.thick
+                        slabThick = thick
                     bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(slabThick)
 
                     outline = shell.intersect(bigSlab)
@@ -695,7 +712,7 @@ class Hands:
 
         minuteHand = minuteHand.mirror().translate((0, 0, self.thick*2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         hourHand = hourHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-        secondHand = secondHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle).translate((0,self.length*1.5,0))
+        secondHand = secondHand.mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle).translate((0,self.length*1.5,0))
 
         all = minuteHand.add(hourHand)
 

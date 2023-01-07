@@ -1,6 +1,12 @@
 import math
 
-import clocks.clock as clock
+from clocks.power import *
+from clocks.escapements import *
+from clocks.striking import *
+from clocks.clock import *
+from clocks.utility import *
+from clocks.leaves import HollyLeaf, Wreath, HollySprig
+from clocks.cosmetics import *
 
 '''
 Based on wall clock 07. Shortest pendulum that can provide a seconds hand. 30 hour runtime, but chain driven
@@ -17,18 +23,18 @@ if 'show_object' not in globals():
 
 clockName="wall_clock_19"
 clockOutDir="out"
-gearStyle = clock.GearStyle.HONEYCOMB_SMALL
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+gearStyle = GearStyle.HONEYCOMB_SMALL
+pendulumFixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, anchorThick=10)
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, anchorThick=10)
 moduleReduction=0.875
 
 #minute wheel ratio so we can use a pinion of 10 teeth to turn the standard motion works arbour and keep the cannon pinion rotating once an hour
-train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=0, hours=30,
+train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=0, hours=30,
                        usePulley=True, huygensMaintainingPower=True, escapeWheelPinionAtFront=True)#, minuteWheelRatio=10/12)
 
 #lie about module reduction, we don't want smallest possible clock, we want a clock where the 2nd arbour isn't too close to the motion works arbour
@@ -54,30 +60,31 @@ train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chain
 train.printInfo(weight_kg=0.75)
 
 # have accidentally printed hour holder with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
-motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, bearing=clock.getBearingInfo(3), module=2, compensateLooseArbour=False)
+motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
 
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
 dial_diameter = 175
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock 19",
+plates = SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock 19",
                                  style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillar=True,
                                  dial_diameter=dial_diameter, pillars_separate=True)
-pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
+pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True)
+hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+                    second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3))
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=15, pulley=pulley_no_pipe)
+assembly = Assembly(plates, hands=hands, timeSeconds=15, pulley=pulley_no_pipe)
 
 assembly.printInfo()
 
-# weight = clock.Weight(height=130, diameter=35)
+# weight = Weight(height=130, diameter=35)
 # weight.printInfo()
 
-# bigweight = clock.Weight(height=125, diameter=45)
+# bigweight = Weight(height=125, diameter=45)
 # bigweight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
