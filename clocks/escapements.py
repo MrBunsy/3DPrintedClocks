@@ -68,7 +68,7 @@ class AnchorEscapement:
 
         run is how much the anchor continues to move towards the centre of the escape wheel after locking (or in the recoil, how much it recoils) in degrees
         only makes sense for deadbeat
-        Run is basically controlled by the weight/spring - it's how much power goes in. The value here is maximum run
+        Run is basically controlled by the weight/spring - it's how much power goes in. The value here is maximum run - the shape of the anchor
 
         clockwiseFromPinionSide is for the escape wheel
         '''
@@ -220,6 +220,7 @@ class AnchorEscapement:
         armLength = np.linalg.norm(np.subtract(midEntryPalet, anchorCentre))
         armThickAngle = armThick / armLength
 
+        #angle of the arms holding the pallets - doesn't affect performance of escapement unless arc is really large (and then the arms crash into the teeth)
         deadbeatAngle=self.run#math.pi*0.05
 
         #why is this armThick/4 rather than /2?

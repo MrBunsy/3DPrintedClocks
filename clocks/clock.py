@@ -2454,10 +2454,11 @@ class Assembly:
             if self.plates.huygensMaintainingPower:
                 pulley = self.pulley.getAssembled().translate((0,0,-self.pulley.getTotalThick()/2)).rotate((0,0,0), (0,1,0),90)
                 clock = clock. add(pulley.translate((self.goingTrain.poweredWheel.diameter/2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter/2)))
+                if self.goingTrain.poweredWheel.type == PowerType.ROPE:
+                    #second pulley for the counterweight
+                    clock = clock.add(pulley.translate((-self.goingTrain.poweredWheel.diameter / 2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter / 2)))
             else:
-                # #HACK HACK HACK, just copy pasted from teh chainHoles in plates, assumes cord wheel with key
-                # chainZ = self.plates.getPlateThick(back=True) + self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() - WASHER_THICK - self.goingTrain.poweredWheel.capThick - self.goingTrain.poweredWheel.thick + self.plates.endshake / 2
-                # print("chain Z", chainZ)
+
                 clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick()/2)))
 
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.plates.getPillarInfo()

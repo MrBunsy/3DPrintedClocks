@@ -62,7 +62,7 @@ train.printInfo(weight_kg=0.75)
 # have accidentally printed hour holder with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
 motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
 
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=75, bobD=70, bobThick=10, useNylocForAnchor=False)
+pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=70, bobThick=10, useNylocForAnchor=False)
 
 
 dial_diameter = 175
