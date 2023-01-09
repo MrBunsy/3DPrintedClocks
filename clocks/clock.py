@@ -150,6 +150,10 @@ class GoingTrain:
 
         self.trains=[]
 
+    def has_seconds_hand(self):
+        #not sure this should work with floating point, but it does...
+        return self.escapement_time == 60
+
     def getCordUsage(self):
         '''
         how much rope or cord will actually be used, as opposed to how far the weight will drop
@@ -726,7 +730,7 @@ class SimpleClockPlates:
 
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
-                 pendulumSticksOut=20, name="", dial_diameter=-1, heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
+                 pendulumSticksOut=20, name="", dial_diameter=-1, second_hand_mini_dial_d=-1, heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True,
                  centred_second_hand=False, pillars_separate=False):
         '''
@@ -742,6 +746,7 @@ class SimpleClockPlates:
         self.pendulumAtFront = pendulumAtFront
 
         self.dial_diameter = dial_diameter
+        self.second_hand_mini_dial_d = second_hand_mini_dial_d
 
         #are the main pillars attached to the back plate or independent? currently needs backPlateFromWall to create wall standoffs in order to screw to back plate
         self.pillars_separate = pillars_separate
@@ -1092,8 +1097,10 @@ class SimpleClockPlates:
         self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 4
         self.dial = None
         if self.dial_diameter > 0:
-
-            self.dial = Dial(outside_d= self.dial_diameter,support_length=self.dial_z, support_d=self.holderWide, thick=dial_thick)
+            if self.centred_second_hand:
+                self.dial = Dial(outside_d= self.dial_diameter,support_length=self.dial_z, support_d=self.holderWide, thick=dial_thick)
+            elif self.goingTrain.has_seconds_hand():
+                self.dial = Dial(outside_d=self.dial_diameter, support_length=self.dial_z, support_d=self.holderWide, thick=dial_thick, second_hand_relative_pos=npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2], second_hand_mini_dial_d=second_hand_mini_dial_d)
         #fixing positions to screw front plate onto the pillars
         self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
         self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
@@ -2131,7 +2138,7 @@ class Dial:
 
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outside_d, style="simple", fixing_screws=None, support_length=0, thick=3, fixing_only_at_top=True, support_d=20):
+    def __init__(self, outside_d, style="simple", fixing_screws=None, support_length=0, thick=3, fixing_only_at_top=True, support_d=20, second_hand_mini_dial_d=0, second_hand_relative_pos=None):
         self.outside_d=outside_d
         self.style = style
         self.fixing_screws = fixing_screws
@@ -2142,9 +2149,17 @@ class Dial:
         self.thick = thick
         self.fixing_only_at_top = fixing_only_at_top
 
+        #if >0, add a mini dial for the second hand
+        self.second_hand_mini_dial_d = second_hand_mini_dial_d
+        #when the second hand is here relative to the centre of the main hands
+        self.second_hand_relative_pos = second_hand_relative_pos
+
         self.dial_width = self.outside_d * 0.1
+        self.seconds_dial_width = self.dial_width*0.5#self.second_hand_mini_dial_d * 0.4
         if self.dial_width < self.support_d:
             self.dial_width = self.support_d
+
+        self.dial_detail_from_edges = self.outside_d * 0.01
         self.inner_r = self.outside_d/2 - self.dial_width
 
         self.calc_fixing_positions()
@@ -2173,13 +2188,15 @@ class Dial:
     def get_fixing_positions(self):
         return self.fixing_positions
 
-    def get_detail(self):
+    def get_detail(self, outer_r, dial_width, from_edge, thick_fives=True):
         '''
         get the bits to be printed in a different colour
         '''
-        r = self.outside_d / 2
-        from_edge = self.outside_d * 0.01
-        line_inner_r = self.inner_r + from_edge
+        # r = self.outside_d / 2
+        # from_edge = self.outside_d * 0.01
+        # line_inner_r = self.inner_r + from_edge
+        r = outer_r
+        line_inner_r = outer_r - dial_width + from_edge
         line_outer_r = r - from_edge
 
         lines = 60
@@ -2197,7 +2214,7 @@ class Dial:
         detail = cq.Workplane("XY").tag("base")
 
         for i in range(lines):
-            big = i % 5 == 0
+            big = i % 5 == 0 and thick_fives
             line_angle = big_angle if big else small_angle
             angle = math.pi / 2 - i * dA
 
@@ -2209,12 +2226,21 @@ class Dial:
 
         return detail
 
+    def get_main_dial_detail(self):
+        '''
+        detailing for the big dial
+        '''
+        return self.get_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
+
+    def get_seconds_dial_detail(self):
+        return self.get_detail(self.second_hand_mini_dial_d/2, self.seconds_dial_width, self.dial_detail_from_edges, thick_fives=False).translate(self.second_hand_relative_pos)
+
     def get_dial(self):
         r = self.outside_d / 2
 
         dial = cq.Workplane("XY").circle(r).circle(self.inner_r).extrude(self.thick)
 
-        dial = dial.cut(self.get_detail())
+
 
         if self.support_length > 0:
             support = cq.Workplane("XY").circle(self.support_d/2).extrude(self.support_length)
@@ -2226,6 +2252,12 @@ class Dial:
             for fixing_pos in self.fixing_positions:
                 dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
 
+        if self.second_hand_mini_dial_d > 0:
+            dial = dial.add(cq.Workplane("XY").circle(self.second_hand_mini_dial_d/2).circle(self.second_hand_mini_dial_d/2-self.seconds_dial_width).extrude(self.thick).translate(self.second_hand_relative_pos))
+            dial = dial.cut(self.get_seconds_dial_detail())
+
+        #cut main detail after potential seconds dial in case of some overlap
+        dial = dial.cut(self.get_main_dial_detail())
 
         return dial
 
@@ -2354,12 +2386,15 @@ class Assembly:
         clock = clock.add(hands.translate((self.plates.hands_position[0], self.plates.hands_position[1],
                                               minuteHandZ - self.motionWorks.hourHandSlotHeight)))
 
-        if self.goingTrain.escapement_time == 60:
+        if self.goingTrain.has_seconds_hand():
             #second hand!! yay
             secondHand = self.hands.getHand(second=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
             secondHandPos = self.plates.bearingPositions[-2][:2]
             secondHandPos.append(self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick)
+
+            if self.plates.dial is not None:
+                secondHandPos[2] = frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick
 
             if self.plates.centred_second_hand:
                 secondHandPos = self.plates.hands_position[:]
