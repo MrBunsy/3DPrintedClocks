@@ -1072,7 +1072,7 @@ class Arbour:
         #is this screwed (and optionally glued) to the threaded rod?
         self.looseOnRod = False
 
-
+        #TODO remove from this class and move to ArbourForPlate
         self.pendulumFixing = pendulumFixing
 
         self.ratchet = None

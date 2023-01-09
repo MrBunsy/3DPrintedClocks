@@ -2065,7 +2065,8 @@ class Ratchet:
 
         cicumference = math.pi*self.outsideDiameter
 
-        self.clicks = math.ceil(cicumference/10)#8
+        #was originaly just 8. Then tried math.ceil(cicumference/10) to replicate it in a way that scales, but this produced slightly too many teeth.
+        self.clicks = math.ceil(cicumference/15)#8
         #ratchetTeet must be a multiple of clicks
         self.ratchetTeeth = self.clicks*2
 

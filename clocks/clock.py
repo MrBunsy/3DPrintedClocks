@@ -1088,7 +1088,8 @@ class SimpleClockPlates:
 
         # height of dial from top of front plate
         dial_thick = 2
-        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 8
+        #previously given 8mm of clearance, but this was more than enough, so reducing down to 4
+        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 4
         self.dial = None
         if self.dial_diameter > 0:
 
@@ -1694,7 +1695,7 @@ class SimpleClockPlates:
             x = sqrt(chainWheelR^2 - bottomPilarR^2)
 
             '''
-            pillarTopY = self.bearingPositions[0][1] - math.sqrt(self.chainWheelR ** 2 - bottomPillarR ** 2)
+            pillarTopY = self.bearingPositions[0][1] - math.sqrt(self.chainWheelR ** 2 - bottomPillarR ** 2) - bottomPillarPos[1]
 
             bottom_pillar = cq.Workplane("XY").moveTo(0 - bottomPillarR, 0).radiusArc((0 + bottomPillarR, 0), -bottomPillarR). \
                 lineTo(0 + bottomPillarR, pillarTopY).radiusArc((0 - bottomPillarR, pillarTopY), self.chainWheelR).close().extrude(self.plateDistance)

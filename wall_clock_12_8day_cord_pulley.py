@@ -3,13 +3,20 @@ from clocks import clock
 '''
 Eight days, with pulley. 1.2m drop so it should have more power to play with than clock 10
 
+Finishing this design after the success of clocks up to 19. This will take on the lessons from clock 10.
+
 Changes from clock 10 planned:
 
- - Pendulum needs to stick out further to cope with larger weights (or maybe put it at the back?)
  - Why not try a second hand without a visible hole?
  - go back to slightly thicker gears to increase robustness (I'm worried about long term life of the clock and seen the escape wheel teeth bend) and make up for friction with longer drop
 
-Decided to try out the new short pendulum since it worked well on clock 11, so I think I can get away with having the pendulum really close to the plates as it'll never reach the weight
+ - Pendulum at back
+ - Direct pendulum arbour - no means of adjusting beat beyond clock angle on the wall and bending pendulum (should make it harder to knock out of beat even if it's slightly harder to set up to begin)
+ - dial
+
+Originally decided to try out the new short pendulum since it worked well on clock 11, so I think I can get away with having the pendulum really close to the plates as it'll never reach the weight
+
+Undecided about centred seconds hand.
 
 '''
 outputSTL = False
@@ -23,21 +30,22 @@ if 'show_object' not in globals():
 clockName="wall_clock_12"
 clockOutDir="out"
 gearStyle=clock.GearStyle.FLOWER
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
-drop =1.5
-lift =3
-lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+#for period 1.5
+# drop =1.5
+# lift =3
+# lock=1.5
+# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 # escapement = clock.GrasshopperEscapement(acceptableError=0.001, teeth=60, tooth_span=9.5, pendulum_length_m=clock.getPendulumLength(1.5), mean_torque_arm_length=10, loud_checks=True, skip_failed_checks=True, ax_deg=89)
-# lift=4
-# drop=2
-# lock=2
-# escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+lift=4
+drop=2
+lock=2
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1240, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1240, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
 
-moduleReduction=1
+moduleReduction=0.9
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 # train.setChainWheelRatio([93, 10])
@@ -68,7 +76,7 @@ cordwheel = train.getArbourWithConventionalNaming(0)
 # show_object(cordwheel.poweredWheel.getAssembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
 #
-motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=2, compensateLooseArbour=True)
+motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=2, compensateLooseArbour=True)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
@@ -76,12 +84,13 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical",
-                                 motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
-                                 backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=3, countersunk=True, length=40), chainThroughPillar=False)
+                                 motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
+                                 backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=3, countersunk=True, length=40),
+                                 chainThroughPillar=False, dial_diameter=250)#, centred_second_hand=True
 
 
 hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+                    length=plates.dial_diameter/2 - 10, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=30)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))

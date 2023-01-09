@@ -22,13 +22,16 @@ class HandStyle(Enum):
 class Hands:
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
                  hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
-                 chunky = False, second_hand_centred=False):
+                 chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
         '''
         self.thick=thick
-        #something doesn't behave how I'd expect with thin and narrow hands
-        self.secondThick= thick#*0.75
+        #something with shells or outline doesn't behave how I'd expect with thin and narrow hands, ends up with a layer inside the hand for the outline
+        #recommend using thicker seconds hands if using an outline
+        self.secondThick= seconds_hand_thick
+        if self.secondThick < 0:
+            self.secondThick = self.thick
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
         #one layer does work pretty well, but the elephant's foot is sometimes obvious and it's hard to keep the first layer of white perfect. So switching back to two
         self.outlineThick=LAYER_THICK*2
@@ -38,6 +41,7 @@ class Hands:
         self.style=style
         #if true, this second hand is centred through the motion works, and is longer and thinner than the minute hand.
         #not supported for all styles
+        #TODO is this needed? is secondLength not enough?
         self.second_hand_centred = second_hand_centred
         self.seconds_hand_through_hole = second_hand_centred
 
@@ -62,6 +66,10 @@ class Hands:
         self.secondLength= secondLength
         #Add a different coloured outline that is this many mm ratchetThick
         self.outline = outline
+        self.outline_on_seconds = outline_on_seconds
+        if outline_on_seconds < 0:
+            #default to same as the other hands, but can be override. Note that if the outline fails to generate (can struggle on some complicated shapes when small) outline will be ignored
+            self.outline_on_seconds = self.outline
         #if true the outline will be part of the same STL as the main body, if false, it'll just be a small sliver
         self.outlineSameAsBody = outlineSameAsBody
         self.handNutMetricSize=handNutMetricSize
@@ -606,9 +614,11 @@ class Hands:
             except:
                 pass
 
+        outline_wide = self.outline
+        if second:
+            outline_wide = self.outline_on_seconds
 
-
-        if self.outline > 0 and not ignoreOutline:
+        if outline_wide > 0 and not ignoreOutline:
             if self.outLineIsSubtractive():
                 #the outline cuts into the hand shape
 
@@ -620,7 +630,7 @@ class Hands:
                     #this doesn't work for fancier shapes - I think it can't cope if there isn't space to extrude the shell without it overlapping itself?
                     #works fine for simple hands, not for cuckoo hands
                     try:
-                        shell = hand.shell(-self.outline).translate((0,0,-self.outline))
+                        shell = hand.shell(-outline_wide).translate((0,0,-outline_wide))
                     except:
                         print("Unable to give outline to hand")
                         return None
@@ -651,7 +661,7 @@ class Hands:
             else:#positive shell - outline is outside the shape
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
                 if generate_outline:
-                    shell = hand.shell(self.outline)
+                    shell = hand.shell(outline_wide)
                     slabThick = self.outlineThick
                     if self.outlineSameAsBody:
                         slabThick = thick
@@ -673,10 +683,13 @@ class Hands:
                         bigSlab = cq.Workplane("XY").rect(length * 3, length * 3).extrude(self.outlineThick)
                         hand = hand.intersect(bigSlab)
                     else:
-                        #make the whole hand bigger by the outline amount
-                        shell = hand.shell(self.outline).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
+                        try:
+                            #make the whole hand bigger by the outline amount
+                            shell = hand.shell(outline_wide).intersect(cq.Workplane("XY").rect(length * 3, length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
 
-                        hand = hand.add(shell)
+                            hand = hand.add(shell)
+                        except:
+                            print("Unable to make hand larger")
                         hand = self.cutFixing(hand, hour, second)
                         return hand
 
