@@ -275,7 +275,7 @@ class GoingTrain:
 
         self.trains = [time]
 
-    def calculatePoweredWheelRatios(self, pinion_min = 10, pinion_max = 20, wheel_min = 20, wheel_max = 120):
+    def calculatePoweredWheelRatios(self, pinion_min = 9, pinion_max = 20, wheel_min = 20, wheel_max = 120, prefer_small=False):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
         TODO currently this tries to choose the largest wheel possible so it can fit. ideally we want the smallest wheel that fits to reduce plate size
@@ -317,15 +317,19 @@ class GoingTrain:
                 totalPinionTeeth = allGearPairCombos[i][1]
 
                 error = desiredRatio - ratio
-                # want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
-                train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth / 1000}
+                # perfer_small false (old behaviour): want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
+                train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth}
                 if abs(error) < 0.1:
                     allRatios.append(train)
+            if not prefer_small:
+                allRatios.sort(key=lambda x: x["error"] - x["teeth"] / 1000)
+            else:
+                #aim for small wheels where possible
+                allRatios.sort(key=lambda x: x["error"] + x["teeth"] / 100)
 
-            allRatios.sort(key=lambda x: x["error"] - x["teeth"])  #
-
-            # print(allRatios)
-
+            print("power wheel ratios", allRatios)
+            if len(allRatios) == 0 :
+                raise ValueError("Unable to generate gear ratio for powered wheel")
             self.chainWheelRatio = allRatios[0]["pair"]
         else:
             raise ValueError("Unsupported number of chain wheels")
@@ -373,7 +377,7 @@ class GoingTrain:
 
         self.powered_wheel_clockwise = not anticlockwise
 
-    def genChainWheels(self, ratchetThick=7.5, holeD=3.4, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10):
+    def genChainWheels(self, ratchetThick=7.5, holeD=3.4, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10, prefer_small=False):
         '''
         HoleD of 3.5 is nice and loose, but I think it's contributing to making the chain wheel wonky - the weight is pulling it over a bit
         Trying 3.3, wondering if I'm going to want to go back to the idea of a brass tube in the middle
@@ -395,9 +399,9 @@ class GoingTrain:
 
         self.poweredWheel = ChainWheel(ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, max_circumference=self.powered_wheel_circumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
 
-        self.calculatePoweredWheelRatios()
+        self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, looseOnRod=True):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, looseOnRod=True, prefer_small=False):
         '''
         If preferred diameter is provided, use that rather than the min diameter
         '''
@@ -410,9 +414,9 @@ class GoingTrain:
 
         self.calculatePoweredWheelInfo(diameter)
         self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
-        self.calculatePoweredWheelRatios()
+        self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
-    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2):
+    def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):
 
         diameter = preferedDiameter
         if diameter < 0:
@@ -433,7 +437,7 @@ class GoingTrain:
         self.poweredWheel = RopeWheel(diameter=self.powered_wheel_diameter, hole_d = hole_d, ratchet_thick=ratchetThick, arbour_d=arbour_d,
                                       rope_diameter=ropeThick, power_clockwise=self.powered_wheel_clockwise, wall_thick=wallThick, o_ring_diameter=o_ring_diameter, need_bearing_standoff=True)
 
-        self.calculatePoweredWheelRatios()
+        self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
 
     def setTrain(self, train):
@@ -1643,7 +1647,7 @@ class SimpleClockPlates:
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
         else:
-            plate = plate.cut(self.get_fixing_screws_cutter().translate((0,0, -self.getPlateThick(back=False) - self.plateDistance)))
+            plate = plate.cut(self.get_fixing_screws_cutter().translate((0,0, -self.getPlateThick(back=True) - self.plateDistance)))
 
 
 
@@ -2155,11 +2159,12 @@ class Dial:
         self.second_hand_relative_pos = second_hand_relative_pos
 
         self.dial_width = self.outside_d * 0.1
-        self.seconds_dial_width = self.dial_width*0.5#self.second_hand_mini_dial_d * 0.4
+        self.seconds_dial_width = self.dial_width*0.3#self.second_hand_mini_dial_d * 0.4
         if self.dial_width < self.support_d:
             self.dial_width = self.support_d
 
         self.dial_detail_from_edges = self.outside_d * 0.01
+        self.seconds_dial_detail_from_edges = self.dial_detail_from_edges*0.75
         self.inner_r = self.outside_d/2 - self.dial_width
 
         self.calc_fixing_positions()
@@ -2188,8 +2193,36 @@ class Dial:
     def get_fixing_positions(self):
         return self.fixing_positions
 
-    def get_detail(self, outer_r, dial_width, from_edge, thick_fives=True):
+    def get_circles_detail(self,outer_r, dial_width, from_edge, thick_fives=False):
         '''
+        In the style of two concentric circles with lines along the radii between them
+        '''
+        line_width = LINE_WIDTH*2
+        inner_circle_r = outer_r - dial_width + from_edge + line_width/2
+        outer_circle_r = outer_r - from_edge - line_width/2
+
+        lines = 60
+        dA = math.pi * 2 / lines
+        line_thick = LAYER_THICK*2
+
+        detail = cq.Workplane("XY").tag("base")
+        detail = detail.add(cq.Workplane("XY").circle(outer_circle_r + line_width / 2).circle(outer_circle_r - line_width / 2).extrude(line_thick))
+        detail = detail.add(cq.Workplane("XY").circle(inner_circle_r + line_width / 2).circle(inner_circle_r - line_width / 2).extrude(line_thick))
+
+
+        for i in range(lines):
+            big = i % 5 == 0 and thick_fives
+            this_line_width = line_width*2 if big else line_width
+            angle = math.pi / 2 - i * dA
+
+            detail = detail.add(cq.Workplane("XY").rect(line_width,outer_circle_r - inner_circle_r).extrude(line_thick).translate((0,(outer_circle_r + inner_circle_r)/2)).rotate((0,0,0), (0,0,1),radToDeg(angle)))
+
+        return detail
+
+    def get_lines_detail(self, outer_r, dial_width, from_edge, thick_fives=True):
+        '''
+        In the style of standalone lines for each minute, with the five minutes thicker
+
         get the bits to be printed in a different colour
         '''
         # r = self.outside_d / 2
@@ -2230,10 +2263,10 @@ class Dial:
         '''
         detailing for the big dial
         '''
-        return self.get_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
+        return self.get_lines_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
 
     def get_seconds_dial_detail(self):
-        return self.get_detail(self.second_hand_mini_dial_d/2, self.seconds_dial_width, self.dial_detail_from_edges, thick_fives=False).translate(self.second_hand_relative_pos)
+        return self.get_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False).translate(self.second_hand_relative_pos)
 
     def get_dial(self):
         r = self.outside_d / 2
@@ -2261,6 +2294,13 @@ class Dial:
 
         return dial
 
+    def get_all_detail(self):
+        detail = self.get_main_dial_detail()
+        if self.second_hand_mini_dial_d > 0:
+            detail = detail.add(self.get_seconds_dial_detail())
+
+        return detail
+
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_dial.stl".format(name))
         print("Outputting ", out)
@@ -2268,7 +2308,7 @@ class Dial:
 
         out = os.path.join(path, "{}_dial_detail.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_detail(), out)
+        exporters.export(self.get_all_detail(), out)
 
 class Assembly:
     '''

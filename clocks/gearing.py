@@ -19,6 +19,8 @@ class Gear:
         '''
         Could still do with a little more tidying up, outerRadius should be a few mm shy of the edge of teh gear to give a solid rim,
         but innerRadius should be at the edge of whatever can't be cut into
+
+        I keep changing my mind whether or not to give the cutter the full size of the gear or just the area to cut.
         '''
         #lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
@@ -48,7 +50,50 @@ class Gear:
         if style == GearStyle.SNOWFLAKE:
             return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius * 0.9, innerRadius = innerRadius + 2)
 
+        if style == GearStyle.CURVES:
+            return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1))
+
         return gear
+
+    @staticmethod
+    def cutCurvesStyle(gear, outerRadius, innerRadius, clockwise=True):
+
+        gap_size = outerRadius - innerRadius
+
+        arm_thick = max(outerRadius*0.1,1.8)#1.8 is the size of the honeycomb walls
+
+        cutter_thick = 100
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+        # cutter = cq.Workplane("XY")
+        arms = 6
+
+        for arm in range(arms):
+            outer_r = (gap_size + arm_thick*2)/2
+            if outer_r < arm_thick*2:
+                #not enough space to cut this gear
+                return gear
+            clockwise_modifier = -1 if clockwise else 1
+
+            angle = arm * math.pi*2 / arms
+
+            arm = cq.Workplane("XY").circle(outer_r).circle(outer_r - arm_thick).extrude(cutter_thick)
+            # return arm
+            square = cq.Workplane("XY").rect(outer_r*2, outer_r*2).extrude(cutter_thick).translate((clockwise_modifier* outer_r,0))
+            # return square
+            arm = arm.cut(square)
+            # return arm
+            arm = arm.translate((0,innerRadius + gap_size/2 )).rotate((0,0,0), (0,0,1), radToDeg(angle))
+            # return arm
+            cutter = cutter.cut(arm)
+            # cutter = cutter.add(arm)
+
+        # return cutter
+
+        gear = gear.cut(cutter)
+
+        return gear
+
 
     @staticmethod
     def cutSnowflakeStyle(gear, outerRadius, innerRadius):

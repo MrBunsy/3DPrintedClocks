@@ -38,8 +38,9 @@ class GearStyle(Enum):
     FLOWER = "flower"
     HONEYCOMB = "honeycomb"
     HONEYCOMB_SMALL = "honeycomb_small"
-    #just at the idea stage, psuedorandom with global seed?
+    #psuedorandom with global seed
     SNOWFLAKE = "snowflake"
+    CURVES = "curves"
 
 
 '''

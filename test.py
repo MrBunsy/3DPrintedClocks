@@ -109,8 +109,10 @@ if 'show_object' not in globals():
 
 
 # show_object(getHandDemo(assembled=True, chunky=True))
-# show_object(getGearDemo())
+show_object(getGearDemo(justStyle=GearStyle.CURVES))
 
+
+# show_object(Gear.cutCurvesStyle(cq.Workplane("XY").circle(120).extrude(5), 100, 20, clockwise=True))
 
 # show_object(getSpanner())
 
@@ -406,11 +408,11 @@ if False:
 # exporters.export(springArbour.getArbour(), out)
 
 
-motionWorks = MotionWorks(extra_height=20, style=None, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
-
-hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
-                    second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3))
-
-
-show_object(hands.getHand(hour=False, minute=False, second=True, generate_outline=True))
+# motionWorks = MotionWorks(extra_height=20, style=None, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
+#
+# hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+#                     hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+#                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3))
+#
+#
+# show_object(hands.getHand(hour=False, minute=False, second=True, generate_outline=True))

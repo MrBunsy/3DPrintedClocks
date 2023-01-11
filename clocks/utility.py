@@ -17,6 +17,7 @@ STEEL_SHOT_DENSITY=0.35/0.055
 
 #TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
 LAYER_THICK=0.2
+LINE_WIDTH=0.45
 LAYER_THICK_EXTRATHICK=0.3
 #default extrusion width, for the odd thing where it matters
 EXTRUSION_WIDTH = 0.45

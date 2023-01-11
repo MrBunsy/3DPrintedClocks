@@ -183,6 +183,8 @@ class Hands:
 
         #default is minute hand
 
+        style = self.style
+
         if not hour and not minute and not second:
             minute = True
         #draw a circle for the base of the hand
@@ -202,6 +204,8 @@ class Hands:
             if self.second_hand_centred:
                 # length = self.length
                 base_r = self.secondFixing_d*2
+                #hack until I design better seconds hands
+                # style = HandStyle.SIMPLE_ROUND
             else:
                 length = self.secondLength
                 base_r = self.secondLength * 0.2
@@ -218,7 +222,7 @@ class Hands:
         # if colour is not None:
         #     ignoreOutline = True
 
-        if self.style == HandStyle.SIMPLE:
+        if style == HandStyle.SIMPLE:
 
             width = self.length * 0.1
             if second:
@@ -231,7 +235,7 @@ class Hands:
 
 
 
-        elif self.style == HandStyle.SIMPLE_ROUND:
+        elif style == HandStyle.SIMPLE_ROUND:
             width = self.length * 0.1
             if second:
                 width = self.length * 0.05
@@ -251,14 +255,14 @@ class Hands:
                 hand = hand.workplaneFromTagged("base").moveTo(0,-counterweight_distance/2).rect(width,counterweight_distance).extrude(thick)
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance).circle(counterweight_r).extrude(thick)
 
-        elif self.style == HandStyle.SQUARE:
+        elif style == HandStyle.SQUARE:
 
             if not second:
                 base_r = self.length * 0.08
 
             handWidth = base_r*2
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
-        elif self.style == HandStyle.XMAS_TREE:
+        elif style == HandStyle.XMAS_TREE:
             trunkWidth = self.length * 0.075
             leafyWidth = length*0.5
             trunkEnd = length*0.4
@@ -346,7 +350,7 @@ class Hands:
 
 
 
-        elif self.style == HandStyle.SYRINGE:
+        elif style == HandStyle.SYRINGE:
 
             syringe_width = self.length*0.1
             if hour:
@@ -378,7 +382,7 @@ class Hands:
 
             hand = hand.lineTo(-syringe_width/2,syringe_startY).line(0,syringe_length-syringe_end_length)\
                 .lineTo(-tip_wide/2,syringe_startY + syringe_length).lineTo(-tip_wide/2,length).lineTo(0,length+tip_wide/2).mirrorY().extrude(thick)
-        elif self.style == HandStyle.CIRCLES:
+        elif style == HandStyle.CIRCLES:
 
             tip_r = self.length*0.05
             base_r = self.length*0.2
@@ -420,7 +424,7 @@ class Hands:
             #     hand = hand.circle(r - border)
             # hand = hand.extrude(thick)
 
-        elif self.style == HandStyle.SWORD:
+        elif style == HandStyle.SWORD:
 
             base_r = base_r*0.6
 
@@ -432,7 +436,7 @@ class Hands:
 
             hand = hand.workplaneFromTagged("base").moveTo(-base_width/2,0).lineTo(0,length).lineTo(base_width/2,0).lineTo(0,-rear_length).close().extrude(thick)
 
-        elif self.style == HandStyle.BREGUET:
+        elif style == HandStyle.BREGUET:
 
             handWidth = self.length * 0.04
             tipWidth = self.length*0.01
@@ -472,7 +476,7 @@ class Hands:
 
 
 
-        elif self.style == HandStyle.SPADE:
+        elif style == HandStyle.SPADE:
             base_r = self.length * 0.075
             handWidth = self.length*0.05
             if second:
@@ -508,7 +512,7 @@ class Hands:
                 .tangentArcPoint(tipBase, relative=False).tangentArcPoint(tipEndSide,relative=False).tangentArcPoint(tip, relative=False)\
                 .mirrorY().extrude(thick)
 
-        elif self.style == HandStyle.CUCKOO:
+        elif style == HandStyle.CUCKOO:
 
             end_d = self.length * 0.3 * 0.1
             centrehole_y = length * 0.6
