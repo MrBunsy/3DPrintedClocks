@@ -1492,7 +1492,7 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
-        cap = Gear.cutStyle(cap, self.capDiameter/2-self.holeD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style)
+        cap = Gear.cutStyle(cap, self.capDiameter/2-self.holeD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
         return cap
 
     def getClickWheelForCord(self):

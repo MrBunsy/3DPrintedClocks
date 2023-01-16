@@ -15,12 +15,14 @@ class Gear:
 
 
     @staticmethod
-    def cutStyle(gear, outerRadius, innerRadius = -1, style=None):
+    def cutStyle(gear, outerRadius, innerRadius = -1, style=None, clockwise_from_pinion_side=True):
         '''
         Could still do with a little more tidying up, outerRadius should be a few mm shy of the edge of teh gear to give a solid rim,
         but innerRadius should be at the edge of whatever can't be cut into
 
         I keep changing my mind whether or not to give the cutter the full size of the gear or just the area to cut.
+
+        clockwise - assume this wheel is turning clockwise from the perspective of the side with the pinion
         '''
         #lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
@@ -51,7 +53,7 @@ class Gear:
             return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius * 0.9, innerRadius = innerRadius + 2)
 
         if style == GearStyle.CURVES:
-            return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1))
+            return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
 
         return gear
 
@@ -546,7 +548,7 @@ class Gear:
 
         return self.pitch_diameter/2 - dedendum_height
 
-    def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1):
+    def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1, clockwise_from_pinion_side=True):
         gear = self.get2D()
 
         if thick == 0:
@@ -570,7 +572,7 @@ class Gear:
             #     # if innerRadius < 0:
             #     #     innerRadius = self.
             #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
-            gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle, style=style)
+            gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
         return gear
 
@@ -585,16 +587,17 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.getMaxRadius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def addToWheel(self,wheel, holeD=0, thick=4, front=True, style="HAC", pinionThick=8, capThick=2):
+    def addToWheel(self,wheel, holeD=0, thick=4, front=True, style="HAC", pinionThick=8, capThick=2, clockwise_from_pinion_side=True):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
         pinionthicker is a multiplier to thickness of the week for thickness of the pinion
+        clockwise_from_pinion_side is purely for cutting a style
         '''
 
         # pinionThick = thick * pinionthicker
 
-        base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.getMaxRadius()+1)
+        base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.getMaxRadius()+1,clockwise_from_pinion_side = clockwise_from_pinion_side)
 
         if front:
             #pinion is on top of the wheel
@@ -766,6 +769,7 @@ class WheelPinionPair:
 
         #addendum factor af
         addendumFactor = pinionTeeth / 4.0 * (1.0 - k + math.sqrt( 1.0 + k * k - 2.0 * k * math.cos(theta)) )
+        # print("addendum Factor", addendumFactor)
         return addendumFactor
 
 
@@ -1069,7 +1073,7 @@ class ArbourForPlate:
 
 class Arbour:
     def __init__(self, arbourD=None, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
-                 distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing = PendulumFixing.FRICTION_ROD, useRatchet=True):
+                 distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing = PendulumFixing.FRICTION_ROD, useRatchet=True, clockwise_from_pinion_side=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -1112,6 +1116,8 @@ class Arbour:
         #for the anchor, this is the side with the pendulum
         #for the powered wheel, this is the side with the chain/rope/cord
         self.pinionAtFront=pinionAtFront
+        #only used for cutting the gear style
+        self.clockwise_from_pinion_side = clockwise_from_pinion_side
         #if using hyugens maintaining power then the chain wheel is directly fixed to the wheel, without a ratchet.
         self.useRatchet=useRatchet
         #is this screwed (and optionally glued) to the threaded rod?
@@ -1426,7 +1432,7 @@ class Arbour:
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
         '''
         if self.getType() == ArbourType.WHEEL_AND_PINION:
-            shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick)
+            shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
             if self.escapementOnFront:
                 shape = self.getPinionArbour(forPrinting=forPrinting)
@@ -1764,7 +1770,7 @@ class Arbour:
         else:
             innerRadiusForStyle = self.poweredWheel.diameter*1.1/2
 
-        gearWheel = self.wheel.get3D(holeD=self.holeD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=innerRadiusForStyle)
+        gearWheel = self.wheel.get3D(holeD=self.holeD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=innerRadiusForStyle, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
         holeDeep = self.getRatchetInsetness(toCarve=True)
         if holeDeep > 0:
@@ -1790,6 +1796,7 @@ class Arbour:
             use_rear_side_extension = True
 
             if self.combine_with_powered_wheel:
+                #currently only rope wheel can do this for huygens, which is also a combination I'm unlikely to ever print again as splicing cord is a faff
                 gearWheel = gearWheel.add(self.poweredWheel.getAssembled().translate((0,0,self.wheelThick)))
 
             if self.rearSideExtension > 0 and not self.combine_with_powered_wheel:
@@ -1862,7 +1869,7 @@ class Arbour:
 class MotionWorks:
 
     def __init__(self, arbourD=3, thick=3, module=1, minuteHandThick=3, extra_height=0,
-                 style="HAC", compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None):
+                 style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None):
         '''
 
         minuteHolderTotalHeight - extra height above the minimum
@@ -1905,9 +1912,11 @@ class MotionWorks:
         self.module = module
         self.compensateLooseArbour = compensateLooseArbour
 
+        self.bearing = bearing
+
         self.calculateGears()
 
-        self.bearing = bearing
+
 
         self.wallThick = 1.5
 
@@ -1942,14 +1951,7 @@ class MotionWorks:
 
         self.bearingHolderThick = 0
 
-        if self.bearing is not None:
-            if self.bearing.outerD > self.pairs[0].pinion.getMinRadius()*2 - 1:
-                #this bearing won't fit inside the cannon pinion
-                self.bearingHolderThick = self.bearing.height
-                if self.compact:
-                    self.bearingHolderThick += 1
-            #we're big enough with the bearings, try to reduce size where we can
-            self.wallThick = 1.2
+        self.calc_bearing_holder_thick()
 
         self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
         self.space = 0.5
@@ -1966,22 +1968,107 @@ class MotionWorks:
 
         self.cannonPinionTotalHeight = extra_height + self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight + self.thick + self.cannonPinionBaseHeight
 
+
+    def calc_bearing_holder_thick(self):
+        if self.bearing is not None:
+            if self.bearing.outerD > self.pairs[0].pinion.getMinRadius()*2 - 1:
+                #this bearing won't fit inside the cannon pinion
+                self.bearingHolderThick = self.bearing.height
+                if self.compact:
+                    self.bearingHolderThick += 1
+            else:
+                self.bearingHolderThick = 0
+            #we're big enough with the bearings, try to reduce size where we can
+            self.wallThick = 1.2
+
     def calculateGears(self, arbourDistance=-1):
         '''
         If no arbour distance, use module size to calculate arbour distance, and set it.
         If arbour distance provided, use it to calculate module size and set that
         changes properties of this object
         '''
+
+        #experiment, if true aim to keep module size aproximately same as self.module by adjusting number of teeth
+        aim_for_module_size = True
+
+        wheel0_teeth = 36
+        pinion0_teeth = 12
+        wheel1_teeth = 40
+        pinion1_teeth = 10
+
         # pinching ratios from The Modern Clock
         # adjust the module so the diameters work properly
         if arbourDistance < 0:
-            self.arbourDistance = self.module * (36 + 12) / 2
+            self.arbourDistance = self.module * (wheel0_teeth + pinion0_teeth) / 2
         else:
-            self.module = arbourDistance / ((36 + 12) / 2)
-            self.arbourDistance = arbourDistance
-        secondModule = 2 * self.arbourDistance / (40 + 10)
-        print("module: {}, secondMOdule: {}".format(self.module, secondModule))
-        self.pairs = [WheelPinionPair(36, 12, self.module, looseArbours=self.compensateLooseArbour), WheelPinionPair(40, 10, secondModule, looseArbours=self.compensateLooseArbour)]
+            if aim_for_module_size:
+                pinion_min = 10
+                pinion_max = 30
+                wheel_min = 20
+                wheel_max = 200
+
+                options = []
+
+                for p0 in range(pinion_min, pinion_max):
+                    print("{:.1f}% calculating motion works gears".format(100*(p0 - pinion_min)/(pinion_max-pinion_min)))
+                    for w0 in range(wheel_min, wheel_max):
+                        for p1 in range(pinion_min, pinion_max):
+                            for w1 in range(wheel_min, wheel_max):
+
+                                ratio = (w1/p1) * (w0/p0)#1/((p0/w0)*(p1/w1))
+
+                                if (w1 * w0) % (p1 * p0) != 0:
+                                    continue
+                                if ratio != 12:
+                                    continue
+
+
+
+
+                                module0 = arbourDistance / ((w0 + p0) / 2)
+                                module1 = arbourDistance / ((w1 + p1) / 2)
+
+                                if self.bearing is not None:
+                                    #v.slow
+                                    potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensateLooseArbour)
+                                    # pinion_dedendum_factor_estimate = 1.8 * 0.95 + 0.4
+                                    # pinion_min_r = (module0 * p0)/2 - pinion_dedendum_factor_estimate * module0
+                                    # if self.bearing.outerD <= pinion_min_r * 2 - 1:
+                                    pinion_min_r = potential_pair.pinion.getMinRadius()
+                                    if self.bearing.outerD > potential_pair.pinion.getMinRadius() * 2 - 1:
+                                        #not enough space to slot in the bearing
+                                        # print("pinion_min_r",pinion_min_r)
+                                        continue
+
+                                option = {'ratio':ratio, 'module0': module0, 'module1':module1, 'teeth':[w0,p0,w1,p1]}
+                                options.append(option)
+
+                #one with the modules closest to requested
+                options.sort(key=lambda x: abs(x["module0"] - x["module1"])*0 + abs(x["module0"] - self.module) + abs(x["module1"] - self.module))
+                # options.sort(key=lambda x:abs((x["module0"] + x["module1"])/2 - self.module))
+
+                if len(options) == 0:
+                    raise ValueError("Unable to calculate gears for motion works")
+                self.module = options[0]["module0"]
+                self.arbourDistance = arbourDistance
+                wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth = options[0]["teeth"]
+
+                # if self.bearing is not None and pinion0_teeth < pinion1_teeth:
+                #     #try and ensure enough space for the bearing
+                #     old0 = pinion0_teeth
+                #     pinion0_teeth = pinion1_teeth
+                #     pinion1_teeth = old0
+
+
+            else:
+                self.module = arbourDistance / ((wheel0_teeth + pinion0_teeth) / 2)
+                self.arbourDistance = arbourDistance
+        secondModule = 2 * self.arbourDistance / (wheel1_teeth + pinion1_teeth)
+        print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, secondModule,wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
+        self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensateLooseArbour), WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensateLooseArbour)]
+
+
+        self.calc_bearing_holder_thick()
 
     def getAssembled(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
@@ -2135,7 +2222,7 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style)
+        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style, clockwise_from_pinion_side=False)
 
     def getMotionArboutPinionSTLModifier(self):
         return self.pairs[1].pinion.getSTLModifierShape(thick=self.thick * 2 + self.pinionCapThick, offset_z=self.thick)
@@ -2170,7 +2257,7 @@ class MotionWorks:
         holderR_base = self.hourHandHolderD / 2 + 0.1
         holderR_top = self.hourHandHolderD / 2 - 0.2
 
-        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR)
+        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR, clockwise_from_pinion_side=True)
 
         if self.snail is not None:
             hour = hour.add(self.snail.get3D(self.thick))

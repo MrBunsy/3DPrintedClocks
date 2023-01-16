@@ -162,6 +162,113 @@ class GoingTrain:
             return 2*self.maxWeightDrop
         return self.maxWeightDrop
 
+    '''
+    TODO make this generic and re-usable, I've got similar logic over in calculating chain wheel ratios and motion works
+    '''
+    def calculateRatios(self, moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50, max_error=0.1, loud=False):
+        '''
+        Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
+        module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
+        '''
+
+        pinion_min = min_pinion_teeth
+        pinion_max = pinion_max_teeth
+        wheel_min = wheel_min_teeth
+        wheel_max = max_wheel_teeth
+
+        '''
+        https://needhamia.com/clock-repair-101-making-sense-of-the-time-gears/
+        “With an ‘integer ratio’, the same pairs of teeth (gear/pinion) always mesh on each revolution.
+         With a non-integer ratio, each pass puts a different pair of teeth in mesh. (Some fractional 
+         ratios are also called a ‘hunting ratio’ because a given tooth ‘hunts’ [walks around] the other gear.)”
+
+         "So it seems clock designers prefer non-whole-number gear ratios to even out the wear of the gears’ teeth. "
+
+         seems reasonable to me
+        '''
+        allGearPairCombos = []
+
+        targetTime = 60 * 60 / self.minuteWheelRatio
+
+        for p in range(pinion_min, pinion_max):
+            for w in range(wheel_min, wheel_max):
+                allGearPairCombos.append([w, p])
+        if loud:
+            print("allGearPairCombos", len(allGearPairCombos))
+        # [ [[w,p],[w,p],[w,p]] ,  ]
+        allTrains = []
+
+        allTrainsLength = 1
+        for i in range(self.wheels):
+            allTrainsLength *= len(allGearPairCombos)
+
+        # this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
+        # one fewer pairs than wheels
+        allcomboCount = len(allGearPairCombos)
+        if self.wheels == 2:
+            for pair_0 in range(allcomboCount):
+                allTrains.append([allGearPairCombos[pair_0]])
+        if self.wheels == 3:
+            for pair_0 in range(allcomboCount):
+                for pair_1 in range(allcomboCount):
+                    allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
+        elif self.wheels == 4:
+            for pair_0 in range(allcomboCount):
+                if loud and pair_0 % 10 == 0:
+                    print("{:.1f}% of calculating trains".format(100 * pair_0 / allcomboCount))
+                for pair_1 in range(allcomboCount):
+                    for pair_2 in range(allcomboCount):
+                        allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1], allGearPairCombos[pair_2]])
+        if loud:
+            print("allTrains", len(allTrains))
+        allTimes = []
+        totalTrains = len(allTrains)
+        for c in range(totalTrains):
+            if loud and c % 100 == 0:
+                print("{:.1f}% of combos".format(100 * c / totalTrains))
+            totalRatio = 1
+            intRatio = False
+            totalTeeth = 0
+            # trying for small wheels and big pinions
+            totalWheelTeeth = 0
+            totalPinionTeeth = 0
+            weighting = 0
+            lastSize = 0
+            fits = True
+            for p in range(len(allTrains[c])):
+                ratio = allTrains[c][p][0] / allTrains[c][p][1]
+                if ratio == round(ratio):
+                    intRatio = True
+                    break
+                totalRatio *= ratio
+                totalTeeth += allTrains[c][p][0] + allTrains[c][p][1]
+                totalWheelTeeth += allTrains[c][p][0]
+                totalPinionTeeth += allTrains[c][p][1]
+                # module * number of wheel teeth - proportional to diameter
+                size = math.pow(moduleReduction, p) * allTrains[c][p][0]
+                weighting += size
+                if p > 0 and size > lastSize * 0.9:
+                    # this wheel is unlikely to physically fit
+                    fits = False
+                    break
+                lastSize = size
+            totalTime = totalRatio * self.escapement_time
+            error = targetTime - totalTime
+
+            train = {"time": totalTime, "train": allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting}
+            if fits and abs(error) < max_error and not intRatio:
+                allTimes.append(train)
+
+        allTimes.sort(key=lambda x: x["weighting"])
+        # print(allTimes)
+
+        self.trains = allTimes
+
+        if len(allTimes) == 0:
+            raise RuntimeError("Unable to calculate valid going train")
+
+        return allTimes
+
     def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
@@ -275,7 +382,7 @@ class GoingTrain:
 
         self.trains = [time]
 
-    def calculatePoweredWheelRatios(self, pinion_min = 9, pinion_max = 20, wheel_min = 20, wheel_max = 120, prefer_small=False):
+    def calculatePoweredWheelRatios(self, pinion_min = 9, pinion_max = 20, wheel_min = 20, wheel_max = 160, prefer_small=False):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
         TODO currently this tries to choose the largest wheel possible so it can fit. ideally we want the smallest wheel that fits to reduce plate size
@@ -557,6 +664,7 @@ class GoingTrain:
         if secondWheelR < space - 3:
             #the second wheel can actually fit on the same side as the ratchet
             chainWheelImaginaryPinionAtFront = not chainWheelImaginaryPinionAtFront
+            print("Space to fit minute wheel in front of chain wheel - should result in smaller plate distance. check to ensure it does not clash with power mechanism")
 
         #this is a bit messy. leaving it alone for now, but basically we manually choose which way to have the escape wheel but by default it's at front (if the chain is also at the front)
         escapeWheelPinionAtFront = self.escapeWheelPinionAtFront
@@ -585,17 +693,24 @@ class GoingTrain:
             chainDistance = chainModule * (self.chainWheelRatio[0] + self.chainWheelRatio[1]) / 2
 
             minuteWheelSpace = pairs[0].wheel.getMaxRadius() + holeD*2
+            if not self.poweredWheel.looseOnRod:
+                #need space for the steel rod as the wheel itself is loose on the threaded rod
+                minuteWheelSpace += 2
 
             #check if the chain wheel will fit next to the minute wheel
             if chainDistance < minuteWheelSpace:
                 # calculate module for the chain wheel based on teh space available
                 chainModule = 2 * minuteWheelSpace / (self.chainWheelRatio[0] + self.chainWheelRatio[1])
+                print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chainModule))
             self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
             #only supporting one at the moment, but open to more in the future if needed
             self.chainWheelPairs=[self.chainWheelPair]
+            power_at_front = not self.chainAtBack
+            clockwise = self.chainWheels % 2 == 1
+            clockwise_from_powered_side = clockwise and power_at_front
             self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
                                            distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
-                                           useRatchet=not self.huygensMaintainingPower, pinionAtFront=not self.chainAtBack)]
+                                           useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side)]
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -605,14 +720,18 @@ class GoingTrain:
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
                     arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d, distanceToNextArbour=pairs[i].centre_distance,
-                                    style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower)
+                                    style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower,
+                                    clockwise_from_pinion_side=not self.chainAtBack)
                 else:
+                    clockwise = i % 2 == 0
+                    clockwise_from_pinion_side = clockwise and pinionAtFront
                     #just a normal gear
                     if self.chainWheels == 1:
                         pinionThick = self.chainWheelArbours[-1].wheelThick * chainWheelPinionThickMultiplier
                     else:
                         pinionThick = self.chainWheelArbours[-1].wheelThick * pinionThickMultiplier
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength, distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront)
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
+                                    distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
                 if useNyloc:
                     #regardless of chains, we need a nyloc nut to fix the wheel to the rod
@@ -733,13 +852,15 @@ class SimpleClockPlates:
     Any future plates are likely to be be very different in terms out laying out gears, and anything that is needed can always be spun out
 
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3,pendulumAtTop=True, plateThick=5, backPlateThick=None,
+    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", dial_diameter=-1, second_hand_mini_dial_d=-1, heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillar=True,
-                 centred_second_hand=False, pillars_separate=False):
+                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
+                 centred_second_hand=False, pillars_separate=False, dial_bottom_fixing=False, dial_top_fixing=True):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
+
+        Do I want to wrap up all the dial parameters in a dict or object?
 
         escapementOnFront: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
 
@@ -759,7 +880,7 @@ class SimpleClockPlates:
         self.centred_second_hand = centred_second_hand
 
         #does the chain/rope/cord pass through the bottom pillar?
-        self.chainThroughPillar = chainThroughPillar
+        self.chainThroughPillar = chainThroughPillarRequired
 
         #only used for the direct arbour pendulum
         self.pendulumFixingBearing = pendulumFixingBearing
@@ -1093,7 +1214,7 @@ class SimpleClockPlates:
 
         self.chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
 
-        self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.holderWide = self.getPillarInfo()
+        self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth = self.getPillarInfo()
 
         # height of dial from top of front plate
         dial_thick = 2
@@ -1102,9 +1223,10 @@ class SimpleClockPlates:
         self.dial = None
         if self.dial_diameter > 0:
             if self.centred_second_hand:
-                self.dial = Dial(outside_d= self.dial_diameter,support_length=self.dial_z, support_d=self.holderWide, thick=dial_thick)
+                self.dial = Dial(outside_d= self.dial_diameter, support_length=self.dial_z, support_d=self.plateWidth, thick=dial_thick, bottom_fixing=dial_bottom_fixing, top_fixing=dial_top_fixing)
             elif self.goingTrain.has_seconds_hand():
-                self.dial = Dial(outside_d=self.dial_diameter, support_length=self.dial_z, support_d=self.holderWide, thick=dial_thick, second_hand_relative_pos=npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2], second_hand_mini_dial_d=second_hand_mini_dial_d)
+                self.dial = Dial(outside_d=self.dial_diameter, support_length=self.dial_z, support_d=self.plateWidth, thick=dial_thick, bottom_fixing=dial_bottom_fixing, top_fixing=dial_top_fixing,
+                                 second_hand_relative_pos=npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2], second_hand_mini_dial_d=second_hand_mini_dial_d)
         #fixing positions to screw front plate onto the pillars
         self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
         self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
@@ -1123,7 +1245,7 @@ class SimpleClockPlates:
             bottomSafe = self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorks.getHourHolderMaxRadius() + self.gearGap
             self.extraFrontPlateMountingPos = (self.bearingPositions[-2][0], (topSafe + bottomSafe)/2)
             self.extraFrontPlateMountingLength = topSafe - bottomSafe
-            self.extraFrontPlateFixings =  [(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] - self.extraFrontPlateMountingLength/2 + self.holderWide / 4), (self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] + self.extraFrontPlateMountingLength/2 - self.holderWide / 4)]
+            self.extraFrontPlateFixings =  [(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] - self.extraFrontPlateMountingLength / 2 + self.plateWidth / 4), (self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] + self.extraFrontPlateMountingLength / 2 - self.plateWidth / 4)]
 
         #fixing positions to screw the wall standoffs onto the back plate/pillars only used if backPlateFromWall > 0
         self.backPlateTopFixings = [(self.topPillarPos[0], self.topPillarPos[1]- self.topPillarR / 2), (self.topPillarPos[0], self.topPillarPos[1] + self.topPillarR / 2)]
@@ -1175,6 +1297,59 @@ class SimpleClockPlates:
             # motion works is directly below the minute rod
             self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
 
+        self.motionWorksPos = npToSet(np.add(self.hands_position, self.motionWorksRelativePos))
+
+        #even if it's not used:
+
+        #TODO calculate so it's always just big enough?
+        self.motion_works_holder_length = 30
+        self.motion_works_holder_wide = self.plateWidth
+        self.motion_works_fixings_relative_pos = [(-self.plateWidth/4,self.motion_works_holder_length/2) ,
+                                                  (self.plateWidth/4,-(self.motion_works_holder_length/2))]
+
+    def need_motion_works_holder(self):
+        '''
+        If we've got a centred second hand then there's a chance that the motino works arbour lines up with another arbour, so there's no easy way to hold it in plnace
+        in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
+        '''
+
+        if self.style == "vertical" and self.goingTrain.has_seconds_hand() and self.centred_second_hand:
+            #potentially
+
+            motion_works_arbour_y = self.motionWorksPos[1]
+
+            for i,bearing_pos in enumerate(self.bearingPositions):
+                #just x,y
+                bearing_pos_y = bearing_pos[1]
+                bearing = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).arbourD)
+                screw = MachineScrew(3, countersunk=True)
+                if abs(bearing_pos_y - motion_works_arbour_y) < bearing.bearingOuterD/2 + screw.getHeadDiameter()/2:
+                    print("motion works holder would clash with bearing holder for arbour", i)
+                    return True
+
+        return False
+
+    def get_motion_works_holder(self):
+        if not self.need_motion_works_holder():
+            return None
+
+
+
+        standoff_thick = 1
+        holder_thick =TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - WASHER_THICK - standoff_thick
+        w = self.motion_works_holder_wide
+        l = self.motion_works_holder_length
+        #holder = cq.Workplane("XY").rect(self.motion_works_holder_wide, self.motion_works_holder_length).extrude(holder_thick)
+        holder = cq.Workplane("XY").moveTo(w/2, l/2).radiusArc((-w/2,l/2), -w/2).line(0,-l).radiusArc((w/2, -l/2), -w/2).close().extrude(holder_thick)
+
+        holder = holder.faces(">Z").workplane().circle(self.fixingScrews.metric_thread).extrude(standoff_thick)
+
+        holder = holder.cut(self.fixingScrews.getCutter(withBridging=True,layerThick=LAYER_THICK_EXTRATHICK, for_tap_die=True))
+
+        for pos in self.motion_works_fixings_relative_pos:
+            holder = holder.cut(self.fixingScrews.getCutter().rotate((0,0,0),(0,1,0),180).translate((pos[0], pos[1], holder_thick)))
+
+        return holder
 
 
     def getPlateThick(self, back=True, standoff=False):
@@ -1337,7 +1512,7 @@ class SimpleClockPlates:
 
             #just above the pillar
             #TODO consider putting the screwhole INSIDE the pillar?
-            screwHolePos = (self.topPillarPos[0],self.topPillarPos[1] + self.holderWide / 2 + self.wallFixingScrewHeadD / 2 + slotLength)
+            screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] + self.plateWidth / 2 + self.wallFixingScrewHeadD / 2 + slotLength)
 
             screwHoleSupportR = self.topPillarR  # (self.wallFixingScrewHeadD + 6)/2
 
@@ -1470,11 +1645,11 @@ class SimpleClockPlates:
         thick = self.getPlateThick(back=False)
 
         #main rectangle
-        plate = cq.Workplane("XY").tag("base").moveTo(0,(topY+bottomY)/2).rect(self.holderWide,topY - bottomY).extrude(thick)
+        plate = cq.Workplane("XY").tag("base").moveTo(0,(topY+bottomY)/2).rect(self.plateWidth, topY - bottomY).extrude(thick)
         #circle over bottom pillar
         # plate = plate.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(thick)
         #top circle
-        plate = plate.workplaneFromTagged("base").moveTo(0, topY).circle(self.holderWide/2).extrude(thick)
+        plate = plate.workplaneFromTagged("base").moveTo(0, topY).circle(self.plateWidth / 2).extrude(thick)
 
         #bearing for the escape wheel
         bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-2).getRodD())
@@ -1485,12 +1660,12 @@ class SimpleClockPlates:
 
         #pillar to attach to front plate
         # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide / 2).extrude(self.extraFrontPlateDistance).translate((0, 0, thick)))
-        if self.extraFrontPlateMountingLength > self.holderWide:
+        if self.extraFrontPlateMountingLength > self.plateWidth:
             #elongated circle
-            centreLength = self.extraFrontPlateMountingLength - self.holderWide
-            plate = plate.workplaneFromTagged("base").moveTo(self.extraFrontPlateMountingPos[0]-self.holderWide/2,self.extraFrontPlateMountingPos[1]+centreLength/2).\
-                radiusArc((self.extraFrontPlateMountingPos[0]+self.holderWide/2,self.extraFrontPlateMountingPos[1]+centreLength/2), self.holderWide/2).line(0,-centreLength).\
-                radiusArc((self.extraFrontPlateMountingPos[0]-self.holderWide/2,self.extraFrontPlateMountingPos[1]-centreLength/2), self.holderWide/2).close().extrude(self.extraFrontPlateDistance + thick)
+            centreLength = self.extraFrontPlateMountingLength - self.plateWidth
+            plate = plate.workplaneFromTagged("base").moveTo(self.extraFrontPlateMountingPos[0] - self.plateWidth / 2, self.extraFrontPlateMountingPos[1] + centreLength / 2).\
+                radiusArc((self.extraFrontPlateMountingPos[0] + self.plateWidth / 2, self.extraFrontPlateMountingPos[1] + centreLength / 2), self.plateWidth / 2).line(0, -centreLength).\
+                radiusArc((self.extraFrontPlateMountingPos[0] - self.plateWidth / 2, self.extraFrontPlateMountingPos[1] - centreLength / 2), self.plateWidth / 2).close().extrude(self.extraFrontPlateDistance + thick)
 
         else:
             raise ValueError("Not enough space for a pillar to hold the extra front plate")
@@ -1870,7 +2045,7 @@ class SimpleClockPlates:
                 if needs_pendulum_bearing and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
                     plate = plate.cut(cq.Workplane("XY").circle(DIRECT_ARBOUR_D/2 + 2).extrude(self.getPlateThick(back=back)).translate((pos[0], pos[1], 0)))
 
-            if bearingInfo.bearingOuterD > self.holderWide - self.bearingWallThick*2:
+            if bearingInfo.bearingOuterD > self.plateWidth - self.bearingWallThick*2:
                 #this is a chunkier bearing, make the plate bigger
                 plate = plate.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back))
             plate = plate.cut(self.getBearingPunch(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
@@ -1958,8 +2133,13 @@ class SimpleClockPlates:
 
         motionWorksPos = npToSet(np.add(self.hands_position, self.motionWorksRelativePos))
 
-        #hole for screw to hold motion works arbour TODO - what if this is on top of a bearing?
-        plate = plate.cut(self.fixingScrews.getCutter().translate(motionWorksPos))
+        if self.need_motion_works_holder():
+            #screw would be on top of a bearing, so there's a separate peice to hold it
+            for pos in self.motion_works_fixings_relative_pos:
+                plate = plate.cut(cq.Workplane("XY").circle(self.fixingScrews.get_diameter_for_die_cutting()/2).extrude(self.getPlateThick(back=False)).translate(pos))
+        else:
+            #hole for screw to hold motion works arbour
+            plate = plate.cut(self.fixingScrews.getCutter().translate(motionWorksPos))
 
         #embedded nut on the front so we can tighten this screw in
         #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.
@@ -1971,15 +2151,24 @@ class SimpleClockPlates:
 
         if self.dial is not None:
 
-            if self.dial_diameter/2 + self.hands_position[1] > self.topPillarPos[1]:
+
+            dial_fixing_positions = [npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
+
+            need_top_extension = max([pos[1] for pos in dial_fixing_positions]) > self.topPillarPos[1]
+            need_bottom_extension = min([pos[1] for pos in dial_fixing_positions]) < self.bottomPillarPos[1]
+
+
+            if need_top_extension:
                 # off the top of teh clock
                 # TODO make this more robust
 
                 dial_support_pos = (self.hands_position[0], self.hands_position[1] + self.dial_diameter/2- self.dial.dial_width/2)
-                plate = plate.add(cq.Workplane("XY").circle(self.holderWide/2).extrude(plateThick).translate(dial_support_pos))
-                plate = plate.add(cq.Workplane("XY").rect(self.holderWide, dial_support_pos[1] - self.topPillarPos[1]).extrude(plateThick).translate((self.topPillarPos[0], (self.topPillarPos[1]+dial_support_pos[1])/2)))
+                plate = plate.add(cq.Workplane("XY").circle(self.plateWidth / 2).extrude(plateThick).translate(dial_support_pos))
+                plate = plate.add(cq.Workplane("XY").rect(self.plateWidth, dial_support_pos[1] - self.topPillarPos[1]).extrude(plateThick).translate((self.topPillarPos[0], (self.topPillarPos[1] + dial_support_pos[1]) / 2)))
 
-            dial_fixing_positions = [npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
+            #TODO bottom extension (am I ever going to want it?)
+
+
             for pos in dial_fixing_positions:
                 plate = plate.cut(self.dial.fixing_screws.getCutter(loose=True,withBridging=True).translate(pos))
 
@@ -2126,6 +2315,11 @@ class SimpleClockPlates:
                 else:
                     print("WARNING {} is None".format(shapeName))
 
+        if self.need_motion_works_holder():
+            out = os.path.join(path, "{}_motion_works_holder.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_motion_works_holder(), out)
+
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
         #         extensionShape=self.getArbourExtension(arbour, top=top)
@@ -2138,11 +2332,11 @@ class SimpleClockPlates:
 
 class Dial:
     '''
-    TODO - should really be created by the plates class
+    should really be created by the plates class
 
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outside_d, style="simple", fixing_screws=None, support_length=0, thick=3, fixing_only_at_top=True, support_d=20, second_hand_mini_dial_d=0, second_hand_relative_pos=None):
+    def __init__(self, outside_d, style="simple", fixing_screws=None, support_length=0, thick=3, top_fixing=True, bottom_fixing=False, support_d=20, second_hand_mini_dial_d=0, second_hand_relative_pos=None):
         self.outside_d=outside_d
         self.style = style
         self.fixing_screws = fixing_screws
@@ -2151,7 +2345,8 @@ class Dial:
         self.support_length=support_length
         self.support_d = support_d
         self.thick = thick
-        self.fixing_only_at_top = fixing_only_at_top
+        self.top_fixing = top_fixing
+        self.bottom_fixing = bottom_fixing
 
         #if >0, add a mini dial for the second hand
         self.second_hand_mini_dial_d = second_hand_mini_dial_d
@@ -2170,10 +2365,11 @@ class Dial:
         self.calc_fixing_positions()
 
     def calc_fixing_positions(self):
+        self.fixing_positions = []
+        if self.top_fixing:
+            self.fixing_positions += [(-self.support_d/4, self.outside_d/2 - self.dial_width/2), (self.support_d/4, self.outside_d/2 - self.dial_width/2)]
 
-        self.fixing_positions = [(-self.support_d/4, self.outside_d/2 - self.dial_width/2), (self.support_d/4, self.outside_d/2 - self.dial_width/2)]
-
-        if not self.fixing_only_at_top:
+        if self.bottom_fixing:
             self.fixing_positions += [(-self.support_d/4, -(self.outside_d/2 - self.dial_width/2)), (self.support_d/4, -(self.outside_d/2 - self.dial_width/2))]
 
     #
@@ -2277,9 +2473,9 @@ class Dial:
 
         if self.support_length > 0:
             support = cq.Workplane("XY").circle(self.support_d/2).extrude(self.support_length)
-
-            dial = dial.add(support.translate((0,r - self.dial_width/2, self.thick)))
-            if not self.fixing_only_at_top:
+            if self.top_fixing:
+                dial = dial.add(support.translate((0,r - self.dial_width/2, self.thick)))
+            if self.bottom_fixing:
                 dial = dial.add(support.translate((0, -(r - self.dial_width / 2), self.thick)))
 
             for fixing_pos in self.fixing_positions:
@@ -2405,7 +2601,8 @@ class Assembly:
 
         if self.plates.centred_second_hand:
             clock = clock.add(self.motionWorks.getCannonPinionPinion(standalone=True).translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], motionWorksZ )))
-
+        if self.plates.need_motion_works_holder():
+            clock = clock.add(self.plates.get_motion_works_holder().translate((self.plates.motionWorksPos[0], self.plates.motionWorksPos[1], frontOfClockZ)))
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180)

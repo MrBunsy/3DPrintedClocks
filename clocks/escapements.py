@@ -573,7 +573,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         if not self.clockwiseFromPinionSide:
             gear = gear.mirror("YZ", (0,0,0))
 
-        gear = Gear.cutStyle(gear,outerRadius=self.innerRadius - holeD*0.5,innerRadius=innerRadiusForStyle, style=style)
+        gear = Gear.cutStyle(gear,outerRadius=self.innerRadius - holeD*0.5,innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=self.clockwiseFromPinionSide)
 
         gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
 

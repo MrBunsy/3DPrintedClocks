@@ -109,7 +109,7 @@ if 'show_object' not in globals():
 
 
 # show_object(getHandDemo(assembled=True, chunky=True))
-show_object(getGearDemo(justStyle=GearStyle.CURVES))
+# show_object(getGearDemo(justStyle=GearStyle.CURVES))
 
 
 # show_object(Gear.cutCurvesStyle(cq.Workplane("XY").circle(120).extrude(5), 100, 20, clockwise=True))
@@ -353,7 +353,8 @@ if False:
 
 
 # cq.Sketch.importDXF("test.dxf")
-# show_object(cq.Workplane("XY").sketch().importDXF("test.dxf").finalize().extrude(10))
+
+show_object(cq.Workplane("XY").sketch().importDXF(filename="test.dxf").finalize().extrude(10))
 
 
 

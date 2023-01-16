@@ -57,10 +57,11 @@ module_sizes = None
 
 train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3,
                pendulumFixing=pendulumFixing, module_sizes=module_sizes)
-train.printInfo(weight_kg=0.75-0.15)
+# train.printInfo(weight_kg=0.75-0.15)
+train.printInfo(weight_kg=1-0.25)
 
 # have accidentally printed hour holder with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
-motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
+motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=1, compensateLooseArbour=False, compact=True)
 
 pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=90, bobD=70, bobThick=10, useNylocForAnchor=False)
 
@@ -69,8 +70,8 @@ dial_diameter = 175
 
 
 plates = SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock 19",
-                                 style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillar=True,
-                                 dial_diameter=dial_diameter, pillars_separate=True)
+                           style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillarRequired=True,
+                           dial_diameter=dial_diameter, pillars_separate=True)
 pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
 hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
