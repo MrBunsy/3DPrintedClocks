@@ -789,6 +789,9 @@ class BearingInfo():
     def get_string(self):
         return "{inner}x{outer}x{thick}".format(inner = self.innerD, outer = self.outerD, thick=self.height)
 
+    def __str__(self):
+        return self.get_string()
+
 def getBearingInfo(innerD):
     '''
     Get some stock bearings
@@ -805,7 +808,7 @@ def getBearingInfo(innerD):
         return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
-        return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD)
+        return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
     return None
 
 

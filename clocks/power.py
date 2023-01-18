@@ -1235,6 +1235,7 @@ class CordWheel:
 
         #only if useKey is true will this be used
         self.bearing = bearing
+        print("cord wheel bearing:{}".format(self.bearing))
         # extra radius to add to stand off from a bearing
         self.bearingWiggleRoom = 0.05
         #this is the square bit that sticks out the front of the clock. I suck at names
@@ -1364,26 +1365,6 @@ class CordWheel:
         cutter = cutter.add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0,0,0),(0,0,1),360/12).translate(self.fixingPoints[1]))
         return cutter
 
-    def getPulleySegment(self, front=True):
-        '''
-        like the segment, but sufficiently not like it to have its own method
-        '''
-        segment = self.pulley.getHalf()
-
-        holes = cq.Workplane("XY").pushPoints(self.fixingPoints).circle(self.screwThreadMetric/2).extrude(self.pulley.getTotalThick())
-
-        # holes = cq.Workplane("XY")#.pushPoints(self.fixingPoints).makeCone(radius1=)
-
-        if front:
-            #countersunk screwhead holes
-            for fixingPoint in self.fixingPoints:
-                holes = holes.add(cq.Solid.makeCone(radius1=getScrewHeadDiameter(self.screwThreadMetric, countersunk=True)/2 + COUNTERSUNK_HEAD_WIGGLE, radius2=self.screwThreadMetric/2, height=getScrewHeadHeight(self.screwThreadMetric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE).translate((fixingPoint[0], fixingPoint[1], 0)))
-
-        holes = holes.add(cq.Workplane("XY").circle(self.holeD/2).extrude(self.pulley.getTotalThick()))
-        segment = segment.cut(holes)
-
-        return segment
-
     def getSegment(self, front=True):
         #if front segment (only applies to non-key version), the holes for screws/nuts will be different
 
@@ -1434,6 +1415,8 @@ class CordWheel:
 
 
         cordHoleR = 1.5*self.cordThick/2
+        if cordHoleR < 1.5:
+            cordHoleR = 1.5
         #weird things happenign without the +0.001 with a 1mm cord
         cordHoleZ = self.capThick + cordHoleR + 0.001
 
@@ -1475,9 +1458,9 @@ class CordWheel:
         holeR = self.holeD / 2
         if self.useKey and top:
             holeR = self.bearing.innerD/2 + self.bearingWiggleRoom
-
+            print("cord wheel cap holeR: {} innerSafe raduis:{}".format(holeR,self.bearing.innerSafeD/2))
             #add small ring to keep this further away from the bearing
-            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD).extrude(self.beforeBearingExtraHeight)
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD/2).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
             countersink = self.getScrewCountersinkCutter(capThick + extraThick)
             cap = cap.cut(countersink)

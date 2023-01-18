@@ -20,9 +20,10 @@ Undecided about centred seconds hand.
 
 TODO:
 
-little bridge peice to mount part of motion works directly over third wheel arbour
+little bridge peice to mount part of motion works directly over third wheel arbour DONE
 rounded square minute hand holder?
 curved gear style - new mechanism to know hwich way is clockwise from the front DONE
+second wall fixing DONE
 
 '''
 outputSTL = False
@@ -84,7 +85,7 @@ cordwheel = train.getArbourWithConventionalNaming(0)
 # show_object(cordwheel.poweredWheel.getAssembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
 #
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=2, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True)
+motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
@@ -108,7 +109,7 @@ or just stick with original plan of arm on top with rounded suqare for hand?
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical",
                                  motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=3, countersunk=True, length=40),
-                                 chainThroughPillarRequired=False, dial_diameter=180, centred_second_hand=True, dial_bottom_fixing=False, dial_top_fixing=True)
+                                 chainThroughPillarRequired=False, dial_diameter=180, centred_second_hand=True, dial_bottom_fixing=False, dial_top_fixing=True, pillars_separate=True)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -126,6 +127,8 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley, 
 
 # show_object(plates.getPlate(back=True))
 show_object(assembly.getClock())
+
+# show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
     #

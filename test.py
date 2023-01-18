@@ -354,10 +354,11 @@ if False:
 
 # cq.Sketch.importDXF("test.dxf")
 
-show_object(cq.Workplane("XY").sketch().importDXF(filename="test.dxf").finalize().extrude(10))
+# show_object(cq.Workplane("XY").sketch().importDXF(filename="test.dxf").finalize().extrude(10))
 
-
-
+thick=2
+text = cq.Workplane("XY").text("bob", 20, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0), (0,0,1),90).translate((0,0,thick))
+show_object(text)
 
 # path = "out"
 # name="test_train"
