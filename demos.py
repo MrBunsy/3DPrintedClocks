@@ -9,5 +9,5 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-show_object(getGearDemo())
+# show_object(getGearDemo())
 show_object(getHandDemo(assembled=True, chunky=True).translate((0,400,0)))

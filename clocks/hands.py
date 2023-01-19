@@ -443,6 +443,8 @@ class Hands:
 
             circleR = self.length * 0.08
             circleY = length*0.75
+            # #point where teh arm starts to bend towards the tip
+            bend_point_y = circleY
 
             if self.chunky:
                 handWidth = self.length*0.06
@@ -455,21 +457,83 @@ class Hands:
 
 
             if hour:
+                handWidth*= 1.16
                 circleR = self.length*0.125
                 circleY = length*0.65
+                bend_point_y = circleY
             if second:
-                handWidth=self.length*0.03
-                circleR = self.length*0.04
-                circleY = - self.length*0.04*2.5
-                base_r = circleR
+                if self.second_hand_centred:
+                    base_r = self.length*0.04
+                    handWidth = self.length * 0.055
+                    # tipWidth = self.length * 0.015
+                    circleY = - self.length * 0.3
+                    circleY = - self.length * 0.5
+                    bend_point_y = self.length*0.75
+
+                    '''
+                    Given a chosen circleY (distance for the hollow circle from the axle), find a radius which should result in a balanced second hand
+                    this could be done analytically, but it was quicker to write a binary search than do the algebra
+                    '''
+
+                    other_side_area = bend_point_y * handWidth + (length - bend_point_y)*(handWidth + tipWidth)/2
+                    #accurately(ish) counterbalance the second hand (treats tip as trapezium)
+                    #this is currently adjusting size of circle based on my chosen length, but would it look better if I instead calculated length to keep size of circle same as one of the other hands?
+                    #but both circles on hour and minute hand are difference sizes, so I'll leave it like this
+
+                    moment = (bend_point_y**2) * handWidth / 2 + ((length - bend_point_y) * (tipWidth + handWidth)/2)* (length - (length - bend_point_y)/2)
+
+                    def counterweight_moment(circle_r, distance):
+                        return distance*(math.pi*circle_r**2 - math.pi*(circle_r - handWidth)**2 ) + (handWidth * (distance - circle_r)**2)/2
+
+                    min_r = handWidth*2.1
+                    max_r = abs(circleY)
+                    test_r = min_r
+                    counterweight_moment_test = counterweight_moment(test_r, abs(circleY))
+                    error = counterweight_moment_test - moment
+                    last_error = 1000
+                    #TODO write a generic binary search solver, this is just a variant over the one used a few times in escapements
+                    for i in range(100):
+                        print("counterweight difference: {}, test_r:{}".format(error, test_r))
+
+                        if error < 0:
+                            #r too small
+                            min_r = test_r
+                        if error > 0:
+                            #too big
+                            max_r = test_r
+                        if error == 0 or abs(error - last_error) < 0.001:
+                            print("best counterweight difference: {}, test_r:{} i {}".format(error, test_r, i))
+                            circleR = test_r
+                            break
+
+                        last_error = error
+                        test_r = (min_r + max_r)/2
+                        counterweight_moment_test = counterweight_moment(test_r, abs(circleY))
+                        error = counterweight_moment_test - moment
+                    # possible_circle_rs = [r for r in range(handWidth*2.5,abs(circleY),0.1)]
+                    #
+                    # for
+
+                    #THIS IS WRONG - I'm only comparing area here, not moments! oops
+                    # circleR = (other_side_area - abs(circleY) * handWidth + math.pi * handWidth**2)/((2*math.pi - 1)*handWidth)
+
+
+
+                else:
+                    handWidth=self.length*0.03
+                    circleR = self.length*0.04
+                    circleY = - self.length*0.04*2.5
+                    base_r = circleR
+                    bend_point_y = abs(circleY)
                 # ignoreOutline=True
 
-            hand = hand.workplaneFromTagged("base").moveTo(0, abs(circleY / 2)).rect(handWidth, abs(circleY)).extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0, bend_point_y/2).rect(handWidth, bend_point_y).extrude(thick)
             #some sizes are complaining the radius isn't long enough to complete the arc, so bodge it a bit
-            hand = hand.workplaneFromTagged("base").moveTo(-handWidth/2, abs(circleY)).lineTo(-tipWidth/2,length).radiusArc((tipWidth/2,length),tipWidth/2+0.01).lineTo(handWidth/2, abs(circleY)).close().extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(-handWidth/2, bend_point_y).lineTo(-tipWidth/2,length).radiusArc((tipWidth/2,length),tipWidth/2+0.01).lineTo(handWidth/2, bend_point_y).close().extrude(thick)
             if second:
+                #this is out the back, extend the main body of the arm
                 hand = hand.workplaneFromTagged("base").moveTo(0, circleY / 2).rect(handWidth, abs(circleY)).extrude(thick)
-                hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(base_r).extrude(thick)
+                # hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(base_r).extrude(thick)
 
             hand = hand.workplaneFromTagged("base").moveTo(0, circleY).circle(circleR).extrude(thick)
             hand = hand.faces(">Z").moveTo(0, circleY).circle(circleR-handWidth).cutThruAll()
@@ -729,7 +793,12 @@ class Hands:
 
         minuteHand = minuteHand.mirror().translate((0, 0, self.thick*2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         hourHand = hourHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-        secondHand = secondHand.mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle).translate((0,self.length*1.5,0))
+        secondHand = secondHand.mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+
+        if self.second_hand_centred:
+            secondHand = secondHand.translate((0,0,self.thick*3))
+        else:
+            secondHand = secondHand.translate((0, self.length * 1.5, 0))
 
         all = minuteHand.add(hourHand)
 

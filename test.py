@@ -356,9 +356,9 @@ if False:
 
 # show_object(cq.Workplane("XY").sketch().importDXF(filename="test.dxf").finalize().extrude(10))
 
-thick=2
-text = cq.Workplane("XY").text("bob", 20, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0), (0,0,1),90).translate((0,0,thick))
-show_object(text)
+# thick=2
+# text = cq.Workplane("XY").text("bob", 20, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0), (0,0,1),90).translate((0,0,thick))
+# show_object(text)
 
 # path = "out"
 # name="test_train"
@@ -410,11 +410,13 @@ show_object(text)
 # exporters.export(springArbour.getArbour(), out)
 
 
-# motionWorks = MotionWorks(extra_height=20, style=None, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
+motionWorks = MotionWorks(extra_height=20, style=None, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False)
 #
-# hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-#                     hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
-#                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3))
+hands = Hands(style=HandStyle.BREGUET, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+                    second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
 #
 #
-# show_object(hands.getHand(hour=False, minute=False, second=True, generate_outline=True))
+show_object(hands.getAssembled())
+# show_object(motionWorks.getAssembled())
+# show_object(hands.getHand(hour=False, minute=False, second=True))

@@ -4,6 +4,8 @@ import clocks.clock as clock
 from cadquery import exporters
 
 '''
+UNPRINTED
+
 Experimental eight day grasshopper
 
 '''

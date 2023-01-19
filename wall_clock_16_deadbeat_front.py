@@ -1,12 +1,10 @@
 import clocks.clock as clock
 
 '''
-first attempt at a grasshopper. Plan:
 
-Escapment on teh front of the clock (new)
-pendulum on the back (new)
-hyugens maintaining power using a loop of chain (new)
+UNPRINTED
 
+first attempt at a deadbeat on teh front, to match the grasshopper
 one day, but since we're using pulleys aiming for a drop of 1.5m
 
 '''

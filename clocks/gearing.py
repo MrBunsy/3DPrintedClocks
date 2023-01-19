@@ -911,7 +911,7 @@ class ArbourForPlate:
             if not self.pendulum_at_front:
 
                 #bits out the back
-                rear_bearing_standoff_height = 0.6
+                rear_bearing_standoff_height = LAYER_THICK*2
                 rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
 
 
@@ -930,7 +930,7 @@ class ArbourForPlate:
                 else:
                     #cylinder passes only through the back plate and up to the anchor
                     #no need for collet - still contained within two bearings like a normal arbour
-                    cylinder_length = self.back_plate_thick + self.endshake/2 + self.bearing_position[2]
+                    cylinder_length = self.back_plate_thick + self.endshake + self.bearing_position[2]
                     shapes["arbour_extension"] = self.get_arbour_extension(front=True)
 
                 anchor_thick = self.arbour.escapement.getAnchorThick()
@@ -1942,6 +1942,8 @@ class MotionWorks:
             self.minuteHandHolderSize = self.bearing.outerD + 3
             # if there is a bearing then there's a rod through the centre for the second hand and the minute hand is friction fit like the hour hand
             self.minuteHandHolderIsSquare = False
+        #assume bearing == centred second hand.
+        self.centred_second_hand = self.bearing is not None
 
         # print("minute hand holder D: {}".format(self.minuteHandHolderD))
 
@@ -2078,6 +2080,10 @@ class MotionWorks:
         motionWorksModel = motionWorksModel.add(self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick())))
         motionWorksModel = motionWorksModel.add(self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.getCannonPinionBaseThick()-self.bearingHolderThick) / 2 +self.bearingHolderThick- self.thick/2)))
 
+        if self.centred_second_hand:
+            relative_pos = npToSet(np.multiply(motionWorksRelativePos,2))
+            motionWorksModel = motionWorksModel.add(self.getCannonPinionPinion(standalone=True).translate(relative_pos))
+
         return motionWorksModel
 
     def getHourHandHoleD(self):
@@ -2118,7 +2124,7 @@ class MotionWorks:
 
         return thick
 
-    def getCannonPinionPinion(self, with_snail=False, standalone=False):
+    def getCannonPinionPinion(self, with_snail=False, standalone=False, for_printing=True):
         '''
         For the centred seconds hands I'm driving the motion works arbour from the minute arbour. To keep the gearing correct, use the same pinion as the cannon pinion!
         if standalone, this is for the centred seconds hands where we're driving the motion works arbour from the minute wheel
@@ -2137,12 +2143,18 @@ class MotionWorks:
         base = base.add(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
 
         if self.pinionCapThick > 0:
-            base = base.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
+            base = base.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
 
         pinion = base
 
         if standalone:
+            #cut hole to slot onto arbour
             pinion = pinion.cut(cq.Workplane("XY").circle((self.arbourD + LOOSE_FIT_ON_ROD)/2).extrude(10000))
+            #add hand-grippy thing to allow setting the time easily
+            inner_r = pinion_max_r
+            outer_r = inner_r*1.5
+
+
 
         return pinion
 
