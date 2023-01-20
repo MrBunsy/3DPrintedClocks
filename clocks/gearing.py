@@ -63,6 +63,12 @@ class Gear:
         gap_size = outerRadius - innerRadius
 
         arm_thick = max(outerRadius*0.1,1.8)#1.8 is the size of the honeycomb walls
+        # print("arm_thick", arm_thick)
+        if arm_thick < 2.7:
+            #arms that were slightly bigger ended up with a gap. probably need to ensure we're a multiple of 0.45?
+            arm_thick = 1.8
+        if arm_thick < 3:
+            arm_thick = 2.7
 
         cutter_thick = 100
 
@@ -1426,6 +1432,16 @@ class Arbour:
 
         return None
 
+    def getSTLModifierWheelShape(self):
+        '''
+        return a shape that covers the teeth of the pinions for apply tweaks to the slicing settings
+        '''
+
+        if self.getType() == ArbourType.WHEEL_AND_PINION:
+            return self.pinion.getSTLModifierShape(thick=self.pinionThick, offset_z=self.wheelThick, min_inner_r=self.arbourD/2)
+
+        return None
+
     def getShape(self, forPrinting=True):
         '''
         return a shape that can be exported to STL
@@ -1797,7 +1813,7 @@ class Arbour:
 
             if self.combine_with_powered_wheel:
                 #currently only rope wheel can do this for huygens, which is also a combination I'm unlikely to ever print again as splicing cord is a faff
-                gearWheel = gearWheel.add(self.poweredWheel.getAssembled().translate((0,0,self.wheelThick)))
+                gearWheel = gearWheel.union(self.poweredWheel.getAssembled().translate((0,0,self.wheelThick)))
 
             if self.rearSideExtension > 0 and not self.combine_with_powered_wheel:
                 #rear side extension
@@ -1844,7 +1860,7 @@ class Arbour:
                     gearWheel = gearWheel.cut(cutter)
 
         else: # not bolt on ratchet
-            gearWheel = gearWheel.add(self.getExtraRatchet().translate((0,0,self.wheelThick)))
+            gearWheel = gearWheel.union(self.getExtraRatchet().translate((0,0,self.wheelThick)))
 
         if (self.boltOnRatchet or not self.useRatchet) and forPrinting:
             #put flat side down
@@ -2140,10 +2156,10 @@ class MotionWorks:
         if self.pinionCapThick > 0:
             base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
 
-        base = base.add(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
+        base = base.union(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
 
         if self.pinionCapThick > 0:
-            base = base.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
+            base = base.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
 
         pinion = base
 
@@ -2176,7 +2192,7 @@ class MotionWorks:
         if self.pinionCapThick > 0:
             base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
 
-        base = base.add(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
+        base = base.union(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
 
 
 
@@ -2190,14 +2206,14 @@ class MotionWorks:
         if self.bearing is not None and self.bearingHolderThick > 0:
             # extend out the bottom for space for a slot on the bottom
             pinion = pinion.translate((0, 0, self.bearingHolderThick))
-            pinion = pinion.add(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearingHolderThick))
+            pinion = pinion.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearingHolderThick))
 
         # has an arm to hold the minute hand
-        pinion = pinion.add(cq.Workplane("XY").circle(self.minuteHandHolderD / 2).extrude(self.cannonPinionTotalHeight - self.cannonPinionBaseHeight - self.minuteHandSlotHeight).translate((0,0,self.cannonPinionBaseHeight)))
+        pinion = pinion.union(cq.Workplane("XY").circle(self.minuteHandHolderD / 2).extrude(self.cannonPinionTotalHeight - self.cannonPinionBaseHeight - self.minuteHandSlotHeight).translate((0,0,self.cannonPinionBaseHeight)))
 
 
         if self.minuteHandHolderIsSquare:
-            pinion = pinion.add(cq.Workplane("XY").rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight).translate((0,0,self.cannonPinionTotalHeight-self.minuteHandSlotHeight)))
+            pinion = pinion.union(cq.Workplane("XY").rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight).translate((0,0,self.cannonPinionTotalHeight-self.minuteHandSlotHeight)))
         else:
 
             holder_r = self.minuteHandHolderSize / 2
@@ -2211,7 +2227,7 @@ class MotionWorks:
             holder = cq.Workplane("XZ").lineTo(holderR_base, 0).lineTo(holderR_top, self.minuteHandSlotHeight).lineTo(0, self.minuteHandSlotHeight).close().sweep(circle)#.translate((0, 0, self.thick))
             holder = holder.translate((0, 0, self.cannonPinionTotalHeight- self.minuteHandSlotHeight))
 
-            pinion = pinion.add(holder)
+            pinion = pinion.union(holder)
 
         pinion = pinion.cut(cq.Workplane("XY").circle(self.holeD/2).extrude(self.cannonPinionTotalHeight))
 

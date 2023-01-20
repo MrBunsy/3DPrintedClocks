@@ -417,6 +417,6 @@ hands = Hands(style=HandStyle.BREGUET, secondLength=40, minuteFixing="circle", m
                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
 #
 #
-show_object(hands.getAssembled())
-# show_object(motionWorks.getAssembled())
+# show_object(hands.getAssembled())
+show_object(motionWorks.getAssembled())
 # show_object(hands.getHand(hour=False, minute=False, second=True))

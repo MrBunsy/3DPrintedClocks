@@ -493,7 +493,7 @@ class Hands:
                     last_error = 1000
                     #TODO write a generic binary search solver, this is just a variant over the one used a few times in escapements
                     for i in range(100):
-                        print("counterweight difference: {}, test_r:{}".format(error, test_r))
+                        # print("counterweight difference: {}, test_r:{}".format(error, test_r))
 
                         if error < 0:
                             #r too small
