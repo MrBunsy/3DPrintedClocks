@@ -873,3 +873,14 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
     shape = shape.add(nutSpace2)
 
     return shape
+
+
+def get_smooth_knob_2d(inner_r, outer_r, knobs=5):
+    def shape_func(t):
+        angle = t * math.pi * 2
+        distance = math.pi * 2 * knobs
+        r_diff = outer_r - inner_r
+        print(t)
+        return polar(angle, inner_r + r_diff/2 + math.sin(t * distance) * r_diff/2)
+
+    return cq.Workplane('XY').parametricCurve(lambda t: shape_func(t), maxDeg=12)

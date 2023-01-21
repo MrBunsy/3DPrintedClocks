@@ -1862,7 +1862,8 @@ class SimpleClockPlates:
             plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.4, textY), textSize)
 
             plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.6, textY), textSize)
-
+            #in case they overlapped with a bearing hole - crude fix rather than locating the text better
+            textMultiMaterial = self.punchBearingHoles(textMultiMaterial, back=back)
             if getText:
                 return textMultiMaterial
 

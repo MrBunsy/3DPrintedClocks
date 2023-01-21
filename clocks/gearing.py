@@ -78,7 +78,7 @@ class Gear:
 
         for arm in range(arms):
             outer_r = (gap_size + arm_thick*2)/2
-            if outer_r < arm_thick*2:
+            if outer_r < arm_thick*1.5:
                 #not enough space to cut this gear
                 return gear
             clockwise_modifier = -1 if clockwise else 1
@@ -2164,11 +2164,17 @@ class MotionWorks:
         pinion = base
 
         if standalone:
-            #cut hole to slot onto arbour
-            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbourD + LOOSE_FIT_ON_ROD)/2).extrude(10000))
+
             #add hand-grippy thing to allow setting the time easily
             inner_r = pinion_max_r
             outer_r = inner_r*1.5
+
+            knob = get_smooth_knob_2d(inner_r, outer_r, knobs=6).extrude(1.5)
+
+            pinion = pinion.union(knob.translate((0,0,self.pinionCapThick + self.cannonPinionPinionThick)))
+
+            # cut hole to slot onto arbour
+            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbourD + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
 
 
 

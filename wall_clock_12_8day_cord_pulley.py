@@ -25,7 +25,7 @@ rounded square minute hand holder? - thinking of giving standalone cannon pinion
 curved gear style - new mechanism to know hwich way is clockwise from the front DONE
 second wall fixing DONE
 front plate printed front-side on the textures sheet DONE
-back plate text alignment to avoid wall standoff
+back plate text alignment to avoid wall standoff (bodged)
 
 '''
 outputSTL = False
@@ -79,7 +79,7 @@ pendulumSticksOut=20
 
 train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
-train.printInfo(weight_kg=4)
+train.printInfo(weight_kg=3.5)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 cordwheel = train.getArbourWithConventionalNaming(0)
