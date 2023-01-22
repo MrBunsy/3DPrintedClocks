@@ -1359,6 +1359,7 @@ class SimpleClockPlates:
         #holder = cq.Workplane("XY").rect(self.motion_works_holder_wide, self.motion_works_holder_length).extrude(holder_thick)
         holder = cq.Workplane("XY").moveTo(w/2, l/2).radiusArc((-w/2,l/2), -w/2).line(0,-l).radiusArc((w/2, -l/2), -w/2).close().extrude(holder_thick)
 
+        #small standoff for motion works arbour
         holder = holder.faces(">Z").workplane().circle(self.fixingScrews.metric_thread).extrude(standoff_thick)
 
         holder = holder.cut(self.fixingScrews.getCutter(withBridging=True,layerThick=LAYER_THICK_EXTRATHICK, for_tap_die=True))
@@ -1529,7 +1530,7 @@ class SimpleClockPlates:
         bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-1).getRodD())
 
 
-        standoff = standoff.cut(self.getBearingPunch(bearingOnTop=True, back=True, bearingInfo=bearingInfo).translate((0, self.bearingPositions[-1][1], 0)))
+        standoff = standoff.cut(self.getBearingPunch(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((0, self.bearingPositions[-1][1], 0)))
 
         return standoff
 
@@ -1922,7 +1923,7 @@ class SimpleClockPlates:
 
             # holes for the embedded nuts and fixing screws for the standoff to attach to the pillar and/or for the pillar to attach to the back plate
             nutZ = self.fixingScrews.length -self.backPlateWallStandoffNutFromEndOfScrew + screw_head_z_relative_to_back_plate
-
+            print("fixing screw lenght: {} nutz:{} screw_head_z_relative_to_back_plate:{}".format(self.fixingScrews.length, nutZ,screw_head_z_relative_to_back_plate))
             for fixingPos in self.backPlateFixings:
                 cutter = cutter.add(self.fixingScrews.getNutCutter(withBridging=True, height=embedded_nut_hole_height, layerThick=LAYER_THICK_EXTRATHICK).translate((0, 0, nutZ)).translate(fixingPos))
                 cutter = cutter.add(self.fixingScrews.getCutter().translate(fixingPos).translate((0, 0, screw_head_z_relative_to_back_plate)))
@@ -1972,7 +1973,7 @@ class SimpleClockPlates:
         chainHoles = self.getChainHoles()
         bottom_pillar = bottom_pillar.cut(chainHoles.translate((-bottomPillarPos[0], -bottomPillarPos[1], self.endshake / 2)))
 
-        bottom_pillar = bottom_pillar.cut(self.get_fixing_screws_cutter().translate((-bottomPillarPos[0], -bottomPillarPos[1], -self.getPlateThick(back=False))))
+        bottom_pillar = bottom_pillar.cut(self.get_fixing_screws_cutter().translate((-bottomPillarPos[0], -bottomPillarPos[1], -self.getPlateThick(back=True))))
         return bottom_pillar
 
     def get_pillar(self, top=True, flat=False):
@@ -2004,7 +2005,7 @@ class SimpleClockPlates:
                 return top_pillar
             top_pillar = top_pillar.extrude(self.plateDistance)
 
-        top_pillar = top_pillar.cut(self.get_fixing_screws_cutter().translate((-topPillarPos[0], -topPillarPos[1], -self.getPlateThick(back=False))))
+        top_pillar = top_pillar.cut(self.get_fixing_screws_cutter().translate((-topPillarPos[0], -topPillarPos[1], -self.getPlateThick(back=True))))
 
         return top_pillar
 
@@ -2088,7 +2089,7 @@ class SimpleClockPlates:
 
         return holder
 
-    def getBearingPunch(self, bearingOnTop=True, bearingInfo=None, back=True):
+    def getBearingPunch(self, bearingOnTop=True, bearingInfo=None, back=True, standoff=False):
         '''
         A shape that can be cut out of a clock plate to hold a bearing
         '''
@@ -2099,6 +2100,8 @@ class SimpleClockPlates:
             bearingInfo = getBearingInfo(self.arbourD)
 
         height = self.getPlateThick(back)
+        if standoff:
+            height = self.getPlateThick(standoff=True)
 
         if bearingInfo.height >= height:
             raise ValueError("{} plate not thick enough to hold bearing: {}".format("Back" if back else "Front",bearingInfo.get_string()))
@@ -2646,6 +2649,27 @@ class Assembly:
             #TODO improve this a bit for cordwheels which have a slot rather than just a hole
             z = self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + self.plates.endshake/2 + holeInfo[0][1]
             print("{} hole from wall = {}mm".format(self.goingTrain.poweredWheel.type.value, z))
+
+    def get_rod_lengths(self):
+        '''
+        Calculate the lengths to cut the steel rods - stop me just guessing wrong all the time!
+        '''
+
+        total_plate_thick = self.plates.plateDistance + self.plates.getPlateThick(True) + self.plates.getPlateThick(False)
+
+        for i in range(self.arbourCount):
+
+            rod_length = total_plate_thick
+
+            arbourForPlate = self.plates.arboursForPlate[i]
+            arbour = arbour.arbour
+            if arbour.type == ArbourType.CHAIN_WHEEL:
+                powered_wheel = self.arbour.arbour.poweredWheel
+                if powered_wheel.type == PowerType.CORD:
+                    if powered_wheel.useKey:
+                        square_bit_out_front = powered_wheel.keySquareBitHeight - self.plates.getPlateThick(back=False) - self.plates.endshake
+                        rod_length += powered_wheel.keySquareBitHeight - self.plates.getPlateThick(back=False) - self.plates.endshake
+
 
     def getClock(self):
         '''

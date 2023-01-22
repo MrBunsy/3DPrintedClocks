@@ -180,7 +180,7 @@ class MachineScrew:
         screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
 
         if self.countersunk:
-            screw.add(cq.Solid.makeCone(radius1=self.getHeadDiameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=self.metric_thread/2,
+            screw.add(cq.Solid.makeCone(radius1=self.getHeadDiameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=r,
                                         height=self.getHeadHeight() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
             #countersunk screw lengths seem to include the head
             screw= screw.add(cq.Workplane("XY").circle(r).extrude(length))
@@ -875,12 +875,3 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
     return shape
 
 
-def get_smooth_knob_2d(inner_r, outer_r, knobs=5):
-    def shape_func(t):
-        angle = t * math.pi * 2
-        distance = math.pi * 2 * knobs
-        r_diff = outer_r - inner_r
-        print(t)
-        return polar(angle, inner_r + r_diff/2 + math.sin(t * distance) * r_diff/2)
-
-    return cq.Workplane('XY').parametricCurve(lambda t: shape_func(t), maxDeg=12)

@@ -5,6 +5,7 @@ from clocks.clock import *
 from clocks.utility import *
 from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
+from clocks.geometry import *
 
 outputSTL = False
 
@@ -109,7 +110,11 @@ if 'show_object' not in globals():
 
 
 # show_object(getHandDemo(assembled=True, chunky=True))
-# show_object(getGearDemo(justStyle=GearStyle.CURVES))
+show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
+
+# show_object(Gear.cutStyle(cq.Workplane("XY").circle(100).extrude(3), 100,20, style=GearStyle.DIAMONDS))
+
+# show_object(getHandDemo(justStyle=HandStyle.BREGUET, length=205*0.45, chunky=True))
 
 
 # show_object(Gear.cutCurvesStyle(cq.Workplane("XY").circle(120).extrude(5), 100, 20, clockwise=True))
@@ -410,15 +415,15 @@ if False:
 # exporters.export(springArbour.getArbour(), out)
 
 #
-motionWorks = MotionWorks(extra_height=20, style=GearStyle.CURVES, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False, compact=True)
-#
-hands = Hands(style=HandStyle.BREGUET, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
-                    second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
-#
-#
-# show_object(hands.getAssembled())
-show_object(motionWorks.getAssembled())
+# motionWorks = MotionWorks(extra_height=20, style=GearStyle.CURVES, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False, compact=True)
+# #
+# hands = Hands(style=HandStyle.BREGUET, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+#                     hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+#                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
+# #
+# #
+# # show_object(hands.getAssembled())
+# show_object(motionWorks.getAssembled())
 # show_object(hands.getHand(hour=False, minute=False, second=True))
 
 
@@ -433,3 +438,19 @@ show_object(motionWorks.getAssembled())
 # show_object(cq.Workplane('XY').parametricCurve(lambda t: shape_func(t)))
 
 # show_object(get_smooth_knob_2d(10,20,7))
+
+# lift=4
+# drop=2
+# lock=2
+#
+# y = 0
+# for style in AnchorStyle:
+#     escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=style)
+#     show_object(escapement.getAnchor().translate((0,y)))
+#     y+=50
+
+
+# line = get_stroke_line([(0,0), (20,20), (0,50)], 5, 2)
+#
+# show_object(line)
+

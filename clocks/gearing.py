@@ -1,5 +1,6 @@
 import random
 
+from .geometry import *
 from .utility import *
 
 import cadquery as cq
@@ -54,21 +55,88 @@ class Gear:
 
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
-
+        if style == GearStyle.DIAMONDS:
+            return Gear.cutDiamondsStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1))
         return gear
+
+    @staticmethod
+    def getThinArmThickness(outerRadius, innerRadius):
+        arm_thick = max(outerRadius * 0.1, 1.8)  # 1.8 is the size of the honeycomb walls
+        # print("arm_thick", arm_thick)
+        if arm_thick < 2.7:
+            # arms that were slightly bigger ended up with a gap. probably need to ensure we're a multiple of 0.45?
+            return 1.75
+        if arm_thick < 3:
+            return 2.7
+
+        return arm_thick
+
+
+    @staticmethod
+    def cutDiamondsStyle(gear, outerRadius, innerRadius):
+        arm_thick = Gear.getThinArmThickness(outerRadius, innerRadius)
+
+        diamonds = 7
+
+        centre_r = (outerRadius + innerRadius)/2
+
+        centre_gap = outerRadius - innerRadius
+
+        if innerRadius/outerRadius > 0.5:
+            diamonds = 5
+
+        diamond_width = math.pi*centre_r*2 / diamonds
+
+        cutter_thick = 100
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+
+        for d in range(diamonds):
+            diamond_angle = d*math.pi*2/diamonds
+
+            other_shapes_angle = (d+0.5)*math.pi*2/diamonds
+
+            next_diamond_angle = (d+1)*math.pi*2/diamonds
+
+            diamond_wide_angle = diamond_width/centre_r
+
+            left_point = polar(diamond_angle - diamond_wide_angle/2, centre_r)
+            right_point = polar(diamond_angle + diamond_wide_angle/2, centre_r)
+            top_point = polar(diamond_angle, outerRadius)
+            bottom_point = polar(diamond_angle, innerRadius)
+
+            diamond = get_stroke_line([top_point, right_point, bottom_point, left_point], wide=arm_thick, thick=cutter_thick, loop=True)
+
+            cutter = cutter.cut(diamond)
+
+            # diamond = cq.Workplane("XY").moveTo(left_point[0], left_point[1]).lineTo(top_point[0], top_point[1]).lineTo(right_point[0], right_point[1]).lineTo(bottom_point[0],bottom_point[1]).close().extrude(cutter_thick)
+            #
+            # arm_thick_angle_inner_r = arm_thick/innerRadius
+            # inner_shape_right = polar(next_diamond_angle - arm_thick_angle_inner_r, innerRadius)
+            # inner_shape_left = polar(diamond_angle + arm_thick_angle_inner_r, innerRadius)
+            # # inner_shape_top =
+            # # inner_shape =
+            #
+            # arm_thick_angle_outer_r = arm_thick/outerRadius
+            #
+            # upper_shape_right = polar(next_diamond_angle - arm_thick_angle_outer_r, outerRadius)
+            # upper_shape_left = polar(diamond_angle + arm_thick_angle_outer_r, outerRadius)
+            # upper_shape_bottom = polar((diamond_angle + next_diamond_angle)/2, centre_r)
+            #
+            # upper_shape = cq.Workplane("XY").moveTo(upper_shape_left[0], upper_shape_left[1]).radiusArc(upper_shape_right, -outerRadius).lineTo(upper_shape_bottom[0], upper_shape_bottom[1]).close().extrude(cutter_thick)
+            # cutter = cutter.add(upper_shape)
+            # cutter = cutter.add(diamond)
+            # return cutter
+
+
+        return gear.cut(cutter)
 
     @staticmethod
     def cutCurvesStyle(gear, outerRadius, innerRadius, clockwise=True):
 
         gap_size = outerRadius - innerRadius
 
-        arm_thick = max(outerRadius*0.1,1.8)#1.8 is the size of the honeycomb walls
-        # print("arm_thick", arm_thick)
-        if arm_thick < 2.7:
-            #arms that were slightly bigger ended up with a gap. probably need to ensure we're a multiple of 0.45?
-            arm_thick = 1.8
-        if arm_thick < 3:
-            arm_thick = 2.7
+        arm_thick = Gear.getThinArmThickness(outerRadius, innerRadius)
 
         cutter_thick = 100
 
@@ -615,12 +683,13 @@ class Gear:
 
         top = self.get3D(thick=pinionThick, holeD=holeD, style=style).translate([0, 0, distance])
 
-        arbour = base.add(top)
+        arbour = base.union(top)
 
         if capThick > 0:
             arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(self.getMaxRadius()).extrude(capThick)
 
-        arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
+        # arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
+        arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(holeD / 2).extrude(1000).translate((0,0,-500)))
 
         if not front:
             #make sure big side is on the bottom.
@@ -947,9 +1016,9 @@ class ArbourForPlate:
 
                 # flip over so the front is on the print bed
                 anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
-                anchor = anchor.add(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
-                anchor = anchor.add(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(rod_length)).translate((0,0, anchor_thick + cylinder_length)))
-                anchor = anchor.add(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
+                anchor = anchor.union(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
+                anchor = anchor.union(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(rod_length)).translate((0,0, anchor_thick + cylinder_length)))
+                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
 
                 front_intact_thick = 0
                 if self.escapement_on_front:
@@ -964,7 +1033,7 @@ class ArbourForPlate:
                     anchor = anchor.cut(cq.Workplane("XZ").circle(self.collet_screws.metric_thread/2).extrude(square_side_length).translate((0,square_side_length, screwhole_z)))
                 else:
                     #anchor is between the plates, make 'base' of cylinder thicker so it can't go through the bearing
-                    anchor = anchor.add(cq.Workplane("XY").circle(self.bearing.innerSafeD/2).circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(self.distance_from_back + self.arbour.escapement.getAnchorThick()))
+                    anchor = anchor.union(cq.Workplane("XY").circle(self.bearing.innerSafeD/2).circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(self.distance_from_back + self.arbour.escapement.getAnchorThick()))
 
             else:
                 '''

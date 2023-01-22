@@ -99,7 +99,7 @@ class Hands:
         # self.min_base_r = max(minuteFixing_d1 * 1.5 / 2,  minuteFixing_d2 * 1.5 / 2, hourfixing_d * 1.5 / 2)
 
     def getHandNut(self):
-        #fancy bit to hide the actual nut
+        #fancy bit to hide the actual nut (still not used, should try and revive this!)
         r = self.handNutMetricSize*2.5
         height = r*0.75
 
@@ -427,6 +427,7 @@ class Hands:
         elif style == HandStyle.SWORD:
 
             base_r = base_r*0.6
+            need_base_r = False
 
             base_width = base_r*2.5
             rear_length = length*0.3
@@ -448,7 +449,7 @@ class Hands:
 
             if self.chunky:
                 handWidth = self.length*0.06
-                tipWidth = self.length*0.0125
+                tipWidth = self.length*0.02#*0.0125
                 circleR = self.length*0.1
                 base_r=circleR
             else:
