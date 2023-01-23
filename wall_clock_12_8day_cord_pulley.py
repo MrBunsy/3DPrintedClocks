@@ -87,10 +87,10 @@ cordwheel = train.getArbourWithConventionalNaming(0)
 # show_object(cordwheel.poweredWheel.getAssembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
 #
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True)
+motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True, module=1)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
-                          bobD=60, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
+                          bobD=80, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
 
 dial = clock.Dial(120)
 
@@ -121,9 +121,9 @@ hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="circle",  minu
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))
-# pulley = clock.BearingPulley(diameter=26, bearing=clock.getBearingInfo(4), screwMetricSize=2, screwsCountersunk=False)
+pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4), screwMetricSize=2, screwsCountersunk=False)
 # #no weight for this clock, as it's going to probably be too heavy to make myself.
-pulley = None
+# pulley = None
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley, showPendulum=True)#weights=[clock.Weight(height=245,diameter=55)]
 
@@ -141,7 +141,7 @@ if outputSTL:
     dial.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
-    # pulley.outputSTLs(clockName, clockOutDir)
+    pulley.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)

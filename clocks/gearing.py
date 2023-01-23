@@ -54,7 +54,7 @@ class Gear:
             return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius * 0.9, innerRadius = innerRadius + 2)
 
         if style == GearStyle.CURVES:
-            return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
+            return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.9, outerRadius-2.4), innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
             return Gear.cutDiamondsStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1))
         return gear
@@ -83,6 +83,7 @@ class Gear:
         centre_gap = outerRadius - innerRadius
 
         if innerRadius/outerRadius > 0.5:
+            #better idea - instead of cutting fewer diamonds, why don't I leave in arms that are solid diamond shaped? with space between?
             diamonds = 5
 
         diamond_width = math.pi*centre_r*2 / diamonds
@@ -137,7 +138,9 @@ class Gear:
         gap_size = outerRadius - innerRadius
 
         arm_thick = Gear.getThinArmThickness(outerRadius, innerRadius)
-
+        #thin arms can result in the wheel warping to be non-circular. I don't fancy taking my chances!
+        if arm_thick < 3:
+            arm_thick = 3
         cutter_thick = 100
 
         cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
@@ -146,7 +149,8 @@ class Gear:
 
         for arm in range(arms):
             outer_r = (gap_size + arm_thick*2)/2
-            if outer_r < arm_thick*1.5:
+            if outer_r < arm_thick:#*1.5:
+                print("curved style: not enough space. outer_r: {}, arm_thick:{}".format(outer_r, arm_thick))
                 #not enough space to cut this gear
                 return gear
             clockwise_modifier = -1 if clockwise else 1
@@ -1483,9 +1487,9 @@ class Arbour:
             # pinion is on top of the wheel
             pinion = self.pinion.get3D(thick=self.pinionThick, holeD=self.holeD, style=self.style).translate([0, 0, self.wheelThick])
 
-            arbour = wheel.add(pinion)
+            arbour = wheel.union(pinion)
             if self.endCapThick > 0:
-                arbour = arbour.add(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
+                arbour = arbour.union(cq.Workplane("XY").circle(self.pinion.getMaxRadius()).extrude(self.endCapThick).translate((0,0,self.wheelThick + self.pinionThick)))
 
             arbour = arbour.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.wheelThick + self.pinionThick + self.endCapThick))
 
@@ -1854,8 +1858,9 @@ class Arbour:
             innerRadiusForStyle=self.ratchet.outsideDiameter * 0.5
         else:
             innerRadiusForStyle = self.poweredWheel.diameter*1.1/2
-
-        gearWheel = self.wheel.get3D(holeD=self.holeD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=innerRadiusForStyle, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+        #invert clockwise from pinion side as the "pinion" is used for the side of the powered wheel, which is wrong
+        #TODO review logic if I ever get chain at back working again
+        gearWheel = self.wheel.get3D(holeD=self.holeD, thick=self.wheelThick, style=self.style, innerRadiusForStyle=innerRadiusForStyle, clockwise_from_pinion_side=not self.clockwise_from_pinion_side)
 
         holeDeep = self.getRatchetInsetness(toCarve=True)
         if holeDeep > 0:
@@ -1999,6 +2004,7 @@ class MotionWorks:
 
         self.bearing = bearing
 
+        self.cannonPinionPinionThick = self.thick * 2
         self.calculateGears()
 
 
@@ -2007,7 +2013,7 @@ class MotionWorks:
 
 
         # self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
-        self.cannonPinionPinionThick = self.thick * 2
+
 
         #minuteHandHolderSize=5,
         #length of the edge of the square that holds the minute hand
@@ -2039,8 +2045,10 @@ class MotionWorks:
         self.bearingHolderThick = 0
 
         self.calc_bearing_holder_thick()
+        print("bearingHolderThick",self.bearingHolderThick)
 
-        self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
+        #done in calc_bearing_holder_thick
+        # self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
         self.space = 0.5
         #old size of space so I can reprint without reprinting the hands (for the non-bearing version)
         self.hourHandHolderD = self.minuteHandHolderD + 1 + self.wallThick*2
@@ -2067,6 +2075,8 @@ class MotionWorks:
                 self.bearingHolderThick = 0
             #we're big enough with the bearings, try to reduce size where we can
             self.wallThick = 1.2
+
+        self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
 
     def calculateGears(self, arbourDistance=-1):
         '''
@@ -2258,23 +2268,23 @@ class MotionWorks:
 
         pinion_max_r = self.pairs[0].pinion.getMaxRadius()
 
-        base = cq.Workplane("XY")
-
-
-        if self.strikeTrigger is not None:
-            base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0,0,0),(0,0,1),self.strikeHourAngleDeg).faces(">Z").workplane()
-
-        if self.pinionCapThick > 0:
-            base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
-
-        base = base.union(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
-
-
-
-
-
-        if self.pinionCapThick > 0:
-            base = base.add(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
+        # base = cq.Workplane("XY")
+        #
+        #
+        # if self.strikeTrigger is not None:
+        #     base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0,0,0),(0,0,1),self.strikeHourAngleDeg).faces(">Z").workplane()
+        #
+        # if self.pinionCapThick > 0:
+        #     base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
+        #
+        # base = base.union(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
+        #
+        #
+        #
+        #
+        #
+        # if self.pinionCapThick > 0:
+        #     base = base.union(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
 
         pinion = self.getCannonPinionPinion(with_snail=True)
 
