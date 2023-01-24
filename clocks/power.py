@@ -492,9 +492,10 @@ class BearingPulley:
         totalThick = self.getTotalThick()
         if totalThick < self.screws.getTotalLength():
             print("Not thick ({}) enough to fit screw of length {}".format(totalThick, self.screws.getTotalLength()))
-            self.edgeThick += (self.screws.getTotalLength() - totalThick)/2
+            #make it thick enough to fit the screw in, with a little bit of spare
+            self.edgeThick += (self.screws.getTotalLength() - totalThick)/2 + 0.25
 
-        self.hookThick = 7.5
+        self.hookThick = 6
         self.hookBottomGap = 3
         self.hookSideGap = 1
 

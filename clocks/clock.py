@@ -2710,7 +2710,7 @@ class Assembly:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
-                    rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.cannonPinionTotalHeight + self.hands.secondFixing_thick + self.hands.secondThick + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+                    rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_total_height() + self.hands.secondFixing_thick + self.hands.secondThick + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
                 elif self.goingTrain.has_seconds_hand():
                     #little seconds hand
                     rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
@@ -2809,7 +2809,7 @@ class Assembly:
         hands = self.hands.getAssembled(time_minute = time_min, time_hour=time_hour, include_seconds=False ,gap_size = self.motionWorks.hourHandSlotHeight - self.hands.thick)
 
         minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset \
-                      + self.motionWorks.cannonPinionTotalHeight - self.hands.thick
+                      + self.motionWorks.get_cannon_pinion_total_height() - self.hands.thick
 
         # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
