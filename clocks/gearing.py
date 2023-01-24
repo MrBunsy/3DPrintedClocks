@@ -2010,6 +2010,8 @@ class MotionWorks:
 
 
         self.wallThick = 1.5
+        #for centred seconds hands, the bit you can twist to set the time
+        self.knob_thick = 1.5
 
 
         # self.pairs = [WheelPinionPair(36, 12, module), WheelPinionPair(40, 10, secondModule)]
@@ -2219,6 +2221,9 @@ class MotionWorks:
 
         return thick
 
+    def getCannonPinionPinionThick(self):
+        return self.getCannonPinionBaseThick() + self.knob_thick
+
     def getCannonPinionPinion(self, with_snail=False, standalone=False, for_printing=True):
         '''
         For the centred seconds hands I'm driving the motion works arbour from the minute arbour. To keep the gearing correct, use the same pinion as the cannon pinion!
@@ -2248,7 +2253,7 @@ class MotionWorks:
             inner_r = pinion_max_r
             outer_r = inner_r*1.5
 
-            knob = get_smooth_knob_2d(inner_r, outer_r, knobs=6).extrude(1.5)
+            knob = get_smooth_knob_2d(inner_r, outer_r, knobs=6).extrude(self.knob_thick)
 
             pinion = pinion.union(knob.translate((0,0,self.pinionCapThick + self.cannonPinionPinionThick)))
 

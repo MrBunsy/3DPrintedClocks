@@ -336,7 +336,7 @@ class LightweightPulley:
 
         self.hole_d = STEEL_TUBE_DIAMETER if self.use_steel_rod else self.screws.metric_thread + LOOSE_FIT_ON_ROD
 
-        self.gap_size = WASHER_THICK + 0.5
+        self.gap_size = WASHER_THICK_M3 + 0.5
 
         self.holder_thick=5
         self.holder_wide = self.screws.metric_thread*2.5
@@ -453,7 +453,7 @@ class BearingPulley:
     This is pretty heavy duty and uses a bearing to avoid friction
     '''
 
-    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screwMetricSize=3, screwsCountersunk=True, vShaped=False, style=None, bearing=None, bearingHolderThick=0.8):
+    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screw_type = None, screw_count=4, vShaped=False, style=None, bearing=None, bearingHolderThick=0.8):
         self.diameter=diameter
         self.cordDiameter=cordDiameter
         self.vShaped=vShaped
@@ -463,18 +463,18 @@ class BearingPulley:
         #if negative, don't punch holes
         self.rodMetricSize=rodMetricSize
         self.rodHoleD = rodMetricSize + LOOSE_FIT_ON_ROD
-        self.screwMetricSize=screwMetricSize
+        self.screws = screw_type
+        if self.screws is None:
+            self.screws = MachineScrew(2, countersunk=True)
 
         self.edgeThick=cordDiameter*0.5
         self.taperThick = cordDiameter * 0.2
         #if not none, a BearingInfo for a bearing instead of a rod
         self.bearing=bearing
         self.bearingHolderThick=bearingHolderThick
-        self.screwsCountersunk=screwsCountersunk
 
-        screws = 3
 
-        self.screwPositions=[polar(angle,diameter*0.35) for angle in [i*math.pi*2/screws for i in range(screws)]]
+        self.screwPositions=[polar(angle,diameter*0.35) for angle in [i*math.pi*2/screw_count for i in range(screw_count)]]
 
 
 
@@ -542,32 +542,23 @@ class BearingPulley:
 
         # pulley = pulley.faces(">Z").workplane().circle(holeD/2).cutThroughAll()
         hole = cq.Workplane("XY").circle(holeD/2).extrude(1000)
-
+        print("pulley, bearing", self.bearing)
         if self.bearing is not None:
+            print("self.bearingHolderThick",self.bearingHolderThick)
             hole = hole.translate((0,0,self.bearingHolderThick))
-            hole = hole.add(cq.Workplane("XY").circle(self.bearing.bearingOuterD/2).extrude(1000))
+            hole = hole.add(cq.Workplane("XY").circle(self.bearing.outerSafeD/2).extrude(1000))
 
         pulley = pulley.cut(hole)
 
-        screwHoles = cq.Workplane("XY").tag("base")
+        screwHoles = cq.Workplane("XY")
 
         for screwPos in self.screwPositions:
-            screwHoles = screwHoles.workplaneFromTagged("base").moveTo(screwPos[0], screwPos[1]).circle(self.screwMetricSize/2).extrude(1000)
+
 
             if top:
-                if self.screwsCountersunk:
-                    #countersunk for screw heads
-                    screwHoles = screwHoles.add(cq.Solid.makeCone(radius1=getScrewHeadDiameter(self.screwMetricSize, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE, radius2=self.screwMetricSize / 2,
-                                                        height=getScrewHeadHeight(self.screwMetricSize, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE).translate(screwPos))
-                else:
-                    #cq.Workplane("XY").moveTo(screwPos[0], screwPos[1]).circle(getScrewHeadDiameter(self.screwMetricSize, countersunk=False)/2 + NUT_WIGGLE_ROOM/2).extrude(getScrewHeadHeight(self.screwMetricSize, countersunk=False))
-                    screwHoles = screwHoles.add(getHoleWithHole(innerD=self.screwMetricSize,outerD=getScrewHeadDiameter(self.screwMetricSize, countersunk=False),deep=getScrewHeadHeight(self.screwMetricSize, countersunk=False)).translate(screwPos))
+               screwHoles = screwHoles.add(self.screws.getCutter(withBridging=True).translate(screwPos))
             else:
-                #space for a nut
-                #screwHoles = screwHoles.workplaneFromTagged("base").moveTo(screwPos[0], screwPos[1]).polygon(6, getNutContainingDiameter(self.screwMetricSize,0.2)).extrude(getNutHeight(self.screwMetricSize))
-                #rotate so flat side is towards centre. Assumes 3 screws....
-                # screwHoles = screwHoles.add(cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screwMetricSize, 0.2)).extrude(getNutHeight(self.screwMetricSize)).rotate((0,0,0),(0,0,1),360/12).translate(screwPos))
-                screwHoles = screwHoles.add(getHoleWithHole(innerD=self.screwMetricSize,outerD=getNutContainingDiameter(self.screwMetricSize, NUT_WIGGLE_ROOM),deep=getNutHeight(self.screwMetricSize),sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(screwPos))
+                screwHoles = screwHoles.add(self.screws.getNutCutter(withBridging=True, withScrewLength=1000).translate(screwPos))
 
         pulley = pulley.cut(screwHoles)
 
@@ -989,9 +980,9 @@ class RopeWheel:
 
     def printScrewLength(self):
         if self.screw.countersunk:
-            screwLength = self.getHeight()-WASHER_THICK
+            screwLength = self.getHeight() - WASHER_THICK_M3
         else:
-            screwLength = self.getHeight() - WASHER_THICK - self.screw.getHeadHeight()
+            screwLength = self.getHeight() - WASHER_THICK_M3 - self.screw.getHeadHeight()
         #nut hole is extra deep by thickness of the ratchet
         print("RopeWheel needs: {} screw length {}-{}".format(self.screw.getString(), screwLength, screwLength-self.ratchet_thick))
 
@@ -1348,10 +1339,10 @@ class CordWheel:
         else:
             #make the weight segment the one nearer the wall to be consistent with old designs (idea was to ensure less flexing of plates, but as they've got closer this might
             #make the weight a bit close to teh wall?)
-            weightSegmentBottomZ = - WASHER_THICK - self.topCapThick - self.thick - self.capThick - self.thick
-            weightSegmentTopZ = - WASHER_THICK - self.topCapThick - self.thick - self.capThick
-            windSegmentBottomZ = - WASHER_THICK - self.topCapThick - self.thick
-            windSegmentTopZ = - WASHER_THICK - self.topCapThick
+            weightSegmentBottomZ = - WASHER_THICK_M3 - self.topCapThick - self.thick - self.capThick - self.thick
+            weightSegmentTopZ = - WASHER_THICK_M3 - self.topCapThick - self.thick - self.capThick
+            windSegmentBottomZ = - WASHER_THICK_M3 - self.topCapThick - self.thick
+            windSegmentTopZ = - WASHER_THICK_M3 - self.topCapThick
 
             if self.ratchet.isClockwise():
                 weightSide = 1
@@ -1646,7 +1637,7 @@ class CordWheel:
         if self.useKey:
             return self.ratchet.thick + self.clickWheelStandoffHeight + self.beforeBearingExtraHeight + self.capThick + self.topCapThick + self.thick
 
-        return self.ratchet.thick + self.clickWheelStandoffHeight + self.capThick * 2 + self.topCapThick + self.thick * 2 + WASHER_THICK
+        return self.ratchet.thick + self.clickWheelStandoffHeight + self.capThick * 2 + self.topCapThick + self.thick * 2 + WASHER_THICK_M3
 
     def outputSTLs(self, name="clock", path="../out"):
 
@@ -1821,7 +1812,7 @@ class ChainWheel:
 
         '''
 
-        zOffset = - WASHER_THICK - self.wall_thick - self.inner_width/2
+        zOffset = - WASHER_THICK_M3 - self.wall_thick - self.inner_width / 2
 
         return [ [(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)] ]
 
@@ -1833,7 +1824,7 @@ class ChainWheel:
         Returns total height of the chain wheel, once assembled, including the ratchet
         includes washer as this is considered part of the full assembly
         '''
-        thick = self.inner_width + self.wall_thick*2  + WASHER_THICK
+        thick = self.inner_width + self.wall_thick * 2 + WASHER_THICK_M3
         if self.ratchet is not None:
             thick += self.ratchet.thick
         return thick
@@ -1977,7 +1968,7 @@ class ChainWheel:
         else:
             assembly = self.getHalf(sideWithClicks=True)
 
-        chainWheelTop = self.getHalf().rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight() - WASHER_THICK))
+        chainWheelTop = self.getHalf().rotate((0,0,0),(1,0,0),180).translate((0, 0, self.getHeight() - WASHER_THICK_M3))
 
         return assembly.add(chainWheelTop)
 

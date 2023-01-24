@@ -28,7 +28,7 @@ LOOSE_FIT_ON_ROD = 0.3
 
 LOOSE_SCREW = 0.2
 
-WASHER_THICK = 0.5
+WASHER_THICK_M3 = 0.5
 
 #external diameter for 3 and 4mm internal diameter
 STEEL_TUBE_DIAMETER = 6.2

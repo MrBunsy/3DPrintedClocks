@@ -110,7 +110,11 @@ if 'show_object' not in globals():
 
 
 # show_object(getHandDemo(assembled=True, chunky=True))
-show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
+# show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
+
+pulley = BearingPulley(diameter=29, bearing=getBearingInfo(4))
+
+show_object(pulley.getHalf())
 
 # show_object(Gear.cutStyle(cq.Workplane("XY").circle(100).extrude(3), 100,20, style=GearStyle.DIAMONDS))
 

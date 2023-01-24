@@ -1353,7 +1353,7 @@ class SimpleClockPlates:
 
 
         standoff_thick = 1
-        holder_thick =TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - WASHER_THICK - standoff_thick
+        holder_thick = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - WASHER_THICK_M3 - standoff_thick
         w = self.motion_works_holder_wide
         l = self.motion_works_holder_length
         #holder = cq.Workplane("XY").rect(self.motion_works_holder_wide, self.motion_works_holder_length).extrude(holder_thick)
@@ -2310,18 +2310,18 @@ class SimpleClockPlates:
             extraHeight =relevantChainHoles[0][1] + self.huygensWheel.getHeight()-self.huygensWheel.ratchet.thick  + chainholeD/2 + minThickAroundChainHole
             ratchetD = self.huygensWheel.ratchet.outsideDiameter
             # ratchet for the chainwheel on the front of the clock
-            ratchet = self.huygensWheel.ratchet.getOuterWheel(extraThick=WASHER_THICK)
+            ratchet = self.huygensWheel.ratchet.getOuterWheel(extraThick=WASHER_THICK_M3)
 
             ratchet = ratchet.faces(">Z").workplane().circle(ratchetD/2).circle(self.huygensWheel.ratchet.toothRadius).extrude(extraHeight)
 
-            totalHeight = extraHeight + WASHER_THICK + self.huygensWheel.ratchet.thick
+            totalHeight = extraHeight + WASHER_THICK_M3 + self.huygensWheel.ratchet.thick
 
 
             cutter = cq.Workplane("YZ").moveTo(-ratchetD/2,totalHeight).spline(includeCurrent=True,listOfXYTuple=[(ratchetD/2, totalHeight-extraHeight)], tangents=[(1,0),(1,0)])\
                 .lineTo(ratchetD/2,totalHeight).close().extrude(ratchetD).translate((-ratchetD/2,0,0))
             for holePosition in holePositions:
                 #chainholes are relative to the assumed height of the chainwheel, which includes a washer
-                chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + (self.huygensWheel.getHeight() + WASHER_THICK)).circle(chainholeD / 2).extrude(1000)
+                chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + (self.huygensWheel.getHeight() + WASHER_THICK_M3)).circle(chainholeD / 2).extrude(1000)
                 cutter.add(chainHole)
 
 
@@ -2346,7 +2346,7 @@ class SimpleClockPlates:
             chainWheelChainZ = chainWheelTopZ + holePositions[0][0][1]
             huygensChainPoses = self.huygensWheel.getChainPositionsFromTop()
             #washer is under the chain wheel
-            huygensChainZ = self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance + self.huygensWheel.getHeight() + WASHER_THICK + huygensChainPoses[0][0][1]
+            huygensChainZ = self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance + self.huygensWheel.getHeight() + WASHER_THICK_M3 + huygensChainPoses[0][0][1]
 
             return huygensChainZ - chainWheelChainZ
         else:
@@ -2630,7 +2630,8 @@ class Assembly:
         self.hands = hands
         self.dial= plates.dial
         self.goingTrain = plates.goingTrain
-        self.arbourCount = self.goingTrain.chainWheels + self.goingTrain.wheels
+        #+1 for the anchor
+        self.arbourCount = self.goingTrain.chainWheels + self.goingTrain.wheels + 1
         self.pendulum = self.plates.pendulum
         self.motionWorks = self.plates.motionWorks
         self.timeMins = timeMins
@@ -2656,22 +2657,80 @@ class Assembly:
         '''
 
         total_plate_thick = self.plates.plateDistance + self.plates.getPlateThick(True) + self.plates.getPlateThick(False)
+        plate_distance =self.plates.plateDistance
+        front_plate_thick = self.plates.getPlateThick(back=False)
+        back_plate_thick = self.plates.getPlateThick(back=True)
+
+        #how much extra to extend out the bearing
+        spare_rod_length_behind_bearing=3
+        #extra length out the front of hands, or front-mounted escapements
+        spare_rod_length_in_front=3
+        rod_lengths = []
+        rod_zs = []
 
         for i in range(self.arbourCount):
 
-            rod_length = total_plate_thick
+            rod_length = -1
 
             arbourForPlate = self.plates.arboursForPlate[i]
-            arbour = arbour.arbour
+            arbour = arbourForPlate.arbour
+            bearing = getBearingInfo(arbour.arbourD)
+            bearing_thick = bearing.bearingHeight
+
+            length_up_to_inside_front_plate = spare_rod_length_behind_bearing + bearing_thick + plate_distance
+
+            #true for nearly all of it
+            rod_z = back_plate_thick - (bearing_thick + spare_rod_length_behind_bearing)
+
+            #trying to arrange all the additions from back to front to make it easy to check
             if arbour.type == ArbourType.CHAIN_WHEEL:
-                powered_wheel = self.arbour.arbour.poweredWheel
+                powered_wheel = arbour.poweredWheel
                 if powered_wheel.type == PowerType.CORD:
                     if powered_wheel.useKey:
-                        square_bit_out_front = powered_wheel.keySquareBitHeight - self.plates.getPlateThick(back=False) - self.plates.endshake
-                        rod_length += powered_wheel.keySquareBitHeight - self.plates.getPlateThick(back=False) - self.plates.endshake
+                        square_bit_out_front = powered_wheel.keySquareBitHeight - (front_plate_thick - powered_wheel.bearing.bearingHeight) - self.plates.endshake/2
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
 
 
-    def getClock(self):
+
+                else:
+                    raise ValueError("TODO calculate rod lengths for powered wheel type: {}".format(arbour.type.value))
+            elif arbour.type == ArbourType.WHEEL_AND_PINION:
+                if i == self.goingTrain.chainWheels:
+                    #minute wheel
+                    if self.plates.centred_second_hand:
+                        #only goes up to the canon pinion with hand turner
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.getCannonPinionPinionThick() + WASHER_THICK_M3 + getNutHeight(arbour.arbourD, halfHeight=True) * 2 + spare_rod_length_in_front
+                    else:
+                        raise ValueError("TODO calculate rod lengths for normal hand holder")
+                else:
+                    # "normal" arbour
+                    rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_behind_bearing
+            elif arbour.type == ArbourType.ESCAPE_WHEEL:
+                if self.plates.escapementOnFront:
+                    raise ValueError("TODO calculate rod lengths for escapement on front")
+                elif self.plates.centred_second_hand:
+                    #safe to assume mutually exclusive with escapement on front?
+                    rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.cannonPinionTotalHeight + self.hands.secondFixing_thick + self.hands.secondThick + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+                elif self.goingTrain.has_seconds_hand():
+                    #little seconds hand
+                    rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
+                else:
+                    #"normal" arbour
+                    rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_behind_bearing
+            elif arbour.type == ArbourType.ANCHOR:
+                if self.plates.escapementOnFront:
+                    raise ValueError("TODO calculate rod lengths for escapement on front")
+                elif self.plates.backPlateFromWall > 0 and not self.plates.pendulumAtFront:
+                    rod_length = spare_rod_length_behind_bearing + bearing_thick + (self.plates.backPlateFromWall - self.plates.getPlateThick(standoff=True)) + self.plates.getPlateThick(back=True) + plate_distance + bearing_thick + spare_rod_length_behind_bearing
+                    rod_z = -self.plates.backPlateFromWall + (self.plates.getPlateThick(standoff=True) - bearing_thick - spare_rod_length_behind_bearing)
+
+            rod_lengths.append(rod_length)
+            rod_zs.append(rod_z)
+            print("Arbour {} rod length: {}mm".format(i, round(rod_length)))
+
+        return rod_lengths, rod_zs
+
+    def getClock(self, with_rods=False):
         '''
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
         '''
@@ -2871,11 +2930,17 @@ class Assembly:
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.plates.getPillarInfo()
 
         if self.plates.huygensMaintainingPower:
-            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(bottomPillarPos).translate((0,0,self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK)))
+            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(bottomPillarPos).translate((0, 0, self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK_M3)))
 
         #TODO pendulum bob and nut?
 
         #TODO weight?
+
+        if with_rods:
+            rod_lengths, rod_zs = self.get_rod_lengths()
+            for i in range(len(rod_lengths)):
+                rod = cq.Workplane("XY").circle(self.goingTrain.getArbourWithConventionalNaming(i).arbourD/2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearingPositions[i][0], self.plates.bearingPositions[i][1], rod_zs[i]))
+                clock = clock.add(rod)
 
         return clock
 

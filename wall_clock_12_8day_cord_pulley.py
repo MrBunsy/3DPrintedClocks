@@ -126,9 +126,9 @@ pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock
 # pulley = None
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley, showPendulum=True)#weights=[clock.Weight(height=245,diameter=55)]
-
+assembly.get_rod_lengths()
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock())
+show_object(assembly.getClock(with_rods=True))
 
 # show_object(plates.getDrillTemplate(6))
 

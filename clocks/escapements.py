@@ -785,7 +785,7 @@ class GrasshopperEscapement:
         self.composer_thick=2.5
 
         #how much z between frame and the start of the composer, to leave space for screws and bits
-        self.composer_z_distance_from_frame = WASHER_THICK+0.2
+        self.composer_z_distance_from_frame = WASHER_THICK_M3 + 0.2
 
         self.loose_on_pivot = 0.5
 
