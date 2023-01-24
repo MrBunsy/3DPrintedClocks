@@ -2586,15 +2586,15 @@ class Dial:
         if self.support_length > 0:
             support = cq.Workplane("XY").circle(self.support_d/2).extrude(self.support_length)
             if self.top_fixing:
-                dial = dial.add(support.translate((0,r - self.dial_width/2, self.thick)))
+                dial = dial.union(support.translate((0,r - self.dial_width/2, self.thick)))
             if self.bottom_fixing:
-                dial = dial.add(support.translate((0, -(r - self.dial_width / 2), self.thick)))
+                dial = dial.union(support.translate((0, -(r - self.dial_width / 2), self.thick)))
 
             for fixing_pos in self.fixing_positions:
                 dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
 
         if self.second_hand_mini_dial_d > 0:
-            dial = dial.add(cq.Workplane("XY").circle(self.second_hand_mini_dial_d/2).circle(self.second_hand_mini_dial_d/2-self.seconds_dial_width).extrude(self.thick).translate(self.second_hand_relative_pos))
+            dial = dial.union(cq.Workplane("XY").circle(self.second_hand_mini_dial_d/2).circle(self.second_hand_mini_dial_d/2-self.seconds_dial_width).extrude(self.thick).translate(self.second_hand_relative_pos))
             dial = dial.cut(self.get_seconds_dial_detail())
 
         #cut main detail after potential seconds dial in case of some overlap

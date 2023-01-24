@@ -219,9 +219,22 @@ class MachineScrew:
 
     def getString(self):
         return "M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
-
+    def __str__(self):
+        return self.getString()
     def getHeadHeight(self,):
         return getScrewHeadHeight(self.metric_thread)
+
+    def getTotalLength(self):
+        '''
+        get the total length from tip to end
+        '''
+        if self.length < 0:
+            return -1
+
+        if self.countersunk:
+            return self.length
+        else:
+            return self.length + self.getHeadHeight()
 
     def getNutContainingDiameter(self):
         return getNutContainingDiameter(self.metric_thread, NUT_WIGGLE_ROOM)
