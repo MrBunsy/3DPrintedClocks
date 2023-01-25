@@ -453,7 +453,7 @@ class BearingPulley:
     This is pretty heavy duty and uses a bearing to avoid friction
     '''
 
-    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=3, screw_type = None, screw_count=4, vShaped=False, style=None, bearing=None, bearingHolderThick=0.8):
+    def __init__(self, diameter, cordDiameter=2.2, rodMetricSize=4, wheel_screws = None, hook_screws=None, screw_count=4, vShaped=False, style=None, bearing=None, bearingHolderThick=0.8):
         self.diameter=diameter
         self.cordDiameter=cordDiameter
         self.vShaped=vShaped
@@ -462,10 +462,18 @@ class BearingPulley:
 
         #if negative, don't punch holes
         self.rodMetricSize=rodMetricSize
+        #only used if bearing is not provided
         self.rodHoleD = rodMetricSize + LOOSE_FIT_ON_ROD
-        self.screws = screw_type
+        #screws which hold the two halves of the pulley wheel together
+        self.screws = wheel_screws
         if self.screws is None:
             self.screws = MachineScrew(2, countersunk=True)
+
+        self.hook_screws = hook_screws
+        if self.hook_screws is None:
+            self.hook_screws = MachineScrew(4, countersunk=True)
+
+        # self.hook_screws =
 
         self.edgeThick=cordDiameter*0.5
         self.taperThick = cordDiameter * 0.2
@@ -493,18 +501,23 @@ class BearingPulley:
         if totalThick < self.screws.getTotalLength():
             print("Not thick ({}) enough to fit screw of length {}".format(totalThick, self.screws.getTotalLength()))
             #make it thick enough to fit the screw in, with a little bit of spare
-            self.edgeThick += (self.screws.getTotalLength() - totalThick)/2 + 0.25
+            extra_thick_needed = (self.screws.getTotalLength() - totalThick) + 0.5
+            self.edgeThick += extra_thick_needed/2
+            self.bearingHolderThick += extra_thick_needed/2
 
         self.hookThick = 6
         self.hookBottomGap = 3
         self.hookSideGap = 1
 
         self.hookWide = 16
-        #using a metal cuckoo chain hook to hold the weight, hoping it can stand up to 4kg
+        #using a metal cuckoo chain hook to hold the weight, hoping it can stand up to 4kg (it can, last clock has been going for months)
         self.cuckooHookOuterD=14#13.2
         self.cuckooHookThick = 1.2#0.9
 
     def getTotalThick(self):
+        '''
+        thickness of just the pulley wheel
+        '''
         return self.edgeThick * 2 + self.taperThick * 2 + self.cordDiameter
 
     def getMaxRadius(self):
@@ -584,7 +597,7 @@ class BearingPulley:
 
         extraHeight = 0
 
-        length = self.getTotalThick() + self.hookSideGap*2 + self.hookThick*2
+        length = self.getHookTotalThick()
 
         # hook = cq.Workplane("XY").lineTo(length/2,0).line(0,axleHeight+extraHeight).line(- thick,0).line(0,-(axleHeight + extraHeight - thick) ).lineTo(0,thick).mirrorY().extrude(wide)
 
@@ -643,6 +656,9 @@ class BearingPulley:
             pulley = hook.add(pulley.translate((0,0,self.getHookTotalThick()/2-self.getTotalThick()/2)))
 
         return pulley
+
+    def printInfo(self):
+        print("pulley needs screws {} {}mm and {} {}mm".format(self.screws, self.getTotalThick(), self.hook_screws, self.getHookTotalThick()))
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pulley_wheel_top.stl".format(name))
