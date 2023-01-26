@@ -21,7 +21,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_19"
+clockName="wall_clock_19b"
 clockOutDir="out"
 gearStyle = GearStyle.HONEYCOMB_SMALL
 pendulumFixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS

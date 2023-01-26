@@ -112,9 +112,9 @@ if 'show_object' not in globals():
 # show_object(getHandDemo(assembled=True, chunky=True))
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
-pulley = BearingPulley(diameter=29, bearing=getBearingInfo(4))
-
-show_object(pulley.getHalf())
+# pulley = BearingPulley(diameter=29, bearing=getBearingInfo(4))
+#
+# show_object(pulley.getHalf())
 
 # show_object(Gear.cutStyle(cq.Workplane("XY").circle(100).extrude(3), 100,20, style=GearStyle.DIAMONDS))
 
@@ -457,4 +457,7 @@ if False:
 # line = get_stroke_line([(0,0), (20,20), (0,50)], 5, 2)
 #
 # show_object(line)
+
+
+show_object(gen_baroque_hour_hand(23/2, 60,3))
 

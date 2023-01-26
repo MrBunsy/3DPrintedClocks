@@ -1219,18 +1219,6 @@ class SimpleClockPlates:
 
         self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth = self.getPillarInfo()
 
-        # height of dial from top of front plate
-        dial_thick = 2
-        #previously given 8mm of clearance, but this was more than enough, so reducing down to 4
-        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 4
-        self.dial = None
-        if self.dial_diameter > 0:
-
-            if self.goingTrain.has_seconds_hand():
-                self.dial = Dial(outside_d=self.dial_diameter, support_length=self.dial_z, support_d=self.plateWidth, thick=dial_thick, bottom_fixing=dial_bottom_fixing, top_fixing=dial_top_fixing,
-                                 second_hand_relative_pos=npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2], second_hand_mini_dial_d=second_hand_mini_dial_d)
-            else:
-                self.dial = Dial(outside_d= self.dial_diameter, support_length=self.dial_z, support_d=self.plateWidth, thick=dial_thick, bottom_fixing=dial_bottom_fixing, top_fixing=dial_top_fixing)
 
         #fixing positions to screw front plate onto the pillars
         self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
@@ -1311,6 +1299,20 @@ class SimpleClockPlates:
         self.motion_works_holder_wide = self.plateWidth
         self.motion_works_fixings_relative_pos = [(-self.plateWidth/4,self.motion_works_holder_length/2) ,
                                                   (self.plateWidth/4,-(self.motion_works_holder_length/2))]
+
+        #calculate dial height after motion works gears have been generated, in case the height changed with the bearing
+        # height of dial from top of front plate
+        dial_thick = 2
+        # previously given 8mm of clearance, but this was more than enough, so reducing down to 4
+        self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 4
+        self.dial = None
+        if self.dial_diameter > 0:
+
+            if self.goingTrain.has_seconds_hand():
+                self.dial = Dial(outside_d=self.dial_diameter, support_length=self.dial_z, support_d=self.plateWidth, thick=dial_thick, bottom_fixing=dial_bottom_fixing, top_fixing=dial_top_fixing,
+                                 second_hand_relative_pos=npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2], second_hand_mini_dial_d=second_hand_mini_dial_d)
+            else:
+                self.dial = Dial(outside_d=self.dial_diameter, support_length=self.dial_z, support_d=self.plateWidth, thick=dial_thick, bottom_fixing=dial_bottom_fixing, top_fixing=dial_top_fixing)
 
     def front_plate_has_flat_front(self):
         '''
