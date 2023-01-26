@@ -85,13 +85,23 @@ def gen_baroque_hour_hand(base_r, total_length, thick):
     hand = hand.union(cq.Workplane("XY").rect(line_width*1.5,bar_y).extrude(thick).translate((0,bar_y/2)))
 
 
-    #back to the top, width of gap in the middle
-    gap_width = (centre_circle_position[0]*0.9 - line_width)*2
-    gap_circle_r = gap_width/4
-    gap_circles_y = centre_circle_position[1] + length*0.25
+    #above the centre circles, width of gap in the middle
+    gap_width = (centre_circle_position[0]*0.9 - line_width)*2 * 0.6
+    gap_circle_r = gap_width/4 + line_width/8
+    gap_circles_y = centre_circle_position[1] + length*0.225
+    top_of_circles_y =centre_circle_position[1] + centre_circles_r
+    height = total_length - top_of_circles_y
+
 
     for x in [-1, 1]:
-        hand = hand.union(cq.Workplane("XY").circle(gap_circle_r).extrude(thick).translate((x*gap_circle_r, gap_circles_y)))
+        hand = hand.union(cq.Workplane("XY").circle(gap_circle_r).extrude(thick).translate((x*gap_width/4, gap_circles_y)))
+
+
+
+        top_line = cq.Workplane("XY").moveTo((gap_width + line_width)*x, top_of_circles_y).spline([((gap_width/2 + line_width)*x, gap_circles_y ), (x*line_width/2, total_length)], includeCurrent=True, tangents=[(0,1), (0,1)])\
+            .line(-line_width*x,0).spline([((gap_width/2)*x, gap_circles_y ), ((gap_width)*x, top_of_circles_y)], includeCurrent=True, tangents=[(0,-1), (0,-1)]).close().extrude(thick)
+        # return top_line
+        hand = hand.union(top_line)
 
 
     #tip:

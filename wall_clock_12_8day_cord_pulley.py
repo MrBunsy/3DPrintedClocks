@@ -1,22 +1,20 @@
 from clocks import clock
 
 '''
-Eight days, with pulley. 1.2m drop so it should have more power to play with than clock 10
+Originally this was following on from clock 10 (the previous pulley eight day), but then I diverted to grasshoppers and made progress with putting the pendulum
+at the back and direct-arbours that don't require setting in beat. So I came back to this design after clock 19.
 
-Finishing this design after the success of clocks up to 19. This will take on the lessons from clock 10.
+Original plan: Eight days, with pulley. 1.2m drop so it should have more power to play with than clock 10
 
-Changes from clock 10 planned:
-
- - Why not try a second hand without a visible hole?
- - go back to slightly thicker gears to increase robustness (I'm worried about long term life of the clock and seen the escape wheel teeth bend) and make up for friction with longer drop
-
+Final Design
+ - back to slightly thicker gears to increase robustness (I'm worried about long term life of the clock and seen the escape wheel teeth bend) and make up for friction with longer drop
  - Pendulum at back
  - Direct pendulum arbour - no means of adjusting beat beyond clock angle on the wall and bending pendulum (should make it harder to knock out of beat even if it's slightly harder to set up to begin)
  - dial
+ - centred second hand
 
-Originally decided to try out the new short pendulum since it worked well on clock 11, so I think I can get away with having the pendulum really close to the plates as it'll never reach the weight
-
-Undecided about centred seconds hand.
+Originally planned to try out the new short pendulum since it worked well on clock 11, so I think I can get away with having the pendulum really close to the plates as it'll never reach the weight.
+Ended up going back to seconds pendulum because it looks best with the centred second hand.
 
 TODO:
 
@@ -79,7 +77,7 @@ pendulumSticksOut=20
 
 train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
-train.printInfo(weight_kg=3.5)
+train.printInfo(weight_kg=2)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 cordwheel = train.getArbourWithConventionalNaming(0)
