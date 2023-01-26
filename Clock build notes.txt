@@ -236,3 +236,9 @@ Next grasshopper:
 
 
 IDEA - for huygens maintaining power with the rope/chain wheel attached to the wheel - print in one peice where possible? and just use old arbour extension. Might only work with rope wheel which can be printed in one peice.
+
+
+Clock 12:
+- Screws inside the dial pillar and larger holes would make it much easier to attach - really fiddly when the wall standoffs are already in place
+- Got the heights for the hands and dial not quite right. by fluke it all fits, but needs to rethink this slightly
+- fixing the loose end of the cord to the bottom pillar didn't work with the screw - the cord hole needs to be much bigger, or the screw smaller. Might want to rethink the whole idea.

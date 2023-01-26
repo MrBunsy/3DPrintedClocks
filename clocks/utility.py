@@ -851,6 +851,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
     '''
     a square hole with rod space below it that can hold the top of a pendulum, top of holder is at 0,0
+    z is height above xy plane for the rod centre
     '''
 
     shape = cq.Workplane("XY")

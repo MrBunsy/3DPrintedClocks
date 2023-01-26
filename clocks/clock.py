@@ -2651,7 +2651,7 @@ class Assembly:
             z = self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + self.plates.endshake/2 + holeInfo[0][1]
             print("{} hole from wall = {}mm".format(self.goingTrain.poweredWheel.type.value, z))
 
-    def get_rod_lengths(self):
+    def get_arbour_rod_lengths(self):
         '''
         Calculate the lengths to cut the steel rods - stop me just guessing wrong all the time!
         '''
@@ -2667,6 +2667,8 @@ class Assembly:
         spare_rod_length_in_front=3
         rod_lengths = []
         rod_zs = []
+        #for measuring where to put the arbour on the rod, how much empty rod should behind the back of the arbour?
+        beyond_back_of_arbours = []
 
         for i in range(self.arbourCount):
 
@@ -2679,6 +2681,7 @@ class Assembly:
 
             length_up_to_inside_front_plate = spare_rod_length_behind_bearing + bearing_thick + plate_distance
 
+            beyond_back_of_arbour = spare_rod_length_behind_bearing + bearing_thick + self.plates.endshake
             #true for nearly all of it
             rod_z = back_plate_thick - (bearing_thick + spare_rod_length_behind_bearing)
 
@@ -2699,7 +2702,12 @@ class Assembly:
                     #minute wheel
                     if self.plates.centred_second_hand:
                         #only goes up to the canon pinion with hand turner
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.getCannonPinionPinionThick() + WASHER_THICK_M3 + getNutHeight(arbour.arbourD, halfHeight=True) * 2 + spare_rod_length_in_front
+                        minimum_rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.getCannonPinionPinionThick() + WASHER_THICK_M3 + getNutHeight(arbour.arbourD, halfHeight=True) * 2
+                        if self.plates.dial is not None:
+                            #small as possible as it might need to fit behind the dial
+                            rod_length = minimum_rod_length + 1.5
+                        else:
+                            rod_length = minimum_rod_length + spare_rod_length_in_front
                     else:
                         raise ValueError("TODO calculate rod lengths for normal hand holder")
                 else:
@@ -2726,9 +2734,19 @@ class Assembly:
 
             rod_lengths.append(rod_length)
             rod_zs.append(rod_z)
-            print("Arbour {} rod length: {}mm".format(i, round(rod_length)))
+            beyond_back_of_arbours.append(beyond_back_of_arbour)
+            print("Arbour {} rod length: {}mm with {:.1f}mm beyond the arbour".format(i, round(rod_length), beyond_back_of_arbour))
+
+
 
         return rod_lengths, rod_zs
+
+    def get_pendulum_rod_lengths(self):
+        '''
+        Calculate lengths of threaded rod needed to make the pendulum
+        '''
+
+
 
     def getClock(self, with_rods=False):
         '''
@@ -2937,7 +2955,7 @@ class Assembly:
         #TODO weight?
 
         if with_rods:
-            rod_lengths, rod_zs = self.get_rod_lengths()
+            rod_lengths, rod_zs = self.get_arbour_rod_lengths()
             for i in range(len(rod_lengths)):
                 rod = cq.Workplane("XY").circle(self.goingTrain.getArbourWithConventionalNaming(i).arbourD/2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearingPositions[i][0], self.plates.bearingPositions[i][1], rod_zs[i]))
                 clock = clock.add(rod)
