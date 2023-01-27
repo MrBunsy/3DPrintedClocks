@@ -60,8 +60,8 @@ train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chain
 # train.printInfo(weight_kg=0.75-0.15)
 train.printInfo(weight_kg=1-0.25)
 
-# have accidentally printed hour holder with compensateLooseArbour as True, but unsure if that will work well as I expect the main motion works to be a bit droopy, might bind.
-motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=1, compensateLooseArbour=False, compact=True, thick=3.5)
+#reprinting these after the work to reduce module size back to 1, hoping it removes the jam problem
+motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=1, compensateLooseArbour=False, compact=True, thick=4)
 
 pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=90, bobD=70, bobThick=10, useNylocForAnchor=False)
 

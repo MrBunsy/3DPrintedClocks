@@ -56,7 +56,7 @@ class Gear:
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.9, outerRadius-2.4), innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
-            return Gear.cutDiamondsStyle(gear, outerRadius=min(outerRadius*0.95, outerRadius-1), innerRadius=max(innerRadius*1.05, innerRadius+1))
+            return Gear.cutDiamondsStyle(gear, outerRadius=min(outerRadius*0.9, outerRadius-2.4), innerRadius=max(innerRadius*1.05, innerRadius+1))
         return gear
 
     @staticmethod
@@ -2070,6 +2070,7 @@ class MotionWorks:
         return self.cannonPinionTotalHeightAboveBase + self.cannonPinionBaseHeight
 
     def calc_bearing_holder_thick(self):
+
         if self.bearing is not None:
             if self.bearing.outerD > self.pairs[0].pinion.getMinRadius()*2 - 1:
                 #this bearing won't fit inside the cannon pinion
@@ -2080,7 +2081,8 @@ class MotionWorks:
                 self.bearingHolderThick = 0
             #we're big enough with the bearings, try to reduce size where we can
             self.wallThick = 1.2
-
+        else:
+            self.bearingHolderThick = 0
         self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
 
     def calculateGears(self, arbourDistance=-1):
@@ -2343,7 +2345,7 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style, clockwise_from_pinion_side=False)
+        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style, clockwise_from_pinion_side=False)
 
     def getMotionArboutPinionSTLModifier(self):
         return self.pairs[1].pinion.getSTLModifierShape(thick=self.thick * 2 + self.pinionCapThick, offset_z=self.thick)

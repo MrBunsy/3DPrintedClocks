@@ -18,96 +18,171 @@ class HandStyle(Enum):
     SWORD="sword"
     CIRCLES="circles" # very much inspired by the same clock on the horological journal that inspired the circle style gears
     XMAS_TREE="xmas_tree"
+    BAROQUE="baroque"
     #ARROWS
 
+class BaroqueHands:
+    def __init__(self, base_r, total_length, thick, line_width):
+        self.base_r = base_r
+        self.total_length =total_length
+        self.thick = thick
+        self.line_width = line_width
+        self.hour_total_length = 0.7*self.total_length
 
-def gen_baroque_hour_hand(base_r, total_length, thick):
-    '''
-    doing this outside the main hands class as it could get complicated and for the baroque hands there's little in common between the hour and minute hands
-    '''
-    #plan is to make the bulk of the hand always start just after the base circle
-    length = total_length-base_r
-    hand = cq.Workplane("XY").circle(base_r).extrude(thick)
-    #overlap should be 1.5 line thick
+    def get_bar(self):
+        bar_width = self.total_length * 0.1
+        # hand = hand.union(cq.Workplane("XY").rect(bar_width, line_width).extrude(thick).translate((0, bar_y)))
+        # bar with slightly rounded ends
+        bar = cq.Workplane("XY").moveTo(bar_width / 2, self.line_width / 2).radiusArc((bar_width / 2, -self.line_width / 2), self.line_width).\
+                          lineTo(-bar_width / 2, -self.line_width / 2).radiusArc((-bar_width / 2, self.line_width / 2), self.line_width).close().extrude(self.thick)
+        return bar
+    def hour_hand(self):
+        '''
+        doing this outside the main hands class as it could get complicated and for the baroque hands there's little in common between the hour and minute hands
+        '''
+        total_length = self.hour_total_length
+        #plan is to make the bulk of the hand always start just after the base circle
+        length = total_length-self.base_r
+        hand =  cq.Workplane("XY").tag("base").circle(self.base_r).extrude(self.thick)
+        #overlap should be 1.5 line thick
 
-    line_width = length*0.05
-    centre_circles_r = length*0.125
-    centre_circle_position = (centre_circles_r + line_width*0.25, base_r + length*0.55)
-    centre_circle_positions = [(centre_circle_position[0]*-1, centre_circle_position[1]),centre_circle_position]
+        # line_width = thick#length*0.05
+        centre_circles_r = length*0.125
+        centre_circle_position = (centre_circles_r + self.line_width*0.25, self.base_r + length*0.55)
+        centre_circle_positions = [(centre_circle_position[0]*-1, centre_circle_position[1]),centre_circle_position]
 
-    #the two circles side by side
-    for circle_pos in centre_circle_positions:
-        hand = hand.union(cq.Workplane("XY").circle(centre_circles_r + line_width/2).circle(centre_circles_r-line_width/2).extrude(thick).translate(circle_pos))
+        #the two circles side by side
+        for circle_pos in centre_circle_positions:
+            hand = hand.union(cq.Workplane("XY").circle(centre_circles_r + self.line_width/2).circle(centre_circles_r-self.line_width/2).extrude(self.thick).translate(circle_pos))
 
-    #the two arcs below these circles
-    #outer radius
-    arc_top_y = centre_circle_position[1] - centre_circles_r + line_width/2
-    #we won't keep the bottom bit, we'll chop off line_width's worth of height
-    arc_bottom_y = base_r + length*0.07
-    arc_height = arc_top_y - arc_bottom_y
-    arc_y = (arc_bottom_y + arc_top_y)/2
-    arc_sag = centre_circle_position[0]+line_width/4
-    #https://en.wikipedia.org/wiki/Sagitta_(geometry)
-    arc_outer_r = arc_sag/2 + arc_height**2/(8*arc_sag)
-    for x in [-1,1]:
-        arc = cq.Workplane("XY").circle(arc_outer_r).circle(arc_outer_r-line_width).extrude(thick).translate(((arc_outer_r-line_width/4)*x,arc_y))
-        arc = arc.intersect(cq.Workplane("XY").rect(arc_sag, arc_height-line_width).extrude(thick).translate((x*(arc_sag/2-line_width/8), arc_y + line_width)))
-        hand = hand.union(arc)
+        #the two arcs below these circles
+        #outer radius
+        arc_top_y = centre_circle_position[1] - centre_circles_r + self.line_width/2
+        #we won't keep the bottom bit, we'll chop off line_width's worth of height
+        arc_bottom_y = self.base_r + length*0.07
+        arc_height = arc_top_y - arc_bottom_y
+        arc_y = (arc_bottom_y + arc_top_y)/2
+        arc_sag = centre_circle_position[0]+self.line_width/4
+        #https://en.wikipedia.org/wiki/Sagitta_(geometry)
+        arc_outer_r = arc_sag/2 + arc_height**2/(8*arc_sag)
+        for x in [-1,1]:
+            arc = cq.Workplane("XY").circle(arc_outer_r).circle(arc_outer_r-self.line_width).extrude(self.thick).translate(((arc_outer_r-self.line_width/4)*x,arc_y))
+            arc = arc.intersect(cq.Workplane("XY").rect(arc_sag, arc_height-self.line_width).extrude(self.thick).translate((x*(arc_sag/2-self.line_width/8), arc_y + self.line_width)))
+            hand = hand.union(arc)
 
-        hand = hand.union(cq.Workplane("XY").circle(line_width*1.25).extrude(thick).translate((centre_circle_position[0]*x,centre_circle_position[1] - centre_circles_r)))
+            hand = hand.union(cq.Workplane("XY").circle(self.line_width*1.25).extrude(self.thick).translate((centre_circle_position[0]*x,centre_circle_position[1] - centre_circles_r)))
 
-    #edge of gap between the bottom ends of teh arcs (another sagitta)
-    #bottom of the intersection rectangle from above
-    y = arc_y + line_width - (arc_height-line_width)/2
-    #length of sagitta
-    l = (arc_y - y )*2
-    edge_of_inner_triangle_x = arc_outer_r - math.sqrt(arc_outer_r**2 - (l/2)**2) - line_width*0.25
-    # x = (2*arc_outer_r + math.sqrt(4*arc_outer_r**2 - 4*(arc_height-line_width)**4))/2
-    # print(x)
+        #edge of gap between the bottom ends of teh arcs (another sagitta)
+        #bottom of the intersection rectangle from above
+        y = arc_y + self.line_width - (arc_height-self.line_width)/2
+        #length of sagitta
+        l = (arc_y - y )*2
+        edge_of_inner_triangle_x = arc_outer_r - math.sqrt(arc_outer_r**2 - (l/2)**2) - self.line_width*0.25
+        # x = (2*arc_outer_r + math.sqrt(4*arc_outer_r**2 - 4*(arc_height-line_width)**4))/2
+        # print(x)
 
-    base_circle_r = edge_of_inner_triangle_x + line_width  # arc_bottom_y+line_width - bar_y + line_width/2
+        base_circle_r = edge_of_inner_triangle_x + self.line_width  # arc_bottom_y+line_width - bar_y + line_width/2
 
-    #horizontal bar near the base circle
-    bar_y = arc_bottom_y+line_width*1.5 - base_circle_r#base_r + (arc_bottom_y+line_width - base_r)/2# + line_width/2
-    bar_width = length*0.2
-    # hand = hand.union(cq.Workplane("XY").rect(bar_width, line_width).extrude(thick).translate((0, bar_y)))
-    #bar with slightly rounded ends
-    hand = hand.union(cq.Workplane("XY").moveTo(bar_width/2, line_width/2).radiusArc((bar_width/2, -line_width/2), line_width).
-                      lineTo(-bar_width/2,-line_width/2).radiusArc((-bar_width/2,line_width/2),line_width).close().extrude(thick).translate((0, bar_y)))
-    # for x in [-1, 1]:
-    #     hand = hand.union(cq.Workplane("XY").circle(line_width/2).extrude(thick).translate((x*bar_width/2, bar_y)))
-
-
-    #semicircle above the bar, inner radius of this circle is calcualted to be in the right place above
-    hand = hand.union(cq.Workplane("XY").circle(base_circle_r).circle(edge_of_inner_triangle_x).extrude(thick).intersect(cq.Workplane("XY").rect(base_circle_r*2, base_circle_r).extrude(thick).translate((0,-base_circle_r/2))).translate((0,(bar_y + base_circle_r))))
-
-    #link up the bar to the base circle
-    hand = hand.union(cq.Workplane("XY").rect(line_width*1.5,bar_y).extrude(thick).translate((0,bar_y/2)))
-
-
-    #above the centre circles, width of gap in the middle
-    gap_width = (centre_circle_position[0]*0.9 - line_width)*2 * 0.6
-    gap_circle_r = gap_width/4 + line_width/8
-    gap_circles_y = centre_circle_position[1] + length*0.225
-    top_of_circles_y =centre_circle_position[1] + centre_circles_r
-    height = total_length - top_of_circles_y
-
-
-    for x in [-1, 1]:
-        hand = hand.union(cq.Workplane("XY").circle(gap_circle_r).extrude(thick).translate((x*gap_width/4, gap_circles_y)))
+        #horizontal bar near the base circle
+        bar_y = arc_bottom_y+self.line_width*1.5 - base_circle_r#base_r + (arc_bottom_y+line_width - base_r)/2# + line_width/2
+        # bar_width = self.total_length*0.15
+        # hand = hand.union(cq.Workplane("XY").rect(bar_width, line_width).extrude(thick).translate((0, bar_y)))
+        #bar with slightly rounded ends
+        hand = hand.union(self.get_bar().translate((0, bar_y)))
+        # for x in [-1, 1]:
+        #     hand = hand.union(cq.Workplane("XY").circle(line_width/2).extrude(thick).translate((x*bar_width/2, bar_y)))
 
 
+        #semicircle above the bar, inner radius of this circle is calcualted to be in the right place above
+        hand = hand.union(cq.Workplane("XY").circle(base_circle_r).circle(edge_of_inner_triangle_x).extrude(self.thick).intersect(cq.Workplane("XY").rect(base_circle_r*2, base_circle_r).extrude(self.thick).translate((0,-base_circle_r/2))).translate((0,(bar_y + base_circle_r))))
 
-        top_line = cq.Workplane("XY").moveTo((gap_width + line_width)*x, top_of_circles_y).spline([((gap_width/2 + line_width)*x, gap_circles_y ), (x*line_width/2, total_length)], includeCurrent=True, tangents=[(0,1), (0,1)])\
-            .line(-line_width*x,0).spline([((gap_width/2)*x, gap_circles_y ), ((gap_width)*x, top_of_circles_y)], includeCurrent=True, tangents=[(0,-1), (0,-1)]).close().extrude(thick)
-        # return top_line
-        hand = hand.union(top_line)
+        #link up the bar to the base circle
+        hand = hand.union(cq.Workplane("XY").rect(self.line_width*1.5,bar_y).extrude(self.thick).translate((0,bar_y/2)))
 
 
-    #tip:
-    hand = hand.union(cq.Workplane("XY").circle(line_width/2).extrude(thick).translate((0,total_length)))
+        #above the centre circles, width of gap in the middle
+        gap_width = (centre_circle_position[0]*0.9 - self.line_width)*2 * 0.6
+        gap_circle_r = gap_width/4 + self.line_width/8
+        gap_circles_y = centre_circle_position[1] + length*0.225
+        top_of_circles_y =centre_circle_position[1] + centre_circles_r
+        # height = self.total_length - top_of_circles_y
 
-    return hand
+
+        for x in [-1, 1]:
+            hand = hand.union(cq.Workplane("XY").circle(gap_circle_r).extrude(self.thick).translate((x*gap_width/4, gap_circles_y)))
+
+
+
+            top_line = cq.Workplane("XY").moveTo((gap_width + self.line_width)*x, top_of_circles_y).spline([((gap_width/2 + self.line_width)*x, gap_circles_y ), (x*self.line_width/2, total_length)], includeCurrent=True, tangents=[(0,1), (0,1)])\
+                .line(-self.line_width*x,0).spline([((gap_width/2)*x, gap_circles_y ), ((gap_width)*x, top_of_circles_y)], includeCurrent=True, tangents=[(0,-1), (0,-1)]).close().extrude(self.thick)
+            # return top_line
+            hand = hand.union(top_line)
+
+
+        #tip:
+        hand = hand.union(cq.Workplane("XY").circle(self.line_width/2).extrude(self.thick).translate((0,total_length)))
+
+        return hand
+
+    def minute_hand(self):
+        hand =  cq.Workplane("XY").tag("base").circle(self.base_r).extrude(self.thick)
+
+        length = self.total_length - self.base_r
+
+        #series of semicircles from top of base circle upwards
+        semicircles=[]
+
+        circles_top_y = self.base_r + length*0.6
+        arrow_y = self.total_length - (self.total_length - circles_top_y)*0.6
+        y = self.base_r + self.line_width
+        bar_y = y
+        semicircle_count = 4
+        semicircle_r = (circles_top_y -y)/(semicircle_count*2)
+        x_offset = semicircle_r*0.5
+        x = 1
+        bar_width = self.total_length * 0.15
+        bar = self.get_bar()
+        # link up the bar to the base circle
+        hand = hand.union(cq.Workplane("XY").rect(self.line_width * 1.5, bar_y).extrude(self.thick).translate((0, bar_y / 2)))
+        hand = hand.union(bar.translate((0,bar_y)))
+
+        for i in range(semicircle_count):
+            semicircle = cq.Workplane("XY").circle(semicircle_r + self.line_width/2).circle(semicircle_r-self.line_width/2).extrude(self.thick)
+            semicircle = semicircle.intersect(cq.Workplane("XY").rect(semicircle_r+self.line_width/2, semicircle_r*2 + self.line_width).extrude(self.thick).translate((x*(semicircle_r + self.line_width/2)/2, 0)))
+            for nobble_y in [-1,1]:
+                semicircle = semicircle.union(cq.Workplane("XY").circle(self.line_width/4).extrude(self.thick).translate((0,nobble_y*(semicircle_r + self.line_width/4))))
+                semicircle = semicircle.union(cq.Workplane("XY").circle(self.line_width / 4).extrude(self.thick).translate((0, nobble_y*(semicircle_r - self.line_width / 4))))
+
+            semicircle = semicircle.translate((-x*x_offset,y + semicircle_r))
+            hand = hand.union(semicircle)
+            y += semicircle_r*2
+            x*=-1
+
+        #link top of circles up to arrow with a bendy line
+        top_bend = cq.Workplane("XY").moveTo(-semicircle_r+x_offset-self.line_width/2, circles_top_y-semicircle_r).spline([(-self.line_width/2, arrow_y)], includeCurrent=True, tangents=[(0.2,1), (-0.2,1)]).\
+            line(self.line_width,0).spline([(-semicircle_r+x_offset+self.line_width/2, circles_top_y-semicircle_r)], includeCurrent=True, tangents=[(0.2,-1), (-0.2,-1)]).close().extrude(self.thick)
+        #chop out any bit that slight comes inside teh circle
+        top_bend = top_bend.cut(cq.Workplane("XY").circle(semicircle_r - self.line_width/2).extrude(self.thick).translate((x_offset,circles_top_y-semicircle_r)))
+        hand = hand.union(top_bend)
+
+        #line to tip
+        hand = hand.union(cq.Workplane("XY").moveTo(-self.line_width/2, arrow_y).lineTo(-self.line_width/2, self.total_length).radiusArc((self.line_width/2, self.total_length), self.line_width/2)
+                          .lineTo(self.line_width/2, arrow_y).close().extrude(self.thick))
+
+        #arrow
+        arrow_wide = self.line_width*4
+        arrow_long = self.line_width*5
+        arrow_y_offset = arrow_long*0.3
+        arrow = cq.Workplane("XY").moveTo(-arrow_wide/2, -arrow_long/2).radiusArc((arrow_wide/2, -arrow_long/2),arrow_wide)\
+            .radiusArc((self.line_width/2, arrow_long/2), arrow_long*1.5).line(-self.line_width,0).radiusArc((-arrow_wide/2, -arrow_long/2), arrow_long*1.5).close().extrude(self.thick).translate((0,arrow_y + arrow_y_offset))
+
+        hand = hand.union(arrow)
+
+        return hand
+
+    def second_hand(self):
+        #TODO
+        return  cq.Workplane("XY").tag("base").circle(self.base_r).extrude(self.thick)
 
 class Hands:
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
@@ -129,6 +204,11 @@ class Hands:
         self.fixing_offset=fixing_offset
         self.length = length
         self.style=style
+
+        #some hands have a class that generates the hand - TODO: should all hands extend from this class and do that? This is getting very messy
+        self.generator = None
+
+
         #if true, this second hand is centred through the motion works, and is longer and thinner than the minute hand.
         #not supported for all styles
         #TODO is this needed? is secondLength not enough?
@@ -170,6 +250,12 @@ class Hands:
 
         self.hourFixing=hourFixing
         self.hourFixing_d = hourfixing_d
+
+        if self.style == HandStyle.BAROQUE:
+            line_width = max(self.length * 0.03, 2.4)
+            #TODO tidy up the base_r calculations do this here again (commented out below)
+            self.generator = BaroqueHands(base_r=self.hourFixing_d *0.75, total_length=self.length, thick=self.thick, line_width=line_width)
+
         #the round bit that attaches to the clock - this is just the default size for the cosmetics and various styles can override it
         # self.base_r = length * 0.12
         #
@@ -311,6 +397,16 @@ class Hands:
 
         # if colour is not None:
         #     ignoreOutline = True
+
+        if self.generator is not None:
+            if second:
+                hand = self.generator.second_hand()
+            elif hour:
+                base_r = self.generator.base_r
+                hand = self.generator.hour_hand()
+            else:
+                base_r = self.generator.base_r
+                hand = self.generator.minute_hand()
 
         if style == HandStyle.SIMPLE:
 

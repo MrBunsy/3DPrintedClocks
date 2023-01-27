@@ -458,6 +458,12 @@ if False:
 #
 # show_object(line)
 
+# baroque_hands = BaroqueHands(base_r=23/2, total_length=100, thick=3, line_width=2.4)
+#
+# show_object(baroque_hands.hour_hand())
+# show_object(baroque_hands.minute_hand().translate((30,0,0)))
 
-show_object(gen_baroque_hour_hand(23/2, 60,3))
+show_object(getHandDemo(justStyle=HandStyle.BAROQUE))
+
+# show_object(get_stroke_semicircle((-50,0), 20, math.pi/2, math.pi, 3,2))
 

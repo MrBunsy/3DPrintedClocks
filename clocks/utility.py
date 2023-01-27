@@ -25,6 +25,8 @@ GRAVITY = 9.81
 
 #extra diameter to add to something that should be free to rotate over a rod
 LOOSE_FIT_ON_ROD = 0.3
+#where not wobbling is more important
+LOOSE_FIT_ON_ROD_MOTION_WORKS = 0.25
 
 LOOSE_SCREW = 0.2
 
