@@ -463,7 +463,7 @@ if False:
 # show_object(baroque_hands.hour_hand())
 # show_object(baroque_hands.minute_hand().translate((30,0,0)))
 
-show_object(getHandDemo(justStyle=HandStyle.BAROQUE))
+show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
 # show_object(get_stroke_semicircle((-50,0), 20, math.pi/2, math.pi, 3,2))
 

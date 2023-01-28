@@ -823,7 +823,8 @@ def getBearingInfo(innerD):
         return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
-        return BearingInfo(bearingOuterD=24.2,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
+        #printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
+        return BearingInfo(bearingOuterD=24.15,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
     return None
 
 

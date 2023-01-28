@@ -84,8 +84,10 @@ cordwheel = train.getArbourWithConventionalNaming(0)
 
 # show_object(cordwheel.poweredWheel.getAssembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
-#
-motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True, module=1)
+
+#extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
+# but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
+motionWorks = clock.MotionWorks(extra_height=11, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True, module=1)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=80, bobThick=10, useNylocForAnchor=False)#, handAvoiderHeight=100)
@@ -128,7 +130,8 @@ print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley, showPendulum=True)#weights=[clock.Weight(height=245,diameter=55)]
 assembly.get_arbour_rod_lengths()
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock(with_rods=True))
+show_object(assembly.getClock(with_rods=True, with_key=True))
+# show_object(plates.get_winding_key(for_printing=False))
 
 # show_object(plates.getDrillTemplate(6))
 

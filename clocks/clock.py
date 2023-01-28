@@ -965,7 +965,8 @@ class SimpleClockPlates:
         self.gearGap = 3
         self.smallGearGap = 2
 
-
+        #if this has a key
+        self.key_offset_from_front_plate = 1
 
 
 
@@ -1305,6 +1306,8 @@ class SimpleClockPlates:
         dial_thick = 2
         # previously given 8mm of clearance, but this was more than enough, so reducing down to 4
         self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - dial_thick - 4
+        self.top_of_hands_z = self.motionWorks.get_cannon_pinion_total_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+        print("dial z", self.dial_z)
         self.dial = None
         if self.dial_diameter > 0:
 
@@ -2364,6 +2367,29 @@ class SimpleClockPlates:
 
         anchor = self.goingTrain.escapement.g
 
+    def get_winding_key(self, for_printing=True):
+        key_body = None
+
+        if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
+            #height of square bit above front plate, minus one so we're not scrapign the front plate
+            key_hole_deep =  self.goingTrain.poweredWheel.keySquareBitHeight  + self.goingTrain.poweredWheel.bearing.height - self.getPlateThick(back=False) - self.key_offset_from_front_plate - self.endshake
+            if self.dial is not None and self.centred_second_hand:
+                # just so it doesn't clip the dial
+                cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
+                # reach to the centre of the dial (just miss the hands)
+                handle_length = self.hands_position[1] - (self.dial.outside_d / 2 - self.dial.dial_width / 2) - self.bearingPositions[0][1] - 5
+            else:
+                # above the hands
+                cylinder_length = self.top_of_hands_z + 10
+                # avoid the centre of the hands
+                handle_length = self.hands_position[1] - self.bearingPositions[0][1] - 10
+
+            # print the key, with the right dimensions
+            key_body = self.goingTrain.poweredWheel.getWindingKey(cylinder_length=cylinder_length, handle_length=handle_length, key_hole_deep = key_hole_deep, for_printing=for_printing)
+
+
+
+        return key_body
 
     def outputSTLs(self, name="clock", path="../out"):
 
@@ -2433,6 +2459,16 @@ class SimpleClockPlates:
             out = os.path.join(path, "{}_motion_works_holder.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_motion_works_holder(), out)
+
+        key_body = self.get_winding_key()
+        if key_body is not None:
+            out = os.path.join(path, "{}_winding_key_body.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(key_body, out)
+
+            out = os.path.join(path, "{}_winding_key_knob.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.goingTrain.poweredWheel.getWindingKnob(), out)
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
@@ -2666,7 +2702,7 @@ class Assembly:
         #how much extra to extend out the bearing
         spare_rod_length_behind_bearing=3
         #extra length out the front of hands, or front-mounted escapements
-        spare_rod_length_in_front=3
+        spare_rod_length_in_front=2
         rod_lengths = []
         rod_zs = []
         #for measuring where to put the arbour on the rod, how much empty rod should behind the back of the arbour?
@@ -2750,7 +2786,7 @@ class Assembly:
 
 
 
-    def getClock(self, with_rods=False):
+    def getClock(self, with_rods=False, with_key=False):
         '''
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
         '''
@@ -2852,6 +2888,10 @@ class Assembly:
 
             clock = clock.add(secondHand.translate(secondHandPos))
 
+        if with_key:
+            key = self.plates.get_winding_key(for_printing=False)
+            if key is not None:
+                clock = clock.add(key.translate((self.plates.bearingPositions[0][0], self.plates.bearingPositions[0][1], frontOfClockZ + self.plates.key_offset_from_front_plate + self.plates.endshake/2)))
 
         pendulumRodExtraZ = 2
 
@@ -2975,7 +3015,7 @@ class Assembly:
         exporters.export(self.getClock(), out)
 
 
-def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False):
+def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1):
     demo = cq.Workplane("XY")
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
@@ -2990,7 +3030,7 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
         if justStyle is not None and style != justStyle:
             continue
 
-        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=1,
+        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=outline,
                       outlineSameAsBody=False, secondLength=25)
 
         x = space*(i%perRow)

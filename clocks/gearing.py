@@ -1958,10 +1958,11 @@ class Arbour:
 
 class MotionWorks:
 
-    def __init__(self, arbourD=3, thick=3, module=1, minuteHandThick=3, extra_height=0,
+    def __init__(self, arbourD=3, thick=3, pinionThick=-1, module=1, minuteHandThick=3, extra_height=0,
                  style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None):
         '''
-
+        thick is thickness of the wheels
+        pinionthick is double thick by default, can be overriden
         minuteHolderTotalHeight - extra height above the minimum
 
         the the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
@@ -1987,6 +1988,9 @@ class MotionWorks:
         self.holeD=arbourD + 0.4
         #thickness of gears
         self.thick = thick
+        self.pinionThick = pinionThick
+        if self.pinionThick < 0:
+            self.pinionThick = self.thick*2
         self.style=style
         self.compact = compact
 
@@ -2004,7 +2008,7 @@ class MotionWorks:
 
         self.bearing = bearing
 
-        self.cannonPinionPinionThick = self.thick * 2
+        self.cannonPinionPinionThick = self.pinionThick
         self.calculateGears()
 
 
@@ -2063,6 +2067,7 @@ class MotionWorks:
             #to ensure hour hand can't hit the top of the arbour
             extra_height = self.thick*2
 
+        #thick for thickness of hour holder wheel
         self.cannonPinionTotalHeightAboveBase = extra_height + self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight + self.thick# + self.cannonPinionBaseHeight
 
 
@@ -2345,24 +2350,13 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheelThick=self.thick, pinionThick=self.thick * 2 + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style, clockwise_from_pinion_side=False)
+        return Arbour(wheel=wheel, pinion=pinion, arbourD=self.arbourD + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheelThick=self.thick, pinionThick=self.pinionThick + self.pinionCapThick, endCapThick=self.pinionCapThick, style=self.style, clockwise_from_pinion_side=False)
 
     def getMotionArboutPinionSTLModifier(self):
-        return self.pairs[1].pinion.getSTLModifierShape(thick=self.thick * 2 + self.pinionCapThick, offset_z=self.thick)
+        return self.pairs[1].pinion.getSTLModifierShape(thick=self.pinionThick + self.pinionCapThick, offset_z=self.thick)
 
     def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
-        #this is just a cadquery shape
-        # wheel = self.pairs[0].wheel
-        # pinion = self.pairs[1].pinion
-        #
-        # base = wheel.get3D(thick=self.thick, holeD=self.holeD, style=self.style, innerRadiusForStyle= pinion.getMaxRadius())
-        #
-        # top = pinion.get3D(thick=self.thick * 3, holeD=self.holeD, style=self.style).translate([0, 0, self.thick])
-        #
-        # arbour = base.add(top)
-        #
-        # arbour = arbour.faces(">Z").workplane().circle(pinion.getMaxRadius()).extrude(self.thick * 0.5).circle(self.holeD / 2).cutThruAll()
         return self.getMotionArbour().getShape()
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
