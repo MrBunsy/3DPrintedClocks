@@ -1,3 +1,5 @@
+import math
+
 import random
 
 from .geometry import *
@@ -45,7 +47,7 @@ class Gear:
         if style == GearStyle.CARTWHEEL:
             return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
         if style == GearStyle.FLOWER:
-            return Gear.cutFlowerStyle(gear, outerRadius=outerRadius-2.8, innerRadius=innerRadius)
+            return Gear.cutFlowerStyle2(gear, outerRadius=outerRadius-2.8, innerRadius=innerRadius)
         if style == GearStyle.HONEYCOMB:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
@@ -357,6 +359,77 @@ class Gear:
         return gear.cut(honeycomb)
 
     @staticmethod
+    def cutFlowerStyle2(gear, outerRadius, innerRadius):
+        '''
+        same idea as cutFlowerStyle but with the arm width consistent
+        '''
+        petals = 5
+
+        armToHoleRatio = 0.5
+
+        innerCircumference = math.pi * 2 * innerRadius
+
+        # width at inner radius
+        pairWidth = innerCircumference / petals
+        armWidth = armToHoleRatio * pairWidth
+        petalWidth = pairWidth * (1 - armToHoleRatio)
+        petal_inner_radius = (outerRadius - innerRadius) * 0.75
+
+        if petal_inner_radius < 0:
+            return gear
+        #if this is a wheel with a relatively large inner radius (like a cord wheel), increase the number of petals
+        while petal_inner_radius < petalWidth*1.5 and armWidth > 2:
+            petals+=1
+            pairWidth = innerCircumference / petals
+            armWidth = armToHoleRatio * pairWidth
+            petalWidth = pairWidth * (1 - armToHoleRatio)
+            armToHoleRatio*=0.96#0.975
+
+        cutter_thick = 1000
+
+        #calculate centre of the circle based on sagitta (again)
+        angle_per_flower = math.pi*2/petals
+        angle_over_arm = armWidth/innerRadius
+        angle_for_sagitta = angle_per_flower*2 - angle_over_arm
+        angle_for_sagitta_deg = radToDeg(angle_for_sagitta)
+        l_old = np.linalg.norm(np.subtract(polar(0, innerRadius), polar(angle_for_sagitta, innerRadius)))
+        l = 2*innerRadius*math.sin(angle_for_sagitta/2)
+        r = petal_inner_radius
+        sagitta = r - math.sqrt(r**2 - (l/2)**2)
+        circle_centre_distance = r - sagitta + innerRadius*math.cos(angle_for_sagitta/2)
+        # circle_centre_distance = math.sqrt(innerRadius**2 - (l/2)**2) + math.sin(petal_inner_radius**2 - (l/2)**2)
+
+        def get_circle(petal, hollow=True, inner_only=False):
+            r = petal_inner_radius + armWidth
+            if inner_only:
+                hollow=False
+                r = petal_inner_radius
+            circle_cutter = cq.Workplane("XY").circle(r)
+            if hollow:
+                circle_cutter = circle_cutter.circle(petal_inner_radius)
+            circle_cutter = circle_cutter.extrude(cutter_thick)
+
+            circle_cutter = circle_cutter.translate(polar(petal * math.pi * 2 / petals, circle_centre_distance))
+            return circle_cutter
+
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+        # debug = cq.Workplane("XY")
+        for p in range(petals):
+            # circle_cutter = cq.Workplane("XY").circle(petal_inner_radius + armWidth).circle(petal_inner_radius).extrude(cutter_thick)
+            # circle_cutter = circle_cutter.translate(polar(p*math.pi*2/petals, circle_centre_distance))
+            # debug = debug.add(circle_cutter)
+
+            circle_cutter = get_circle(p)
+            #only keep the 'inner' bits of the circles, so that for more than 5ish petals we don't have small circles eating into the outer ring. hard to explain, easy to see
+            circle_cutter = circle_cutter.intersect(get_circle(p-1, hollow=False).union(get_circle(p+1, hollow=False)))
+            #don't let the arms bulge into the inner petal bit
+            circle_cutter = circle_cutter.cut(get_circle(p-2, inner_only=True).union(get_circle(p+2, inner_only=True)))
+
+            cutter = cutter.cut(circle_cutter)
+        # return debug
+        return gear.cut(cutter)
+
+    @staticmethod
     def cutFlowerStyle(gear, outerRadius, innerRadius):
 
         petals = 5
@@ -365,6 +438,7 @@ class Gear:
 
         innerCircumference=math.pi*2*innerRadius
 
+        #width at inner radius
         pairWidth = innerCircumference/petals
         armWidth = armToHoleRatio*pairWidth
         petalWidth = pairWidth*(1-armToHoleRatio)
@@ -399,6 +473,7 @@ class Gear:
             tipPos = polar(tipAngle, outerRadius)
             endPos = polar(endAngle, innerRadius)
             try:
+                #cut out the hole in the middle
                 cutter = cutter.add(cq.Workplane("XY").moveTo(startPos[0], startPos[1]).radiusArc(tipPos, -petalRadius).radiusArc(endPos, -petalRadius).radiusArc(startPos,innerRadius).close().extrude(cutterThick))
             except:
                 print("unable to produce flower cutter:", innerRadius, outerRadius)

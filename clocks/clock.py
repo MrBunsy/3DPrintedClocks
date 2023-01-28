@@ -1975,7 +1975,7 @@ class SimpleClockPlates:
             bottom_pillar = bottom_pillar.extrude(self.plateDistance)
 
 
-        chainHoles = self.getChainHoles()
+        chainHoles = self.get_chain_holes()
         bottom_pillar = bottom_pillar.cut(chainHoles.translate((-bottomPillarPos[0], -bottomPillarPos[1], self.endshake / 2)))
 
         bottom_pillar = bottom_pillar.cut(self.get_fixing_screws_cutter().translate((-bottomPillarPos[0], -bottomPillarPos[1], -self.getPlateThick(back=True))))
@@ -2014,7 +2014,7 @@ class SimpleClockPlates:
 
         return top_pillar
 
-    def getChainHoles(self):
+    def get_chain_holes(self):
         '''
         These chain holes are relative to the front of the back plate - they do NOT take plate thickness or wobble into account
         '''
@@ -2062,14 +2062,27 @@ class SimpleClockPlates:
             # original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
             # so instead, put a screw in from the front
             pulleyY =  self.bottomPillarPos[1]+self.bottomPillarR/2
+            if self.extraHeavy:
+                #bring it nearer the top, making it easier to tie the cord around it
+                pulleyY =  self.bottomPillarPos[1]+self.bottomPillarR - self.fixingScrews.metric_thread
             # this screw will provide something for the cord to be tied round
-            #TODO use MachineScrew and limit length
-            # pulleyScrew = MachineScrew(self.fixingScrews.metric_thread, countersunk=True,length=26)
-            pulleyScrewHole = cq.Workplane("XY").moveTo(pulleyX, pulleyY).circle(self.fixingScrews.metric_thread/2).extrude(10000)
-            coneHeight = getScrewHeadHeight(self.fixingScrews.metric_thread, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-            topR = getScrewHeadDiameter(self.fixingScrews.metric_thread, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-            topZ = self.plateDistance
-            pulleyScrewHole = pulleyScrewHole.add(cq.Solid.makeCone(radius2=topR, radius1=self.fixingScrews.metric_thread / 2, height=coneHeight).translate((pulleyX, pulleyY, topZ - coneHeight)))
+            pulleyScrewHole = self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0),180).translate((pulleyX,pulleyY,self.plateDistance))
+
+            #but it's fiddly so give it a hole and protect the screw
+            max_extra_space = self.bottomPillarR - pulleyX - 1
+            extra_space = cq.Workplane("XY").circle(max_extra_space).extrude(self.chainHoleD).translate((pulleyX,pulleyY,pulleyZ-self.chainHoleD/2))
+            #make the space open to the top of the pillar
+            extra_space = extra_space.union(cq.Workplane("XY").rect(max_extra_space*2, 1000).extrude(self.chainHoleD).translate((pulleyX,pulleyY + 500,pulleyZ-self.chainHoleD/2)))
+            #and keep it printable
+            extra_space = extra_space.union(getHoleWithHole(innerD=self.fixingScrews.metric_thread, outerD=max_extra_space*2, deep=self.chainHoleD,  layerThick=LAYER_THICK_EXTRATHICK)
+                                            .rotate((0,0,0),(0,0,1),90).translate((pulleyX, pulleyY, pulleyZ-self.chainHoleD/2)))
+
+            #I'm worried about the threads cutting the thinner cord, but there's not quite enough space to add a printed bit around the screw
+            # I could instead file off the threads for this bit of the screw?
+
+            chainHoles.add(extra_space)
+
+
             chainHoles.add(pulleyScrewHole)
         return chainHoles
 
