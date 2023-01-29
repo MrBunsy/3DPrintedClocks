@@ -42,8 +42,8 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 
 # train.genCordWheels(ratchetThick=5, cordThick=1, cordCoilThick=11, style=gearStyle)
 # 61 links/ft 1-day regula chain. copied from clock 04
-# train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
-train.genRopeWheels(ratchetThick=4, ropeThick=2.2, use_steel_tube=False)
+train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8)
+# train.genRopeWheels(ratchetThick=4, ropeThick=2.2, use_steel_tube=False)
 
 pendulumSticksOut=25
 # was attemptign to get the second arbour to line up with where I want the arbour for the motion works - but I think this is actually impossible

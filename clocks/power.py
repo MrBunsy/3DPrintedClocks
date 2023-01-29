@@ -1820,7 +1820,7 @@ class ChainWheel:
             ratchetOuterD = self.diameter * 2.5
 
         if ratchet_thick > 0:
-            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
+            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=0.9999*self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
         else:
             self.ratchet = None
 
@@ -2072,7 +2072,8 @@ class Ratchet:
         cicumference = math.pi*self.outsideDiameter
 
         #was originaly just 8. Then tried math.ceil(cicumference/10) to replicate it in a way that scales, but this produced slightly too many teeth.
-        self.clicks = math.ceil(cicumference/15)#8
+        #even /15 seems excessive, trying /20 for reprinting bits of clock 19
+        self.clicks = math.ceil(cicumference/20)#8
         #ratchetTeet must be a multiple of clicks
         self.ratchetTeeth = self.clicks*2
 
@@ -2090,18 +2091,24 @@ class Ratchet:
         wheel = cq.Workplane("XY")
 
         thick = 1.25
-        #since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
-        #mostly affects ratchets with a larger inner radius and a not-so-large outer radius
-        #note - since adjusting number of clicks to the circumference, this isn't so exagerated
-        #TODO proper maffs
-        innerThick=thick*1.2
+
 
         innerClickR = self.clickInnerRadius
 
         #arc aprox ratchetThick
         clickArcAngle = self.anticlockwise * thick / innerClickR
+
+        clickOffsetAngle = -(math.pi*2/(self.clicks))*0.75 * self.anticlockwise
+
+        # since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
+        # mostly affects ratchets with a larger inner radius and a not-so-large outer radius
+        # note - since adjusting number of clicks to the circumference, this isn't so exagerated
+        #TODO proper maffs. can't use clickoffsetangle - need angle from edge of the circle
+        # innerThick = 1.2*thick/math.sin(clickOffsetAngle)
+        #el bodgeo for now
+        innerThick = 1.4*thick
+
         clickInnerArcAngle = self.anticlockwise * innerThick / innerClickR
-        clickOffsetAngle = -(math.pi*2/self.clicks)*1 * self.anticlockwise
 
         dA = -math.pi*2 / self.clicks * self.anticlockwise
 

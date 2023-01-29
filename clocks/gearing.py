@@ -2024,7 +2024,7 @@ class Arbour:
                 if len(self.boltPositions) > 0:
                     boltR = np.linalg.norm(self.boltPositions[0])
                     #make sure it's possible to screw the ratchet or wheel on
-                    if self.useRatchet and extensionR > boltR - self.ratchetScrews.getNutContainingDiameter()/2:
+                    if extensionR > boltR - self.ratchetScrews.getNutContainingDiameter()/2:
                         extensionR = boltR - self.ratchetScrews.getNutContainingDiameter()/2
 
                 bearingStandoffHeight = LAYER_THICK * 2
