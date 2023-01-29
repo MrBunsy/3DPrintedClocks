@@ -67,15 +67,15 @@ pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anch
 
 
 dial_diameter = 175
-
+dial = Dial(outside_d=dial_diameter, bottom_fixing=False, top_fixing=True)
 
 plates = SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock 19",
                            style="vertical", backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillarRequired=True,
-                           dial_diameter=dial_diameter, pillars_separate=True)
+                           dial=dial, pillars_separate=True)
 pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
 hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=plates.dial_diameter/2 - 10, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+                    hourfixing_d=motionWorks.getHourHandHoleD(), length=dial.outside_d/2 - 10, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), outline_on_seconds=1, seconds_hand_thick=2.5)
 
 assembly = Assembly(plates, hands=hands, timeSeconds=15, pulley=pulley_no_pipe)

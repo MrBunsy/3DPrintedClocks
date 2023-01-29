@@ -78,3 +78,14 @@ class PowerType(Enum):
     CORD = "cord"
     # === Spring types ===
     SPRING = "spring" # either loop end or barrel
+
+class DialStyle(Enum):
+    #simple lines that are actually slightly wedge shaped
+    LINES_ARC = "lines_arc"
+    #simple lines that are just rectangles
+    LINES_RECT = "lines_rect"
+    #flat cuckoo style (not the fully 3D cuckoo style in cuckoo bits)
+    CUCKOO = "cuckoo"
+    DOTS = "dots"
+    #two concentric circles joined by lines along spokes
+    CONCENTRIC_CIRCLES="concentric_circles"
