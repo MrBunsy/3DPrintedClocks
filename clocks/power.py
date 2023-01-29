@@ -2073,7 +2073,7 @@ class Ratchet:
 
         #was originaly just 8. Then tried math.ceil(cicumference/10) to replicate it in a way that scales, but this produced slightly too many teeth.
         #even /15 seems excessive, trying /20 for reprinting bits of clock 19
-        self.clicks = math.ceil(cicumference/20)#8
+        self.clicks = 7#math.ceil(cicumference/20)#8
         #ratchetTeet must be a multiple of clicks
         self.ratchetTeeth = self.clicks*2
 
