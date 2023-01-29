@@ -2073,7 +2073,7 @@ class Ratchet:
 
         #was originaly just 8. Then tried math.ceil(cicumference/10) to replicate it in a way that scales, but this produced slightly too many teeth.
         #even /15 seems excessive, trying /20 for reprinting bits of clock 19
-        self.clicks = 7#math.ceil(cicumference/20)#8
+        self.clicks = 6#math.ceil(cicumference/20)#8
         #ratchetTeet must be a multiple of clicks
         self.ratchetTeeth = self.clicks*2
 
@@ -2098,7 +2098,7 @@ class Ratchet:
         #arc aprox ratchetThick
         clickArcAngle = self.anticlockwise * thick / innerClickR
 
-        clickOffsetAngle = -(math.pi*2/(self.clicks))*0.75 * self.anticlockwise
+        clickOffsetAngle = -(math.pi*2/(self.clicks))*0.8 * self.anticlockwise
 
         # since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
         # mostly affects ratchets with a larger inner radius and a not-so-large outer radius
@@ -2106,7 +2106,7 @@ class Ratchet:
         #TODO proper maffs. can't use clickoffsetangle - need angle from edge of the circle
         # innerThick = 1.2*thick/math.sin(clickOffsetAngle)
         #el bodgeo for now
-        innerThick = 1.4*thick
+        innerThick = 2*thick
 
         clickInnerArcAngle = self.anticlockwise * innerThick / innerClickR
 
