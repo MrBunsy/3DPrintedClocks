@@ -465,7 +465,7 @@ if False:
 
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
-show_object(getGearDemo(justStyle=GearStyle.FLOWER))
+show_object(getGearDemo(justStyle=GearStyle.ARCS))
 
 # x=0
 # for i in range(60,70,2):

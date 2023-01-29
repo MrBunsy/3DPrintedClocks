@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 import random
 
@@ -31,7 +32,7 @@ class Gear:
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
-            return Gear.cutHACStyle(gear,armThick=outerRadius*0.1, rimRadius=outerRadius-2, innerRadius=innerRadius*1.15)
+            return Gear.cutHACStyle(gear, armThick=outerRadius*0.1, outer_r=outerRadius - 2, inner_r=innerRadius)
         if style == GearStyle.CIRCLES:
             if innerRadius < 0:
                 innerRadius = 3
@@ -599,32 +600,44 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutHACStyle(gear, armThick, rimRadius, innerRadius=-1):
+    def cutHACStyle(gear, armThick, outer_r, inner_r):
         # vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
-        armAngle = armThick / rimRadius
-        # # cadquery complains it can't make a radiusArc with a radius < rimRadius*0.85. this is clearly bollocks as the sagittaArc works.
-        # innerRadius = rimRadius * 0.7
-
-        if innerRadius < 0:
-            #default, looks fine, works in most situations
-            innerSagitta = rimRadius * 0.325
-        else:
-            #for more tightly controlled wheels were we need a certain amount of space in the centre
-            #note, this is a bodge, I really need to calculate the sagitta of the outer circle so I can correctly calculate the desired inner sagitta
-            innerSagitta = (rimRadius - innerRadius)*0.675#(innerRadius/rimRadius)**1.5#
-
+        armAngle = armThick / outer_r
         arms = 5
+
+
+        def get_sagitta(arms):
+            # distance between inner arches of cutout
+            angle_between_arches = math.pi * 2 / arms - armAngle
+            # l = 2 * outer_r * math.sin(angle_between_arches / 2)
+            sagitta = outer_r * math.cos(angle_between_arches / 2) - inner_r
+            return sagitta
+
+        gap_size = outer_r - inner_r
+
+        sagitta = get_sagitta(arms)
+        while sagitta < gap_size/2:
+            #on narrow gaps they can end up just a straight lines!
+            arms+=1
+            sagitta = get_sagitta(arms)
+
+
+        # sagitta*=1.2
+        # if sagitta > outer_r - inner_r:
+        #     sagitta = outer_r - inner_r
+
         #line it up so there's a nice arm a the bottom
         offsetAngle = -math.pi/2 + armAngle/2
         for i in range(arms):
             startAngle = i * math.pi * 2 / arms + offsetAngle
             endAngle = (i + 1) * math.pi * 2 / arms - armAngle + offsetAngle
 
-            startPos = (math.cos(startAngle) * rimRadius, math.sin(startAngle) * rimRadius)
-            endPos = (math.cos(endAngle) * rimRadius, math.sin(endAngle) * rimRadius)
+            startPos = polar(startAngle, outer_r)
+            endPos = polar(endAngle, outer_r)
 
             gear = gear.faces(">Z").workplane()
-            gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos, -rimRadius).sagittaArc(startPos, -innerSagitta).close().cutThruAll()
+            gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos, -outer_r).sagittaArc(startPos, -sagitta).close().cutThruAll()
+            # gear = gear.moveTo(startPos[0], startPos[1]).spline([startPos, endPos], tangents=[npToSet(np.multiply(startPos, -1)), endPos]).radiusArc(startPos, outer_r).close().cutThruAll()
             # .radiusArc(startPos,-innerRadius)\
             # .close().cutThruAll()
         return gear
