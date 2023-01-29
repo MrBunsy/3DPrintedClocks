@@ -1248,7 +1248,7 @@ class SimpleClockPlates:
 
         self.huygensWheel = None
         if self.huygensMaintainingPower:
-            max_circumference = self.bottomPillarR * 1.25 * math.pi
+            max_circumference = 36.6/2 * 1.25 * math.pi
             max_diameter = max_circumference/math.pi
             ratchetOuterThick = 3
             ratchet_thick=5
@@ -1257,7 +1257,7 @@ class SimpleClockPlates:
 
                 self.huygensWheel = ChainWheel(ratchet_thick=5, max_circumference=max_circumference,wire_thick=self.goingTrain.poweredWheel.chain_thick,
                                                width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
-                                               tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=32.42, ratchetOuterThick=ratchetOuterThick)
+                                               tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=36.6, ratchetOuterThick=ratchetOuterThick)
             elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
                 print("Huygens wheel diameter",huygens_diameter)
