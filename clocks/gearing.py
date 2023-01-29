@@ -374,16 +374,26 @@ class Gear:
         armWidth = armToHoleRatio * pairWidth
         petalWidth = pairWidth * (1 - armToHoleRatio)
         petal_inner_radius = (outerRadius - innerRadius) * 0.75
+        if petal_inner_radius < 6:
+            print("petal inner radius: ", petal_inner_radius)
+            petal_inner_radius = 6
+
+        min_arm_width=1.8
 
         if petal_inner_radius < 0:
             return gear
         #if this is a wheel with a relatively large inner radius (like a cord wheel), increase the number of petals
-        while petal_inner_radius < petalWidth*1.5 and armWidth > 2:
+        while petal_inner_radius < petalWidth*1.5 and armWidth > min_arm_width:
             petals+=1
             pairWidth = innerCircumference / petals
             armWidth = armToHoleRatio * pairWidth
             petalWidth = pairWidth * (1 - armToHoleRatio)
-            armToHoleRatio*=0.96#0.975
+            armToHoleRatio*=0.975#0.975
+            # petal_inner_radius*=1.01
+
+        if armWidth < min_arm_width:
+            armWidth = min_arm_width
+            petals-=1
 
         cutter_thick = 1000
 
@@ -395,7 +405,13 @@ class Gear:
         l_old = np.linalg.norm(np.subtract(polar(0, innerRadius), polar(angle_for_sagitta, innerRadius)))
         l = 2*innerRadius*math.sin(angle_for_sagitta/2)
         r = petal_inner_radius
-        sagitta = r - math.sqrt(r**2 - (l/2)**2)
+        try:
+            sagitta = r - math.sqrt(r**2 - (l/2)**2)
+        except:
+            print("unable to cut flower gear. innerR:{} outerR:{}, petals:{}".format(innerRadius, outerRadius, petals))
+            # return Gear.cutFlowerStyle(gear, innerRadius, outerRadius)
+            # return Gear.cutSimpleStyle(gear, innerRadius, outerRadius,15)
+            return Gear.cutSemicirclesStyle(gear, outerRadius, innerRadius)
         circle_centre_distance = r - sagitta + innerRadius*math.cos(angle_for_sagitta/2)
         # circle_centre_distance = math.sqrt(innerRadius**2 - (l/2)**2) + math.sin(petal_inner_radius**2 - (l/2)**2)
 
@@ -666,6 +682,35 @@ class Gear:
                         gear = gear.faces(">Z").workplane().moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).cutThruAll()
 
         return gear
+
+    @staticmethod
+    def cutSemicirclesStyle(gear, outerRadius, innerRadius):
+        '''
+        used when the gap is too narrow for flowers to work - cut a series of circles that are larger than the gap
+        '''
+
+        circle_r = (outerRadius - innerRadius)#*0.6
+        arm_wide=3
+
+        r = (innerRadius + outerRadius)/2
+
+        # circle_r = outerRadius - innerRadius
+
+        circles = floor(math.pi*2*innerRadius / (circle_r*2 + arm_wide))
+
+        cutter_thick = 1000
+        cutter = cq.Workplane("XY")
+
+        for c in range(circles):
+            angle = c*math.pi*2/circles
+
+            cutter = cutter.add(cq.Workplane("XY").circle(circle_r).extrude(cutter_thick).translate(polar(angle,innerRadius)))
+
+        cutter = cutter.intersect(cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick))
+
+        return gear.cut(cutter)
+
+
 
     def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, innerRadiusForStyle=-1):
         self.iswheel = isWheel

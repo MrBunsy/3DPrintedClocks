@@ -467,9 +467,17 @@ if False:
 
 show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 
-circle = cq.Workplane("XY").circle(100).extrude(3)
-
-# show_object(Gear.cutFlowerStyle2(circle,  outerRadius=80, innerRadius=20))
+# x=0
+# for i in range(60,70,2):
+#     # innerR:29.5 outerR:34.2383298577297, petals:24
+#     innerR = 29.5
+#     outerR = 100 - i
+#
+#
+#     circle = cq.Workplane("XY").circle(outerR+5).extrude(3)
+#
+#     show_object(Gear.cutFlowerStyle2(circle,  outerRadius=outerR, innerRadius=innerR).translate((x,0,0)))
+#     x += outerR*2 + 5
 
 # show_object(get_stroke_semicircle((-50,0), 20, math.pi/2, math.pi, 3,2))
 

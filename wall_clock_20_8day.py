@@ -14,7 +14,7 @@ if 'show_object' not in globals():
 
 clockName="wall_clock_20"
 clockOutDir="out"
-gearStyle=clock.GearStyle.DIAMONDS
+gearStyle=clock.GearStyle.FLOWER
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #for period 1.5
