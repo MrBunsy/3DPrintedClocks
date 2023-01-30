@@ -6,6 +6,7 @@ from clocks.utility import *
 from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
+from clocks.cuckoo_bits import roman_numerals
 
 outputSTL = False
 
@@ -404,9 +405,9 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-# dial = Dial(outsideD=200)
-#
-# show_object(dial.getDial())
+dial = Dial(outside_d=200, style=DialStyle.ROMAN)
+
+show_object(dial.get_dial())
 
 # AnchorEscapement.get_with_45deg_pallets(teeth=30)
 # springArbour = SpringArbour(power_clockwise=True)
@@ -465,7 +466,12 @@ if False:
 
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
-show_object(getGearDemo(justStyle=GearStyle.ARCS))
+# show_object(getGearDemo(justStyle=GearStyle.ARCS))
+
+
+# show_object(roman_numerals("VII",30,cq.Workplane("XY"),0.4))
+
+
 
 # x=0
 # for i in range(60,70,2):

@@ -13,6 +13,7 @@ from math import sin, cos, pi, floor
 import numpy as np
 import os
 import datetime
+from .cuckoo_bits import roman_numerals
 
 
 
@@ -2503,11 +2504,14 @@ class Dial:
 
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outside_d, style="simple", fixing_screws=None,thick=2, top_fixing=True, bottom_fixing=False):
+    def __init__(self, outside_d, style=DialStyle.LINES_ARC, seconds_style=None, fixing_screws=None,thick=2, top_fixing=True, bottom_fixing=False):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
         '''
         self.style = style
+        self.seconds_style = seconds_style
+        if self.seconds_style is None:
+            self.seconds_style = self.style
         self.fixing_screws = fixing_screws
         if self.fixing_screws is None:
             self.fixing_screws = MachineScrew(metric_thread=3, countersunk=True, length=25)
@@ -2543,6 +2547,9 @@ class Dial:
 
         self.seconds_dial_width = self.dial_width * 0.3  # self.second_hand_mini_dial_d * 0.4
 
+        self.dial_detail_from_edges = self.outside_d * 0.01
+        self.seconds_dial_detail_from_edges = self.dial_detail_from_edges * 0.75
+
     def get_fixing_positions(self):
         fixing_positions = []
         if self.top_fixing:
@@ -2575,7 +2582,28 @@ class Dial:
             this_line_width = line_width*2 if big else line_width
             angle = math.pi / 2 - i * dA
 
-            detail = detail.add(cq.Workplane("XY").rect(line_width,outer_circle_r - inner_circle_r).extrude(line_thick).translate((0,(outer_circle_r + inner_circle_r)/2)).rotate((0,0,0), (0,0,1),radToDeg(angle)))
+            detail = detail.add(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(line_thick).translate((0,(outer_circle_r + inner_circle_r)/2)).rotate((0,0,0), (0,0,1),radToDeg(angle)))
+
+        return detail
+
+    def get_roman_numerals_detail(self, outer_r, dial_width, from_edge, with_lines=True):
+
+        outer_ring_width = from_edge*2
+
+        centre_r = outer_r - dial_width/2
+        numeral_r = centre_r - outer_ring_width/2
+        numbers = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
+        detail = cq.Workplane("XY")
+        numeral_height = dial_width - 2*from_edge - outer_ring_width
+        line_thick = LAYER_THICK * 2
+
+        for i,number in enumerate(numbers):
+            angle = math.pi/2 + i*math.pi*2/12
+            pos = polar(angle, numeral_r)
+            detail = detail.add(roman_numerals(number, numeral_height, cq.Workplane("XY"), line_thick).rotate((0,0,0), (0,0,1), radToDeg(angle-math.pi/2)).translate(pos))
+
+        # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
+        detail = detail.add(self.get_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
 
         return detail
 
@@ -2623,10 +2651,25 @@ class Dial:
         '''
         detailing for the big dial
         '''
-        return self.get_lines_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
+        if self.style == DialStyle.LINES_ARC:
+            return self.get_lines_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
+        elif self.style == DialStyle.CONCENTRIC_CIRCLES:
+            return self.get_circles_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
+        elif self.style == DialStyle.ROMAN:
+            return self.get_roman_numerals_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
+        raise ValueError("Unsupported dial type")
 
     def get_seconds_dial_detail(self):
-        return self.get_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False).translate(self.second_hand_relative_pos)
+        dial = None
+        if self.seconds_style == DialStyle.LINES_ARC:
+            dial = self.get_lines_detail(outer_r=self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
+        elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
+            dial = self.get_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
+
+        if dial is not None:
+            dial = dial.translate(self.second_hand_relative_pos)
+
+        return dial
 
     def get_dial(self):
         r = self.outside_d / 2
@@ -2635,8 +2678,7 @@ class Dial:
 
 
 
-        self.dial_detail_from_edges = self.outside_d * 0.01
-        self.seconds_dial_detail_from_edges = self.dial_detail_from_edges * 0.75
+
         self.inner_r = self.outside_d / 2 - self.dial_width
 
 
@@ -2666,14 +2708,38 @@ class Dial:
 
         return detail
 
-    def outputSTLs(self, name="clock", path="../out"):
-        out = os.path.join(path, "{}_dial.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_dial(), out)
+    def get_halfs(self, shape):
+        halves = []
+        for y in [-1,0]:
+            half_box = cq.Workplane("XY").rect(self.outside_d, self.outside_d/2).extrude(self.thick + self.support_d).translate((0,y*self.outside_d/4))
+            #actually rotate by two and a half minutes so we don't slice through anything too complicated
+            half_box = half_box.rotate((0,0,0), (0,0,1), 2.5*360/60)
+            halves.append(shape.intersect(half_box))
 
-        out = os.path.join(path, "{}_dial_detail.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_all_detail(), out)
+        return halves
+
+
+    def outputSTLs(self, name="clock", path="../out", max_wide=250, max_long=210):
+
+        if self.outside_d < min(max_wide, max_long):
+            out = os.path.join(path, "{}_dial.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_dial(), out)
+
+            out = os.path.join(path, "{}_dial_detail.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_all_detail(), out)
+        else:
+            dials = self.get_halfs(self.get_dial())
+            details = self.get_halfs(self.get_all_detail())
+            for i in range(len(dials)):
+                out = os.path.join(path, "{}_dial_half{}.stl".format(name, i))
+                print("Outputting ", out)
+                exporters.export(dials[i], out)
+
+                out = os.path.join(path, "{}_dial_detail_half{}.stl".format(name, i))
+                print("Outputting ", out)
+                exporters.export(details[i], out)
 
 class Assembly:
     '''

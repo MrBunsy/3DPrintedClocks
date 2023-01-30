@@ -84,6 +84,7 @@ class DialStyle(Enum):
     LINES_ARC = "lines_arc"
     #simple lines that are just rectangles
     LINES_RECT = "lines_rect"
+    ROMAN = "roman"
     #flat cuckoo style (not the fully 3D cuckoo style in cuckoo bits)
     CUCKOO = "cuckoo"
     DOTS = "dots"
