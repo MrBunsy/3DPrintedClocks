@@ -176,7 +176,9 @@ def back(width=110, height=114.75, lip_thick=1.9,thick=7.5,hole_d=20,hole_y=45,g
     return back
 
 
-def roman_numerals(number, height, workplane, thick=0.4):
+def roman_numerals(number, height, workplane=None, thick=0.4, invert=False):
+    if workplane is None:
+        workplane = cq.Workplane("XY")
     width = height * 0.1
     #I changed the width later.. bodge
     width_for_calcs = height*0.15
@@ -259,6 +261,10 @@ def roman_numerals(number, height, workplane, thick=0.4):
     for char in number:
         thiswidth=widths[char]
         workplane = makes[char](workplane.transformed(offset=(thiswidth/2,0))).translate((-thiswidth/2,0))
+
+    if invert:
+        workplane = workplane.rotate((0,0,0), (0,1,0),180).translate((0,0,thick))
+
     return workplane
 
 def dial(diameter=62, hole_d=7, black=True):

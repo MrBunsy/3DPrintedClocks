@@ -2600,7 +2600,7 @@ class Dial:
         for i,number in enumerate(numbers):
             angle = math.pi/2 + i*math.pi*2/12
             pos = polar(angle, numeral_r)
-            detail = detail.add(roman_numerals(number, numeral_height, cq.Workplane("XY"), line_thick).rotate((0,0,0), (0,0,1), radToDeg(angle-math.pi/2)).translate(pos))
+            detail = detail.add(roman_numerals(number, numeral_height, thick=line_thick, invert=True).rotate((0,0,0), (0,0,1), radToDeg(angle-math.pi/2)).translate(pos))
 
         # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
         detail = detail.add(self.get_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
