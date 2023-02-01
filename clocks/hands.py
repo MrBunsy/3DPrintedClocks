@@ -21,11 +21,44 @@ class HandStyle(Enum):
     BAROQUE="baroque"
     #ARROWS
 
-class BaroqueHands:
-    def __init__(self, base_r, total_length, thick, line_width):
+class HandGenerator:
+    def __init__(self, base_r, length, thick):
+        #radius of circle at base of hand
         self.base_r = base_r
-        self.total_length =total_length
+        #total length of minute hand regardless of base_r
+        self.length = length
         self.thick = thick
+
+    def hour_hand(self):
+        raise NotImplemented()
+
+    def minute_hand(self):
+        raise NotImplemented()
+
+    def second_hand(self, length=30, base_r=6, thick=3):
+        raise NotImplemented()
+
+class KnobHands(HandGenerator):
+    '''
+    Mohsin asked, it amuses me so I'm going to try!
+
+    I'd like to have the balls literally dangling off the end, I think just a screw and nyloc nut should be enough for that
+    '''
+    def __init__(self, base_r, length, thick):
+        super().__init__(base_r, length, thick)
+
+    def get_knob(self, length, width):
+        knob = cq.Workplane("XY")
+
+        knob = knob.moveTo(width/2, 0).radiusArc((-width/2,0), width/2)
+
+        return knob
+
+
+class BaroqueHands(HandGenerator):
+    def __init__(self, base_r, total_length, thick, line_width, length):
+        super().__init__(base_r, length, thick)
+        self.total_length =total_length
         self.line_width = line_width
         self.hour_total_length = 0.7*self.total_length
 
@@ -180,11 +213,89 @@ class BaroqueHands:
 
         return hand
 
-    def second_hand(self):
-        #TODO
-        return  cq.Workplane("XY").tag("base").circle(self.base_r).extrude(self.thick)
+    def second_hand(self, total_length=30, base_r=6, thick=3):
+        line_width=1.2
+        hand = cq.Workplane("XY").tag("base").circle(base_r).extrude(thick)
+
+        length = total_length - base_r
+
+        curve_centre_r = length*0.2
+        points_wide = length*0.5
+
+        points_y = base_r + length*0.6
+        narrow_start_y = base_r + length*0.3
+        narrow_centre_y = base_r + length*0.35
+        narrow_end_y =base_r + length*0.4
+
+        #bottom right curve
+        pointer = cq.Workplane("XY").moveTo(0, base_r- line_width/2).radiusArc((curve_centre_r/2 + line_width/2, base_r + curve_centre_r/2), -curve_centre_r/2 - line_width/2)
+        #curve out to the pointy bit
+        pointer = pointer.spline([(line_width/2, narrow_centre_y), (points_wide/2, points_y)], includeCurrent=True, tangents=[(0,1), (1,0.5)])
+        #curve back to the tip
+        pointer = pointer.spline([(line_width/2, total_length-line_width)], includeCurrent=True, tangents=[(-1, 0.5),(0, 1)]).lineTo(0,total_length)#.radiusArc((0,total_length), -line_width)
+        pointer = pointer.mirrorY().extrude(thick)
+
+        first_cutter = cq.Workplane("XY").moveTo(0, base_r+ line_width/2).radiusArc((curve_centre_r/2 - line_width/2, base_r + curve_centre_r/2), -curve_centre_r/2 + line_width/2)
+        first_cutter = first_cutter.spline([(0, narrow_centre_y - line_width)], includeCurrent=True, tangents=[(0,1), (0,1)])
+        first_cutter = first_cutter.mirrorY().extrude(thick)
+        pointer = pointer.cut(first_cutter)
+
+        star_base_y = narrow_centre_y + line_width*1.25
+        star_top_y = points_y + (points_y - star_base_y)
+        star_wide = points_wide - line_width*2.5
+
+        # second_cutter = cq.Workplane("XY").moveTo(0,star_base_y).lineTo(points_wide/2 - line_width, points_y).lineTo(0, star_top_y).mirrorY().extrude(thick)
+        second_cutter = cq.Workplane("XY").spline([(0, star_base_y), (star_wide/2, points_y)], tangents=[(0.5,1),(1,0.5)])\
+            .spline([(0, star_top_y)], includeCurrent=True, tangents=[(-1,0.5),(-0.5,1)]).mirrorY().extrude(thick)
+        # return second_cutter.add(first_cutter)
+        # return second_cutter
+        pointer = pointer.cut(second_cutter)
+
+        # return first_cutter
+        # pointer = cq.Workplane("XY").moveTo(0, base_r-line_width/2).spline([(line_width/2, narrow_start_y),(line_width/2, narrow_end_y),(points_wide/2, points_y)], tangents=[(1,0),None, None ,(1,0)] ,includeCurrent=True)
+        hand = hand.union(pointer)
+        # return pointer
+        #swirly bit out the back
+        semicircle_r = length*0.6/4
+
+        x=-1
+        x_offset=0
+        y = -(base_r - line_width/2)
+        for i in range(2):
+            semicircle = cq.Workplane("XY").circle(semicircle_r + line_width/2).circle(semicircle_r-line_width/2).extrude(thick)
+            semicircle = semicircle.intersect(cq.Workplane("XY").rect(semicircle_r+line_width/2, semicircle_r*2 + line_width).extrude(self.thick).translate((x*(semicircle_r + line_width/2)/2, 0)))
+            # for nobble_y in [-1,1]:
+            #     semicircle = semicircle.union(cq.Workplane("XY").circle(line_width/4).extrude(thick).translate((0,nobble_y*(semicircle_r + line_width/4))))
+            #     semicircle = semicircle.union(cq.Workplane("XY").circle(line_width / 4).extrude(thick).translate((0, nobble_y*(semicircle_r - line_width / 4))))
+
+            semicircle = semicircle.translate((-x*x_offset,y - semicircle_r))
+            hand = hand.union(semicircle)
+            y -= semicircle_r*2
+            x*=-1
+
+        #blob at end
+        hand = hand.union(cq.Workplane("XY").circle(line_width).extrude(thick).translate((0,y + line_width/2)))
+
+        # return base_swirl_line
+        # swirl = cq.Workplane("YZ").moveTo(0, thick/2).rect(line_width,thick).loft(base_swirl_line)
+        # return swirl
+        # hand = hand.union(swirl)
+
+        return hand
 
 class Hands:
+    '''
+    this class generates most of the hands entirely internally - but can now use a "hand generator" class like BaroqueHands.
+    This class provides  hour_hand(), minute_hand() and second_hand(length, base_r, thick)
+
+    This helps prevent this class grow and grow.
+
+    The main benefit of this class is the shared features: cutting fixings and adding outlines.
+
+    TODO (long term aspiration) tidy up so this Hands class is more explicitly just teh shared features and the hand styles are all in generators
+    '''
+
+
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
                  hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
                  chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1):
@@ -400,7 +511,7 @@ class Hands:
 
         if self.generator is not None:
             if second:
-                hand = self.generator.second_hand()
+                hand = self.generator.second_hand(total_length=self.secondLength, base_r=base_r, thick=self.secondThick)
             elif hour:
                 base_r = self.generator.base_r
                 hand = self.generator.hour_hand()

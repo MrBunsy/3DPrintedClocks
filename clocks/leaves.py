@@ -727,3 +727,108 @@ class Wreath:
 #     show_object(leaf)
 #
 #     exporters.export(leaf, "out/cuckoo_pendulum_leaf2.stl", tolerance=0.001, angularTolerance=0.01)
+
+
+
+class MistletoeLeaf:
+    '''
+    A randomly generated mistletow leaf. currently only a 2D outline
+    (0,0) is at the base of the leaf, which is pointing along the y axis
+    '''
+    def __init__(self, length=40, seed=-1):
+        self.length = length
+        if seed >=0:
+            random.seed(seed)
+        self.width = length * random.uniform(0.25, 0.4)
+        self.stalk_width = length* random.uniform(0.05, 0.1)
+        self.tip_offset = length*0.1 * random.uniform(-0.15,0.15)
+        self.stalk_length = length * random.uniform(0.075,0.1)
+
+    def get_2d(self):
+        leaf = cq.Workplane("XY")
+
+        leaf = leaf.lineTo(self.stalk_width/2,0).line(0,self.stalk_length).spline([(self.width/2, self.length/2+self.stalk_length), (self.tip_offset, self.length)], includeCurrent=True).\
+            spline([(-self.width/2, self.length/2+self.stalk_length), (-self.stalk_width/2, self.stalk_length)], includeCurrent=True).line(0,-self.stalk_length).radiusArc((self.stalk_width/2,0), -self.stalk_width/2).close()
+
+        return leaf
+
+class MistletoeLeafPair:
+    '''
+    just two leaves at the end of a short branch
+
+    starting at 0,0, facing along y axis
+    '''
+    def __init__(self, branch_length=50, leaf_length=50, seed=-1, thick=3):
+        self.thick = thick
+        if seed >=0:
+            random.seed(seed)
+        self.branch_length = branch_length
+        self.leaf_length = leaf_length
+        self.branch_thick = self.branch_length*random.uniform(0.05, 0.1)
+        self.leaves = [MistletoeLeaf(length= self.leaf_length*random.uniform(0.9, 1.1), seed=random.random()) for l in range(2)]
+        angle = random.uniform(0.9,1.1)*math.pi/4
+        spread = math.pi/10
+        self.leaf_angles = [angle + random.uniform(-0.5, 0.5)*spread, (angle + random.uniform(-0.5, 0.5)*spread) - math.pi/2]
+
+        self.branch = self.gen_branch()
+        self.leaves_shape = self.gen_leaves().cut(self.branch)
+
+    def get_branch(self):
+        return self.branch
+
+    def get_leaves(self):
+        return self.leaves_shape
+
+    def gen_branch(self):
+        branch = cq.Workplane("XY").moveTo(0, self.branch_length/2).rect(self.branch_thick, self.branch_length).extrude(self.thick)
+        branch = branch.union(cq.Workplane("XY").circle(self.branch_thick/2).extrude(self.thick))
+        branch = branch.union(cq.Workplane("XY").moveTo(0, self.branch_length).circle(self.branch_thick / 2).extrude(self.thick))
+        return branch
+
+    def gen_leaves(self):
+        leaves = cq.Workplane("XY")
+        for i, leaf in enumerate(self.leaves):
+            leaves = leaves.union(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), radToDeg(self.leaf_angles[i])).translate((0,self.branch_length)))
+            # return leaf.get_2d().extrude(self.thick)
+
+        return leaves
+
+
+class MistletoeSprig:
+    def __init__(self, leaf_length=50, berry_diameter=8, thick=3):
+        self.leaf_length = leaf_length
+        self.berry_diameter = berry_diameter
+        self.thick = thick
+        self.leaves = self.gen_leaves()
+        self.berries = self.gen_berries()
+
+        self.leaves = self.leaves.cut(self.berries)
+
+    def get_leaves(self):
+        return self.leaves
+
+    def get_berries(self):
+        return self.berries
+
+    def gen_leaves(self):
+        leaves = cq.Workplane("XY")
+
+        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1),-50))
+        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0, 0, 0), (0, 0, 1), 50))
+
+        return leaves
+
+    def gen_berries(self):
+        berries = cq.Workplane("XY").tag("base")
+
+        total_berries = 3
+        berry_angle = math.pi*2/total_berries
+
+        for berry in range(total_berries):
+            angle = math.pi/2 + berry_angle*berry
+
+            pos = polar(angle, self.berry_diameter*0.55)
+
+            berries = berries.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
+
+        return berries

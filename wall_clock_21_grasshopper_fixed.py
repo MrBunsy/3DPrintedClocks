@@ -4,9 +4,9 @@ import clocks.clock as clock
 from cadquery import exporters
 
 '''
-second attempt at a grasshopper. Same as teh first attempt (clock 14) but with space to fit hands on properly and less drooping of the escape wheel and frame
-A regenerated clock 14 will benefit from the improvements to the plates, but this rejigged the gear train so there's more space
+The xmas grasshopper was my very first attempt at an anchor that directly drove the pendulum. unfortunatly large bearings added far more friction than I anticipated and it wasn't reliable
 
+This is an attempt to create yet another 1 day grasshopper with a small bearing directly driven anchor. Should be the same gears as clocks 15 and 17, so arbours could be exchanged.
 '''
 outputSTL=False
 
@@ -19,13 +19,13 @@ if 'show_object' not in globals():
 # random.seed(6)
 random.seed(7)
 
-clockName="wall_clock_17_xmas_retrofit"
+clockName="wall_clock_21_grasshopper"
 clockOutDir="out"
-gearStyle = clock.GearStyle.SNOWFLAKE
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
+gearStyle = clock.GearStyle.CURVES
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, xmas=True)
+escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
@@ -57,14 +57,14 @@ motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="clk 17", style="vertical", pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, pendulumFixingBearing = clock.getBearingInfo(10))
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
+                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
 pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
-hands = clock.Hands(style=clock.HandStyle.XMAS_TREE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+hands = clock.Hands(style=clock.HandStyle.CIRCLES, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
 assembly = clock.Assembly(plates, hands=hands, pulley=pulley)
 
@@ -73,18 +73,8 @@ assembly.printInfo()
 
 weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
 
+# show_object(plates.get_front_anchor_bearing_holder())
 show_object(assembly.getClock())
-
-leaf_thick=1
-pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR*2, cut_rect_width=pendulum.gapWidth+0.1, cut_rect_height=pendulum.gapHeight+0.1)
-
-pretty_bob = clock.ItemWithCosmetics(pendulum.getBob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
-
-wreath = clock.Wreath(diameter=pendulum.handAvoiderInnerD, thick=leaf_thick)
-cosmetics={"green": wreath.get_leaves(),
-           "red": wreath.get_berries()}
-
-pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
 
 if outputSTL:
 

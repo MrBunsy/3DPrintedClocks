@@ -62,7 +62,10 @@ METRIC_HALF_NUT_DEPTH_MULT=0.57
 COUNTERSUNK_HEAD_WIGGLE = 0.2
 COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.1
 
-
+def get_washer_diameter(metric_thread):
+    if metric_thread == 3:
+        return 6.8
+    raise ValueError("TODO measure more washers")
 
 def getNutContainingDiameter(metric_thread, wiggleRoom=0):
     '''

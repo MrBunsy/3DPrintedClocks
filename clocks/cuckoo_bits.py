@@ -188,7 +188,7 @@ def roman_numerals(number, height, workplane=None, thick=0.4, invert=False):
     diamond_height = width_for_calcs * 1#0.75
     #instead of a point, end in a blunt bit this tall
     # diamond_thinnest = diamond_height*0.1
-    v_top_width = width_for_calcs * 2.5
+    v_top_width = width_for_calcs * 3#2.5
     thin_width = width * 0.75
     thick_width = width*1.1
     widths={}

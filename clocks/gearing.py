@@ -1134,10 +1134,6 @@ class ArbourForPlate:
                     #cylinder passes through plates and out the front
                     cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
 
-                    #need a collet on the back
-                    collet = self.get_anchor_collet(square_side_length)
-
-                    shapes["collet"] = collet
 
                 else:
                     #cylinder passes only through the back plate and up to the anchor
@@ -1157,20 +1153,9 @@ class ArbourForPlate:
                 anchor = anchor.union(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(rod_length)).translate((0,0, anchor_thick + cylinder_length)))
                 anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
 
-                front_intact_thick = 0
-                if self.escapement_on_front:
-                    front_intact_thick = 1
-                #cut a hole through everything except an optional thin bit - so the rod isn't visible
-                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height).translate((0,0,front_intact_thick)))
-                #end-shake limiting collet screwhole
-
-                if self.escapement_on_front:
-                    #need a hole for the collet on the back to screw into
-                    screwhole_z = anchor_thick + cylinder_length + self.collet_thick/2
-                    anchor = anchor.cut(cq.Workplane("XZ").circle(self.collet_screws.metric_thread/2).extrude(square_side_length).translate((0,square_side_length, screwhole_z)))
-                else:
-                    #anchor is between the plates, make 'base' of cylinder thicker so it can't go through the bearing
-                    anchor = anchor.union(cq.Workplane("XY").circle(self.bearing.innerSafeD/2).circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(self.distance_from_back + self.arbour.escapement.getAnchorThick()))
+                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height))
+                #anchor is between the plates, make 'base' of cylinder thicker so it can't go through the bearing
+                anchor = anchor.union(cq.Workplane("XY").circle(self.bearing.innerSafeD/2).circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(self.distance_from_back + self.arbour.escapement.getAnchorThick()))
 
             else:
                 '''
@@ -2091,9 +2076,16 @@ class Arbour:
 
 class MotionWorks:
 
+    #enough for two half height nuts, a washer and a slightly compressed spring washer to be contained in the base of the cannon pinion
+    STANDARD_INSET_DEPTH = 4.5
+
     def __init__(self, arbourD=3, thick=3, pinionThick=-1, module=1, minuteHandThick=3, extra_height=0,
-                 style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None):
+                 style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None, inset_at_base=-1):
         '''
+
+        inset_at_base - if >0 (usually going to want just less than TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT) then inset the bearing or create a space large enoguh
+        for the two locked nuts, washer and spring washer. this way the motion works can be closer to the clock plate
+
         thick is thickness of the wheels
         pinionthick is double thick by default, can be overriden
         minuteHolderTotalHeight - extra height above the minimum
@@ -2127,6 +2119,8 @@ class MotionWorks:
         self.style=style
         self.compact = compact
 
+        self.inset_at_base = inset_at_base
+
         self.strikeTrigger=strikeTrigger
         #angle the hour strike should be at
         self.strikeHourAngleDeg=strikeHourAngleDeg
@@ -2140,6 +2134,8 @@ class MotionWorks:
         self.compensateLooseArbour = compensateLooseArbour
 
         self.bearing = bearing
+
+        self.inset_at_base_r = (get_washer_diameter(self.arbourD) + 1)/2
 
         self.cannonPinionPinionThick = self.pinionThick
         self.calculateGears()
@@ -2168,6 +2164,7 @@ class MotionWorks:
 
         if self.bearing is not None:
             self.minuteHandHolderD = self.bearing.outerD + 4
+            self.inset_at_base_r = self.bearing.outerD/2
             self.holeD = self.bearing.outerSafeD
             self.minuteHandHolderSize = self.bearing.outerD + 3
             # if there is a bearing then there's a rod through the centre for the second hand and the minute hand is friction fit like the hour hand
@@ -2206,6 +2203,10 @@ class MotionWorks:
 
     def get_cannon_pinion_total_height(self):
         return self.cannonPinionTotalHeightAboveBase + self.cannonPinionBaseHeight
+
+    def get_cannon_pinion_effective_height(self):
+        #because the inset at the base means the locking nuts and spring washer sit inside the motion works
+        return self.get_cannon_pinion_total_height() - self.inset_at_base
 
     def calc_bearing_holder_thick(self):
 
@@ -2270,17 +2271,19 @@ class MotionWorks:
                                 module0 = arbourDistance / ((w0 + p0) / 2)
                                 module1 = arbourDistance / ((w1 + p1) / 2)
 
+                                min_cannon_pinion_r = 0
+
                                 if self.bearing is not None:
-                                    #v.slow
-                                    potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensateLooseArbour)
-                                    # pinion_dedendum_factor_estimate = 1.8 * 0.95 + 0.4
-                                    # pinion_min_r = (module0 * p0)/2 - pinion_dedendum_factor_estimate * module0
-                                    # if self.bearing.outerD <= pinion_min_r * 2 - 1:
-                                    pinion_min_r = potential_pair.pinion.getMinRadius()
-                                    if self.bearing.outerD > potential_pair.pinion.getMinRadius() * 2 - 1:
-                                        #not enough space to slot in the bearing
-                                        # print("pinion_min_r",pinion_min_r)
-                                        continue
+                                    min_cannon_pinion_r = self.bearing.outerD/2
+                                if self.inset_at_base > 0:
+                                    min_cannon_pinion_r = self.inset_at_base_r
+
+                                #v.slow
+                                potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensateLooseArbour)
+                                if min_cannon_pinion_r > potential_pair.pinion.getMinRadius() - 0.9:
+                                    #not enough space to slot in the bearing
+                                    # print("pinion_min_r",pinion_min_r)
+                                    continue
 
                                 option = {'ratio':ratio, 'module0': module0, 'module1':module1, 'teeth':[w0,p0,w1,p1]}
                                 options.append(option)
@@ -2470,9 +2473,12 @@ class MotionWorks:
             pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outerD / 2).extrude(self.bearing.height).translate((0, 0, self.get_cannon_pinion_total_height() - self.bearing.height)))
 
 
-            pinion = pinion.cut(getHoleWithHole(innerD=self.holeD, outerD=self.bearing.outerD, deep=self.bearing.height))
+            pinion = pinion.cut(getHoleWithHole(innerD=self.holeD, outerD=self.bearing.outerD, deep=self.bearing.height + self.inset_at_base))
 
-
+        elif self.inset_at_base > 0:
+            # cut out space for the nuts/bearing to go further into the cannon pinion, so it can be closer to the front plate
+            # pinion = pinion.cut(cq.Workplane("XY").circle(self.inset_at_base_r).extrude(self.inset_at_base))
+            pinion = pinion.cut(getHoleWithHole(innerD=self.holeD, outerD=self.inset_at_base_r*2, deep=self.inset_at_base))
 
         return pinion
 

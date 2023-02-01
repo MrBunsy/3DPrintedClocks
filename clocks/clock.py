@@ -925,6 +925,10 @@ class SimpleClockPlates:
         #is the weight danging from a pulley? (will affect screwhole and give space to tie other end of cord)
         self.usingPulley = goingTrain.usePulley
 
+        #the hole for the key to slot through is big enough for the key to slot partially into the front plate
+        #HACK this is calculated when generating the front plate
+        self.front_plate_has_key_hole = False
+
         #just for the first prototype
         self.anchorHasNormalBushing=True
         self.motionWorks = motionWorks
@@ -962,10 +966,6 @@ class SimpleClockPlates:
         # how much space to leave around the edge of the gears for safety
         self.gearGap = 3
         self.smallGearGap = 2
-
-        #if this has a key
-        self.key_offset_from_front_plate = 1
-
 
 
 
@@ -1302,8 +1302,11 @@ class SimpleClockPlates:
             #calculate dial height after motion works gears have been generated, in case the height changed with the bearing
             # height of dial from top of front plate
             # previously given 8mm of clearance, but this was more than enough, so reducing down to 4
-            self.dial_z = self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.dial.thick - 4
-            self.top_of_hands_z = self.motionWorks.get_cannon_pinion_total_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+            self.dial_z = self.bottom_of_hour_hand_z() - self.dial.thick - 3
+            if self.goingTrain.has_seconds_hand() and not self.centred_second_hand:
+                #mini second hand! give a smidge more clearance
+                self.dial_z -= 2
+            self.top_of_hands_z = self.motionWorks.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
             print("dial z", self.dial_z)
 
             if self.goingTrain.has_seconds_hand():
@@ -1322,6 +1325,17 @@ class SimpleClockPlates:
             else:
                 self.dial.configure_dimensions(support_length=self.dial_z, support_d=self.plateWidth)
 
+        # if this has a key (do after we've calculated the dial z)
+        if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
+            self.calc_winding_key_info()
+
+
+        self.front_z = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False)
+
+
+    def bottom_of_hour_hand_z(self):
+        return self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
+
     def front_plate_has_flat_front(self):
         '''
         If there's nothing sticking out of the front plate it can be printed the other way up - better front surface and no hole-in-hole needed for bearings
@@ -1333,6 +1347,45 @@ class SimpleClockPlates:
             #ratchet is on the front
             return False
         return True
+
+    def need_front_anchor_bearing_holder(self):
+        return self.escapementOnFront and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+
+    def get_front_anchor_bearing_holder_total_length(self):
+        '''
+        full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
+        '''
+        if self.need_front_anchor_bearing_holder():
+            holder_long = self.arboursForPlate[-1].front_anchor_from_plate + self.endshake + self.arboursForPlate[-1].arbour.escapement.getAnchorThick() + self.getPlateThick(back=False)
+        else:
+            holder_long = 0
+        return holder_long
+
+    def get_front_anchor_bearing_holder(self, for_printing=True):
+
+        holder_thick = self.getPlateThick(back=False)
+
+        pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
+
+        holder = cq.Workplane("XY").moveTo(-self.topPillarR, self.topPillarPos[1]).radiusArc((self.topPillarR, self.topPillarPos[1]), self.topPillarR)\
+            .lineTo(self.topPillarR, self.bearingPositions[-1][1]).radiusArc((-self.topPillarR, self.bearingPositions[-1][1]), self.topPillarR).close().extrude(holder_thick)
+
+        holder = holder.union(cq.Workplane("XY").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(self.plateWidth / 2 + 0.0001).extrude(pillar_tall + holder_thick))
+
+
+        holder = self.cut_anchor_bearing_in_standoff(holder)
+        #rotate into position to cut fixing holes
+        holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
+        holder= holder.cut(self.get_fixing_screws_cutter().translate((0,0,-self.front_z)))
+
+        if for_printing:
+            #rotate back
+            holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
+            holder = holder.translate(npToSet(np.multiply(self.topPillarPos, -1)))
+        else:
+            holder = holder.translate((0,0, self.front_z))
+
+        return holder
 
     def need_motion_works_holder(self):
         '''
@@ -1466,7 +1519,7 @@ class SimpleClockPlates:
         minWidth = maxX - minX
         minHeight = maxY - minY
 
-        print("screw hold distance", minHeight)
+        print("screw hole distance", minHeight)
 
         border = drillHoleD*2
         thick = 2
@@ -1917,11 +1970,16 @@ class SimpleClockPlates:
         for fixingPos in self.frontPlateFixings:
             # holes and embedded nuts for the screws that hold the front plate to the back plate's pillars
 
+            z = self.front_z
+            if fixingPos in self.frontPlateTopFixings and self.need_front_anchor_bearing_holder():
+                z += self.get_front_anchor_bearing_holder_total_length()
+            print("fixing pos: {}, z:{}".format(fixingPos, z))
+
             # embedded nuts!
             # extra thick layer because plates are huge and usually printed with 0.3 layer height
             cutter = cutter.add(self.fixingScrews.getNutCutter(withBridging=True, height=embedded_nut_hole_height, layerThick=LAYER_THICK_EXTRATHICK).translate((fixingPos[0], fixingPos[1], self.embeddedNutHeightForFrontPlateFixings)))
 
-            cutter = cutter.add(self.fixingScrews.getCutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False))))
+            cutter = cutter.add(self.fixingScrews.getCutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
 
 
         if self.backPlateFromWall > 0 or self.pillars_separate:
@@ -2176,7 +2234,10 @@ class SimpleClockPlates:
 
             if bearingInfo.bearingOuterD > self.plateWidth - self.bearingWallThick*2:
                 #this is a chunkier bearing, make the plate bigger
-                plate = plate.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back))
+                try:
+                    plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back)))
+                except:
+                    print("wasn't able to make plate bigger for bearing")
             plate = plate.cut(self.getBearingPunch(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
@@ -2306,14 +2367,22 @@ class SimpleClockPlates:
         # need an extra chunky hole for the big bearing that the key slots through
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
             cordWheel = self.goingTrain.poweredWheel
+            front_hole_d = cordWheel.bearing.outerSafeD
+            self.front_plate_has_key_hole = False
+            key_hole_d = self.goingTrain.poweredWheel.keyWidth+1.5
+            if key_hole_d > front_hole_d and key_hole_d < cordWheel.bearing.bearingOuterD - 1:
+                #make the hole just big enough to fit the key into
+                print("Making the front hole just big enough for the cord key")
+                self.front_plate_has_key_hole = True
+                front_hole_d = key_hole_d
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
             if self.front_plate_has_flat_front():
                 #can print front-side on the build plate, so the bearing holes are printed on top
                 cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearing.bearingOuterD/2).extrude(cordWheel.bearing.bearingHeight)
-                cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearing.outerSafeD / 2).extrude(plateThick)
+                cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(front_hole_d / 2).extrude(plateThick)
             else:
-                cordBearingHole = getHoleWithHole(cordWheel.bearing.outerSafeD, cordWheel.bearing.bearingOuterD, cordWheel.bearing.bearingHeight, layerThick=LAYER_THICK_EXTRATHICK)
-                cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(cordWheel.bearing.outerSafeD / 2).extrude(plateThick)
+                cordBearingHole = getHoleWithHole(front_hole_d, cordWheel.bearing.bearingOuterD, cordWheel.bearing.bearingHeight, layerThick=LAYER_THICK_EXTRATHICK)
+                cordBearingHole = cordBearingHole.faces(">Z").workplane().circle(front_hole_d / 2).extrude(plateThick)
 
             plate = plate.cut(cordBearingHole.translate((self.bearingPositions[0][0], self.bearingPositions[0][1],0)))
 
@@ -2385,20 +2454,57 @@ class SimpleClockPlates:
 
         anchor = self.goingTrain.escapement.g
 
+    def calc_winding_key_info(self):
+        '''
+        set front_plate_has_key_hole and key_offset_from_front_plate
+
+        hacky side effect: will set key length on cord wheel
+        '''
+
+        if self.goingTrain.poweredWheel.type != PowerType.CORD or not self.goingTrain.poweredWheel.useKey:
+            raise ValueError("No winding key on this clock!")
+        cordWheel = self.goingTrain.poweredWheel
+        front_hole_d = cordWheel.bearing.outerSafeD
+        self.front_plate_has_key_hole = False
+
+        key_within_front_plate = self.getPlateThick(back=False) - self.goingTrain.poweredWheel.bearing.height
+
+        self.key_hole_d = self.goingTrain.poweredWheel.keyWidth + 1.5
+        if self.key_hole_d > front_hole_d and self.key_hole_d < cordWheel.bearing.bearingOuterD - 1:
+            # make the hole just big enough to fit the key into
+            print("Making the front hole just big enough for the cord key")
+            self.front_plate_has_key_hole = True
+            #offset *into* the front plate
+            self.key_offset_from_front_plate = -key_within_front_plate
+        else:
+            self.key_offset_from_front_plate = 1
+
+        #hack - set key size here
+        # if self.dial is not None:
+        #     self.goingTrain.poweredWheel.keySquareBitHeight = self.dial_z + self.dial.thick + key_within_front_plate
+        # else:
+        #this works out the same as above, but I'm trying to future proof at least slightly
+        #note - do this relative to the hour hand, not the dial, because there may be more space for the hour hand to avoid the second hand
+        self.goingTrain.poweredWheel.keySquareBitHeight = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
+
+
     def get_winding_key(self, for_printing=True):
         key_body = None
 
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
             #height of square bit above front plate, minus one so we're not scrapign the front plate
-            key_hole_deep =  self.goingTrain.poweredWheel.keySquareBitHeight  + self.goingTrain.poweredWheel.bearing.height - self.getPlateThick(back=False) - self.key_offset_from_front_plate - self.endshake
+            square_bit_inside_front_plate_length = self.getPlateThick(back=False) - self.goingTrain.poweredWheel.bearing.height
+
+            #key can only reach the front of the front plate if not front_plate_has_key_hole
+            key_hole_deep =  self.goingTrain.poweredWheel.keySquareBitHeight  - ( square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
             if self.dial is not None and self.centred_second_hand:
-                # just so it doesn't clip the dial
+                # just so it doesn't clip the dial (the key is outside the dial)
                 cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
                 # reach to the centre of the dial (just miss the hands)
                 handle_length = self.hands_position[1] - (self.dial.outside_d / 2 - self.dial.dial_width / 2) - self.bearingPositions[0][1] - 5
             else:
-                # above the hands
-                cylinder_length = self.top_of_hands_z + 10
+                # above the hands (the key is inside the dial)
+                cylinder_length = self.top_of_hands_z + 6 - self.key_offset_from_front_plate
                 # avoid the centre of the hands
                 handle_length = self.hands_position[1] - self.bearingPositions[0][1] - 10
 
@@ -2709,12 +2815,11 @@ class Dial:
         return detail
 
     def get_halfs(self, shape):
-        halves = []
-        for y in [-1,0]:
-            half_box = cq.Workplane("XY").rect(self.outside_d, self.outside_d/2).extrude(self.thick + self.support_d).translate((0,y*self.outside_d/4))
-            #actually rotate by two and a half minutes so we don't slice through anything too complicated
-            half_box = half_box.rotate((0,0,0), (0,0,1), 2.5*360/60)
-            halves.append(shape.intersect(half_box))
+        top_includer = cq.Workplane("XY").rect(self.outside_d, self.outside_d/2).extrude(self.thick + self.support_d).translate((0,self.outside_d/4))
+        # actually rotate by two and a half minutes so we don't slice through anything too complicated
+        top_includer = top_includer.rotate((0, 0, 0), (0, 0, 1), -2.5 * 360 / 60).union(top_includer.rotate((0, 0, 0), (0, 0, 1), 2.5 * 360 / 60))
+
+        halves = [shape.intersect(top_includer), shape.cut(top_includer)]
 
         return halves
 
@@ -2841,7 +2946,7 @@ class Assembly:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
-                    rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_total_height() + self.hands.secondFixing_thick + self.hands.secondThick + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+                    rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + self.hands.secondFixing_thick + self.hands.secondThick + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
                 elif self.goingTrain.has_seconds_hand():
                     #little seconds hand
                     rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
@@ -2894,8 +2999,8 @@ class Assembly:
             # clock = clock.add(self.plates.getWallStandOff())
             # clock = clock.add(self.plates.getDrillTemplate(6))
 
-        if self.plates.extraFrontPlate:
-            clock = clock.add(self.plates.getExtraFrontPlate(forPrinting=False))
+        if self.plates.need_front_anchor_bearing_holder():
+            clock = clock.add(self.plates.get_front_anchor_bearing_holder(for_printing=False))
 
         #the wheels
         # arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1
@@ -2918,7 +3023,7 @@ class Assembly:
 
 
         #where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
-        motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+        motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
 
         time_min = self.timeMins
         time_hour = self.timeHours
@@ -2948,7 +3053,7 @@ class Assembly:
         # minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
         # hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
         hands = self.hands.getAssembled(time_minute = time_min, time_hour=time_hour, include_seconds=False ,gap_size = self.motionWorks.hourHandSlotHeight - self.hands.thick)
-
+        #total, not effective, height because that's been taken into accounr with motionworksZOffset
         minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset \
                       + self.motionWorks.get_cannon_pinion_total_height() - self.hands.thick
 

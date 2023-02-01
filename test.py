@@ -405,9 +405,19 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-dial = Dial(outside_d=200, style=DialStyle.ROMAN)
+# dial = Dial(outside_d=200, style=DialStyle.ROMAN)
+#
+# show_object(dial.get_dial())
 
-show_object(dial.get_dial())
+
+# leaf = MistletoeLeaf()
+#
+# show_object(leaf.get_2d())
+
+# twig = MistletoeLeafPair(seed=2)
+twig = MistletoeLeafPair()
+show_object(twig.get_branch())
+show_object(twig.get_leaves())
 
 # AnchorEscapement.get_with_45deg_pallets(teeth=30)
 # springArbour = SpringArbour(power_clockwise=True)
@@ -419,15 +429,16 @@ show_object(dial.get_dial())
 # print("Outputting ", out)
 # exporters.export(springArbour.getArbour(), out)
 
-#
-# motionWorks = MotionWorks(extra_height=20, style=GearStyle.CURVES, bearing=getBearingInfo(3), module=2, compensateLooseArbour=False, compact=True)
-# #
-# hands = Hands(style=HandStyle.BREGUET, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-#                     hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
-#                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
-# #
-# #
-# # show_object(hands.getAssembled())
+#, bearing=getBearingInfo(3)
+# motionWorks = MotionWorks(extra_height=20, style=GearStyle.CURVES, module=1, compensateLooseArbour=False, compact=True, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT)
+# motionWorks.calculateGears(35)
+# # #
+# # hands = Hands(style=HandStyle.BREGUET, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+# #                     hourfixing_d=motionWorks.getHourHandHoleD(), length=77.5, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
+# #                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
+# # #
+# # #
+# # # show_object(hands.getAssembled())
 # show_object(motionWorks.getAssembled())
 # show_object(hands.getHand(hour=False, minute=False, second=True))
 
@@ -460,9 +471,10 @@ show_object(dial.get_dial())
 # show_object(line)
 
 # baroque_hands = BaroqueHands(base_r=23/2, total_length=100, thick=3, line_width=2.4)
-#
-# show_object(baroque_hands.hour_hand())
-# show_object(baroque_hands.minute_hand().translate((30,0,0)))
+# #
+# # show_object(baroque_hands.hour_hand())
+# # show_object(baroque_hands.minute_hand().translate((30,0,0)))
+# show_object(baroque_hands.second_hand())
 
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
