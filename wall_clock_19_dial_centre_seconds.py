@@ -7,6 +7,7 @@ from clocks.clock import *
 from clocks.utility import *
 from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
+from clocks.dial import *
 
 '''
 Based on wall clock 07. Shortest pendulum that can provide a seconds hand. 30 hour runtime, but chain driven
@@ -58,7 +59,7 @@ module_sizes = None
 train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3,
                pendulumFixing=pendulumFixing, module_sizes=module_sizes)
 # train.printInfo(weight_kg=0.75-0.15)
-train.printInfo(weight_kg=0.75)
+train.printInfo(weight_kg=0.42)
 
 #reprinting these after the work to reduce module size back to 1, hoping it removes the jam problem
 motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=1, compensateLooseArbour=False, compact=True, thick=1.8, pinionThick=8)

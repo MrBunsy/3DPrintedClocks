@@ -25,6 +25,9 @@ second wall fixing DONE
 front plate printed front-side on the textures sheet DONE
 back plate text alignment to avoid wall standoff (bodged)
 
+
+retrofit plan:
+reprint bottom pillar and cord wheel, need to force bottom pillar radius and ratchet radius.
 '''
 outputSTL = False
 
@@ -49,8 +52,8 @@ lift=4
 drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
-
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1400, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
+#this clock was originally printed with the maxweightdrodp of 1400 by accident. a cord wheel of diameter 25, keeping the existing ratio, works to get it back down to 1200
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 
@@ -60,7 +63,7 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 #original test
 # train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=18, style=gearStyle, useKey=True, preferedDiameter=42.5, looseOnRod=False)
 #think this is promising for good compromise of size
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
+train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, looseOnRod=False, prefer_small=True)
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
 
@@ -71,13 +74,24 @@ train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThic
 # train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=40,o_ring_diameter=2)
 # train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=35,o_ring_diameter=2, prefer_small=True)
 
-
+train.setChainWheelRatio([67, 11])
 
 pendulumSticksOut=20
 
 train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=2)
+'''
+Powered wheel diameter: 29
+[67, 11]
+layers of cord: 3, cord per hour: 1.8cm to 1.5cm min diameter: 29.0mm
+Cord used per layer: [1319.468914507713, 1407.4335088082273, 73.09757668405973]
+runtime: 174.7hours using 2.8m of cord/chain for a weight drop of 1400. Chain wheel multiplier: 6.1 ([67, 11])
+With a weight of 2kg, this results in an average power usage of 43.7μW
+Ratchet needs M2 (CS) screws of length 8mm
+cord wheel screw (m3) length between 20.6 22.6
+Cordwheel power varies from 42.2μW to 47.8μW
+'''
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 cordwheel = train.getArbourWithConventionalNaming(0)

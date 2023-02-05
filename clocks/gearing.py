@@ -1133,7 +1133,8 @@ class ArbourForPlate:
                 if self.escapement_on_front:
                     #cylinder passes through plates and out the front
                     cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
-
+                    if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
+                        anchor = self.arbour.escapement.getFrame(leave_in_situ=False)
 
                 else:
                     #cylinder passes only through the back plate and up to the anchor
@@ -1565,7 +1566,7 @@ class Arbour:
         #escapement controls wheel thickness
         arbour_or_pivot_r = self.pinion.getMaxRadius()
         if self.escapementOnFront:
-            arbour_or_pivot_r = self.arbourD
+            arbour_or_pivot_r = self.arbourD*2
         wheel = self.escapement.getWheel(style = self.style, arbour_or_pivot_r=arbour_or_pivot_r, holeD=self.holeD)
 
 

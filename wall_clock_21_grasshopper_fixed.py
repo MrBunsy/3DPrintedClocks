@@ -25,7 +25,7 @@ gearStyle = clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+escapement = clock.GrasshopperEscapement.get_harrison_compliant_grasshopper()#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,

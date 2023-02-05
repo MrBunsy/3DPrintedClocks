@@ -577,7 +577,7 @@ class GoingTrain:
         drop_m = self.maxWeightDrop/1000
         power = weight_kg * GRAVITY * drop_m / (runtime_hours*60*60)
         power_uW = power * math.pow(10, 6)
-
+        #for reference, the hubert hurr eight day cuckoo is aproximately 34uW
         print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.getCordUsage() / 1000,self.maxWeightDrop, chainRatio, chainRatios))
         print("With a weight of {}kg, this results in an average power usage of {:.1f}μW".format(weight_kg, power_uW))
 
@@ -1356,14 +1356,17 @@ class SimpleClockPlates:
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
         if self.need_front_anchor_bearing_holder():
-            holder_long = self.arboursForPlate[-1].front_anchor_from_plate + self.endshake + self.arboursForPlate[-1].arbour.escapement.getAnchorThick() + self.getPlateThick(back=False)
+            holder_long = self.arboursForPlate[-1].front_anchor_from_plate  + self.arboursForPlate[-1].arbour.escapement.getAnchorThick() + self.get_front_anchor_bearing_holder_thick()
         else:
             holder_long = 0
         return holder_long
 
+    def get_front_anchor_bearing_holder_thick(self):
+        return self.pendulumFixingBearing.height + 1
+
     def get_front_anchor_bearing_holder(self, for_printing=True):
 
-        holder_thick = self.getPlateThick(back=False)
+        holder_thick = self.get_front_anchor_bearing_holder_thick()
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
 
@@ -2603,248 +2606,6 @@ class SimpleClockPlates:
         #             exporters.export(extensionShape, out)
 
 
-
-class Dial:
-    '''
-    should really be created by the plates class
-
-    using filament switching to change colours so the supports can be printed to the back of the dial
-    '''
-    def __init__(self, outside_d, style=DialStyle.LINES_ARC, seconds_style=None, fixing_screws=None,thick=2, top_fixing=True, bottom_fixing=False):
-        '''
-        Just style and fixing info, dimensions are set in configure_dimensions
-        '''
-        self.style = style
-        self.seconds_style = seconds_style
-        if self.seconds_style is None:
-            self.seconds_style = self.style
-        self.fixing_screws = fixing_screws
-        if self.fixing_screws is None:
-            self.fixing_screws = MachineScrew(metric_thread=3, countersunk=True, length=25)
-        self.thick = thick
-        #is there a pillar at the top?
-        self.top_fixing = top_fixing
-        #is there a pillar at the bottom?
-        self.bottom_fixing = bottom_fixing
-
-        #something for debugging
-        self.configure_dimensions(support_length=30, support_d=15, outside_d=outside_d)
-
-
-    def configure_dimensions(self, support_length, support_d, outside_d=-1, second_hand_mini_dial_d=0, second_hand_relative_pos=None):
-        '''
-        since the dimensions aren't known until the plates have been calculated, the main constructor is for storing the style and this actually sets the size
-        '''
-        self.support_length = support_length
-
-        self.support_d = support_d
-        if outside_d > 0:
-            self.outside_d = outside_d
-            # else leave the default
-            self.dial_width = self.outside_d * 0.1
-        # if >0, add a mini dial for the second hand
-        self.second_hand_mini_dial_d = second_hand_mini_dial_d
-        # when the second hand is here relative to the centre of the main hands
-        self.second_hand_relative_pos = second_hand_relative_pos
-        if self.support_d > self.dial_width:
-            self.dial_width = self.support_d
-
-        self.inner_r = self.outside_d/2 - self.dial_width
-
-        self.seconds_dial_width = self.dial_width * 0.3  # self.second_hand_mini_dial_d * 0.4
-
-        self.dial_detail_from_edges = self.outside_d * 0.01
-        self.seconds_dial_detail_from_edges = self.dial_detail_from_edges * 0.75
-
-    def get_fixing_positions(self):
-        fixing_positions = []
-        if self.top_fixing:
-            fixing_positions += [(-self.support_d / 4, self.outside_d / 2 - self.dial_width / 2), (self.support_d / 4, self.outside_d / 2 - self.dial_width / 2)]
-
-        if self.bottom_fixing:
-            fixing_positions += [(-self.support_d / 4, -(self.outside_d / 2 - self.dial_width / 2)), (self.support_d / 4, -(self.outside_d / 2 - self.dial_width / 2))]
-        return fixing_positions
-
-
-    def get_circles_detail(self,outer_r, dial_width, from_edge, thick_fives=False):
-        '''
-        In the style of two concentric circles with lines along the radii between them
-        '''
-        line_width = LINE_WIDTH*2
-        inner_circle_r = outer_r - dial_width + from_edge + line_width/2
-        outer_circle_r = outer_r - from_edge - line_width/2
-
-        lines = 60
-        dA = math.pi * 2 / lines
-        line_thick = LAYER_THICK*2
-
-        detail = cq.Workplane("XY").tag("base")
-        detail = detail.add(cq.Workplane("XY").circle(outer_circle_r + line_width / 2).circle(outer_circle_r - line_width / 2).extrude(line_thick))
-        detail = detail.add(cq.Workplane("XY").circle(inner_circle_r + line_width / 2).circle(inner_circle_r - line_width / 2).extrude(line_thick))
-
-
-        for i in range(lines):
-            big = i % 5 == 0 and thick_fives
-            this_line_width = line_width*2 if big else line_width
-            angle = math.pi / 2 - i * dA
-
-            detail = detail.add(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(line_thick).translate((0,(outer_circle_r + inner_circle_r)/2)).rotate((0,0,0), (0,0,1),radToDeg(angle)))
-
-        return detail
-
-    def get_roman_numerals_detail(self, outer_r, dial_width, from_edge, with_lines=True):
-
-        outer_ring_width = from_edge*2
-
-        centre_r = outer_r - dial_width/2
-        numeral_r = centre_r - outer_ring_width/2
-        numbers = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
-        detail = cq.Workplane("XY")
-        numeral_height = dial_width - 2*from_edge - outer_ring_width
-        line_thick = LAYER_THICK * 2
-
-        for i,number in enumerate(numbers):
-            angle = math.pi/2 + i*math.pi*2/12
-            pos = polar(angle, numeral_r)
-            detail = detail.add(roman_numerals(number, numeral_height, thick=line_thick, invert=True).rotate((0,0,0), (0,0,1), radToDeg(angle-math.pi/2)).translate(pos))
-
-        # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
-        detail = detail.add(self.get_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
-
-        return detail
-
-    def get_lines_detail(self, outer_r, dial_width, from_edge, thick_fives=True):
-        '''
-        In the style of standalone lines for each minute, with the five minutes thicker
-
-        get the bits to be printed in a different colour
-        '''
-        # r = self.outside_d / 2
-        # from_edge = self.outside_d * 0.01
-        # line_inner_r = self.inner_r + from_edge
-        r = outer_r
-        line_inner_r = outer_r - dial_width + from_edge
-        line_outer_r = r - from_edge
-
-        lines = 60
-
-        dA = math.pi * 2 / lines
-
-        line_thick = LAYER_THICK * 2
-
-        big_line_thick = 3
-        small_line_thick = 1
-        #the angle the line spreads out over
-        big_angle = math.asin((big_line_thick / 2) / r) * 2
-        small_angle = math.asin((small_line_thick / 2) / r) * 2
-
-        detail = cq.Workplane("XY").tag("base")
-
-        for i in range(lines):
-            big = i % 5 == 0 and thick_fives
-            line_angle = big_angle if big else small_angle
-            angle = math.pi / 2 - i * dA
-
-            bottom_left = polar(angle - line_angle / 2, line_inner_r)
-            bottom_right = polar(angle + line_angle / 2, line_inner_r)
-            top_right = polar(angle + line_angle / 2, line_outer_r)
-            top_left = polar(angle - line_angle / 2, line_outer_r)
-            detail = detail.workplaneFromTagged("base").moveTo(bottom_left[0], bottom_left[1]).radiusArc(bottom_right, line_inner_r).lineTo(top_right[0], top_right[1]).radiusArc(top_left, line_outer_r).close().extrude(line_thick)
-
-        return detail
-
-    def get_main_dial_detail(self):
-        '''
-        detailing for the big dial
-        '''
-        if self.style == DialStyle.LINES_ARC:
-            return self.get_lines_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
-        elif self.style == DialStyle.CONCENTRIC_CIRCLES:
-            return self.get_circles_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
-        elif self.style == DialStyle.ROMAN:
-            return self.get_roman_numerals_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
-        raise ValueError("Unsupported dial type")
-
-    def get_seconds_dial_detail(self):
-        dial = None
-        if self.seconds_style == DialStyle.LINES_ARC:
-            dial = self.get_lines_detail(outer_r=self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
-        elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
-            dial = self.get_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
-
-        if dial is not None:
-            dial = dial.translate(self.second_hand_relative_pos)
-
-        return dial
-
-    def get_dial(self):
-        r = self.outside_d / 2
-
-        dial = cq.Workplane("XY").circle(r).circle(self.inner_r).extrude(self.thick)
-
-
-
-
-        self.inner_r = self.outside_d / 2 - self.dial_width
-
-
-        if self.support_length > 0:
-            support = cq.Workplane("XY").circle(self.support_d/2).extrude(self.support_length)
-            if self.top_fixing:
-                dial = dial.union(support.translate((0,r - self.dial_width/2, self.thick)))
-            if self.bottom_fixing:
-                dial = dial.union(support.translate((0, -(r - self.dial_width / 2), self.thick)))
-
-            for fixing_pos in self.get_fixing_positions():
-                dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
-
-        if self.second_hand_mini_dial_d > 0:
-            dial = dial.union(cq.Workplane("XY").circle(self.second_hand_mini_dial_d/2).circle(self.second_hand_mini_dial_d/2-self.seconds_dial_width).extrude(self.thick).translate(self.second_hand_relative_pos))
-            dial = dial.cut(self.get_seconds_dial_detail())
-
-        #cut main detail after potential seconds dial in case of some overlap
-        dial = dial.cut(self.get_main_dial_detail())
-
-        return dial
-
-    def get_all_detail(self):
-        detail = self.get_main_dial_detail()
-        if self.second_hand_mini_dial_d > 0:
-            detail = detail.add(self.get_seconds_dial_detail())
-
-        return detail
-
-    def get_halfs(self, shape):
-        top_includer = cq.Workplane("XY").rect(self.outside_d, self.outside_d/2).extrude(self.thick + self.support_d).translate((0,self.outside_d/4))
-        # actually rotate by two and a half minutes so we don't slice through anything too complicated
-        top_includer = top_includer.rotate((0, 0, 0), (0, 0, 1), -2.5 * 360 / 60).union(top_includer.rotate((0, 0, 0), (0, 0, 1), 2.5 * 360 / 60))
-
-        halves = [shape.intersect(top_includer), shape.cut(top_includer)]
-
-        return halves
-
-
-    def outputSTLs(self, name="clock", path="../out", max_wide=250, max_long=210):
-
-        if self.outside_d < min(max_wide, max_long):
-            out = os.path.join(path, "{}_dial.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_dial(), out)
-
-            out = os.path.join(path, "{}_dial_detail.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_all_detail(), out)
-        else:
-            dials = self.get_halfs(self.get_dial())
-            details = self.get_halfs(self.get_all_detail())
-            for i in range(len(dials)):
-                out = os.path.join(path, "{}_dial_half{}.stl".format(name, i))
-                print("Outputting ", out)
-                exporters.export(dials[i], out)
-
-                out = os.path.join(path, "{}_dial_detail_half{}.stl".format(name, i))
-                print("Outputting ", out)
-                exporters.export(details[i], out)
 
 class Assembly:
     '''

@@ -770,6 +770,8 @@ class GrasshopperEscapement:
         self.geometry = {}
 
         self.frame_thick = frame_thick
+        # #for front mounted grasshopper, split the frame into two parts
+        # self.frame_back_thick = frame_thick*0.5
         self.wheel_thick = wheel_thick
         self.pallet_thick = pallet_thick
         #angle from the arm to the nib, from the arm pivot, so the arm stays out the way of the wheel
@@ -1493,7 +1495,7 @@ class GrasshopperEscapement:
         #comply with expected interface
         return self.getFrame(leave_in_situ=False)
 
-    def getFrame(self, leave_in_situ=False):
+    def getFrame(self, leave_in_situ=False, thick=-1):
         '''
         Get the anchor-like part (fully 3D) which attaches to the arbour
         rotated and translated so taht (0,0) is in the centre of its arbour
@@ -1501,12 +1503,15 @@ class GrasshopperEscapement:
 
 
         '''
+        #optionally override the thickness - so we have more options on how to print it, including optionally in two parts
+        if thick < 0:
+            thick =self.frame_thick
         holeD = self.arbourD
         arm_wide = self.screws.metric_thread * 2.5
         arbour_circle_r = self.screws.metric_thread * 3.5/2
 
         #make taller so it's rigid on the arbour? Not sure how to do this iwthout it potentially clashing with pallet arms
-        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arm_wide/2).extrude(self.frame_thick)
+        frame = cq.Workplane("XY").tag("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arm_wide/2).extrude(thick)
 
         #larger around the arbour - do this instead in ArboursForPlate, where we have a better idea of how the escapement is laid out
         # frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arbour_circle_r).extrude(self.frame_thick)
@@ -1525,17 +1530,17 @@ class GrasshopperEscapement:
         frame = frame.lineTo(entry_side_end[0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, entry_side_end[1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
         endArc = (entry_side_end[0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, entry_side_end[1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
         frame = frame.radiusArc(endArc, -arm_wide * 0.50001).lineTo(self.geometry["Z"][0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
-        frame = frame.close().extrude(self.frame_thick)
+        frame = frame.close().extrude(thick)
 
         line_entry_end_to_entry_composer_rest = Line(entry_side_end, anotherPoint=entry_composer_rest)
         holder_r = self.screws.metric_thread*1.5
         arm_to_rest_distance = distanceBetweenTwoPoints(entry_composer_rest, entry_side_end)
         holder_circle_distance = arm_to_rest_distance + (holder_r - self.screws.metric_thread/2)
         holder_circle_centre = np.add(entry_side_end, np.multiply(line_entry_end_to_entry_composer_rest.dir, holder_circle_distance))
-        frame = frame.cut(cq.Workplane("XY").moveTo(holder_circle_centre[0], holder_circle_centre[1]).circle(holder_r).extrude(self.frame_thick))
+        frame = frame.cut(cq.Workplane("XY").moveTo(holder_circle_centre[0], holder_circle_centre[1]).circle(holder_r).extrude(thick))
 
         # cut hole for exit pallet pivot
-        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).extrude(self.frame_thick))
+        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).extrude(thick))
 
 
         #exit side
@@ -1546,7 +1551,7 @@ class GrasshopperEscapement:
         frame = frame.lineTo(self.geometry["G"][0] + dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] + dir_ZG_perpendicular[1]*arm_wide*0.5)
         endArc = (self.geometry["G"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)
         frame = frame.radiusArc(endArc, -arm_wide*0.50001).lineTo(self.geometry["Z"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["Z"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)
-        frame = frame.close().extrude(self.frame_thick)
+        frame = frame.close().extrude(thick)
 
         #exit composer rest
         exit_composer_rest = self.getComposerRestScrewCentrePos(self.geometry["Cstar"], self.geometry["G"])
@@ -1564,10 +1569,10 @@ class GrasshopperEscapement:
         #radiusArc(npToSet(exit_composer_rest_top_right), arm_wide/2)
         #lineTo(exit_composer_rest_top_right[0], exit_composer_rest_top_right[1])
         frame = frame.workplaneFromTagged("base").moveTo(exit_composer_rest_base_left[0], exit_composer_rest_base_left[1]).lineTo(exit_composer_rest_top_left[0], exit_composer_rest_top_left[1]).\
-            sagittaArc(npToSet(exit_composer_rest_top_right),-self.screws.metric_thread/2).lineTo(exit_composer_rest_base_right[0], exit_composer_rest_base_right[1]).close().extrude(self.frame_thick)
+            sagittaArc(npToSet(exit_composer_rest_top_right),-self.screws.metric_thread/2).lineTo(exit_composer_rest_base_right[0], exit_composer_rest_base_right[1]).close().extrude(thick)
 
         # cut hole for exit pallet pivot
-        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread/2).extrude(self.frame_thick))
+        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread/2).extrude(thick))
 
 
             # frame = frame.add(star)
@@ -1575,7 +1580,7 @@ class GrasshopperEscapement:
 
 
         #cut hole for arbour
-        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD/2).extrude(self.frame_thick*2))
+        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(holeD/2).extrude(thick*2))
 
         if not leave_in_situ:
             #rotate and translate so it's upright with 0,0 where the arbour should be
@@ -1583,32 +1588,32 @@ class GrasshopperEscapement:
 
             #rotate so it's aligned with a vertical pendulum
             frame = frame.rotate((0, 0, 0), (0, 0, 1), radToDeg(-self.escaping_arc / 2))
-
-            if self.xmas:
-                #this is a massive bodge doing it here, if I'm giong to make a habit of themed clocks I should create a more generic way of customising parts
-                star_thick=3
-                star_size = 75
-                star = get_star(star_thick=star_thick, star_size=star_size)
-                start_inset_thick = LAYER_THICK*2
-                star_inset = get_star(star_thick=start_inset_thick, star_size=star_size*0.7)
-
-
-                # star = self.rotateToUpright(star.translate(self.geometry["Z"]))
-                #arbour_circle_r isn't actually used anymore, so go for 10mm, which is the size of the inner d of the bearing used, so the tip of the bottom of the star lines up with the bottom of the
-                #circle around the arbour
-                star = star.translate((0, star_size/2 - 10/2, self.frame_thick - star_thick))
-                star_inset = star_inset.translate((0, star_size/2 - 10/2, self.frame_thick - start_inset_thick))
-                #the geometry is in the position of the start of entry pallet engaging, rotate so it's in the centre of the escaping arc
-                # star = star.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.escaping_arc / 2))
-                #.translate(self.geometry["Z"])
-                frame = frame.add(star)
-
-                frame = frame.cut(star_inset)
-                #bodgily save this
-                self.star_inset=star_inset
-
-                # recut hole for arbour
-                frame = frame.cut(cq.Workplane("XY").circle(holeD / 2).extrude(self.frame_thick * 2))
+            #
+            # if self.xmas:
+            #     #this is a massive bodge doing it here, if I'm giong to make a habit of themed clocks I should create a more generic way of customising parts
+            #     star_thick=3
+            #     star_size = 75
+            #     star = get_star(star_thick=star_thick, star_size=star_size)
+            #     start_inset_thick = LAYER_THICK*2
+            #     star_inset = get_star(star_thick=start_inset_thick, star_size=star_size*0.7)
+            #
+            #
+            #     # star = self.rotateToUpright(star.translate(self.geometry["Z"]))
+            #     #arbour_circle_r isn't actually used anymore, so go for 10mm, which is the size of the inner d of the bearing used, so the tip of the bottom of the star lines up with the bottom of the
+            #     #circle around the arbour
+            #     star = star.translate((0, star_size/2 - 10/2, self.frame_thick - star_thick))
+            #     star_inset = star_inset.translate((0, star_size/2 - 10/2, self.frame_thick - start_inset_thick))
+            #     #the geometry is in the position of the start of entry pallet engaging, rotate so it's in the centre of the escaping arc
+            #     # star = star.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.escaping_arc / 2))
+            #     #.translate(self.geometry["Z"])
+            #     frame = frame.add(star)
+            #
+            #     frame = frame.cut(star_inset)
+            #     #bodgily save this
+            #     self.star_inset=star_inset
+            #
+            #     # recut hole for arbour
+            #     frame = frame.cut(cq.Workplane("XY").circle(holeD / 2).extrude(self.frame_thick * 2))
 
 
 
@@ -1692,7 +1697,7 @@ class GrasshopperEscapement:
             .line(0, top_left_corner[1]).line(-self.composer_arm_wide,0).close().extrude(self.composer_thick)
 
         #top arm
-        composer = composer_arm.add(composer_arm.translate((0,0,self.pallet_thick + self.composer_thick + self.composer_pivot_space)))
+        composer = composer_arm.union(composer_arm.translate((0,0,self.pallet_thick + self.composer_thick + self.composer_pivot_space)))
 
         #rest of composer
         composer_total_thick = self.pallet_thick + self.composer_thick*2 + self.composer_pivot_space
@@ -1706,7 +1711,7 @@ class GrasshopperEscapement:
         #hole to rotate around pivot
         composer = composer.cut(cq.Workplane("XY").circle(self.screws.metric_thread/2 + self.loose_on_pivot/2).extrude(1000))
         #hole to hold screw for weight
-        composer = composer.add(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(around_screw_r).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
+        composer = composer.union(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(around_screw_r).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
         composer = composer.cut(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(self.screws.metric_thread/2).extrude(1000))
 
         if not forPrinting:
@@ -2219,23 +2224,23 @@ class Pendulum:
 
             notHole = cut.shell(self.wallThick)
             #don't have a floating tube through the middle, give it something below
-            notHole = notHole.add(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
+            notHole = notHole.union(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
 
             for pos in self.bobLidNutPositions:
-                notHole = notHole.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.nutMetricSize*1.5).circle(self.nutMetricSize/2).extrude(self.bobThick-self.wallThick))
+                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.nutMetricSize*1.5).circle(self.nutMetricSize/2).extrude(self.bobThick-self.wallThick))
 
             weightHole = weightHole.cut(notHole)
 
             lid = self.getBobLid(True)
 
-            weightHole = weightHole.add(lid.translate((0,0,self.bobThick-self.wallThick)))
+            weightHole = weightHole.union(lid.translate((0,0,self.bobThick-self.wallThick)))
 
             bob = bob.cut(weightHole)
 
         #add a little S <--> F text
         textSize = self.gapHeight
-        bob = bob.add(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gapWidth/2 - textSize*0.75, 0, self.bobThick)))
-        bob = bob.add(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gapWidth/2 + textSize*0.75, 0, self.bobThick)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gapWidth/2 - textSize*0.75, 0, self.bobThick)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gapWidth/2 + textSize*0.75, 0, self.bobThick)))
 
         return bob
 
