@@ -24,8 +24,10 @@ clockOutDir="out"
 gearStyle = clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
+need_space = clock.SimpleClockPlates.get_front_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
+
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement.get_harrison_compliant_grasshopper()#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space, composer_min_distance=need_space)#clock.GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
@@ -88,12 +90,12 @@ if outputSTL:
     pulley.outputSTLs(clockName, clockOutDir)
     pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
 
-    pretty_bob.output_STLs(clockName, clockOutDir)
-    pretty_hand_avoider.output_STLs(clockName, clockOutDir)
+    # pretty_bob.output_STLs(clockName, clockOutDir)
+    # pretty_hand_avoider.output_STLs(clockName, clockOutDir)
 
-    out = os.path.join(clockOutDir, "anchor_white.stl")
-    print("Outputting ", out)
-    exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
-
-    for i in ["_a", "_b", "_c"]:
-        train.outputSTLs(clockName+i, clockOutDir)
+    # out = os.path.join(clockOutDir, "anchor_white.stl")
+    # print("Outputting ", out)
+    # exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
+    #
+    # for i in ["_a", "_b", "_c"]:
+    #     train.outputSTLs(clockName+i, clockOutDir)

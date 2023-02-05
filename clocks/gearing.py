@@ -1133,8 +1133,14 @@ class ArbourForPlate:
                 if self.escapement_on_front:
                     #cylinder passes through plates and out the front
                     cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
-                    if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
-                        anchor = self.arbour.escapement.getFrame(leave_in_situ=False)
+                    # if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
+                    #     #anchor is split into two parts, the back part has to be printed front-side down because of the link to the pendulum,
+                    #     #but we need a gap for the bearing-holder on teh front , otherwise it'll crash into the composers
+                    #     bearing_standoff_thick = LAYER_THICK*2
+                    #     front_thick = bearing_standoff_thick + 1.5
+                    #     back_thick = self.arbour.escapement.getAnchorThick() - front_thick - self.plates.get_front_anchor_bearing_holder_thick()
+                    #
+                    #     anchor = self.arbour.escapement.getFrame(leave_in_situ=False, thick=back_thick)
 
                 else:
                     #cylinder passes only through the back plate and up to the anchor

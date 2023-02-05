@@ -498,14 +498,14 @@ class GoingTrain:
         longer to make it generic than just make it work
         '''
 
-        self.calculatePoweredWheelInfo(ChainWheel.getMinDiameter())
+        self.calculatePoweredWheelInfo(PocketChainWheel.getMinDiameter())
 
         if self.huygensMaintainingPower:
             #there is no ratchet with this setup
             ratchetThick = 0
             #TODO check holeD?
 
-        self.poweredWheel = ChainWheel(ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, max_circumference=self.powered_wheel_circumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
+        self.poweredWheel = PocketChainWheel(ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise, max_circumference=self.powered_wheel_circumference, wire_thick=wire_thick, inside_length=inside_length, width=width, holeD=holeD, tolerance=tolerance, screwThreadLength=screwThreadLength)
 
         self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
@@ -1253,9 +1253,9 @@ class SimpleClockPlates:
             #need a powered wheel and ratchet on the front!
             if self.goingTrain.poweredWheel.type == PowerType.CHAIN:
 
-                self.huygensWheel = ChainWheel(ratchet_thick=5, max_circumference=max_circumference,wire_thick=self.goingTrain.poweredWheel.chain_thick,
-                                               width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
-                                               tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
+                self.huygensWheel = PocketChainWheel(ratchet_thick=5, max_circumference=max_circumference, wire_thick=self.goingTrain.poweredWheel.chain_thick,
+                                                     width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
+                                                     tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
             elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
                 print("Huygens wheel diameter",huygens_diameter)
@@ -1356,17 +1356,25 @@ class SimpleClockPlates:
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
         if self.need_front_anchor_bearing_holder():
-            holder_long = self.arboursForPlate[-1].front_anchor_from_plate  + self.arboursForPlate[-1].arbour.escapement.getAnchorThick() + self.get_front_anchor_bearing_holder_thick()
+            holder_long = self.arboursForPlate[-1].front_anchor_from_plate  + self.arboursForPlate[-1].arbour.escapement.getAnchorThick()\
+                          + self.get_front_anchor_bearing_holder_thick() + WASHER_THICK_M3
         else:
             holder_long = 0
         return holder_long
 
-    def get_front_anchor_bearing_holder_thick(self):
-        return self.pendulumFixingBearing.height + 1
+
+    @staticmethod
+    def get_front_anchor_bearing_holder_thick(bearing = None):
+        '''
+        static so it can be used to adjust the thickness of the frame
+        '''
+        if bearing is None:
+            bearing = getBearingInfo(3)
+        return bearing.height + 1
 
     def get_front_anchor_bearing_holder(self, for_printing=True):
 
-        holder_thick = self.get_front_anchor_bearing_holder_thick()
+        holder_thick = self.get_front_anchor_bearing_holder_thick(self.pendulumFixingBearing)
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
 
@@ -1376,7 +1384,7 @@ class SimpleClockPlates:
         holder = holder.union(cq.Workplane("XY").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(self.plateWidth / 2 + 0.0001).extrude(pillar_tall + holder_thick))
 
 
-        holder = self.cut_anchor_bearing_in_standoff(holder)
+        holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=getBearingInfo(self.arboursForPlate[-1].arbour.arbourD)).translate((self.bearingPositions[-1][0], self.bearingPositions[-1][1])))
         #rotate into position to cut fixing holes
         holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
         holder= holder.cut(self.get_fixing_screws_cutter().translate((0,0,-self.front_z)))
@@ -1596,7 +1604,7 @@ class SimpleClockPlates:
         bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-1).getRodD())
 
 
-        standoff = standoff.cut(self.getBearingPunch(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((0, self.bearingPositions[-1][1], 0)))
+        standoff = standoff.cut(self.getBearingPunchDeprecated(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((0, self.bearingPositions[-1][1], 0)))
 
         return standoff
 
@@ -1781,7 +1789,7 @@ class SimpleClockPlates:
 
         #bearing for the escape wheel
         bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-2).getRodD())
-        plate = plate.cut(self.getBearingPunch(bearingOnTop=True,bearingInfo=bearingInfo, back=False).translate(self.bearingPositions[-2][0:2]))
+        plate = plate.cut(self.getBearingPunchDeprecated(bearingOnTop=True, bearingInfo=bearingInfo, back=False).translate(self.bearingPositions[-2][0:2]))
 
         handHoleR = self.motionWorks.getHourHandHoleD()/2 + 2
         handsPos = self.bearingPositions[self.goingTrain.chainWheels]
@@ -2173,9 +2181,32 @@ class SimpleClockPlates:
 
         return holder
 
-    def getBearingPunch(self, bearingOnTop=True, bearingInfo=None, back=True, standoff=False):
+    def get_bearing_punch(self, plate_thick, bearing, bearing_on_top=True , with_support=False):
+        '''
+        General purpose bearing punch
+        '''
+        if bearing.height >= plate_thick:
+            raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
+
+        if bearing_on_top:
+            punch = cq.Workplane("XY").circle(bearing.outerSafeD/2).extrude(plate_thick - bearing.height)
+            punch = punch.faces(">Z").workplane().circle(bearing.outerD/2).extrude(bearing.height)
+        else:
+            if with_support:
+                punch = getHoleWithHole(bearing.outerSafeD, bearing.outerD, bearing.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearing.outerSafeD / 2).extrude(
+                    plate_thick - bearing.height)
+            else:
+                #no need for hole-in-hole!
+                punch = cq.Workplane("XY").circle(bearing.outerD/2).extrude(bearing.height).faces(">Z").workplane().circle(bearing.outerSafeD/2).extrude(plate_thick - bearing.height)
+
+        return punch
+
+
+
+    def getBearingPunchDeprecated(self, bearingOnTop=True, bearingInfo=None, back=True, standoff=False):
         '''
         A shape that can be cut out of a clock plate to hold a bearing
+        TODO use get_bearing_punch instead, the logic here is hard to follow as it's grown.
         '''
 
 
@@ -2241,7 +2272,7 @@ class SimpleClockPlates:
                     plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back)))
                 except:
                     print("wasn't able to make plate bigger for bearing")
-            plate = plate.cut(self.getBearingPunch(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
+            plate = plate.cut(self.getBearingPunchDeprecated(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):

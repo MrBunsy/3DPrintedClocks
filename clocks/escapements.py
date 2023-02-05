@@ -721,7 +721,7 @@ class GrasshopperEscapement:
 
     def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
                  mean_torque_arm_length=-1, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01, frame_thick=10, wheel_thick=5, pallet_thick=7, screws=None, arbourD=3,
-                 loud_checks=False, skip_failed_checks=False, xmas=False):
+                 loud_checks=False, skip_failed_checks=False, xmas=False, composer_min_distance=0, frame_screw_fixing_min_thick=10):
         '''
         From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
 
@@ -737,6 +737,9 @@ class GrasshopperEscapement:
          - wheel_thick: how thick the escape wheel should be
          - pallet_thick: how thick the pallet arms should be, aiming for wider than the wheel thickness
          - screws: a MachineScrew to be used for pivot pins and composer stops
+         - composer_min_distance: Should the composers be extra far away from the frame? (Useful if the means of mounting the frame is a bit chunky as the entry composer is very close to
+         the axis)
+         - frame_screw_fixing_min_thick: for a thin frame there may not be much for the screws that are the pivot for the pallet and composer arms, so extend the frame out the back
 
         All angles are radians unless specifically called `_deg`
 
@@ -774,6 +777,8 @@ class GrasshopperEscapement:
         # self.frame_back_thick = frame_thick*0.5
         self.wheel_thick = wheel_thick
         self.pallet_thick = pallet_thick
+        self.composer_min_distance = composer_min_distance
+        self.frame_screw_fixing_min_thick = frame_screw_fixing_min_thick
         #angle from the arm to the nib, from the arm pivot, so the arm stays out the way of the wheel
         self.nib_offset_angle = degToRad(8)
         self.pallet_arm_wide=3
@@ -781,6 +786,8 @@ class GrasshopperEscapement:
         if self.screws is None:
             self.screws = MachineScrew(3)
         self.arbourD=arbourD
+
+        self.frame_wide = self.screws.metric_thread * 2.5
         #I'd like to auto calculate this so the weight screw rests on top of the frame arm, but that can make things very complicated for the entry pallet
         #so, the weight screw will still rest on the frame arm, but the frame arm will adapt its shape to ensure that happens
         self.composer_height=10#7.5
@@ -788,6 +795,9 @@ class GrasshopperEscapement:
 
         #how much z between frame and the start of the composer, to leave space for screws and bits
         self.composer_z_distance_from_frame = WASHER_THICK_M3 + 0.2
+
+        if self.composer_z_distance_from_frame < self.composer_min_distance:
+            self.composer_z_distance_from_frame = self.composer_min_distance
 
         self.loose_on_pivot = 0.5
 
@@ -1495,6 +1505,17 @@ class GrasshopperEscapement:
         #comply with expected interface
         return self.getFrame(leave_in_situ=False)
 
+    def getFramePivotArmExtenders(self):
+        '''
+        if composer_z_distance_from_frame is larger than a few washers, print little arms to thread on to the screws to keep the composers and thus pallets in the right place on the z axis
+        '''
+
+        if self.composer_z_distance_from_frame > 0.8:
+            return cq.Workplane("XY").circle(self.frame_wide/2).circle(self.screws.metric_thread/2).extrude(self.composer_z_distance_from_frame - WASHER_THICK_M3)
+
+        return None
+
+
     def getFrame(self, leave_in_situ=False, thick=-1):
         '''
         Get the anchor-like part (fully 3D) which attaches to the arbour
@@ -1507,7 +1528,7 @@ class GrasshopperEscapement:
         if thick < 0:
             thick =self.frame_thick
         holeD = self.arbourD
-        arm_wide = self.screws.metric_thread * 2.5
+        arm_wide = self.frame_wide
         arbour_circle_r = self.screws.metric_thread * 3.5/2
 
         #make taller so it's rigid on the arbour? Not sure how to do this iwthout it potentially clashing with pallet arms
@@ -1539,9 +1560,10 @@ class GrasshopperEscapement:
         holder_circle_centre = np.add(entry_side_end, np.multiply(line_entry_end_to_entry_composer_rest.dir, holder_circle_distance))
         frame = frame.cut(cq.Workplane("XY").moveTo(holder_circle_centre[0], holder_circle_centre[1]).circle(holder_r).extrude(thick))
 
-        # cut hole for exit pallet pivot
-        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).extrude(thick))
-
+        # cut hole for entry pallet & composer pivot
+        if thick < self.frame_screw_fixing_min_thick:
+            frame = frame.union(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(arm_wide/2).extrude(self.frame_screw_fixing_min_thick).translate((0,0,-self.frame_screw_fixing_min_thick)))
+        frame = frame.faces(">Z").workplane().moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
 
         #exit side
         line_ZG = Line(self.geometry["Z"], anotherPoint=self.geometry["G"])
@@ -1572,9 +1594,10 @@ class GrasshopperEscapement:
             sagittaArc(npToSet(exit_composer_rest_top_right),-self.screws.metric_thread/2).lineTo(exit_composer_rest_base_right[0], exit_composer_rest_base_right[1]).close().extrude(thick)
 
         # cut hole for exit pallet pivot
-        frame = frame.cut(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread/2).extrude(thick))
-
-
+        if thick < self.frame_screw_fixing_min_thick:
+            #make it chunkier first
+            frame = frame.union(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(arm_wide/2).extrude(self.frame_screw_fixing_min_thick).translate((0,0,-self.frame_screw_fixing_min_thick)))
+        frame = frame.faces(">Z").workplane().moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
             # frame = frame.add(star)
 
 
@@ -1901,7 +1924,10 @@ class GrasshopperEscapement:
             grasshopper = grasshopper.add(self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
             grasshopper = grasshopper.add(rotate_anchor(self.rotateToUpright(self.getFrame(leave_in_situ=True))))
 
-
+        pivot_extenders = self.getFramePivotArmExtenders()
+        if pivot_extenders is not None:
+            grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick)))))
+            grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick)))))
 
         grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z)))))
         grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z)))))
@@ -1947,6 +1973,12 @@ class GrasshopperEscapement:
         out = os.path.join(path, "{}_grasshopper_exit_composer.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getExitComposer(), out)
+
+        pivot_extenders = self.getFramePivotArmExtenders()
+        if pivot_extenders is not None:
+            out = os.path.join(path, "{}_grasshopper_pivot_extender.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(pivot_extenders, out)
 
 class Pendulum:
     '''

@@ -1716,9 +1716,15 @@ class CordWheel:
         print("Outputting ", out)
         exporters.export(self.getClickWheelForCord(), out)
 
+class SprocketChainWheel:
+    '''
+    I really want to be able to use heavier weights with a chain so I can do an eight grasshopper with simple maintaining power, so this is an attempt to make a
+    stronger chainwheel using a sprocket sandwhiched between two large "washers"
+    '''
+    def __init__(self, ratchet=None):
+        self.ratchet = ratchet
 
-
-class ChainWheel:
+class PocketChainWheel:
     '''
     This is a pocket chain wheel, printed in two parts.
 
