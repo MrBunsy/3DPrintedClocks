@@ -1,3 +1,5 @@
+import math
+
 from .utility import *
 from .gearing import *
 import cadquery as cq
@@ -1724,6 +1726,78 @@ class SprocketChainWheel:
     def __init__(self, ratchet=None):
         self.ratchet = ratchet
 
+class PocketChainWheel2:
+    '''
+    The PocketChainWheel was one of the first classes I wrote for the clocks, it's a mess and also the chain wheel doesn't cope well with heavy weights
+    So this is an attempt to produce an improved pocket chain wheel and a tidier class
+    '''
+
+    def __init__(self, ratchet=None, chain=None, max_diameter=30, hole_d=3+LOOSE_FIT_ON_ROD):
+        self.ratchet = ratchet
+        self.chain = chain
+        self.max_diameter = max_diameter
+        self.hole_d = hole_d
+
+        if self.chain is None:
+            self.chain = REGULA_30_HOUR_CHAIN
+
+        max_circumference = math.pi * max_diameter
+        #two chain segments is what I'm calling a link, as that's the repeating bit
+        link_length = self.chain.inside_length * 2
+        self.pockets = floor(max_circumference /link_length)
+        self.pocket_wide = self.chain.width+0.5
+        n = self.pockets * 2
+        #https://keisan.casio.com/exec/system/1223432608
+        #radius of a circle that fits a polygon with n sides of length a
+        a = self.chain.inside_length
+        #for the centre of the chain width
+        self.radius = a / (2*math.sin(math.pi/n))
+        # self.inner_radius =
+
+        #TODO
+        self.total_thick = self.pocket_wide+4
+
+    def get_pocket_cutter(self):
+        pocket_length = self.chain.inside_length + self.chain.wire_thick*2
+
+        #from law of cosines
+        pocket_angle = math.acos(1 - (pocket_length**2)/(2*self.radius**2))
+
+
+        end_cylinder = cq.Workplane("XY").circle(self.pocket_wide/2).extrude(self.radius*2).translate((-self.pocket_wide/2,0,0)).rotate((0,0,0), (1,0,0),-90).rotate((0,0,0),(0,0,1), radToDeg(-pocket_angle/2))
+        start_cylinder = cq.Workplane("XY").circle(self.pocket_wide/2).extrude(self.radius*2).translate((self.pocket_wide/2,0,0)).rotate((0,0,0), (1,0,0),-90).rotate((0,0,0),(0,0,1), radToDeg(pocket_angle/2))
+
+        cutter = end_cylinder.union(start_cylinder)
+
+        end_cylinder_centre_line = Line((math.cos(pocket_angle/2)*self.pocket_wide/2, math.sin(pocket_angle/2)*self.pocket_wide/2), angle=math.pi/2+pocket_angle/2)
+        start_cylinder_centre_line = Line((-math.cos(pocket_angle / 2) * self.pocket_wide / 2, math.sin(pocket_angle / 2) * self.pocket_wide / 2), angle=math.pi / 2 - pocket_angle / 2)
+
+        filler_centre = start_cylinder_centre_line.intersection(end_cylinder_centre_line)
+
+        end_pos = np.add(end_cylinder_centre_line.start, polar(end_cylinder_centre_line.getAngle(), self.radius * 2))
+        start_pos = np.add(start_cylinder_centre_line.start, polar(start_cylinder_centre_line.getAngle(), self.radius * 2))
+        #
+        filler = cq.Workplane("XY").moveTo(filler_centre[0], filler_centre[1]).lineTo(start_pos[0], start_pos[1]).lineTo(end_pos[0], end_pos[1]).close().extrude(self.pocket_wide).translate((0,0,-self.pocket_wide/2))
+        cutter = cutter.union(filler)
+
+        base_end = polar(end_cylinder_centre_line.getAngle(), self.radius - self.chain.wire_thick/2)
+        base_start = polar(start_cylinder_centre_line.getAngle(), self.radius - self.chain.wire_thick / 2)
+        #chop the bottom off so we only cut a pocket with a flat base
+        base_cutter = cq.Workplane("XY").rect(self.radius*2, base_end[1]*2).extrude(self.pocket_wide).translate((0,0,-self.pocket_wide/2))
+        cutter = cutter.cut(base_cutter)
+
+        return cutter
+
+    def get_whole_wheel(self):
+        wheel = cq.Workplane("XY").circle(self.radius+self.chain.wire_thick).extrude(self.total_thick).translate((0,0,-self.total_thick/2))
+
+        for p in range(self.pockets):
+            angle = p*math.pi*2/self.pockets
+            wheel = wheel.cut(self.get_pocket_cutter().rotate((0,0,0), (0,0,1), radToDeg(angle)))
+
+        return wheel
+
+
 class PocketChainWheel:
     '''
     This is a pocket chain wheel, printed in two parts.
@@ -1812,7 +1886,8 @@ class PocketChainWheel:
 
 
         self.wall_thick = 1.5
-        self.pocket_wall_thick = inside_length - wire_thick*4
+        #was  inside_length - wire_thick*4, which is fine for weights < 500g, but starts to get damanged beyond that, completely failing somewhere before 2.5kg
+        self.pocket_wall_thick = inside_length - wire_thick*2.5
 
         self.inner_width = width*1.2
 

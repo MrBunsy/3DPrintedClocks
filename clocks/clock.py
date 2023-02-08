@@ -856,7 +856,7 @@ class SimpleClockPlates:
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
-                 centred_second_hand=False, pillars_separate=False, dial=None):
+                 centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -868,6 +868,8 @@ class SimpleClockPlates:
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
+
+        self.direct_arbour_d = direct_arbour_d
 
         self.dial = dial
 
@@ -1198,7 +1200,7 @@ class SimpleClockPlates:
             #new way of doing it, new class for combining all this logic in once place
             arbourForPlate = ArbourForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulumSticksOut,
                                             pendulum_at_front=self.pendulumAtFront, bearing=bearing, escapement_on_front=self.escapementOnFront, back_from_wall=self.backPlateFromWall,
-                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing)
+                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing, direct_arbour_d=direct_arbour_d)
             self.arboursForPlate.append(arbourForPlate)
 
 
@@ -1357,7 +1359,7 @@ class SimpleClockPlates:
         '''
         if self.need_front_anchor_bearing_holder():
             holder_long = self.arboursForPlate[-1].front_anchor_from_plate  + self.arboursForPlate[-1].arbour.escapement.getAnchorThick()\
-                          + self.get_front_anchor_bearing_holder_thick() + WASHER_THICK_M3
+                          + self.get_front_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing) + WASHER_THICK_M3
         else:
             holder_long = 0
         return holder_long
@@ -1374,7 +1376,7 @@ class SimpleClockPlates:
 
     def get_front_anchor_bearing_holder(self, for_printing=True):
 
-        holder_thick = self.get_front_anchor_bearing_holder_thick(self.pendulumFixingBearing)
+        holder_thick = self.get_front_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing)
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
 
@@ -2264,7 +2266,7 @@ class SimpleClockPlates:
                         needs_pendulum_bearing = True
 
                 if needs_pendulum_bearing and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-                    plate = plate.cut(cq.Workplane("XY").circle(DIRECT_ARBOUR_D/2 + 2).extrude(self.getPlateThick(back=back)).translate((pos[0], pos[1], 0)))
+                    plate = plate.cut(cq.Workplane("XY").circle(self.direct_arbour_d/2 + 1.5).extrude(self.getPlateThick(back=back)).translate((pos[0], pos[1], 0)))
 
             if bearingInfo.bearingOuterD > self.plateWidth - self.bearingWallThick*2:
                 #this is a chunkier bearing, make the plate bigger
@@ -2627,6 +2629,11 @@ class SimpleClockPlates:
             out = os.path.join(path, "{}_winding_key_knob.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.goingTrain.poweredWheel.getWindingKnob(), out)
+
+        if self.need_front_anchor_bearing_holder():
+            out = os.path.join(path, "{}_front_anchor_bearing_holder.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_front_anchor_bearing_holder(), out)
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:

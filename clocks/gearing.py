@@ -988,7 +988,7 @@ class WheelPinionPair:
 class ArbourForPlate:
 
     def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
-                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None):
+                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbour_d = DIRECT_ARBOUR_D):
         '''
         Given a basic Arbour and a specific plate class do the following:
 
@@ -1017,6 +1017,8 @@ class ArbourForPlate:
         self.back_from_wall = back_from_wall
         self.endshake = endshake
         self.bearing = bearing
+        if self.bearing is None:
+            self.bearing = getBearingInfo(self.arbour.arbourD)
         #(x,y,z) from the clock plate. z is the base of the arbour, ignoring arbour extensions (this is from the days when the bearings were raised on little pillars, but is still useful for
         #calculating where the arbour should be)
         self.bearing_position = bearing_position
@@ -1031,12 +1033,13 @@ class ArbourForPlate:
         self.type = self.arbour.getType()
 
         #for an escapement on the front, how far from the front plate is the anchor?
-        self.front_anchor_from_plate = 2 + self.endshake
+        self.front_anchor_from_plate = 1 + self.endshake
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
         self.collet_screws = MachineScrew(2,countersunk=True)
         self.pendulum_holder_thick = 15
         self.pendulum_fixing_extra_space = 0.2
+        self.direct_arbour_d = direct_arbour_d
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1063,7 +1066,7 @@ class ArbourForPlate:
 
         return collet
 
-    def get_pendulum_holder_collet(self, square_side_length):
+    def get_pendulum_holder_collet(self, square_side_length, cylinder_r):
         '''
         will slot over square bit of anchor arbour and screw in place
         for the direct arbours without suspension spring
@@ -1071,7 +1074,7 @@ class ArbourForPlate:
         #to be consistent with the endshake collet
         outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
         if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-            outer_d = DIRECT_ARBOUR_D*2
+            outer_d = cylinder_r*4#DIRECT_ARBOUR_D*2
 
         square_size = square_side_length + self.pendulum_fixing_extra_space
 
@@ -1111,14 +1114,14 @@ class ArbourForPlate:
 
             cylinder_r = self.bearing.innerD / 2
             if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-                cylinder_r = DIRECT_ARBOUR_D/2
+                cylinder_r = self.direct_arbour_d/2
             square_side_length = math.sqrt(2) * cylinder_r
 
             if cylinder_r < 5:
                 square_side_length = math.sqrt(2) * cylinder_r * 1.2
 
 
-            shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length)
+            shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length, cylinder_r)
 
             if not self.pendulum_at_front:
 

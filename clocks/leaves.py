@@ -735,12 +735,14 @@ class MistletoeLeaf:
     A randomly generated mistletow leaf. currently only a 2D outline
     (0,0) is at the base of the leaf, which is pointing along the y axis
     '''
-    def __init__(self, length=40, seed=-1):
+    def __init__(self, length=40, seed=-1, stalk_width=-1):
         self.length = length
         if seed >=0:
             random.seed(seed)
         self.width = length * random.uniform(0.25, 0.4)
-        self.stalk_width = length* random.uniform(0.05, 0.1)
+        self.stalk_width = stalk_width
+        if self.stalk_width < 0:
+            self.stalk_width = length* random.uniform(0.05, 0.1)
         self.tip_offset = length*0.1 * random.uniform(-0.15,0.15)
         self.stalk_length = length * random.uniform(0.075,0.1)
 
@@ -765,7 +767,7 @@ class MistletoeLeafPair:
         self.branch_length = branch_length
         self.leaf_length = leaf_length
         self.branch_thick = self.branch_length*random.uniform(0.05, 0.1)
-        self.leaves = [MistletoeLeaf(length= self.leaf_length*random.uniform(0.9, 1.1), seed=random.random()) for l in range(2)]
+        self.leaves = [MistletoeLeaf(length= self.leaf_length*random.uniform(0.9, 1.1), seed=random.random(), stalk_width=self.branch_thick*random.uniform(0.5,1)) for l in range(2)]
         angle = random.uniform(0.9,1.1)*math.pi/4
         spread = math.pi/10
         self.leaf_angles = [angle + random.uniform(-0.5, 0.5)*spread, (angle + random.uniform(-0.5, 0.5)*spread) - math.pi/2]

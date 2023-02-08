@@ -22,10 +22,13 @@ random.seed(7)
 clockName="wall_clock_17_xmas_retrofit"
 clockOutDir="out"
 gearStyle = clock.GearStyle.SNOWFLAKE
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+
+need_space = clock.SimpleClockPlates.get_front_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
 
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, xmas=True)
+#also -1 from frame_thick because I've reduced front_anchor_from_plate by one
+escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space+1, composer_min_distance=need_space)#clock.GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,

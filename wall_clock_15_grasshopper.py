@@ -14,13 +14,17 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_15_grasshopper"
+clockName="wall_clock_15_grasshopper_retrofit"
 clockOutDir="out"
 gearStyle = clock.GearStyle.HONEYCOMB
 
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+
+need_space = clock.SimpleClockPlates.get_front_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
 
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+#also -1 from frame_thick because I've reduced front_anchor_from_plate by one
+escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space+1, composer_min_distance=need_space)#clock.GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
@@ -42,20 +46,15 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
+train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2,pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=1)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
-
-
-dial = clock.Dial(120)
-
-
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 15", style="vertical", pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True)
+                                 backPlateFromWall=40, escapementOnFront=True,pendulumFixing=pendulumFixing, direct_arbour_d=6)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
@@ -76,7 +75,6 @@ if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
     weight.outputSTLs(clockName, clockOutDir)

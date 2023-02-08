@@ -43,6 +43,13 @@ if 'show_object' not in globals():
 #
 # show_object(chainWheel.getAssembled())
 
+chainWheel = PocketChainWheel2(max_diameter=20)
+
+# show_object(chainWheel.get_pocket_cutter())
+show_object(chainWheel.get_whole_wheel())
+
+# show_object(chainWheel.getAssembled())
+
 #
 # motionWorks=MotionWorks(compensateLooseArbour=True, compact= True, bearing=getBearingInfo(3))
 # show_object(motionWorks.getAssembled())
@@ -210,6 +217,7 @@ if 'show_object' not in globals():
 
 #
 # # grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
+# grasshopper = GrasshopperEscapement.get_harrison_compliant_grasshopper()
 # '''
 # Balanced escaping arc of 9.7500deg with d of 12.40705997 and ax of 90.26021004
 # Diameter of 130.34328818 results in mean torque arm of 9.9396
@@ -224,7 +232,7 @@ if 'show_object' not in globals():
 # # # # #
 # show_object(grasshopper.getAnchor())
 # # # # show_object(grasshopper.getEscapementWheel())
-# show_object(grasshopper.getAssembled(style=GearStyle.FLOWER))
+# show_object(grasshopper.getAssembled(style=GearStyle.CURVES))
 #
 # if outputSTL:
 #     grasshopper.outputSTLs("grasshopper", "out")
@@ -415,9 +423,9 @@ if False:
 # show_object(leaf.get_2d())
 
 # twig = MistletoeLeafPair(seed=2)
-twig = MistletoeLeafPair()
-show_object(twig.get_branch())
-show_object(twig.get_leaves())
+# twig = MistletoeLeafPair()
+# show_object(twig.get_branch())
+# show_object(twig.get_leaves())
 
 # AnchorEscapement.get_with_45deg_pallets(teeth=30)
 # springArbour = SpringArbour(power_clockwise=True)

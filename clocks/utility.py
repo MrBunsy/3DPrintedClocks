@@ -40,7 +40,8 @@ NUT_WIGGLE_ROOM = 0.2
 #extra diameter to add to the arbour extension to make them easier to screw onto the threaded rod
 ARBOUR_WIGGLE_ROOM = 0.1
 
-DIRECT_ARBOUR_D = 6
+#six actually prints pretty well, but feels a bit small! contemplating bumping up to 7.5
+DIRECT_ARBOUR_D = 7#7.5
 
 #for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
 #includes a bit of slack
@@ -775,7 +776,29 @@ def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
     return testR
 
 
-class BearingInfo():
+class ChainInfo:
+
+    '''
+    Hold info to describe a chain
+    regula 30 hour chain:
+    train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
+
+    Undecided on if to include tolerance with the chain or with the wheel, going to try with the wheel for now as I hope the improved pocket wheel won't need it as much
+    '''
+    def __init__(self, wire_thick=0.85, width=3.6, outside_length=6.65, inside_length=-1):
+        self.wire_thick = wire_thick
+        self.width = width
+        self.outside_length = outside_length
+        self.inside_length = inside_length
+        if self.inside_length < 0:
+            self.inside_length = self.outside_length - self.wire_thick*2
+        if self.outside_length < 0:
+            self.outside_length = self.inside_length + self.wire_thick*2
+
+REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65)
+
+
+class BearingInfo:
     '''
     Like MachineScrew this is designed to be in place of passing around loads of info, just one object that represents different sizes of bearings
 

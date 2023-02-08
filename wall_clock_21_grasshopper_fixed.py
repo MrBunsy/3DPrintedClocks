@@ -4,9 +4,7 @@ import clocks.clock as clock
 from cadquery import exporters
 
 '''
-The xmas grasshopper was my very first attempt at an anchor that directly drove the pendulum. unfortunatly large bearings added far more friction than I anticipated and it wasn't reliable
-
-This is an attempt to create yet another 1 day grasshopper with a small bearing directly driven anchor. Should be the same gears as clocks 15 and 17, so arbours could be exchanged.
+This will be both a complete clock and produce retrofit components for grasshoppers 14 and 15, for testing a retrofit to the xmas clock
 '''
 outputSTL=False
 
@@ -27,7 +25,8 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 need_space = clock.SimpleClockPlates.get_front_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
 
 #pre-calculated good values for a 9.75 escaping arc
-escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space, composer_min_distance=need_space)#clock.GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+#also -1 from frame_thick because I've reduced front_anchor_from_plate by one
+escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space+1, composer_min_distance=need_space)#clock.GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
@@ -58,8 +57,7 @@ motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, 
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
-#need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
