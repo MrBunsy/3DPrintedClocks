@@ -48,6 +48,8 @@ chainWheel = PocketChainWheel2(max_diameter=20)
 # show_object(chainWheel.get_pocket_cutter())
 show_object(chainWheel.get_whole_wheel())
 
+# show_object(chainWheel.get_between_pocket_cutter())
+
 # show_object(chainWheel.getAssembled())
 
 #

@@ -1758,6 +1758,7 @@ class PocketChainWheel2:
         self.total_thick = self.pocket_wide+4
 
     def get_pocket_cutter(self):
+
         pocket_length = self.chain.inside_length + self.chain.wire_thick*2
 
         #from law of cosines
@@ -1786,6 +1787,21 @@ class PocketChainWheel2:
         base_cutter = cq.Workplane("XY").rect(self.radius*2, base_end[1]*2).extrude(self.pocket_wide).translate((0,0,-self.pocket_wide/2))
         cutter = cutter.cut(base_cutter)
 
+        #gap for the vertical chainlinks
+        gap_thick = self.chain.wire_thick * 2
+
+        hole_centre_y = (self.radius - self.chain.wire_thick/2)* math.cos(pocket_angle/2)
+
+        circle_centres_distance = self.chain.inside_length + self.chain.wire_thick - self.pocket_wide
+
+        chain_segment_hole = cq.Workplane("XY").moveTo(circle_centres_distance / 2, 0).circle(self.pocket_wide / 2).extrude(gap_thick)
+
+        chain_segment_hole = chain_segment_hole.union(cq.Workplane("XY").moveTo(-circle_centres_distance / 2, 0).circle(self.pocket_wide / 2).extrude(gap_thick))
+        chain_segment_hole = chain_segment_hole.union(cq.Workplane("XY").rect(circle_centres_distance, self.pocket_wide).extrude(gap_thick))
+
+        chain_segment_hole = chain_segment_hole.translate((0, hole_centre_y, -gap_thick / 2)).rotate((0,0,0), (0,0,1), 360/(self.pockets*2))
+
+        cutter = cutter.union(chain_segment_hole)
         return cutter
 
     def get_whole_wheel(self):
