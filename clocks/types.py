@@ -72,6 +72,7 @@ class PowerType(Enum):
     NOT_CONFIGURED = None
     # === Weight types ===
     CHAIN = "chain"
+    CHAIN2 = "chain2"
     #drop in for chain, using friction and a hemp rope
     ROPE = "rope"
     #thin synthetic cord, coiled multiple times

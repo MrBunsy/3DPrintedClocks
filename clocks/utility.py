@@ -796,7 +796,8 @@ class ChainInfo:
             self.outside_length = self.inside_length + self.wire_thick*2
 
 REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65)
-
+#claims a max load of 5kg, looks promising for an eight day
+CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.4, width=5.5, outside_length=10.8)
 
 class BearingInfo:
     '''

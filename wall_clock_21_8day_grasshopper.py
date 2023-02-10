@@ -30,7 +30,7 @@ escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, 
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
-                       chainAtBack=False, chainWheels=0, hours=28, huygensMaintainingPower=True)
+                       chainAtBack=False, chainWheels=1, hours=7*24+6, huygensMaintainingPower=True)
 
 train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
@@ -39,7 +39,8 @@ train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=
 
 #for the first draft let's stick to a chain I know works, and hope that we're not over its weight limit
 # 61 links/ft 1-day regula chain. copied from clock 04
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
+# train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
+train.genChainWheels2(clock.REGULA_30_HOUR_CHAIN, ratchetThick=4, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=35)
 # train.genChainWheels(ratchetThick=4,wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075, screwThreadLength=8, holeD=3)
 
 
@@ -50,15 +51,18 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.genGears(module_size=1.1,moduleReduction=1.1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+train.genGears(module_size=1,moduleReduction=1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=0.5)
 
-motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
+motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, compact=True, thick=2)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100, bobD=80, bobThick=10, useNylocForAnchor=False)
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
+# dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC)
+dial = None
+
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=10, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
+                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, heavy=True, extraHeavy=True, dial=dial, pillars_separate=True, chainThroughPillarRequired=False)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 

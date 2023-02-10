@@ -43,10 +43,13 @@ if 'show_object' not in globals():
 #
 # show_object(chainWheel.getAssembled())
 
-chainWheel = PocketChainWheel2(max_diameter=20)
+chainWheel = PocketChainWheel2(max_diameter=30, chain=CHAIN_PRODUCTS_1_4MM_CHAIN, ratchet_thick=4, ratchetOuterD=50)
 
 # show_object(chainWheel.get_pocket_cutter())
-show_object(chainWheel.get_whole_wheel())
+# show_object(chainWheel.get_whole_wheel())
+# show_object(chainWheel.getAssembled())
+# show_object(chainWheel.get_top_half())
+show_object(chainWheel.get_bottom_half())
 
 # show_object(chainWheel.get_between_pocket_cutter())
 

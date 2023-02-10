@@ -1732,11 +1732,25 @@ class PocketChainWheel2:
     So this is an attempt to produce an improved pocket chain wheel and a tidier class
     '''
 
-    def __init__(self, ratchet=None, chain=None, max_diameter=30, hole_d=3+LOOSE_FIT_ON_ROD):
-        self.ratchet = ratchet
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, looseOnRod=False, ratchetOuterD=-1, ratchetOuterThick=5):
+
+        self.type = PowerType.CHAIN2
+        # if false, the powered wheel is fixed to the rod and the gear wheel is loose.
+        self.looseOnRod = looseOnRod
+        self.arbour_d = arbour_d
+
+
+
         self.chain = chain
         self.max_diameter = max_diameter
-        self.hole_d = hole_d
+        self.hole_d  = arbour_d
+        if self.looseOnRod:
+            self.hole_d += LOOSE_FIT_ON_ROD
+        self.fixing_screws = fixing_screws
+        self.power_clockwise = power_clockwise
+
+        if self.fixing_screws is None:
+            self.fixing_screws = MachineScrew(2, countersunk=True)
 
         if self.chain is None:
             self.chain = REGULA_30_HOUR_CHAIN
@@ -1746,20 +1760,34 @@ class PocketChainWheel2:
         link_length = self.chain.inside_length * 2
         self.pockets = floor(max_circumference /link_length)
         self.pocket_wide = self.chain.width+0.5
+        self.pocket_long =  self.chain.inside_length + self.chain.wire_thick*2 + self.chain.wire_thick
         n = self.pockets * 2
         #https://keisan.casio.com/exec/system/1223432608
         #radius of a circle that fits a polygon with n sides of length a
         a = self.chain.inside_length
         #for the centre of the chain width
         self.radius = a / (2*math.sin(math.pi/n))
-        # self.inner_radius =
+
+        self.fixing_positions = [polar(f*math.pi*2/fixings, self.radius*0.5) for f in range(fixings)]
+        self.outer_radius = self.radius+self.chain.wire_thick
+
+        self.diameter = self.radius*2
+        self.circumference = math.pi * self.diameter
 
         #TODO
-        self.total_thick = self.pocket_wide+4
+        self.wheel_thick = self.pocket_wide + 4
+
+        if ratchetOuterD < 0:
+            ratchetOuterD = self.diameter * 2.5
+
+        if ratchet_thick > 0:
+            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outer_radius*0.9999, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
+        else:
+            self.ratchet = None
 
     def get_pocket_cutter(self):
 
-        pocket_length = self.chain.inside_length + self.chain.wire_thick*2
+        pocket_length = self.pocket_long#self.chain.inside_length + self.chain.wire_thick*2
 
         #from law of cosines
         pocket_angle = math.acos(1 - (pocket_length**2)/(2*self.radius**2))
@@ -1798,6 +1826,7 @@ class PocketChainWheel2:
 
         chain_segment_hole = chain_segment_hole.union(cq.Workplane("XY").moveTo(-circle_centres_distance / 2, 0).circle(self.pocket_wide / 2).extrude(gap_thick))
         chain_segment_hole = chain_segment_hole.union(cq.Workplane("XY").rect(circle_centres_distance, self.pocket_wide).extrude(gap_thick))
+        chain_segment_hole = chain_segment_hole.union(cq.Workplane("XY").moveTo(0,self.pocket_wide/2).rect(circle_centres_distance + self.pocket_wide, self.pocket_wide).extrude(gap_thick))
 
         chain_segment_hole = chain_segment_hole.translate((0, hole_centre_y, -gap_thick / 2)).rotate((0,0,0), (0,0,1), 360/(self.pockets*2))
 
@@ -1805,14 +1834,153 @@ class PocketChainWheel2:
         return cutter
 
     def get_whole_wheel(self):
-        wheel = cq.Workplane("XY").circle(self.radius+self.chain.wire_thick).extrude(self.total_thick).translate((0,0,-self.total_thick/2))
+        #just the chain wheel, no ratchet, centred on (0,0,0)
+
+        wheel = cq.Workplane("XY").circle(self.outer_radius).extrude(self.wheel_thick).translate((0, 0, -self.wheel_thick / 2))
 
         for p in range(self.pockets):
             angle = p*math.pi*2/self.pockets
             wheel = wheel.cut(self.get_pocket_cutter().rotate((0,0,0), (0,0,1), radToDeg(angle)))
 
+        wheel = wheel.faces(">Z").workplane().circle(self.hole_d/2).cutThruAll()
+
+        for pos in self.fixing_positions:
+            wheel = wheel.cut(self.fixing_screws.getCutter().rotate((0,0,0), (1,0,0),180).translate(pos).translate((0,0,self.wheel_thick/2)))
+            #no bottom fixing nut space, this is always being bolted to something, be it a ratchet or wheel
+            # if self.ratchet is None:
+            #     wheel = wheel.cut(self.fixing_screws.getNutCutter(height=self.wheel_thick/4, withBridging=True).translate(pos).translate((0,0,-self.wheel_thick/2)))
+
         return wheel
 
+    def get_top_half(self):
+        top = self.get_whole_wheel().intersect(cq.Workplane("XY").rect(self.radius*4, self.radius*4).extrude(self.wheel_thick))
+
+
+
+        top =top.rotate((0,0,0), (1,0,0),180).translate((0,0,self.wheel_thick/2))
+
+        return top
+
+    def get_bottom_half(self):
+        bottom = self.get_whole_wheel().intersect(cq.Workplane("XY").rect(self.radius*4, self.radius*4).extrude(self.wheel_thick).translate((0,0,-self.wheel_thick))).translate((0,0,self.wheel_thick/2))
+
+        if self.ratchet is not None:
+            bottom = bottom.translate((0,0,self.ratchet.thick))
+            bottom = bottom.union(self.ratchet.getInnerWheel())
+
+            for pos in self.fixing_positions:
+                bottom = bottom.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.getHeight()).translate(pos))
+                bottom = bottom.cut(self.fixing_screws.getNutCutter(height=self.wheel_thick*0.25).translate(pos))
+            bottom = bottom.faces(">Z").workplane().circle(self.hole_d / 2).cutThruAll()
+
+        return bottom
+
+    @staticmethod
+    def getMinDiameter():
+        '''
+        Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
+        '''
+        return 22
+
+    def getEncasingRadius(self):
+        '''
+        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+        '''
+        if self.ratchet is not None:
+            return self.ratchet.outsideDiameter / 2
+        else:
+            return self.outer_radius
+
+    def getChainHoleD(self):
+        '''
+        Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
+        '''
+        return self.chain.width + 2
+
+    def isClockwise(self):
+        '''
+        return true if this wheel is powered to rotate clockwise
+        '''
+        return self.power_clockwise
+
+    def getAssembled(self):
+        '''
+        return 3D model of fully assembled wheel with ratchet (for the model, not printing)
+        '''
+        wheel = self.get_whole_wheel().translate((0,0,self.wheel_thick/2))
+        if self.ratchet is not None:
+            wheel = wheel.translate((0,0,self.ratchet.thick))
+            wheel = wheel.union(self.ratchet.getInnerWheel())
+        return wheel
+
+    def getHeight(self):
+        '''
+        returns total thickness of the assembled wheel, with ratchet. If it needs a washer, this is included in the height
+        '''
+        height =  self.wheel_thick + WASHER_THICK_M3
+        if self.ratchet is not None:
+            height += self.ratchet.thick
+        return height
+
+    def outputSTLs(self, name="clock", path="../out"):
+        '''
+        save STL files to disc for all the objects required to print this wheel
+        '''
+        out = os.path.join(path, "{}_chain_wheel_bottom_half.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_bottom_half(), out)
+
+        out = os.path.join(path, "{}_chain_wheel_top_half.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_top_half(), out)
+
+    def getChainPositionsFromTop(self):
+        '''
+        Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
+        but two coordinates [top, bottom] if the hole should be elongated.
+        For example: chain would be just two round holes at the same z height [ [(-3,-5)], [(3,-5)]]
+        Z coordinates are relative to the "front" of the chain wheel - the side furthest from the wheel
+        (this is because the ratchet could be inset and the wheel could be different thicknesses)
+
+         [ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
+
+
+        '''
+
+        zOffset = - WASHER_THICK_M3 - self.wheel_thick/2
+
+        return [[(-self.radius, zOffset)], [(self.radius, zOffset)]]
+
+    def getScrewPositions(self):
+        '''
+        return list of (x,y) positions, relative to the arbour, for screws that hold this wheel together.
+        Only really relevant for ones in two halves, like chain and rope
+        Used when we're not using a ratchet so the screwholes can line up with holes in the wheel
+        '''
+        return self.fixing_positions
+
+    def getTurnsForDrop(self, maxChainDrop):
+        '''
+        Given a chain drop, return number of rotations of this wheel.
+        this is trivial for rope or chain, but not so much for the cord
+        '''
+        return maxChainDrop / (self.pockets*self.chain.inside_length*2)
+
+    def getRunTime(self, minuteRatio=1, cordLength=2000):
+        '''
+        print information about runtime based on the info provided
+        '''
+        return self.getTurnsForDrop(cordLength)*minuteRatio
+
+    def printScrewLength(self):
+        '''
+        print to console information on screws required to assemble
+        '''
+        if self.ratchet is None:
+            print("No ratchet, can't estimate screw lenght")
+            return
+        minScrewLength = self.ratchet.thick + self.wheel_thick*0.75 + self.fixing_screws.getNutHeight()
+        print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.fixing_screws.getString(), self.getHeight(), minScrewLength))
 
 class PocketChainWheel:
     '''
@@ -1955,7 +2123,7 @@ class PocketChainWheel:
         return [ [(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)] ]
 
     def getTurnsForDrop(self, chainDrop):
-        return chainDrop / self.circumference
+        return chainDrop / (self.pockets*self.chain_inside_length*2)
 
     def getHeight(self):
         '''
@@ -2172,7 +2340,7 @@ class Ratchet:
         #even /15 seems excessive, trying /20 for reprinting bits of clock 19
         self.clicks = math.ceil(cicumference/20)#8
         #ratchetTeet must be a multiple of clicks
-        self.ratchetTeeth = self.clicks*2
+        self.ratchetTeeth = self.clicks*4
 
 
         self.thick = thick

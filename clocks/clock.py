@@ -5,6 +5,7 @@ from .hands import *
 from .escapements import *
 from .cosmetics import *
 from .leaves import *
+from .dial import *
 import cadquery as cq
 from pathlib import Path
 from cadquery import exporters
@@ -484,6 +485,22 @@ class GoingTrain:
             anticlockwise = not anticlockwise
 
         self.powered_wheel_clockwise = not anticlockwise
+
+    def genChainWheels2(self, chain, ratchetThick=7.5, arbourD=3, looseOnRod=True, prefer_small=False, preferedDiameter=-1):
+
+        diameter = preferedDiameter
+        if diameter < 0:
+            diameter = PocketChainWheel2.getMinDiameter()
+        self.calculatePoweredWheelInfo(diameter)
+
+        if self.huygensMaintainingPower:
+            # there is no ratchet with this setup
+            ratchetThick = 0
+            # TODO check holeD?
+
+        self.poweredWheel = PocketChainWheel2(ratchet_thick=ratchetThick, arbour_d=arbourD, looseOnRod=looseOnRod, power_clockwise=self.powered_wheel_clockwise, chain=chain, max_diameter=self.powered_wheel_diameter)
+
+        self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
     def genChainWheels(self, ratchetThick=7.5, holeD=3.4, wire_thick=1.25, inside_length=6.8, width=5, tolerance=0.15,screwThreadLength=10, prefer_small=False):
         '''
@@ -1258,6 +1275,9 @@ class SimpleClockPlates:
                 self.huygensWheel = PocketChainWheel(ratchet_thick=5, max_circumference=max_circumference, wire_thick=self.goingTrain.poweredWheel.chain_thick,
                                                      width=self.goingTrain.poweredWheel.chain_width, inside_length=self.goingTrain.poweredWheel.chain_inside_length,
                                                      tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
+            elif self.goingTrain.poweredWheel.type == PowerType.CHAIN2:
+                self.huygensWheel = PocketChainWheel2(ratchet_thick=5, max_diameter=max_diameter, chain=self.goingTrain.poweredWheel.chain, looseOnRod=True,
+                                                      ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick, arbour_d=self.goingTrain.poweredWheel.arbour_d)
             elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
                 print("Huygens wheel diameter",huygens_diameter)
@@ -1573,6 +1593,10 @@ class SimpleClockPlates:
         #
         # if self.heavy:
         bottomPillarR = self.plateDistance / 2
+
+        if bottomPillarR < holderWide/2:
+            #rare, but can happen
+            bottomPillarR = holderWide/2
 
         if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar:
             bottomPillarR = minDistanceForChainHoles
