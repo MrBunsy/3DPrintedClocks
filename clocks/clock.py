@@ -486,7 +486,7 @@ class GoingTrain:
 
         self.powered_wheel_clockwise = not anticlockwise
 
-    def genChainWheels2(self, chain, ratchetThick=7.5, arbourD=3, looseOnRod=True, prefer_small=False, preferedDiameter=-1):
+    def genChainWheels2(self, chain, ratchetThick=7.5, arbourD=3, looseOnRod=True, prefer_small=False, preferedDiameter=-1, fixing_screws=None):
 
         diameter = preferedDiameter
         if diameter < 0:
@@ -498,7 +498,8 @@ class GoingTrain:
             ratchetThick = 0
             # TODO check holeD?
 
-        self.poweredWheel = PocketChainWheel2(ratchet_thick=ratchetThick, arbour_d=arbourD, looseOnRod=looseOnRod, power_clockwise=self.powered_wheel_clockwise, chain=chain, max_diameter=self.powered_wheel_diameter)
+        self.poweredWheel = PocketChainWheel2(ratchet_thick=ratchetThick, arbour_d=arbourD, looseOnRod=looseOnRod,
+                                              power_clockwise=self.powered_wheel_clockwise, chain=chain, max_diameter=self.powered_wheel_diameter, fixing_screws=fixing_screws)
 
         self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 

@@ -1761,14 +1761,19 @@ class PocketChainWheel2:
         self.pockets = floor(max_circumference /link_length)
         self.pocket_wide = self.chain.width+0.5
         self.pocket_long =  self.chain.inside_length + self.chain.wire_thick*2 + self.chain.wire_thick
+
         n = self.pockets * 2
         #https://keisan.casio.com/exec/system/1223432608
         #radius of a circle that fits a polygon with n sides of length a
         a = self.chain.inside_length
         #for the centre of the chain width
         self.radius = a / (2*math.sin(math.pi/n))
-
-        self.fixing_positions = [polar(f*math.pi*2/fixings, self.radius*0.5) for f in range(fixings)]
+        if self.radius < self.pocket_long:
+            #a ratio of pocket length to radius of less than one will fail to generate a pocket angle
+            print("Radius too small to generate chain wheel for this chain")
+            self.radius = self.pocket_long
+            # raise ValueError("Radius too small to generate chain wheel for this chain")
+        self.fixing_positions = [polar(f*math.pi*2/fixings, self.radius*0.45) for f in range(fixings)]
         self.outer_radius = self.radius+self.chain.wire_thick
 
         self.diameter = self.radius*2
@@ -1788,7 +1793,7 @@ class PocketChainWheel2:
     def get_pocket_cutter(self):
 
         pocket_length = self.pocket_long#self.chain.inside_length + self.chain.wire_thick*2
-
+        print("pocket_length: {}, radius: {} {}".format(pocket_length, self.radius, 1 - (pocket_length**2)/(2*self.radius**2)))
         #from law of cosines
         pocket_angle = math.acos(1 - (pocket_length**2)/(2*self.radius**2))
 

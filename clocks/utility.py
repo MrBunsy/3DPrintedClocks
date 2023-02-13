@@ -797,7 +797,10 @@ class ChainInfo:
 
 REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65)
 #claims a max load of 5kg, looks promising for an eight day
-CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.4, width=5.5, outside_length=10.8)
+#129 links in 1m = 7.75 inside length
+#38.5 in 30cm = 7.79 inside length
+#re-measuring 7.75 inside seems more accurate and wire I think is 1.45 not 1.4 thick
+CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.45, width=5.5, inside_length=1000/129)#, outside_length=10.8)
 
 class BearingInfo:
     '''
