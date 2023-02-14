@@ -24,3 +24,4 @@ Often I want to fit a new mechanism to an old clock, or something didn't work an
 #                                                innerD=big_bearing.innerD, innerSafeD=big_bearing.innerSafeD)
 #
 #     punch = plates.getBearingPunch(bearingOnTop=False, bearingInfo=slightly_smaller_big_bearing, back=back)
+

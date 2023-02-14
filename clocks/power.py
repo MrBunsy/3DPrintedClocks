@@ -1768,19 +1768,19 @@ class PocketChainWheel2:
         a = self.chain.inside_length
         #for the centre of the chain width
         self.radius = a / (2*math.sin(math.pi/n))
-        if self.radius < self.pocket_long:
+        if self.radius < self.pocket_long*0.5:
             #a ratio of pocket length to radius of less than one will fail to generate a pocket angle
             print("Radius too small to generate chain wheel for this chain")
-            self.radius = self.pocket_long
+            self.radius = self.pocket_long*0.5
             # raise ValueError("Radius too small to generate chain wheel for this chain")
-        self.fixing_positions = [polar(f*math.pi*2/fixings, self.radius*0.45) for f in range(fixings)]
+        self.fixing_positions = [polar(f*math.pi*2/fixings, self.radius*0.475) for f in range(fixings)]
         self.outer_radius = self.radius+self.chain.wire_thick
 
         self.diameter = self.radius*2
         self.circumference = math.pi * self.diameter
 
         #TODO
-        self.wheel_thick = self.pocket_wide + 4
+        self.wheel_thick = self.pocket_wide + 4 - 1.2
 
         if ratchetOuterD < 0:
             ratchetOuterD = self.diameter * 2.5
@@ -1875,7 +1875,7 @@ class PocketChainWheel2:
 
             for pos in self.fixing_positions:
                 bottom = bottom.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.getHeight()).translate(pos))
-                bottom = bottom.cut(self.fixing_screws.getNutCutter(height=self.wheel_thick*0.25).translate(pos))
+                bottom = bottom.cut(self.fixing_screws.getNutCutter(height=self.ratchet.thick, withBridging=True).rotate((0,0,0),(0,0,1), 360/12).translate(pos))
             bottom = bottom.faces(">Z").workplane().circle(self.hole_d / 2).cutThruAll()
 
         return bottom
@@ -2312,7 +2312,7 @@ class Ratchet:
 
     APROX_EXTRA_RADIUS_NEEDED=12
 
-    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5):
+    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5, click_arms=-1, click_teeth=-1):
         '''
         innerRadius is the radius of the round bit of the click wheel
         '''
@@ -2343,9 +2343,17 @@ class Ratchet:
 
         #was originaly just 8. Then tried math.ceil(cicumference/10) to replicate it in a way that scales, but this produced slightly too many teeth.
         #even /15 seems excessive, trying /20 for reprinting bits of clock 19
-        self.clicks = math.ceil(cicumference/20)#8
-        #ratchetTeet must be a multiple of clicks
-        self.ratchetTeeth = self.clicks*4
+        #allowing overrides since I keep messing with this logic and I need to retrofit a few ratchets
+        if click_arms < 0:
+            self.clicks = math.ceil(cicumference/20)#8
+        else:
+            self.clicks = click_arms
+
+        if click_teeth < 0:
+            #ratchetTeet must be a multiple of clicks
+            self.ratchetTeeth = self.clicks*4
+        else:
+            self.ratchetTeeth = click_teeth
 
 
         self.thick = thick
@@ -2368,7 +2376,7 @@ class Ratchet:
         #arc aprox ratchetThick
         clickArcAngle = self.anticlockwise * thick / innerClickR
 
-        clickOffsetAngle = -(math.pi*2/(self.clicks))*0.75 * self.anticlockwise
+        clickOffsetAngle = -(math.pi*2/(self.clicks))*1 * self.anticlockwise
 
         # since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
         # mostly affects ratchets with a larger inner radius and a not-so-large outer radius
