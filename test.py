@@ -43,13 +43,13 @@ if 'show_object' not in globals():
 #
 # show_object(chainWheel.getAssembled())
 
-chainWheel = PocketChainWheel2(max_diameter=35, chain=CHAIN_PRODUCTS_1_4MM_CHAIN, ratchet_thick=4, ratchetOuterD=50)
-
-# show_object(chainWheel.get_pocket_cutter())
-# show_object(chainWheel.get_whole_wheel())
-# show_object(chainWheel.getAssembled())
-# show_object(chainWheel.get_top_half())
-show_object(chainWheel.get_bottom_half())
+# chainWheel = PocketChainWheel2(max_diameter=35, chain=CHAIN_PRODUCTS_1_4MM_CHAIN, ratchet_thick=4, ratchetOuterD=50)
+#
+# # show_object(chainWheel.get_pocket_cutter())
+# # show_object(chainWheel.get_whole_wheel())
+# # show_object(chainWheel.getAssembled())
+# # show_object(chainWheel.get_top_half())
+# show_object(chainWheel.get_bottom_half())
 
 # show_object(chainWheel.get_between_pocket_cutter())
 
@@ -491,8 +491,10 @@ if False:
 
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
-# show_object(getGearDemo(justStyle=GearStyle.ARCS))
+show_object(getGearDemo(justStyle=GearStyle.CIRCLES_HOLLOW))
 
+
+# show_object(Gear.cutStyle(cq.Workplane("XY").circle(120).extrude(5),outerRadius=100, innerRadius=30,style=GearStyle.CIRCLES_HOLLOW))
 
 # show_object(roman_numerals("VII",30,cq.Workplane("XY"),0.4))
 

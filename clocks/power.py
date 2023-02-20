@@ -1730,6 +1730,9 @@ class PocketChainWheel2:
     '''
     The PocketChainWheel was one of the first classes I wrote for the clocks, it's a mess and also the chain wheel doesn't cope well with heavy weights
     So this is an attempt to produce an improved pocket chain wheel and a tidier class
+
+    still got a 'clunk' from this, which looked like it was due to teh chain twisting slightly so it ended up in the gap. Might try making that gap smaller.
+    Also possible that the chainproducts chain is just not very high quality as it seems to hang twisted
     '''
 
     def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, looseOnRod=False, ratchetOuterD=-1, ratchetOuterThick=5):
@@ -1760,6 +1763,7 @@ class PocketChainWheel2:
         link_length = self.chain.inside_length * 2
         self.pockets = floor(max_circumference /link_length)
         self.pocket_wide = self.chain.width+0.5
+        #extra wire thick just so they're a smidge bigger than they need to be
         self.pocket_long =  self.chain.inside_length + self.chain.wire_thick*2 + self.chain.wire_thick
 
         n = self.pockets * 2
@@ -1821,7 +1825,7 @@ class PocketChainWheel2:
         cutter = cutter.cut(base_cutter)
 
         #gap for the vertical chainlinks
-        gap_thick = self.chain.wire_thick * 2
+        gap_thick = self.chain.wire_thick * 1.5 # twice the wire thick seemed to result in chains still being able to clunk and ended up partly sideways on the way out the wheel
 
         hole_centre_y = (self.radius - self.chain.wire_thick/2)* math.cos(pocket_angle/2)
 
@@ -1912,10 +1916,12 @@ class PocketChainWheel2:
         '''
         return 3D model of fully assembled wheel with ratchet (for the model, not printing)
         '''
-        wheel = self.get_whole_wheel().translate((0,0,self.wheel_thick/2))
+        wheel = self.get_bottom_half()
+        top = self.get_top_half().rotate((0,0,0),(1,0,0),180).translate((0,0,self.wheel_thick/2))
+        bottom_thick = self.wheel_thick/2
         if self.ratchet is not None:
-            wheel = wheel.translate((0,0,self.ratchet.thick))
-            wheel = wheel.union(self.ratchet.getInnerWheel())
+            bottom_thick += self.ratchet.thick
+        wheel = wheel.add(top.translate((0,0,bottom_thick)))
         return wheel
 
     def getHeight(self):

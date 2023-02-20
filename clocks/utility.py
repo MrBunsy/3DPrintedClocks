@@ -800,7 +800,15 @@ REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65
 #129 links in 1m = 7.75 inside length
 #38.5 in 30cm = 7.79 inside length
 #re-measuring 7.75 inside seems more accurate and wire I think is 1.45 not 1.4 thick
+#some lengths of this stuff are completely different, triple checked this and got one with much shorter links:
+#82 links over 597mm
+#looks like that one chain is just different! I might not use this one after all...
+#74 links 593mm
+#different again!!! That's three different sizes from one purchase. I think I need to stick to ones that come on a reel
 CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.45, width=5.5, inside_length=1000/129)#, outside_length=10.8)
+
+#TODO measure a long stretch, 10.15 is just a rough estimate
+FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.15)
 
 class BearingInfo:
     '''

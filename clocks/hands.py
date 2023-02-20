@@ -56,8 +56,8 @@ class KnobHands(HandGenerator):
 
 
 class BaroqueHands(HandGenerator):
-    def __init__(self, base_r, total_length, thick, line_width, length):
-        super().__init__(base_r, length, thick)
+    def __init__(self, base_r, total_length, thick, line_width):
+        super().__init__(base_r, total_length, thick)
         self.total_length =total_length
         self.line_width = line_width
         self.hour_total_length = 0.7*self.total_length

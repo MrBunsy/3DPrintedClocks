@@ -28,7 +28,10 @@ class PendulumFixing(Enum):
 class GearStyle(Enum):
     SOLID = None
     ARCS = "HAC"
+    #punched out circles with little circles between
     CIRCLES = "circles"
+    #just the outer edges of a ring of circles
+    CIRCLES_HOLLOW = "circles_hollow"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
     #spokes these don't print nicely with petg - very stringy (might be fine on anything other than the mini?)

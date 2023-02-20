@@ -36,7 +36,9 @@ class Gear:
         if style == GearStyle.CIRCLES:
             if innerRadius < 0:
                 innerRadius = 3
-            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius)
+            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius, hollow=False)
+        if style == GearStyle.CIRCLES_HOLLOW:
+            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius+2, hollow=True)
         if style == GearStyle.SIMPLE4:
             return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=4)
         if style == GearStyle.SIMPLE5:
@@ -643,8 +645,9 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2.4, cantUseCutThroughAllBodgeThickness=0):
+    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2.4, hollow=False):
         '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
+        #TODO split out the hollow into its own method, I think it's going to be a little different, especially around calculating positions
 
         if innerRadius < 0:
             innerRadius = 3
@@ -662,7 +665,11 @@ class Gear:
         bigCircleSpace = ringSize*1.1
         # smallCircleR = bigCircleR*0.3
 
+        cutter_thick = 1000
+        cutter = cq.Workplane("XY")
 
+        if hollow:
+            cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
 
         bigCirclescircumference = 2 * math.pi * (innerRadius + ringSize/2)
 
@@ -681,18 +688,17 @@ class Gear:
                 angle = bigCircleAngle*circle - bigCircleAngle/4
                 pos = polar(angle, innerRadius + ringSize/2)
 
-                if cantUseCutThroughAllBodgeThickness > 0:
-                    cutter = cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR).extrude(cantUseCutThroughAllBodgeThickness)
-                    gear = gear.cut(cutter)
+                if hollow:
+                    cutter = cutter.cut(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR+2).circle(bigCircleR).extrude(cutter_thick))
                 else:
-                    gear = gear.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(bigCircleR).cutThruAll()
+                    cutter = cutter.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR).extrude(cutter_thick))
+
                 if hasSmallCircles:
                     smallCirclePos = polar(angle + bigCircleAngle / 2, innerRadius + ringSize * 0.75)
-                    if cantUseCutThroughAllBodgeThickness > 0:
-                        cutter = cq.Workplane("XY").moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).extrude(cantUseCutThroughAllBodgeThickness)
-                        gear = gear.cut(cutter)
-                    else:
-                        gear = gear.faces(">Z").workplane().moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).cutThruAll()
+                    cutter = cutter.add(cq.Workplane("XY").moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).extrude(cutter_thick))
+
+
+        gear = gear.cut(cutter)
 
         return gear
 

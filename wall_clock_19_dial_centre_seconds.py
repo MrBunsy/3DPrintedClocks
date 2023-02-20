@@ -83,8 +83,8 @@ assembly = Assembly(plates, hands=hands, timeSeconds=15, pulley=pulley_no_pipe)
 
 assembly.printInfo()
 
-# weight = Weight(height=130, diameter=35)
-# weight.printInfo()
+weight = Weight(height=100, diameter=35)
+weight.printInfo()
 
 # bigweight = Weight(height=125, diameter=45)
 # bigweight.printInfo()
@@ -99,7 +99,7 @@ if outputSTL:
     pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
-    # weight.outputSTLs(clockName, clockOutDir)
+    weight.outputSTLs(clockName, clockOutDir)
     # bigweight.outputSTLs(clockName+"_big", clockOutDir)
     pulley_no_pipe.outputSTLs(clockName + "_no_pipe", clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
