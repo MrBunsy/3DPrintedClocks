@@ -2472,6 +2472,7 @@ class MotionWorks:
             # minute holder is -0.2 and is pretty snug, but this needs to be really snug
             # -0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
             # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
+            #INFO - HANDS ADD 0.2 TO THIS for the hole in the hand
             holderR_base = self.minuteHandHolderSize / 2 + 0.05
             holderR_top = self.minuteHandHolderSize / 2 - 0.15
 

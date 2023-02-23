@@ -320,11 +320,13 @@ def dial(diameter=62, hole_d=7, black=True):
 
     return out
 
-class Whistle():
+class CuckooWhistle:
     '''
     Very much based on teh whistle built in this thread https://mb.nawcc.org/threads/how-to-diy-a-wooden-whistle.97498/
 
     Thought - could also make one of those train whistles just for fun
+
+    This was one of the first clock-related bits I wrote and is designed for a cuckoo clock, it's not very re-usable as a general purpose whistle (yet)
 
     '''
     def __init__(self, total_length=65):

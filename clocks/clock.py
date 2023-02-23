@@ -15,6 +15,7 @@ import numpy as np
 import os
 import datetime
 from .cuckoo_bits import roman_numerals
+from .cq_svg import exportSVG
 
 
 
@@ -2677,7 +2678,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, showPendulum=False, weights=None):
+    def __init__(self, plates, hands=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, weights=None):
         self.plates = plates
         self.hands = hands
         self.dial= plates.dial
@@ -2690,7 +2691,6 @@ class Assembly:
         self.timeHours = timeHours
         self.timeSeconds = timeSeconds
         self.pulley=pulley
-        self.showPendulum=showPendulum
         #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)
         self.weights=weights
         if self.weights is None:
@@ -2800,7 +2800,7 @@ class Assembly:
 
 
 
-    def getClock(self, with_rods=False, with_key=False):
+    def getClock(self, with_rods=False, with_key=False, with_pendulum=False):
         '''
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
         '''
@@ -2923,7 +2923,7 @@ class Assembly:
         pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick / 2
         pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
 
-        if self.showPendulum:
+        if with_pendulum:
 
 
             clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
@@ -3028,6 +3028,11 @@ class Assembly:
         print("Outputting ", out)
         exporters.export(self.getClock(), out)
 
+    def outputSVG(self, name="clock", path="../out"):
+        out = os.path.join(path, "{}.svg".format(name))
+        print("Outputting ", out)
+        exportSVG(self.getClock(), out, opts={"width":720,"height":1280})
+
 
 def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1):
     demo = cq.Workplane("XY")
@@ -3070,7 +3075,7 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
             # demo = demo.add(minuteHand.translate((x, y, hands.thick)))
             # demo = demo.add(hourHand.translate((x, y, 0)))
-            demo = demo.add(hands.getAssembled(include_seconds=False).translate((x, y, 0)))
+            demo = demo.add(hands.getAssembled(include_seconds=False, time_seconds=time_sec, time_minute=time_min, time_hour=time_hour).translate((x, y, 0)))
 
             if secondsHand is not None:
                 demo = demo.add(secondsHand.translate((x, y + length * 0.3)))
@@ -3084,7 +3089,11 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
     return demo
 
-def getGearDemo(module=1, justStyle=None):
+def getAnchorDemo(style=AnchorStyle.STRAIGHT):
+    escapment = AnchorEscapement(style=style)
+    return escapment.getAnchor()
+
+def getGearDemo(module=1, justStyle=None, oneGear=False):
     demo = cq.Workplane("XY")
 
     train = GoingTrain(pendulum_period=2, fourth_wheel=False, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5 * 24)
@@ -3111,6 +3120,10 @@ def getGearDemo(module=1, justStyle=None):
 
     gap = 5
     space = max([arbour.getMaxRadius()*2 for arbour in demoArbours]) + gap
+
+    if oneGear and justStyle is not None:
+        demoArbours[1].style = justStyle
+        return demoArbours[1].getShape()
 
     x=0
 

@@ -42,9 +42,10 @@ class AnchorEscapement:
         print(diff, "degrees")
 
     def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True,
-                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4, wheelThick=3, forceDiameter=False, anchorThick=12,
+                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, wheelThick=3, forceDiameter=False, anchorThick=12,
                  style=AnchorStyle.STRAIGHT):
         '''
+        originally: toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
         because it ended up being more elegant to treat the anchor as the last arbour in the clock.
 
@@ -74,6 +75,9 @@ class AnchorEscapement:
         Run is basically controlled by the weight/spring - it's how much power goes in. The value here is maximum run - the shape of the anchor
 
         clockwiseFromPinionSide is for the escape wheel
+
+        anchorTeeth can override the size of teh anchor - by default we cover 1/4 of the teeth between the pallets to
+
         '''
 
         #if true, do not allow the gear train to override the diameter. The default is that the escape wheel size is adjusted to fit best.

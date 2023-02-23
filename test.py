@@ -6,7 +6,7 @@ from clocks.utility import *
 from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
-from clocks.cuckoo_bits import roman_numerals
+from clocks.cuckoo_bits import roman_numerals, CuckooWhistle
 
 outputSTL = False
 
@@ -491,8 +491,17 @@ if False:
 
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
-show_object(getGearDemo(justStyle=GearStyle.CIRCLES_HOLLOW))
 
+# gear_demo = getGearDemo(justStyle=GearStyle.CIRCLES)
+# show_object(gear_demo)
+# exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
+
+show_object(getHandDemo())
+
+# whistle = CuckooWhistle()
+#
+# # show_object(whistle.getWholeWhistle())
+# show_object(whistle.getWhistleTop())
 
 # show_object(Gear.cutStyle(cq.Workplane("XY").circle(120).extrude(5),outerRadius=100, innerRadius=30,style=GearStyle.CIRCLES_HOLLOW))
 

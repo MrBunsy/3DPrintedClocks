@@ -705,9 +705,9 @@ class Hands:
                     hand = hand.circle(r-border)
                 hand = hand.extrude(thick)
                 y+=r-overlap/2
-
-            #is this too much? # TODO line up cutter with hand!
-            hand = Gear.cutStyle(hand,base_r*0.9,self.hourFixing_d*0.7, style=GearStyle.CIRCLES)
+            if not second:
+                #is this too much? # TODO line up cutter with hand!
+                hand = Gear.cutStyle(hand,base_r*0.9,self.hourFixing_d*0.7, style=GearStyle.CIRCLES)
             base_r = self.hourFixing_d*0.6
 
 
@@ -997,8 +997,8 @@ class Hands:
                     #works fine for simple hands, not for cuckoo hands
                     try:
                         shell = hand.shell(-outline_wide).translate((0,0,-outline_wide))
-                    except:
-                        print("Unable to give outline to hand")
+                    except Exception as e:
+                        print("Unable to give outline to hand: ", type(e), e)
                         return None
 
                     # hand_minus_shell = hand.cut(shell)
@@ -1096,7 +1096,7 @@ class Hands:
         if self.second_hand_centred:
             secondHand = secondHand.translate((0,0,self.thick*3))
         else:
-            secondHand = secondHand.translate((0, self.length * 1.5, 0))
+            secondHand = secondHand.translate((0, self.length * 1, 0))
 
         all = minuteHand.add(hourHand)
 
