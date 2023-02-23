@@ -12,6 +12,8 @@ from .dial import *
 from .cq_svg import exportSVG
 import os
 
+from cairosvg import svg2png
+
 '''
 Tools for a configurable clock, destined to be driven by a web GUI
 '''
@@ -170,8 +172,24 @@ class AutoWallClock:
         if has_dial:
             self.dial = Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
             self.hand_length = self.dial.outside_d * 0.45
-        self.plates = SimpleClockPlates(self.train, self.motionWorks, self.pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=self.pendulumSticksOut, name="auto", style="vertical",
-                                         motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=self.pendulumFixing, pendulumAtFront=False,
+
+        front_thick = 9
+        back_thick = 11
+        motionWorksAbove = True
+        heavy = True
+        extraHeavy = True
+        if days < 8:
+            front_thick = 6
+            back_thick = 6
+            motionWorksAbove = False
+            heavy = False
+            extraHeavy = False
+
+        if centred_second_hand:
+            motionWorksAbove = False
+
+        self.plates = SimpleClockPlates(self.train, self.motionWorks, self.pendulum, plateThick=front_thick, backPlateThick=back_thick, pendulumSticksOut=self.pendulumSticksOut, name="auto", style="vertical",
+                                         motionWorksAbove=motionWorksAbove, heavy=heavy, extraHeavy=extraHeavy, pendulumFixing=self.pendulumFixing, pendulumAtFront=False,
                                          backPlateFromWall=self.pendulumSticksOut * 2, fixingScrews=MachineScrew(metric_thread=3, countersunk=True, length=40),
                                          chainThroughPillarRequired=True, dial=self.dial, centred_second_hand=self.centred_second_hand, pillars_separate=True)
 
@@ -189,7 +207,9 @@ class AutoWallClock:
 
 
     def output_svg(self, path):
-        out = os .path.join(path, "{}.svg".format(self.name))
+        basename =  os.path.join(path, self.name)
+        out = basename + ".svg"
 
         print("Exporting {}".format(out))
         exportSVG(self.model.getClock(), out, opts={"width":720, "height":720, "strokeWidth": 0.2, "showHidden": False})
+        svg2png(url=out, write_to=basename+".png", background_color="rgb(255,255,255)")
