@@ -72,7 +72,7 @@ def gen_anchor_previews(out_path="autoclock"):
         file_name = "anchor_preview_{}.svg".format(style.value)
         print("Exporting Anchor {}".format(style.value))
         demo = getAnchorDemo(style)
-        exportSVG(demo, os.path.join(out_path, file_name), opts={"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.2,
+        exportSVG(demo, os.path.join(out_path, file_name), opts={"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
                                                                                   "showHidden": False, "projectionDir": (0, 0, 1)})
 
 def gen_hand_previews(out_path="autoclock", length=120):
@@ -87,13 +87,24 @@ def gen_hand_previews(out_path="autoclock", length=120):
 
                 print("Generating preview for {}{}{}".format(style.value, outline_string.replace("_"," "), seconds_string.replace("_", " ")))
 
-                hands = Hands(style=style, length=length, outline=outline, second_hand_centred=centred_seconds, thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD())
-                demo = hands.getAssembled()
+                hands = Hands(style=style, length=length, outline=outline, second_hand_centred=centred_seconds,
+                              thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+                              hourfixing_d=motionWorks.getHourHandHoleD())
+                demo = hands.getAssembled()#include_seconds=centred_seconds
 
                 file_name = "hands_{}{}{}.svg".format(style.value,outline_string, seconds_string)
 
                 exportSVG(demo, os.path.join(out_path, file_name), opts={"width": 600, "height": 600, "showAxes": False, "strokeWidth": 0.5,
                                                                            "showHidden": False, "projectionDir": (0, 0, 1)})
+
+def gen_dial_previews(out_path="autoclock", diameter=180):
+    for style in DialStyle:
+        dial = Dial(diameter, style=style)
+
+        print("Generating preview for {} dial".format(style.value))
+        file_name = "dial_{}.svg".format(style.value)
+        exportSVG(dial.get_dial(), os.path.join(out_path, file_name),opts={"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
+                                                                           "showHidden": False, "projectionDir": (0, 0, -1)})
 
 def enum_to_typescript(enum):
     name = enum.__name__

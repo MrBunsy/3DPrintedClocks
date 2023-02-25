@@ -1096,7 +1096,7 @@ class Hands:
         if self.second_hand_centred:
             secondHand = secondHand.translate((0,0,self.thick*3))
         else:
-            secondHand = secondHand.translate((0, self.length * 1, 0))
+            secondHand = secondHand.translate((0, self.length * 0.5, 0))
 
         all = minuteHand.add(hourHand)
 
