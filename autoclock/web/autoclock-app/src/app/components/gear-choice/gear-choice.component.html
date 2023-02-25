@@ -1,0 +1,9 @@
+<h2>Style of Gear</h2>
+<div class="gears">
+    <div class="choice">
+        <img *ngFor="let gear of gears;" width="120" src="assets/gear_preview_{{gear}}.svg" (click)="chooseGear(gear)">
+    </div>
+    <div class="preview">
+        <img height="500" src="assets/gear_demo_{{chosenGear}}.svg">
+    </div>
+</div>
