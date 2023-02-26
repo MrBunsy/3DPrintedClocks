@@ -148,6 +148,7 @@ class AutoWallClock:
 
         # currently based on clock 12
         self.hours = max(1,days-1) * 24 + 6
+        self.pendulum_period_s = pendulum_period_s
         self.pendulumFixing = PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
         self.weight_drop = 1200
         self.huygens = False
@@ -156,11 +157,16 @@ class AutoWallClock:
         self.bob_d = 100
         #will be overriden if we have a dial
         self.hand_length = 120
+        self.gear_style = gear_style
         self.second_hand_length=25
         self.hand_style = hand_style
         self.hand_has_outline = hand_has_outline
         self.centred_second_hand = centred_second_hand
+        self.dial_style = dial_style
         self.dial_seconds_style = dial_seconds_style
+        self.escapement_style = escapement_style
+        self.has_dial = has_dial
+        self.days = days
 
         self.pendulumSticksOut = 20
 
@@ -170,47 +176,66 @@ class AutoWallClock:
         if days < 8:
             self.module_size = 1.25
 
+        dial_style_string = ""
+        if has_dial:
+            dial_style_string = "_" + dial_style.value
+            if dial_seconds_style is not None:# and self.train.has_seconds_hand():
+                #record the second style regardless of if its present - we want to get this name without doing any heavy processing
+                dial_style_string += "_" + dial_seconds_style.value
+        self.name = "autoclock_{period}s_{days}day{centred_second}_{dial}{dial_style}_{gear}_{escapement}_{hands}".format(period=pendulum_period_s,
+                                                                                                                          days=days,
+                                                                                                                          centred_second="centred_second" if centred_second_hand else "",
+                                                                                                                          dial="dial" if has_dial else "nodial",
+                                                                                                                          gear=gear_style.value,
+                                                                                                                          escapement=escapement_style.value,
+                                                                                                                          dial_style=dial_style_string,
+                                                                                                                          hands=hand_style.value + ("_outline" if hand_has_outline else ""))
+
+        self.clock_generated = False
+
+    def gen_clock(self):
+        self.clock_generated = True
         #TODO auto optimal pallets
-        if pendulum_period_s > 1.5:
+        if self.pendulum_period_s > 1.5:
             #viable for second hand with 2s pendulum
             lift = 4
             drop = 2
             lock = 2
-            self.escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, toothBaseAngle=4, style=escapement_style)
+            self.escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, toothBaseAngle=4, style=self.escapement_style)
         else:
             # for period 1.5 with second hand, but viable for all short pendulums
             drop = 1.5
             lift = 3
             lock = 1.5
-            self.escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, style=escapement_style)
+            self.escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, style=self.escapement_style)
 
 
 
-        self.train = GoingTrain(pendulum_period=pendulum_period_s, fourth_wheel=False, escapement=self.escapement, maxWeightDrop=self.weight_drop,
+        self.train = GoingTrain(pendulum_period=self.pendulum_period_s, fourth_wheel=False, escapement=self.escapement, maxWeightDrop=self.weight_drop,
                            usePulley=True, chainAtBack=False, chainWheels=1, hours=self.hours, huygensMaintainingPower=self.huygens)
 
         self.moduleReduction = 0.85
         self.train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=self.moduleReduction)
 
-        self.train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gear_style, useKey=True, preferedDiameter=25, looseOnRod=False, prefer_small=True)
+        self.train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=self.gear_style, useKey=True, preferedDiameter=25, looseOnRod=False, prefer_small=True)
 
 
 
-        self.train.genGears(module_size=self.module_size, moduleReduction=self.moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gear_style,
+        self.train.genGears(module_size=self.module_size, moduleReduction=self.moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=self.gear_style,
                        chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=self.pendulumFixing)
 
         bearing = None
-        if centred_second_hand:
+        if self.centred_second_hand:
             bearing = getBearingInfo(3)
 
-        self.motionWorks = MotionWorks(style=gear_style, thick=3, compensateLooseArbour=False, bearing=bearing, compact=True, module=1)
+        self.motionWorks = MotionWorks(style=self.gear_style, thick=3, compensateLooseArbour=False, bearing=bearing, compact=True, module=1)
 
         self.pendulum = Pendulum(self.train.escapement, self.train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, handAvoiderInnerD=self.ring_d,
                                   bobD=self.bob_d, bobThick=10, useNylocForAnchor=False)
         self.dial = None
 
 
-        if has_dial:
+        if self.has_dial:
             bottom_fixing = False
             top_fixing = True
             # clock 12 (and roughly clock 19)
@@ -224,7 +249,7 @@ class AutoWallClock:
                     dial_diameter=245
                     #second hand length calculated after plates have reconfigured the dial
 
-            self.dial = Dial(outside_d=dial_diameter, bottom_fixing=bottom_fixing, top_fixing=top_fixing, seconds_style=dial_seconds_style, style=dial_style)
+            self.dial = Dial(outside_d=dial_diameter, bottom_fixing=bottom_fixing, top_fixing=top_fixing, seconds_style=self.dial_seconds_style, style=self.dial_style)
             self.hand_length = self.dial.outside_d * 0.45
 
         front_thick = 9
@@ -232,14 +257,14 @@ class AutoWallClock:
         motionWorksAbove = True
         heavy = True
         extraHeavy = True
-        if days < 8:
+        if self.days < 8:
             front_thick = 6
             back_thick = 6
             motionWorksAbove = False
             heavy = False
             extraHeavy = False
 
-        if centred_second_hand:
+        if self.centred_second_hand:
             motionWorksAbove = False
 
         self.plates = SimpleClockPlates(self.train, self.motionWorks, self.pendulum, plateThick=front_thick, backPlateThick=back_thick, pendulumSticksOut=self.pendulumSticksOut, name="auto", style="vertical",
@@ -247,13 +272,13 @@ class AutoWallClock:
                                          backPlateFromWall=self.pendulumSticksOut * 2, fixingScrews=MachineScrew(metric_thread=3, countersunk=True, length=40),
                                          chainThroughPillarRequired=True, dial=self.dial, centred_second_hand=self.centred_second_hand, pillars_separate=True)
 
-        if has_dial and not self.centred_second_hand and self.train.has_seconds_hand():
+        if self.has_dial and not self.centred_second_hand and self.train.has_seconds_hand():
             self.second_hand_length = self.dial.second_hand_mini_dial_d*0.5
 
         outline = 1 if self.hand_has_outline else 0
         minute_fixing = "circle" if bearing is not None else "square"
         outlineSameAsBody = False
-        if hand_style == HandStyle.XMAS_TREE:
+        if self.hand_style == HandStyle.XMAS_TREE:
             outlineSameAsBody = True
         self.hands = Hands(style=self.hand_style, minuteFixing=minute_fixing, minuteFixing_d1=self.motionWorks.getMinuteHandSquareSize(), hourfixing_d=self.motionWorks.getHourHandHoleD(),
                             length=self.hand_length, thick=self.motionWorks.minuteHandSlotHeight, outline=outline, outlineSameAsBody=outlineSameAsBody,
@@ -263,29 +288,22 @@ class AutoWallClock:
 
         self.model = Assembly(self.plates, hands=self.hands, timeSeconds=30, pulley=self.pulley)
 
-        dial_style_string = ""
-        if has_dial:
-            dial_style_string = "_" + dial_style.value
-            if dial_seconds_style is not None and self.train.has_seconds_hand():
-                dial_style_string += "_" + dial_seconds_style.value
-        self.name = "autoclock_{period}s_{days}day{centred_second}_{dial}{dial_style}_{gear}_{escapement}_{hands}".format(period=pendulum_period_s,
-                                                                                                                          days=days,
-                                                                                                                          centred_second="centred_second" if centred_second_hand else "",
-                                                                                                                          dial="dial" if has_dial else "nodial",
-                                                                                                                          gear=gear_style.value,
-                                                                                                                          escapement=escapement_style.value,
-                                                                                                                          dial_style=dial_style_string,
-                                                                                                                          hands=hand_style.value + ("_outline" if hand_has_outline else ""))
+
 
 
     def get_svg_text(self):
+        if not self.clock_generated:
+            self.gen_clock()
         return exportSVG(self.model.getClock(), None, opts={"width": 720, "height": 720, "strokeWidth": 0.2, "showHidden": False})
 
     def output_svg(self, path):
+        if not self.clock_generated:
+            self.gen_clock()
         basename =  os.path.join(path, self.name)
         out = basename + ".svg"
 
         print("Exporting {}".format(out))
-        exportSVG(self.model.getClock(), out, opts={"width":720, "height":720, "strokeWidth": 0.2, "showHidden": False})
+        svg = exportSVG(self.model.getClock(), out, opts={"width":720, "height":720, "strokeWidth": 0.2, "showHidden": False})
         svg2png(url=out, write_to=basename+".png", background_color="rgb(255,255,255)", output_width=1440)
         svg2png(url=out, write_to=basename + "_small.png", background_color="rgb(255,255,255)", output_width=720)
+        return svg
