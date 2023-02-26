@@ -301,7 +301,7 @@ def getSVG(shape, opts=None):
     return svg
 
 
-def exportSVG(shape, fileName: str, opts=None):
+def exportSVG(shape, fileName: str = None, opts=None):
     """
     Accept a cadquery shape, and export it to the provided file
     TODO: should use file-like objects, not a fileName, and/or be able to return a string instead
@@ -314,6 +314,9 @@ def exportSVG(shape, fileName: str, opts=None):
         shape = toCompound(shape)
 
     svg = getSVG(shape, opts)
-    f = open(fileName, "w")
-    f.write(svg)
-    f.close()
+    if fileName is not None:
+        with open(fileName, "w") as f:
+            f.write(svg)
+            f.close()
+
+    return svg

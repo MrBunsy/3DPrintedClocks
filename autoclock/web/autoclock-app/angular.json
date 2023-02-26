@@ -63,7 +63,8 @@
               "browserTarget": "autoclock-app:build:production"
             },
             "development": {
-              "browserTarget": "autoclock-app:build:development"
+              "browserTarget": "autoclock-app:build:development",
+			  "proxyConfig":"proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

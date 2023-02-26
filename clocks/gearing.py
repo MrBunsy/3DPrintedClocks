@@ -618,10 +618,12 @@ class Gear:
         gap_size = outer_r - inner_r
 
         sagitta = get_sagitta(arms)
-        while sagitta < gap_size/2:
+        i=0
+        while sagitta < gap_size/2 and i <1000:
             #on narrow gaps they can end up just a straight lines!
             arms+=1
             sagitta = get_sagitta(arms)
+            i+=1
 
 
         # sagitta*=1.2

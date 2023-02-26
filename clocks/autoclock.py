@@ -147,7 +147,7 @@ class AutoWallClock:
         '''
 
         # currently based on clock 12
-        self.hours = min(1,days-1) * 24 + 6
+        self.hours = max(1,days-1) * 24 + 6
         self.pendulumFixing = PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
         self.weight_drop = 1200
         self.huygens = False
@@ -277,6 +277,9 @@ class AutoWallClock:
                                                                                                                           dial_style=dial_style_string,
                                                                                                                           hands=hand_style.value + ("_outline" if hand_has_outline else ""))
 
+
+    def get_svg_text(self):
+        return exportSVG(self.model.getClock(), None, opts={"width": 720, "height": 720, "strokeWidth": 0.2, "showHidden": False})
 
     def output_svg(self, path):
         basename =  os.path.join(path, self.name)
