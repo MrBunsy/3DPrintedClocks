@@ -1,0 +1,8 @@
+<H2>Hands</H2>
+<div class="hands">
+    <label class="choice">Centred second hand<input type="checkbox" [(ngModel)]="centredSecond" (change)="chooseCentredSecond(centredSecond)"></label>
+    <label class="choice">Outline<input type="checkbox" [(ngModel)]="outline" (change)="chooseOutline(outline)"></label>
+    <div class="choice">
+        <img *ngFor="let style of handStyles;" width="300" class="{{style == handStyle ? 'chosen' : ''}}" src="assets/hands_{{style}}{{outlineString}}{{centredSecondString}}.svg" (click)="chooseHandStyle(style)">
+    </div>
+</div>

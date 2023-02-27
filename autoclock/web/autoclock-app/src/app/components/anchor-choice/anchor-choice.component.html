@@ -1,0 +1,6 @@
+<h2>Style of Anchor</h2>
+<div class="anchors">
+    <div class="choice">
+        <img *ngFor="let a of anchors;" width="250" src="assets/anchor_preview_{{a}}.svg" class="{{a == anchor ? 'chosen' : '' }}" (click)="chooseAnchorStyle(a)">
+    </div>
+</div>

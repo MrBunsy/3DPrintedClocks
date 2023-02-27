@@ -52,6 +52,10 @@ export class Autoclock{
     }
 
     public getUrl(){
-        return `/generate_clock/?pendulum_period_s=${this.pendulum_period_s}&days=${this.days}&centred_second_hand=${this.centred_second_hand}&has_dial=${this.has_dial}&dial_style=${this.dial_style}&dial_seconds_style=${this.dial_seconds_style}&gear_style=${this.gear_style}&hand_style=${this.hand_style}&hand_has_outline=${this.hand_has_outline}&escapement_style=${this.anchor_style}`
+        return `/generate_clock/clock?pendulum_period_s=${this.pendulum_period_s}&days=${this.days}&centred_second_hand=${this.centred_second_hand}&has_dial=${this.has_dial}&dial_style=${this.dial_style}&dial_seconds_style=${this.dial_seconds_style}&gear_style=${this.gear_style}&hand_style=${this.hand_style}&hand_has_outline=${this.hand_has_outline}&escapement_style=${this.anchor_style}`
+    }
+
+    public getDialAndHandsUrl(){
+        return `/generate_clock/dial?centred_second_hand=${this.centred_second_hand}&dial_style=${this.dial_style}&dial_seconds_style=${this.dial_seconds_style}&hand_style=${this.hand_style}&hand_has_outline=${this.hand_has_outline}`
     }
 }

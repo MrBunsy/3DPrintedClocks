@@ -1,0 +1,7 @@
+<div class="preview">
+    <button *ngIf="!show" (click)="generateClock()">Generate Clock</button>
+    <div *ngIf="show">
+        <img [hidden]="loading" width="720" src="{{(clock$ | async)?.getUrl()}}" (load)="onLoad()">
+        <div *ngIf="loading">  Generating Clock...</div>
+    </div>
+</div>

@@ -1,0 +1,13 @@
+<H2>Dial</H2>
+<div class="dial">
+    <div class="choice">
+        <label class="choice">Has a dial<input type="checkbox" [(ngModel)]="hasDial" (change)="chooseDial(hasDial)"></label>
+        <div *ngIf="hasDial" >
+            <img *ngFor="let style of dialStyles;" width="300" class="{{style == dialStyle ? 'chosen' : ''}}" src="assets/dial_{{style}}.svg" (click)="chooseStyle(style)">
+        </div>
+    </div>
+    <div class="preview">
+        <img [hidden]="loading" width="400" src="{{(clock$ | async)?.getDialAndHandsUrl()}}&width=400" (load)="onLoad()">
+        <div *ngIf="loading"> Loading ...</div>
+    </div>
+</div>

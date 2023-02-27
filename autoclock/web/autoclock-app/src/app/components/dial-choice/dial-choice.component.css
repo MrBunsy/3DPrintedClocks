@@ -1,0 +1,12 @@
+.dial {
+    display:grid;
+    /* columns: 2; */
+}
+
+div.choice{
+    grid-column-start:1;
+}
+
+div.preview{
+    grid-column-start:2;
+}
