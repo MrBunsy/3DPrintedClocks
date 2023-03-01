@@ -62,6 +62,10 @@ class BaroqueHands(HandGenerator):
         self.line_width = line_width
         self.hour_total_length = 0.7*self.total_length
 
+        self.hour_hand_cache = None
+        self.minute_hand_cache = None
+        self.second_hand_cache = None
+
     def get_bar(self):
         bar_width = self.total_length * 0.1
         # hand = hand.union(cq.Workplane("XY").rect(bar_width, line_width).extrude(thick).translate((0, bar_y)))
@@ -73,6 +77,10 @@ class BaroqueHands(HandGenerator):
         '''
         doing this outside the main hands class as it could get complicated and for the baroque hands there's little in common between the hour and minute hands
         '''
+
+        if self.hour_hand_cache is not None:
+            return self.hour_hand_cache
+
         total_length = self.hour_total_length
         #plan is to make the bulk of the hand always start just after the base circle
         length = total_length-self.base_r
@@ -154,10 +162,12 @@ class BaroqueHands(HandGenerator):
 
         #tip:
         hand = hand.union(cq.Workplane("XY").circle(self.line_width/2).extrude(self.thick).translate((0,total_length)))
-
+        self.hour_hand_cache = hand
         return hand
 
     def minute_hand(self):
+        if self.minute_hand_cache is not None:
+            return self.minute_hand_cache
         hand =  cq.Workplane("XY").tag("base").circle(self.base_r).extrude(self.thick)
 
         length = self.total_length - self.base_r
@@ -210,10 +220,12 @@ class BaroqueHands(HandGenerator):
             .radiusArc((self.line_width/2, arrow_long/2), arrow_long*1.5).line(-self.line_width,0).radiusArc((-arrow_wide/2, -arrow_long/2), arrow_long*1.5).close().extrude(self.thick).translate((0,arrow_y + arrow_y_offset))
 
         hand = hand.union(arrow)
-
+        self.minute_hand_cache = hand
         return hand
 
     def second_hand(self, total_length=30, base_r=6, thick=3):
+        if self.second_hand_cache is not None:
+            return self.second_hand_cache
         line_width=1.2
         hand = cq.Workplane("XY").tag("base").circle(base_r).extrude(thick)
 
@@ -280,7 +292,7 @@ class BaroqueHands(HandGenerator):
         # swirl = cq.Workplane("YZ").moveTo(0, thick/2).rect(line_width,thick).loft(base_swirl_line)
         # return swirl
         # hand = hand.union(swirl)
-
+        self.second_hand_cache = hand
         return hand
 
 class Hands:
@@ -459,6 +471,7 @@ class Hands:
             return ["brown", "green", "red", "gold"]
 
         return [None]
+
 
     def getHand(self, hour=False, minute=False, second=False, generate_outline=False, colour=None):
         '''
@@ -1000,7 +1013,8 @@ class Hands:
                     except Exception as e:
                         print("Unable to give outline to {} hand: ".format("second" if second else ("minute" if minute else "hour")), type(e), e)
                         return None
-
+                    if minute:
+                        print("generating outline for minute hand")
                     # hand_minus_shell = hand.cut(shell)
                     # return shell
                     slab_thick = self.outlineThick
