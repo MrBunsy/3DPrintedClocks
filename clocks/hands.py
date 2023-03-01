@@ -21,6 +21,12 @@ class HandStyle(Enum):
     BAROQUE="baroque"
     #ARROWS
 
+class HandType(Enum):
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+
+
 class HandGenerator:
     def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
         #radius of circle at base of hand
@@ -320,6 +326,12 @@ class Hands:
                  chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
+
+        This is a bit of a mess, but the hand shapes are mostly generated in getBasicHandShape, with a few styles having their own classes to do the heavy work - I could probably consider combining these back
+        now I've done some tidy up.
+
+        There is a caching system for hand shapes, but it only helps with generating outlines and doesn't help with multicolour hands yet
+
         '''
         self.thick=thick
         #something with shells or outline doesn't behave how I'd expect with thin and narrow hands, ends up with a layer inside the hand for the outline
@@ -386,7 +398,11 @@ class Hands:
             #TODO tidy up the base_r calculations do this here again (commented out below)
             self.generator = BaroqueHands(base_r=self.hourFixing_d *0.75, total_length=self.length, thick=self.thick, line_width=line_width)
 
-        # self.minute_hand_shape = self.get
+        self.hand_shapes = {}
+        self.outline_shapes = {}
+        for hand_type in HandType:
+            self.hand_shapes[hand_type] = None
+            self.outline_shapes[hand_type] = None
 
     def getHandNut(self):
         #fancy bit to hide the actual nut (still not used, should try and revive this!)
@@ -403,8 +419,8 @@ class Hands:
 
         return nut
 
-    def cutFixing(self, hand, hour, second=False):
-        if second and self.secondFixing == "rod":
+    def cutFixing(self, hand, hand_type):
+        if hand_type == HandType.SECOND and self.secondFixing == "rod":
             #second hand, assuming threaded onto a threaded rod, hole doesn't extend all the way through unless centred seconds hand
             # hand = hand.moveTo(0, 0).circle(self.secondFixing_d / 2).cutThruAll()
 
@@ -429,13 +445,13 @@ class Hands:
             return hand
 
 
-        if not hour and self.minuteFixing == "rectangle":
+        if hand_type == HandType.MINUTE and self.minuteFixing == "rectangle":
             # TODO fixing_offset
             cutter = cq.Workplane("XY").rect(self.minuteFixing_d1, self.minuteFixing_d2).extrude(self.thick).rotate((0,0,0), (0,0,1), self.fixing_offset_deg)
             hand = hand.cut(cutter)
-        elif not hour and self.minuteFixing == "circle":
+        elif hand_type == HandType.MINUTE and self.minuteFixing == "circle":
             hand = hand.moveTo(0, 0).circle(self.minuteFixing_d1 / 2).cutThruAll()
-        elif hour and self.hourFixing == "circle":
+        elif hand_type == HandType.HOUR and self.hourFixing == "circle":
             #hour hand, assuming circular friction fit
             hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()
         else:
@@ -947,7 +963,7 @@ class Hands:
         return hand
 
 
-    def getHand(self, hour=False, minute=False, second=False, generate_outline=False, colour=None):
+    def getHand(self, hand_type=HandType.MINUTE, generate_outline=False, colour=None):
         '''
         #either hour, minute or second hand (for now?)
         if provide a colour, return the layer for just that colour (for novelty hands with lots of colours)
@@ -955,25 +971,30 @@ class Hands:
         if generate_outline is true this is just the shape of the hand used to generate an outline - this skips cutting a hole for the fixing
         '''
 
-        #default is minute hand
+        if generate_outline and self.outline_shapes[hand_type] is not None:
+            #the outline is cached
+            return self.outline_shapes[hand_type]
 
 
-        if not hour and not minute and not second:
-            minute = True
+        hand = None
         #draw a circle for the base of the hand
-
-        hand = self.getBasicHandShape(hour, minute, second, colour)
+        if self.hand_shapes[hand_type] is not None:
+            hand = self.hand_shapes[hand_type]
+        else:
+            hand = self.getBasicHandShape(hand_type == HandType.HOUR, hand_type == HandType.MINUTE, hand_type == HandType.SECOND, colour)
+            #cache the basic shape as it's re-used in generating the outline
+            self.hand_shapes[hand_type] = hand
         # if second:
         #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + thick)
 
         if not generate_outline:
             try:
-                hand = self.cutFixing(hand, hour, second)
+                hand = self.cutFixing(hand, hand_type)
             except:
                 pass
         thick = self.thick
         outline_wide = self.outline
-        if second:
+        if hand_type == HandType.SECOND:
             outline_wide = self.outline_on_seconds
             thick = self.secondThick
 
@@ -991,10 +1012,8 @@ class Hands:
                     try:
                         shell = hand.shell(-outline_wide).translate((0,0,-outline_wide))
                     except Exception as e:
-                        print("Unable to give outline to {} hand: ".format("second" if second else ("minute" if minute else "hour")), type(e), e)
+                        print("Unable to give outline to {} {} hand: ".format(hand_type.value, self.style.value), type(e), e)
                         return None
-                    if minute:
-                        print("generating outline for minute hand")
                     # hand_minus_shell = hand.cut(shell)
                     # return shell
                     slab_thick = self.outlineThick
@@ -1007,14 +1026,16 @@ class Hands:
                         thin_not_outline = hand.intersect(bigSlab).cut(outline)
                         outline_with_back_of_hand = hand.cut(thin_not_outline)
                         try:
-                            outline_with_back_of_hand = self.cutFixing(outline_with_back_of_hand, hour, second)
+                            outline_with_back_of_hand = self.cutFixing(outline_with_back_of_hand, hand_type)
                         except:
                             pass
+                        self.outline_shapes[hand_type] = outline_with_back_of_hand
                         return outline_with_back_of_hand
                     else:
+                        self.outline_shapes[hand_type] = outline
                         return outline
                 else:
-                    outlineShape = self.getHand(hour=hour, minute=minute, second=second, generate_outline=True)
+                    outlineShape = self.getHand(hand_type, generate_outline=True)
                     #chop out the outline from the shape
                     if outlineShape is not None:
                         hand = hand.cut(outlineShape)
@@ -1028,14 +1049,15 @@ class Hands:
                     bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(slabThick)
 
                     outline = shell.intersect(bigSlab)
-                    outline = self.cutFixing(outline, hour, second)
+                    outline = self.cutFixing(outline, hand_type)
 
                     if self.outlineSameAsBody:
                         #add the hand, minus a thin layer on the front
                         outline = outline.union(hand.cut(cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(self.outlineThick)))
-                        outline = self.cutFixing(outline, hour, second)
+                        outline = self.cutFixing(outline, hand_type)
+                        self.outline_shapes[hand_type] = outline
                         return outline
-
+                    self.outline_shapes[hand_type] = outline
                     return outline
                 else:
                     #this is the hand, minus the outline
@@ -1049,8 +1071,8 @@ class Hands:
 
                             hand = hand.union(shell)
                         except:
-                            print("Unable to make hand larger")
-                        hand = self.cutFixing(hand, hour, second)
+                            print("Unable to add external outline to hand: {} {}".format(hand_type.value, self.style.value))
+                        hand = self.cutFixing(hand, hand_type)
                         return hand
 
 
@@ -1071,15 +1093,15 @@ class Hands:
         secondHand = cq.Workplane("XY")
 
         for colour in self.getExtraColours():
-            minuteHand = minuteHand.add(self.getHand(minute=True, colour=colour))
-            hourHand = hourHand.add(self.getHand(hour=True, colour=colour))
-            secondHand = secondHand.add(self.getHand(second=True, colour = colour))
+            minuteHand = minuteHand.add(self.getHand(hand_type=HandType.MINUTE, colour=colour))
+            hourHand = hourHand.add(self.getHand(hand_type=HandType.HOUR, colour=colour))
+            secondHand = secondHand.add(self.getHand(hand_type=HandType.SECOND, colour = colour))
 
         if self.outline > 0:
-            minuteHand = minuteHand.add(self.getHand(minute=True, generate_outline=True))
-            hourHand = hourHand.add(self.getHand(hour=True, generate_outline=True))
+            minuteHand = minuteHand.add(self.getHand(hand_type=HandType.MINUTE, generate_outline=True))
+            hourHand = hourHand.add(self.getHand(hand_type=HandType.HOUR, generate_outline=True))
             try:
-                secondHand = secondHand.add(self.getHand(second = True, generate_outline=True))
+                secondHand = secondHand.add(self.getHand(hand_type=HandType.SECOND, generate_outline=True))
             except:
                 pass
 
@@ -1107,15 +1129,15 @@ class Hands:
             colour_string = "_"+colour if colour is not None else ""
             out = os.path.join(path, "{}_hour_hand{}.stl".format(name, colour_string))
             print("Outputting ", out)
-            exporters.export(self.getHand(hour=True, colour=colour), out)
+            exporters.export(self.getHand(hand_type=HandType.HOUR, colour=colour), out)
 
             out = os.path.join(path, "{}_minute_hand{}.stl".format(name, colour_string))
             print("Outputting ", out)
-            exporters.export(self.getHand(minute=True, colour=colour), out)
+            exporters.export(self.getHand(hand_type=HandType.MINUTE, colour=colour), out)
 
             out = os.path.join(path, "{}_second_hand{}.stl".format(name, colour_string))
             print("Outputting ", out)
-            exporters.export(self.getHand(second=True, colour=colour), out)
+            exporters.export(self.getHand(hand_type=HandType.SECOND, colour=colour), out)
 
         out = os.path.join(path, "{}_hand_nut.stl".format(name))
         print("Outputting ", out)
@@ -1124,13 +1146,13 @@ class Hands:
         if self.outline > 0:
             out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(hour=True, generate_outline=True), out)
+            exporters.export(self.getHand(hand_type=HandType.HOUR, generate_outline=True), out)
 
             out = os.path.join(path, "{}_minute_hand_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(minute=True, generate_outline=True), out)
+            exporters.export(self.getHand(hand_type=HandType.MINUTE, generate_outline=True), out)
 
-            secondoutline = self.getHand(second=True, generate_outline=True)
+            secondoutline = self.getHand(hand_type=HandType.SECOND, generate_outline=True)
             if secondoutline is not None:
                 out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
                 print("Outputting ", out)

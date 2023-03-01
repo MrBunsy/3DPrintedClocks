@@ -2903,7 +2903,7 @@ class Assembly:
 
         if self.goingTrain.has_seconds_hand():
             #second hand!! yay
-            secondHand = self.hands.getHand(second=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+            secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
             secondHandPos = self.plates.bearingPositions[-2][:2]
             secondHandPos.append(self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick)
@@ -3073,7 +3073,7 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
         secondsHand = None
         try:
-            secondsHand =hands.getHand(second=True)
+            secondsHand =hands.getHand(hand_type=HandType.SECOND)
         except:
             print("Unable to generate second hand for {}".format(style.value))
 
@@ -3096,8 +3096,8 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
                 demo = demo.add(secondsHand.translate((x, y + length * 0.3)))
 
         else:
-            demo = demo.add(hands.getHand(hour=True).translate((x, y)))
-            demo = demo.add(hands.getHand(minute=True).translate((x+length*0.3, y)))
+            demo = demo.add(hands.getHand(hand_type=HandType.HOUR).translate((x, y)))
+            demo = demo.add(hands.getHand(hand_type=HandType.MINUTE).translate((x+length*0.3, y)))
             if secondsHand is not None:
                 demo = demo.add(secondsHand.translate((x - length * 0.3, y)))
 
