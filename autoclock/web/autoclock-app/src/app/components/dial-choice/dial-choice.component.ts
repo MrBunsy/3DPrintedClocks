@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
+import { filter, map, Observable, pairwise, Subscription, tap } from 'rxjs';
 import { ClocksService } from 'src/app/clocks.service';
 import { Autoclock } from 'src/app/models/clock';
 import { DialStyle, DialStyle_list } from 'src/app/models/types';
@@ -13,7 +13,7 @@ export class DialChoiceComponent implements OnDestroy {
   public hasDial: boolean = true;
   public dialStyle: DialStyle = DialStyle.LINES_ARC;
   public dialStyles : DialStyle[] = DialStyle_list;
-  public loading: boolean = false;
+  public loading: boolean = true;
   public clock$: Observable<Autoclock>;
   private subscription: Subscription;
 
@@ -23,7 +23,7 @@ export class DialChoiceComponent implements OnDestroy {
 
   constructor(public clockService: ClocksService){
     clockService.setDial(this.hasDial, this.dialStyle, this.secondsStyle);
-    this.clock$ = clockService.getClock()
+    this.clock$ = clockService.getDialChanged();
 
     this.subscription = this.clock$.subscribe(clock => this.loading = true);
   }

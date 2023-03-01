@@ -7,7 +7,7 @@
         </div>
     </div>
     <div class="preview">
-        <img [hidden]="loading" width="400" src="{{(clock$ | async)?.getDialAndHandsUrl()}}&width=400" (load)="onLoad()">
+        <img [hidden]="loading" width="400" src="{{(clock$ | async)?.getDialAndHandsUrl()}}" (load)="onLoad()">
         <div *ngIf="loading"> Loading ...</div>
     </div>
 </div>

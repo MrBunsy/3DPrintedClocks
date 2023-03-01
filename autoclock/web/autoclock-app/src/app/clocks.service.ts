@@ -17,14 +17,27 @@ export class ClocksService {
 
   private clockSubject: ReplaySubject<Autoclock>;
   private clock: Autoclock
+  private dialChanged: Subject<Autoclock>;
 
   constructor(private http: HttpClient) {
     this.clockSubject = new ReplaySubject<Autoclock>();
     this.clock = new Autoclock()
+    this.dialChanged = new ReplaySubject<Autoclock>();
+
+    this.dialChanged.next(this.clock);
+    this.clockSubject.next(this.clock);
    }
 
    public getClock(): Observable<Autoclock>{
       return this.clockSubject.asObservable()
+   }
+
+   /**
+    * Emits if the dial or hands (to create a dial preview) have changed
+    * @returns 
+    */
+   public getDialChanged(): Observable<Autoclock>{
+     return this.dialChanged.asObservable();
    }
 
    public setGear(gear: GearStyle){
@@ -42,6 +55,7 @@ export class ClocksService {
     this.clock.hand_has_outline = outline;
     this.clock.centred_second_hand = centredSecond
     this.clockSubject.next(this.clock)
+    this.dialChanged.next(this.clock);
   }
 
   public setDial(hasDial: boolean, style: DialStyle, secondsStyle: DialStyle){
@@ -49,5 +63,6 @@ export class ClocksService {
     this.clock.dial_style = style;
     this.clock.dial_seconds_style = secondsStyle;
     this.clockSubject.next(this.clock);
+    this.dialChanged.next(this.clock);
   }
 }

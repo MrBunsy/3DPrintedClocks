@@ -950,6 +950,8 @@ class SimpleClockPlates:
         #HACK this is calculated when generating the front plate
         self.front_plate_has_key_hole = False
 
+
+
         #just for the first prototype
         self.anchorHasNormalBushing=True
         self.motionWorks = motionWorks
@@ -988,242 +990,8 @@ class SimpleClockPlates:
         self.gearGap = 3
         self.smallGearGap = 2
 
-
-
-        #if angles are not given, assume clock is entirely vertical
-
-        if anglesFromMinute is None:
-            #assume simple pendulum at top
-            angle = math.pi/2 if self.pendulumAtTop else math.pi / 2
-
-            #one extra for the anchor
-            self.anglesFromMinute = [angle for i in range(self.goingTrain.wheels + 1)]
-        if anglesFromChain is None:
-            angle = math.pi / 2 if self.pendulumAtTop else -math.pi / 2
-
-            self.anglesFromChain = [angle for i in range(self.goingTrain.chainWheels)]
-
-        if self.style=="round":
-
-            # TODO decide if we want the train to go in different directions based on which side the weight is
-            side = -1 if self.goingTrain.isWeightOnTheRight() else 1
-            arbours = [self.goingTrain.getArbourWithConventionalNaming(arbour) for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels)]
-            distances = [arbour.distanceToNextArbour for arbour in arbours]
-            maxRs = [arbour.getMaxRadius() for arbour in arbours]
-            arcAngleDeg = 270
-
-            foundSolution=False
-            while(not foundSolution and arcAngleDeg > 180):
-                arcRadius = getRadiusForPointsOnAnArc(distances, degToRad(arcAngleDeg))
-
-                # minDistance = max(distances)
-
-                if arcRadius > max(maxRs):
-                    #if none of the gears cross the centre, they should all fit
-                    #pretty sure there are other situations where they all fit
-                    #and it might be possible for this to be true and they still don't all fit
-                    #but a bit of playing around and it looks true enough
-                    foundSolution=True
-                    self.compactRadius = arcRadius
-                else:
-                    arcAngleDeg-=1
-            if not foundSolution:
-                raise ValueError("Unable to calculate radius for gear ring, try a vertical clock instead")
-
-            angleOnArc = -math.pi/2
-            lastPos = polar(angleOnArc, arcRadius)
-
-            for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels):
-                '''
-                Calculate angle of the isololese triangle with the distance at the base and radius as the other two sides
-                then work around the arc to get the positions
-                then calculate the relative angles so the logic for finding bearing locations still works
-                bit over complicated
-                '''
-                # print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
-                nextAngleOnArc = angleOnArc + 2*math.asin(distances[i+self.goingTrain.chainWheels]/(2*arcRadius))*side
-                nextPos = polar(nextAngleOnArc, arcRadius)
-
-                relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
-                if i < 0 :
-                    self.anglesFromChain[i + self.goingTrain.chainWheels] = relativeAngle
-                else:
-                    self.anglesFromMinute[i] = relativeAngle
-                lastPos = nextPos
-                angleOnArc = nextAngleOnArc
-
-
-        #[[x,y,z],]
-        #for everything, arbours and anchor
-        self.bearingPositions=[]
-        #TODO consider putting the anchor on a bushing
-        # self.bushingPositions=[]
-        self.arbourThicknesses=[]
-        #how much the arbours can wobble back and forth. aka End-shake.
-        #2mm seemed a bit much
-        self.endshake = 1
-        #height of the centre of the wheel that will drive the next pinion
-        drivingZ = 0
-        for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels +1):
-            # print(str(i))
-            if  i == -self.goingTrain.chainWheels:
-                #the wheel with chain wheel ratchet
-                #assuming this is at the very back of the clock
-                #note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
-                pos = [0, 0, 0]
-                self.bearingPositions.append(pos)
-                #note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
-                drivingZ = self.goingTrain.getArbour(i).getWheelCentreZ()
-                self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
-                # print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
-            else:
-                r = self.goingTrain.getArbour(i - 1).distanceToNextArbour
-                # print("r", r)
-                #all the other going wheels up to and including the escape wheel
-                if i == self.goingTrain.wheels:
-                    # the anchor
-                    if self.escapementOnFront:
-                        #there is nothing between the plates for this
-                        self.arbourThicknesses.append(0)
-                        #don't do anything else
-                    else:
-                        escapement = self.goingTrain.getArbour(i).escapement
-                        baseZ = drivingZ - self.goingTrain.getArbour(i-1).wheelThick/2 + escapement.getWheelBaseToAnchorBaseZ()
-                        self.arbourThicknesses.append(escapement.getAnchorThick())
-                    # print("is anchor")
-                else:
-                    #any of the other wheels
-                    # pinionAtBack = not pinionAtBack
-                    # print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
-                    pinionToWheel = self.goingTrain.getArbour(i).getPinionToWheelZ()
-                    pinionZ = self.goingTrain.getArbour(i).getPinionCentreZ()
-                    baseZ = drivingZ - pinionZ
-
-                    drivingZ = drivingZ + pinionToWheel
-                    # massive bodge here, the arbour doesn't know about the escapement being on the front yet
-                    self.goingTrain.getArbour(i).escapementOnFront = self.escapementOnFront
-                    arbourThick = self.goingTrain.getArbour(i).getTotalThickness()
-
-                    self.arbourThicknesses.append(arbourThick)
-
-                if i <= 0:
-                    angle = self.anglesFromChain[i - 1 + self.goingTrain.chainWheels]
-                else:
-                    angle = self.anglesFromMinute[i - 1]
-                v = polar(angle, r)
-                # v = [v[0], v[1], baseZ]
-                lastPos = self.bearingPositions[-1]
-                # pos = list(np.add(self.bearingPositions[i-1],v))
-                pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
-                # if i < self.goingTrain.wheels:
-                #     print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
-                # print("baseZ: ",baseZ, "drivingZ ", drivingZ)
-
-                self.bearingPositions.append(pos)
-
-
-        # print(self.bearingPositions)
-
-        topZs = [self.arbourThicknesses[i] + self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
-
-        bottomZs = [self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
-
-        bottomZ = min(bottomZs)
-        if bottomZ < 0:
-            #positions are relative (chain at front), so readjust everything
-            topZs = [z-bottomZ for z in topZs]
-            # bottomZs = [z - bottomZ for z in bottomZs]
-            for i in range(len(self.bearingPositions)):
-                self.bearingPositions[i][2] -= bottomZ
-
-
-        '''
-        something is always pressed up against both the front and back plate. If it's a powered wheel that's designed for that (the chain/rope wheel is designed to use a washer,
-        and the key-wound cord wheel is specially shaped) then that's not a problem.
-        
-        However if it's just a pinion (or a wheel - somehow?), or and anchor (although this should be avoided now by choosing where it goes) then that's extra friction
-        
-        TODO - I assumed that the chainwheel was alays the frontmost or backmost, but that isn't necessarily true.
-        '''
-        needExtraFront = False
-        needExtraBack = False
-
-        preliminaryPlateDistance=max(topZs)
-        for i in range(len(self.bearingPositions)):
-            #check front plate
-            canIgnoreFront = False
-            canIgnoreBack = False
-            if self.goingTrain.getArbourWithConventionalNaming(i).getType() == ArbourType.CHAIN_WHEEL:
-                if self.goingTrain.chainAtBack:
-                    canIgnoreBack = True
-                else:
-                    #this is the part of the chain wheel with a washer, can ignore
-                    canIgnoreFront = True
-            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).getTotalThickness() + self.bearingPositions[i][2]
-            if topZs[i] >= preliminaryPlateDistance - LAYER_THICK*2 and not canIgnoreFront:
-                #something that matters is pressed up against the top plate
-                #could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
-                needExtraFront = True
-
-            if self.bearingPositions[i][2] == 0 and not canIgnoreBack:
-                needExtraBack = True
-
-        extraFront = 0
-        extraBack = 0
-        if needExtraFront:
-            extraFront = LAYER_THICK*2
-        if needExtraBack:
-            extraBack = LAYER_THICK*2
-
-        for i in range(len(self.bearingPositions)):
-            self.bearingPositions[i][2]+= extraBack
-
-        # print(self.bearingPositions)
-        self.plateDistance=max(topZs) + self.endshake + extraFront + extraBack
-
-        if self.escapementOnFront:
-            #little bodge to try and make things easier (not sure if it does)
-            #the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
-            #so pretend it's placed exactly in the centre
-            self.bearingPositions[-1][2] = self.plateDistance/2 - self.endshake/2
-
-        self.arboursForPlate = []
-
-        print("Plate distance", self.plateDistance)
-
-        #configure stuff for the arbours, now we know their absolute positions
-        # poweredWheel=self.goingTrain.getArbourWithConventionalNaming(0)
-        # poweredWheelBracingR = poweredWheel.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(1).getMaxRadius() - self.gearGap
-        #
-        # #no need for it to be massive
-        # poweredWheelBracingR = min(10,poweredWheelBracingR)
-        # poweredWheel.setArbourExtensionInfo(rearSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
-
-        for i,bearingPos in enumerate(self.bearingPositions):
-            arbour = self.goingTrain.getArbourWithConventionalNaming(i)
-            if i < self.goingTrain.wheels + self.goingTrain.chainWheels - 2:
-                maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.smallGearGap
-            else:
-                maxR = 0
-            #hacky hack hack, I really think I should put escapementOnFront into GoingTrain
-            arbour.escapementOnFront = escapementOnFront
-            #deprecated way of doing it - passing loads of info to the Arbour class
-            arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
-                                frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
-                                pendulumFixingBearing=self.pendulumFixingBearing, plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
-
-            bearing = getBearingInfo(arbour.arbourD)
-            if arbour.getType() == ArbourType.ANCHOR and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
-                bearing = self.pendulumFixingBearing
-
-            #new way of doing it, new class for combining all this logic in once place
-            arbourForPlate = ArbourForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulumSticksOut,
-                                            pendulum_at_front=self.pendulumAtFront, bearing=bearing, escapement_on_front=self.escapementOnFront, back_from_wall=self.backPlateFromWall,
-                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing, direct_arbour_d=direct_arbour_d)
-            self.arboursForPlate.append(arbourForPlate)
-
-
-
+        self.calc_bearing_positions()
+        self.generate_arbours_for_plate()
 
         self.chainHoleD = self.goingTrain.poweredWheel.getChainHoleD()
 
@@ -1356,6 +1124,245 @@ class SimpleClockPlates:
 
         self.front_z = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False)
 
+        #cache stuff that's needed multiple times to speed up generating clock
+        self.fixing_screws_cutter = None
+        self.need_motion_works_holder = self.calc_need_motion_works_holder()
+
+    def generate_arbours_for_plate(self):
+
+        self.arboursForPlate = []
+
+        print("Plate distance", self.plateDistance)
+
+        #configure stuff for the arbours, now we know their absolute positions
+        # poweredWheel=self.goingTrain.getArbourWithConventionalNaming(0)
+        # poweredWheelBracingR = poweredWheel.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(1).getMaxRadius() - self.gearGap
+        #
+        # #no need for it to be massive
+        # poweredWheelBracingR = min(10,poweredWheelBracingR)
+        # poweredWheel.setArbourExtensionInfo(rearSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
+
+        for i,bearingPos in enumerate(self.bearingPositions):
+            arbour = self.goingTrain.getArbourWithConventionalNaming(i)
+            if i < self.goingTrain.wheels + self.goingTrain.chainWheels - 2:
+                maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.smallGearGap
+            else:
+                maxR = 0
+            #hacky hack hack, I really think I should put escapementOnFront into GoingTrain
+            arbour.escapementOnFront = self.escapementOnFront
+            #deprecated way of doing it - passing loads of info to the Arbour class
+            arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
+                                frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
+                                pendulumFixingBearing=self.pendulumFixingBearing, plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
+
+            bearing = getBearingInfo(arbour.arbourD)
+            if arbour.getType() == ArbourType.ANCHOR and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+                bearing = self.pendulumFixingBearing
+
+            #new way of doing it, new class for combining all this logic in once place
+            arbourForPlate = ArbourForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulumSticksOut,
+                                            pendulum_at_front=self.pendulumAtFront, bearing=bearing, escapement_on_front=self.escapementOnFront, back_from_wall=self.backPlateFromWall,
+                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing, direct_arbour_d=self.direct_arbour_d)
+            self.arboursForPlate.append(arbourForPlate)
+
+
+
+
+    def calc_bearing_positions(self):
+
+        # if angles are not given, assume clock is entirely vertical
+
+        if self.anglesFromMinute is None:
+            # assume simple pendulum at top
+            angle = math.pi / 2 if self.pendulumAtTop else math.pi / 2
+
+            # one extra for the anchor
+            self.anglesFromMinute = [angle for i in range(self.goingTrain.wheels + 1)]
+        if self.anglesFromChain is None:
+            angle = math.pi / 2 if self.pendulumAtTop else -math.pi / 2
+
+            self.anglesFromChain = [angle for i in range(self.goingTrain.chainWheels)]
+
+        if self.style == "round":
+
+            # TODO decide if we want the train to go in different directions based on which side the weight is
+            side = -1 if self.goingTrain.isWeightOnTheRight() else 1
+            arbours = [self.goingTrain.getArbourWithConventionalNaming(arbour) for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels)]
+            distances = [arbour.distanceToNextArbour for arbour in arbours]
+            maxRs = [arbour.getMaxRadius() for arbour in arbours]
+            arcAngleDeg = 270
+
+            foundSolution = False
+            while (not foundSolution and arcAngleDeg > 180):
+                arcRadius = getRadiusForPointsOnAnArc(distances, degToRad(arcAngleDeg))
+
+                # minDistance = max(distances)
+
+                if arcRadius > max(maxRs):
+                    # if none of the gears cross the centre, they should all fit
+                    # pretty sure there are other situations where they all fit
+                    # and it might be possible for this to be true and they still don't all fit
+                    # but a bit of playing around and it looks true enough
+                    foundSolution = True
+                    self.compactRadius = arcRadius
+                else:
+                    arcAngleDeg -= 1
+            if not foundSolution:
+                raise ValueError("Unable to calculate radius for gear ring, try a vertical clock instead")
+
+            angleOnArc = -math.pi / 2
+            lastPos = polar(angleOnArc, arcRadius)
+
+            for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels):
+                '''
+                Calculate angle of the isololese triangle with the distance at the base and radius as the other two sides
+                then work around the arc to get the positions
+                then calculate the relative angles so the logic for finding bearing locations still works
+                bit over complicated
+                '''
+                # print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
+                nextAngleOnArc = angleOnArc + 2 * math.asin(distances[i + self.goingTrain.chainWheels] / (2 * arcRadius)) * side
+                nextPos = polar(nextAngleOnArc, arcRadius)
+
+                relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
+                if i < 0:
+                    self.anglesFromChain[i + self.goingTrain.chainWheels] = relativeAngle
+                else:
+                    self.anglesFromMinute[i] = relativeAngle
+                lastPos = nextPos
+                angleOnArc = nextAngleOnArc
+
+        # [[x,y,z],]
+        # for everything, arbours and anchor
+        self.bearingPositions = []
+        # TODO consider putting the anchor on a bushing
+        # self.bushingPositions=[]
+        self.arbourThicknesses = []
+        # how much the arbours can wobble back and forth. aka End-shake.
+        # 2mm seemed a bit much
+        self.endshake = 1
+        # height of the centre of the wheel that will drive the next pinion
+        drivingZ = 0
+        for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels + 1):
+            # print(str(i))
+            if i == -self.goingTrain.chainWheels:
+                # the wheel with chain wheel ratchet
+                # assuming this is at the very back of the clock
+                # note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
+                pos = [0, 0, 0]
+                self.bearingPositions.append(pos)
+                # note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
+                drivingZ = self.goingTrain.getArbour(i).getWheelCentreZ()
+                self.arbourThicknesses.append(self.goingTrain.getArbour(i).getTotalThickness())
+                # print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
+            else:
+                r = self.goingTrain.getArbour(i - 1).distanceToNextArbour
+                # print("r", r)
+                # all the other going wheels up to and including the escape wheel
+                if i == self.goingTrain.wheels:
+                    # the anchor
+                    if self.escapementOnFront:
+                        # there is nothing between the plates for this
+                        self.arbourThicknesses.append(0)
+                        # don't do anything else
+                    else:
+                        escapement = self.goingTrain.getArbour(i).escapement
+                        baseZ = drivingZ - self.goingTrain.getArbour(i - 1).wheelThick / 2 + escapement.getWheelBaseToAnchorBaseZ()
+                        self.arbourThicknesses.append(escapement.getAnchorThick())
+                    # print("is anchor")
+                else:
+                    # any of the other wheels
+                    # pinionAtBack = not pinionAtBack
+                    # print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
+                    pinionToWheel = self.goingTrain.getArbour(i).getPinionToWheelZ()
+                    pinionZ = self.goingTrain.getArbour(i).getPinionCentreZ()
+                    baseZ = drivingZ - pinionZ
+
+                    drivingZ = drivingZ + pinionToWheel
+                    # massive bodge here, the arbour doesn't know about the escapement being on the front yet
+                    self.goingTrain.getArbour(i).escapementOnFront = self.escapementOnFront
+                    arbourThick = self.goingTrain.getArbour(i).getTotalThickness()
+
+                    self.arbourThicknesses.append(arbourThick)
+
+                if i <= 0:
+                    angle = self.anglesFromChain[i - 1 + self.goingTrain.chainWheels]
+                else:
+                    angle = self.anglesFromMinute[i - 1]
+                v = polar(angle, r)
+                # v = [v[0], v[1], baseZ]
+                lastPos = self.bearingPositions[-1]
+                # pos = list(np.add(self.bearingPositions[i-1],v))
+                pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
+                # if i < self.goingTrain.wheels:
+                #     print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
+                # print("baseZ: ",baseZ, "drivingZ ", drivingZ)
+
+                self.bearingPositions.append(pos)
+
+        # print(self.bearingPositions)
+
+        topZs = [self.arbourThicknesses[i] + self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
+
+        bottomZs = [self.bearingPositions[i][2] for i in range(len(self.bearingPositions))]
+
+        bottomZ = min(bottomZs)
+        if bottomZ < 0:
+            # positions are relative (chain at front), so readjust everything
+            topZs = [z - bottomZ for z in topZs]
+            # bottomZs = [z - bottomZ for z in bottomZs]
+            for i in range(len(self.bearingPositions)):
+                self.bearingPositions[i][2] -= bottomZ
+
+        '''
+        something is always pressed up against both the front and back plate. If it's a powered wheel that's designed for that (the chain/rope wheel is designed to use a washer,
+        and the key-wound cord wheel is specially shaped) then that's not a problem.
+
+        However if it's just a pinion (or a wheel - somehow?), or and anchor (although this should be avoided now by choosing where it goes) then that's extra friction
+
+        TODO - I assumed that the chainwheel was alays the frontmost or backmost, but that isn't necessarily true.
+        '''
+        needExtraFront = False
+        needExtraBack = False
+
+        preliminaryPlateDistance = max(topZs)
+        for i in range(len(self.bearingPositions)):
+            # check front plate
+            canIgnoreFront = False
+            canIgnoreBack = False
+            if self.goingTrain.getArbourWithConventionalNaming(i).getType() == ArbourType.CHAIN_WHEEL:
+                if self.goingTrain.chainAtBack:
+                    canIgnoreBack = True
+                else:
+                    # this is the part of the chain wheel with a washer, can ignore
+                    canIgnoreFront = True
+            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).getTotalThickness() + self.bearingPositions[i][2]
+            if topZs[i] >= preliminaryPlateDistance - LAYER_THICK * 2 and not canIgnoreFront:
+                # something that matters is pressed up against the top plate
+                # could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
+                needExtraFront = True
+
+            if self.bearingPositions[i][2] == 0 and not canIgnoreBack:
+                needExtraBack = True
+
+        extraFront = 0
+        extraBack = 0
+        if needExtraFront:
+            extraFront = LAYER_THICK * 2
+        if needExtraBack:
+            extraBack = LAYER_THICK * 2
+
+        for i in range(len(self.bearingPositions)):
+            self.bearingPositions[i][2] += extraBack
+
+        # print(self.bearingPositions)
+        self.plateDistance = max(topZs) + self.endshake + extraFront + extraBack
+
+        if self.escapementOnFront:
+            # little bodge to try and make things easier (not sure if it does)
+            # the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
+            # so pretend it's placed exactly in the centre
+            self.bearingPositions[-1][2] = self.plateDistance / 2 - self.endshake / 2
 
     def bottom_of_hour_hand_z(self):
         return self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
@@ -1422,7 +1429,8 @@ class SimpleClockPlates:
 
         return holder
 
-    def need_motion_works_holder(self):
+
+    def calc_need_motion_works_holder(self):
         '''
         If we've got a centred second hand then there's a chance that the motino works arbour lines up with another arbour, so there's no easy way to hold it in plnace
         in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
@@ -1445,7 +1453,7 @@ class SimpleClockPlates:
         return False
 
     def get_motion_works_holder(self):
-        if not self.need_motion_works_holder():
+        if not self.need_motion_works_holder:
             return None
 
 
@@ -2003,6 +2011,10 @@ class SimpleClockPlates:
         '''
         in position, assuming back of back plate is resting on the XY plane
         '''
+
+        if self.fixing_screws_cutter is not None:
+            return self.fixing_screws_cutter
+
         cutter = cq.Workplane("XY")
 
         embedded_nut_hole_height = self.fixingScrews.getNutHeight() * 1.4
@@ -2041,6 +2053,8 @@ class SimpleClockPlates:
             #hold a nyloc nut
             nutZ = self.getPlateThick(back=True) + self.plateDistance - self.fixingScrews.getNutHeight(nyloc=True)
             cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=True).translate(self.bottomPillarPos).translate((0,0,nutZ)))
+
+        self.fixing_screws_cutter = cutter
 
         return cutter
 
@@ -2385,7 +2399,7 @@ class SimpleClockPlates:
 
         motionWorksPos = npToSet(np.add(self.hands_position, self.motionWorksRelativePos))
 
-        if self.need_motion_works_holder():
+        if self.need_motion_works_holder:
             #screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = npToSet(np.add(self.motionWorksPos, pos))
@@ -2641,7 +2655,7 @@ class SimpleClockPlates:
                 else:
                     print("WARNING {} is None".format(shapeName))
 
-        if self.need_motion_works_holder():
+        if self.need_motion_works_holder:
             out = os.path.join(path, "{}_motion_works_holder.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_motion_works_holder(), out)
@@ -2863,8 +2877,9 @@ class Assembly:
         clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], motionWorksZ)))
 
         if self.plates.centred_second_hand:
+            #the bit with a knob to set the time
             clock = clock.add(self.motionWorks.getCannonPinionPinion(standalone=True).translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], motionWorksZ )))
-        if self.plates.need_motion_works_holder():
+        if self.plates.need_motion_works_holder:
             clock = clock.add(self.plates.get_motion_works_holder().translate((self.plates.motionWorksPos[0], self.plates.motionWorksPos[1], frontOfClockZ)))
 
         if self.dial is not None:

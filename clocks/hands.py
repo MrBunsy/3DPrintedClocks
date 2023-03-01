@@ -998,7 +998,7 @@ class Hands:
                     try:
                         shell = hand.shell(-outline_wide).translate((0,0,-outline_wide))
                     except Exception as e:
-                        print("Unable to give outline to hand: ", type(e), e)
+                        print("Unable to give outline to {} hand: ".format("second" if second else ("minute" if minute else "hour")), type(e), e)
                         return None
 
                     # hand_minus_shell = hand.cut(shell)

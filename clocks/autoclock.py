@@ -106,6 +106,31 @@ def gen_dial_previews(out_path="autoclock", diameter=180):
         exportSVG(dial.get_dial(), os.path.join(out_path, file_name),opts={"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
                                                                            "showHidden": False, "projectionDir": (0, 0, -1)})
 
+def gen_clock_previews(out_path="autoclock"):
+    days=8
+    pendulum_period_s=2
+    dial_seconds_style = DialStyle.CONCENTRIC_CIRCLES
+    total = len(DialStyle) * 2 * len(GearStyle) * len(HandStyle) * 2 * len(AnchorStyle) * 2
+    print("total combos", total)
+    return False
+    for dial_style in DialStyle:
+        for has_dial in [True, False]:
+            for gear_style in GearStyle:
+                for hand_style in HandStyle:
+                    for hand_has_outline in [True, False]:
+                        for escapement_style in AnchorStyle:
+                            for centred_second_hand in [True, False]:
+                                clock = AutoWallClock(dial_style=dial_style,
+                                                      dial_seconds_style=dial_seconds_style,
+                                                      has_dial=has_dial,
+                                                      gear_style=gear_style,
+                                                      hand_style=hand_style,
+                                                      hand_has_outline=hand_has_outline,
+                                                      pendulum_period_s=pendulum_period_s,
+                                                      escapement_style=escapement_style,
+                                                      days=days,
+                                                      centred_second_hand=centred_second_hand)
+
 def enum_to_typescript(enum):
     name = enum.__name__
 
@@ -343,15 +368,14 @@ class AutoWallClock:
             self.gen_clock()
         return exportSVG(self.model.getClock(), None, opts={"width": 720, "height": 720, "strokeWidth": 0.2, "showHidden": False})
 
-    def output_svg(self, path, width=-1):
+    def output_svg(self, path):
         if not self.clock_generated:
             self.gen_clock()
         basename =  os.path.join(path, self.name)
         out = basename + ".svg"
-        if width < 0:
-            width:720
+
         print("Exporting {}".format(out))
-        svg = exportSVG(self.model.getClock(), out, opts={"width":width, "strokeWidth": 0.25, "showHidden": False})
+        svg = exportSVG(self.model.getClock(), out, opts={"width":720, "height":720, "strokeWidth": 0.2, "showHidden": False})
         svg2png(url=out, write_to=basename+".png", background_color="rgb(255,255,255)", output_width=1440)
         svg2png(url=out, write_to=basename + "_small.png", background_color="rgb(255,255,255)", output_width=720)
         return svg

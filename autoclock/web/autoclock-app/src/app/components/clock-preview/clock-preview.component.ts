@@ -16,7 +16,7 @@ export class ClockPreviewComponent implements OnDestroy {
   public loading: boolean = true;
 
   constructor(public clockService: ClocksService){
-    this.clock$ = clockService.getClock()
+    this.clock$ = clockService.getDialChanged()
 
     this.subscription = this.clock$.subscribe(clock => this.show = false);
   }

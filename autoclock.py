@@ -26,7 +26,9 @@ Plan is two scripts (or arguments?) - generate cache and typescript, and run the
 # print(enum_to_typescript(GearStyle))
 if outputSTL:
     gen_typescript_enums("autoclock/web/autoclock-app/src/app/models/types.ts")
-    # gen_gear_previews("autoclock/web/autoclock-app/src/assets")
+    gen_gear_previews("autoclock/web/autoclock-app/src/assets")
     gen_anchor_previews("autoclock/web/autoclock-app/src/assets")
     gen_hand_previews("autoclock/web/autoclock-app/src/assets")
     gen_dial_previews("autoclock/web/autoclock-app/src/assets")
+    #5.5 days approx to run this, maybe not
+    # gen_clock_previews("autoclock/web/autoclock-app/src/assets")
