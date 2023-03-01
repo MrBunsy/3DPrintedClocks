@@ -418,9 +418,9 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-dial = Dial(outside_d=200, style=DialStyle.ROMAN)
-#
-show_object(dial.get_dial())
+# dial = Dial(outside_d=200, style=DialStyle.ROMAN)
+# #
+# show_object(dial.get_dial())
 
 
 # leaf = MistletoeLeaf()
@@ -496,7 +496,7 @@ show_object(dial.get_dial())
 # show_object(gear_demo)
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
-# show_object(getHandDemo())
+show_object(getHandDemo())
 
 # whistle = CuckooWhistle()
 #
