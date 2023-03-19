@@ -733,7 +733,7 @@ class Gear:
 
 
 
-    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, innerRadiusForStyle=-1):
+    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, innerRadiusForStyle=-1, is_crown=False):
         self.iswheel = isWheel
         self.teeth = teeth
         self.module=module
@@ -746,6 +746,15 @@ class Gear:
         self.toothFactor = toothFactor
 
         self.pitch_diameter = self.module * self.teeth
+
+        '''
+        is this a crown gear (may be called a face gear) - a special case of bevel gear that can mesh with a normal spur gear at 90deg
+        experimental, no idea if this will work with cycloidal gears or with my rudementary understanding of gear design.
+        my idea is that this will be easier to work with then bevel gears as they wouldn't need to be perfectly lined up - one could be slightly offset from the other without issue
+        
+        further thought - even if I can design this - will it be printable? bevel gears look printable so it's probably worth experimenting with them first
+        '''
+        self.is_crown = is_crown
 
         #purely for the fancy styling, is there anyhting in the centre (like a pinion or ratchet) to avoid?
         # self.innerRadiusForStyle=innerRadiusForStyle
@@ -2218,6 +2227,12 @@ class MotionWorks:
         #thick for thickness of hour holder wheel
         self.cannonPinionTotalHeightAboveBase = extra_height + self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight + self.thick# + self.cannonPinionBaseHeight
 
+
+    def get_hour_wheel_teeth(self):
+        return self.pairs[1].wheel.teeth
+
+    def get_cannon_pinion_teeth(self):
+        return self.pairs[0].pinion.teeth
 
     def get_cannon_pinion_total_height(self):
         return self.cannonPinionTotalHeightAboveBase + self.cannonPinionBaseHeight

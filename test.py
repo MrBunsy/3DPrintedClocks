@@ -8,6 +8,8 @@ from clocks.cosmetics import *
 from clocks.geometry import *
 from clocks.cuckoo_bits import roman_numerals, CuckooWhistle
 
+from clocks.cq_gears import BevelGear, BevelGearPair, CrownGearPair
+
 outputSTL = False
 
 if 'show_object' not in globals():
@@ -496,7 +498,24 @@ if False:
 # show_object(gear_demo)
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
-show_object(getHandDemo())
+# show_object(getHandDemo())
+
+# motionWorks = MotionWorks(extra_height=10, style=GearStyle.CURVES, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
+# moon = MoonPhaseComplication3D(motionWorks)
+
+# print(1/moon.ratio)
+
+# bevels = BevelGearPair(module=1, gear_teeth=32, pinion_teeth=30, face_width=4, pressure_angle=20)
+# #
+# show_object(bevels.assemble())
+#
+# exporters.export(bevels.gear.build(), "out/test_bevel.stl")
+
+mistletoe = MistletoeLeafPair()
+
+show_object(mistletoe.get_branch())
+show_object(mistletoe.get_leaves())
+
 
 # whistle = CuckooWhistle()
 #

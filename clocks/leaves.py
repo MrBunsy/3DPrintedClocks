@@ -765,6 +765,7 @@ class MistletoeLeafPair:
         if seed >=0:
             random.seed(seed)
         self.branch_length = branch_length
+        self.branch_wonky = self.branch_length*random.uniform(-0.1, 0.1)
         self.leaf_length = leaf_length
         self.branch_thick = self.branch_length*random.uniform(0.05, 0.1)
         self.leaves = [MistletoeLeaf(length= self.leaf_length*random.uniform(0.9, 1.1), seed=random.random(), stalk_width=self.branch_thick*random.uniform(0.5,1)) for l in range(2)]
@@ -782,9 +783,16 @@ class MistletoeLeafPair:
         return self.leaves_shape
 
     def gen_branch(self):
-        branch = cq.Workplane("XY").moveTo(0, self.branch_length/2).rect(self.branch_thick, self.branch_length).extrude(self.thick)
-        branch = branch.union(cq.Workplane("XY").circle(self.branch_thick/2).extrude(self.thick))
-        branch = branch.union(cq.Workplane("XY").moveTo(0, self.branch_length).circle(self.branch_thick / 2).extrude(self.thick))
+        # branch = cq.Workplane("XY").moveTo(0, self.branch_length/2).rect(self.branch_thick, self.branch_length).extrude(self.thick)
+        # branch = branch.union(cq.Workplane("XY").circle(self.branch_thick/2).extrude(self.thick))
+        # branch = branch.union(cq.Workplane("XY").moveTo(0, self.branch_length).circle(self.branch_thick / 2).extrude(self.thick))
+
+
+        branch = cq.Workplane("XY").moveTo(-self.branch_thick/2, 0).sagittaArc((-self.branch_thick/2, self.branch_length), self.branch_wonky)\
+            .radiusArc((self.branch_thick/2, self.branch_length), 1.001*self.branch_thick/2).sagittaArc((self.branch_thick/2, 0), -self.branch_wonky).radiusArc((-self.branch_thick/2, 0), 1.001*self.branch_thick/2).close().extrude(self.thick)
+
+
+
         return branch
 
     def gen_leaves(self):

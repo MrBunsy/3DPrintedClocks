@@ -70,7 +70,7 @@ pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock
 print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley, showPendulum=True)#weights=[clock.Weight(height=245,diameter=55)]
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#weights=[clock.Weight(height=245,diameter=55)]
 
 # show_object(plates.getPlate(back=True))
 show_object(assembly.getClock(with_key=False))
