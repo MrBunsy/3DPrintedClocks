@@ -767,7 +767,7 @@ class MistletoeLeafPair:
         self.branch_length = branch_length
         self.branch_wonky = self.branch_length*random.uniform(-0.1, 0.1)
         self.leaf_length = leaf_length
-        self.branch_thick = self.branch_length*random.uniform(0.05, 0.1)
+        self.branch_thick = self.branch_length*random.uniform(0.05, 0.08)
         self.leaves = [MistletoeLeaf(length= self.leaf_length*random.uniform(0.9, 1.1), seed=random.random(), stalk_width=self.branch_thick*random.uniform(0.5,1)) for l in range(2)]
         angle = random.uniform(0.9,1.1)*math.pi/4
         spread = math.pi/10
@@ -805,10 +805,15 @@ class MistletoeLeafPair:
 
 
 class MistletoeSprig:
-    def __init__(self, leaf_length=50, berry_diameter=8, thick=3):
+    def __init__(self, leaf_length=35, branch_length=50, berry_diameter=8, thick=3, seed=-1):
         self.leaf_length = leaf_length
+        self.branch_length = branch_length
         self.berry_diameter = berry_diameter
         self.thick = thick
+
+        if seed >=0:
+            random.seed(seed)
+
         self.leaves = self.gen_leaves()
         self.berries = self.gen_berries()
 
@@ -822,9 +827,15 @@ class MistletoeSprig:
 
     def gen_leaves(self):
         leaves = cq.Workplane("XY")
+        self.mistletoe_leaf_pairs =[MistletoeLeafPair(branch_length=self.branch_length, leaf_length= self.leaf_length, seed=random.random(), thick=self.thick) for x in range(2)]
+        angles = [-random.uniform(10,30), random.uniform(10,30)]
 
-        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1),-50))
-        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0, 0, 0), (0, 0, 1), 50))
+        for i,leaf in enumerate(self.mistletoe_leaf_pairs):
+            angle = angles[i]
+
+            leaves = leaves.union(leaf.get_leaves().rotate((0,0,0), (0,0,1), angle))
+            leaves = leaves.union(leaf.get_branch().rotate((0, 0, 0), (0, 0, 1), angle))
+
 
         return leaves
 

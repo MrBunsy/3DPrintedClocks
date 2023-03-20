@@ -511,11 +511,16 @@ if False:
 #
 # exporters.export(bevels.gear.build(), "out/test_bevel.stl")
 
-mistletoe = MistletoeLeafPair()
+mistletoe = MistletoeSprig() #MistletoeLeafPair()
 
-show_object(mistletoe.get_branch())
-show_object(mistletoe.get_leaves())
-
+# show_object(mistletoe.get_branch())
+show_object(mistletoe.get_leaves(),options = { "color" : "green"})
+show_object(mistletoe.get_berries(),options = { "color" : "white"})
+# sprig = cq.Assembly(name='mistletoe')
+# sprig.add(mistletoe.get_leaves(), name='leaves', loc=cq.Location(),color='green')
+# sprig.add(mistletoe.get_berries(), name='berries', loc=cq.Location(),color='white')
+#
+# show_object(sprig)
 
 # whistle = CuckooWhistle()
 #
