@@ -94,20 +94,25 @@ pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(),
 
 frame = plates.arboursForPlate[-1].get_anchor_shapes()["anchor"]
 escapement = plates.arboursForPlate[-1].arbour.escapement
-entry_pos = clock.npToSet(np.multiply(escapement.entry_side_end_relative,(1,-1)))
+entry_pos = clock.npToSet(np.multiply(escapement.entry_side_end_relative,(0.65,-0.65)))
 exit_pos = clock.npToSet(np.multiply(escapement.exit_side_end_relative,(1,-1)))
-
-mistletoes = [clock.MistletoeSprig(thick=leaf_thick) for i in range(2)]
+random.random()
+mistletoes = [clock.MistletoeSprig(thick=leaf_thick, leaf_length=30, branch_length=40) for i in range(2)]
 
 def right_mistletoe_transform(shape):
     #cut a circle that's not exactly the same size, otherwise it throws a wobbly and produces invalid shapes
-    shape = shape.rotate((0,0,0),(0,0,1),-130).translate(exit_pos).faces(">Z").workplane().moveTo(exit_pos[0], exit_pos[1]).circle(3/2-0.01).cutThruAll()
+    shape = shape.rotate((0,0,0),(0,0,1),-145).translate(exit_pos).faces(">Z").workplane().moveTo(exit_pos[0], exit_pos[1]).circle(3/2-0.01).cutThruAll()
+    #  anchor has been rotated so it's aligned with a vertical pendulum
+    return shape.rotate((0, 0, 0), (0, 0, 1), -clock.radToDeg(-escapement.escaping_arc / 2))
+
+def left_mistletoe_transform(shape):
+    shape = shape.rotate((0,0,0),(0,0,1),145).translate(entry_pos)
     #  anchor has been rotated so it's aligned with a vertical pendulum
     return shape.rotate((0, 0, 0), (0, 0, 1), -clock.radToDeg(-escapement.escaping_arc / 2))
 
 
-mistletoe_leaves = right_mistletoe_transform(mistletoes[0].get_leaves())
-mistletoe_berries = right_mistletoe_transform(mistletoes[0].get_berries())
+mistletoe_leaves = right_mistletoe_transform(mistletoes[0].get_leaves()).add(left_mistletoe_transform(mistletoes[1].get_leaves()))
+mistletoe_berries = right_mistletoe_transform(mistletoes[0].get_berries()).add(left_mistletoe_transform(mistletoes[1].get_berries()))
 
 mistletoe_cosmetics = {"lightgreen": mistletoe_leaves, "white": mistletoe_berries}
 pretty_anchor = clock.ItemWithCosmetics(shape = frame, name="frame", background_colour="green", cosmetics=mistletoe_cosmetics)#,colour_thick_overrides={"lightgreen":leaf_thick}
