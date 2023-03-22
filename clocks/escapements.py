@@ -1525,6 +1525,7 @@ class GrasshopperEscapement:
         Get the anchor-like part (fully 3D) which attaches to the arbour
         rotated and translated so taht (0,0) is in the centre of its arbour
         also rotated so that it lines up with the pendulum being vertical
+        HACKY SIDE EFFECTS: sets self.entry_side_end, self.exit_side_end
 
 
         '''
@@ -1550,6 +1551,14 @@ class GrasshopperEscapement:
 
 
         entry_side_end = np.add(self.geometry["Z"], np.multiply(line_ZP.dir, entry_composer_rest_distance))#self.geometry["P"]#
+        #hacky side effect, setting these values to aid with cosmetics
+        Z_dir = np.multiply(self.geometry["Z"], 1/np.linalg.norm(self.geometry["Z"]))
+        self.entry_side_end = entry_side_end
+        entry_side_end_relative_in_situ = np.subtract(entry_side_end, self.geometry["Z"])
+        entry_side_end_relative_x = np.dot(np.cross(Z_dir, (0, 0, 1))[:2], entry_side_end_relative_in_situ)
+        entry_side_end_relative_y = np.dot(Z_dir, entry_side_end_relative_in_situ)
+        # for lining up cosmetics with the end
+        self.entry_side_end_relative = (entry_side_end_relative_x, entry_side_end_relative_y)
 
         frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
         frame = frame.lineTo(entry_side_end[0] + dir_ZP_perpendicular[0] * arm_wide * 0.5, entry_side_end[1] + dir_ZP_perpendicular[1] * arm_wide * 0.5)
@@ -1573,6 +1582,13 @@ class GrasshopperEscapement:
         line_ZG = Line(self.geometry["Z"], anotherPoint=self.geometry["G"])
         dir_ZG_perpendicular = line_ZG.get_perpendicular_direction()
 
+        #hacky side effect
+        self.exit_side_end = self.geometry["G"]
+        exit_side_end_relative_in_situ = np.subtract(self.exit_side_end, self.geometry["Z"])
+        exit_side_end_relative_x = np.dot(np.cross(Z_dir,(0,0,1))[:2], exit_side_end_relative_in_situ)
+        exit_side_end_relative_y = np.dot(Z_dir, exit_side_end_relative_in_situ)
+        #for lining up cosmetics with the end
+        self.exit_side_end_relative = (exit_side_end_relative_x, exit_side_end_relative_y)
         frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0] + dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["Z"][1] + dir_ZG_perpendicular[1]*arm_wide*0.5)
         frame = frame.lineTo(self.geometry["G"][0] + dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] + dir_ZG_perpendicular[1]*arm_wide*0.5)
         endArc = (self.geometry["G"][0] - dir_ZG_perpendicular[0]*arm_wide*0.5, self.geometry["G"][1] - dir_ZG_perpendicular[1]*arm_wide*0.5)

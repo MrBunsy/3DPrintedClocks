@@ -1,3 +1,4 @@
+import numpy as np
 import random
 import os
 import clocks.clock as clock
@@ -89,24 +90,46 @@ cosmetics={"green": wreath.get_leaves(),
 
 pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
 
+#very brittle code for the mistletoe themed grasshopper frame:
+
+frame = plates.arboursForPlate[-1].get_anchor_shapes()["anchor"]
+escapement = plates.arboursForPlate[-1].arbour.escapement
+entry_pos = clock.npToSet(np.multiply(escapement.entry_side_end_relative,(1,-1)))
+exit_pos = clock.npToSet(np.multiply(escapement.exit_side_end_relative,(1,-1)))
+
+mistletoes = [clock.MistletoeSprig(thick=leaf_thick) for i in range(2)]
+
+def right_mistletoe_transform(shape):
+    #cut a circle that's not exactly the same size, otherwise it throws a wobbly and produces invalid shapes
+    shape = shape.rotate((0,0,0),(0,0,1),-130).translate(exit_pos).faces(">Z").workplane().moveTo(exit_pos[0], exit_pos[1]).circle(3/2-0.01).cutThruAll()
+    #  anchor has been rotated so it's aligned with a vertical pendulum
+    return shape.rotate((0, 0, 0), (0, 0, 1), -clock.radToDeg(-escapement.escaping_arc / 2))
+
+
+mistletoe_leaves = right_mistletoe_transform(mistletoes[0].get_leaves())
+mistletoe_berries = right_mistletoe_transform(mistletoes[0].get_berries())
+
+mistletoe_cosmetics = {"lightgreen": mistletoe_leaves, "white": mistletoe_berries}
+pretty_anchor = clock.ItemWithCosmetics(shape = frame, name="frame", background_colour="green", cosmetics=mistletoe_cosmetics)#,colour_thick_overrides={"lightgreen":leaf_thick}
+
 if outputSTL:
 
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    weight_shell.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
-
-    pretty_bob.output_STLs(clockName, clockOutDir)
-    pretty_hand_avoider.output_STLs(clockName, clockOutDir)
-
-    out = os.path.join(clockOutDir, "anchor_white.stl")
-    print("Outputting ", out)
-    exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
-
-    for i in ["_a", "_b", "_c"]:
-        train.outputSTLs(clockName+i, clockOutDir)
+    # train.outputSTLs(clockName,clockOutDir)
+    # motionWorks.outputSTLs(clockName,clockOutDir)
+    # pendulum.outputSTLs(clockName, clockOutDir)
+    # plates.outputSTLs(clockName, clockOutDir)
+    # hands.outputSTLs(clockName, clockOutDir)
+    # weight_shell.outputSTLs(clockName, clockOutDir)
+    # assembly.outputSTLs(clockName, clockOutDir)
+    # pulley.outputSTLs(clockName, clockOutDir)
+    # pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
+    #
+    # pretty_bob.output_STLs(clockName, clockOutDir)
+    # pretty_hand_avoider.output_STLs(clockName, clockOutDir)
+    pretty_anchor.output_STLs(clockName, clockOutDir)
+    # out = os.path.join(clockOutDir, "anchor_white.stl")
+    # print("Outputting ", out)
+    # # exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
+    #
+    # for i in ["_a", "_b", "_c"]:
+    #     train.outputSTLs(clockName+i, clockOutDir)
