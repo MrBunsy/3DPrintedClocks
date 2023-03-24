@@ -1613,7 +1613,7 @@ class SimpleClockPlates:
         topPillarR = holderWide / 2
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
-        if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
+        if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR or True:
             anchorSpace = self.pendulumFixingBearing.bearingOuterD/2 + self.gearGap
 
         # find the Y position of the bottom of the top pillar

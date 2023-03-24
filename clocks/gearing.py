@@ -1132,6 +1132,8 @@ class ArbourForPlate:
             cylinder_r = self.bearing.innerD / 2
             if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
                 cylinder_r = self.direct_arbour_d/2
+
+            cylinder_r = getBearingInfo(10).innerD / 2
             square_side_length = math.sqrt(2) * cylinder_r
 
             if cylinder_r < 5:
