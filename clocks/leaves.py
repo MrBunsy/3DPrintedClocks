@@ -742,7 +742,7 @@ class MistletoeLeaf:
         self.width = length * random.uniform(0.25, 0.4)
         self.stalk_width = stalk_width
         if self.stalk_width < 0:
-            self.stalk_width = length* random.uniform(0.06, 0.1)
+            self.stalk_width = length* random.uniform(0.075, 0.1)
         self.tip_offset = length*0.1 * random.uniform(-0.15,0.15)
         self.stalk_length = length * random.uniform(0.075,0.1)
 
@@ -767,7 +767,7 @@ class MistletoeLeafPair:
         self.branch_length = branch_length
         self.branch_wonky = self.branch_length*random.uniform(-0.1, 0.1)
         self.leaf_length = leaf_length
-        self.branch_thick = self.branch_length*random.uniform(0.06, 0.09)
+        self.branch_thick = self.branch_length*random.uniform(0.075, 0.1)
         self.leaves = [MistletoeLeaf(length= self.leaf_length*random.uniform(0.9, 1.1), seed=random.random(), stalk_width=self.branch_thick*random.uniform(0.5,1)) for l in range(2)]
         angle = random.uniform(0.9,1.1)*math.pi/4
         spread = math.pi/10

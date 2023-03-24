@@ -97,7 +97,7 @@ escapement = plates.arboursForPlate[-1].arbour.escapement
 entry_pos = clock.npToSet(np.multiply(escapement.entry_side_end_relative,(0.65,-0.65)))
 exit_pos = clock.npToSet(np.multiply(escapement.exit_side_end_relative,(1,-1)))
 random.random()
-mistletoes = [clock.MistletoeSprig(thick=leaf_thick, leaf_length=30, branch_length=40) for i in range(2)]
+mistletoes = [clock.MistletoeSprig(thick=leaf_thick, leaf_length=30, branch_length=30) for i in range(2)]
 
 def right_mistletoe_transform(shape):
     #cut a circle that's not exactly the same size, otherwise it throws a wobbly and produces invalid shapes
