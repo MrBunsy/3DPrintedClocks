@@ -119,18 +119,18 @@ pretty_anchor = clock.ItemWithCosmetics(shape = frame, name="frame", background_
 
 if outputSTL:
 
-    # train.outputSTLs(clockName,clockOutDir)
-    # motionWorks.outputSTLs(clockName,clockOutDir)
-    # pendulum.outputSTLs(clockName, clockOutDir)
-    # plates.outputSTLs(clockName, clockOutDir)
-    # hands.outputSTLs(clockName, clockOutDir)
-    # weight_shell.outputSTLs(clockName, clockOutDir)
-    # assembly.outputSTLs(clockName, clockOutDir)
-    # pulley.outputSTLs(clockName, clockOutDir)
-    # pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
-    #
-    # pretty_bob.output_STLs(clockName, clockOutDir)
-    # pretty_hand_avoider.output_STLs(clockName, clockOutDir)
+    train.outputSTLs(clockName,clockOutDir)
+    motionWorks.outputSTLs(clockName,clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
+    plates.outputSTLs(clockName, clockOutDir)
+    hands.outputSTLs(clockName, clockOutDir)
+    weight_shell.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)
+    pulley.outputSTLs(clockName, clockOutDir)
+    pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
+
+    pretty_bob.output_STLs(clockName, clockOutDir)
+    pretty_hand_avoider.output_STLs(clockName, clockOutDir)
     pretty_anchor.output_STLs(clockName, clockOutDir)
     # out = os.path.join(clockOutDir, "anchor_white.stl")
     # print("Outputting ", out)
