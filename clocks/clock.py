@@ -874,7 +874,7 @@ class SimpleClockPlates:
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumFixingBearing=None, pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
+                 pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
@@ -888,6 +888,7 @@ class SimpleClockPlates:
         self.pendulumFixing = pendulumFixing
         self.pendulumAtFront = pendulumAtFront
 
+        #diameter of the cylinder that forms the arbour that physically links pendulum holder (or crutch in future) and anchor
         self.direct_arbour_d = direct_arbour_d
 
         self.dial = dial
@@ -900,15 +901,6 @@ class SimpleClockPlates:
 
         #does the chain/rope/cord pass through the bottom pillar?
         self.chainThroughPillar = chainThroughPillarRequired
-
-        #only used for the direct arbour pendulum
-        self.pendulumFixingBearing = pendulumFixingBearing
-        if self.pendulumFixingBearing is None:
-            if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
-                #default to the 6mm bearing (10mm adds a lot of friction, even dry, I'm hoping 6mm is better)
-                self.pendulumFixingBearing = getBearingInfo(6)
-            else:
-                self.pendulumFixingBearing = getBearingInfo(arbourD)
 
         anglesFromMinute = None
         anglesFromChain = None
@@ -1153,11 +1145,9 @@ class SimpleClockPlates:
             #deprecated way of doing it - passing loads of info to the Arbour class
             arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
                                 frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
-                                pendulumFixingBearing=self.pendulumFixingBearing, plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
+                                plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
 
             bearing = getBearingInfo(arbour.arbourD)
-            if arbour.getType() == ArbourType.ANCHOR and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
-                bearing = self.pendulumFixingBearing
 
             #new way of doing it, new class for combining all this logic in once place
             arbourForPlate = ArbourForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulumSticksOut,
@@ -1613,8 +1603,8 @@ class SimpleClockPlates:
         topPillarR = holderWide / 2
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
-        if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
-            anchorSpace = self.pendulumFixingBearing.bearingOuterD/2 + self.gearGap
+        if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
+            anchorSpace = self.direct_arbour_d*2 + self.gearGap
 
         # find the Y position of the bottom of the top pillar
         topY = self.bearingPositions[0][1]
@@ -2280,41 +2270,37 @@ class SimpleClockPlates:
             bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(i).getRodD())
             bearingOnTop = back
 
-
-
+            needs_plain_hole = False
             if self.pendulumFixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS] and i == len(self.bearingPositions)-1:
-                #this is the anchor arbour and we can't just use normal bearings
-                needs_pendulum_bearing = False
-                if self.escapementOnFront:
+                #if true we just need a hole for the direct arbour to fit through
+
+                if self.escapementOnFront and not back:
                     '''
                     need the bearings to be on the back of front plate and back of the back plate
                     so endshake will be between back of back plate and front of the wall standoff bearing holder
                     this way there doesn't need to be a visible bearing on the front
                     '''
-                    if self.pendulumAtFront:
-                        raise ValueError("escapement and pendulum at front not supported with direct arbour (or at all?)")
-                    bearingInfo = self.pendulumFixingBearing
-                    needs_pendulum_bearing = True
-                    if back:
-                        bearingOnTop = False
-                else:
-                    #escapement is between the plates
-                    if self.pendulumAtFront != back:
-                        #this is the front bearing for a pendulum that sticks out the front of the clock
-                        # or the back bearing for a pendulum that sticks out the back
-                        bearingInfo = self.pendulumFixingBearing
-                        needs_pendulum_bearing = True
+                    needs_plain_hole = True
 
-                if needs_pendulum_bearing and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-                    plate = plate.cut(cq.Workplane("XY").circle(self.direct_arbour_d/2 + 1.5).extrude(self.getPlateThick(back=back)).translate((pos[0], pos[1], 0)))
+                if not self.pendulumAtFront and back:
+                    needs_plain_hole = True
 
-            if bearingInfo.bearingOuterD > self.plateWidth - self.bearingWallThick*2:
+
+            outer_d =  bearingInfo.bearingOuterD
+            if needs_plain_hole:
+                outer_d = self.direct_arbour_d + 3
+
+            if outer_d > self.plateWidth - self.bearingWallThick*2:
                 #this is a chunkier bearing, make the plate bigger
                 try:
-                    plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bearingInfo.bearingOuterD / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back)))
+                    plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(outer_d / 2 + self.bearingWallThick).extrude(self.getPlateThick(back=back)))
                 except:
                     print("wasn't able to make plate bigger for bearing")
-            plate = plate.cut(self.getBearingPunchDeprecated(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
+
+            if needs_plain_hole:
+                plate = plate.cut(cq.Workplane("XY").circle(outer_d/2).extrude(self.getPlateThick(back=back)).translate((pos[0], pos[1], 0)))
+            else:
+                plate = plate.cut(self.getBearingPunchDeprecated(bearingOnTop=bearingOnTop, bearingInfo=bearingInfo, back=back).translate((pos[0], pos[1], 0)))
         return plate
 
     def addScrewHole(self, plate, screwholePos, screwHeadD = 9, screwBodyD = 6, slotLength = 7, backThick = -1, addExtraSupport=False):
