@@ -1055,7 +1055,7 @@ class ArbourForPlate:
         self.collet_thick = 6
         self.collet_screws = MachineScrew(2,countersunk=True)
         self.pendulum_holder_thick = 15
-        self.pendulum_fixing_extra_space = 0.2
+        self.pendulum_fixing_extra_space = 0.4
         self.direct_arbour_d = direct_arbour_d
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
@@ -1091,7 +1091,7 @@ class ArbourForPlate:
         #to be consistent with the endshake collet
         outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
         if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-            outer_d = cylinder_r*4#DIRECT_ARBOUR_D*2
+            outer_d = cylinder_r*3.25#DIRECT_ARBOUR_D*2
 
         square_size = square_side_length + self.pendulum_fixing_extra_space
 
