@@ -1434,7 +1434,7 @@ class Arbour:
 
 
     def setPlateInfo(self, frontSideExtension=0, rearSideExtension=0, maxR=0, frontPlateThick=0, backPlateThick=0, pendulumSticksOut=0,
-                     pendulumAtFront=True, endshake=1, pendulumFixingBearing=None, escapementOnFront=False, plateDistance=0):
+                     pendulumAtFront=True, endshake=1, escapementOnFront=False, plateDistance=0):
         '''
         front/rear side extensions: how far from the front or back of this arbour to the front or back plate (excluding end shake aka "wobble")
 
@@ -1455,7 +1455,6 @@ class Arbour:
         self.pendulumAtFront=pendulumAtFront
         self.backPlateThick=backPlateThick
         self.endshake=endshake
-        self.pendulumFixingBearing = pendulumFixingBearing
         self.escapementOnFront = escapementOnFront
         self.plateDistance = plateDistance
 
@@ -1737,48 +1736,6 @@ class Arbour:
             arbourExtension = self.getArbourExtension(front=True)
             arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
             anchor = anchor.add(arbourExtension)
-
-        elif self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR:
-            '''
-            Extend the arbour out through a larger bearing and end in a square (like the cannon pinion) that the pendulum end can slot over
-            '''
-            #note - copied and modified from the unfinished spring arbour
-            bearingWiggleRoom = 0.05
-            bearingStandoffThick = 0.6
-
-            # radius for that bit that slots inside the bearing
-            bearingBitR = self.pendulumFixingBearing.innerD / 2 - bearingWiggleRoom
-            diameter = self.arbourD*2
-            beforeBearingTaperHeight = 0
-            if diameter < bearingBitR * 2:
-                # need to taper up to the bearing, as it's bigger!
-                r = self.pendulumFixingBearing.innerSafeD / 2 - diameter / 2
-                angle = degToRad(30)
-                beforeBearingTaperHeight = r * math.sqrt(1 / math.sin(angle) - 1)
-
-            normalExtensionLength = self.frontSideExtension-beforeBearingTaperHeight-bearingStandoffThick
-            if normalExtensionLength <=0 :
-                # raise ValueError("TODO work to enable really short anchor arbours")
-                print("TODO work to enable really short anchor arbours")
-                normalExtensionLength=0.1
-
-            arbour = cq.Workplane("XY").circle(diameter/2).extrude(normalExtensionLength)
-
-            if beforeBearingTaperHeight > 0:
-                arbour = arbour.add(cq.Solid.makeCone(radius1=diameter / 2, radius2=self.pendulumFixingBearing.innerSafeD / 2, height=beforeBearingTaperHeight).translate((0, 0, normalExtensionLength)))
-                arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.pendulumFixingBearing.innerSafeD / 2).extrude(bearingStandoffThick)
-
-            roundBitThick = self.frontPlateThick + self.endshake/2
-
-            arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.pendulumFixingBearing.innerD / 2 - bearingWiggleRoom).extrude(roundBitThick)
-            # using polygon rather than rect so it calcualtes the size to fit in teh circle
-            arbour = arbour.faces(">Z").workplane().polygon(4, self.pendulumFixingBearing.innerD - bearingWiggleRoom * 2).extrude(self.pendulumSticksOut+20)
-
-            arbour = arbour.rotate((0,0,0), (0,0,1), 45)
-
-            arbour = arbour.faces(">Z").workplane().circle(self.arbourD / 2).cutThruAll()
-
-            anchor = anchor.add(arbour.translate((0,0,self.wheelThick)))
 
         return anchor
 

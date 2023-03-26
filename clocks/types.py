@@ -16,6 +16,7 @@ class PendulumFixing(Enum):
     FRICTION_ROD = "friction_rod"
     #using a 10mm bearing for the front anchor arbour, a long extension from the anchour arbour will end in a square and the rod will slot onto this like the minute hand slots
     #onto the cannon pinion
+    #DEPRECATED and mostly removed from the codebase. large bearings had way too much friction to hold the anchor and pendulum
     DIRECT_ARBOUR = "direct_arbour"
     '''
     Same as direct arbour - but avoiding the use of the large (high friction) bearings. Experimental.
@@ -24,6 +25,8 @@ class PendulumFixing(Enum):
     #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)
     KNIFE_EDGE = "knife_edge"
     #idea - 3D printed suspension spring, works for the ratchet, might work for this?
+    #might try with real steel spring too
+    SUSPENSION_SPRING = "suspension_spring"
 
 class GearStyle(Enum):
     SOLID = None
