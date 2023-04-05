@@ -1031,7 +1031,7 @@ class ArbourForPlate:
         self.arbour_extension_max_radius = arbour_extension_max_radius
         self.pendulum_sticks_out = pendulum_sticks_out
         self.pendulum_at_front = pendulum_at_front
-        self.back_from_wall = back_from_wall
+        self.back_plate_from_wall = back_from_wall
         self.endshake = endshake
         self.bearing = bearing
         if self.bearing is None:
@@ -1039,6 +1039,7 @@ class ArbourForPlate:
         #(x,y,z) from the clock plate. z is the base of the arbour, ignoring arbour extensions (this is from the days when the bearings were raised on little pillars, but is still useful for
         #calculating where the arbour should be)
         self.bearing_position = bearing_position
+        #from the top of the back plate to the bottom of the wheel/anchor
         self.distance_from_back = bearing_position[2]
         self.distance_from_front = (self.plate_distance - self.endshake) - self.arbour.getTotalThickness() - self.distance_from_back
 
@@ -1122,7 +1123,7 @@ class ArbourForPlate:
     def get_anchor_shapes(self):
         shapes = {}
         anchor = self.arbour.escapement.getAnchor()
-        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR,PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS]:
+        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR,PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING]:
 
 
             #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
@@ -1130,22 +1131,27 @@ class ArbourForPlate:
             #if the anchor is on the front plate (assumed pendulum is at back), then the cylinder extends all the way through the plates and the square rod is at the back
             #the end of the square rod controls one bit of end shake and there will be a collect that slots onto the rod to control the other
 
-            cylinder_r = self.bearing.innerD / 2
-            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-                cylinder_r = self.direct_arbour_d/2
+            #suspension spring is the same shape of arbour, just with less distance between the anchor and the square bit
+
+            #no need to support direct arbour with large bearings
+            cylinder_r = self.direct_arbour_d/2
             square_side_length = math.sqrt(2) * cylinder_r
 
             if cylinder_r < 5:
                 square_side_length = math.sqrt(2) * cylinder_r * 1.2
 
-
-            shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length, cylinder_r)
+            if self.pendulum_fixing != PendulumFixing.SUSPENSION_SPRING:
+                shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length, cylinder_r)
+                #else TODO suspension spring holder
 
             if not self.pendulum_at_front:
+                rear_bearing_standoff_height = LAYER_THICK * 2
+                if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                    square_rod_length = self.distance_from_back - rear_bearing_standoff_height
+                else:
+                    #bits out the back
 
-                #bits out the back
-                rear_bearing_standoff_height = LAYER_THICK*2
-                rod_length = self.back_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
+                    square_rod_length = self.back_plate_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
 
 
                 '''
@@ -1166,7 +1172,12 @@ class ArbourForPlate:
                 else:
                     #cylinder passes only through the back plate and up to the anchor
                     #no need for collet - still contained within two bearings like a normal arbour
-                    cylinder_length = self.back_plate_thick + self.endshake + self.bearing_position[2]
+
+                    if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                        #we put the square section right on the back of the anchor
+                        cylinder_length = 0
+                    else:
+                        cylinder_length = self.back_plate_thick + self.endshake + self.bearing_position[2]
                     shapes["arbour_extension"] = self.get_arbour_extension(front=True)
 
                 anchor_thick = self.arbour.escapement.getAnchorThick()
@@ -1177,13 +1188,14 @@ class ArbourForPlate:
 
                 # flip over so the front is on the print bed
                 anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
+                #circular bit
                 anchor = anchor.union(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
-                anchor = anchor.union(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(rod_length)).translate((0,0, anchor_thick + cylinder_length)))
-                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + rod_length)))
-
-                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + rod_length + rear_bearing_standoff_height))
-                #anchor is between the plates, make 'base' of cylinder thicker so it can't go through the bearing
-                anchor = anchor.union(cq.Workplane("XY").circle(self.bearing.innerSafeD/2).circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(self.distance_from_back + self.arbour.escapement.getAnchorThick()))
+                #square bit
+                anchor = anchor.union(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(square_rod_length)).translate((0,0, anchor_thick + cylinder_length)))
+                #bearing standoff
+                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + square_rod_length)))
+                #cut hole through the middle
+                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbour.arbourD/2+ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
 
             else:
                 '''
@@ -1225,13 +1237,13 @@ class ArbourForPlate:
             if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR and self.escapement_on_front and not self.pendulum_at_front:
                 collet = shapes["collet"]
                 assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
+            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD]:
+                pendulum_z = -self.pendulum_sticks_out
 
-            pendulum_z = -self.pendulum_sticks_out
+                if self.pendulum_at_front:
+                    pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
 
-            if self.pendulum_at_front:
-                pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
-
-            assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
+                assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
 
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArbourType.ESCAPE_WHEEL:

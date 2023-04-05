@@ -1642,7 +1642,7 @@ class SimpleClockPlates:
 
         return standoff
 
-    def getSinglePillarWallStandoff(self, top=True, forPrinting=True, extraBearingForAnchor=True):
+    def getSinglePillarWallStandoff(self, top=True, forPrinting=True):
         '''
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
@@ -1650,14 +1650,13 @@ class SimpleClockPlates:
 
         this is in position with the xy plate at the TOP of the standoff
 
-        NEW IDEA - make the pillars entirely separate pieces, this will make the print cleaner (no more strings from pillar to pillar)
-        and make it easier to screw the wall standoff to the back plate?
-        note - this won't make it easier, but is a good idea to improve print quality
+        I had considered linking the top and bottom standoffs together with another plate for strength, but an eight day clock (clock 12) has demonstrated that they're
+        fine as two independant little pillars
 
-        new new idea - I'm worried about them being a bit too flimsy, I might give them an equivilant to the back plate to hold them together and give the screwhole somewhere to go
-        doesn't need to be as thick or wide as the back plate
+        In the case of a suspension spring the top pillar standoff is only the bit that holds the bearing for the anchor arbor. There is (will be) a separate
+        peice behind that to hold the suspension spring. This is because it's the same piece as the older standoff, just with a different length.
+        SECOND THOUGHTS - could I just have a big round hole in the back plate and have the crutch extend through that?
 
-        Going to test just pillar extensions and using the hand-avoider around the bottom pillar. If that's too unstable I might try a straddling bottom standoff with two half pillars
         '''
 
         pillarPos = self.topPillarPos if top else self.bottomPillarPos
@@ -1666,21 +1665,25 @@ class SimpleClockPlates:
 
         pillarWallThick = 2
         pillarInnerR = pillarR-pillarWallThick
+
+        extraBearingForAnchor = self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+
+
+
         if top:
             standoff = cq.Workplane("XY").tag("base")
             standoff = standoff.add(self.get_pillar(top=top, flat=True).extrude(self.backPlateFromWall).translate(pillarPos))
         else:
             #I think round is fine, or at least worth a shot for a first test
-            standoff = cq.Workplane("XY").tag("base").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude(self.backPlateFromWall)
+            standoff = cq.Workplane("XY").tag("base").moveTo(pillarPos[0], pillarPos[1]).circle(pillarR).extrude( self.backPlateFromWall)
 
 
-        if top or self.heavy:
+        if top or self.heavy or True:
             back_thick=self.getPlateThick(standoff=True)
-            # slotLength = 7
-            #
-            # #just above the pillar
+            #screwholes to hang on wall
+            #originally only at the top, but now I think put them everywhere
             # #TODO consider putting the screwhole INSIDE the pillar?
-            # screwHolePos = (pillarPos[0], pillarPos[1] + pillarR + self.wallFixingScrewHeadD / 2 + slotLength)
+
             if top:
                 screwHolePos = self.getScrewHolePositions()[0]
             else:
@@ -1714,138 +1717,7 @@ class SimpleClockPlates:
             standoff = standoff.translate((0,0,-self.backPlateFromWall))
 
         return standoff
-    
-    # def getCombinedWallStandOff(self):
-    #     '''
-    #     Get a combined peice for a wall standoff, intended for heavier eight day clocks to provide a means to fix clock to wall in two places to prevent it moving
-    #     '''
-    #
-    #     height = self.topPillarPos[1] - self.bottomPillarPos[1]
-    #
-    #     standoff = cq.Workplane("XY").tag("base").rect(self.plateWidth,height).translate((0,(self.bottomPillarPos[1] + self.bottomPillarPos[1])/2))
-    #     standoff = standoff.add(self.get_top_pillar(flat=True).extrude(self.backPlateFromWall).translate(self.topPillarPos))
-    #     standoff = standoff.add(self.get_bottom_pillar(flat=True).extrude(self.backPlateFromWall).translate(self.bottomPillarPos))
-    #
-    #     # plate = self.addScrewHole(plate, (screwPos[0], screwPos[1]), backThick=screwHolebackThick, screwHeadD=self.wallFixingScrewHeadD, addExtraSupport=screwPos[2])
-    #     back_wide = self.plateWidth
-    #     back_thick = self.getPlateThick(standoff=True)
-    #
-    #     standoff = standoff.workplaneFromTagged("base").moveTo(self.topPillarPos[0] - back_wide / 2, self.topPillarPos[1]).line(back_wide, 0). \
-    #         lineTo(self.bottomPillarPos[0] + back_wide / 2, self.bottomPillarPos[1]).line(-back_wide, 0).close().extrude(back_thick)
-    #
-    #     screwHolePos = (self.topPillarPos[0], self.topPillarPos[1] - self.topPillarR - 8)
-    #     screwHoleSupportR = self.topPillarR#(self.wallFixingScrewHeadD + 6)/2
-    #     slotLength = 7
-    #
-    #     standoff = standoff.workplaneFromTagged("base").moveTo(screwHolePos[0], screwHolePos[1] - slotLength).circle(screwHoleSupportR).extrude(back_thick)
-    #
-    #     standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0])/2, (screwHolePos[1] + self.topPillarPos[1]-slotLength)/2 ).\
-    #         rect(self.topPillarR*2, self.topPillarPos[1] - screwHolePos[1] + slotLength).extrude(back_thick)
-    #
-    #     standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
-    #
-    #     screwStartZ = self.backPlateFromWall-self.backPlateWallStandoffThickForScrews
-    #
-    #     for fixingPos in self.backPlateFixings:
-    #         standoff = standoff.cut(self.fixingScrews.getCutter(withBridging=False).translate(fixingPos).translate((0, 0, screwStartZ)))
-    #         # #put holeinhole and don't use the cut out screwhead space so we can make the pillars mostly hollow
-    #         # standoff = standoff.cut(getHoleWithHole(innerD=self.fixingScrews.metric_thread, outerD=self.fixingScrews.getHeadDiameter(), deep=0)
-    #         #                         .translate(fixingPos).translate((0, 0, screwStartZ-LAYER_THICK_EXTRATHICK*2)))
-    #
-    #     # #make the pillars mostly hollow
-    #     # standoff = standoff.cut(cq.Workplane("XY").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(topPillarInnerR).extrude(screwStartZ-LAYER_THICK_EXTRATHICK*2))
-    #     #
-    #     #
-    #     #
-    #     # standoff = standoff.cut(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(bottomPillarInnerR).extrude(screwStartZ-LAYER_THICK_EXTRATHICK*2))
-    #
-    #     standoff = standoff.translate((0, 0, -self.backPlateFromWall))
-    #     return standoff
 
-    
-    # def getFrontPlateFixingScrewPositions(self, top=None):
-    #     '''
-    #     Get positions of the screws that hold the front plate to the pillars
-    #     if top is None, return all of them
-    #     if top is True, return top pillar fixings
-    #     if top is False, return bottom pillar fixings
-    #     '''
-    #     topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
-    #     topFixings = [(topPillarPos[0] -topPillarR / 2, topPillarPos[1]), (topPillarPos[0] + topPillarR / 2, topPillarPos[1])]
-    #     bottomFixings = [(bottomPillarPos[0], bottomPillarPos[1] + bottomPillarR * 0.5), (bottomPillarPos[0], bottomPillarPos[1] - bottomPillarR * 0.5)]
-    #
-    #     if top is None:
-    #         fixings = []
-    #         fixings.append(topFixings)
-    #         fixings.append(bottomFixings)
-    #         return fixings
-    #     elif top:
-    #         return topFixings
-    #     else:
-    #         return bottomFixings
-
-    # def getWallStandoffFixingPositions
-
-    def getExtraFrontPlate(self, forPrinting=True):
-        '''
-        Constructed with the front facing downwards, so it's on its back with the leggies facing up
-
-        first idea was to make it all the way from the centre of the esacep wheel to the bottom pillar.
-         Now undecided and going to try a first attempt that goes from below the esacpe wheel only
-        '''
-        if not self.extraFrontPlate:
-            raise ValueError("There is no extra front plate")
-        if self.style != "vertical":
-            raise NotImplementedError("No support for extra front plate for anything other than vertical plates")
-
-        topY = self.bearingPositions[-2][1]
-        # bottomY = self.bottomPillarPos[1]
-        bottomY = self.extraFrontPlateMountingPos[1]
-
-        thick = self.getPlateThick(back=False)
-
-        #main rectangle
-        plate = cq.Workplane("XY").tag("base").moveTo(0,(topY+bottomY)/2).rect(self.plateWidth, topY - bottomY).extrude(thick)
-        #circle over bottom pillar
-        # plate = plate.workplaneFromTagged("base").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.bottomPillarR).extrude(thick)
-        #top circle
-        plate = plate.workplaneFromTagged("base").moveTo(0, topY).circle(self.plateWidth / 2).extrude(thick)
-
-        #bearing for the escape wheel
-        bearingInfo = getBearingInfo(self.goingTrain.getArbourWithConventionalNaming(-2).getRodD())
-        plate = plate.cut(self.getBearingPunchDeprecated(bearingOnTop=True, bearingInfo=bearingInfo, back=False).translate(self.bearingPositions[-2][0:2]))
-
-        handHoleR = self.motionWorks.getHourHandHoleD()/2 + 2
-        handsPos = self.bearingPositions[self.goingTrain.chainWheels]
-
-        #pillar to attach to front plate
-        # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide / 2).extrude(self.extraFrontPlateDistance).translate((0, 0, thick)))
-        if self.extraFrontPlateMountingLength > self.plateWidth:
-            #elongated circle
-            centreLength = self.extraFrontPlateMountingLength - self.plateWidth
-            plate = plate.workplaneFromTagged("base").moveTo(self.extraFrontPlateMountingPos[0] - self.plateWidth / 2, self.extraFrontPlateMountingPos[1] + centreLength / 2).\
-                radiusArc((self.extraFrontPlateMountingPos[0] + self.plateWidth / 2, self.extraFrontPlateMountingPos[1] + centreLength / 2), self.plateWidth / 2).line(0, -centreLength).\
-                radiusArc((self.extraFrontPlateMountingPos[0] - self.plateWidth / 2, self.extraFrontPlateMountingPos[1] - centreLength / 2), self.plateWidth / 2).close().extrude(self.extraFrontPlateDistance + thick)
-
-        else:
-            raise ValueError("Not enough space for a pillar to hold the extra front plate")
-        #
-        # #extra circle so not too flimsy around the motion works
-        # plate = plate.workplaneFromTagged("base").moveTo(handsPos[0], handsPos[1]).circle(handHoleR+5).extrude(thick)
-        # #hole for the motion works
-        # plate = plate.cut(cq.Workplane("XY").moveTo(handsPos[0], handsPos[1]).circle(handHoleR).extrude(thick))
-
-
-        for pos in self.extraFrontPlateFixings:
-            # plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).translate(pos).translate((0,0,-thick)))
-            plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).rotate((0,0,0),(1,0,0),180).translate(pos).translate((0, 0, thick + self.extraFrontPlateDistance + self.getPlateThick(back=False))))
-            plate = plate.cut(self.fixingScrews.getNutCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(pos).translate((0,0,self.fixingScrews.length-10 - self.fixingScrews.getNutHeight())))
-
-
-        if not forPrinting:
-            plate = plate.rotate((0,0,0), (0,1,0), 180).translate((0,0,thick + self.extraFrontPlateDistance + self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance))
-
-        return plate
 
     def getPlate(self, back=True, getText=False, for_printing=True):
         '''
@@ -2044,7 +1916,7 @@ class SimpleClockPlates:
             else:
                 cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height).translate(fixingPos).translate((0, 0, rear_nut_base_z)))
             # holes for the screws
-            cutter = cutter.add(self.fixingScrews.getCutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
+            cutter = cutter.add(self.fixingScrews.getCutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
 
 
 

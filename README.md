@@ -9,6 +9,8 @@ See the wall_clock_* python scripts in the root directory for examples of genera
 
 Documentation is lacking as this is a hobby project and I'm easily distracted. This readme aims to provide a general overview and the code is commented with my intentions throughout. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading The Modern Clock if you are interested in using it to produce your own clock.
 
+Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase.
+
 ![Clock 15 render](images/clock_15_grasshopper_render_small.png "Clock 15")
 ![Clock 07 photo](images/clock_07_photo_small.jpg "Clock 7")
 

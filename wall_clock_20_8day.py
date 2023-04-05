@@ -15,7 +15,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_20"
 clockOutDir="out"
 gearStyle=clock.GearStyle.ARCS
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.SUSPENSION_SPRING
 
 #for period 1.5
 drop =1.5
@@ -56,8 +56,8 @@ dial = clock.Dial(outside_d=245, bottom_fixing=True, top_fixing=True, style=cloc
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 12", style="vertical",
                                  motionWorksAbove=True, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
-                                 backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=3, countersunk=True, length=40),
-                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial)
+                                 backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
+                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial,)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
