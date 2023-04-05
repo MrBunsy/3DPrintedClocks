@@ -40,7 +40,7 @@ train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=
 #for the first draft let's stick to a chain I know works, and hope that we're not over its weight limit
 # 61 links/ft 1-day regula chain. copied from clock 04
 # train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
-train.genChainWheels2(clock.CHAIN_PRODUCTS_1_4MM_CHAIN, ratchetThick=4, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=35, fixing_screws=clock.MachineScrew(3, countersunk=True))
+train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=4, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=35, fixing_screws=clock.MachineScrew(3, countersunk=True))
 # train.genChainWheels(ratchetThick=4,wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075, screwThreadLength=8, holeD=3)
 
 
@@ -63,7 +63,7 @@ dial = None
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=10, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, heavy=True, extraHeavy=True, dial=dial, pillars_separate=True,
-                                 chainThroughPillarRequired=False, huygens_wheel_min_d=35)
+                                 chainThroughPillarRequired=False, huygens_wheel_min_d=35, fixingScrews=clock.MachineScrew(4, countersunk=True))
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
