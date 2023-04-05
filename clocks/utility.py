@@ -31,6 +31,8 @@ LOOSE_FIT_ON_ROD_MOTION_WORKS = 0.25
 LOOSE_SCREW = 0.2
 
 WASHER_THICK_M3 = 0.5
+#the spring washer flattened - useful because it can butt up against a bearing without rubbing on anything.
+SMALL_WASHER_THICK_M3 = 1.1
 
 #external diameter for 3 and 4mm internal diameter
 STEEL_TUBE_DIAMETER = 6.2

@@ -1050,7 +1050,8 @@ class ArbourForPlate:
         self.type = self.arbour.getType()
 
         #for an escapement on the front, how far from the front plate is the anchor?
-        self.front_anchor_from_plate = 1 + self.endshake
+        #want space for a washer to act as a standoff against the bearing and a bit of wobble to account for the top wall standoff to flex a bit
+        self.front_anchor_from_plate =  SMALL_WASHER_THICK_M3 + self.endshake + 1
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
         self.collet_screws = MachineScrew(2,countersunk=True)

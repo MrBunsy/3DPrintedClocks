@@ -875,7 +875,7 @@ class SimpleClockPlates:
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
-                 centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D):
+                 centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -925,6 +925,8 @@ class SimpleClockPlates:
         #use the weight on a pulley with a single loop of chain/rope, going over a ratchet on the front of the clock and a counterweight on the other side from the main weight
         #easiest to implement with a chain
         self.huygensMaintainingPower = goingTrain.huygensMaintainingPower
+        #for plates with very little distance (eg grasshopper) the bottom pillar will be small - but we still need a largeish wheel for the chain
+        self.huygens_wheel_min_d = huygens_wheel_min_d
 
         #is the weight heavy enough that we want to chagne the plate design?
         #will result in wider plates up to the chain wheel
@@ -971,8 +973,9 @@ class SimpleClockPlates:
         self.backPlateFromWall = backPlateFromWall
         self.fixingScrews = fixingScrews
         if self.fixingScrews is None:
-            #longest pozihead countersunk screws I can easily get are 25mm long. I have some 40mm flathead which could be deployed if really needed
-            self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True, length=25)
+            #PREVIOUSLY longest pozihead countersunk screws I can easily get are 25mm long. I have some 40mm flathead which could be deployed if really needed
+            #now found supplies of pozihead countersunk screws up to 60mm, so planning to use two screws (each at top and bottom) to hold everything together
+            self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True)#, length=25)
 
         #how much of the screw should be in the standoff, with the rest in the back plate
         self.backPlateWallStandoffThickForScrews=self.plateThick
@@ -1029,6 +1032,13 @@ class SimpleClockPlates:
         if self.huygensMaintainingPower:
             max_circumference = self.bottomPillarR * 1.25 * math.pi
             max_diameter = max_circumference/math.pi
+            ratchetOuterD = self.bottomPillarR * 2
+
+            if max_diameter < self.huygens_wheel_min_d:
+                max_diameter = self.huygens_wheel_min_d
+                max_circumference = max_diameter*math.pi
+                ratchetOuterD = max_diameter+25
+
             ratchetOuterThick = 3
             ratchet_thick=5
             #need a powered wheel and ratchet on the front!
@@ -1039,7 +1049,7 @@ class SimpleClockPlates:
                                                      tolerance=self.goingTrain.poweredWheel.tolerance, ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick)
             elif self.goingTrain.poweredWheel.type == PowerType.CHAIN2:
                 self.huygensWheel = PocketChainWheel2(ratchet_thick=5, max_diameter=max_diameter, chain=self.goingTrain.poweredWheel.chain, looseOnRod=True,
-                                                      ratchetOuterD=self.bottomPillarR*2, ratchetOuterThick=ratchetOuterThick, arbour_d=self.goingTrain.poweredWheel.arbour_d)
+                                                      ratchetOuterD=ratchetOuterD, ratchetOuterThick=ratchetOuterThick, arbour_d=self.goingTrain.poweredWheel.arbour_d)
             elif self.goingTrain.poweredWheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
                 print("Huygens wheel diameter",huygens_diameter)
@@ -1370,7 +1380,8 @@ class SimpleClockPlates:
         return True
 
     def need_front_anchor_bearing_holder(self):
-        return self.escapementOnFront and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+        #no longer supporting anything that doesn't (with the escapement on the front) - the large bearings have way too much friction so we have to hold the anchor arbour from both ends
+        return self.escapementOnFront# and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
     def get_front_anchor_bearing_holder_total_length(self):
         '''
