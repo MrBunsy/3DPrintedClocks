@@ -18,7 +18,8 @@ clockName="wall_clock_05_retrofit"
 clockOutDir="out"
 
 #aiming for diameter of  17.881637930486566
-new_chainwheel = PocketChainWheel2(chain=CHAIN_PRODUCTS_1_4MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=20, power_clockwise=False, looseOnRod=True, arbour_d=3, fixings=2)
+#new_chainwheel = PocketChainWheel2(chain=CHAIN_PRODUCTS_1_4MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=20, power_clockwise=False, looseOnRod=True, arbour_d=3, fixings=2)
+new_chainwheel = PocketChainWheel2(chain=COUSINS_1_5MM_CHAIN, ratchet_thick=4.5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, looseOnRod=True, arbour_d=3, fixings=2, wall_thick=1)
 # new_chainwheel = PocketChainWheel2(chain=FAITHFULL_1_6MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=30, power_clockwise=False, looseOnRod=True, arbour_d=3, fixings=2)
 new_chainwheel.ratchet.ratchetTeeth=16
 new_chainwheel.ratchet.clicks=8

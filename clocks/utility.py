@@ -809,6 +809,12 @@ REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65
 #different again!!! That's three different sizes from one purchase. I think I need to stick to ones that come on a reel
 CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.45, width=5.5, inside_length=1000/129)#, outside_length=10.8)
 
+#https://www.cousinsuk.com/product/chains-steel?code=C34656
+#looks to be as good value as the reels of chain I got, but smaller
+#the values on the website don't match up to the stated chain pitch, I'll have to wait until it arrives
+#597.5/83
+COUSINS_1_5MM_CHAIN = ChainInfo(wire_thick=1.5, width=6.5,inside_length=597.5/83.0)# outside_length=12)
+
 #TODO measure a long stretch, 10.15 is just a rough estimate
 FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.15)
 
