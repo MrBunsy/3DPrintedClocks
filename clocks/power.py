@@ -1735,7 +1735,7 @@ class PocketChainWheel2:
     Also possible that the chainproducts chain is just not very high quality as it seems to hang twisted
     '''
 
-    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, looseOnRod=False, ratchetOuterD=-1, ratchetOuterThick=5):
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, looseOnRod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):
 
         self.type = PowerType.CHAIN2
         # if false, the powered wheel is fixed to the rod and the gear wheel is loose.
@@ -1783,8 +1783,8 @@ class PocketChainWheel2:
         self.diameter = self.radius*2
         self.circumference = math.pi * self.diameter
 
-        #TODO
-        self.wheel_thick = self.pocket_wide + 4 - 1.2
+        self.wall_thick=wall_thick
+        self.wheel_thick = self.pocket_wide + self.wall_thick*2
 
         if ratchetOuterD < 0:
             ratchetOuterD = self.diameter * 2.5
