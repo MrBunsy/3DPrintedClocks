@@ -6,7 +6,7 @@
             <img *ngFor="let style of dialStyles;" width="300" class="{{style == dialStyle ? 'chosen' : ''}}" src="assets/dial_{{style}}.svg" (click)="chooseStyle(style)">
         </div>
     </div>
-    <div class="preview">
+    <div *ngIf="hasDial"  class="preview">
         <img [hidden]="loading" width="400" src="{{(clock$ | async)?.getDialAndHandsUrl()}}" (load)="onLoad()">
         <div *ngIf="loading"> Loading ...</div>
     </div>

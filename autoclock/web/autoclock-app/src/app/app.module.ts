@@ -10,6 +10,8 @@ import { ClockPreviewComponent } from './components/clock-preview/clock-preview.
 import { HandChoiceComponent } from './components/hand-choice/hand-choice.component';
 import { FormsModule } from '@angular/forms';
 import { DialChoiceComponent } from './components/dial-choice/dial-choice.component';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { ClipboardModule } from '@angular/cdk/clipboard';
 
 @NgModule({
   declarations: [
@@ -23,7 +25,9 @@ import { DialChoiceComponent } from './components/dial-choice/dial-choice.compon
   imports: [
     BrowserModule,
     HttpClientModule,
-    FormsModule 
+    FormsModule,
+    NoopAnimationsModule,
+    ClipboardModule
   ],
   providers: [ClocksService],
   bootstrap: [AppComponent]

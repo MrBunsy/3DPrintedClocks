@@ -1,5 +1,10 @@
 <div class="preview">
-    <button *ngIf="!show" (click)="generateClock()">Generate Clock</button>
+    <div>
+        <textarea id="clock-string" cols="120" rows="1" value="{{(clock$ | async)?.getString()}}"></textarea> <button [cdkCopyToClipboard]="(clock$ | async)?.getString()!">Copy clock info to clipboard (send to Luke)</button>
+    </div>
+    <div>
+        <button *ngIf="!show" (click)="generateClock()">Generate Clock</button>
+    </div>
     <div *ngIf="show">
         <img [hidden]="loading" width="720" src="{{(clock$ | async)?.getUrl()}}" (load)="onLoad()">
         <div *ngIf="loading">  Generating Clock...</div>

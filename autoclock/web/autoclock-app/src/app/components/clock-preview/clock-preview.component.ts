@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 import { ClocksService } from 'src/app/clocks.service';
 import { Autoclock } from 'src/app/models/clock';
+import {ClipboardModule} from '@angular/cdk/clipboard';
 
 @Component({
   selector: 'clock-preview',
