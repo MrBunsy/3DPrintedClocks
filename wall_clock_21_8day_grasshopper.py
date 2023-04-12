@@ -22,7 +22,7 @@ clockOutDir="out"
 gearStyle = clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
-need_space = clock.SimpleClockPlates.get_front_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
+need_space = clock.SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
 
 #pre-calculated good values for a 9.75 escaping arc
 #also -1 from frame_thick because I've reduced front_anchor_from_plate by one

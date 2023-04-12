@@ -26,6 +26,10 @@ class PendulumFixing(Enum):
     KNIFE_EDGE = "knife_edge"
     #idea - 3D printed suspension spring, works for the ratchet, might work for this?
     #might try with real steel spring too
+    #two types of suspension spring because I'm not sure which will work best - I may need both anyway if I want to ressurect front pendulum
+    #a large hole in the back/front plate for the crutch to slot through
+    SUSPENSION_SPRING_WITH_PLATE_HOLE = "suspension_spring_with_plate_hole"
+    #same small hole in plate as direct arbour, and the rear standoff or front bearing holder holds the bearing
     SUSPENSION_SPRING = "suspension_spring"
 
 class GearStyle(Enum):

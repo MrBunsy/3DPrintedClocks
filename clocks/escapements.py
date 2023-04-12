@@ -2002,6 +2002,12 @@ class GrasshopperEscapement:
 
 class Pendulum:
     '''
+    DEPRECATED - only the hand avoider is still used in anything other than the deprecated friction-fitting pendulum attachment.
+     Responsibility for most of the parts here are now in ArborsForPlate
+    Plan is to make a new version of this class for all the bits required for a suspension spring.
+
+    TODO overhaul this so I can still produce the old friction-fit clocks from ArborForPlate then move it to gearing
+
     Class to generate the anchor&crutch arbour and pendulum parts
     NOTE - the anchor is now usually accessed via being a special case of Arbour
 

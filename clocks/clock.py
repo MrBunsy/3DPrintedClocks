@@ -944,9 +944,14 @@ class SimpleClockPlates:
         #HACK this is calculated when generating the front plate
         self.front_plate_has_key_hole = False
 
+        #how much space the crutch will need - used for work out where to put the bearing for the anchor
+        self.crutch_space = 10
+        #how thick the bearing holder out the back or front should be
+        #can't use bearing from ArborForPlate yet as they haven't been generated
+        #bit thicker than the front bearing thick because this may have to be printed with supports
+        self.rear_standoff_bearing_holder_thick = getBearingInfo(goingTrain.getArbourWithConventionalNaming(-1).arbourD).height+2
 
-
-        #just for the first prototype
+        #just for the first prototype (hahahahah, lasted a long time until PendulumFixing.SUSPENSION_SPRING)
         self.anchorHasNormalBushing=True
         self.motionWorks = motionWorks
         self.goingTrain = goingTrain
@@ -1159,7 +1164,7 @@ class SimpleClockPlates:
             #new way of doing it, new class for combining all this logic in once place
             arbourForPlate = ArbourForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulumSticksOut,
                                             pendulum_at_front=self.pendulumAtFront, bearing=bearing, escapement_on_front=self.escapementOnFront, back_from_wall=self.backPlateFromWall,
-                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing, direct_arbour_d=self.direct_arbour_d)
+                                            endshake=self.endshake, pendulum_fixing=self.pendulumFixing, direct_arbour_d=self.direct_arbour_d, crutch_space=self.crutch_space)
             self.arboursForPlate.append(arbourForPlate)
 
 
@@ -1385,15 +1390,15 @@ class SimpleClockPlates:
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
         if self.need_front_anchor_bearing_holder():
-            holder_long = self.arboursForPlate[-1].front_anchor_from_plate  + self.arboursForPlate[-1].arbour.escapement.getAnchorThick()\
-                          + self.get_front_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing) + WASHER_THICK_M3
+            holder_long = self.arboursForPlate[-1].front_anchor_from_plate + self.arboursForPlate[-1].arbour.escapement.getAnchorThick() \
+                          + self.get_lone_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing) + WASHER_THICK_M3
         else:
             holder_long = 0
         return holder_long
 
 
     @staticmethod
-    def get_front_anchor_bearing_holder_thick(bearing = None):
+    def get_lone_anchor_bearing_holder_thick(bearing = None):
         '''
         static so it can be used to adjust the thickness of the frame
         '''
@@ -1403,7 +1408,7 @@ class SimpleClockPlates:
 
     def get_front_anchor_bearing_holder(self, for_printing=True):
 
-        holder_thick = self.get_front_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing)
+        holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing)
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
 
@@ -1666,7 +1671,7 @@ class SimpleClockPlates:
         pillarWallThick = 2
         pillarInnerR = pillarR-pillarWallThick
 
-        extraBearingForAnchor = self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+
 
 
 
@@ -1699,12 +1704,19 @@ class SimpleClockPlates:
 
             standoff = self.addScrewHole(standoff, screwHolePos, screwHeadD=self.wallFixingScrewHeadD)
 
-            if extraBearingForAnchor and top:
+            if self.pendulumFixing in [PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and top:
                 # extend a back plate out to the bearing holder and wall fixing
-                standoff = standoff.workplaneFromTagged("base").moveTo((screwHolePos[0] + self.topPillarPos[0]) / 2, (self.bearingPositions[-1][1] + self.topPillarPos[1]) / 2). \
-                    rect(self.topPillarR * 2, self.topPillarPos[1] - self.bearingPositions[-1][1]).extrude(back_thick)
-                standoff = standoff.workplaneFromTagged("base").moveTo(self.bearingPositions[-1][0], self.bearingPositions[-1][1]).circle(screwHoleSupportR).extrude(back_thick)
-                standoff = self.cut_anchor_bearing_in_standoff(standoff)
+
+                bearingHolder = cq.Workplane("XY").tag("base").moveTo((screwHolePos[0] + self.topPillarPos[0]) / 2, (self.bearingPositions[-1][1] + self.topPillarPos[1]) / 2). \
+                    rect(self.topPillarR * 2, self.topPillarPos[1] - self.bearingPositions[-1][1]).extrude(self.rear_standoff_bearing_holder_thick)
+                bearingHolder = bearingHolder.workplaneFromTagged("base").moveTo(self.bearingPositions[-1][0], self.bearingPositions[-1][1]).circle(screwHoleSupportR).extrude(self.rear_standoff_bearing_holder_thick)
+                bearingHolder = self.cut_anchor_bearing_in_standoff(bearingHolder)
+
+                z = 0
+                if self.pendulumFixing == PendulumFixing.SUSPENSION_SPRING:
+                    #TODO
+                    z = self.backPlateFromWall - self.crutch_space - self.rear_standoff_bearing_holder_thick - self.endshake
+                standoff = standoff.union(bearingHolder.translate((0,0,z)))
 
         #we're currently not in the right z position
         standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0,self.backPlateFromWall)))
@@ -1912,9 +1924,9 @@ class SimpleClockPlates:
             z = self.front_z
             if fixingPos in self.frontPlateTopFixings and self.need_front_anchor_bearing_holder():
                 z += self.get_front_anchor_bearing_holder_total_length()
-                cutter = cutter.union(self.fixingScrews.getNutCutter(height=top_nut_hole_height).translate(fixingPos).translate((0, 0, rear_nut_base_z)))
+                cutter = cutter.union(self.fixingScrews.getNutCutter(height=top_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, rear_nut_base_z)))
             else:
-                cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height).translate(fixingPos).translate((0, 0, rear_nut_base_z)))
+                cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, rear_nut_base_z)))
             # holes for the screws
             cutter = cutter.add(self.fixingScrews.getCutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
 
@@ -1985,7 +1997,7 @@ class SimpleClockPlates:
         '''
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
         if self.extraHeavy:
-            #sagitta looks nice, otherwise arbitrary at the moment, should really check it encompasses the anchor
+            #sagitta looks nice, otherwise arbitrary at the moment, should really check it leaves enough space for the anchor
             sagitta = topPillarR * 0.25
             top_pillar = cq.Workplane("XY").moveTo(0 - topPillarR, 0).radiusArc((0 + topPillarR, 0), topPillarR)\
                 .lineTo(0 + topPillarR, 0 - topPillarR - sagitta). \
@@ -2132,7 +2144,7 @@ class SimpleClockPlates:
 
         height = self.getPlateThick(back)
         if standoff:
-            height = self.getPlateThick(standoff=True)
+            height = self.rear_standoff_bearing_holder_thick#self.getPlateThick(standoff=True)
 
         if bearingInfo.height >= height:
             raise ValueError("{} plate not thick enough to hold bearing: {}".format("Back" if back else "Front",bearingInfo.get_string()))
@@ -2155,7 +2167,7 @@ class SimpleClockPlates:
             bearingOnTop = back
 
             needs_plain_hole = False
-            if self.pendulumFixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS] and i == len(self.bearingPositions)-1:
+            if self.pendulumFixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearingPositions)-1:
                 #if true we just need a hole for the direct arbour to fit through
 
                 if self.escapementOnFront and not back:

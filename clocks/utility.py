@@ -797,6 +797,8 @@ class ChainInfo:
         if self.outside_length < 0:
             self.outside_length = self.inside_length + self.wire_thick*2
 
+#consistently reliable results have been obtained by laying out and pulling tight) a stretch of chain against a ruler to calculate inside_length (half chain pitch)
+
 REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65)
 #claims a max load of 5kg, looks promising for an eight day
 #129 links in 1m = 7.75 inside length
@@ -817,6 +819,9 @@ COUSINS_1_5MM_CHAIN = ChainInfo(wire_thick=1.5, width=6.5,inside_length=597.5/83
 
 #TODO measure a long stretch, 10.15 is just a rough estimate
 FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.15)
+
+#595.5/94
+REGULA_8_DAY_1_05MM_CHAIN = ChainInfo(wire_thick=1.05, width=4.4, inside_length=595.5/94)#, outside_length=8.4)
 
 class BearingInfo:
     '''

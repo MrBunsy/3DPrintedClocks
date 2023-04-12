@@ -1002,10 +1002,52 @@ class WheelPinionPair:
         return addendumFactor
 
 
+class SuspensionSpringPendulumBits:
+    '''
+    Crutch and pendulum holder for a suspension spring, contained here to avoid making ArborForPlate far too large
+    '''
+
+    def __init__(self, crutch_length=40, square_side_length=6, crutch_thick=7.5, collet_screws=None, crutch_screw=None):
+
+        self.collet_screws = collet_screws
+
+        if self.collet_screws is None:
+            self.collet_screws = MachineScrew(2, countersunk=True)
+
+        self.crutch_screw =crutch_screw
+        if self.crutch_screw is None:
+            self.crutch_screw = MachineScrew(3, countersunk=True)
+
+        self.crutch_length = crutch_length
+        #size of the square that will slot onto the anchor arbor
+        self.square_side_length = square_side_length
+        self.crutch_thick=crutch_thick
+
+        self.radius = self.square_side_length*0.5/math.sqrt(2) + 4
+        self.crutch_wide = 10
+
+    def get_crutch(self):
+        crutch = cq.Workplane("XY").circle(self.radius).extrude(self.crutch_thick)
+        # means to hold screw that will hold this in place
+        crutch = crutch.cut(self.collet_screws.getCutter(length=self.radius, headSpaceLength=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.radius, self.crutch_thick / 2)))
+        crutch = crutch.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.square_side_length / 2, self.crutch_thick / 2)))
+
+        #arm down to the screw that will link with the pendulum
+        crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length/2).rect(self.crutch_wide, self.crutch_length).extrude(self.crutch_thick))
+        crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length).circle(self.crutch_wide/2).extrude(self.crutch_thick))
+
+        #screw to link with pendulum
+        crutch = crutch.cut(self.crutch_screw.getCutter(withBridging=True).translate((0,-self.crutch_length)))
+
+        crutch = crutch.faces(">Z").workplane().rect(self.square_side_length, self.square_side_length).cutThruAll()
+
+        return crutch
+
+
 class ArbourForPlate:
 
     def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
-                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbour_d = DIRECT_ARBOUR_D):
+                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbour_d = DIRECT_ARBOUR_D, crutch_space=10):
         '''
         Given a basic Arbour and a specific plate class do the following:
 
@@ -1060,13 +1102,24 @@ class ArbourForPlate:
         self.pendulum_fixing_extra_space = 0.2
         self.direct_arbour_d = direct_arbour_d
 
+        self.cylinder_r = self.direct_arbour_d / 2
+        self.square_side_length = math.sqrt(2) * self.cylinder_r
+
+        if self.cylinder_r < 5:
+            self.square_side_length = math.sqrt(2) * self.cylinder_r * 1.2
+
+        self.crutch_holder_slack_space = 2
+        self.crutch_thick = crutch_space - self.crutch_holder_slack_space
+
+        self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
+
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
 
         # so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
         self.arbour_bearing_standoff_length = LAYER_THICK * 2
 
-    def get_anchor_collet(self, square_side_length):
+    def get_anchor_collet(self):
         '''
         get a collet that fits on the direct arbour anchor to prevent it sliding out and holds the pendulum
         '''
@@ -1074,7 +1127,7 @@ class ArbourForPlate:
         outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD)/2
         height = self.collet_thick - LAYER_THICK*2
 
-        square_size = square_side_length+self.pendulum_fixing_extra_space
+        square_size = self.square_side_length+self.pendulum_fixing_extra_space
 
 
         collet = cq.Workplane("XY").circle(outer_d/2).rect(square_size, square_size).extrude(height)
@@ -1085,7 +1138,13 @@ class ArbourForPlate:
 
         return collet
 
-    def get_pendulum_holder_collet(self, square_side_length, cylinder_r):
+    def get_pendulum_crutch(self):
+
+        if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE]:
+            return None
+        return self.suspension_spring_bits.get_crutch()
+
+    def get_pendulum_holder_collet(self):
         '''
         will slot over square bit of anchor arbour and screw in place
         for the direct arbours without suspension spring
@@ -1093,9 +1152,9 @@ class ArbourForPlate:
         #to be consistent with the endshake collet
         outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
         if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-            outer_d = cylinder_r*4#DIRECT_ARBOUR_D*2
+            outer_d = self.cylinder_r*4#DIRECT_ARBOUR_D*2
 
-        square_size = square_side_length + self.pendulum_fixing_extra_space
+        square_size = self.square_side_length + self.pendulum_fixing_extra_space
 
         gap_between_square_and_pendulum_hole = self.collet_screws.getNutHeight(half=True) + 1 + self.collet_screws.getHeadHeight()
 
@@ -1111,7 +1170,7 @@ class ArbourForPlate:
         collet = collet.cut(cq.Workplane("XY").rect(square_size, square_size).extrude(self.pendulum_holder_thick))
 
         #means to hold end of pendulum made of threaded rod
-        collet = collet.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick/2).translate((0,-square_side_length/2-gap_between_square_and_pendulum_hole)))
+        collet = collet.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick/2).translate((0,-self.square_side_length/2-gap_between_square_and_pendulum_hole)))
 
         #means to hold screw that will hold this in place
         collet = collet.cut(self.collet_screws.getCutter(length=outer_d / 2, headSpaceLength=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
@@ -1123,7 +1182,7 @@ class ArbourForPlate:
     def get_anchor_shapes(self):
         shapes = {}
         anchor = self.arbour.escapement.getAnchor()
-        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR,PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING]:
+        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
 
 
             #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
@@ -1134,20 +1193,21 @@ class ArbourForPlate:
             #suspension spring is the same shape of arbour, just with less distance between the anchor and the square bit
 
             #no need to support direct arbour with large bearings
-            cylinder_r = self.direct_arbour_d/2
-            square_side_length = math.sqrt(2) * cylinder_r
 
-            if cylinder_r < 5:
-                square_side_length = math.sqrt(2) * cylinder_r * 1.2
 
-            if self.pendulum_fixing != PendulumFixing.SUSPENSION_SPRING:
-                shapes["pendulum_holder"]=self.get_pendulum_holder_collet(square_side_length, cylinder_r)
+            if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
+                shapes["pendulum_holder"]=self.get_pendulum_holder_collet()
                 #else TODO suspension spring holder
 
             if not self.pendulum_at_front:
                 rear_bearing_standoff_height = LAYER_THICK * 2
-                if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE:
+                    #square bit just up to the top back plate
                     square_rod_length = self.distance_from_back - rear_bearing_standoff_height
+                elif self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                    #round up to the back of the back plate then square out the back
+                    #some extra so the crutch doesn't have to be perfectly aligned
+                    square_rod_length = self.crutch_thick + self.crutch_holder_slack_space - rear_bearing_standoff_height
                 else:
                     #bits out the back
 
@@ -1173,10 +1233,11 @@ class ArbourForPlate:
                     #cylinder passes only through the back plate and up to the anchor
                     #no need for collet - still contained within two bearings like a normal arbour
 
-                    if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                    if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE:
                         #we put the square section right on the back of the anchor
                         cylinder_length = 0
                     else:
+                        #cylinder up to the back of the back plate
                         cylinder_length = self.back_plate_thick + self.endshake + self.bearing_position[2]
                     shapes["arbour_extension"] = self.get_arbour_extension(front=True)
 
@@ -1189,9 +1250,9 @@ class ArbourForPlate:
                 # flip over so the front is on the print bed
                 anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
                 #circular bit
-                anchor = anchor.union(cq.Workplane("XY").circle(cylinder_r).extrude(cylinder_length + anchor_thick))
+                anchor = anchor.union(cq.Workplane("XY").circle(self.cylinder_r).extrude(cylinder_length + anchor_thick))
                 #square bit
-                anchor = anchor.union(cq.Workplane("XY").rect(square_side_length,square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(cylinder_r).extrude(square_rod_length)).translate((0,0, anchor_thick + cylinder_length)))
+                anchor = anchor.union(cq.Workplane("XY").rect(self.square_side_length, self.square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(self.cylinder_r).extrude(square_rod_length)).translate((0,0, anchor_thick + cylinder_length)))
                 #bearing standoff
                 anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbour.arbourD/2).extrude(rear_bearing_standoff_height).translate((0,0, anchor_thick + cylinder_length + square_rod_length)))
                 #cut hole through the middle
@@ -1201,6 +1262,7 @@ class ArbourForPlate:
                 '''
                 I don't think I'm going to design many more with the pendulum on the front, so I'm not going to bother supporting that with a direct arbour unless I have to
                 TODO - would be useful to have old designs working again
+                UPDATE: several people have remarked that they like the style of the old pendulum on front clocks, so I might ressurect it free of the friction fitting
                 '''
                 raise NotImplementedError("Unsuported escapement and pendulum combination!")
         else:
@@ -1208,6 +1270,11 @@ class ArbourForPlate:
             raise ValueError("Only direct arbour pendulum fixing supported currently")
             # print("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
+
+        crutch = self.get_pendulum_crutch()
+        if crutch is not None:
+            shapes["crutch"] = crutch
+
         return shapes
 
     def get_assembled(self):
@@ -1244,7 +1311,8 @@ class ArbourForPlate:
                     pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
 
                 assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
-
+            if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArbourType.ESCAPE_WHEEL:
             assembly = assembly.add(self.arbour.getAssembled())

@@ -510,13 +510,13 @@ if False:
 # show_object(bevels.assemble())
 #
 # exporters.export(bevels.gear.build(), "out/test_bevel.stl")
-
-mistletoe = MistletoeSprig() #MistletoeLeafPair()
-
-# show_object(mistletoe.get_branch())
-show_object(mistletoe.get_leaves(),options = { "color" : "green"})
-show_object(mistletoe.get_berries(),options = { "color" : "white"})
-# sprig = cq.Assembly(name='mistletoe')
+#
+# mistletoe = MistletoeSprig() #MistletoeLeafPair()
+#
+# # show_object(mistletoe.get_branch())
+# show_object(mistletoe.get_leaves(),options = { "color" : "green"})
+# show_object(mistletoe.get_berries(),options = { "color" : "white"})
+# # sprig = cq.Assembly(name='mistletoe')
 # sprig.add(mistletoe.get_leaves(), name='leaves', loc=cq.Location(),color='green')
 # sprig.add(mistletoe.get_berries(), name='berries', loc=cq.Location(),color='white')
 #
@@ -547,3 +547,6 @@ show_object(mistletoe.get_berries(),options = { "color" : "white"})
 
 # show_object(get_stroke_semicircle((-50,0), 20, math.pi/2, math.pi, 3,2))
 
+suspension_bits = SuspensionSpringPendulumBits()
+
+show_object(suspension_bits.get_crutch())
