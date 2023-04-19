@@ -52,6 +52,8 @@ class GearStyle(Enum):
     SNOWFLAKE = "snowflake"
     CURVES = "curves"
     DIAMONDS = "diamonds"
+    #planned - branching tree structure (not a million miles off snowflake) - probably best for a design with big wheels like grasshopper
+    TREE = "tree"
 
 class StrokeStyle(Enum):
     ROUND = "rounded"

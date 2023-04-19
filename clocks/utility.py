@@ -100,6 +100,10 @@ def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
         if nyloc:
             return 3.9
 
+    if metric_thread == 4:
+        if nyloc:
+            return 5
+
     return metric_thread * METRIC_NUT_DEPTH_MULT
 
 def getScrewHeadHeight(metric_thread, countersunk=False):
@@ -209,6 +213,9 @@ class MachineScrew:
     def getNutHeight(self, nyloc=False, half=False):
         return getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
 
+    def getNutContainingDiameter(self, wiggle=NUT_WIGGLE_ROOM):
+        return getNutContainingDiameter(self.metric_thread, wiggle)
+
     def getNutCutter(self,height=-1, nyloc=False, half=False, withScrewLength=0, withBridging=False, layerThick=LAYER_THICK):
         '''
         if height is provided, use that, otherwise use the default height of a nut
@@ -216,7 +223,7 @@ class MachineScrew:
         nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
         if height < 0:
             height = nutHeight
-        nutD = getNutContainingDiameter(self.metric_thread, NUT_WIGGLE_ROOM)
+        nutD = self.getNutContainingDiameter()
         if withBridging:
             nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = height, sides=6, layerThick=layerThick)
         else:

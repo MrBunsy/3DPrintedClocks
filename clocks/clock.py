@@ -902,6 +902,9 @@ class SimpleClockPlates:
         #does the chain/rope/cord pass through the bottom pillar?
         self.chainThroughPillar = chainThroughPillarRequired
 
+
+
+
         anglesFromMinute = None
         anglesFromChain = None
 
@@ -946,10 +949,7 @@ class SimpleClockPlates:
 
         #how much space the crutch will need - used for work out where to put the bearing for the anchor
         self.crutch_space = 10
-        #how thick the bearing holder out the back or front should be
-        #can't use bearing from ArborForPlate yet as they haven't been generated
-        #bit thicker than the front bearing thick because this may have to be printed with supports
-        self.rear_standoff_bearing_holder_thick = getBearingInfo(goingTrain.getArbourWithConventionalNaming(-1).arbourD).height+2
+
 
         #just for the first prototype (hahahahah, lasted a long time until PendulumFixing.SUSPENSION_SPRING)
         self.anchorHasNormalBushing=True
@@ -982,6 +982,13 @@ class SimpleClockPlates:
             #now found supplies of pozihead countersunk screws up to 60mm, so planning to use two screws (each at top and bottom) to hold everything together
             self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True)#, length=25)
 
+        # how thick the bearing holder out the back or front should be
+        # can't use bearing from ArborForPlate yet as they haven't been generated
+        # bit thicker than the front bearing thick because this may have to be printed with supports
+        if pendulumFixing == PendulumFixing.SUSPENSION_SPRING:
+            self.rear_standoff_bearing_holder_thick = getBearingInfo(goingTrain.getArbourWithConventionalNaming(-1).arbourD).height + 2
+        else:
+            self.rear_standoff_bearing_holder_thick = self.plateThick
 
         # how much space to leave around the edge of the gears for safety
         self.gearGap = 3
@@ -1002,12 +1009,12 @@ class SimpleClockPlates:
 
         self.chainWheelR = self.goingTrain.getArbour(-self.goingTrain.chainWheels).getMaxRadius() + self.gearGap
 
-        self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth = self.getPillarInfo()
+        self.calc_pillar_info()
 
 
         #fixing positions to screw front plate onto the pillars
         self.frontPlateTopFixings = [(self.topPillarPos[0] - self.topPillarR / 2, self.topPillarPos[1]), (self.topPillarPos[0] + self.topPillarR / 2, self.topPillarPos[1])]
-        self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
+        self.frontPlateBottomFixings = [(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.bottomPillarR * 0.5 - self.reduce_bottom_pillar_height/3), (self.bottomPillarPos[0], self.bottomPillarPos[1] - self.bottomPillarR * 0.5)]
         self.frontPlateFixings = self.frontPlateTopFixings + self.frontPlateBottomFixings
 
         self.extraFrontPlateDistance = 0
@@ -1031,6 +1038,8 @@ class SimpleClockPlates:
         self.backPlateFixings = self.backPlateTopFixings + self.backPlateBottomFixings
 
         self.huygensWheel = None
+        #offset in y? This enables the plate to stay smaller (and fit on the print bed) while still offering a large huygens wheel
+        self.huygens_wheel_y_offset = 0
         if self.huygensMaintainingPower:
             max_circumference = self.bottomPillarR * 1.25 * math.pi
             max_diameter = max_circumference/math.pi
@@ -1039,7 +1048,11 @@ class SimpleClockPlates:
             if max_diameter < self.huygens_wheel_min_d:
                 max_diameter = self.huygens_wheel_min_d
                 max_circumference = max_diameter*math.pi
-                ratchetOuterD = max_diameter+25
+                ratchetOuterD = max_diameter+15
+                if ratchetOuterD < self.bottomPillarR*2:
+                    #have seen this happen, though I think it's rare
+                    ratchetOuterD = self.bottomPillarR*2
+                self.huygens_wheel_y_offset = ratchetOuterD / 2 - self.bottomPillarR
 
             ratchetOuterThick = 3
             ratchet_thick=5
@@ -1583,10 +1596,12 @@ class SimpleClockPlates:
 
         return template
 
-    def getPillarInfo(self):
+    def calc_pillar_info(self):
         '''
-        return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
+        Calculate (and set) topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide, reduce_bottom_pillar_height
         '''
+
+
         bearingInfo = getBearingInfo(self.arbourD)
         # width of thin bit
         holderWide = bearingInfo.bearingOuterD + self.bearingWallThick * 2
@@ -1611,8 +1626,11 @@ class SimpleClockPlates:
             #rare, but can happen
             bottomPillarR = holderWide/2
 
+        self.reduce_bottom_pillar_height = 0
         if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar:
+            self.reduce_bottom_pillar_height = minDistanceForChainHoles - bottomPillarR
             bottomPillarR = minDistanceForChainHoles
+
         topPillarR = holderWide / 2
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
@@ -1630,13 +1648,13 @@ class SimpleClockPlates:
                     topY = y
         else:
 
-            topY = self.bearingPositions[-1][1] + anchorSpace
+            topY = self.bearingPositions[-1][1] + max(self.arboursForPlate[-1].get_max_radius(), bearingInfo.bearingOuterD / 2) + self.gearGap
 
-        bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - self.chainWheelR - bottomPillarR]
+        bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - self.chainWheelR - bottomPillarR + self.reduce_bottom_pillar_height]
         topPillarPos = [self.bearingPositions[0][0], topY + topPillarR]
 
 
-        return (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
+        self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth = (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
 
 
     def cut_anchor_bearing_in_standoff(self, standoff):
@@ -1743,9 +1761,7 @@ class SimpleClockPlates:
         The screwhole is placed directly above the weight to make the clock easier to hang straight
 
         '''
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
-
-
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = (self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth)
 
         plate = cq.Workplane("XY").tag("base")
         if self.style=="round":
@@ -1857,7 +1873,7 @@ class SimpleClockPlates:
             #front
             plate = self.frontAdditionsToPlate(plate)
             if self.extraFrontPlate:
-                # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.holderWide/2).extrude(self.extraFrontPlateDistance).translate((0,0,self.getPlateThick(back=False))))
+                # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.plateWidth/2).extrude(self.extraFrontPlateDistance).translate((0,0,self.getPlateThick(back=False))))
                 # self.extraFrontPlateMountingPos
                 for pos in self.extraFrontPlateFixings:
                     plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).translate(pos))
@@ -1891,6 +1907,7 @@ class SimpleClockPlates:
 
 
         if self.fixing_screws_cutter is not None:
+            #fetch from cache if possible
             return self.fixing_screws_cutter
 
         bottom_total_length = self.backPlateFromWall + self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False)
@@ -1935,11 +1952,28 @@ class SimpleClockPlates:
 
         if self.huygensMaintainingPower:
             #screw to hold the ratchetted chainwheel
-            cutter = cutter.add(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1]).circle(self.fixingScrews.metric_thread/2).extrude(1000))
-            #hold a nyloc nut
-            nutZ = self.getPlateThick(back=True) + self.plateDistance - self.fixingScrews.getNutHeight(nyloc=True)
-            cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=True).translate(self.bottomPillarPos).translate((0,0,nutZ)))
 
+            #hold a nyloc nut
+            nyloc = True
+            bridging = False
+            base_z = 0
+            nutZ = self.getPlateThick(back=True) + self.plateDistance - self.fixingScrews.getNutHeight(nyloc=True)
+
+            if self.huygens_wheel_y_offset > self.bottomPillarR - self.fixingScrews.getNutContainingDiameter()/2:
+                #nut is in the back of the front plate rather than the top of the bottom pillar, but don't make it as deep as we need the strength
+                #making it normal nut deep but will probably still use nyloc
+                # nutZ = self.getPlateThick(back=True) + self.plateDistance - (self.fixingScrews.getNutHeight(nyloc=True) - self.fixingScrews.getNutHeight(nyloc=False))
+
+                if self.huygens_wheel_y_offset > self.bottomPillarR:
+                    #just the front plate
+                    bridging = True
+                    base_z = self.getPlateThick(back=True) + self.plateDistance
+                    nutZ = self.getPlateThick(back=True) + self.plateDistance - (self.fixingScrews.getNutHeight(nyloc=True) - self.fixingScrews.getNutHeight(nyloc=False))
+
+            cutter = cutter.add(cq.Workplane("XY").moveTo(self.bottomPillarPos[0], self.bottomPillarPos[1] + self.huygens_wheel_y_offset).circle(self.fixingScrews.metric_thread / 2).extrude(1000).translate((0,0,base_z)))
+            cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=nyloc, withBridging=bridging).translate(self.bottomPillarPos).translate((0, self.huygens_wheel_y_offset, nutZ)))
+
+        #cache to avoid re-calculating
         self.fixing_screws_cutter = cutter
 
         return cutter
@@ -1948,7 +1982,7 @@ class SimpleClockPlates:
         '''
         centred on 0,0 flat on the XY plane
         '''
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = (self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth)
 
         if self.extraHeavy:
             '''
@@ -1995,7 +2029,7 @@ class SimpleClockPlates:
 
         if flat returns a 2D shape
         '''
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.getPillarInfo()
+        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = (self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth)
         if self.extraHeavy:
             #sagitta looks nice, otherwise arbitrary at the moment, should really check it leaves enough space for the anchor
             sagitta = topPillarR * 0.25
@@ -2355,8 +2389,8 @@ class SimpleClockPlates:
             relevantChainHoles = [ pair[0] for pair in holePositions ]
 
             minThickAroundChainHole = 2
+            #make a fancy bit that sticks out the bottom with holes for the chain - this makes it hard for the chain to detatch from the wheel
 
-            #self.huygensWheel.getHeight(include_washer=False)-self.huygensWheel.ratchet.thick#
             extraHeight =relevantChainHoles[0][1] + self.huygensWheel.getHeight()-self.huygensWheel.ratchet.thick  + chainholeD/2 + minThickAroundChainHole
             ratchetD = self.huygensWheel.ratchet.outsideDiameter
             # ratchet for the chainwheel on the front of the clock
@@ -2379,9 +2413,12 @@ class SimpleClockPlates:
 
 
 
-            plate = plate.add(ratchet.translate(self.bottomPillarPos).translate((0,0,self.getPlateThick(back=False))))
+            plate = plate.union(ratchet.translate(self.bottomPillarPos).translate((0, self.huygens_wheel_y_offset, self.getPlateThick(back=False))))
+            if ratchetD > self.bottomPillarR:
+                plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(self.getPlateThick(back=False)).translate(self.bottomPillarPos).translate((0,self.huygens_wheel_y_offset)))
 
-        if self.escapementOnFront and not self.extraFrontPlate:
+        if self.escapementOnFront and not self.extraFrontPlate and False:
+            #this is a bearing extended out the front. I'm no longer convinced it's needed for the grasshopper
             plate = plate.add(self.getBearingHolder(-self.goingTrain.escapement.getWheelBaseToAnchorBaseZ()).translate((self.bearingPositions[-2][0], self.bearingPositions[-2][1], self.getPlateThick(back=False))))
 
         return plate
@@ -2898,10 +2935,8 @@ class Assembly:
 
                 clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick()/2)))
 
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = self.plates.getPillarInfo()
-
         if self.plates.huygensMaintainingPower:
-            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(bottomPillarPos).translate((0, 0, self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK_M3)))
+            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(self.plates.bottomPillarPos).translate((0, self.plates.huygens_wheel_y_offset, self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK_M3)))
 
         #TODO pendulum bob and nut?
 

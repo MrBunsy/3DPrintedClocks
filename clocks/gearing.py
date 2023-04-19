@@ -1007,9 +1007,12 @@ class SuspensionSpringPendulumBits:
     Crutch and pendulum holder for a suspension spring, contained here to avoid making ArborForPlate far too large
     '''
 
-    def __init__(self, crutch_length=40, square_side_length=6, crutch_thick=7.5, collet_screws=None, crutch_screw=None):
+    def __init__(self, crutch_length=40, square_side_length=6, crutch_thick=7.5, collet_screws=None, crutch_screw=None, printed_suspension=True):
 
         self.collet_screws = collet_screws
+
+        #experiment: try a 3D printed suspension spring
+        self.printed_suspension = printed_suspension
 
         if self.collet_screws is None:
             self.collet_screws = MachineScrew(2, countersunk=True)
@@ -1030,7 +1033,8 @@ class SuspensionSpringPendulumBits:
         crutch = cq.Workplane("XY").circle(self.radius).extrude(self.crutch_thick)
         # means to hold screw that will hold this in place
         crutch = crutch.cut(self.collet_screws.getCutter(length=self.radius, headSpaceLength=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.radius, self.crutch_thick / 2)))
-        crutch = crutch.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.square_side_length / 2, self.crutch_thick / 2)))
+        #rotating so bridging shouldn't be needed to print
+        crutch = crutch.cut(self.collet_screws.getNutCutter(half=True).rotate((0,0,0),(0,0,1),360/12).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.square_side_length / 2, self.crutch_thick / 2)))
 
         #arm down to the screw that will link with the pendulum
         crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length/2).rect(self.crutch_wide, self.crutch_length).extrude(self.crutch_thick))
@@ -1042,7 +1046,11 @@ class SuspensionSpringPendulumBits:
         crutch = crutch.faces(">Z").workplane().rect(self.square_side_length, self.square_side_length).cutThruAll()
 
         return crutch
+    def get_pendulum_holder(self):
+        holder = cq.Workplane("XY")
 
+
+        return holder
 
 class ArbourForPlate:
 
@@ -1095,12 +1103,15 @@ class ArbourForPlate:
         #for an escapement on the front, how far from the front plate is the anchor?
         #want space for a washer to act as a standoff against the bearing and a bit of wobble to account for the top wall standoff to flex a bit
         self.front_anchor_from_plate =  SMALL_WASHER_THICK_M3 + self.endshake + 1
+        # ============ anchor bits ===============
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
         self.collet_screws = MachineScrew(2,countersunk=True)
         self.pendulum_holder_thick = 15
         self.pendulum_fixing_extra_space = 0.2
         self.direct_arbour_d = direct_arbour_d
+        #for the collet
+        self.outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
 
         self.cylinder_r = self.direct_arbour_d / 2
         self.square_side_length = math.sqrt(2) * self.cylinder_r
@@ -1119,12 +1130,19 @@ class ArbourForPlate:
         # so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
         self.arbour_bearing_standoff_length = LAYER_THICK * 2
 
+    def get_max_radius(self):
+        if self.arbour.type == ArbourType.ANCHOR:
+            #too much of the anchor is dependant on the plate, even though a method exists to use the base arbor
+            return self.outer_d/2
+        else:
+            return self.arbour.getMaxRadius()
+
     def get_anchor_collet(self):
         '''
         get a collet that fits on the direct arbour anchor to prevent it sliding out and holds the pendulum
         '''
 
-        outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD)/2
+        outer_d = self.outer_d
         height = self.collet_thick - LAYER_THICK*2
 
         square_size = self.square_side_length+self.pendulum_fixing_extra_space
@@ -1149,8 +1167,7 @@ class ArbourForPlate:
         will slot over square bit of anchor arbour and screw in place
         for the direct arbours without suspension spring
         '''
-        #to be consistent with the endshake collet
-        outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
+        outer_d = self.outer_d
         if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
             outer_d = self.cylinder_r*4#DIRECT_ARBOUR_D*2
 
@@ -1312,7 +1329,7 @@ class ArbourForPlate:
 
                 assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-                assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2)))
+                assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArbourType.ESCAPE_WHEEL:
             assembly = assembly.add(self.arbour.getAssembled())

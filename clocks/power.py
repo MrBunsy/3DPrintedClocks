@@ -1928,7 +1928,7 @@ class PocketChainWheel2:
         '''
         returns total thickness of the assembled wheel, with ratchet. If it needs a washer, this is included in the height
         '''
-        height =  self.wheel_thick + WASHER_THICK_M3
+        height =  self.wheel_thick + SMALL_WASHER_THICK_M3
         if self.ratchet is not None:
             height += self.ratchet.thick
         return height
@@ -2350,14 +2350,20 @@ class Ratchet:
         #was originaly just 8. Then tried math.ceil(cicumference/10) to replicate it in a way that scales, but this produced slightly too many teeth.
         #even /15 seems excessive, trying /20 for reprinting bits of clock 19
         #allowing overrides since I keep messing with this logic and I need to retrofit a few ratchets
+        click_multiplier = 4
         if click_arms < 0:
-            self.clicks = math.ceil(cicumference/20)#8
+            if self.clickInnerRadius/(self.outsideDiameter/2) < 0.75:
+                #not much space for the clicks, go for more and smaller arms
+                self.clicks = math.ceil(cicumference / 15)  # 8
+                click_multiplier=2
+            else:
+                self.clicks = math.ceil(cicumference/20)#8
         else:
             self.clicks = click_arms
 
         if click_teeth < 0:
             #ratchetTeet must be a multiple of clicks
-            self.ratchetTeeth = self.clicks*4
+            self.ratchetTeeth = self.clicks*click_multiplier
         else:
             self.ratchetTeeth = click_teeth
 
