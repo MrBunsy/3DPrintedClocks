@@ -127,13 +127,14 @@ if 'show_object' not in globals():
 # show_object(getHandDemo(assembled=True, chunky=True))
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
+
 # pulley = BearingPulley(diameter=29, bearing=getBearingInfo(4))
 #
 # show_object(pulley.getHalf())
 
 # show_object(Gear.cutStyle(cq.Workplane("XY").circle(100).extrude(3), 100,20, style=GearStyle.DIAMONDS))
 
-# show_object(getHandDemo(justStyle=HandStyle.BREGUET, length=205*0.45, chunky=True))
+
 
 
 # show_object(Gear.cutCurvesStyle(cq.Workplane("XY").circle(120).extrude(5), 100, 20, clockwise=True))
@@ -420,10 +421,11 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-# dial = Dial(outside_d=200, style=DialStyle.ROMAN)
+dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
 # #
-# show_object(dial.get_dial())
-
+show_object(dial.get_assembled())
+#.rotate((0,0,0),(0,1,0),180)
+show_object(getHandDemo(justStyle=HandStyle.ARROWS, length=200*0.45-10, chunky=True,outline=0, assembled=True, include_seconds=False, time_hour=3, time_min=41).translate((0,0,5)))
 
 # leaf = MistletoeLeaf()
 #
@@ -547,6 +549,6 @@ if False:
 
 # show_object(get_stroke_semicircle((-50,0), 20, math.pi/2, math.pi, 3,2))
 
-suspension_bits = SuspensionSpringPendulumBits()
-
-show_object(suspension_bits.get_crutch())
+# suspension_bits = SuspensionSpringPendulumBits()
+#
+# show_object(suspension_bits.get_crutch())

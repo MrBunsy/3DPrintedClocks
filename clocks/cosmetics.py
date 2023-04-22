@@ -4,6 +4,25 @@ import cadquery as cq
 import os
 from cadquery import exporters
 
+'''
+measuring a printout of tony the clock
+'''
+tony_the_clock={
+    "diameter":140,
+    "dial_edge_width":11,
+    "dial_marker_length":10,
+    "dial_marker_width":5,
+    "minute_hand_length":51,
+    "hand_width":3,
+    "arrow_width":11,
+    "arrow_length":10,
+    "hand_base_r":11/2,
+    "eye_diameter":19.5,
+    "pupil_diameter":6.5,
+    "eye_spacing":38,
+    "eyes_from_top":48
+
+}
 
 class ItemWithCosmetics:
     def __init__(self, shape, name, background_colour,cosmetics, offset = None, colour_thick=LAYER_THICK*2, colour_thick_overrides=None):

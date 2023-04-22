@@ -875,7 +875,7 @@ class SimpleClockPlates:
     def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
-                 centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15):
+                 centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -994,6 +994,9 @@ class SimpleClockPlates:
         self.gearGap = 3
         self.smallGearGap = 2
 
+        #if the bottom pillar radius is increased to allow space for the chains to fit through, do we permit the gear wheel to cut into that pillar?
+        self.allow_bottom_pillar_height_reduction = allow_bottom_pillar_height_reduction
+
         self.calc_bearing_positions()
         self.generate_arbours_for_plate()
 
@@ -1088,7 +1091,7 @@ class SimpleClockPlates:
         # get position of motion works relative to the minute wheel
         if style == "round":
             # place the motion works on the same circle as the rest of the bearings
-            angle = 2 * math.asin(motionWorksDistance / (2 * self.compactRadius))
+            angle = self.hands_on_side*2 * math.asin(motionWorksDistance / (2 * self.compactRadius))
             compactCentre = (0, self.compactRadius)
             minuteAngle = math.atan2(self.bearingPositions[self.goingTrain.chainWheels][1] - compactCentre[1], self.bearingPositions[self.goingTrain.chainWheels][0] - compactCentre[0])
             motionWorksPos = polar(minuteAngle - angle, self.compactRadius)
@@ -1201,7 +1204,7 @@ class SimpleClockPlates:
         if self.style == "round":
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
-            side = -1 if self.goingTrain.isWeightOnTheRight() else 1
+            self.hands_on_side = 1 if self.goingTrain.isWeightOnTheRight() else -1
             arbours = [self.goingTrain.getArbourWithConventionalNaming(arbour) for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels)]
             distances = [arbour.distanceToNextArbour for arbour in arbours]
             maxRs = [arbour.getMaxRadius() for arbour in arbours]
@@ -1236,7 +1239,7 @@ class SimpleClockPlates:
                 bit over complicated
                 '''
                 # print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
-                nextAngleOnArc = angleOnArc + 2 * math.asin(distances[i + self.goingTrain.chainWheels] / (2 * arcRadius)) * side
+                nextAngleOnArc = angleOnArc + 2 * math.asin(distances[i + self.goingTrain.chainWheels] / (2 * arcRadius)) * self.hands_on_side
                 nextPos = polar(nextAngleOnArc, arcRadius)
 
                 relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
@@ -1627,7 +1630,7 @@ class SimpleClockPlates:
             bottomPillarR = holderWide/2
 
         self.reduce_bottom_pillar_height = 0
-        if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar:
+        if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar and self.allow_bottom_pillar_height_reduction:
             self.reduce_bottom_pillar_height = minDistanceForChainHoles - bottomPillarR
             bottomPillarR = minDistanceForChainHoles
 
@@ -2966,10 +2969,11 @@ class Assembly:
         exportSVG(self.getClock(), out, opts={"width":720,"height":1280})
 
 
-def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1):
+def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
     demo = cq.Workplane("XY")
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    print("motion works r", motionWorks.get_widest_radius())
 
     space = length
 
@@ -2984,9 +2988,11 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
         hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=outline,
                       outlineSameAsBody=False, secondLength=25)
 
-        x = space*(i%perRow)
-
-        y = (space)*math.floor(i/perRow)
+        x = 0
+        y = 0
+        if justStyle is None:
+            x = space*(i%perRow)
+            y = (space)*math.floor(i/perRow)
 
         secondsHand = None
         try:
@@ -3009,13 +3015,13 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
             # demo = demo.add(hourHand.translate((x, y, 0)))
             demo = demo.add(hands.getAssembled(include_seconds=False, time_seconds=time_sec, time_minute=time_min, time_hour=time_hour).translate((x, y, 0)))
 
-            if secondsHand is not None:
+            if secondsHand is not None and include_seconds:
                 demo = demo.add(secondsHand.translate((x, y + length * 0.3)))
 
         else:
             demo = demo.add(hands.getHand(hand_type=HandType.HOUR).translate((x, y)))
             demo = demo.add(hands.getHand(hand_type=HandType.MINUTE).translate((x+length*0.3, y)))
-            if secondsHand is not None:
+            if secondsHand is not None and include_seconds:
                 demo = demo.add(secondsHand.translate((x - length * 0.3, y)))
 
 

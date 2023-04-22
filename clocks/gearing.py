@@ -2586,6 +2586,16 @@ class MotionWorks:
     def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
         return self.getMotionArbour().getShape()
+
+    def get_widest_radius(self):
+        '''
+        a hole in the dial must be at least this wide (plus some more for working in the real world)
+        bottomR for the hand holder
+        '''
+
+        # fiddled the numbers so that fill isn't required to print
+        return self.hourHandHolderD / 2 + 0.7
+
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
         #this used to be excessively tapered, but now a lightly tapered friction fit slot.
@@ -2594,7 +2604,8 @@ class MotionWorks:
         #     style = None
 
         #fiddled the numbers so that fill isn't required to print
-        bottomR = self.hourHandHolderD / 2 + 0.7
+        # bottomR = self.hourHandHolderD / 2 + 0.7
+        bottomR = self.get_widest_radius()
 
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)

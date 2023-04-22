@@ -6,6 +6,7 @@ import os
 from cadquery import exporters
 from enum import Enum
 from .gearing import GearStyle,Gear
+from .cosmetics import tony_the_clock
 
 class HandStyle(Enum):
     SQUARE = "square"
@@ -19,7 +20,7 @@ class HandStyle(Enum):
     CIRCLES="circles" # very much inspired by the same clock on the horological journal that inspired the circle style gears
     XMAS_TREE="xmas_tree"
     BAROQUE="baroque"
-    #ARROWS
+    ARROWS="arrows"#specicially for Tony the Clock
 
 class HandType(Enum):
     HOUR = "hour"
@@ -50,6 +51,7 @@ class HandGenerator:
 
     def second_hand(self, length=30, base_r=6, thick=3):
         raise NotImplemented()
+
 
 class KnobHands(HandGenerator):
     '''
@@ -376,6 +378,8 @@ class Hands:
         self.secondFixing_d = secondFixing_d
         self.secondFixing_thick = self.thick
         self.secondLength= secondLength
+        if self.secondLength == 0:
+            raise ValueError("Cannot have second hand of length zero")
         #Add a different coloured outline that is this many mm ratchetThick
         self.outline = outline
         self.outline_on_seconds = outline_on_seconds
@@ -565,6 +569,19 @@ class Hands:
 
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance / 2).rect(width, counterweight_distance).extrude(thick)
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance).circle(counterweight_r).extrude(thick)
+        elif style == HandStyle.ARROWS:
+            '''
+            Deliberately styled to look like the hands for Tony the Clock
+            '''
+            base_r = self.length * tony_the_clock["hand_base_r"]/tony_the_clock["minute_hand_length"]
+            arrow_base_wide = self.length * tony_the_clock["arrow_width"]/tony_the_clock["minute_hand_length"]
+            arrow_length = self.length * tony_the_clock["arrow_length"]/tony_the_clock["minute_hand_length"]
+            width = self.length * tony_the_clock["hand_width"]/tony_the_clock["minute_hand_length"]
+            fillet = arrow_base_wide*0.1
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, (length - arrow_length)/2).rect(width, length-arrow_length).extrude(thick)
+            hand = hand.union(cq.Workplane("XY").moveTo(arrow_base_wide/2, length - arrow_length).lineTo(0, length).lineTo(-arrow_base_wide/2, length - arrow_length).close().extrude(thick).edges("|Z").fillet(fillet))
+
 
         elif style == HandStyle.SQUARE:
 
