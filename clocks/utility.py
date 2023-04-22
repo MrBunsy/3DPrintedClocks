@@ -824,6 +824,10 @@ CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.45, width=5.5, inside_length
 #597.5/83
 COUSINS_1_5MM_CHAIN = ChainInfo(wire_thick=1.5, width=6.5,inside_length=597.5/83.0)# outside_length=12)
 
+#bought one, probably not going to buy any more but might use it for a prototype
+#undecided - on further inspection it's not a great chain, many wonky links
+COUSINS_1_2_BRASS_CHAIN = ChainInfo(wire_thick=1.2, width=5.5, inside_length=597/76)
+
 #TODO measure a long stretch, 10.15 is just a rough estimate
 FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.15)
 

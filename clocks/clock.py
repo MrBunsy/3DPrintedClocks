@@ -2805,7 +2805,7 @@ class Assembly:
             clock = clock.add(self.plates.get_motion_works_holder().translate((self.plates.motionWorksPos[0], self.plates.motionWorksPos[1], frontOfClockZ)))
 
         if self.dial is not None:
-            dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180)
+            dial = self.dial.get_assembled()#get_dial().rotate((0,0,0),(0,1,0),180)
             clock = clock.add(dial.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + frontOfClockZ)))
 
 

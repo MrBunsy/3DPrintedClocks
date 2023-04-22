@@ -20,7 +20,12 @@ tony_the_clock={
     "eye_diameter":19.5,
     "pupil_diameter":6.5,
     "eye_spacing":38,
-    "eyes_from_top":48
+    "eyes_from_top":48,
+    "eyebrow_width":18,
+    "eyebrow_thick":2,
+    "eyebrow_sagitta":4,
+    "eyebrow_above_eye":6,
+    "mouth_width":26
 
 }
 

@@ -59,7 +59,7 @@ motionWorks.calculateGears(arbourDistance=30)
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)
 
-dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.LINES_ARC)
+dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.TONY_THE_CLOCK)
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Tony", style="round",
