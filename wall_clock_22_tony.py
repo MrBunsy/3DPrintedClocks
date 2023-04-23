@@ -48,7 +48,7 @@ train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=4, arbourD=4, loos
 pendulumSticksOut=20
 
 train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
@@ -62,7 +62,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.TONY_THE_CLOCK)
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Tony", style="round",
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Tony", style=clock.ClockPlateStyle.COMPACT,
                                  motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chainThroughPillarRequired=False, pillars_separate=True, dial=dial)

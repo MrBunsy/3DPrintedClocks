@@ -61,7 +61,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 # dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC)
 dial = None
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=10, pendulumSticksOut=pendulumSticksOut, name="clk 21", style="vertical", pendulumAtFront=False,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=10, pendulumSticksOut=pendulumSticksOut, name="clk 21",style=clock.ClockPlateStyle.VERTICAL, pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, heavy=True, extraHeavy=True, dial=dial, pillars_separate=True,
                                  chainThroughPillarRequired=True, huygens_wheel_min_d=30, fixingScrews=clock.MachineScrew(4, countersunk=True), allow_bottom_pillar_height_reduction=True)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())

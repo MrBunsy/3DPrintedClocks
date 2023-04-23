@@ -62,7 +62,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clk 14", style="vertical", pendulumAtFront=False,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="clk 14",style=clock.ClockPlateStyle.VERTICAL, pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True)
 
 

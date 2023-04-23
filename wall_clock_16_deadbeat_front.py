@@ -55,7 +55,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 16", style="vertical", pendulumAtFront=False,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="wall clock 16",style=clock.ClockPlateStyle.VERTICAL, pendulumAtFront=False,
                                  backPlateFromWall=40, escapementOnFront=True)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))

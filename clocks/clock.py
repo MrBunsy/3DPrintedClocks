@@ -621,13 +621,13 @@ class GoingTrain:
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
                  chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1,
-                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None):
+                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
         if > 0 and < 1, escape wheel will be this fraction of the previous wheel
 
-
+        stack_away_from_powered_wheel - experimental, usually we interleave gears to minimise plate distance, but we might want to minimise height instead
 
         '''
         self.pendulumFixing = pendulumFixing
@@ -731,6 +731,7 @@ class GoingTrain:
             self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
                                            distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
                                            useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side)]
+
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -758,6 +759,9 @@ class GoingTrain:
                     arbour.setNutSpace(holeD)
 
                 arbours.append(arbour)
+                if stack_away_from_powered_wheel:
+                    #only the minute wheel behind teh chain wheel
+                    pinionAtFront = not pinionAtFront
 
             elif i < self.wheels-1:
                 pinionThick = arbours[-1].wheelThick * pinionThickMultiplier
@@ -779,8 +783,8 @@ class GoingTrain:
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
                 arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                       distanceToNextArbour=self.escapement.getDistanceBeteenArbours(), style=style, pinionAtFront=pinionAtFront))
-
-            pinionAtFront = not pinionAtFront
+            if not stack_away_from_powered_wheel:
+                pinionAtFront = not pinionAtFront
 
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
@@ -872,7 +876,7 @@ class SimpleClockPlates:
     Any future plates are likely to be be very different in terms out laying out gears, and anything that is needed can always be spun out
 
     '''
-    def __init__(self, goingTrain, motionWorks, pendulum, style="vertical", arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
+    def __init__(self, goingTrain, motionWorks, pendulum,style=ClockPlateStyle.VERTICAL, arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False):
@@ -908,8 +912,8 @@ class SimpleClockPlates:
         anglesFromMinute = None
         anglesFromChain = None
 
-        #"round" or "vertical"
         self.style=style
+
         #to print on the back
         self.name = name
 
@@ -1089,7 +1093,7 @@ class SimpleClockPlates:
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
         # get position of motion works relative to the minute wheel
-        if style == "round":
+        if style == ClockPlateStyle.ROUND:
             # place the motion works on the same circle as the rest of the bearings
             angle = self.hands_on_side*2 * math.asin(motionWorksDistance / (2 * self.compactRadius))
             compactCentre = (0, self.compactRadius)
@@ -1188,7 +1192,7 @@ class SimpleClockPlates:
 
     def calc_bearing_positions(self):
 
-        # if angles are not given, assume clock is entirely vertical
+        # if angles are not given, assume clock is entirely vertical, unless overriden by style below
 
         if self.anglesFromMinute is None:
             # assume simple pendulum at top
@@ -1201,7 +1205,38 @@ class SimpleClockPlates:
 
             self.anglesFromChain = [angle for i in range(self.goingTrain.chainWheels)]
 
-        if self.style == "round":
+        if self.style == ClockPlateStyle.COMPACT:
+            '''
+            idea: in a loop guess at the first angle, then do all the next angles such that it's as compact as possible without the wheels touching each other
+            then see if it's possible to put the pendulum directly above the hands
+            if it's not, tweak the first angle and try again
+            '''
+
+            #the first wheel after the minute wheel, which has to avoid the chain *wheel* as it's at the same z height
+            if self.goingTrain.chainWheels > 0:
+                distance_from_chain_wheel = self.goingTrain.getArbourWithConventionalNaming(0).getMaxRadius() + self.goingTrain.getArbour(1).getMaxRadius() + self.gearGap
+                c = distance_from_chain_wheel
+                distance_from_previous_wheel = self.goingTrain.getArbour(0).distanceToNextArbour
+                b = distance_from_previous_wheel
+                a = self.goingTrain.getArbour(-1).distanceToNextArbour
+                #cosine law
+                angle = math.acos((a**2 + b**2 - c**2)/(2*a*b))
+                self.anglesFromMinute[0] = self.anglesFromChain[-1] + (math.pi - angle)
+                left = True
+            else:
+                left = True
+                self.anglesFromMinute[0] = math.pi*0.75
+            for i in range(1,self.goingTrain.wheels-1):
+                left = not left
+                self.anglesFromMinute[i] = math.pi/2
+                if left:
+                    self.anglesFromMinute[i] += math.pi/4
+                else:
+                    self.anglesFromMinute[i] -= math.pi/4
+
+        print(self.anglesFromMinute)
+
+        if self.style == ClockPlateStyle.ROUND:
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
             self.hands_on_side = 1 if self.goingTrain.isWeightOnTheRight() else -1
@@ -1455,7 +1490,7 @@ class SimpleClockPlates:
         in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
         '''
 
-        if self.style == "vertical" and self.goingTrain.has_seconds_hand() and self.centred_second_hand:
+        if self.style ==ClockPlateStyle.VERTICAL and self.goingTrain.has_seconds_hand() and self.centred_second_hand:
             #potentially
 
             motion_works_arbour_y = self.motionWorksPos[1]
@@ -1548,11 +1583,11 @@ class SimpleClockPlates:
                 # line up the hole with the big heavy weight
                 weightX = weightOnSide * self.goingTrain.poweredWheel.diameter / 2
 
-            if self.style == "round":
+            if self.style == ClockPlateStyle.ROUND:
                 #screwHoleY = chainWheelR * 1.4
                 raise NotImplemented("Haven't fixed this for round clocks")
 
-            elif self.style == "vertical":
+            elif self.style == ClockPlateStyle.VERTICAL:
                 if self.extraHeavy:
 
                     # below anchor
@@ -1642,7 +1677,7 @@ class SimpleClockPlates:
 
         # find the Y position of the bottom of the top pillar
         topY = self.bearingPositions[0][1]
-        if self.style == "round":
+        if self.style == ClockPlateStyle.ROUND:
             # find the highest point on the going train
             # TODO for potentially large gears this might be lower if they're spaced right
             for i in range(len(self.bearingPositions) - 1):
@@ -1767,11 +1802,11 @@ class SimpleClockPlates:
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = (self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth)
 
         plate = cq.Workplane("XY").tag("base")
-        if self.style=="round":
+        if self.style==ClockPlateStyle.ROUND:
             radius = self.compactRadius + holderWide / 2
             #the ring that holds the gears
             plate = plate.moveTo(self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius).circle(radius).circle(radius - holderWide).extrude(self.getPlateThick(back))
-        elif self.style == "vertical":
+        elif self.style == ClockPlateStyle.VERTICAL:
             #rectangle that just spans from the top bearing to the bottom pillar (so we can vary the width of the bottom section later)
             # plate = plate.moveTo(self.bearingPositions[0][0]-holderWide/2, self.bearingPositions[0][1] - self.chainWheelR).line(holderWide,0).\
             #     lineTo(self.bearingPositions[-1][0]+holderWide/2, self.bearingPositions[-1][1]).line(-holderWide,0).close().extrude(self.getPlateThick(back))
@@ -1795,7 +1830,7 @@ class SimpleClockPlates:
             topOfBottomBitPos = (0, bottomScrewHoleY)
 
         #supports all the combinations of round/vertical and chainwheels or not
-        topRound = self.style == "vertical"
+        topRound = self.style == ClockPlateStyle.VERTICAL
         narrow = self.goingTrain.chainWheels == 0
         bottomBitWide = holderWide if narrow else bottomPillarR*2
 
@@ -1818,10 +1853,10 @@ class SimpleClockPlates:
 
 
 
-        if self.style == "round":
+        if self.style == ClockPlateStyle.ROUND:
             #centre of the top of the ring
             topOfPlate = (self.bearingPositions[0][0], self.bearingPositions[0][1] + self.compactRadius * 2)
-        elif self.style == "vertical":
+        else:
             #topmost bearing
             topOfPlate = self.bearingPositions[-1]
 

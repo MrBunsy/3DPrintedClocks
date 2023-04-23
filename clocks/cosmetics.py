@@ -25,7 +25,8 @@ tony_the_clock={
     "eyebrow_thick":2,
     "eyebrow_sagitta":4,
     "eyebrow_above_eye":6,
-    "mouth_width":26
+    "mouth_width":26,
+    "mouth_below_centre":25,
 
 }
 
