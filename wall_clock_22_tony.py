@@ -64,7 +64,7 @@ dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=cloc
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Tony", style=clock.ClockPlateStyle.COMPACT,
                                  motionWorksAbove=False, heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chainThroughPillarRequired=False, pillars_separate=True, dial=dial)
+                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial, allow_bottom_pillar_height_reduction=True)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

@@ -2144,7 +2144,6 @@ class SimpleClockPlates:
         centred on 0,0 flat on the XY plane
         '''
         topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = (self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth)
-
         if self.extraHeavy:
             '''
             beef up the bottom pillar
@@ -2162,6 +2161,8 @@ class SimpleClockPlates:
 
             bottom_pillar = bottom_pillar.extrude(self.plateDistance)
 
+
+
         else:
 
             bottom_pillar = cq.Workplane("XY").moveTo(0, 0).circle(bottomPillarR)
@@ -2170,6 +2171,11 @@ class SimpleClockPlates:
                 return bottom_pillar
 
             bottom_pillar = bottom_pillar.extrude(self.plateDistance)
+
+            if self.reduce_bottom_pillar_height > 0:
+                #bottom pillar has been moved upwards a smidge, cut out a space for the chain wheel
+                r = abs(self.bearingPositions[0][1] - (self.bottomPillarPos[1] + self.bottomPillarR - self.reduce_bottom_pillar_height))
+                bottom_pillar = bottom_pillar.cut(cq.Workplane("XY").moveTo(0, r-self.reduce_bottom_pillar_height + self.bottomPillarR).circle(r).extrude(self.plateDistance))
 
 
         chainHoles = self.get_chain_holes()
