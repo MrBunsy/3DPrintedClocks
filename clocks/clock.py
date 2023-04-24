@@ -924,6 +924,7 @@ class SimpleClockPlates:
         self.escapementOnFront = escapementOnFront
         #only valid if escapementOnFront. This adds an extra front plate that goes up to the escape wheel, to add stability for the large grasshopper esacpe wheel
         #not used yet, trying extending a bearing out the front to just behind the escape wheel first
+        #DEPRECATED
         self.extraFrontPlate = extraFrontPlate
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
@@ -1730,10 +1731,10 @@ class SimpleClockPlates:
 
         bearingInfo = getBearingInfo(self.arbourD)
         # width of thin bit
-        holderWide = bearingInfo.bearingOuterD + self.bearingWallThick * 2
-        self.minPlateWidth = holderWide
+        self.plateWidth = bearingInfo.bearingOuterD + self.bearingWallThick * 2
+        self.minPlateWidth = self.plateWidth
         if self.heavy or self.extraHeavy:
-            holderWide *= 1.2
+            self.plateWidth *= 1.2
 
         # original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
         # so instead, make it just big enough to contain the holes for the chains/cord
@@ -1743,21 +1744,21 @@ class SimpleClockPlates:
         # juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
         minDistanceForChainHoles = (furthestX * 2 + self.chainHoleD + 5) / 2
 
-        # bottomPillarR = minDistanceForChainHoles
-        #
-        # if self.heavy:
-        bottomPillarR = self.plateDistance / 2
 
-        if bottomPillarR < holderWide/2:
+        self.bottomPillarR = self.plateDistance / 2
+
+        if self.bottomPillarR < self.plateWidth/2:
             #rare, but can happen
-            bottomPillarR = holderWide/2
+            self.bottomPillarR = self.plateWidth/2
 
         self.reduce_bottom_pillar_height = 0
-        if bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar and self.allow_bottom_pillar_height_reduction:
-            self.reduce_bottom_pillar_height = minDistanceForChainHoles - bottomPillarR
-            bottomPillarR = minDistanceForChainHoles
+        if self.bottomPillarR < minDistanceForChainHoles and self.chainThroughPillar:
+            if self.allow_bottom_pillar_height_reduction:
+                self.reduce_bottom_pillar_height = minDistanceForChainHoles - self.bottomPillarR
+            self.bottomPillarR = minDistanceForChainHoles
 
-        topPillarR = holderWide / 2
+
+        self.topPillarR = self.plateWidth / 2
 
         anchorSpace = bearingInfo.bearingOuterD / 2 + self.gearGap
         if self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
@@ -1776,11 +1777,8 @@ class SimpleClockPlates:
 
             topY = self.bearingPositions[-1][1] + max(self.arboursForPlate[-1].get_max_radius(), bearingInfo.bearingOuterD / 2) + self.gearGap
 
-        bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - self.chainWheelR - bottomPillarR + self.reduce_bottom_pillar_height]
-        topPillarPos = [self.bearingPositions[0][0], topY + topPillarR]
-
-
-        self.topPillarPos, self.topPillarR, self.bottomPillarPos, self.bottomPillarR, self.plateWidth = (topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide)
+        self.bottomPillarPos = [self.bearingPositions[0][0], self.bearingPositions[0][1] - self.chainWheelR - self.bottomPillarR + self.reduce_bottom_pillar_height]
+        self.topPillarPos = [self.bearingPositions[0][0], topY + self.topPillarR]
 
 
     def cut_anchor_bearing_in_standoff(self, standoff):
