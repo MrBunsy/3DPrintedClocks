@@ -56,6 +56,7 @@ def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=
             line = line.union(cq.Workplane("XY").circle(wide/2).extrude(thick).translate(point))
 
     if style == StrokeStyle.ROUND:
+        #cap off the end
         line = line.union(cq.Workplane("XY").circle(wide / 2).extrude(thick).translate(points[-1]))
 
     return line

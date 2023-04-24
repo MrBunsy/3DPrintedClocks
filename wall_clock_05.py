@@ -9,13 +9,14 @@ It failed as the chain wheel couldn't take the weight (the lugs broke/bent) and 
 It ran for about 4 days first though, proving that the going train can work. Plan is to remake this clock but with a symetric design and a cord wheel (this ended up being clock 06)
 '''
 
-
+outputSTL = False
 if 'show_object' not in globals():
+    outputSTL=True
     def show_object(*args, **kwargs):
         pass
 
 
-clockName="wall_clock_05"
+clockName="wall_clock_05_new"
 clockOutDir="out"
 
 # crutchLength=100
@@ -33,38 +34,43 @@ train.setChainWheelRatio([74, 11])
 
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
-train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+# train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
+#new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, looseOnRod=True, arbour_d=3, fixings=2, wall_thick=1.5)
+train.genChainWheels2(clock.REGULA_8_DAY_1_05MM_CHAIN, ratchetThick=5, preferedDiameter=25, prefer_small=True)
 
 train.printInfo()
 
 pendulumSticksOut=0
 
 train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
-train.outputSTLs(clockName,clockOutDir)
 
 motionWorks = clock.MotionWorks(extra_height=30)
-motionWorks.outputSTLs(clockName,clockOutDir)
 
 #trying a thicker anchor and glue rather than nyloc
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10, useNylocForAnchor=False)
 
-pendulum.outputSTLs(clockName, clockOutDir)
-
 dial = clock.Dial(120)
-dial.outputSTLs(clockName, clockOutDir)
+
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style=clock.ClockPlateStyle.ROUND, heavy=True)
-plates.outputSTLs(clockName, clockOutDir)
 
 # hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False, outline=0.6)
-hands.outputSTLs(clockName, clockOutDir)
 
 #no weight for this clock, using the cheap 2.5kg weight from cousins
 #which needs a shell to look better!
 shell = clock.WeightShell(45,220, twoParts=True, holeD=5)
-shell.outputSTLs(clockName, clockOutDir)
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=47)
-assembly.outputSTLs(clockName, clockOutDir)
+
+
+if outputSTL:
+    train.outputSTLs(clockName, clockOutDir)
+    motionWorks.outputSTLs(clockName, clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
+    dial.outputSTLs(clockName, clockOutDir)
+    plates.outputSTLs(clockName, clockOutDir)
+    hands.outputSTLs(clockName, clockOutDir)
+    shell.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)

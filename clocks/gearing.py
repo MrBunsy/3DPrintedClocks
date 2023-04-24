@@ -1055,7 +1055,8 @@ class SuspensionSpringPendulumBits:
 class ArbourForPlate:
 
     def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
-                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbour_d = DIRECT_ARBOUR_D, crutch_space=10):
+                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbour_d = DIRECT_ARBOUR_D, crutch_space=10,
+                 previous_bearing_position=None):
         '''
         Given a basic Arbour and a specific plate class do the following:
 
@@ -1089,6 +1090,8 @@ class ArbourForPlate:
         #(x,y,z) from the clock plate. z is the base of the arbour, ignoring arbour extensions (this is from the days when the bearings were raised on little pillars, but is still useful for
         #calculating where the arbour should be)
         self.bearing_position = bearing_position
+        #only used for the anchor, to get the angle correct for non-vertical layouts
+        self.previous_bearing_position = previous_bearing_position
         #from the top of the back plate to the bottom of the wheel/anchor
         self.distance_from_back = bearing_position[2]
         self.distance_from_front = (self.plate_distance - self.endshake) - self.arbour.getTotalThickness() - self.distance_from_back
@@ -1198,7 +1201,9 @@ class ArbourForPlate:
 
     def get_anchor_shapes(self):
         shapes = {}
-        anchor = self.arbour.escapement.getAnchor()
+        previous_bearing_to_here = npToSet(np.subtract(self.bearing_position, self.previous_bearing_position))
+        anchor_angle = math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2
+        anchor = self.arbour.escapement.getAnchor().rotate((0,0,0), (0,0,1), radToDeg(anchor_angle))
         if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
 
 

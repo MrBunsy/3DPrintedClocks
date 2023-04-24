@@ -89,6 +89,8 @@ class AnchorEscapement:
         self.lift_deg = lift
         self.halfLift = 0.5*degToRad(lift)
         self.lift = degToRad(lift)
+        #meet the Escapement interface
+        self.escaping_arc = self.lift
 
         self.drop_deg= drop
         self.drop = degToRad(drop)
@@ -127,8 +129,7 @@ class AnchorEscapement:
         # angle that encompases the teeth the anchor encompases
         self.wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth
 
-        #calculates things like tooth height from diameter
-        self.setDiameter(diameter)
+
 
         self.arbourD = 3
         self.anchorThick = anchorThick
@@ -137,6 +138,20 @@ class AnchorEscapement:
         self.pallet_angles = []
 
         self.centre_r = self.arbourD*2
+
+        #currently calcualted in getAnchor2D TODO refactor maths to be done elsewhere
+        self.largest_anchor_r = -1
+
+        # calculates things like tooth height from diameter, also recalculates the maths
+        self.setDiameter(diameter)
+        #just to calculate all the maths
+        # self.calcMaths()
+
+    def calcMaths(self):
+        '''
+        calculate all the relevant maths for dimensions
+        '''
+        self.getAnchor2D()
 
     def getAnchorArbourD(self):
         return self.arbourD
@@ -198,6 +213,9 @@ class AnchorEscapement:
         self.anchorTopThickBase = (self.anchor_centre_distance - self.radius) * 0.6
         self.anchorTopThickMid = (self.anchor_centre_distance - self.radius) * 0.1
         self.anchorTopThickTop = (self.anchor_centre_distance - self.radius) * 0.75
+
+        #recalculate the maths
+        self.calcMaths()
 
     def getAnchor2D(self):
         '''
@@ -295,6 +313,8 @@ class AnchorEscapement:
         innerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle, exitPalletStartR), anchorCentre))
         armThickAngleExit = armThick/exitPalletEndR
         outerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle + armThickAngleExit, exitPalletEndR), anchorCentre))
+
+        self.largest_anchor_r = max(entryPalletStartR, exitPalletEndR)
 
         if self.style == AnchorStyle.CURVED:
             #calculate the radii of the curved bits
@@ -498,9 +518,10 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
     def getAnchorMaxR(self):
         '''
-        To allow enough space in the clock plates and anywhere else, HACK HACK HACK for now
+        #for anything that needs to avoid the sides/bottom of the anchor - anythign that needs to avoid the top just needs to avoid the self.centre_r
         '''
-        return self.arbourD*2
+        return self.largest_anchor_r
+        # return self.arbourD*2
 
     def getAnchorArbour(self, holeD=3, anchorThick=10, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0):#, forPrinting=True):
         '''
@@ -660,6 +681,7 @@ class EscapmentInterface:
         self.teeth=None
         self.diameter=None
         self.type = EscapementType.NOT_IMPLEMENTED
+        self.escaping_arc = 0
         raise NotImplementedError()
 
     def setGearTrainInfo(self, escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise):
