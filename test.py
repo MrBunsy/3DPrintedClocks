@@ -421,7 +421,7 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-if False:
+if True:
     dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
     # #
     # show_object(dial.get_assembled(),options={"color":"blue"})
@@ -509,7 +509,7 @@ if False:
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
 
-gear_demo = getGearDemo(justStyle=GearStyle.ARCS2)
+# gear_demo = getGearDemo(justStyle=GearStyle.ARCS2)
 # show_object(gear_demo)
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
