@@ -1136,12 +1136,35 @@ class SimpleClockPlates:
             #calculate dial height after motion works gears have been generated, in case the height changed with the bearing
             # height of dial from top of front plate
             # previously given 8mm of clearance, but this was more than enough, so reducing down to 4
-            self.dial_z = self.bottom_of_hour_hand_z() - self.dial.thick - 3
+            # looks like I later reduced it to 3 (I think after clock 12?)
+            self.dial_z = self.bottom_of_hour_hand_z() - self.dial.thick - self.dial.get_hand_space_z()
             if self.goingTrain.has_seconds_hand() and not self.centred_second_hand:
                 #mini second hand! give a smidge more clearance
                 self.dial_z -= 2
             self.top_of_hands_z = self.motionWorks.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
             print("dial z", self.dial_z)
+            dial_support_d = self.plateWidth
+
+            if self.dial.is_full_dial():
+                #free placement of the dial fixings
+                if self.bottom_pillars > 1 and self.style == ClockPlateStyle.COMPACT:
+                    #put two fixings on either side of the chain wheel
+                    #currently this is designed around tony the clock, and should be made more generic in the future
+                    dial_fixings = [
+                        (abs(self.bottomPillarPositions[0][0])-self.bottomPillarR*2,self.bottomPillarPositions[0][1]),
+                        (-abs(self.bottomPillarPositions[0][0]) + self.bottomPillarR * 2, self.bottomPillarPositions[0][1]),
+                        (0, self.bearingPositions[-2][1])
+                    ]
+                    dial_fixings_relative_to_dial = []
+                    dial_centre = tuple(self.bearingPositions[self.goingTrain.chainWheels][:2])
+                    # for fixing in dial_fixings:
+                    #     relative_pos = npToSet(np.subtract(fixing, tuple(dial_centre)))
+                    #     dial_fixings_relative_to_dial.append(relative_pos)
+                    #array of arrays because we only want one screw per pillar here
+                    dial_fixings_relative_to_dial = [[npToSet(np.subtract(pos, dial_centre))] for pos in dial_fixings]
+                    self.dial.override_fixing_positions(dial_fixings_relative_to_dial)
+                    dial_support_d = 15
+
 
             if self.goingTrain.has_seconds_hand():
                 second_hand_relative_pos = npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2]
@@ -1155,9 +1178,9 @@ class SimpleClockPlates:
                     second_hand_mini_dial_d = (self.dial.inner_r - distance_to_seconds + 2)*2
                     print("second_hand_mini_dial_d: {}".format(second_hand_mini_dial_d))
 
-                self.dial.configure_dimensions(support_length=self.dial_z, support_d=self.plateWidth,second_hand_relative_pos=second_hand_relative_pos , second_hand_mini_dial_d=second_hand_mini_dial_d)
+                self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d,second_hand_relative_pos=second_hand_relative_pos , second_hand_mini_dial_d=second_hand_mini_dial_d)
             else:
-                self.dial.configure_dimensions(support_length=self.dial_z, support_d=self.plateWidth)
+                self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d)
 
         # if this has a key (do after we've calculated the dial z)
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
@@ -1881,7 +1904,7 @@ class SimpleClockPlates:
         if forPrinting:
             if not top:
                 standoff = standoff.rotate((0,0,0), (1,0,0), 180)
-            standoff = standoff.translate((-pillarPos[0], -pillarPos[1]))
+            standoff = standoff.translate((-pillarPositions[0][0], -pillarPositions[0][1]))
         else:
             standoff = standoff.translate((0,0,-self.backPlateFromWall))
 
@@ -2519,7 +2542,10 @@ class SimpleClockPlates:
         if self.dial is not None:
 
 
-            dial_fixing_positions = [npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
+            dial_fixing_positions = []#[npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
+            for pos_list in self.dial.get_fixing_positions():
+                for pos in pos_list:
+                    dial_fixing_positions.append(npToSet(np.add(pos, self.hands_position)))
 
             need_top_extension = max([pos[1] for pos in dial_fixing_positions]) > self.topPillarPos[1]
             # need_bottom_extension = min([pos[1] for pos in dial_fixing_positions]) < self.bottomPillarPositions[1]

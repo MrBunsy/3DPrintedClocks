@@ -430,7 +430,7 @@ if True:
     show_object(dial.get_all_detail(),options={"color":"yellow"})
     show_object(dial.get_extras()["outer_ring"].rotate((0,0,0),(0,1,0),180).translate((0,0,dial.thick)),options={"color":"black"})
     #.rotate((0,0,0),(0,1,0),180)
-    show_object(getHandDemo(justStyle=HandStyle.ARROWS, length=200*0.45-10, chunky=True,outline=0, assembled=True, include_seconds=False, time_hour=3, time_min=41).translate((0,0,5)),options = { "color" : "red"})
+    show_object(getHandDemo(justStyle=HandStyle.ARROWS, length=200*0.45-10, chunky=True,outline=0, assembled=True, include_seconds=False, time_hour=3, time_min=41).translate((0,0,dial.get_hand_space_z())),options = { "color" : "red"})
     eye,pupil = dial.get_tony_eye()
 
     for x in [-1, 1]:
