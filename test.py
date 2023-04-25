@@ -437,6 +437,8 @@ if True:
         show_object(eye.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)),options={"color":"white"} )
         show_object(pupil.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)), options={"color": "black"})
 
+# show_object(cq.Workplane("XY").rect(10,10).extrude(10).cut(cq.Solid.makeCone(radius1=0, radius2=50, height=50)))
+
 # show_object(eye,options={"color":"white"} )
 # show_object(pupil,options={"color":"black"} )
 

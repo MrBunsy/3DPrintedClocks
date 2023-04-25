@@ -68,6 +68,7 @@ class GearStyle(Enum):
 
 class StrokeStyle(Enum):
     ROUND = "rounded"
+    SQUARE = "square"
 
 class AnchorStyle(Enum):
     STRAIGHT = "straight" #the old default style
