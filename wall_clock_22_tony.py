@@ -14,7 +14,7 @@ if 'show_object' not in globals():
 
 clockName="tony"
 clockOutDir="out"
-gearStyle=clock.GearStyle.ARCS
+gearStyle=clock.GearStyle.ARCS2
 pendulumFixing=clock.PendulumFixing.SUSPENSION_SPRING
 
 #for period 1.5
@@ -30,15 +30,17 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, a
 # lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, maxWeightDrop=1800, usePulley=False, chainAtBack=False, chainWheels=1, hours=7.5*24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_length=0.15, fourth_wheel=True, escapement=escapement, maxWeightDrop=1800, usePulley=False, chainAtBack=False, chainWheels=1, hours=7.5*24)#, huygensMaintainingPower=True)
 
 moduleReduction=1#0.85
 
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=20, max_error=0.1, moduleReduction=moduleReduction, loud=True)
+#for 0.15m pendulum:
+train.setRatios( [[77, 10], [62, 10], [55, 17]])
 #for 0.2m pendulum:
 # train.setRatios( [[76, 10], [66, 14], [56, 15]])
 #for 0.225
-train.setRatios([[68, 10], [60, 11], [51, 15]])
+# train.setRatios([[68, 10], [60, 11], [51, 15]])
 #for 0.25m pendulum:
 # train.setRatios([[73, 10], [59, 10], [50, 18]])
 
@@ -59,9 +61,9 @@ train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thic
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
-#although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
+
 motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
-motionWorks.calculateGears(arbourDistance=30)
+# motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)

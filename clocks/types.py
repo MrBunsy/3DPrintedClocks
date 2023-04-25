@@ -42,7 +42,10 @@ class PendulumFixing(Enum):
 
 class GearStyle(Enum):
     SOLID = None
+    #arcs made from semicircles
     ARCS = "HAC"
+    #more aggressive arcs, non-semicircular
+    ARCS2 = "arcs"
     #punched out circles with little circles between
     CIRCLES = "circles"
     #just the outer edges of a ring of circles

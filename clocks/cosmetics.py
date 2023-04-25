@@ -27,8 +27,30 @@ tony_the_clock={
     "eyebrow_above_eye":6,
     "mouth_width":26,
     "mouth_below_centre":25,
-
+    "bow_tie_width":40,
+    "bow_tie_centre_thick":6,
+    "bow_tie_centre_width":7.5,
+    "bow_tie_height":22,
+    "bow_tie_end_thick":5
 }
+
+class BowTie:
+    def __init__(self, width=50, thick=1):
+        '''
+        Styled after tony the clock
+        '''
+        self.width = width
+        self.thick = thick
+
+    def get_tony_dimension(self, name):
+        '''
+        Get a dimension for tony the clock, scaled to the current size of the bow tie
+        '''
+        return self.width * tony_the_clock[name] / tony_the_clock["bow_tie_width"]
+
+    def get_outline(self):
+
+        bow = cq.Workplane("XY")
 
 class ItemWithCosmetics:
     def __init__(self, shape, name, background_colour,cosmetics, offset = None, colour_thick=LAYER_THICK*2, colour_thick_overrides=None):

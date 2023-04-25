@@ -33,6 +33,8 @@ class Gear:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
             return Gear.cutHACStyle(gear, armThick=outerRadius*0.1, outer_r=outerRadius - 2, inner_r=innerRadius)
+        if style == GearStyle.ARCS2:
+            return Gear.cutArcsStyle(gear, outer_r=outerRadius*0.9, inner_r=innerRadius+2)
         if style == GearStyle.CIRCLES:
             if innerRadius < 0:
                 innerRadius = 3
@@ -600,6 +602,51 @@ class Gear:
         gear = gear.cut(cutter)
 
         return gear
+
+    @staticmethod
+    def cutArcsStyle(gear, outer_r, inner_r):
+        #more wibbly than the HAC style ARCS
+        #unlike HAC style, which uses semicircles, this uses non-semicircles so can cut away more gear
+        armThick = max(4, outer_r*0.1)
+        armAngle = armThick / outer_r
+        print("outer_r: {} inner_r:{} outer_r/inner_r:{} inner_r/outer_r:{}".format(outer_r, inner_r, outer_r/inner_r, (inner_r-armThick)/outer_r))
+        # arms = math.ceil(25 * (inner_r-armThick)/outer_r)
+        arms = max(5,math.ceil(10 * (inner_r) / outer_r))
+
+
+        # sagitta*=1.2
+        # if sagitta > outer_r - inner_r:
+        #     sagitta = outer_r - inner_r
+
+        # line it up so there's a nice arm a the bottom
+        offsetAngle = -math.pi / 2 + armAngle / 2
+        cutter = cq.Workplane("XY")
+
+        for i in range(arms):
+            startAngle = i * math.pi * 2 / arms + offsetAngle
+            endAngle = (i + 1) * math.pi * 2 / arms - armAngle + offsetAngle
+
+            midAngle = (startAngle + endAngle)/2
+
+            startPos = polar(startAngle, outer_r)
+            midPos = polar(midAngle, inner_r)
+            endPos = polar(endAngle, outer_r)
+
+            startDir = polar(startAngle , 1)
+            endDir = polar(endAngle + math.pi, 1)
+            midDir = polar(midAngle - math.pi/2, 1)
+
+
+
+            # gear = gear.faces(">Z").workplane()
+            # gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos, -outer_r).spline([midPos, startPos], tangents=[endDir, midDir, startDir], includeCurrent=True).close().cutThruAll()
+            cutter = cutter.add(cq.Workplane("XY").moveTo(startPos[0], startPos[1]).radiusArc(endPos, -outer_r).spline([midPos, startPos], tangents=[endDir, midDir, startDir], includeCurrent=True).close().extrude(100))
+            # gear = gear.moveTo(startPos[0], startPos[1]).spline([startPos, endPos], tangents=[npToSet(np.multiply(startPos, -1)), endPos]).radiusArc(startPos, outer_r).close().cutThruAll()
+            # .radiusArc(startPos,-innerRadius)\
+            # .close().cutThruAll()
+
+        # return cutter
+        return gear.cut(cutter)
 
     @staticmethod
     def cutHACStyle(gear, armThick, outer_r, inner_r):

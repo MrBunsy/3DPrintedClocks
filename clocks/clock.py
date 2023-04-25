@@ -952,6 +952,9 @@ class SimpleClockPlates:
         #2 or 1?
         self.bottom_pillars = bottom_pillars
 
+        #make the bottom pillar long a thin rather than round?
+        self.narrow_bottom_pillar = self.bottom_pillars > 1
+
         #is the weight danging from a pulley? (will affect screwhole and give space to tie other end of cord)
         self.usingPulley = goingTrain.usePulley
 
@@ -3225,16 +3228,16 @@ def getGearDemo(module=1, justStyle=None, oneGear=False):
         if justStyle is not None and style != justStyle:
             continue
         print(style.value)
-        try:
-            y=0
-            for arbour in demoArbours:
-                arbour.style = style
-                y += arbour.getMaxRadius() + gap
-                demo = demo.add(arbour.getShape().translate((x,y,0)))
-                y += arbour.getMaxRadius()
+        # try:
+        y=0
+        for arbour in demoArbours:
+            arbour.style = style
+            y += arbour.getMaxRadius() + gap
+            demo = demo.add(arbour.getShape().translate((x,y,0)))
+            y += arbour.getMaxRadius()
 
-            x += space
-        except:
-            print("Failed to generate demo for {}".format(style.value))
+        x += space
+        # except Exception as e:
+        #     print("Failed to generate demo for {}: {}".format(style.value, e))
 
     return demo
