@@ -15,7 +15,7 @@ if 'show_object' not in globals():
 clockName="tony"
 clockOutDir="out"
 gearStyle=clock.GearStyle.ARCS2
-pendulumFixing=clock.PendulumFixing.SUSPENSION_SPRING
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #for period 1.5
 # drop =1.5
@@ -30,7 +30,7 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, a
 # lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, maxWeightDrop=1800, usePulley=False, chainAtBack=False, chainWheels=1, hours=7.5*24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, maxWeightDrop=1400, usePulley=False, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
 
 moduleReduction=1#0.85
 

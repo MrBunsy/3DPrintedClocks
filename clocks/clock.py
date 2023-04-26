@@ -385,7 +385,7 @@ class GoingTrain:
 
         self.trains = [time]
 
-    def calculatePoweredWheelRatios(self, pinion_min = 11, pinion_max = 20, wheel_min = 20, wheel_max = 160, prefer_small=False):
+    def calculatePoweredWheelRatios(self, pinion_min = 10, pinion_max = 20, wheel_min = 20, wheel_max = 160, prefer_small=False):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
         TODO currently this tries to choose the largest wheel possible so it can fit. ideally we want the smallest wheel that fits to reduce plate size
@@ -394,7 +394,8 @@ class GoingTrain:
             '''
             nothing to do, the diameter is calculted in calculatePoweredWheelInfo
             '''
-        elif self.chainWheels == 1:
+        else:
+            #this should be made to scale down to 1 and then I can reduce the logic here
 
             turns = self.poweredWheel.getTurnsForDrop(self.getCordUsage())
 
@@ -403,52 +404,93 @@ class GoingTrain:
 
             desiredRatio = 1 / turnsPerHour
 
-            # print("Chain wheel turns per hour", turnsPerHour)
-            # print("Chain wheel ratio to minute wheel", desiredRatio)
-
+            #consider tweaking this in future
+            moduleReduction = 1.1
+            #copy-pasted from calculateRatios and tweaked
             allGearPairCombos = []
-
-
 
             for p in range(pinion_min, pinion_max):
                 for w in range(wheel_min, wheel_max):
                     allGearPairCombos.append([w, p])
-            # print("ChainWheel: allGearPairCombos", len(allGearPairCombos))
+            # [ [[w,p],[w,p],[w,p]] ,  ]
+            allTrains = []
 
-            allRatios = []
-            for i in range(len(allGearPairCombos)):
-                ratio = allGearPairCombos[i][0] / allGearPairCombos[i][1]
-                if round(ratio) == ratio:
-                    # integer ratio
-                    continue
+            allTrainsLength = 1
+            for i in range(self.chainWheels):
+                allTrainsLength *= len(allGearPairCombos)
+
+            allcomboCount = len(allGearPairCombos)
+            if self.chainWheels == 1:
+                for pair_0 in range(allcomboCount):
+                    allTrains.append([allGearPairCombos[pair_0]])
+            elif self.chainWheels == 2:
+                for pair_0 in range(allcomboCount):
+                    for pair_1 in range(allcomboCount):
+                        allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
+            else:
+                raise ValueError("Unsupported number of chain wheels")
+            all_ratios = []
+            totalTrains = len(allTrains)
+            for c in range(totalTrains):
+                totalRatio = 1
+                intRatio = False
                 totalTeeth = 0
                 # trying for small wheels and big pinions
-                totalWheelTeeth = allGearPairCombos[i][0]
-                totalPinionTeeth = allGearPairCombos[i][1]
+                totalWheelTeeth = 0
+                totalPinionTeeth = 0
+                weighting = 0
+                lastSize = 0
+                fits = True
+                for p in range(len(allTrains[c])):
+                    #loop through each wheel/pinion pair
+                    ratio = allTrains[c][p][0] / allTrains[c][p][1]
+                    if ratio == round(ratio):
+                        intRatio = True
+                        break
+                    totalRatio *= ratio
+                    totalTeeth += allTrains[c][p][0] + allTrains[c][p][1]
+                    totalWheelTeeth += allTrains[c][p][0]
+                    totalPinionTeeth += allTrains[c][p][1]
+                    # module * number of wheel teeth - proportional to diameter
+                    size = math.pow(moduleReduction, p) * allTrains[c][p][0]
+                    #prefer smaller wheels
+                    weighting += size
+                    #allow more space between the wheels than with the normal wheels ebcause of the chunky bit out the back of the chain wheel
+                    if p > 0 and size > lastSize * 0.875:
+                        # this wheel is unlikely to physically fit
+                        fits = False
+                        break
+                    #TODO does it fit next to the minute wheel?
+                    # if p > 0 and size > self.trains[0][0][0]
+                    lastSize = size
+                    #TODO is the first wheel big enough to take the powered wheel?
 
-                error = desiredRatio - ratio
-                # perfer_small false (old behaviour): want a fairly large wheel so it can actually fit next to the minute wheel (which is always going to be pretty big)
-                train = {"ratio": ratio, "pair": allGearPairCombos[i], "error": abs(error), "teeth": totalWheelTeeth}
-                if abs(error) < 0.1:
-                    allRatios.append(train)
-            if not prefer_small:
-                allRatios.sort(key=lambda x: x["error"] - x["teeth"] / 1000)
-            else:
-                #aim for small wheels where possible
-                allRatios.sort(key=lambda x: x["error"] + x["teeth"] / 100)
+                error = desiredRatio - totalRatio
 
-            print("power wheel ratios", allRatios)
-            if len(allRatios) == 0 :
+                train = {"ratio": totalRatio, "train": allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting}
+                if fits and abs(error) < 0.1 and not intRatio:
+                    all_ratios.append(train)
+
+            all_ratios.sort(key=lambda x: x["weighting"])
+            # if not prefer_small:
+            #     all_ratios.sort(key=lambda x: x["error"] - x["teeth"] / 1000)
+            # else:
+            #     # aim for small wheels where possible
+            #     all_ratios.sort(key=lambda x: x["error"] + x["teeth"] / 100)
+            if len(all_ratios) == 0 :
                 raise ValueError("Unable to generate gear ratio for powered wheel")
-            self.chainWheelRatio = allRatios[0]["pair"]
-        else:
-            raise ValueError("Unsupported number of chain wheels")
+            self.chainWheelRatios = all_ratios[0]["train"]
 
-    def setChainWheelRatio(self, pinionPair):
+
+    def setChainWheelRatio(self, pinionPairs):
         '''
         Note, shouldn't need to use this anymore, and I think it's overriden when generating powered wheels anyway!
         '''
-        self.chainWheelRatio = pinionPair
+        if type(pinionPairs[0]) == int:
+            #backwards compatibility with old clocks that assumed only one chain wheel was supported
+            self.chainWheelRatios = [pinionPairs]
+        else:
+            self.chainWheelRatios = pinionPairs
 
     def isWeightOnTheRight(self):
         '''
@@ -472,7 +514,7 @@ class GoingTrain:
             self.powered_wheel_circumference = self.getCordUsage() / (self.hours * self.minuteWheelRatio)
             self.powered_wheel_diameter = self.powered_wheel_circumference / math.pi
 
-        elif self.chainWheels == 1:
+        else:
             #set the diameter to the minimum so the chain wheel gear ratio is as low as possible (TODO - do we always want this?)
 
             self.powered_wheel_diameter = default_powered_wheel_diameter
@@ -585,11 +627,13 @@ class GoingTrain:
         chainRatios=[1]
         if self.chainWheels > 0:
             #TODO if - for some reason - the minuteWheelRatio isn't 1, this logic needs checking
-            print(self.chainWheelRatio)
+            print(self.chainWheelRatios)
             #how many turns per turn of the minute wheel
-            chainRatio = self.chainWheelRatio[0]/self.chainWheelRatio[1]
+            chainRatio = 1
+            for pair in self.chainWheelRatios:
+                chainRatio *= pair[0] / pair[1]
             #the wheel/pinion tooth count
-            chainRatios=self.chainWheelRatio
+            chainRatios=self.chainWheelRatios
 
         runtime_hours = self.poweredWheel.getRunTime(chainRatio, self.getCordUsage())
 
@@ -630,6 +674,10 @@ class GoingTrain:
         stack_away_from_powered_wheel - experimental, usually we interleave gears to minimise plate distance, but we might want to minimise height instead
 
         '''
+
+        if chainModuleIncrease is None:
+            chainModuleIncrease = (1 / moduleReduction)
+
         self.pendulumFixing = pendulumFixing
         arbours = []
         # ratchetThick = holeD*2
@@ -704,34 +752,61 @@ class GoingTrain:
         # self.escapement.escapeWheelClockwise=escapeWheelClockwise
         self.escapement.setGearTrainInfo(escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise)
         self.chainWheelArbours=[]
-        if self.chainWheels > 0:
-            # assuming one chain wheel for now
-            if chainModuleIncrease is None:
-                chainModuleIncrease = (1 / moduleReduction)
+        self.chainWheelPairs=[]
+        chain_module_base = module_size
+        fits = False
+        loop = 0
+        while not fits and loop < 100:
+            self.chainWheelPairs = []
+            for i in range(self.chainWheels):
+                #TODO review this
+                chainModule = chain_module_base * chainModuleIncrease ** i
+                # chain_wheel_space = chainModule * (self.chainWheelRatios[i][0] + self.chainWheelRatios[i][1]) / 2
 
-            chainModule = module_size * chainModuleIncrease
-            chainDistance = chainModule * (self.chainWheelRatio[0] + self.chainWheelRatio[1]) / 2
 
-            minuteWheelSpace = pairs[0].wheel.getMaxRadius() + holeD*2
+
+                # #check if the chain wheel will fit next to the minute wheel
+                # if i == 0 and chain_wheel_space < minuteWheelSpace:
+                #     # calculate module for the chain wheel based on teh space available
+                #     chainModule = 2 * minuteWheelSpace / (self.chainWheelRatios[0] + self.chainWheelRatios[1])
+                #     print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chainModule))
+                # self.chainWheelPair = WheelPinionPair(self.chainWheelRatios[0], self.chainWheelRatios[1], chainModule)
+                #only supporting one at the moment, but open to more in the future if needed
+                pair = WheelPinionPair(self.chainWheelRatios[i][0], self.chainWheelRatios[i][1], chainModule)
+                self.chainWheelPairs.append(pair)
+
+            minuteWheelSpace = pairs[0].wheel.getMaxRadius() + holeD * 2
+            last_chain_wheel_space = self.chainWheelPairs[-1].wheel.getMaxRadius()
             if not self.poweredWheel.looseOnRod:
-                #need space for the steel rod as the wheel itself is loose on the threaded rod
+                # need space for the steel rod as the wheel itself is loose on the threaded rod
                 minuteWheelSpace += 2
 
-            #check if the chain wheel will fit next to the minute wheel
-            if chainDistance < minuteWheelSpace:
+            if last_chain_wheel_space < minuteWheelSpace:
                 # calculate module for the chain wheel based on teh space available
-                chainModule = 2 * minuteWheelSpace / (self.chainWheelRatio[0] + self.chainWheelRatio[1])
-                print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chainModule))
-            self.chainWheelPair = WheelPinionPair(self.chainWheelRatio[0], self.chainWheelRatio[1], chainModule)
-            #only supporting one at the moment, but open to more in the future if needed
-            self.chainWheelPairs=[self.chainWheelPair]
-            power_at_front = not self.chainAtBack
-            clockwise = self.chainWheels % 2 == 1
-            clockwise_from_powered_side = clockwise and power_at_front
-            self.chainWheelArbours=[Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPair.wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
-                                           distanceToNextArbour=self.chainWheelPair.centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
-                                           useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side)]
+                chain_module_base *= 1.1
+                print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chain_module_base))
+            else:
+                fits = True
 
+        power_at_front = not self.chainAtBack
+        first_chainwheel_clockwise = self.chainWheels % 2 == 1
+        for i in range(self.chainWheels):
+
+
+
+            if i == 0:
+                clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
+                #the powered wheel
+                self.chainWheelArbours.append(Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
+                                               distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
+                                               useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
+            else:
+                #just a bog standard wheel and pinion
+                pinionThick = self.chainWheelArbours[i-1].wheelThick * chainWheelPinionThickMultiplier
+                self.chainWheelArbours.append(Arbour(wheel = self.chainWheelPairs[i].wheel, wheelThick=thick * (1/thicknessReduction), arbourD=holeD, pinion=self.chainWheelPairs[i-1].pinion,
+                                                     pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
+                                                     distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront
+                                                     ))
             pinionAtFront = not pinionAtFront
 
         for i in range(self.wheels):
@@ -744,14 +819,15 @@ class GoingTrain:
                                     style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower,
                                     clockwise_from_pinion_side=not self.chainAtBack)
                 else:
+                    # just a normal gear
+
                     clockwise = i % 2 == 0
                     clockwise_from_pinion_side = clockwise and pinionAtFront
-                    #just a normal gear
                     if self.chainWheels == 1:
                         pinionThick = self.chainWheelArbours[-1].wheelThick * chainWheelPinionThickMultiplier
                     else:
                         pinionThick = self.chainWheelArbours[-1].wheelThick * pinionThickMultiplier
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPair.pinion, arbourD=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPairs[-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
                                     distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
                 if useNyloc:
