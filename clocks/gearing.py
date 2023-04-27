@@ -609,7 +609,7 @@ class Gear:
         #unlike HAC style, which uses semicircles, this uses non-semicircles so can cut away more gear
         armThick = max(4, outer_r*0.1)
         armAngle = armThick / outer_r
-        print("outer_r: {} inner_r:{} outer_r/inner_r:{} inner_r/outer_r:{}".format(outer_r, inner_r, outer_r/inner_r, (inner_r-armThick)/outer_r))
+        # print("outer_r: {} inner_r:{} outer_r/inner_r:{} inner_r/outer_r:{}".format(outer_r, inner_r, outer_r/inner_r, (inner_r-armThick)/outer_r))
         # arms = math.ceil(25 * (inner_r-armThick)/outer_r)
         arms = max(5,math.ceil(10 * (inner_r) / outer_r))
 
@@ -2146,7 +2146,7 @@ class Arbour:
                 #limit to r of 1cm
                 maxR = 10
                 if self.looseOnRod:
-                    maxR = 15
+                    maxR = 12.5
 
                 extensionR = min(maxR,self.arbourExtensionMaxR)
 

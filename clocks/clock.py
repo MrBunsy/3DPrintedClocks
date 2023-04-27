@@ -712,7 +712,12 @@ class GoingTrain:
 
         # print(module_sizes)
         #make the escape wheel as large as possible, by default
-        escapeWheelDiameter = (pairs[len(pairs)-1].centre_distance - pairs[len(pairs)-1].pinion.getMaxRadius() - 3)*2
+        if stack_away_from_powered_wheel:
+            #avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
+            escapeWheelDiameter = (pairs[len(pairs) - 1].centre_distance - holeD*2 - 2) * 2
+        else:
+            #avoid previous pinion
+            escapeWheelDiameter = (pairs[len(pairs)-1].centre_distance - pairs[len(pairs)-1].pinion.getMaxRadius() - 2)*2
 
         #we might choose to override this
         if escapeWheelMaxD > 1 and escapeWheelDiameter > escapeWheelMaxD:
@@ -2123,16 +2128,24 @@ class SimpleClockPlates:
 
 
 
-
+            #this definitely needs tidying up.
             textMultiMaterial = cq.Workplane("XY")
             textSize = topPillarR * 0.9
             textY = (self.bearingPositions[0][1] + self.plate_fixings[2][1]) / 2
+            textXs=[-textSize*0.4,+textSize*0.6]
+            angle=90
             if self.goingTrain.escapement.type == EscapementType.GRASSHOPPER:
                 #TODO check all the gaps and choose the largest, so we don't have to care about which escapemetn it is?
                 textY = (self.bearingPositions[-1][1] + self.bearingPositions[-2][1])/2
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (-textSize*0.4, textY), textSize)
+            if self.bottom_pillars > 1:
+                textY = self.bearingPositions[0][1]
+                angle=0
+                textXs = [self.bottomPillarPositions[0][0]/2, self.bottomPillarPositions[1][0]/2]
 
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textSize*0.6, textY), textSize)
+
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (textXs[0], textY), textSize, angle=angle)
+
+            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textXs[1], textY), textSize, angle=angle)
             #in case they overlapped with a bearing hole - crude fix rather than locating the text better
             textMultiMaterial = self.punchBearingHoles(textMultiMaterial, back=back)
             if getText:
@@ -2575,12 +2588,12 @@ class SimpleClockPlates:
 
         return plate
 
-    def addText(self,plate, multimaterial, text, pos, textSize):
+    def addText(self,plate, multimaterial, text, pos, textSize, angle=90):
         # textSize =  width*0.25
         # textYOffset = width*0.025
         y = pos[1]
         textYOffset = 0  + pos[0]# width*0.1
-        text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotateAboutCenter((0, 0, 1), 90).rotateAboutCenter((1, 0, 0), 180).translate((textYOffset, y, 0))
+        text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0,),(0, 0, 1), 90).rotate((0,0,0,),(1, 0, 0), 180).translate((textYOffset, y, 0))
 
         return plate.cut(text), multimaterial.add(text)
 
@@ -3143,24 +3156,27 @@ class Assembly:
 
         pendulumRodFixing = self.pendulum.getPendulumForRod(forPrinting=False)
 
-        pendulumHolderBaseZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ
+        # pendulumHolderBaseZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ
+        pendulumRodCentreZ =  self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut +  pendulumRodExtraZ + self.pendulum.pendulumTopThick / 2
+        # pendulumRodCentreZ = pendulumHolderBaseZ + self.pendulum.pendulumTopThick / 2
+        # pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick / 2
+        pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
 
         if not self.plates.pendulumAtFront:
-            pendulumHolderBaseZ = -self.plates.pendulumSticksOut - self.pendulum.pendulumTopThick/2
+            # pendulumHolderBaseZ = -self.plates.pendulumSticksOut - self.pendulum.pendulumTopThick/2
+            pendulumRodCentreZ = -self.plates.pendulumSticksOut
 
         # if self.plates.pendulumFixing == PendulumFixing.FRICTION_ROD:
         #     clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], pendulumHolderBaseZ)))
 
-        pendulumRodCentreZ = pendulumHolderBaseZ + self.pendulum.pendulumTopThick / 2
-        pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick / 2
-        pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
+
 
         if with_pendulum:
 
 
-            clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ)))
+            clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ - self.pendulum.bobThick / 2)))
 
-            clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumBobBaseZ + self.pendulum.bobThick/2)))
+            clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ)))
 
 
         if len(self.weights) > 0:

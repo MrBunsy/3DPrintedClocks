@@ -1794,10 +1794,15 @@ class PocketChainWheel2:
         else:
             self.ratchet = None
 
+        self.pocket_cutter_cache = None
+
     def get_pocket_cutter(self):
 
+        if self.pocket_cutter_cache is not None:
+            return self.pocket_cutter_cache
+
         pocket_length = self.pocket_long#self.chain.inside_length + self.chain.wire_thick*2
-        print("pocket_length: {}, radius: {} {}".format(pocket_length, self.radius, 1 - (pocket_length**2)/(2*self.radius**2)))
+        # print("pocket_length: {}, radius: {} {}".format(pocket_length, self.radius, 1 - (pocket_length**2)/(2*self.radius**2)))
         #from law of cosines
         pocket_angle = math.acos(1 - (pocket_length**2)/(2*self.radius**2))
 
@@ -1840,6 +1845,7 @@ class PocketChainWheel2:
         chain_segment_hole = chain_segment_hole.translate((0, hole_centre_y, -gap_thick / 2)).rotate((0,0,0), (0,0,1), 360/(self.pockets*2))
 
         cutter = cutter.union(chain_segment_hole)
+        self.pocket_cutter_cache = cutter
         return cutter
 
     def get_whole_wheel(self):
