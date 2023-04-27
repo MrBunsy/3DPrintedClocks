@@ -3,6 +3,10 @@ from clocks import clock
 '''
 Tony the Clock from Don't Hug Me I'm Scared
 
+TODO:
+guard for the chains? some sort of flat bit with two holes in that is either part of or can be bolted to the bottom of the front plate
+mouth movement?
+
 '''
 outputSTL = False
 
