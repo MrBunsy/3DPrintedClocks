@@ -421,21 +421,33 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-if True:
-    dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
-    # #
-    # show_object(dial.get_assembled(),options={"color":"blue"})
-    show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180),options={"color":"blue"})
-    show_object(dial.get_tony_face_detail(),options={"color":"black"})
-    show_object(dial.get_all_detail(),options={"color":"yellow"})
-    show_object(dial.get_extras()["outer_ring"].rotate((0,0,0),(0,1,0),180).translate((0,0,dial.thick)),options={"color":"black"})
-    #.rotate((0,0,0),(0,1,0),180)
-    show_object(getHandDemo(justStyle=HandStyle.ARROWS, length=200*0.45-10, chunky=True,outline=0, assembled=True, include_seconds=False, time_hour=3, time_min=41).translate((0,0,dial.get_hand_space_z())),options = { "color" : "red"})
-    eye,pupil = dial.get_eye()
+# if True:
+#     dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
+#     # #
+#     # show_object(dial.get_assembled(),options={"color":"blue"})
+#     show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180),options={"color":"blue"})
+#     show_object(dial.get_tony_face_detail(),options={"color":"black"})
+#     show_object(dial.get_all_detail(),options={"color":"yellow"})
+#     show_object(dial.get_extras()["outer_ring"].rotate((0,0,0),(0,1,0),180).translate((0,0,dial.thick)),options={"color":"black"})
+#     #.rotate((0,0,0),(0,1,0),180)
+#     show_object(getHandDemo(justStyle=HandStyle.ARROWS, length=200*0.45-10, chunky=True,outline=0, assembled=True, include_seconds=False, time_hour=3, time_min=41).translate((0,0,dial.get_hand_space_z())),options = { "color" : "red"})
+#     eye,pupil = dial.get_eye()
+#
+#     for x in [-1, 1]:
+#         show_object(eye.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)),options={"color":"white"} )
+#         show_object(pupil.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)), options={"color": "black"})
 
-    for x in [-1, 1]:
-        show_object(eye.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)),options={"color":"white"} )
-        show_object(pupil.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)), options={"color": "black"})
+
+dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
+test_eye_hole = dial.get_dial().union(dial.get_tony_face_detail()).intersect(cq.Workplane("XY").moveTo(dial.eye_distance_apart/2, dial.eye_y).circle(dial.eye_hole_d*0.75+7).extrude(50))
+
+show_object(test_eye_hole)
+
+path="out"
+name="test_eye_hole"
+out = os.path.join(path, "{}.stl".format(name))
+print("Outputting ", out)
+exporters.export(test_eye_hole, out)
 
 # show_object(cq.Workplane("XY").rect(10,10).extrude(10).cut(cq.Solid.makeCone(radius1=0, radius2=50, height=50)))
 

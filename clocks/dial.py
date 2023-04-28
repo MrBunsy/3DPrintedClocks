@@ -122,7 +122,8 @@ class Dial:
 
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outside_d, style=DialStyle.LINES_ARC, seconds_style=None, fixing_screws=None,thick=2, top_fixing=True, bottom_fixing=False, hand_hole_d=18):
+    def __init__(self, outside_d, style=DialStyle.LINES_ARC, seconds_style=None, fixing_screws=None,thick=2, top_fixing=True, bottom_fixing=False, hand_hole_d=18,
+                 detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
         '''
@@ -140,7 +141,9 @@ class Dial:
         self.bottom_fixing = bottom_fixing
         #for a style which isn't just a ring, how big a hole for the hands to fit through?
         self.hand_hole_d = hand_hole_d
-        self.line_thick = LAYER_THICK * 2
+        self.detail_thick = detail_thick
+        #bit of a bodge, for tony the detail is in yellow so I need it thicker (my yellow is really translucent)
+        self.extras_thick = extras_thick
 
         #something for debugging
         self.configure_dimensions(support_length=30, support_d=15, outside_d=outside_d)
@@ -205,7 +208,7 @@ class Dial:
             self.eye_screw = MachineScrew(2)
             self.eye_distance_apart = self.get_tony_dimension("eye_spacing")
             self.eye_y = self.outside_d / 2 - self.get_tony_dimension("eyes_from_top")
-            self.eye_bendy_wire_d = 1
+            self.eye_bendy_wire_d = 1.5
 
     def is_full_dial(self):
         '''
@@ -257,8 +260,8 @@ class Dial:
         dA = math.pi * 2 / lines
 
         detail = cq.Workplane("XY").tag("base")
-        detail = detail.add(cq.Workplane("XY").circle(outer_circle_r + line_width / 2).circle(outer_circle_r - line_width / 2).extrude(self.line_thick))
-        detail = detail.add(cq.Workplane("XY").circle(inner_circle_r + line_width / 2).circle(inner_circle_r - line_width / 2).extrude(self.line_thick))
+        detail = detail.add(cq.Workplane("XY").circle(outer_circle_r + line_width / 2).circle(outer_circle_r - line_width / 2).extrude(self.detail_thick))
+        detail = detail.add(cq.Workplane("XY").circle(inner_circle_r + line_width / 2).circle(inner_circle_r - line_width / 2).extrude(self.detail_thick))
 
 
         for i in range(lines):
@@ -266,7 +269,7 @@ class Dial:
             this_line_width = line_width*2 if big else line_width
             angle = math.pi / 2 - i * dA
 
-            detail = detail.add(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(self.line_thick).translate((0,(outer_circle_r + inner_circle_r)/2)).rotate((0,0,0), (0,0,1),radToDeg(angle)))
+            detail = detail.add(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(self.detail_thick).translate((0, (outer_circle_r + inner_circle_r) / 2)).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle)))
 
         return detail
 
@@ -283,7 +286,7 @@ class Dial:
         for i,number in enumerate(numbers):
             angle = math.pi/2 + i*math.pi*2/12
             pos = polar(angle, numeral_r)
-            detail = detail.add(roman_numerals(number, numeral_height, thick=self.line_thick, invert=True).rotate((0,0,0), (0,0,1), radToDeg(angle-math.pi/2)).translate(pos))
+            detail = detail.add(roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle - math.pi / 2)).translate(pos))
 
         # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
         detail = detail.add(self.get_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
@@ -326,7 +329,7 @@ class Dial:
             bottom_right = polar(angle + line_angle / 2, line_inner_r)
             top_right = polar(angle + line_angle / 2, line_outer_r)
             top_left = polar(angle - line_angle / 2, line_outer_r)
-            detail = detail.workplaneFromTagged("base").moveTo(bottom_left[0], bottom_left[1]).radiusArc(bottom_right, line_inner_r).lineTo(top_right[0], top_right[1]).radiusArc(top_left, line_outer_r).close().extrude(self.line_thick)
+            detail = detail.workplaneFromTagged("base").moveTo(bottom_left[0], bottom_left[1]).radiusArc(bottom_right, line_inner_r).lineTo(top_right[0], top_right[1]).radiusArc(top_left, line_outer_r).close().extrude(self.detail_thick)
 
         return detail
 
@@ -339,7 +342,7 @@ class Dial:
         for i in range(4):
             angle = i*360/4
             #12 o'clock, then rotate into place
-            marks = marks.add(cq.Workplane("XY").rect(mark_width, mark_length).extrude(self.line_thick).translate((0,outer_r - from_edge - mark_length/2)).rotate((0,0,0), (0,0,1), angle))
+            marks = marks.add(cq.Workplane("XY").rect(mark_width, mark_length).extrude(self.detail_thick).translate((0, outer_r - from_edge - mark_length / 2)).rotate((0, 0, 0), (0, 0, 1), angle))
 
         return marks
 
@@ -354,8 +357,10 @@ class Dial:
         elif self.style == DialStyle.ROMAN:
             return self.get_roman_numerals_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
         elif self.style == DialStyle.TONY_THE_CLOCK:
-            return self.get_quad_marks(self.outside_d/2, self.outside_d * tony_the_clock["dial_marker_length"]/tony_the_clock["diameter"],
-                                       self.outside_d * tony_the_clock["dial_marker_width"]/tony_the_clock["diameter"], self.outside_d * tony_the_clock["dial_edge_width"]/tony_the_clock["diameter"])
+            #extend the marks so they go underneath the black ring to allow for some slop attaching the ring
+            extra = 2
+            return self.get_quad_marks(self.outside_d/2, self.outside_d * tony_the_clock["dial_marker_length"]/tony_the_clock["diameter"] + extra,
+                                       self.outside_d * tony_the_clock["dial_marker_width"]/tony_the_clock["diameter"], self.outside_d * tony_the_clock["dial_edge_width"]/tony_the_clock["diameter"] - extra)
         raise ValueError("Unsupported dial type")
 
     def get_seconds_dial_detail(self):
@@ -391,7 +396,7 @@ class Dial:
 
         for x in [-1,1]:
             #going from r to r+thick so we can put little circles at either end (on the sides rather than underneath)
-            eyebrow = cq.Workplane("XY").circle(r).circle(r-thick).extrude(self.line_thick).intersect(cq.Workplane("XY").moveTo(0, r - (sagitta)/2).rect(width, sagitta).extrude(self.line_thick))
+            eyebrow = cq.Workplane("XY").circle(r).circle(r-thick).extrude(self.extras_thick).intersect(cq.Workplane("XY").moveTo(0, r - (sagitta) / 2).rect(width, sagitta).extrude(self.extras_thick))
 
             #circles at end of eyebrows
             # eyebrow = eyebrow.union(cq.Workplane("XY").circle(thick/2).extrude(self.line_thick).intersect(cq.Workplane("XY").moveTo(-thick/4,0).rect(thick, thick).extrude(self.line_thick)))
@@ -403,7 +408,7 @@ class Dial:
             detail = detail.add(eyebrow)
 
 
-        mouth = cq.Workplane("XY").moveTo(0, -self.get_tony_dimension("mouth_below_centre")-thick/2).rect(self.get_tony_dimension("mouth_width"),thick).extrude(self.line_thick)
+        mouth = cq.Workplane("XY").moveTo(0, -self.get_tony_dimension("mouth_below_centre")-thick/2).rect(self.get_tony_dimension("mouth_width"),thick).extrude(self.extras_thick)
 
         mouth = mouth.edges("|Z").fillet(thick*0.499)
 
@@ -461,10 +466,16 @@ class Dial:
         cut out hole and add pivot holders for a pair of eyes
         Trying to be generic enough to be reused for more than just tony
         '''
-        eye_pivot_holder_wide = 6
-        eye_pivot_holder_thick = 6
+        eye_pivot_holder_wide = 5
+        eye_pivot_holder_thick = 8
         eye_pivot_space = 5
         eye_pivot_rod_d = 2
+        #1.8 perfectly for slotting the rod in!
+        #1.7 gap, 0.3 extra r and eye_pivot_holder_wide 6 snapped immediately
+        #trying same extra r but making it thinner so it might be more flexible (or just weaker? really need to print soemthing at 90deg and attach it)
+        rod_gap = 1.8
+        #0.5 was very loose
+        rod_loose_extra_r = 0.3
         eye_pivot_hole_deep = eye_pivot_rod_d
 
         for x in [-1, 1]:
@@ -476,8 +487,11 @@ class Dial:
                                     translate((x * self.eye_distance_apart/2,pivot_top_of_base - eye_pivot_hole_deep,self.eye_pivot_z))))
             dial = dial.union(bottom_pivot_holder.translate((0,0,self.thick)))
             #top pivot holder is a sticky out bit with a hole through the middle
-            top_pivot_holder = cq.Workplane("XY").moveTo(x * self.eye_distance_apart/2,  self.eye_y  + self.eye_hole_d/2 + eye_pivot_space ).rect(eye_pivot_holder_wide, eye_pivot_holder_thick).extrude(self.eye_pivot_z + eye_pivot_holder_thick/2)
-            top_pivot_holder = top_pivot_holder.cut(cq.Workplane("XY").circle(eye_pivot_rod_d/2+0.5).extrude(10000).rotate((0,0,0), (1,0,0),-90).translate((x * self.eye_distance_apart/2, pivot_top_of_base, self.eye_pivot_z)))
+            top_holder_y_centre = self.eye_y  + self.eye_hole_d/2 + eye_pivot_space + eye_pivot_holder_thick/2
+            top_pivot_holder = cq.Workplane("XY").moveTo(x * self.eye_distance_apart/2, top_holder_y_centre ).rect(eye_pivot_holder_wide, eye_pivot_holder_thick).extrude(self.eye_pivot_z + eye_pivot_holder_thick/2)
+            top_pivot_holder = top_pivot_holder.cut(cq.Workplane("XY").circle(eye_pivot_rod_d/2+rod_loose_extra_r).extrude(10000).rotate((0,0,0), (1,0,0),-90).translate((x * self.eye_distance_apart/2, pivot_top_of_base, self.eye_pivot_z)))
+            #cut a slot so the rod can be pushed in - experimental!
+            top_pivot_holder = top_pivot_holder.cut(cq.Workplane("XY").rect(rod_gap,eye_pivot_holder_thick).extrude(eye_pivot_holder_thick).translate((x * self.eye_distance_apart/2, top_holder_y_centre, self.eye_pivot_z )))
 
             dial = dial.union(top_pivot_holder.translate((0,0,self.thick)))
 
@@ -544,12 +558,13 @@ class Dial:
         eye = eye.cut(cq.Workplane("XY").circle(self.eye_rod_d/2).extrude(self.eye_radius*4).translate((0,0,-self.eye_radius*2)).rotate((0,0,0),(1,0,0),90))
 
         #screw on the back to hold eye tight to rod and provide fixing for wire (maybe)
-        eye = eye.cut(cq.Workplane("XY").circle(self.eye_screw.metric_thread/2).extrude(self.eye_extend_beyond_pivot).translate((0,0, -self.eye_extend_beyond_pivot)))
-        nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
-        eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((0,0,-self.eye_extend_beyond_pivot + 1)))
+        #didn't need this, the rod is a good tight friction fit
+        # eye = eye.cut(cq.Workplane("XY").circle(self.eye_screw.metric_thread/2).extrude(self.eye_extend_beyond_pivot).translate((0,0, -self.eye_extend_beyond_pivot)))
+        # nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
+        # eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((0,0,-self.eye_extend_beyond_pivot + 1)))
 
         wire_hole_depth = self.eye_pivot_z + self.eye_extend_beyond_pivot
-        eye = eye.cut(cq.Workplane("XY").moveTo(0,self.eye_radius/2).circle(self.eye_bendy_wire_d/2).extrude(wire_hole_depth).translate((0,0,-wire_hole_depth)))
+        eye = eye.cut(cq.Workplane("XY").circle(self.eye_bendy_wire_d/2).extrude(wire_hole_depth).translate((0,0,-wire_hole_depth)))
 
         return eye,pupil
 
