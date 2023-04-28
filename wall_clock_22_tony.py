@@ -63,7 +63,7 @@ power wheel ratios [{'ratio': 7.7272727272727275, 'pair': [85, 11], 'error': 0.0
 #think this is promising for good compromise of size
 # train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
 #fixing chain wheel to the rod and having the wheel loose (with a steel rod) as this worked really well with the cord wheel and i suspect it will with the chain wheel too
-train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True))
+train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 pendulumSticksOut=15
 
