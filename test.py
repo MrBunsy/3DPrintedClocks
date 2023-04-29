@@ -421,7 +421,7 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-if True:
+if False:
     dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
     # #
     # show_object(dial.get_assembled(),options={"color":"blue"})
@@ -447,6 +447,12 @@ if False:
     print("Outputting ", out)
     exporters.export(test_eye_hole, out)
 
+text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
+
+# cadquery.BoundBox()
+print(text.val().BoundingBox().center)
+
+show_object(text.rotate((0, 0, 0), (0, 1, 0), 180).translate((0,0,LAYER_THICK)))
 # show_object(cq.Workplane("XY").rect(10,10).extrude(10).cut(cq.Solid.makeCone(radius1=0, radius2=50, height=50)))
 
 # show_object(eye,options={"color":"white"} )

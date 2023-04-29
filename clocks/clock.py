@@ -2011,8 +2011,111 @@ class SimpleClockPlates:
 
         return standoff
 
+    def getText(self):
 
-    def getPlate(self, back=True, getText=False, for_printing=True):
+        class TextSpace:
+            def __init__(self, x, y, width, height, horizontal, inverted=True):
+                self.x = x
+                self.y = y
+                self.width = width
+                self.height = height
+                self.horizontal = horizontal
+                self.text = None
+                self.text_size = 10
+                self.inverted = inverted
+
+            def set_text(self,text):
+                self.text = text
+
+            def set_size(self, size):
+                self.text_size = size
+
+            def get_text_shape(self):
+                '''
+                get the text centred properly
+                '''
+                shape = cq.Workplane("XY").text(self.text, self.text_size, LAYER_THICK, kind="bold")
+                bb = shape.val().BoundingBox()
+
+                #actually centre it, the align feature of text does...something else
+                shape = shape.translate((-bb.center.x, -bb.center.y))
+
+                if self.inverted:
+                    shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0,0,LAYER_THICK))
+                shape = shape.translate((self.x,self.y))
+
+                return shape
+
+            def get_text_max_size(self):
+                shape = self.get_text_shape()
+                bb = shape.val().BoundingBox()
+                width_ratio = self.width / bb.xlen
+                height_ratio = self.height / bb.ylen
+
+                return self.text_size * min(width_ratio, height_ratio)
+
+
+            def text_fits(self, text_obj):
+                bb = text_obj.val().BoundingBox()
+                return bb.xlen < self.width and bb.ylen < self.height
+
+
+        all_text = cq.Workplane("XY")
+
+        texts = [
+            self.name,
+            "{:.1f}cm".format(self.goingTrain.pendulum_length*100),
+            "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
+            "Luke Wallin"
+        ]
+
+        #(x,y,width,height, horizontal)
+        spaces = []
+
+
+
+        if self.bottom_pillars > 1:
+            #along the bottom of the plate between the two pillars
+
+            pillar_wide_half = self.bottom_pillar_width / 2 if self.narrow_bottom_pillar else self.bottomPillarR
+            bearing_wide_half = self.arboursForPlate[0].bearing.outerD/2
+
+            for pillarPos in self.bottomPillarPositions:
+
+                if pillarPos[0] > 0:
+                    offset = bearing_wide_half - pillar_wide_half
+                else:
+                    offset = -(bearing_wide_half - pillar_wide_half)
+
+                spaces.append(TextSpace(pillarPos[0] / 2 + offset, pillarPos[1] + self.bottom_pillar_height/4, abs(pillarPos[0]) - pillar_wide_half - bearing_wide_half, self.bottom_pillar_height, horizontal=True))
+                spaces.append(TextSpace(pillarPos[0] / 2 + offset, pillarPos[1] - self.bottom_pillar_height/4, abs(pillarPos[0]) - pillar_wide_half - bearing_wide_half, self.bottom_pillar_height, horizontal=True))
+
+        else:
+            '''
+            vertical long the plate between bearings
+            '''
+
+        for i,text in enumerate(texts):
+            spaces[i].set_text(text)
+
+
+        max_text_size = min([textSpace.get_text_max_size() for textSpace in spaces])
+
+        for space in spaces:
+            space.set_size(max_text_size)
+
+
+
+        for space in spaces:
+            all_text = all_text.add(space.get_text_shape())
+
+
+        all_text = self.punchBearingHoles(all_text, back=True)
+
+        return all_text
+
+
+    def getPlate(self, back=True, for_printing=True):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
         Designed to be flat up against the wall, with everything offset to avoid the wall and picture rail
@@ -2139,33 +2242,13 @@ class SimpleClockPlates:
                     plate = plate.union(self.get_bottom_pillar().translate(bottomPillarPos).translate((0, 0, thick)))
                 plate = plate.union(self.get_top_pillar().translate(self.topPillarPos).translate((0, 0, thick)))
 
+            plate = plate.cut(self.getText())
 
 
 
-            #this definitely needs tidying up.
-            textMultiMaterial = cq.Workplane("XY")
-            textSize = topPillarR * 0.9
-            textY = (self.bearingPositions[0][1] + self.plate_fixings[2][1]) / 2
-            textXs=[-textSize*0.4,+textSize*0.6]
-            angle=90
-            if self.goingTrain.escapement.type == EscapementType.GRASSHOPPER:
-                #TODO check all the gaps and choose the largest, so we don't have to care about which escapemetn it is?
-                textY = (self.bearingPositions[-1][1] + self.bearingPositions[-2][1])/2
-            if self.bottom_pillars > 1:
-                textY = self.bearingPositions[0][1]
-                angle=0
-                textXs = [self.bottomPillarPositions[0][0]/2, self.bottomPillarPositions[1][0]/2]
-
-
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{} {:.1f}".format(self.name, self.goingTrain.pendulum_length * 100), (textXs[0], textY), textSize, angle=angle)
-
-            plate, textMultiMaterial = self.addText(plate, textMultiMaterial, "{}".format(datetime.date.today().strftime('%Y-%m-%d')), (textXs[1], textY), textSize, angle=angle)
-            #in case they overlapped with a bearing hole - crude fix rather than locating the text better
-            textMultiMaterial = self.punchBearingHoles(textMultiMaterial, back=back)
-            if getText:
-                return textMultiMaterial
 
         plate = self.punchBearingHoles(plate, back)
+
 
 
         if not back:
@@ -2618,15 +2701,6 @@ class SimpleClockPlates:
 
         return plate
 
-    def addText(self,plate, multimaterial, text, pos, textSize, angle=90):
-        # textSize =  width*0.25
-        # textYOffset = width*0.025
-        y = pos[1]
-        textYOffset = 0  + pos[0]# width*0.1
-        text = cq.Workplane("XY").moveTo(0, 0).text(text, textSize, LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0,),(0, 0, 1), 90).rotate((0,0,0,),(1, 0, 0), 180).translate((textYOffset, y, 0))
-
-        return plate.cut(text), multimaterial.add(text)
-
     def frontAdditionsToPlate(self, plate):
         '''
         stuff only needed to be added to the front plate
@@ -2757,9 +2831,9 @@ class SimpleClockPlates:
             if ratchetD > self.bottomPillarR:
                 plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(self.getPlateThick(back=False)).translate(self.bottomPillarPositions).translate((0, self.huygens_wheel_y_offset)))
 
-        if not self.escapementOnFront and not self.huygensMaintainingPower and not self.pendulumAtFront and self.bottom_pillars > 1:
+        if not self.escapementOnFront and not self.huygensMaintainingPower and not self.pendulumAtFront and self.bottom_pillars > 1 and not self.goingTrain.chainAtBack:
             #add a semicircular bit under the chain wheel (like on huygens) to stop chain from being able to fall off easily
-            #TODO support cord wheels?
+            #TODO support cord wheels and chain at back
 
             powered_wheel = self.goingTrain.poweredWheel
 
@@ -2899,7 +2973,7 @@ class SimpleClockPlates:
 
         out = os.path.join(path, "{}_back_plate_textcolour.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getPlate(True, True), out)
+        exporters.export(self.getText(), out)
 
         if self.pillars_separate:
             out = os.path.join(path, "{}_bottom_pillar.stl".format(name))
