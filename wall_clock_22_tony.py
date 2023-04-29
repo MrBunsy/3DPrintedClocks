@@ -99,7 +99,7 @@ hands = clock.Hands(style=clock.HandStyle.ARROWS,  minuteFixing="square",  minut
 # print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30,weights=[clock.Weight(height=245,diameter=55)])
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#,weights=[clock.Weight(height=245,diameter=55)])
 
 # show_object(plates.getPlate(back=True))
 show_object(assembly.getClock(with_key=False, with_pendulum=True))

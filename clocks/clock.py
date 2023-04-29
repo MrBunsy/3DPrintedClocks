@@ -2223,6 +2223,8 @@ class SimpleClockPlates:
 
         #top and bottom screws are different lengths if there is a front-mounted escapement
 
+        #TODO - could easily have a larger hole in the standoff so the screw or nut starts deeper and thus need shorter screws
+
         print("Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
         if top_screw_length > 60 and self.fixingScrews.metric_thread < 4:
             raise ValueError("WARNING may not be able to source screws long enough, try M4")
@@ -2754,6 +2756,40 @@ class SimpleClockPlates:
             plate = plate.union(ratchet.translate(self.bottomPillarPositions).translate((0, self.huygens_wheel_y_offset, self.getPlateThick(back=False))))
             if ratchetD > self.bottomPillarR:
                 plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(self.getPlateThick(back=False)).translate(self.bottomPillarPositions).translate((0, self.huygens_wheel_y_offset)))
+
+        if not self.escapementOnFront and not self.huygensMaintainingPower and not self.pendulumAtFront and self.bottom_pillars > 1:
+            #add a semicircular bit under the chain wheel (like on huygens) to stop chain from being able to fall off easily
+            #TODO support cord wheels?
+
+            powered_wheel = self.goingTrain.poweredWheel
+
+            chainholeD = powered_wheel.getChainHoleD()
+            holePositions = powered_wheel.getChainPositionsFromTop()
+            relevantChainHoles = [pair[0] for pair in holePositions]
+
+
+            minThickAroundChainHole = 3
+            thick = 3
+
+
+            outer_r = powered_wheel.ratchet.outsideDiameter/2 +self.gearGap + thick
+            deep = powered_wheel.getHeight()-powered_wheel.ratchet.thick/2
+
+            extra_plate = cq.Workplane("XY").circle(outer_r).extrude(plateThick)
+            extra_plate = extra_plate.union(cq.Workplane("XY").circle(outer_r).circle(outer_r - thick).extrude(deep).translate((0,0,-deep)))
+
+            extra_plate = extra_plate.intersect(cq.Workplane("XY").moveTo(0,-outer_r - self.bottom_pillar_height/2).rect(outer_r*2, outer_r*2).extrude(self.plateDistance + plateThick).translate((0,0,-self.plateDistance)))
+            cutter = cq.Workplane("XY")
+            for holePosition in relevantChainHoles:
+                #chainholes are relative to the assumed height of the chainwheel, which includes a washer
+                chainHole = cq.Workplane("XZ").moveTo(holePosition[0], holePosition[1] - self.endshake/2).circle(chainholeD / 2).extrude(1000)
+                cutter.add(chainHole)
+
+            extra_plate = extra_plate.cut(cutter)
+
+            plate = plate.union(extra_plate.translate(self.bearingPositions[0][:2]))
+
+
 
         if self.escapementOnFront and not self.extraFrontPlate and False:
             #this is a bearing extended out the front. I'm no longer convinced it's needed for the grasshopper

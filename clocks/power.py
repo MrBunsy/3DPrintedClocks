@@ -1964,7 +1964,7 @@ class PocketChainWheel2:
 
         '''
 
-        zOffset = - WASHER_THICK_M3 - self.wheel_thick/2
+        zOffset = - SMALL_WASHER_THICK_M3 - self.wheel_thick/2
 
         return [[(-self.radius, zOffset)], [(self.radius, zOffset)]]
 
