@@ -1375,7 +1375,11 @@ class SimpleClockPlates:
 
         if self.narrow_bottom_pillar:
             self.bottom_pillar_height = self.bottomPillarR*2
-            self.bottom_pillar_width = self.fixingScrews.getNutContainingDiameter()+5
+            # I hadn't measured an m4 nut, and now I've printed half the clock!
+            #TODO fix this later!
+            self.bottom_pillar_width = 14.46854441470986
+            # self.bottom_pillar_width = self.fixingScrews.getNutContainingDiameter() + 5
+            print("bottom_pillar_width", self.bottom_pillar_width)
 
         self.topPillarR = self.plateWidth / 2
 
@@ -2342,6 +2346,7 @@ class SimpleClockPlates:
 
         #TODO - could easily have a larger hole in the standoff so the screw or nut starts deeper and thus need shorter screws
 
+        #note - can use threaded rod with nuts on both ends by configuring plates with non-countersunk screws
         print("Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
         if top_screw_length > 60 and self.fixingScrews.metric_thread < 4:
             raise ValueError("WARNING may not be able to source screws long enough, try M4")

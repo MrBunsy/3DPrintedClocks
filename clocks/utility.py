@@ -84,6 +84,8 @@ def getNutContainingDiameter(metric_thread, wiggleRoom=0):
 
     if metric_thread == 3:
         nutWidth = 5.4
+    if metric_thread == 4:
+        nutWidth = 6.85
 
     nutWidth += wiggleRoom
 
