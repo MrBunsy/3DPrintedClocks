@@ -222,6 +222,15 @@ class Dial:
         '''
         return self.style in [DialStyle.TONY_THE_CLOCK]
 
+    def has_eyes(self):
+        '''
+        has eyes that rotate with the pendulum
+        '''
+        return self.style in [DialStyle.TONY_THE_CLOCK]
+
+    def has_seconds_sub_dial(self):
+        return self.second_hand_mini_dial_d > 0
+
     def override_fixing_positions(self, fixing_positions):
         '''
         expects list of lists:
@@ -573,7 +582,15 @@ class Dial:
 
         return eye,pupil
 
-    def get_wire_to_arbor_fixer(self, rod_d=3):
+    def get_wire_to_arbor_fixer_thick(self, rod_d=3):
+        '''
+        separate so it can be used in teh rod length calculations
+        '''
+        screw = MachineScrew(rod_d)
+        return screw.getNutHeight(nyloc=True) * 2
+
+
+    def get_wire_to_arbor_fixer(self, rod_d=3, for_printing=True):
         '''
         bit like the friction-fit pendulum holder, screws onto a rod and provides ability to glue a wire in
 
@@ -582,9 +599,9 @@ class Dial:
 
         screw = MachineScrew(rod_d)
 
-        width = rod_d*3
+        width = screw.getNutContainingDiameter()+4
         length = rod_d*5
-        thick = screw.getNutHeight(nyloc=True)*2
+        thick = self.get_wire_to_arbor_fixer_thick(rod_d)
 
         holder = cq.Workplane("XY").moveTo(0,(length-width)/2).rect(width,length-width).extrude(thick)
         holder = holder.union(cq.Workplane("XY").circle(width/2).extrude(thick))
@@ -595,7 +612,8 @@ class Dial:
 
         holder= holder.cut(screw.getNutCutter(nyloc=True).translate((0,0,thick - screw.getNutHeight(nyloc=True))))
 
-
+        if not for_printing:
+            holder = holder.rotate((0,0,0),(1,0,0),180).translate((0,0,thick))
 
         return holder
 

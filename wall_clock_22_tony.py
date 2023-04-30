@@ -102,7 +102,7 @@ hands = clock.Hands(style=clock.HandStyle.ARROWS,  minuteFixing="square",  minut
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#,weights=[clock.Weight(height=245,diameter=55)])
 
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock(with_key=False, with_pendulum=True))
+show_object(assembly.getClock(with_key=False, with_pendulum=True, with_rods=True))
 
 # show_object(plates.getDrillTemplate(6))
 

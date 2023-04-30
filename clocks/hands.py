@@ -359,6 +359,9 @@ class Hands:
         self.second_hand_centred = second_hand_centred
         self.seconds_hand_through_hole = second_hand_centred
 
+        #the second hand doesn't have the rod go all the way through - how thick should the bit that stops on the end of the rod be?
+        self.second_rod_end_thick = self.secondThick/2
+
         #try to make the second hand counterbalanced
         self.second_hand_balanced = second_hand_centred
 
@@ -428,7 +431,7 @@ class Hands:
             #second hand, assuming threaded onto a threaded rod, hole doesn't extend all the way through unless centred seconds hand
             # hand = hand.moveTo(0, 0).circle(self.secondFixing_d / 2).cutThruAll()
 
-            z_offset =self.secondThick/2
+            z_offset =self.second_rod_end_thick
             if self.seconds_hand_through_hole:
                 z_offset = 0
 

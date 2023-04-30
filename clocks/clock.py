@@ -3130,13 +3130,15 @@ class Assembly:
         back_plate_thick = self.plates.getPlateThick(back=True)
 
         #how much extra to extend out the bearing
-        spare_rod_length_behind_bearing=3
+        spare_rod_length_beyond_bearing=3
         #extra length out the front of hands, or front-mounted escapements
         spare_rod_length_in_front=2
         rod_lengths = []
         rod_zs = []
         #for measuring where to put the arbour on the rod, how much empty rod should behind the back of the arbour?
         beyond_back_of_arbours = []
+
+
 
         for i in range(self.arbourCount):
 
@@ -3147,11 +3149,15 @@ class Assembly:
             bearing = getBearingInfo(arbour.arbourD)
             bearing_thick = bearing.bearingHeight
 
-            length_up_to_inside_front_plate = spare_rod_length_behind_bearing + bearing_thick + plate_distance
+            length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
 
-            beyond_back_of_arbour = spare_rod_length_behind_bearing + bearing_thick + self.plates.endshake
+            beyond_back_of_arbour = spare_rod_length_beyond_bearing + bearing_thick + self.plates.endshake
             #true for nearly all of it
-            rod_z = back_plate_thick - (bearing_thick + spare_rod_length_behind_bearing)
+            rod_z = back_plate_thick - (bearing_thick + spare_rod_length_beyond_bearing)
+
+            #"normal" arbour that does not extend out the front or back
+            simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
 
             #trying to arrange all the additions from back to front to make it easy to check
             if arbour.type == ArbourType.CHAIN_WHEEL:
@@ -3161,10 +3167,10 @@ class Assembly:
                         square_bit_out_front = powered_wheel.keySquareBitHeight - (front_plate_thick - powered_wheel.bearing.bearingHeight) - self.plates.endshake/2
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
 
-
-
                 else:
-                    raise ValueError("TODO calculate rod lengths for powered wheel type: {}".format(arbour.type.value))
+                    #assume all other types of powered wheel lack a key and thus are just inside the plates
+                    rod_length = simple_arbour_length
+
             elif arbour.type == ArbourType.WHEEL_AND_PINION:
                 if i == self.goingTrain.chainWheels:
                     #minute wheel
@@ -3177,29 +3183,42 @@ class Assembly:
                         else:
                             rod_length = minimum_rod_length + spare_rod_length_in_front
                     else:
-                        raise ValueError("TODO calculate rod lengths for normal hand holder")
+                        rod_length = hand_arbor_length
                 else:
                     # "normal" arbour
-                    rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_behind_bearing
+                    rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
             elif arbour.type == ArbourType.ESCAPE_WHEEL:
                 if self.plates.escapementOnFront:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
-                    rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + self.hands.secondFixing_thick + self.hands.secondThick + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+                    rod_length = hand_arbor_length + self.hands.secondFixing_thick + self.hands.secondThick
                 elif self.goingTrain.has_seconds_hand():
-                    #little seconds hand
-                    rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
+                    if self.dial is not None and self.dial.has_seconds_sub_dial():
+                        #if the rod doesn't go all the way through the second hand
+                        hand_thick_accounting = self.hands.secondThick - self.hands.second_rod_end_thick
+                        if self.hands.seconds_hand_through_hole:
+                            hand_thick_accounting = self.hands.secondThick
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.dial.support_length + self.dial.thick + self.hands.secondFixing_thick + hand_thick_accounting
+                    else:
+                        #little seconds hand just in front of the plate
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
                 else:
                     #"normal" arbour
-                    rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_behind_bearing
+                    rod_length = simple_arbour_length
             elif arbour.type == ArbourType.ANCHOR:
                 if self.plates.escapementOnFront:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.backPlateFromWall > 0 and not self.plates.pendulumAtFront:
-                    rod_length = spare_rod_length_behind_bearing + bearing_thick + (self.plates.backPlateFromWall - self.plates.getPlateThick(standoff=True)) + self.plates.getPlateThick(back=True) + plate_distance + bearing_thick + spare_rod_length_behind_bearing
-                    rod_z = -self.plates.backPlateFromWall + (self.plates.getPlateThick(standoff=True) - bearing_thick - spare_rod_length_behind_bearing)
+                    rod_length_to_back_of_front_plate = spare_rod_length_beyond_bearing + bearing_thick + (self.plates.backPlateFromWall - self.plates.getPlateThick(standoff=True)) + self.plates.getPlateThick(back=True) + plate_distance
 
+                    if self.dial is not None and self.dial.has_eyes():
+                        rod_length = rod_length_to_back_of_front_plate + front_plate_thick + self.plates.endshake + 1 + self.dial.get_wire_to_arbor_fixer_thick() + 5
+                    else:
+                        rod_length = rod_length_to_back_of_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+                    rod_z = -self.plates.backPlateFromWall + (self.plates.getPlateThick(standoff=True) - bearing_thick - spare_rod_length_beyond_bearing)
+                else:
+                    raise ValueError("TODO calculate rod lengths for pendulum on front")
             rod_lengths.append(rod_length)
             rod_zs.append(rod_z)
             beyond_back_of_arbours.append(beyond_back_of_arbour)
@@ -3288,6 +3307,8 @@ class Assembly:
         if self.dial is not None:
             dial = self.dial.get_assembled()#get_dial().rotate((0,0,0),(0,1,0),180)
             clock = clock.add(dial.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + frontOfClockZ)))
+            if self.dial.has_eyes():
+                clock = clock.add(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate((self.plates.bearingPositions[-1][0],self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake + 1)))
 
 
         #hands on the motion work, showing the time
