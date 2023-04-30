@@ -438,6 +438,7 @@ if False:
         show_object(pupil.translate((x * dial.get_tony_dimension("eye_spacing") / 2, dial.outside_d / 2 - dial.get_tony_dimension("eyes_from_top"), -dial.thick - dial.eye_pivot_z)), options={"color": "black"})
 
 if False:
+    #testing the slots for holding an eyeball
     dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
     test_eye_hole = dial.get_dial().union(dial.get_tony_face_detail()).intersect(cq.Workplane("XY").moveTo(dial.eye_distance_apart/2, dial.eye_y).circle(dial.eye_hole_d*0.75+7).extrude(50))
     show_object(test_eye_hole)
@@ -447,12 +448,17 @@ if False:
     print("Outputting ", out)
     exporters.export(test_eye_hole, out)
 
-text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 
-# cadquery.BoundBox()
-print(text.val().BoundingBox().center)
+dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
 
-show_object(text.rotate((0, 0, 0), (0, 1, 0), 180).translate((0,0,LAYER_THICK)))
+show_object(dial.get_wire_to_arbor_fixer())
+
+# text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
+#
+# # cadquery.BoundBox()
+# print(text.val().BoundingBox().center)
+#
+# show_object(text.rotate((0, 0, 0), (0, 1, 0), 180).translate((0,0,LAYER_THICK)))
 # show_object(cq.Workplane("XY").rect(10,10).extrude(10).cut(cq.Solid.makeCone(radius1=0, radius2=50, height=50)))
 
 # show_object(eye,options={"color":"white"} )

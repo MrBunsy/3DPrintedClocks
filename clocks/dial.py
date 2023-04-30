@@ -145,6 +145,7 @@ class Dial:
         #bit of a bodge, for tony the detail is in yellow so I need it thicker (my yellow is really translucent)
         self.extras_thick = extras_thick
 
+
         #something for debugging
         self.configure_dimensions(support_length=30, support_d=15, outside_d=outside_d)
 
@@ -158,7 +159,7 @@ class Dial:
 
         return 3
 
-    def configure_dimensions(self, support_length, support_d, outside_d=-1, second_hand_mini_dial_d=0, second_hand_relative_pos=None):
+    def configure_dimensions(self, support_length, support_d, outside_d=-1, second_hand_relative_pos=None):
         '''
         since the dimensions aren't known until the plates have been calculated, the main constructor is for storing the style and this actually sets the size
         Bit of a bodge, but the obvious alternative is to pass all the dial settings into clocks plates (or a new class for dial config?)
@@ -170,8 +171,7 @@ class Dial:
             self.outside_d = outside_d
             # else leave the default
             self.dial_width = self.outside_d * 0.1
-        # if >0, add a mini dial for the second hand
-        self.second_hand_mini_dial_d = second_hand_mini_dial_d
+
         # when the second hand is here relative to the centre of the main hands
         self.second_hand_relative_pos = second_hand_relative_pos
         if self.support_d > self.dial_width:
@@ -186,6 +186,11 @@ class Dial:
 
         self.dial_detail_from_edges = self.outside_d * 0.01
         self.seconds_dial_detail_from_edges = self.dial_detail_from_edges * 0.75
+        self.second_hand_mini_dial_d = 0
+
+        if self.second_hand_relative_pos is not None:
+            # add a mini dial for the second hand (NOTE assumes second hand is vertical)
+            self.second_hand_mini_dial_d = ((self.outside_d/2 - self.dial_width + self.dial_detail_from_edges) - self.second_hand_relative_pos[1])*2
 
         if self.style == DialStyle.TONY_THE_CLOCK:
             self.outer_ring_thick=2
@@ -568,6 +573,31 @@ class Dial:
 
         return eye,pupil
 
+    def get_wire_to_arbor_fixer(self, rod_d=3):
+        '''
+        bit like the friction-fit pendulum holder, screws onto a rod and provides ability to glue a wire in
+
+        Intended to drive the eyes from the pendulum
+        '''
+
+        screw = MachineScrew(rod_d)
+
+        width = rod_d*3
+        length = rod_d*5
+        thick = screw.getNutHeight(nyloc=True)*2
+
+        holder = cq.Workplane("XY").moveTo(0,(length-width)/2).rect(width,length-width).extrude(thick)
+        holder = holder.union(cq.Workplane("XY").circle(width/2).extrude(thick))
+        holder = holder.union(cq.Workplane("XY").moveTo(0,length-width).circle(width / 2).extrude(thick))
+
+        holder = holder.faces(">Z").moveTo(0,length-width).circle(self.eye_bendy_wire_d/2).cutThruAll()
+        holder = holder.faces(">Z").moveTo(0,0).circle(rod_d/2).cutThruAll()
+
+        holder= holder.cut(screw.getNutCutter(nyloc=True).translate((0,0,thick - screw.getNutHeight(nyloc=True))))
+
+
+
+        return holder
 
     def get_extras(self):
         '''
@@ -584,6 +614,7 @@ class Dial:
             eye, pupil = self.get_eye()
             extras["eye_white"] = eye
             extras["eye_black"] = pupil
+            extras["eye_wire_to_arbor_fixer"] = self.get_wire_to_arbor_fixer()
         return extras
 
     def get_halfs(self, shape):

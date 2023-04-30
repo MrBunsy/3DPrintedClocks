@@ -1208,6 +1208,16 @@ class SimpleClockPlates:
             motionWorksPos = polar(minuteAngle - angle, self.compactRadius)
             motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
             self.motionWorksRelativePos = (motionWorksPos[0] - self.bearingPositions[self.goingTrain.chainWheels][0], motionWorksPos[1] - self.bearingPositions[self.goingTrain.chainWheels][1])
+        elif self.style == ClockPlateStyle.COMPACT and self.motionWorksAbove and self.goingTrain.has_seconds_hand() and not self.centred_second_hand and self.extraHeavy:
+            '''
+            niche case maybe?
+            put the motion works along the arm to the offset gear
+            '''
+            direction = np.subtract(self.bearingPositions[self.goingTrain.chainWheels +1][:2], self.bearingPositions[self.goingTrain.chainWheels][:2])
+            #make unit vector
+            direction = np.multiply(direction, 1/np.linalg.norm(direction))
+
+            self.motionWorksRelativePos = npToSet(np.multiply(direction, motionWorksDistance))
         else:
             # motion works is directly below the minute rod
             self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
@@ -1267,15 +1277,15 @@ class SimpleClockPlates:
                 second_hand_relative_pos = npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2]
 
                 if self.centred_second_hand:
-                    second_hand_mini_dial_d = -1
+                    # second_hand_mini_dial_d = -1
                     second_hand_relative_pos = None
-                else:
-                    distance_to_seconds = np.linalg.norm(second_hand_relative_pos)
+                # else:
+                    # distance_to_seconds = np.linalg.norm(second_hand_relative_pos)
                     #just overlapping a tiny bit
-                    second_hand_mini_dial_d = (self.dial.inner_r - distance_to_seconds + 2)*2
-                    print("second_hand_mini_dial_d: {}".format(second_hand_mini_dial_d))
+                    # second_hand_mini_dial_d = (self.dial.inner_r - distance_to_seconds + 2)*2
+                    # print("second_hand_mini_dial_d: {}".format(second_hand_mini_dial_d))
 
-                self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d,second_hand_relative_pos=second_hand_relative_pos , second_hand_mini_dial_d=second_hand_mini_dial_d)
+                self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d,second_hand_relative_pos=second_hand_relative_pos )
             else:
                 self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d)
 
@@ -1948,7 +1958,7 @@ class SimpleClockPlates:
         else:
             if self.bottom_pillars > 1:
                 # make back thinner, not needed for strength so much as stability
-                back_thick = 4
+                back_thick = 5
                 screwhole_back_thick = back_thick
                 for pillarPos in pillarPositions:
                     standoff = standoff.union(self.get_pillar(top=top, flat=True).extrude(self.backPlateFromWall).translate(pillarPos))
@@ -2042,6 +2052,9 @@ class SimpleClockPlates:
                 #actually centre it, the align feature of text does...something else
                 shape = shape.translate((-bb.center.x, -bb.center.y))
 
+                if not self.horizontal:
+                    shape = shape.rotate((0,0,0),(0,0,1),90)
+
                 if self.inverted:
                     shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0,0,LAYER_THICK))
                 shape = shape.translate((self.x,self.y))
@@ -2057,18 +2070,13 @@ class SimpleClockPlates:
                 return self.text_size * min(width_ratio, height_ratio)
 
 
-            def text_fits(self, text_obj):
-                bb = text_obj.val().BoundingBox()
-                return bb.xlen < self.width and bb.ylen < self.height
-
-
         all_text = cq.Workplane("XY")
 
         texts = [
             self.name,
-            "{:.1f}cm".format(self.goingTrain.pendulum_length*100),
             "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
-            "Luke Wallin"
+            "Luke Wallin",
+            "{:.1f}cm".format(self.goingTrain.pendulum_length * 100)
         ]
 
         #(x,y,width,height, horizontal)
@@ -2096,6 +2104,30 @@ class SimpleClockPlates:
             '''
             vertical long the plate between bearings
             '''
+            #between bottom pillar and lowest bearing
+            bottom_pos = (self.bottomPillarPositions[0][0], self.bottomPillarPositions[0][1] + self.bottomPillarR)
+            chain_pos = self.bearingPositions[0][:2]
+            first_arbour_pos = self.bearingPositions[1][:2]
+
+            chain_space = self.arboursForPlate[0].bearing.outerD/2
+            arbour_space = self.arboursForPlate[1].bearing.outerD/2
+
+            if self.heavy:
+                text_height = self.bottomPillarR*2 * 0.3
+                #three along the wide bit at the bottom and one above
+                spaces.append(TextSpace(bottom_pos[0] - self.bottomPillarR +  self.bottomPillarR / 3, (bottom_pos[1] + chain_pos[1]) / 2, text_height, chain_pos[1] - bottom_pos[1], horizontal=False))
+                spaces.append(TextSpace(bottom_pos[0], (bottom_pos[1] + (chain_pos[1]-chain_space)) / 2, text_height, chain_pos[1] - chain_space - bottom_pos[1], horizontal=False))
+                spaces.append(TextSpace(bottom_pos[0] + self.bottomPillarR -  self.bottomPillarR / 3, (bottom_pos[1] + chain_pos[1]) / 2, text_height, chain_pos[1] - bottom_pos[1], horizontal=False))
+
+                spaces.append(TextSpace(chain_pos[0], (first_arbour_pos[1]-arbour_space + chain_pos[1] + chain_space) / 2, self.plateWidth*0.9, first_arbour_pos[1]-arbour_space - (chain_pos[1] + chain_space), horizontal=False))
+            else:
+                #two and two
+                spaces.append(TextSpace(bottom_pos[0] - self.plateWidth / 4, (bottom_pos[1] + chain_pos[1]) / 2, self.plateWidth / 2, chain_pos[1] - bottom_pos[1], horizontal=False))
+                spaces.append(TextSpace(bottom_pos[0] + self.plateWidth / 4, (bottom_pos[1] + chain_pos[1]) / 2, self.plateWidth / 2, chain_pos[1] - bottom_pos[1], horizontal=False))
+
+                spaces.append(TextSpace(chain_pos[0] - self.plateWidth / 4, (first_arbour_pos[1] + chain_pos[1]) / 2, self.plateWidth / 2, first_arbour_pos[1] - chain_pos[1], horizontal=False))
+                spaces.append(TextSpace(chain_pos[0] + self.plateWidth / 4, (first_arbour_pos[1] + chain_pos[1]) / 2, self.plateWidth / 2, first_arbour_pos[1] - chain_pos[1], horizontal=False))
+
 
         for i,text in enumerate(texts):
             spaces[i].set_text(text)
@@ -2385,7 +2417,7 @@ class SimpleClockPlates:
 
         #for chainholes and things which assume one pillar
         bottomPillarPos = self.bottomPillarPositions[0]
-        if self.extraHeavy:
+        if self.extraHeavy and self.bottom_pillars == 1:
             '''
             beef up the bottom pillar
             bottomPillarR^2 + x^2 = chainWheelR^2
@@ -2515,10 +2547,10 @@ class SimpleClockPlates:
 
             # original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
             # so instead, put a screw in from the front
-            pulleyY = self.bottomPillarPositions[1] + self.bottomPillarR / 2
+            pulleyY = self.bottomPillarPositions[0][1] + self.bottomPillarR / 2
             if self.extraHeavy:
                 #bring it nearer the top, making it easier to tie the cord around it
-                pulleyY = self.bottomPillarPositions[1] + self.bottomPillarR - self.fixingScrews.metric_thread
+                pulleyY = self.bottomPillarPositions[0][1] + self.bottomPillarR - self.fixingScrews.metric_thread
             # this screw will provide something for the cord to be tied round
             pulleyScrewHole = self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0),180).translate((pulleyX,pulleyY,self.plateDistance))
 
@@ -2675,7 +2707,7 @@ class SimpleClockPlates:
             #assumes plate has been tagged
             #removing all the old bodges and simplifying
             # extraSupportSize = screwHeadD*1.25
-            extraSupportSize = self.plateWidth/2
+            extraSupportR = self.plateWidth*0.5
             supportCentre=[screwholePos[0], screwholePos[1]- slotLength]
 
             # if self.heavy:
@@ -2686,7 +2718,8 @@ class SimpleClockPlates:
             #         #this can be a bit finnickity - I think if something lines up exactly wrong with the bearing holes?
             #         supportCentre[0] += (-1 if screwholePos[0] > 0 else 1) * extraSupportSize*0.5
             #
-            plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(plate_thick)
+            # plate = plate.workplaneFromTagged("base").moveTo(supportCentre[0], supportCentre[1] ).circle(extraSupportSize).extrude(plate_thick)
+            plate = plate.union(get_stroke_line([(screwholePos[0], screwholePos[1]- slotLength), (screwholePos[0], screwholePos[1])], wide=extraSupportR*2, thick=plate_thick))
 
         #big hole
         plate = plate.faces(">Z").workplane().tag("top").moveTo(screwholePos[0], screwholePos[1] - slotLength).circle(screwHeadD / 2).cutThruAll()
