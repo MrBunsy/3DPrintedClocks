@@ -1078,6 +1078,8 @@ class SimpleClockPlates:
             #now found supplies of pozihead countersunk screws up to 60mm, so planning to use two screws (each at top and bottom) to hold everything together
             self.fixingScrews = MachineScrew(metric_thread=3, countersunk=True)#, length=25)
 
+        self.motion_works_screws = MachineScrew(metric_thread=self.arbourD, countersunk=True)
+
         #for some dials (filled-in ones like tony) it won't be possible to get a screwdriver (or the screw!) in from the front, so instead screw in from the back
         #currently this also implies that the nuts will be sticking out the front plate (I don't want to embed them in the plate and weaken it)
         self.screws_from_back = screws_from_back
@@ -2730,10 +2732,10 @@ class SimpleClockPlates:
             #screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = npToSet(np.add(self.motionWorksPos, pos))
-                plate = plate.cut(cq.Workplane("XY").circle(self.fixingScrews.get_diameter_for_die_cutting()/2).extrude(self.getPlateThick(back=False)).translate(screw_pos))
+                plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(self.getPlateThick(back=False)).translate(screw_pos))
         else:
             #hole for screw to hold motion works arbour
-            plate = plate.cut(self.fixingScrews.getCutter().translate(motionWorksPos))
+            plate = plate.cut(self.motion_works_screws.getCutter().translate(motionWorksPos))
 
         #embedded nut on the front so we can tighten this screw in
         #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.
