@@ -72,15 +72,32 @@ class BowTie:
         y_scale = -self.height / (math.pi * peaks * 2)
         y_offset = self.height/2
 
-        for t in np.linspace(0, math.pi * peaks * 2, num=100):
-            points.append((math.sin(t) * x_scale + x_offset, t * y_scale + y_offset))
+        arc_angle = math.atan((self.height/2)/(self.width/2))*2
+
+        num_points = 100
+
+        d_a = math.pi * peaks * 2 / num_points
+
+        for t in np.linspace(0, math.pi * peaks * 2, num=num_points):
+            angle = -(arc_angle / (math.pi * peaks * 2)) * t + arc_angle/2
+            print(radToDeg(angle))
+            # x,y = polar(angle,(math.sin(t) * x_scale))
+            points.append(polar(angle,(math.sin(t) * x_scale + x_offset)))
+            # points.append(polar(angle, x_offset))
 
         curve_angle_from_90 = degToRad(10)
+
+        # return cq.Workplane("XY").spline(listOfXYTuple=points[1:-1]).line(-10,0).close().extrude(self.thick)
+        # return cq.Workplane("XY").moveTo(0, self.centre_height / 2).lineTo(self.centre_width / 2, self.centre_height / 2).lineTo(points[0][0], points[0][1]).spline(
+        #     listOfXYTuple=points).close().extrude(self.thick)
+        # return cq.Workplane("XY").moveTo(0, self.centre_height/2).lineTo(self.centre_width/2, self.centre_height/2).spline([points[0]], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)]).spline(listOfXYTuple=points[1:-1]).close().extrude(self.thick)
+
         #.spline([(self.width/2, self.height/2)], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
-        bow = cq.Workplane("XY").moveTo(0, self.centre_height/2).lineTo(self.centre_width/2, self.centre_height/2).spline([(self.width/2, self.height/2)], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
+        bow = cq.Workplane("XY").moveTo(0, self.centre_height/2).lineTo(self.centre_width/2, self.centre_height/2).spline([points[0]], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
             .spline(listOfXYTuple=points).\
             spline(listOfXYTuple=[(self.centre_width/2, -self.centre_height/2)], includeCurrent=True, tangents=[polar(math.pi-curve_angle_from_90,1), None]).lineTo(0, -self.centre_height/2).mirrorY().extrude(self.thick)
         #lineTo(self.width/2, -self.height/2)
+
         return bow
 
 class ItemWithCosmetics:
