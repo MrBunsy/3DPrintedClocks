@@ -458,9 +458,20 @@ lock=2
 escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
 pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)
-bow = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
+bow_tie = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
 
-show_object(bow.get_outline())
+# show_object(bow.get_outline())
+# show_object(bow.get_red(),options={"color":"red"} )
+# show_object(bow.get_yellow(),options={"color":"yellow"} )
+
+cosmetics={"red": bow_tie.get_red(),
+           "yellow": bow_tie.get_yellow()}
+
+pretty_bob = ItemWithCosmetics(shape = pendulum.getBob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics)
+
+show_object(pretty_bob.get_models())
+
+
 # text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 #
 # # cadquery.BoundBox()

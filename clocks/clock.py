@@ -3227,7 +3227,7 @@ class Assembly:
             rod_lengths.append(rod_length)
             rod_zs.append(rod_z)
             beyond_back_of_arbours.append(beyond_back_of_arbour)
-            print("Arbour {} rod length: {}mm with {:.1f}mm beyond the arbour".format(i, round(rod_length), beyond_back_of_arbour))
+            print("Arbour {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i,self.plates.arboursForPlate[i].bearing.innerD, round(rod_length), beyond_back_of_arbour))
 
 
 

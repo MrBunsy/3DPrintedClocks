@@ -52,6 +52,13 @@ class BowTie:
         if self.centre_width < bob_nut_width:
             self.centre_width = bob_nut_width
 
+        #for a bow tie on teh pendulum bob
+        self.cut_hole = bob_nut_width > 0 and bob_nut_height >0
+
+        self.bob_nut_width =bob_nut_width
+        self.bob_nut_height =bob_nut_height
+
+
         self.colour_line_thick = self.centre_height/3
 
 
@@ -76,29 +83,37 @@ class BowTie:
 
         num_points = 100
 
-        d_a = math.pi * peaks * 2 / num_points
-
+        #sine wave along a circular arc
         for t in np.linspace(0, math.pi * peaks * 2, num=num_points):
             angle = -(arc_angle / (math.pi * peaks * 2)) * t + arc_angle/2
-            print(radToDeg(angle))
-            # x,y = polar(angle,(math.sin(t) * x_scale))
             points.append(polar(angle,(math.sin(t) * x_scale + x_offset)))
-            # points.append(polar(angle, x_offset))
 
-        curve_angle_from_90 = degToRad(10)
+        #undecided if I want this join to be smooth or not
+        curve_angle_from_90 = math.atan2(points[1][1]-points[0][1], points[1][0] - points[0][0])#-degToRad(10)
 
-        # return cq.Workplane("XY").spline(listOfXYTuple=points[1:-1]).line(-10,0).close().extrude(self.thick)
-        # return cq.Workplane("XY").moveTo(0, self.centre_height / 2).lineTo(self.centre_width / 2, self.centre_height / 2).lineTo(points[0][0], points[0][1]).spline(
-        #     listOfXYTuple=points).close().extrude(self.thick)
-        # return cq.Workplane("XY").moveTo(0, self.centre_height/2).lineTo(self.centre_width/2, self.centre_height/2).spline([points[0]], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)]).spline(listOfXYTuple=points[1:-1]).close().extrude(self.thick)
-
-        #.spline([(self.width/2, self.height/2)], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
         bow = cq.Workplane("XY").moveTo(0, self.centre_height/2).lineTo(self.centre_width/2, self.centre_height/2).spline([points[0]], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
             .spline(listOfXYTuple=points).\
             spline(listOfXYTuple=[(self.centre_width/2, -self.centre_height/2)], includeCurrent=True, tangents=[polar(math.pi-curve_angle_from_90,1), None]).lineTo(0, -self.centre_height/2).mirrorY().extrude(self.thick)
         #lineTo(self.width/2, -self.height/2)
+        if self.cut_hole:
+            bow = bow.faces(">Z").workplane().rect(self.bob_nut_width, self.bob_nut_height).cutThruAll()
 
         return bow
+
+    def get_red(self):
+        ring_thick = self.get_tony_dimension("bow_tie_end_thick")
+
+        red = cq.Workplane("XY").circle(self.width).circle(self.width/2 - ring_thick/6).extrude(self.thick)
+        red = red.union(cq.Workplane("XY").circle(self.width/2 - ring_thick/3).circle(self.width/2 - ring_thick/2).extrude(self.thick))
+
+        r = self.centre_height*2
+        red = red.union(cq.Workplane("XY").rect(self.centre_width + ring_thick, self.centre_height*2).extrude(self.thick).
+                        cut(cq.Workplane("XY").pushPoints([(-self.centre_width/2 - r - ring_thick/6, 0), (self.centre_width/2 + r + ring_thick/6, 0)]).circle(r).extrude(self.thick)))
+
+        return red.intersect(self.get_outline())
+
+    def get_yellow(self):
+        return self.get_outline().cut(self.get_red())
 
 class ItemWithCosmetics:
     def __init__(self, shape, name, background_colour,cosmetics, offset = None, colour_thick=LAYER_THICK*2, colour_thick_overrides=None):

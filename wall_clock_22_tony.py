@@ -75,7 +75,7 @@ train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 
-motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 # motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
@@ -102,14 +102,23 @@ hands = clock.Hands(style=clock.HandStyle.ARROWS,  minuteFixing="square",  minut
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#,weights=[clock.Weight(height=245,diameter=55)])
 
+
+bow_tie = clock.BowTie(width=dial.outside_d*clock.tony_the_clock["bow_tie_width"]/clock.tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
+cosmetics={"red": bow_tie.get_red(),
+           "yellow": bow_tie.get_yellow()}
+
+#yellow is slightly translucent - a layer of solid white behind two layers of yellow works well.
+pretty_bob = clock.ItemWithCosmetics(shape = pendulum.getBob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics, colour_thick_overrides={"yellow":clock.LAYER_THICK*3})
+
+
 # show_object(plates.getPlate(back=True))
 show_object(assembly.getClock(with_key=False, with_pendulum=True, with_rods=True))
 
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-    #
-    #
+
+    pretty_bob.output_STLs(clockName, clockOutDir)
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
@@ -117,5 +126,3 @@ if outputSTL:
     hands.outputSTLs(clockName, clockOutDir)
     # pulley.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
-
-    # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)
