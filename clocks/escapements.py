@@ -2086,6 +2086,7 @@ class Pendulum:
         self.bobR=bobD/2
         self.bobThick = bobThick
 
+        #hole for the bob nut
         self.gapHeight = self.bobNutThick + 0.5
         self.gapWidth = self.bobNutD + 1
 

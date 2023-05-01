@@ -2346,10 +2346,10 @@ class SimpleClockPlates:
 
         #TODO - could easily have a larger hole in the standoff so the screw or nut starts deeper and thus need shorter screws
 
-        #note - can use threaded rod with nuts on both ends by configuring plates with non-countersunk screws
+        #TODO add option to use threaded rod with nuts on both sides. I've bodged this for tony by printing half with screws from back, and the rest with screws from front
         print("Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
         if top_screw_length > 60 and self.fixingScrews.metric_thread < 4:
-            raise ValueError("WARNING may not be able to source screws long enough, try M4")
+            print("WARNING may not be able to source screws long enough, try M4")
         cutter = cq.Workplane("XY")
 
         nut_base_z = -self.backPlateFromWall

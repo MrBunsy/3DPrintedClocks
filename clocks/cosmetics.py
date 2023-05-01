@@ -35,12 +35,26 @@ tony_the_clock={
 }
 
 class BowTie:
-    def __init__(self, width=50, thick=1):
+    def __init__(self, width=50, thick=1, bob_nut_width=-1, bob_nut_height=-1):
         '''
-        Styled after tony the clock
+        Loosely styled after tony the clock (not adhering rigidly as I want it to fit on the pendulum bob)
+        designed so the bob nut fits in the middle
         '''
         self.width = width
         self.thick = thick
+        self.height = self.get_tony_dimension("bow_tie_height")
+
+        self.centre_width = self.get_tony_dimension("bow_tie_centre_width")
+        self.centre_height = self.get_tony_dimension("bow_tie_centre_thick")
+
+        if self.centre_height < bob_nut_height:
+            self.centre_height = bob_nut_height
+        if self.centre_width < bob_nut_width:
+            self.centre_width = bob_nut_width
+
+        self.colour_line_thick = self.centre_height/3
+
+
 
     def get_tony_dimension(self, name):
         '''
@@ -50,7 +64,24 @@ class BowTie:
 
     def get_outline(self):
 
-        bow = cq.Workplane("XY")
+        peaks = 3.5
+        points = []
+
+        x_scale = self.width * 0.02
+        x_offset = self.width / 2
+        y_scale = -self.height / (math.pi * peaks * 2)
+        y_offset = self.height/2
+
+        for t in np.linspace(0, math.pi * peaks * 2, num=100):
+            points.append((math.sin(t) * x_scale + x_offset, t * y_scale + y_offset))
+
+        curve_angle_from_90 = degToRad(10)
+        #.spline([(self.width/2, self.height/2)], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
+        bow = cq.Workplane("XY").moveTo(0, self.centre_height/2).lineTo(self.centre_width/2, self.centre_height/2).spline([(self.width/2, self.height/2)], includeCurrent=True,tangents=[None,polar(curve_angle_from_90,1)])\
+            .spline(listOfXYTuple=points).\
+            spline(listOfXYTuple=[(self.centre_width/2, -self.centre_height/2)], includeCurrent=True, tangents=[polar(math.pi-curve_angle_from_90,1), None]).lineTo(0, -self.centre_height/2).mirrorY().extrude(self.thick)
+        #lineTo(self.width/2, -self.height/2)
+        return bow
 
 class ItemWithCosmetics:
     def __init__(self, shape, name, background_colour,cosmetics, offset = None, colour_thick=LAYER_THICK*2, colour_thick_overrides=None):

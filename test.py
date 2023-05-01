@@ -449,10 +449,18 @@ if False:
     exporters.export(test_eye_hole, out)
 
 
-dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
+# dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
+# show_object(dial.get_wire_to_arbor_fixer())
 
-show_object(dial.get_wire_to_arbor_fixer())
+lift=4
+drop=2
+lock=2
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
+pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
+                          bobD=60, bobThick=10, useNylocForAnchor=False)
+bow = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
 
+show_object(bow.get_outline())
 # text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 #
 # # cadquery.BoundBox()
