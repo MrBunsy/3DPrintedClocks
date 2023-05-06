@@ -47,8 +47,11 @@ train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thickn
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
+moon_complication = clock.MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=20, module=1)
+
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH,
+                                moon_complication=moon_complication)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 motionWorks.calculateGears(arbourDistance=30)
 

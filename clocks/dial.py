@@ -8,6 +8,7 @@ from .cuckoo_bits import roman_numerals
 import numpy as np
 import os
 from .cosmetics import tony_the_clock
+from .gearing import *
 
 class MoonPhaseComplication2D:
     def __init__(self, motion_works):
@@ -75,15 +76,18 @@ class MoonPhaseComplication3D:
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half
     '''
-    def __init__(self, motion_works):
-        self.motion_works = motion_works
+    def __init__(self, pinion_teeth_on_hour_wheel=10, module=1, gear_thick=8):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
+        self.module = module
+        self.gear_thick = gear_thick
 
         bevel_min = 9
         bevel_max = 30
         wheel_min = 60
-        wheel_max = 120
+        wheel_max = 80
+        pinion_min = 9
+        pinion_max = 15
 
         '''
         wheel driven by a pinion from the hour holder
@@ -95,23 +99,22 @@ class MoonPhaseComplication3D:
 
         # if we start with this number of teeth on the pinion then it might fit without making the module size too big
         #could consider a single pin as a 1-tooth pinion
-        pinion_on_hour_wheel = 10#self.motion_works.get_cannon_pinion_teeth() + 3
+        self.pinion_teeth_on_hour_wheel = pinion_teeth_on_hour_wheel#self.motion_works.get_cannon_pinion_teeth() + 3
         # for pinion_on_hour_wheel in range(pinion_min, pinion_max):
         # print("{:.1f}% calculating moon complication gears".format(100 * (pinion_on_hour_wheel - pinion_min) / (pinion_max - pinion_min)))
         options = []
-        pinion_min = 9
-        pinion_max = 20
+
         total_combos = (wheel_max - wheel_min) * (pinion_max -pinion_min) * (wheel_max - wheel_min) * (bevel_max - bevel_min)*(bevel_max - bevel_min)
         combo = 0
         for w0 in range(wheel_min, wheel_max):
             for p1 in range(pinion_min, pinion_max):
                 for w1 in range(wheel_min, wheel_max):
-                    for bevel0 in range(bevel_min, bevel_max):
-                        for bevel1 in range(bevel_min, bevel_max):
+                    for bevel_pinion in range(bevel_min, bevel_max):
+                        for bevel_wheel in range(bevel_min, bevel_max):
                             if combo % 10000 == 0:
                                 print("{:.1f}%".format(100*combo/total_combos))
                             combo +=1
-                            ratio = (pinion_on_hour_wheel / w0) * (p1 / w1) * (bevel0 / bevel1)
+                            ratio = (pinion_teeth_on_hour_wheel / w0) * (p1 / w1) * (bevel_pinion / bevel_wheel)
                             if abs(1/ratio - 1/self.ratio) < 0.01 and w1 < w0:#0.0000002
                                 # print(self.ratio, pinion_on_hour_wheel, w0, bevel0, bevel1, ratio, 1 / ratio, self.lunar_month_hours / 12)
                                 option = {
@@ -120,9 +123,9 @@ class MoonPhaseComplication3D:
                                     "w0": w0,
                                     "p1": p1,
                                     "w1": w1,
-                                    "bevel0": bevel0,
-                                    "bevel1": bevel1,
-                                    "weighting": bevel0 + bevel1,
+                                    "bevel_pinion": bevel_pinion,
+                                    "bevel_wheel": bevel_wheel,
+                                    "weighting": bevel_pinion + bevel_wheel,
                                     "error": abs(1/ratio - 1/self.ratio)
                                 }
                                 options.append(option)
@@ -130,8 +133,25 @@ class MoonPhaseComplication3D:
         # options.sort(key=lambda x: x["weighting"])
         options.sort(key=lambda x: x["error"])
 
-        print(options)
+        #pinions driving wheels here
+        self.train = [(self.pinion_teeth_on_hour_wheel, options[0]["w0"]), (options[0]["p1"], options[0]["w1"]), (options[0]["bevel_wheel"], options[0]["bevel_pinion"])]
+        #TODO faff about with module sizes to make sure this all fits and the bevel is big enough to be reliable
+        self.pairs = [WheelPinionPair(self.train[0][1], self.train[0][0], self.module), WheelPinionPair(self.train[1][1], self.train[1][0]), WheelPinionBeveledPair(options[0]["bevel_wheel"], options[0]["bevel_pinion"], module=self.module)]
+
+        # print(options)
         print(options[0], self.lunar_month_hours / 12)
+
+
+    def get_pinion_for_motion_works_shape(self):
+        '''
+        get the Gear that should be part of the hour holder
+        '''
+        return self.pairs[0].pinion.get3D(thick=self.gear_thick)
+
+    def get_pinion_for_motion_works_max_radius(self):
+        return self.pairs[0].pinion.getMaxRadius()
+
+
 
 class Dial:
     '''

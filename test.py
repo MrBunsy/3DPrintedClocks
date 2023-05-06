@@ -561,19 +561,22 @@ if False:
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
 # show_object(getHandDemo())
-if False:
-    motionWorks = MotionWorks(extra_height=10, style=GearStyle.CURVES, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
-    # moon = MoonPhaseComplication3D(motionWorks)
+if True:
+    moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1)
+    motionWorks = MotionWorks(extra_height=10, style=GearStyle.CURVES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
 
-    # print(1/moon.ratio)
-    face_width = 6
-    bevels = BevelGearPair(module=1, gear_teeth=23, pinion_teeth=29, face_width=face_width, pressure_angle=20)
+    show_object(motionWorks.getAssembled())
+
     #
-    print(radToDeg(bevels.axis_angle), face_width*math.sin(bevels.axis_angle))
-
-    beveled_pair = WheelPinionBeveledPair(wheel_teeth=23, pinion_teeth=29, module=1)
-
-    show_object(beveled_pair.get_assembled())
+    # # print(1/moon.ratio)
+    # face_width = 6
+    # bevels = BevelGearPair(module=1, gear_teeth=23, pinion_teeth=29, face_width=face_width, pressure_angle=20)
+    # #
+    # print(radToDeg(bevels.axis_angle), face_width*math.sin(bevels.axis_angle))
+    #
+    # beveled_pair = WheelPinionBeveledPair(wheel_teeth=23, pinion_teeth=29, module=1)
+    #
+    # show_object(beveled_pair.get_assembled())
 
     # show_object(bevels.assemble())
     # testbevel = cq.Workplane("XY").add(bevels.gear.build()).intersect(cq.Workplane("XY").rect(100,100).extrude(face_width*math.sin(bevels.axis_angle/2)).translate((0,0,0)))

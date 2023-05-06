@@ -823,7 +823,7 @@ class Gear:
 
         return self.pitch_diameter/2 - dedendum_height
 
-    def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1, clockwise_from_pinion_side=True):
+    def get3D(self, holeD=0, thick=0, style=GearStyle.ARCS, innerRadiusForStyle=-1, clockwise_from_pinion_side=True):
         gear = self.get2D()
 
         if thick == 0:
@@ -2255,7 +2255,8 @@ class MotionWorks:
     STANDARD_INSET_DEPTH = 4.5
 
     def __init__(self, arbourD=3, thick=3, pinionThick=-1, module=1, minuteHandThick=3, extra_height=0,
-                 style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None, inset_at_base=-1):
+                 style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None, inset_at_base=-1,
+                 moon_complication=None):
         '''
 
         inset_at_base - if >0 (usually going to want just less than TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT) then inset the bearing or create a space large enoguh
@@ -2283,6 +2284,8 @@ class MotionWorks:
 
          Note - bits of this get overriden by the plates (for the centred seconds hands). this is a bit of a hack
 
+         moon_complication - the hour wheel will drive the moon phase complication and needs a pinion at the base of the holder
+
         '''
         self.arbourD = arbourD
         self.holeD=arbourD + 0.4
@@ -2295,6 +2298,8 @@ class MotionWorks:
         self.compact = compact
 
         self.inset_at_base = inset_at_base
+
+        self.moon_complication = moon_complication
 
         self.strikeTrigger=strikeTrigger
         #angle the hour strike should be at
@@ -2700,16 +2705,23 @@ class MotionWorks:
         # bottomR = self.hourHandHolderD / 2 + 0.7
         bottomR = self.get_widest_radius()
 
+        bottom_r_for_style = bottomR
+        if self.moon_complication is not None:
+            bottom_r_for_style = self.moon_complication.get_pinion_for_motion_works_max_radius()
+
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
         # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
         holderR_base = self.hourHandHolderD / 2 + 0.1
         holderR_top = self.hourHandHolderD / 2 - 0.2
 
-        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick,style=style, innerRadiusForStyle=bottomR, clockwise_from_pinion_side=True)
+        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick, style=style, innerRadiusForStyle=bottom_r_for_style, clockwise_from_pinion_side=True)
 
         if self.snail is not None:
-            hour = hour.add(self.snail.get3D(self.thick))
+            hour = hour.union(self.snail.get3D(self.thick))
+
+        if self.moon_complication is not None:
+            hour = hour.union(self.moon_complication.get_pinion_for_motion_works_shape().translate((0,0,self.thick)))
 
         top_z = self.get_cannon_pinion_total_height() - self.space - self.minuteHandSlotHeight - self.cannonPinionBaseHeight
 
