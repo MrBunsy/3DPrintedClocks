@@ -13,7 +13,7 @@ from cadquery import exporters
 
 from .types import *
 
-
+from clocks.cq_gears import BevelGearPair
 
 class Gear:
 
@@ -1048,6 +1048,47 @@ class WheelPinionPair:
         # print("addendum Factor", addendumFactor)
         return addendumFactor
 
+class WheelPinionBeveledPair:
+    '''
+    90degree beveled set of involute gears. Uses cq_gears with some bodges to make them easier to print
+
+    wheel driving pinion to keep consistent even though main usecase is probably the moon dial where it's a pinion driving a wheel
+    '''
+    def __init__(self, wheel_teeth, pinion_teeth, module=1):
+        self.wheel_teeth = wheel_teeth
+        self.pinion_teeth = pinion_teeth
+        self.module = module
+
+        self.face_width = module*8
+
+        #I've manually overridden trim_bottom in my fork TODO work out how to use the build_params
+        self.bevel_gear_pair = BevelGearPair(module=module, gear_teeth=wheel_teeth, pinion_teeth=pinion_teeth, face_width=self.face_width, build_params={"trim_bottom":False})
+
+        #chop off the top bits that cq_gears generates - they'll just produce stringy mess when printing
+        self.wheel =  cq.Workplane("XY").add(self.bevel_gear_pair.gear.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.face_width * math.sin(self.bevel_gear_pair.pinion_cone_angle)))
+        self.pinion = cq.Workplane("XY").add(self.bevel_gear_pair.pinion.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.face_width * math.sin(self.bevel_gear_pair.gear_cone_angle)))
+
+        #chop off edge bits - I've disabled trim_bottom but I won't want them to stick out sideways. This limits them to a cylinder - bit ugly but should print cleanly without overhang
+        #note - I'm uncertain about this - will this cause the gears to bind? am I better off with the overhang?
+        # self.wheel = self.wheel.intersect(cq.Workplane("XY").circle(self.bevel_gear_pair.pinion.cone_h).extrude(self.bevel_gear_pair.pinion.cone_h))
+        # self.pinion = self.pinion.intersect(cq.Workplane("XY").circle(self.bevel_gear_pair.gear.cone_h).extrude(self.bevel_gear_pair.gear.cone_h))
+
+        #this is doable but I'm too fuzzy - I'll just leave it with overhang
+        # self.wheel = self.wheel.cut(cq.Workplane("XY").rect(self.bevel_gear_pair.gear.gs_r*2,self.bevel_gear_pair.gear.gs_r*2).extrude(self.bevel_gear_pair.gear.gs_r*(1-math.cos(self.bevel_gear_pair.gear_cone_angle/2))))
+        # self.pinion = self.pinion.cut(cq.Workplane("XY").rect(self.bevel_gear_pair.pinion.gs_r * 2, self.bevel_gear_pair.pinion.gs_r * 2).extrude(self.bevel_gear_pair.pinion.gs_r * (1 - math.cos(self.bevel_gear_pair.pinion_cone_angle / 2))))
+
+    def get_centre_of_wheel_to_back_of_pinion(self):
+        return self.bevel_gear_pair.pinion.cone_h
+
+    def get_centre_of_pinion_to_back_of_wheel(self):
+        return self.bevel_gear_pair.gear.cone_h
+
+
+    def get_assembled(self):
+        pinion_in_situ = self.pinion.rotate((0,0,0),(1,0,0),90).translate((0,self.get_centre_of_wheel_to_back_of_pinion(),self.get_centre_of_pinion_to_back_of_wheel()))
+        assembly = self.wheel.add(pinion_in_situ)
+
+        return assembly
 
 class SuspensionSpringPendulumBits:
     '''

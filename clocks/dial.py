@@ -81,39 +81,56 @@ class MoonPhaseComplication3D:
         self.ratio = 12 / self.lunar_month_hours
 
         bevel_min = 9
-        bevel_max = 120
-        wheel_min = 30
-        wheel_max = 160
+        bevel_max = 30
+        wheel_min = 60
+        wheel_max = 120
 
         '''
         wheel driven by a pinion from the hour holder
         this wheel is on an arbour with a bevel gear
         final bevel gear is on the rod that goes up to the moon
+        
+        ...or an extra arbor too? then the hour holder can have a real pinion rather than a one-tooth thingie, and we can push the bevel gear as close to the front of the frame as possible
         '''
 
         # if we start with this number of teeth on the pinion then it might fit without making the module size too big
         #could consider a single pin as a 1-tooth pinion
-        pinion_on_hour_wheel = 1#self.motion_works.get_cannon_pinion_teeth() + 3
+        pinion_on_hour_wheel = 10#self.motion_works.get_cannon_pinion_teeth() + 3
         # for pinion_on_hour_wheel in range(pinion_min, pinion_max):
         # print("{:.1f}% calculating moon complication gears".format(100 * (pinion_on_hour_wheel - pinion_min) / (pinion_max - pinion_min)))
         options = []
+        pinion_min = 9
+        pinion_max = 20
+        total_combos = (wheel_max - wheel_min) * (pinion_max -pinion_min) * (wheel_max - wheel_min) * (bevel_max - bevel_min)*(bevel_max - bevel_min)
+        combo = 0
         for w0 in range(wheel_min, wheel_max):
-            for bevel0 in range(bevel_min, bevel_max):
-                for bevel1 in range(wheel_min, wheel_max):
-                    ratio = (pinion_on_hour_wheel / w0) * (bevel0 / bevel1)
-                    if abs(ratio - self.ratio) < 0.000001:#0.0000002
-                        print(self.ratio, pinion_on_hour_wheel, w0, bevel0, bevel1, ratio, 1 / ratio, self.lunar_month_hours / 12)
-                        option = {
-                            "ratio": ratio,
-                            "1/ratio": 1/ratio,
-                            "w0": w0,
-                            "bevel0": bevel0,
-                            "bevel1": bevel1,
-                            "weighting": bevel0 + bevel1# - w0
-                        }
-                        options.append(option)
+            for p1 in range(pinion_min, pinion_max):
+                for w1 in range(wheel_min, wheel_max):
+                    for bevel0 in range(bevel_min, bevel_max):
+                        for bevel1 in range(bevel_min, bevel_max):
+                            if combo % 10000 == 0:
+                                print("{:.1f}%".format(100*combo/total_combos))
+                            combo +=1
+                            ratio = (pinion_on_hour_wheel / w0) * (p1 / w1) * (bevel0 / bevel1)
+                            if abs(1/ratio - 1/self.ratio) < 0.01 and w1 < w0:#0.0000002
+                                # print(self.ratio, pinion_on_hour_wheel, w0, bevel0, bevel1, ratio, 1 / ratio, self.lunar_month_hours / 12)
+                                option = {
+                                    "ratio": ratio,
+                                    "1/ratio": 1/ratio,
+                                    "w0": w0,
+                                    "p1": p1,
+                                    "w1": w1,
+                                    "bevel0": bevel0,
+                                    "bevel1": bevel1,
+                                    "weighting": bevel0 + bevel1,
+                                    "error": abs(1/ratio - 1/self.ratio)
+                                }
+                                options.append(option)
 
-        options.sort(key=lambda x: x["weighting"])
+        # options.sort(key=lambda x: x["weighting"])
+        options.sort(key=lambda x: x["error"])
+
+        print(options)
         print(options[0], self.lunar_month_hours / 12)
 
 class Dial:
@@ -261,8 +278,30 @@ class Dial:
 
         return fixing_positions
 
+    def get_dots_detail(self, outer_r, dial_width, thick_fives=True):
+        dots = 60
+        dA = math.pi * 2 / 60
 
-    def get_circles_detail(self,outer_r, dial_width, from_edge, thick_fives=False):
+        centre_radius = outer_r - dial_width/2
+
+        max_dot_r = centre_radius * math.sin(dA/2)
+
+        big_dot_r = max_dot_r
+        small_dot_r = max_dot_r/2
+
+        detail = cq.Workplane("XY")
+
+        for d in range(dots):
+            big = d %5 == 0 and thick_fives
+            r = big_dot_r if big else small_dot_r
+
+            pos = polar(dA*d, centre_radius)
+
+            detail = detail.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(r).extrude(self.detail_thick))
+
+        return detail
+
+    def get_concentric_circles_detail(self, outer_r, dial_width, from_edge, thick_fives=False):
         '''
         In the style of two concentric circles with lines along the radii between them
         '''
@@ -303,7 +342,7 @@ class Dial:
             detail = detail.add(roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle - math.pi / 2)).translate(pos))
 
         # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
-        detail = detail.add(self.get_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
+        detail = detail.add(self.get_concentric_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
 
         return detail
 
@@ -367,9 +406,11 @@ class Dial:
         if self.style == DialStyle.LINES_ARC:
             return self.get_lines_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
         elif self.style == DialStyle.CONCENTRIC_CIRCLES:
-            return self.get_circles_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
+            return self.get_concentric_circles_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
         elif self.style == DialStyle.ROMAN:
             return self.get_roman_numerals_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
+        elif self.style == DialStyle.CIRCLES:
+            return self.get_dots_detail(self.outside_d/2, self.dial_width)
         elif self.style == DialStyle.TONY_THE_CLOCK:
             #extend the marks so they go underneath the black ring to allow for some slop attaching the ring
             extra = 2
@@ -382,7 +423,7 @@ class Dial:
         if self.seconds_style == DialStyle.LINES_ARC:
             dial = self.get_lines_detail(outer_r=self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
         elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
-            dial = self.get_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
+            dial = self.get_concentric_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
 
         if dial is not None:
             dial = dial.translate(self.second_hand_relative_pos)

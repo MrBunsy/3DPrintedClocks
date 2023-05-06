@@ -115,4 +115,6 @@ class DialStyle(Enum):
     # DOTS = "dots"
     #two concentric circles joined by lines along spokes
     CONCENTRIC_CIRCLES="concentric_circles"
+    #TODO dots for minutes
+    CIRCLES = "circles"
     TONY_THE_CLOCK="tony_the_clock"

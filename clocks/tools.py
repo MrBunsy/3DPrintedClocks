@@ -17,6 +17,8 @@ def pivotBlock(height=50, length=100,thick=25):
     Pivot can be rested in the right size of groove while the arbour is held in a pin vise and rotated by hand
 
     Then the burnisher/file can be rested on top of the pivot
+
+    NOTE - never actually used
     '''
 
     block =cq.Workplane("XY").rect(thick,length).extrude(height)
@@ -45,6 +47,9 @@ def pivotBlock(height=50, length=100,thick=25):
 
 
 def cupWasher(innerD=3, topD=5.5, coutersinkDeep=2.5, height = 4.5):
+    '''
+    Used to repair the smiths striking wall clock in the dining room (I didn't have small enough screws)
+    '''
     wallThick = 2
     washer = cq.Workplane("XY").circle(topD/2 + wallThick).circle(innerD/2).extrude(height)
 
@@ -55,6 +60,24 @@ def cupWasher(innerD=3, topD=5.5, coutersinkDeep=2.5, height = 4.5):
 
     return washer
 
+def crystal_centre_press(fixing_r=9.4/2, outer_r=10, dome_r=15, fixing_thick=10):
+    '''
+    9.1 fitted on the end but not past the o-ring
+    For putting acrylic crystals into pocket watch lids, I've got the press and round edge holding bits, need something to squeeze the centre of the crystal
+    '''
+    press = cq.Workplane("XY").circle(outer_r).circle(fixing_r).extrude(fixing_thick)
+    # return cq.Workplane("XY").add(cq.Solid.makeSphere(dome_r)).intersect(cq.Workplane("XY").circle(outer_r).extrude(dome_r))
+
+    press = press.union(cq.Workplane("XY").add(cq.Solid.makeSphere(dome_r)).translate((0,0,fixing_thick - (dome_r - outer_r))).intersect(cq.Workplane("XY").circle(outer_r).extrude(dome_r).translate((0,0,fixing_thick))))
+
+    bevel=1
+
+    press = press.cut(cq.Solid.makeCone(radius1=fixing_r+bevel,radius2=fixing_r,height=bevel))
+
+    return press
+
+
+
 
 
 # washer = cupWasher()
@@ -62,9 +85,12 @@ def cupWasher(innerD=3, topD=5.5, coutersinkDeep=2.5, height = 4.5):
 # exporters.export(washer, "../out/smiths_cupwasher.stl")
 
 
-testForSteelTube = cq.Workplane("XY").circle(6.2-0.1).circle(6.2/2).extrude(15.6)
-exporters.export(testForSteelTube, "../out/testForSteelTube.stl")
+# testForSteelTube = cq.Workplane("XY").circle(6.2-0.1).circle(6.2/2).extrude(15.6)
+# exporters.export(testForSteelTube, "../out/testForSteelTube.stl")
 
+press = crystal_centre_press()
+show_object(press)
+exporters.export(press, "../out/press.stl")
 
 # block = pivotBlock()
 # show_object(block)

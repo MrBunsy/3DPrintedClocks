@@ -472,6 +472,9 @@ if False:
 
     show_object(pretty_bob.get_models())
 
+# dial = Dial(200, DialStyle.CIRCLES)
+#
+# show_object(dial.get_dial())
 
 # text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 #
@@ -558,52 +561,56 @@ if False:
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
 # show_object(getHandDemo())
+if False:
+    motionWorks = MotionWorks(extra_height=10, style=GearStyle.CURVES, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
+    # moon = MoonPhaseComplication3D(motionWorks)
 
-motionWorks = MotionWorks(extra_height=10, style=GearStyle.CURVES, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
-moon = MoonPhaseComplication3D(motionWorks)
+    # print(1/moon.ratio)
+    face_width = 6
+    bevels = BevelGearPair(module=1, gear_teeth=23, pinion_teeth=29, face_width=face_width, pressure_angle=20)
+    #
+    print(radToDeg(bevels.axis_angle), face_width*math.sin(bevels.axis_angle))
 
-print(1/moon.ratio)
-face_width = 6
-bevels = BevelGearPair(module=1, gear_teeth=32, pinion_teeth=30, face_width=face_width, pressure_angle=20)
-#
-print(radToDeg(bevels.axis_angle), face_width*math.sin(bevels.axis_angle))
+    beveled_pair = WheelPinionBeveledPair(wheel_teeth=23, pinion_teeth=29, module=1)
 
-# show_object(bevels.assemble())
-testbevel = cq.Workplane("XY").add(bevels.gear.build()).intersect(cq.Workplane("XY").rect(100,100).extrude(face_width*math.sin(bevels.axis_angle/2)).translate((0,0,0)))
+    show_object(beveled_pair.get_assembled())
 
-testbevel = testbevel.cut(cq.Workplane("XY").circle(3.2/2).extrude(10))
+    # show_object(bevels.assemble())
+    # testbevel = cq.Workplane("XY").add(bevels.gear.build()).intersect(cq.Workplane("XY").rect(100,100).extrude(face_width*math.sin(bevels.axis_angle/2)).translate((0,0,0)))
+    #
+    # testbevel = testbevel.cut(cq.Workplane("XY").circle(3.2/2).extrude(10))
+    #
+    # testbevel_pinion = cq.Workplane("XY").add(bevels.pinion.build()).intersect(cq.Workplane("XY").rect(100,100).extrude(face_width*math.sin(bevels.axis_angle/2)))
+    # testbevel_pinion = testbevel_pinion.cut(cq.Workplane("XY").circle(3.2/2).extrude(10))
+    #
+    # show_object(testbevel)
+    # show_object(testbevel_pinion.rotate((0,0,0),(1,0,0),90).translate((0,bevels.pinion.cone_h,bevels.gear.cone_h)))
+    # # show_object(bevels.gear.build())
+    # # show_object(bevels.pinion.build())
+    #
+    # holder_wide = 10
+    # holder_thick = 5
+    # holder_long = bevels.pinion.cone_h + WASHER_THICK_M3
+    #
+    # holder_tall = bevels.gear.cone_h + holder_thick + WASHER_THICK_M3
+    #
+    #
+    # # testbevel_holder = cq.Workplane("XY").moveTo(0,holder_long/2 - holder_wide/2).rect(holder_wide, holder_long).extrude(holder_thick).faces(">Z").workplane().circle(3/2).cutThruAll()
+    #
+    # testbevel_holder = cq.Workplane("XY").circle(holder_wide/2).extrude(holder_thick)
+    # testbevel_holder = testbevel_holder.union(get_stroke_line([(0,0), (0,holder_long + holder_thick)],wide = holder_wide,thick = holder_thick, style=StrokeStyle.SQUARE))
+    #
+    # testbevel_holder = testbevel_holder.union(cq.Workplane("XY").moveTo(0,bevels.pinion.cone_h + WASHER_THICK_M3 + holder_thick/2).rect(holder_wide, holder_thick).extrude(holder_tall))
+    # testbevel_holder = testbevel_holder.union(cq.Workplane("XY").circle(holder_wide/2).extrude(holder_thick).rotate((0,0,0),(1,0,0),-90).translate((0,holder_long,holder_tall)))
+    #
+    # testbevel_holder = testbevel_holder.cut(cq.Workplane("XY").circle(3/2).extrude(holder_thick))
+    # testbevel_holder = testbevel_holder.cut(cq.Workplane("XY").circle(3/2).extrude(holder_thick).rotate((0,0,0),(1,0,0),-90).translate((0,holder_long,holder_tall)))
+    #
+    # show_object(testbevel_holder.translate((0,0,-holder_thick-WASHER_THICK_M3)))
 
-testbevel_pinion = cq.Workplane("XY").add(bevels.pinion.build()).intersect(cq.Workplane("XY").rect(100,100).extrude(face_width*math.sin(bevels.axis_angle/2)))
-testbevel_pinion = testbevel_pinion.cut(cq.Workplane("XY").circle(3.2/2).extrude(10))
-
-show_object(testbevel)
-show_object(testbevel_pinion.rotate((0,0,0),(1,0,0),90).translate((0,bevels.pinion.cone_h,bevels.gear.cone_h)))
-# show_object(bevels.gear.build())
-# show_object(bevels.pinion.build())
-
-holder_wide = 10
-holder_thick = 5
-holder_long = bevels.pinion.cone_h + WASHER_THICK_M3
-
-holder_tall = bevels.gear.cone_h + holder_thick + WASHER_THICK_M3
-
-
-# testbevel_holder = cq.Workplane("XY").moveTo(0,holder_long/2 - holder_wide/2).rect(holder_wide, holder_long).extrude(holder_thick).faces(">Z").workplane().circle(3/2).cutThruAll()
-
-testbevel_holder = cq.Workplane("XY").circle(holder_wide/2).extrude(holder_thick)
-testbevel_holder = testbevel_holder.union(get_stroke_line([(0,0), (0,holder_long + holder_thick)],wide = holder_wide,thick = holder_thick, style=StrokeStyle.SQUARE))
-
-testbevel_holder = testbevel_holder.union(cq.Workplane("XY").moveTo(0,bevels.pinion.cone_h + WASHER_THICK_M3 + holder_thick/2).rect(holder_wide, holder_thick).extrude(holder_tall))
-testbevel_holder = testbevel_holder.union(cq.Workplane("XY").circle(holder_wide/2).extrude(holder_thick).rotate((0,0,0),(1,0,0),-90).translate((0,holder_long,holder_tall)))
-
-testbevel_holder = testbevel_holder.cut(cq.Workplane("XY").circle(3/2).extrude(holder_thick))
-testbevel_holder = testbevel_holder.cut(cq.Workplane("XY").circle(3/2).extrude(holder_thick).rotate((0,0,0),(1,0,0),-90).translate((0,holder_long,holder_tall)))
-
-show_object(testbevel_holder.translate((0,0,-holder_thick-WASHER_THICK_M3)))
-
-exporters.export(testbevel, "out/test_bevel.stl")
-exporters.export(testbevel_pinion, "out/test_bevel_pinion.stl")
-exporters.export(testbevel_holder, "out/test_bevel_holder.stl")
+    # exporters.export(testbevel, "out/test_bevel.stl")
+    # exporters.export(testbevel_pinion, "out/test_bevel_pinion.stl")
+    # exporters.export(testbevel_holder, "out/test_bevel_holder.stl")
 #
 # mistletoe = MistletoeSprig() #MistletoeLeafPair()
 #
@@ -644,3 +651,6 @@ exporters.export(testbevel_holder, "out/test_bevel_holder.stl")
 # suspension_bits = SuspensionSpringPendulumBits()
 #
 # show_object(suspension_bits.get_crutch())
+
+# show_object(cq.Solid.makeSphere(10))
+
