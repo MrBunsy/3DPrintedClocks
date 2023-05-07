@@ -291,9 +291,10 @@ class MoonPhaseComplication3D:
         moon = cq.Workplane("XY").add(cq.Solid.makeSphere(self.moon_radius))
 
         #hole for rod - we're clamping the moon in place like the motion works, so it can be rotated with friction from the split washer
-        moon = moon.cut(cq.Workplane("XY").circle(self.arbor_loose_d).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius*2,0)))
+        moon = moon.cut(cq.Workplane("XY").circle(self.arbor_loose_d).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius,0)))
 
         #TODO way to attach the two halves together? Inset little areas to hold glue like on the model trains?
+        #panhead screws stick and out it slots on and rotates?
 
         return moon
 
@@ -307,9 +308,11 @@ class MoonPhaseComplication3D:
         for i in range(3):
             model = model.add(self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2])))
 
-        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),90).translate(
+        #would like the bevel at the top, keeping it further out the way of the motion works and closer to where it can be through a pipe/bearing (to reduce wobble)
+        #but with the extra gear it'd be spinning the wrong way!
+        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).translate(
             (0,
-             positions[2][1] + self.bevel_pair.get_centre_of_pinion_to_back_of_wheel(),
+             positions[2][1] - self.bevel_pair.get_centre_of_pinion_to_back_of_wheel(),
              self.get_moon_z())
         ))
 

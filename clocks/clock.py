@@ -2209,6 +2209,8 @@ class SimpleClockPlates:
                     plate = plate.union(get_stroke_line(points, self.minPlateWidth, thick))
 
 
+
+
         plate = plate.tag("top")
 
         bottom_pillar_joins_plate_pos = self.bearingPositions[0][:2]
@@ -2257,6 +2259,9 @@ class SimpleClockPlates:
             .lineTo(topPillarPos[0] - topPillarR, topPillarPos[1]).radiusArc((topPillarPos[0] + topPillarR, topPillarPos[1]), topPillarR) \
             .lineTo(topOfPlate[0] + topPillarR, topOfPlate[1]).close().extrude(self.getPlateThick(back))
 
+        #not sure this will print well
+        # if not back and self.front_plate_has_flat_front():
+        #     plate = plate.edges(">Z").fillet(1)
 
         plate = plate.tag("top")
         # #for the screwhole

@@ -561,12 +561,18 @@ if False:
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
 # show_object(getHandDemo())
+
+# testfillet = cq.Workplane("XY").rect(100,100).extrude(10).edges(">Z").fillet(1)
+# show_object(testfillet)
+
 if True:
     moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.CIRCLES)
     motionWorks = MotionWorks(extra_height=10, style=GearStyle.CIRCLES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
     moon.set_motion_works_sizes(motionWorks)
     show_object(motionWorks.getAssembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
     show_object(moon.get_assembled())
+    # show_object(moon.get_moon_half())
+
 
     #
     # # print(1/moon.ratio)
