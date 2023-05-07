@@ -1088,10 +1088,10 @@ class WheelPinionBeveledPair:
 
     def get_pinion_max_radius(self):
         #TODO properly - from great circle and cone height?
-        return self.module * self.pinion_teeth + self.module
+        return (self.module * self.pinion_teeth)/2 + self.module
 
     def get_wheel_max_radius(self):
-        return self.module * self.wheel_teeth + self.module
+        return (self.module * self.wheel_teeth)/2 + self.module
 
 
     def get_assembled(self):
@@ -2522,7 +2522,7 @@ class MotionWorks:
 
     def getAssembled(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
-            motionWorksRelativePos = [0, self.getArbourDistance()]
+            motionWorksRelativePos = [0, -self.getArbourDistance()]
 
         motionWorksModel = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         motionWorksModel = motionWorksModel.add(self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick())))
@@ -2739,8 +2739,7 @@ class MotionWorks:
         if self.snail is not None:
             hour = hour.union(self.snail.get3D(self.thick))
 
-        if self.moon_complication is not None:
-            hour = hour.union(self.moon_complication.get_pinion_for_motion_works_shape().translate((0,0,self.thick)))
+
 
         top_z = self.get_cannon_pinion_total_height() - self.space - self.minuteHandSlotHeight - self.cannonPinionBaseHeight
 
@@ -2759,6 +2758,11 @@ class MotionWorks:
         shape = cq.Workplane("XZ").moveTo(bottomR,self.thick).lineTo(bottomR,handHolderStartZ).lineTo(holderR_base,handHolderStartZ).lineTo(holderR_top,top_z).lineTo(holeR,top_z).lineTo(holeR,self.thick).close().sweep(circle)
 
         hour = hour.add(shape)
+
+        if self.moon_complication is not None:
+            # experiment, cut out a chunk
+            hour = hour.cut(cq.Workplane("XY").circle(bottom_r_for_style).extrude(self.moon_complication.hour_hand_pinion_thick).translate((0, 0, self.thick)))
+            hour = hour.union(self.moon_complication.get_pinion_for_motion_works_shape().translate((0, 0, self.thick)))
 
         hole = cq.Workplane("XY").circle(holeR).extrude(self.get_cannon_pinion_total_height())
         hour = hour.cut(hole)

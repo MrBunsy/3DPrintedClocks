@@ -562,10 +562,11 @@ if False:
 
 # show_object(getHandDemo())
 if True:
-    moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1)
-    motionWorks = MotionWorks(extra_height=10, style=GearStyle.CURVES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
-
-    show_object(motionWorks.getAssembled())
+    moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.CIRCLES)
+    motionWorks = MotionWorks(extra_height=10, style=GearStyle.CIRCLES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
+    moon.set_motion_works_sizes(motionWorks)
+    show_object(motionWorks.getAssembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
+    show_object(moon.get_assembled())
 
     #
     # # print(1/moon.ratio)

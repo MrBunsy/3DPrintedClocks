@@ -3307,9 +3307,11 @@ class Assembly:
 
         if self.moon_complication is not None:
             relative_positions = self.moon_complication.get_arbor_positions_relative_to_motion_works()
-            for i in range(2):
-                arbor_pos = npToSet(np.add(motion_works_pos, relative_positions[i]))
-                clock = clock.add(self.moon_complication.get_arbor_shape(i,for_printing=False).translate((arbor_pos[0], arbor_pos[1], WASHER_THICK_M3 + frontOfClockZ)))
+            for i in range(3):
+                arbor_pos = npToSet(np.add(motion_works_pos, relative_positions[i][:2]))
+                clock = clock.add(self.moon_complication.get_arbor_shape(i,for_printing=False).translate((arbor_pos[0], arbor_pos[1], relative_positions[i][2] + frontOfClockZ)))
+            #TODO bevel
+            # clock = clock.add(self.moon_complication.)
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time
