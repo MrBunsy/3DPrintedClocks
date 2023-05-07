@@ -47,16 +47,17 @@ train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thickn
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
-#14 just fits
-moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle)
+#tweaking angle slightly so that the second gear doesn't line up with an arbor that's between the plates
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205)
 
-#although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH,
-                                moon_complication=moon_complication)
+#not inset at base as there's not enough space for the moon complication to fit behind it
+motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon_complication)
+
+
 
 moon_complication.set_motion_works_sizes(motionWorks)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-motionWorks.calculateGears(arbourDistance=30)
+# motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                           bobD=60, bobThick=10, useNylocForAnchor=False)
@@ -96,6 +97,7 @@ if outputSTL:
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
     pulley.outputSTLs(clockName, clockOutDir)
+    moon_complication.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)

@@ -2284,7 +2284,7 @@ class SimpleClockPlates:
 
 
 
-        plate = self.punchBearingHoles(plate, back)
+
 
 
 
@@ -2297,6 +2297,7 @@ class SimpleClockPlates:
                 for pos in self.extraFrontPlateFixings:
                     plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).translate(pos))
 
+        plate = self.punchBearingHoles(plate, back)
 
         #screws to fix the plates together, with embedded nuts in the pillars
         if back:
@@ -2808,6 +2809,18 @@ class SimpleClockPlates:
             for pos in dial_fixing_positions:
                 plate = plate.cut(self.dial.fixing_screws.getCutter(loose=True,withBridging=True).translate(pos))
 
+        if self.moon_complication is not None:
+
+            #screw holes
+            for i, relative_pos in enumerate(self.moon_complication.get_arbor_positions_relative_to_motion_works()):
+                pos = npToSet(np.add(self.hands_position, relative_pos[:2]))
+                # extra bits of plate to hold the screw holes for extra arbors
+                if i != 1 or (self.style != ClockPlateStyle.COMPACT and self.extraHeavy):
+                    #don't need this extra bit of plate for the second arbor if we're compact
+                    plate = plate.union(get_stroke_line([self.hands_position, pos], wide=self.motion_works_screws.getNutContainingDiameter()*2, thick=plateThick))
+
+
+                plate = plate.cut(self.motion_works_screws.getCutter(withBridging=True).translate(pos))
 
         # need an extra chunky hole for the big bearing that the key slots through
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
@@ -3306,12 +3319,13 @@ class Assembly:
         clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], motionWorksZ)))
 
         if self.moon_complication is not None:
-            relative_positions = self.moon_complication.get_arbor_positions_relative_to_motion_works()
-            for i in range(3):
-                arbor_pos = npToSet(np.add(motion_works_pos, relative_positions[i][:2]))
-                clock = clock.add(self.moon_complication.get_arbor_shape(i,for_printing=False).translate((arbor_pos[0], arbor_pos[1], relative_positions[i][2] + frontOfClockZ)))
+            # relative_positions = self.moon_complication.get_arbor_positions_relative_to_motion_works()
+            # for i in range(3):
+            #     arbor_pos = npToSet(np.add(motion_works_pos, relative_positions[i][:2]))
+            #     clock = clock.add(self.moon_complication.get_arbor_shape(i,for_printing=False).translate((arbor_pos[0], arbor_pos[1], relative_positions[i][2] + frontOfClockZ)))
             #TODO bevel
             # clock = clock.add(self.moon_complication.)
+            clock =clock.add(self.moon_complication.get_assembled().translate((motion_works_pos[0], motion_works_pos[1], frontOfClockZ)))
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time

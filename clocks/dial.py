@@ -76,11 +76,15 @@ class MoonPhaseComplication3D:
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half
     '''
-    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS):
+    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=50, first_gear_angle_deg=180):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
         self.gear_style = gear_style
+
+        self.moon_radius = moon_radius
+        self.first_gear_angle = degToRad(first_gear_angle_deg)
+
         '''
         TODO - each one will need carefully controlled thickness
         the pinion on the hour hand just needs to be chunky enough to allow for non perfect alignment
@@ -251,7 +255,7 @@ class MoonPhaseComplication3D:
         motion_works_to_belvel0 = self.cannon_pinion_max_r + self.pairs[1].wheel.getMaxRadius() + 3
         bevel0_pos = (0, motion_works_to_belvel0)
         # directly to the left of teh motion works
-        arbor0_pos = (-self.get_arbor_distances(0),0)
+        arbor0_pos = polar(self.first_gear_angle, self.get_arbor_distances(0))#(-self.get_arbor_distances(0),0)
 
         #plan, first arbor at 90deg from the motion works, then fit the final arbor in
         #potentially fiddle the angle of the first arbor
@@ -283,17 +287,37 @@ class MoonPhaseComplication3D:
             (arbor1_pos[0], arbor1_pos[1], WASHER_THICK_M3),
             (bevel0_pos[0], bevel0_pos[1], WASHER_THICK_M3 + self.pinion_thick/2 +self.gear_thick/2)]
 
+    def get_moon_half(self):
+        moon = cq.Workplane("XY").add(cq.Solid.makeSphere(self.moon_radius))
+
+        #hole for rod - we're clamping the moon in place like the motion works, so it can be rotated with friction from the split washer
+        moon = moon.cut(cq.Workplane("XY").circle(self.arbor_loose_d).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius*2,0)))
+
+        #TODO way to attach the two halves together? Inset little areas to hold glue like on the model trains?
+
+        return moon
+
+    def get_moon_z(self):
+        #front of the last arbor, then the bevel
+        return self.get_arbor_positions_relative_to_motion_works()[2][2] + self.gear_thick + self.bevel_pair.get_centre_of_wheel_to_back_of_pinion()
+
     def get_assembled(self):
         model = cq.Workplane("XY")
         positions = self.get_arbor_positions_relative_to_motion_works()
         for i in range(3):
             model = model.add(self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2])))
 
+        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),90).translate(
+            (0,
+             positions[2][1] + self.bevel_pair.get_centre_of_pinion_to_back_of_wheel(),
+             self.get_moon_z())
+        ))
+
         return model
 
     def outputSTLs(self, name="clock", path="../out", max_wide=250, max_long=210):
 
-        for i in range(3):
+        for i in range(4):
             out = os.path.join(path, "{}_moon_arbor_{}.stl".format(name,i))
             print("Outputting ", out)
             exporters.export(self.get_arbor_shape(i), out)
