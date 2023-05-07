@@ -961,7 +961,7 @@ class SimpleClockPlates:
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, centre_weight=False, screws_from_back=False):
+                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -991,7 +991,7 @@ class SimpleClockPlates:
         #does the chain/rope/cord pass through the bottom pillar?
         self.chainThroughPillar = chainThroughPillarRequired
 
-
+        self.moon_complication = moon_complication
 
 
         anglesFromMinute = None
@@ -1440,12 +1440,12 @@ class SimpleClockPlates:
 
         if self.style == ClockPlateStyle.COMPACT:
             '''
-            idea: in a loop guess at the first angle, then do all the next angles such that it's as compact as possible without the wheels touching each other
+            idea for even more compact: in a loop guess at the first angle, then do all the next angles such that it's as compact as possible without the wheels touching each other
             then see if it's possible to put the pendulum directly above the hands
             if it's not, tweak the first angle and try again
             
-            second thoughts: would it be easier to force a line of gears and then every other gear is just off to one side?
-            Not peak compactness but might keep the plate design easier
+            current implementation: a line of gears vertically and then every other gear is just off to one side
+            Not sure if peak compactness but keeps the plate design easier
             '''
             # if self.goingTrain.chainWheels > 0:
 
@@ -3111,6 +3111,7 @@ class Assembly:
         self.timeHours = timeHours
         self.timeSeconds = timeSeconds
         self.pulley=pulley
+        self.moon_complication = self.plates.moon_complication
         #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)
         self.weights=weights
         if self.weights is None:
@@ -3300,7 +3301,15 @@ class Assembly:
         motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos,minuteAngle=minuteAngle)
         motionWorksZ = frontOfClockZ + motionWorksZOffset
 
+        motion_works_pos = (self.plates.hands_position[0], self.plates.hands_position[1])
+
         clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], motionWorksZ)))
+
+        if self.moon_complication is not None:
+            relative_positions = self.moon_complication.get_arbor_positions_relative_to_motion_works()
+            for i in range(2):
+                arbor_pos = npToSet(np.add(motion_works_pos, relative_positions[i]))
+                clock = clock.add(self.moon_complication.get_arbor_shape(i,for_printing=False).translate((arbor_pos[0], arbor_pos[1], WASHER_THICK_M3 + frontOfClockZ)))
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time

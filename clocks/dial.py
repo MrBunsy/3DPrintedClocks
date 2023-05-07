@@ -76,18 +76,32 @@ class MoonPhaseComplication3D:
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half
     '''
-    def __init__(self, pinion_teeth_on_hour_wheel=10, module=1, gear_thick=8):
+    def __init__(self, pinion_teeth_on_hour_wheel=10, module=1, gear_thick=3, gear_style=GearStyle.ARCS):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
+        self.gear_style = gear_style
+        '''
+        TODO - each one will need carefully controlled thickness
+        the pinion on the hour hand just needs to be chunky enough to allow for non perfect alignment
+        the pinion on the first abour needs to be long enough that the *next* arbour can be as close to the plate as possible
+        if the second arbour (with the first bevel gear) is close to the plate then the vertical arbor with the moon can be relatvely close to the plate
+        '''
         self.gear_thick = gear_thick
+        self.hour_hand_pinion_thick = 8
+        #TODO
+        self.pinion_thick = 15
 
-        bevel_min = 9
+        bevel_min = 15
         bevel_max = 30
         wheel_min = 60
-        wheel_max = 80
+        wheel_max = 100
         pinion_min = 9
         pinion_max = 15
+
+        self.arbor_d = 3
+        self.arbor_loose_d = self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS
+
 
         '''
         wheel driven by a pinion from the hour holder
@@ -115,7 +129,8 @@ class MoonPhaseComplication3D:
                                 print("{:.1f}%".format(100*combo/total_combos))
                             combo +=1
                             ratio = (pinion_teeth_on_hour_wheel / w0) * (p1 / w1) * (bevel_pinion / bevel_wheel)
-                            if abs(1/ratio - 1/self.ratio) < 0.01 and w1 < w0:#0.0000002
+                            error = abs(1/ratio - 1/self.ratio)
+                            if error < 0.005 and w1 > w0:#0.0000002
                                 # print(self.ratio, pinion_on_hour_wheel, w0, bevel0, bevel1, ratio, 1 / ratio, self.lunar_month_hours / 12)
                                 option = {
                                     "ratio": ratio,
@@ -125,32 +140,114 @@ class MoonPhaseComplication3D:
                                     "w1": w1,
                                     "bevel_pinion": bevel_pinion,
                                     "bevel_wheel": bevel_wheel,
-                                    "weighting": bevel_pinion + bevel_wheel,
+                                    "weighting": w1 - w0,
                                     "error": abs(1/ratio - 1/self.ratio)
                                 }
                                 options.append(option)
-
-        # options.sort(key=lambda x: x["weighting"])
+        print(options)
+        # options.sort(key=lambda x: -x["weighting"])
         options.sort(key=lambda x: x["error"])
+
 
         #pinions driving wheels here
         self.train = [(self.pinion_teeth_on_hour_wheel, options[0]["w0"]), (options[0]["p1"], options[0]["w1"]), (options[0]["bevel_wheel"], options[0]["bevel_pinion"])]
+        self.bevel_pair = WheelPinionBeveledPair(options[0]["bevel_wheel"], options[0]["bevel_pinion"], module=self.module)
+
+        #want second wheel to be larger so there's space for the bevel, can do this by meddling with tooth count but I'd rather keep the ratio accuracy and meddle size with module size
+        size_ratio_target = 1.1
+        tooth_ratio = options[0]["w1"]/options[0]["w0"]
+        module_ratio = size_ratio_target/tooth_ratio
+        second_module = self.module * module_ratio
+
         #TODO faff about with module sizes to make sure this all fits and the bevel is big enough to be reliable
-        self.pairs = [WheelPinionPair(self.train[0][1], self.train[0][0], self.module), WheelPinionPair(self.train[1][1], self.train[1][0]), WheelPinionBeveledPair(options[0]["bevel_wheel"], options[0]["bevel_pinion"], module=self.module)]
+        self.pairs = [WheelPinionPair(self.train[0][1], self.train[0][0], self.module), WheelPinionPair(self.train[1][1], self.train[1][0], second_module), self.bevel_pair]
 
         # print(options)
         print(options[0], self.lunar_month_hours / 12)
 
+        #placeholders
+        self.cannon_pinion_max_r = 10
+        self.plate_to_top_of_hour_holder_wheel = 15
+
+    def set_motion_works_sizes(self, motion_works):
+
+        self.cannon_pinion_max_r = motion_works.get_cannon_pinion_max_r()
+        self.plate_to_top_of_hour_holder_wheel = motion_works.getCannonPinionBaseThick() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+        self.pinion_thick = self.plate_to_top_of_hour_holder_wheel + self.hour_hand_pinion_thick/2 - self.gear_thick/2 - WASHER_THICK_M3
 
     def get_pinion_for_motion_works_shape(self):
         '''
         get the Gear that should be part of the hour holder
         '''
-        return self.pairs[0].pinion.get3D(thick=self.gear_thick)
+        return self.pairs[0].pinion.get3D(thick=self.hour_hand_pinion_thick)
 
     def get_pinion_for_motion_works_max_radius(self):
         return self.pairs[0].pinion.getMaxRadius()
 
+    def get_arbor_shape(self, index, for_printing=True):
+        '''
+        not adapting the Arbour class to do all this as there's just not the need - there's only going to be one sensible solution for the moon complication once it's finished
+
+        (arbor -1 is the hour holder)
+        arbor 0 is off to one side - standard arbor except driven backwards (pinion drives the wheel)
+        arbor 1 has the first bevel gear
+        arbor 2 is just the last bevel gear
+        '''
+        if index == 0:
+            #TODO pinion should be long enough to reach all the way to the plate so the next arbor can be as close as possible and thus the moon not stick out too much
+            arbor = Arbour(arbourD= self.arbor_loose_d, wheel=self.pairs[0].wheel, wheelThick=self.gear_thick, pinion=self.pairs[1].pinion, pinionThick=self.pinion_thick,
+                          pinionAtFront=False, clockwise_from_pinion_side=True, style=self.gear_style, endCapThick=0).getShape()
+
+            if not for_printing:
+                arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.gear_thick + self.pinion_thick))
+
+            return arbor
+
+        elif index == 1:
+            #arbour with bevel#
+            arbor = self.pairs[1].wheel.get3D(holeD=self.arbor_loose_d, thick=self.gear_thick, style = self.gear_style, innerRadiusForStyle=self.bevel_pair.get_pinion_max_radius())
+            arbor = arbor.union(self.bevel_pair.pinion.cut(cq.Workplane("XY").circle(self.arbor_loose_d / 2).extrude(1000)).translate((0, 0, self.gear_thick)))
+
+            return arbor
+        elif index == 2:
+            return self.bevel_pair.wheel.cut(cq.Workplane("XY").circle(self.arbor_d / 2).extrude(1000))
+            # return , wheelThick=self.gear_thick, pinion=self.pairs[2])
+        else:
+            raise ValueError("Arbor {} not valid".format(index))
+
+    def get_arbor_distances(self, pair_index):
+        if pair_index < 2:
+            return self.pairs[pair_index].centre_distance
+        else:
+            raise ValueError("Invalid pair ({}) to calculate distances".format(pair_index))
+
+
+    def get_arbor_positions_relative_to_motion_works(self):
+        '''
+        returns [(x,y),] starting with the first arbor (not position of motion works)
+        '''
+
+        on_side = 1
+        motion_works_to_arbor1 = self.get_arbor_distances(0)
+        arbor1_to_bevel0 = self.get_arbor_distances(1)
+        motion_works_to_belvel0 = self.cannon_pinion_max_r + self.pairs[1].wheel.getMaxRadius() + 3
+        b = motion_works_to_arbor1
+        c = arbor1_to_bevel0
+        a = motion_works_to_belvel0
+        # cosine law
+        angle = math.pi / 2 + on_side * math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
+
+        bevel0_pos = (0, motion_works_to_belvel0)
+        arbor1_pos = polar(angle, motion_works_to_arbor1)
+
+        return [arbor1_pos, bevel0_pos]
+
+    def outputSTLs(self, name="clock", path="../out", max_wide=250, max_long=210):
+
+        for i in range(3):
+            out = os.path.join(path, "{}_moon_arbor_{}.stl".format(name,i))
+            print("Outputting ", out)
+            exporters.export(self.get_arbor_shape(i), out)
 
 
 class Dial:
@@ -195,6 +292,15 @@ class Dial:
             return 3 + self.eye_radius - self.eye_pivot_z - self.thick
 
         return 3
+
+    def get_hand_length(self):
+        '''
+        what length hands should go on this dial?
+        '''
+        if self.style == DialStyle.TONY_THE_CLOCK:
+            return self.get_tony_dimension("minute_hand_length")
+        else:
+            return self.outside_d/2 - self.dial_width/2
 
     def configure_dimensions(self, support_length, support_d, outside_d=-1, second_hand_relative_pos=None):
         '''

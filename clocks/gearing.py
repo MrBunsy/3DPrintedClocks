@@ -28,7 +28,10 @@ class Gear:
 
         clockwise - assume this wheel is turning clockwise from the perspective of the side with the pinion
         '''
-        #lots of old designs used a literal string "HAC"
+
+        rimThick = max(outerRadius * 0.07, 3)
+        outerRadius -= rimThick
+        # lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
@@ -847,7 +850,7 @@ class Gear:
             #     # if innerRadius < 0:
             #     #     innerRadius = self.
             #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
-            gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
+            gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
         return gear
 
@@ -1082,6 +1085,13 @@ class WheelPinionBeveledPair:
 
     def get_centre_of_pinion_to_back_of_wheel(self):
         return self.bevel_gear_pair.gear.cone_h
+
+    def get_pinion_max_radius(self):
+        #TODO properly - from great circle and cone height?
+        return self.module * self.pinion_teeth + self.module
+
+    def get_wheel_max_radius(self):
+        return self.module * self.wheel_teeth + self.module
 
 
     def get_assembled(self):
@@ -2387,12 +2397,21 @@ class MotionWorks:
     def get_cannon_pinion_teeth(self):
         return self.pairs[0].pinion.teeth
 
+    def get_cannon_pinion_max_r(self):
+        return self.pairs[0].pinion.getMaxRadius()
+
     def get_cannon_pinion_total_height(self):
         return self.cannonPinionTotalHeightAboveBase + self.cannonPinionBaseHeight
 
     def get_cannon_pinion_effective_height(self):
         #because the inset at the base means the locking nuts and spring washer sit inside the motion works
         return self.get_cannon_pinion_total_height() - self.inset_at_base
+
+    def get_top_of_hour_holder_wheel_z(self):
+        '''
+        get distance in z from bottom of cannon pinion to top of the wheel on the hour holder
+        '''
+        return self.cannonPinionBaseHeight
 
     def calc_bearing_holder_thick(self):
 
