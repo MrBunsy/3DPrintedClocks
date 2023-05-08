@@ -76,11 +76,12 @@ class MoonPhaseComplication3D:
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half
     '''
-    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=50, first_gear_angle_deg=180):
+    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=50, first_gear_angle_deg=180,on_left=True):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
         self.gear_style = gear_style
+        self.on_left = on_left
 
         self.moon_radius = moon_radius
         self.first_gear_angle = degToRad(first_gear_angle_deg)
@@ -282,10 +283,13 @@ class MoonPhaseComplication3D:
 
         print("arbor1_to_bevel0: {}, arbor1_to_bevel0_check:{}".format(arbor1_to_bevel0, arbor1_to_bevel0_check))
 
+        #flip it all if needed (don't want to re-do the angle stuff)
+        x = 1 if self.on_left else -1
+
         return [
-            (arbor0_pos[0], arbor0_pos[1], WASHER_THICK_M3),
-            (arbor1_pos[0], arbor1_pos[1], WASHER_THICK_M3),
-            (bevel0_pos[0], bevel0_pos[1], WASHER_THICK_M3 + self.pinion_thick/2 +self.gear_thick/2)]
+            (x*arbor0_pos[0], arbor0_pos[1], WASHER_THICK_M3),
+            (x*arbor1_pos[0], arbor1_pos[1], WASHER_THICK_M3),
+            (x*bevel0_pos[0], bevel0_pos[1], WASHER_THICK_M3 + self.pinion_thick/2 +self.gear_thick/2)]
 
     def get_moon_half(self):
         moon = cq.Workplane("XY").add(cq.Solid.makeSphere(self.moon_radius))

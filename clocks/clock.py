@@ -961,7 +961,7 @@ class SimpleClockPlates:
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None):
+                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -985,6 +985,8 @@ class SimpleClockPlates:
         #try and put the weight central to the clock. Only currently affects the compact style when using two pillars
         self.centre_weight = centre_weight
 
+        #if the going train supports it, put a second hand on the clock
+        self.second_hand = second_hand
         #second hand is centred on the motion works
         self.centred_second_hand = centred_second_hand
 
@@ -1002,8 +1004,17 @@ class SimpleClockPlates:
         #to print on the back
         self.name = name
 
-        #is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable
-        self.motionWorksAbove=motionWorksAbove
+        # override default position of the motion works (for example if it would be in the way of a keywind and it can't go above because there's a moon complication)
+        self.motion_works_angle = degToRad(motion_works_angle_deg)
+
+        if self.motion_works_angle < 0:
+            # is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable (deprecated - motion_works_angle is more flexible)
+            if motionWorksAbove:
+                self.motion_works_angle = math.pi/2
+            else:
+                #below
+                self.motion_works_angle = math.pi*1.5
+
         #escapement is on top of the front plate
         self.escapementOnFront = escapementOnFront
         #only valid if escapementOnFront. This adds an extra front plate that goes up to the escape wheel, to add stability for the large grasshopper esacpe wheel
@@ -1195,7 +1206,7 @@ class SimpleClockPlates:
             self.motionWorks.calculateGears(arbourDistance= distance_between_minute_wheel_and_seconds_wheel/2)
 
             #override motion works position
-            self.motionWorksAbove = not self.pendulumAtTop
+            self.motion_works_angle = math.pi/2 if not self.pendulumAtTop else math.pi*1.5
             self.hands_position = [self.bearingPositions[-2][0],self.bearingPositions[-2][1]]
 
         motionWorksDistance = self.motionWorks.getArbourDistance()
@@ -1208,7 +1219,7 @@ class SimpleClockPlates:
             motionWorksPos = polar(minuteAngle - angle, self.compactRadius)
             motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
             self.motionWorksRelativePos = (motionWorksPos[0] - self.bearingPositions[self.goingTrain.chainWheels][0], motionWorksPos[1] - self.bearingPositions[self.goingTrain.chainWheels][1])
-        elif self.style == ClockPlateStyle.COMPACT and self.motionWorksAbove and self.goingTrain.has_seconds_hand() and not self.centred_second_hand and self.extraHeavy:
+        elif self.style == ClockPlateStyle.COMPACT and motionWorksAbove and self.has_seconds_hand() and not self.centred_second_hand and self.extraHeavy:
             '''
             niche case maybe?
             put the motion works along the arm to the offset gear
@@ -1219,8 +1230,8 @@ class SimpleClockPlates:
 
             self.motionWorksRelativePos = npToSet(np.multiply(direction, motionWorksDistance))
         else:
-            # motion works is directly below the minute rod
-            self.motionWorksRelativePos = [0, motionWorksDistance * (1 if self.motionWorksAbove else -1)]
+            # motion works is directly below the minute rod by default, or whatever angle has been set
+            self.motionWorksRelativePos = polar(self.motion_works_angle, motionWorksDistance)
 
         self.motionWorksPos = npToSet(np.add(self.hands_position, self.motionWorksRelativePos))
 
@@ -1237,7 +1248,7 @@ class SimpleClockPlates:
             # previously given 8mm of clearance, but this was more than enough, so reducing down to 4
             # looks like I later reduced it to 3 (I think after clock 12?)
             self.dial_z = self.bottom_of_hour_hand_z() - self.dial.thick - self.dial.get_hand_space_z()
-            if self.goingTrain.has_seconds_hand() and not self.centred_second_hand:
+            if self.has_seconds_hand() and not self.centred_second_hand:
                 #mini second hand! give a smidge more clearance
                 self.dial_z -= 2
             self.top_of_hands_z = self.motionWorks.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
@@ -1273,7 +1284,7 @@ class SimpleClockPlates:
                     dial_support_d = 15
 
 
-            if self.goingTrain.has_seconds_hand():
+            if self.has_seconds_hand():
                 second_hand_relative_pos = npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2]
 
                 if self.centred_second_hand:
@@ -1714,6 +1725,10 @@ class SimpleClockPlates:
             return False
         return True
 
+    def has_seconds_hand(self):
+        #true if the going train supports it and it's enabled for this clock
+        return self.goingTrain.has_seconds_hand() and self.second_hand
+
     def need_front_anchor_bearing_holder(self):
         #no longer supporting anything that doesn't (with the escapement on the front) - the large bearings have way too much friction so we have to hold the anchor arbour from both ends
         return self.escapementOnFront# and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -1772,7 +1787,7 @@ class SimpleClockPlates:
         in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
         '''
 
-        if self.style ==ClockPlateStyle.VERTICAL and self.goingTrain.has_seconds_hand() and self.centred_second_hand:
+        if self.style ==ClockPlateStyle.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
             #potentially
 
             motion_works_arbour_y = self.motionWorksPos[1]
@@ -2767,9 +2782,7 @@ class SimpleClockPlates:
             plate = plate.add(extraBearingHolder)
 
 
-
-
-        motionWorksPos = npToSet(np.add(self.hands_position, self.motionWorksRelativePos))
+        mini_arm_width = self.motion_works_screws.getNutContainingDiameter() * 2
 
         if self.need_motion_works_holder:
             #screw would be on top of a bearing, so there's a separate peice to hold it
@@ -2777,8 +2790,10 @@ class SimpleClockPlates:
                 screw_pos = npToSet(np.add(self.motionWorksPos, pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(self.getPlateThick(back=False)).translate(screw_pos))
         else:
+            #extra material in case the motion works is at an angle off to one side
+            plate = plate.union(get_stroke_line([self.hands_position, self.motionWorksPos], wide=mini_arm_width, thick=plateThick))
             #hole for screw to hold motion works arbour
-            plate = plate.cut(self.motion_works_screws.getCutter().translate(motionWorksPos))
+            plate = plate.cut(self.motion_works_screws.getCutter().translate(self.motionWorksPos))
 
         #embedded nut on the front so we can tighten this screw in
         #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.
@@ -2820,9 +2835,11 @@ class SimpleClockPlates:
             for i, relative_pos in enumerate(self.moon_complication.get_arbor_positions_relative_to_motion_works()):
                 pos = npToSet(np.add(self.hands_position, relative_pos[:2]))
                 # extra bits of plate to hold the screw holes for extra arbors
-                if i != 1 or (self.style != ClockPlateStyle.COMPACT and self.extraHeavy):
-                    #don't need this extra bit of plate for the second arbor if we're compact
-                    plate = plate.union(get_stroke_line([self.hands_position, pos], wide=self.motion_works_screws.getNutContainingDiameter()*2, thick=plateThick))
+
+                #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates
+                if i != 1 or (self.style != ClockPlateStyle.COMPACT and self.extraHeavy) or not self.moon_complication.on_left:
+
+                    plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plateThick))
 
 
                 plate = plate.cut(self.motion_works_screws.getCutter(withBridging=True).translate(pos))
@@ -2831,12 +2848,10 @@ class SimpleClockPlates:
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
             cordWheel = self.goingTrain.poweredWheel
             front_hole_d = cordWheel.bearing.outerSafeD
-            self.front_plate_has_key_hole = False
             key_hole_d = self.goingTrain.poweredWheel.keyWidth+1.5
-            if key_hole_d > front_hole_d and key_hole_d < cordWheel.bearing.bearingOuterD - 1:
+            if self.front_plate_has_key_hole and key_hole_d > front_hole_d and key_hole_d < cordWheel.bearing.bearingOuterD - 1:
                 #make the hole just big enough to fit the key into
-                print("Making the front hole just big enough for the cord key")
-                self.front_plate_has_key_hole = True
+                print("front_plate_has_key_hole so making the front hole just big enough for the cord key")
                 front_hole_d = key_hole_d
             # cordBearingHole = cq.Workplane("XY").circle(cordWheel.bearingOuterD/2).extrude(cordWheel.bearingHeight)
             if self.front_plate_has_flat_front():
@@ -2970,8 +2985,8 @@ class SimpleClockPlates:
         key_within_front_plate = self.getPlateThick(back=False) - self.goingTrain.poweredWheel.bearing.height
 
         self.key_hole_d = self.goingTrain.poweredWheel.keyWidth + 1.5
-        if self.key_hole_d > front_hole_d and self.key_hole_d < cordWheel.bearing.bearingOuterD - 1:
-            # make the hole just big enough to fit the key into
+        if self.bottom_of_hour_hand_z() < 25 and self.key_hole_d > front_hole_d and self.key_hole_d < cordWheel.bearing.bearingOuterD - 1:
+            # only if the key would otherwise be a bit too short (for dials very close to the front plate) make the hole just big enough to fit the key into
             print("Making the front hole just big enough for the cord key")
             self.front_plate_has_key_hole = True
             #offset *into* the front plate
@@ -2987,6 +3002,7 @@ class SimpleClockPlates:
         #note - do this relative to the hour hand, not the dial, because there may be more space for the hour hand to avoid the second hand
         self.goingTrain.poweredWheel.keySquareBitHeight = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
 
+        print("winding key length {:.1f}mm".format(self.goingTrain.poweredWheel.keySquareBitHeight))
 
     def get_winding_key(self, for_printing=True):
         key_body = None
@@ -3216,7 +3232,7 @@ class Assembly:
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
                     rod_length = hand_arbor_length + self.hands.secondFixing_thick + self.hands.secondThick
-                elif self.goingTrain.has_seconds_hand():
+                elif self.plates.has_seconds_hand():
                     if self.dial is not None and self.dial.has_seconds_sub_dial():
                         #if the rod doesn't go all the way through the second hand
                         hand_thick_accounting = self.hands.secondThick - self.hands.second_rod_end_thick
@@ -3359,7 +3375,7 @@ class Assembly:
         clock = clock.add(hands.translate((self.plates.hands_position[0], self.plates.hands_position[1],
                                               minuteHandZ - self.motionWorks.hourHandSlotHeight)))
 
-        if self.goingTrain.has_seconds_hand():
+        if self.plates.has_seconds_hand():
             #second hand!! yay
             secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 

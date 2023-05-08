@@ -697,7 +697,7 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 2.4, hollow=False):
+    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 3, hollow=False):
         '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
         #TODO split out the hollow into its own method, I think it's going to be a little different, especially around calculating positions
 
@@ -714,7 +714,8 @@ class Gear:
 
         ringSize = (outerRadius - innerRadius)
         bigCircleR = ringSize*0.425
-        bigCircleSpace = ringSize*1.1
+        #want to ensure the "arm" thickness between the circles is enough for a rigid gear
+        bigCircleSpace = ringSize*1.15
         # smallCircleR = bigCircleR*0.3
 
         cutter_thick = 1000
@@ -725,14 +726,20 @@ class Gear:
 
         bigCirclescircumference = 2 * math.pi * (innerRadius + ringSize/2)
 
+        #this is only aproximate, but seems to work
         bigCircleCount = math.floor(bigCirclescircumference / bigCircleSpace)
         if bigCircleCount > 0 :
             bigCircleAngle = math.pi*2/bigCircleCount
 
+            smallCircleRingR = innerRadius + ringSize * 0.75
+
             bigCirclePos = polar(0, innerRadius + ringSize / 2)
-            smallCirclePos = polar(bigCircleAngle / 2, innerRadius + ringSize * 0.75)
+            smallCirclePos = polar(bigCircleAngle / 2, smallCircleRingR)
             distance = math.sqrt((bigCirclePos[0] - smallCirclePos[0])**2 + (bigCirclePos[1] - smallCirclePos[1])**2)
             smallCircleR = distance - bigCircleR - minGap
+            #don't want the small circles eating into the edges of the gear
+            if smallCircleR + smallCircleRingR > outerRadius:
+                smallCircleR = outerRadius - smallCircleRingR
 
             hasSmallCircles = smallCircleR > 2
 

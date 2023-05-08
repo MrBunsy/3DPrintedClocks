@@ -16,7 +16,7 @@ clockName="wall_clock_23"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
-
+second_hand_centred = False
 #for period 1.5
 drop =1.5
 lift =3
@@ -27,16 +27,16 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, a
 # lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=False, chainAtBack=False, chainWheels=1, hours=7.5*24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 
 #think this is promising for good compromise of size
-# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
+train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
-train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
+# train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 
 
@@ -48,13 +48,13 @@ train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 #tweaking angle slightly so that the second gear doesn't line up with an arbor that's between the plates
-moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205)
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False)
 
 #not inset at base as there's not enough space for the moon complication to fit behind it
 motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon_complication)
 
 
-
+#TODO try out larger pinions on the motion works - it'll be a fiddle to slot together at the moment
 moon_complication.set_motion_works_sizes(motionWorks)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
@@ -65,16 +65,17 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.CIRCLES, seconds_style=clock.DialStyle.LINES_ARC)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 23",style=clock.ClockPlateStyle.COMPACT,
-                                 motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
+                                 heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication)
+                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
+                                 second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225)
 
 hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+                    length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)
 
-show_object(assembly.getClock(with_key=False, with_pendulum=True))
+show_object(assembly.getClock(with_key=True, with_pendulum=True))
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
