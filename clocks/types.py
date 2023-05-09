@@ -50,6 +50,8 @@ class GearStyle(Enum):
     CIRCLES = "circles"
     #just the outer edges of a ring of circles
     CIRCLES_HOLLOW = "circles_hollow"
+    #circles but with variations of cresent moons
+    MOONS = "moons"
     SIMPLE4 = "simple4"
     SIMPLE5 = "simple5"
     #spokes these don't print nicely with petg - very stringy (might be fine on anything other than the mini?)

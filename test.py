@@ -421,7 +421,7 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-if False:
+if True:
     dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
     # #
     # show_object(dial.get_assembled(),options={"color":"blue"})
@@ -556,8 +556,11 @@ if False:
 # show_object(getHandDemo(justStyle=HandStyle.BAROQUE, outline=0, assembled=True))
 
 
-# gear_demo = getGearDemo(justStyle=GearStyle.ARCS2)
+# gear_demo = getGearDemo(justStyle=GearStyle.MOONS)
 # show_object(gear_demo)
+
+# show_object(Gear.crescent_moon_2D(20,0.125*7.5))
+
 # exporters.export(gear_demo, "out/test.svg", opt={"width":480,"height":1024, "showAxes":False, "strokeWidth":0.2, "showHidden":False})
 
 # show_object(getHandDemo())
@@ -565,7 +568,7 @@ if False:
 # testfillet = cq.Workplane("XY").rect(100,100).extrude(10).edges(">Z").fillet(1)
 # show_object(testfillet)
 
-if True:
+if False:
     moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.CIRCLES)
     motionWorks = MotionWorks(extra_height=10, style=GearStyle.CIRCLES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
     moon.set_motion_works_sizes(motionWorks)

@@ -42,7 +42,7 @@ train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThic
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+train.genGears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()

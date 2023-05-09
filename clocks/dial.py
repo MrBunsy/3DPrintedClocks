@@ -820,12 +820,15 @@ class Dial:
 
         #screw on the back to hold eye tight to rod and provide fixing for wire (maybe)
         #didn't need this, the rod is a good tight friction fit
-        # eye = eye.cut(cq.Workplane("XY").circle(self.eye_screw.metric_thread/2).extrude(self.eye_extend_beyond_pivot).translate((0,0, -self.eye_extend_beyond_pivot)))
-        # nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
-        # eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((0,0,-self.eye_extend_beyond_pivot + 1)))
+        #do want to try using new tiny m2 eye bolts instead of hot-glued bent wire!
+        #offset from the centre so tehy don't hit the rod
+        x_offset = self.eye_rod_d/2 + self.eye_screw.metric_thread/2 + 1
+        eye = eye.cut(cq.Workplane("XY").moveTo(x_offset,0).circle(self.eye_screw.metric_thread/2).extrude(self.eye_extend_beyond_pivot + self.eye_radius*0.75).translate((0,0, -self.eye_extend_beyond_pivot)))
+        nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
+        eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((x_offset,0,self.eye_rod_d/2 + 1)))
 
-        wire_hole_depth = self.eye_pivot_z + self.eye_extend_beyond_pivot
-        eye = eye.cut(cq.Workplane("XY").circle(self.eye_bendy_wire_d/2).extrude(wire_hole_depth).translate((0,0,-wire_hole_depth)))
+        # wire_hole_depth = self.eye_pivot_z + self.eye_extend_beyond_pivot
+        # eye = eye.cut(cq.Workplane("XY").circle(self.eye_bendy_wire_d/2).extrude(wire_hole_depth).translate((0,0,-wire_hole_depth)))
 
         return eye,pupil
 

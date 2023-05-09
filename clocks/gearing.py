@@ -28,7 +28,10 @@ class Gear:
 
         clockwise - assume this wheel is turning clockwise from the perspective of the side with the pinion
         '''
-
+        #TODO - why did I used to pass this through to all the cutters?
+        if innerRadius < 0:
+            innerRadius = 3
+        #thought - some things don't need a thick rim
         rimThick = max(outerRadius * 0.07, 3)
         outerRadius -= rimThick
         # lots of old designs used a literal string "HAC"
@@ -39,9 +42,9 @@ class Gear:
         if style == GearStyle.ARCS2:
             return Gear.cutArcsStyle(gear, outer_r=outerRadius*0.9, inner_r=innerRadius+2)
         if style == GearStyle.CIRCLES:
-            if innerRadius < 0:
-                innerRadius = 3
             return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius, hollow=False)
+        if style == GearStyle.MOONS:
+            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius, moons=True)
         if style == GearStyle.CIRCLES_HOLLOW:
             return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius+2, hollow=True)
         if style == GearStyle.SIMPLE4:
@@ -697,7 +700,32 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 3, hollow=False):
+    def crescent_moon_2D(radius, fraction):
+        '''
+        moon, from no moon (fraction 0) to full moon (fraction 0.5) back to no moon (fraction 1)
+        '''
+        if fraction < 0 or fraction > 1:
+            raise ValueError("fraction can only go from 0 to 1")
+
+        if fraction == 0 or fraction == 1:
+            return None
+            return cq.Workplane("XY")
+
+        sagitta = -radius + (fraction*2 % 1)*2*radius
+        radius_for_shape = radius if fraction < 0.5 else -radius
+
+        moon = cq.Workplane("XY").moveTo(0, radius).radiusArc((0, -radius), radius_for_shape)
+
+        if sagitta != 0:
+            moon = moon.sagittaArc((0,radius),sagitta)
+
+        moon = moon.close()
+
+
+        return moon
+
+    @staticmethod
+    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 3, hollow=False, moons=False):
         '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
         #TODO split out the hollow into its own method, I think it's going to be a little different, especially around calculating positions
 
@@ -726,8 +754,14 @@ class Gear:
 
         bigCirclescircumference = 2 * math.pi * (innerRadius + ringSize/2)
 
+        cutmoons = moons
+
         #this is only aproximate, but seems to work
         bigCircleCount = math.floor(bigCirclescircumference / bigCircleSpace)
+
+        if bigCircleCount <6:
+            cutmoons = False
+
         if bigCircleCount > 0 :
             bigCircleAngle = math.pi*2/bigCircleCount
 
@@ -749,6 +783,10 @@ class Gear:
 
                 if hollow:
                     cutter = cutter.cut(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR+2).circle(bigCircleR).extrude(cutter_thick))
+                elif cutmoons:
+                    moon = Gear.crescent_moon_2D(bigCircleR,((circle)/bigCircleCount))
+                    if moon is not None:
+                        cutter = cutter.add(moon.extrude(cutter_thick).rotate((0,0,0),(0,0,1),radToDeg(angle-math.pi/2)).translate(pos))
                 else:
                     cutter = cutter.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR).extrude(cutter_thick))
 
