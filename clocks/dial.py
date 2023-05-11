@@ -13,6 +13,7 @@ from .gearing import *
 class MoonPhaseComplication2D:
     def __init__(self, motion_works):
         '''
+        UNFINISHED
         Simple 2D 29.5 day cycle moon phase complication
 
         Plan:
@@ -68,13 +69,13 @@ class MoonPhaseComplication3D:
     '''
     A moon phase complication with a spherical moon!
 
-    I think this may work out easier than the 2D as there's less gearing required
+    I think this may work out easier than the 2D as there's less gearing required (...but still lots of gearing)
 
     Plan:
 
     One gear from the hour holder on the motion works, which will drive a bevel gear to a rod going up through the top holder for the dial
 
-    then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half
+    then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half (moon spoon!)
     '''
     def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=50, first_gear_angle_deg=180,on_left=True):
         self.lunar_month_hours = 29.53059 * 24.0
@@ -113,7 +114,7 @@ class MoonPhaseComplication3D:
 
         self.arbor_d = 3
         self.arbor_loose_d = self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS
-
+        self.lone_bevel_min_height = 10
 
         '''
         wheel driven by a pinion from the hour holder
@@ -233,7 +234,7 @@ class MoonPhaseComplication3D:
 
             return arbor
         elif index == 3:
-            return self.bevel_pair.wheel.cut(cq.Workplane("XY").circle(self.arbor_d / 2).extrude(1000))
+            return self.bevel_pair.wheel.union(cq.Workplane("XY").circle(self.arbor_d).extrude(self.lone_bevel_min_height)).cut(cq.Workplane("XY").circle(self.arbor_d / 2).extrude(1000))
             # return , wheelThick=self.gear_thick, pinion=self.pairs[2])
         else:
             raise ValueError("Arbor {} not valid".format(index))
@@ -823,6 +824,8 @@ class Dial:
         #do want to try using new tiny m2 eye bolts instead of hot-glued bent wire!
         #offset from the centre so tehy don't hit the rod
         x_offset = self.eye_rod_d/2 + self.eye_screw.metric_thread/2 + 1
+        #just self.eye_screw.metric_thread/2 radius was really a faff to get the screws in and tight enough not to need the nuts, so could leave it at that and remove nuts
+        #or make it looser and keep nut
         eye = eye.cut(cq.Workplane("XY").moveTo(x_offset,0).circle(self.eye_screw.metric_thread/2).extrude(self.eye_extend_beyond_pivot + self.eye_radius*0.75).translate((0,0, -self.eye_extend_beyond_pivot)))
         nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
         eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((x_offset,0,self.eye_rod_d/2 + 1)))

@@ -947,6 +947,56 @@ class GoingTrain:
         # print("Outputting ", out)
         # exporters.export(getSpanner(thick=self.arbours[-1].spannerBitThick,size=self.arbours[-1].getAnchorSpannerSize()), out)
 
+class MoonHolder:
+    '''
+    bolts to the front of the front plate to hold the moon on a stick for the moon complication.
+    needs both moon complication and plates objects to calculate all the relevant dimensions
+    highly coupled to both
+
+    this needs to be able to be screwed into the front plate from the front - so i think space for the nuts behind the front plate
+
+    TODO also the moon spoon (semisphere behind the moon to make it easier to "read")
+    I'm thinking it might be worth attaching it to the front of the top pillar
+
+    '''
+    def __init__(self, plates, moon_complication, fixing_screws):
+        self.plates = plates
+        self.moon_complication = moon_complication
+        self.fixing_screws = fixing_screws
+        self.arbor_d = self.moon_complication.arbor_d
+
+
+        if self.plates.style == ClockPlateStyle.ROUND:
+            raise ValueError("TODO moon phase holder for round plates")
+
+        # max_y = self.bearingPositions[-1][1] - self.arboursForPlate[-1].bearing.outerD/2 - 3
+        # max_y = self.plates.plate_top_fixings[0][1] - self.plates.fixingScrews.getNutContainingDiameter()/2
+        max_y = self.plates.topPillarPos[1] + self.plates.topPillarR
+
+        min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.getMaxRadius()
+
+        self.height = max_y - min_y
+        self.centre_y = (max_y + min_y) / 2
+
+    def get_moon_base_y(self):
+        return self.centre_y + self.height/2
+
+    def get_fixing_positions(self):
+        #between pillar screws and anchor arbor
+        top_fixing_y = (self.plates.topPillarPos[1] + self.plates.bearingPositions[-1][1] )/2
+        return [(-self.plates.plateWidth / 4, top_fixing_y), (self.plates.plateWidth / 4, self.centre_y - self.height / 3)]
+
+    def get_moon_holder(self, for_printing=True):
+        '''
+        piece screwed onto the front of the front plate with a steel tube slotted into it to take the moon on a threaded rod
+        '''
+
+        moon_z = self.moon_complication.get_moon_z()
+
+        holder = cq.Workplane("XY")
+
+
+        return holder
 
 class SimpleClockPlates:
     '''
@@ -1306,6 +1356,11 @@ class SimpleClockPlates:
 
 
         self.front_z = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False)
+
+        self.moon_holder = None
+
+        if self.moon_complication is not None:
+            self.moon_holder = MoonHolder(self, self.moon_complication, self.motion_works_screws)
 
         #cache stuff that's needed multiple times to speed up generating clock
         self.fixing_screws_cutter = None
@@ -1781,6 +1836,7 @@ class SimpleClockPlates:
         return holder
 
 
+
     def calc_need_motion_works_holder(self):
         '''
         If we've got a centred second hand then there's a chance that the motino works arbour lines up with another arbour, so there's no easy way to hold it in plnace
@@ -2205,14 +2261,22 @@ class SimpleClockPlates:
             #     points = [(x,y) for x,y,z in points]
             #     plate = plate.union(get_stroke_line(points,self.minPlateWidth, self.getPlateThick(back=back)))
             points = []
-            if self.extraHeavy:
-                #this looks okay but I think it's probably overkill
+
+            sticky_out_ness = abs(self.bearingPositions[self.goingTrain.chainWheels][0]- self.bearingPositions[self.goingTrain.chainWheels + 1 ][0])
+
+            if sticky_out_ness > 30:
+                #a-frame arms
+                #reducing to thin arms and chunky circle around bearings
                 if self.goingTrain.wheels == 4:
                     points = [self.bearingPositions[self.goingTrain.chainWheels], self.bearingPositions[self.goingTrain.chainWheels + 1 ], self.bearingPositions[self.goingTrain.chainWheels + 3], self.bearingPositions[self.goingTrain.chainWheels + 4 ]]
+                    plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth / 2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 1][:2]))
+                    plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth / 2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 3][:2]))
                 else:
                     points = [self.bearingPositions[self.goingTrain.chainWheels], self.bearingPositions[self.goingTrain.chainWheels + 1], self.bearingPositions[self.goingTrain.chainWheels + 2]]
+                    plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth/2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 1][:2]))
                 points = [(x, y) for x, y, z in points]
-                plate = plate.union(get_stroke_line(points, self.minPlateWidth, thick))
+                plate = plate.union(get_stroke_line(points, self.minPlateWidth/2, thick))
+
             else:
                 #just stick a tiny arm out the side for each bearing
                 arm_from_bearing = [0]
@@ -2430,7 +2494,14 @@ class SimpleClockPlates:
             cutter = cutter.add(cq.Workplane("XY").moveTo(self.huygensWheelPos[0], self.huygensWheelPos[1] + self.huygens_wheel_y_offset).circle(self.fixingScrews.metric_thread / 2).extrude(1000).translate((0, 0, base_z)))
             cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=nyloc, withBridging=bridging).translate(self.huygensWheelPos).translate((0, self.huygens_wheel_y_offset, nutZ)))
 
-        #cache to avoid re-calculating
+        if self.moon_complication is not None:
+            moon_screws = self.moon_holder.get_fixing_positions()
+
+            for pos in moon_screws:
+                cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate((pos[0], pos[1], self.getPlateThick(back=True) + self.plateDistance)))
+
+
+        #cache to avoid re-calculating (this is reused all over the plates)
         self.fixing_screws_cutter = cutter
 
         return cutter
@@ -2572,7 +2643,7 @@ class SimpleClockPlates:
 
             # original plan was a screw in from the side, but I think this won't be particularly strong as it's in line with the layers
             # so instead, put a screw in from the front
-            pulleyY = self.bottomPillarPositions[0][1] + self.bottomPillarR / 2
+            pulleyY = self.bottomPillarPositions[0][1]# + self.bottomPillarR / 2
             if self.extraHeavy:
                 #bring it nearer the top, making it easier to tie the cord around it
                 pulleyY = self.bottomPillarPositions[0][1] + self.bottomPillarR - self.fixingScrews.metric_thread
@@ -3340,13 +3411,10 @@ class Assembly:
         clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], motionWorksZ)))
 
         if self.moon_complication is not None:
-            # relative_positions = self.moon_complication.get_arbor_positions_relative_to_motion_works()
-            # for i in range(3):
-            #     arbor_pos = npToSet(np.add(motion_works_pos, relative_positions[i][:2]))
-            #     clock = clock.add(self.moon_complication.get_arbor_shape(i,for_printing=False).translate((arbor_pos[0], arbor_pos[1], relative_positions[i][2] + frontOfClockZ)))
-            #TODO bevel
-            # clock = clock.add(self.moon_complication.)
-            clock =clock.add(self.moon_complication.get_assembled().translate((motion_works_pos[0], motion_works_pos[1], frontOfClockZ)))
+            clock = clock.add(self.moon_complication.get_assembled().translate((motion_works_pos[0], motion_works_pos[1], frontOfClockZ)))
+            moon = self.moon_complication.get_moon_half()
+            moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
+            clock = clock.add(moon.translate((0,self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + frontOfClockZ)))
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time

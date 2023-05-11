@@ -998,7 +998,8 @@ class Hands:
 
         hand = None
         #draw a circle for the base of the hand
-        if self.hand_shapes[hand_type] is not None:
+        if self.hand_shapes[hand_type] is not None and False:
+            #fetch out the cache (disabling cache for now - doesn't work with colours)
             hand = self.hand_shapes[hand_type]
         else:
             hand = self.getBasicHandShape(hand_type == HandType.HOUR, hand_type == HandType.MINUTE, hand_type == HandType.SECOND, colour)

@@ -31,16 +31,16 @@ class Gear:
         #TODO - why did I used to pass this through to all the cutters?
         if innerRadius < 0:
             innerRadius = 3
-        #thought - some things don't need a thick rim
-        rimThick = max(outerRadius * 0.07, 3)
+        #thought - some things (caps for cord wheel?) don't need a thick rim
+        rimThick = max(outerRadius * 0.175, 3)
         outerRadius -= rimThick
         # lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
             if innerRadius < outerRadius*0.5:
                 innerRadius=outerRadius*0.5
-            return Gear.cutHACStyle(gear, armThick=outerRadius*0.1, outer_r=outerRadius - 2, inner_r=innerRadius)
+            return Gear.cutHACStyle(gear, outer_r=outerRadius, inner_r=innerRadius)
         if style == GearStyle.ARCS2:
-            return Gear.cutArcsStyle(gear, outer_r=outerRadius*0.9, inner_r=innerRadius+2)
+            return Gear.cutArcsStyle(gear, outer_r=outerRadius, inner_r=innerRadius+2)
         if style == GearStyle.CIRCLES:
             return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius, hollow=False)
         if style == GearStyle.MOONS:
@@ -48,28 +48,28 @@ class Gear:
         if style == GearStyle.CIRCLES_HOLLOW:
             return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius+2, hollow=True)
         if style == GearStyle.SIMPLE4:
-            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=4)
+            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, arms=4)
         if style == GearStyle.SIMPLE5:
-            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, arms=5)
+            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, arms=5)
         if style == GearStyle.SPOKES:
-            return Gear.cutSpokesStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
+            return Gear.cutSpokesStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2)
         if style == GearStyle.STEAMTRAIN:
-            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2)
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2)
         if style == GearStyle.CARTWHEEL:
-            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius*0.9, innerRadius=innerRadius+2, withWeight=False)
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, withWeight=False)
         if style == GearStyle.FLOWER:
-            return Gear.cutFlowerStyle2(gear, outerRadius=outerRadius-2.8, innerRadius=innerRadius)
+            return Gear.cutFlowerStyle2(gear, outerRadius=outerRadius, innerRadius=innerRadius)
         if style == GearStyle.HONEYCOMB:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius * 0.9, innerRadius=innerRadius + 2, big=False)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2, big=False)
         if style == GearStyle.SNOWFLAKE:
-            return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius * 0.9, innerRadius = innerRadius + 2)
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius, innerRadius = innerRadius + 2)
 
         if style == GearStyle.CURVES:
-            return Gear.cutCurvesStyle(gear, outerRadius=min(outerRadius*0.9, outerRadius-2.4), innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
+            return Gear.cutCurvesStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
-            return Gear.cutDiamondsStyle(gear, outerRadius=min(outerRadius*0.9, outerRadius-2.4), innerRadius=max(innerRadius*1.05, innerRadius+1))
+            return Gear.cutDiamondsStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1))
         return gear
 
     @staticmethod
@@ -655,10 +655,13 @@ class Gear:
         return gear.cut(cutter)
 
     @staticmethod
-    def cutHACStyle(gear, armThick, outer_r, inner_r):
+    def cutHACStyle(gear,outer_r, inner_r):
         # vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
+        #same as ARCS2
+        armThick = max(4, outer_r * 0.1)
         armAngle = armThick / outer_r
         arms = 5
+
 
 
         def get_sagitta(arms):

@@ -124,7 +124,7 @@ if 'show_object' not in globals():
 # show_object(hands.getHand(second=True).translate((-40,0)))
 
 
-# show_object(getHandDemo(assembled=True, chunky=True))
+# show_object(getHandDemo(assembled=True, chunky=True, justStyle=HandStyle.XMAS_TREE))
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
 
@@ -279,9 +279,9 @@ if False:
 #
 # show_object(holder)
 #
-# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
-# # # hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-# # #                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
+motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
+hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
 # #
 # # hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 # #                      length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)
@@ -291,7 +291,9 @@ if False:
 # # show_object(motionWorks.getCannonPinion())
 # # show_object(motionWorks.getHourHolder())
 #
-# # show_object(hands.getAssembled())
+show_object(hands.getHand())
+
+show_object(hands.getAssembled())
 #
 # if outputSTL:
 #     motionWorks.outputSTLs(name="test", path="out")
@@ -421,7 +423,7 @@ if False:
 #     .arc((1,10),0.5,0.,360.)
 #     # .segment((0.,2),(-1,3.))
 #     .hull().finalize().extrude(5))
-if True:
+if False:
     dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
     # #
     # show_object(dial.get_assembled(),options={"color":"blue"})
@@ -572,9 +574,10 @@ if False:
     moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.CIRCLES)
     motionWorks = MotionWorks(extra_height=10, style=GearStyle.CIRCLES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
     moon.set_motion_works_sizes(motionWorks)
-    show_object(motionWorks.getAssembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
-    show_object(moon.get_assembled())
-    # show_object(moon.get_moon_half())
+    # show_object(motionWorks.getAssembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
+    # show_object(moon.get_assembled())
+    #
+    show_object(moon.get_moon_half())
 
 
     #
