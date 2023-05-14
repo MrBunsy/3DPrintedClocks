@@ -100,8 +100,6 @@ hands = clock.Hands(style=clock.HandStyle.ARROWS,  minuteFixing="square",  minut
 # print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#,weights=[clock.Weight(height=245,diameter=55)])
-
 
 bow_tie = clock.BowTie(width=dial.outside_d*clock.tony_the_clock["bow_tie_width"]/clock.tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
 cosmetics={"red": bow_tie.get_red(),
@@ -109,6 +107,8 @@ cosmetics={"red": bow_tie.get_red(),
 
 #yellow is slightly translucent - a layer of solid white behind two layers of yellow works well.
 pretty_bob = clock.ItemWithCosmetics(shape = pendulum.getBob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics, colour_thick_overrides={"yellow":clock.LAYER_THICK*3})
+
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pretty_bob=pretty_bob)#,weights=[clock.Weight(height=245,diameter=55)])
 
 
 # show_object(plates.getPlate(back=True))

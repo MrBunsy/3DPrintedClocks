@@ -77,7 +77,7 @@ class MoonPhaseComplication3D:
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half (moon spoon!)
     '''
-    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=50, first_gear_angle_deg=180,on_left=True):
+    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,on_left=True):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
@@ -219,8 +219,8 @@ class MoonPhaseComplication3D:
         if index < 2:
             pinion_length = self.first_pinion_thick if index == 0 else self.pinion_thick
             #TODO pinion should be long enough to reach all the way to the plate so the next arbor can be as close as possible and thus the moon not stick out too much
-            arbor = Arbour(arbourD= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheelThick=self.gear_thick, pinion=self.pairs[index+1].pinion, pinionThick=pinion_length,
-                          pinionAtFront=False, clockwise_from_pinion_side=True, style=self.gear_style, endCapThick=0).getShape()
+            arbor = Arbour(arbourD= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheelThick=self.gear_thick, pinion=self.pairs[index+1].pinion, pinionThick=self.pinion_thick,
+                          pinionExtension=pinion_length - self.pinion_thick, pinionAtFront=False, clockwise_from_pinion_side=True, style=self.gear_style, endCapThick=0).getShape()
 
             if not for_printing and index == 0:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.gear_thick + pinion_length))
@@ -296,7 +296,7 @@ class MoonPhaseComplication3D:
         moon = cq.Workplane("XY").add(cq.Solid.makeSphere(self.moon_radius))
 
         #hole for rod - we're clamping the moon in place like the motion works, so it can be rotated with friction from the split washer
-        moon = moon.cut(cq.Workplane("XY").circle(self.arbor_loose_d).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius,0)))
+        moon = moon.cut(cq.Workplane("XY").circle(self.arbor_loose_d/2).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius,0)))
 
         #TODO way to attach the two halves together? Inset little areas to hold glue like on the model trains?
         #panhead screws stick and out it slots on and rotates?
@@ -329,6 +329,10 @@ class MoonPhaseComplication3D:
             out = os.path.join(path, "{}_moon_arbor_{}.stl".format(name,i))
             print("Outputting ", out)
             exporters.export(self.get_arbor_shape(i), out)
+
+        out = os.path.join(path, "{}_moon_half.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_moon_half(), out)
 
 
 class Dial:

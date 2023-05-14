@@ -150,7 +150,7 @@ class Gear:
 
         gap_size = outerRadius - innerRadius
 
-        arm_thick = Gear.getThinArmThickness(outerRadius, innerRadius)
+        arm_thick = outerRadius*0.15
         #thin arms can result in the wheel warping to be non-circular. I don't fancy taking my chances!
         if arm_thick < 3:
             arm_thick = 3
@@ -320,6 +320,11 @@ class Gear:
         #1.9 nearly seems to result in no gaps and no fiddly bits with classic slicer and 0.4 nozzle
         #1.8 seems better
         padding=1.8#2
+
+        if big:
+            #experimental, not printed yet
+            padding=2.7
+
         #experimenting to reduce the tiny bits teh slicer likes to make
         # padding = padding - (padding % EXTRUSION_WIDTH) - 0.2
 
@@ -675,11 +680,10 @@ class Gear:
 
         sagitta = get_sagitta(arms)
         i=0
-        while sagitta < gap_size/2 and i <1000:
+        while sagitta < gap_size/2 and arms < 20:
             #on narrow gaps they can end up just a straight lines!
             arms+=1
             sagitta = get_sagitta(arms)
-            i+=1
 
 
         # sagitta*=1.2
@@ -913,7 +917,7 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.getMaxRadius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def addToWheel(self,wheel, holeD=0, thick=4, front=True, style="HAC", pinionThick=8, capThick=2, clockwise_from_pinion_side=True):
+    def addToWheel(self,wheel, holeD=0, thick=4, style="HAC", pinionThick=8, capThick=2, clockwise_from_pinion_side=True, pinion_extension=0):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
@@ -925,28 +929,18 @@ class Gear:
 
         base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.getMaxRadius()+1,clockwise_from_pinion_side = clockwise_from_pinion_side)
 
-        if front:
-            #pinion is on top of the wheel
-            distance = thick
-            topFace = ">Z"
-        else:
-            distance = -pinionThick
-            topFace = "<Z"
+        if pinion_extension > 0:
+            base = base.union(cq.Workplane("XY").circle(self.getMaxRadius()).extrude(pinion_extension).translate((0,0,thick)))
 
-        top = self.get3D(thick=pinionThick, holeD=holeD, style=style).translate([0, 0, distance])
+        top = self.get3D(thick=pinionThick, holeD=holeD, style=style).translate((0, 0, thick + pinion_extension))
 
         arbour = base.union(top)
 
         if capThick > 0:
-            arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(self.getMaxRadius()).extrude(capThick)
+            arbour = arbour.union(cq.Workplane("XY").circle(self.getMaxRadius()).extrude(capThick).translate((0,0,thick + pinionThick +  pinion_extension)))
 
         # arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
         arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(holeD / 2).extrude(1000).translate((0,0,-500)))
-
-        if not front:
-            #make sure big side is on the bottom.
-            #wanted to mirror the wheel, but can't due to bug in cadquery https://github.com/ukaea/paramak/issues/548 (I can't see to get a later version to work either)
-            arbour = arbour.rotateAboutCenter((0,1,0),180)
 
         return arbour
 
@@ -1545,7 +1539,7 @@ class ArbourForPlate:
         return None
 
 class Arbour:
-    def __init__(self, arbourD=None, wheel=None, wheelThick=None, pinion=None, pinionThick=None, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
+    def __init__(self, arbourD=None, wheel=None, wheelThick=None, pinion=None, pinionThick=None, pinionExtension=0, poweredWheel=None, escapement=None, endCapThick=1, style=GearStyle.ARCS,
                  distanceToNextArbour=-1, pinionAtFront=True, ratchetInset=True, ratchetScrews=None, pendulumFixing = PendulumFixing.FRICTION_ROD, useRatchet=True, clockwise_from_pinion_side=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
@@ -1579,6 +1573,8 @@ class Arbour:
         self.wheelThick=wheelThick
         self.pinion=pinion
         self.pinionThick=pinionThick
+        #where the pinion is extended (probably to ensure the wheel avoids something) but don't want to treat it just as an extra-thick pinion
+        self.pinionExtension = pinionExtension
         self.escapement=escapement
         self.endCapThick=endCapThick
         #the pocket chain wheel or cord wheel (needed to calculate full height and a few tweaks)
@@ -1789,9 +1785,9 @@ class Arbour:
 
             if self.escapementOnFront and self.getType() == ArbourType.ESCAPE_WHEEL:
                 #just the pinion is within the plates
-                return self.pinionThick + self.endCapThick*2
+                return self.pinionThick + self.pinionExtension + self.endCapThick*2
 
-            return self.wheelThick + self.pinionThick + self.endCapThick
+            return self.wheelThick + self.pinionThick + self.pinionExtension + self.endCapThick
         if self.getType() == ArbourType.CHAIN_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             return self.wheelThick + self.poweredWheel.getHeight() - self.getRatchetInsetness(toCarve=False)
@@ -1914,7 +1910,12 @@ class Arbour:
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
         '''
         if self.getType() == ArbourType.WHEEL_AND_PINION:
-            shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick, capThick=self.endCapThick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+
+            shape = self.pinion.addToWheel(self.wheel, holeD=self.holeD, thick=self.wheelThick, style=self.style, pinionThick=self.pinionThick,
+                                           pinion_extension=self.pinionExtension, capThick=self.endCapThick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+
+            # shape = self.pinion.get3D
+
         elif self.getType() == ArbourType.ESCAPE_WHEEL:
             if self.escapementOnFront:
                 shape = self.getPinionArbour(forPrinting=forPrinting)
@@ -2506,7 +2507,7 @@ class MotionWorks:
                 options = []
 
                 for p0 in range(pinion_min, pinion_max):
-                    print("{:.1f}% calculating motion works gears".format(100*(p0 - pinion_min)/(pinion_max-pinion_min)))
+                    print("\r{:.1f}% calculating motion works gears".format(100*(p0 - pinion_min)/(pinion_max-pinion_min)), end='')
                     for w0 in range(wheel_min, wheel_max):
                         for p1 in range(pinion_min, pinion_max):
                             for w1 in range(wheel_min, wheel_max):

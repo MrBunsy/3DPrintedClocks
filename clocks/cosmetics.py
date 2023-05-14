@@ -171,6 +171,16 @@ class ItemWithCosmetics:
     def get_models(self):
         return [self.final_shapes[colour] for colour in self.final_shapes]
 
+    def get_models_by_colour(self):
+        return self.final_shapes
+
+    def get_model(self):
+        complete_model = cq.Workplane("XY")
+        for model in self.get_models():
+            complete_model = complete_model.add(model)
+
+        return complete_model
+
     def output_STLs(self, name="clock", path="../out"):
         '''
 

@@ -61,7 +61,7 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 class GoingTrain:
 
     def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chainWheels=0, hours=30, chainAtBack=True, maxWeightDrop=1800,
-                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False, minuteWheelRatio = 1):
+                 escapement=None, escapeWheelPinionAtFront=None, usePulley=False, huygensMaintainingPower=False, minuteWheelRatio = 1, supportSecondHand=False):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -80,6 +80,8 @@ class GoingTrain:
 
         minuteWheelRatio: usually 1 - so the minute wheel (chain wheel as well on a 1-day clock) rotates once an hour. If less than one, this "minute wheel" rotates less than once per hour.
         this makes sense (at the moment) only on a centred-second-hand clock where we have another set of wheels linking the "minute wheel" and the motion works
+
+        supportSecondHand: if the period and number of teeth on the escape wheel don't result in it rotating once a minute, try and get the next gear down the train to rotate once a minute
 
 
         Grand plan: auto generate gear ratios.
@@ -104,7 +106,11 @@ class GoingTrain:
         #in metres
         self.pendulum_length = pendulum_length
 
+        #was experimenting with having the minute wheel outside the powered wheel to escapement train - but I think it's a dead
+        #end as it will end up with some slop if it's not in the train
         self.minuteWheelRatio = minuteWheelRatio
+
+        self.supportSecondHand = supportSecondHand
 
         self.huygensMaintainingPower = huygensMaintainingPower
         self.arbours = []
@@ -137,7 +143,7 @@ class GoingTrain:
         self.usePulley=usePulley
 
         if fourth_wheel is not None:
-            #old deprecated interface
+            #old deprecated interface, use "wheels" instead
             self.wheels = 4 if fourth_wheel else 3
         else:
             self.wheels = wheels
@@ -153,9 +159,14 @@ class GoingTrain:
 
         self.trains=[]
 
-    def has_seconds_hand(self):
+    def has_seconds_hand_on_escape_wheel(self):
         #not sure this should work with floating point, but it does...
         return self.escapement_time == 60
+
+    def has_second_hand_on_last_wheel(self):
+
+        last_pair = self.trains[0]["train"][-1]
+        return self.escapement_time / (last_pair[1]/last_pair[0]) == 60
 
     def getCordUsage(self):
         '''
@@ -168,10 +179,12 @@ class GoingTrain:
     '''
     TODO make this generic and re-usable, I've got similar logic over in calculating chain wheel ratios and motion works
     '''
-    def calculateRatios(self, moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50, max_error=0.1, loud=False):
+    def calculateRatios(self, moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50, max_error=0.1, loud=False, penultimate_wheel_min_ratio=0):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
+        penultimate_wheel_min_ratio - check that the ratio of teeth on the last wheel is greater than the previous wheel's teeth * penultimate_wheel_min_ratio (mainly for trains
+        where the second hand is on the penultimate wheel rather than the escape wheel - since we prioritise smaller trains we can end up with a teeny tiny escape wheel)
         '''
 
         pinion_min = min_pinion_teeth
@@ -190,45 +203,64 @@ class GoingTrain:
          seems reasonable to me
         '''
         allGearPairCombos = []
+        allSecondsWheelCombos = []
 
         targetTime = 60 * 60 / self.minuteWheelRatio
 
         for p in range(pinion_min, pinion_max):
             for w in range(wheel_min, wheel_max):
                 allGearPairCombos.append([w, p])
+
+
+        #use a much wider range
+        if self.supportSecondHand and not self.has_seconds_hand_on_escape_wheel():
+            for p in range(pinion_min, pinion_max*3):
+                for w in range(pinion_max, wheel_max*4):
+                    print(p, w, self.escapement_time / (p/w))
+                    if self.escapement_time / (p/w) == 60:
+                        allSecondsWheelCombos.append([w,p])
         if loud:
             print("allGearPairCombos", len(allGearPairCombos))
         # [ [[w,p],[w,p],[w,p]] ,  ]
         allTrains = []
 
+        print(allSecondsWheelCombos)
+
         allTrainsLength = 1
         for i in range(self.wheels):
             allTrainsLength *= len(allGearPairCombos)
-
-        # this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
-        # one fewer pairs than wheels
         allcomboCount = len(allGearPairCombos)
-        if self.wheels == 2:
-            for pair_0 in range(allcomboCount):
-                allTrains.append([allGearPairCombos[pair_0]])
-        if self.wheels == 3:
-            for pair_0 in range(allcomboCount):
-                for pair_1 in range(allcomboCount):
-                    allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
-        elif self.wheels == 4:
-            for pair_0 in range(allcomboCount):
-                if loud and pair_0 % 10 == 0:
-                    print("{:.1f}% of calculating trains".format(100 * pair_0 / allcomboCount))
-                for pair_1 in range(allcomboCount):
-                    for pair_2 in range(allcomboCount):
-                        allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1], allGearPairCombos[pair_2]])
+
+        def addCombos(pair_index=0, previous_pairs=None):
+            if previous_pairs is None:
+                previous_pairs = []
+            # one fewer pair than wheels, and if we're the last pair then add the combos, else recurse
+            final_pair = pair_index == self.wheels - 2
+            valid_combos = allGearPairCombos
+            if self.supportSecondHand and not self.has_seconds_hand_on_escape_wheel() and final_pair:
+                #using a different set of combinations that will force the penultimate wheel to rotate at 1 rpm
+                valid_combos = allSecondsWheelCombos
+            for pair in range(len(valid_combos)):
+                if loud and pair % 10 == 0 and pair_index == 0:
+                    print("\r{:.1f}% of calculating train options".format(100 * pair / allcomboCount), end='')
+
+
+                all_pairs = previous_pairs + [valid_combos[pair]]
+                if final_pair:
+                    allTrains.append(all_pairs)
+                else:
+                    addCombos(pair_index+1, all_pairs)
+
+        #recursively create an array of all gear trains to test - should work with any number of wheels >= 2
+        addCombos()
+
         if loud:
-            print("allTrains", len(allTrains))
+            print("\nallTrains", len(allTrains))
         allTimes = []
         totalTrains = len(allTrains)
         for c in range(totalTrains):
             if loud and c % 100 == 0:
-                print("{:.1f}% of combos".format(100 * c / totalTrains))
+                print("\r{:.1f}% of trains evaluated".format(100 * c / totalTrains), end='')
             totalRatio = 1
             intRatio = False
             totalTeeth = 0
@@ -255,12 +287,22 @@ class GoingTrain:
                     fits = False
                     break
                 lastSize = size
+            if self.supportSecondHand and not self.has_seconds_hand_on_escape_wheel():
+                #want to check last wheel won't be too tiny (would rather add more teeth than increase the module size for asthetics)
+                if allTrains[c][-1][0] < allTrains[c][-2][0]*penultimate_wheel_min_ratio:
+                    #only continue if the penultimate wheel has more than half the number of teeth of the wheel before that
+                    continue
+
+
             totalTime = totalRatio * self.escapement_time
             error = targetTime - totalTime
 
             train = {"time": totalTime, "train": allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting}
             if fits and abs(error) < max_error and not intRatio:
                 allTimes.append(train)
+
+        if loud:
+            print("")
 
         allTimes.sort(key=lambda x: x["weighting"])
         # print(allTimes)
@@ -671,7 +713,8 @@ class GoingTrain:
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
         if > 0 and < 1, escape wheel will be this fraction of the previous wheel
 
-        stack_away_from_powered_wheel - experimental, usually we interleave gears to minimise plate distance, but we might want to minimise height instead
+        stack_away_from_powered_wheel - experimental, put each wheel in "front" of the previous, usually we interleave gears to minimise plate distance,
+         but we might want to minimise height instead. Required for compact plates with 4 wheels
 
         '''
 
@@ -846,15 +889,18 @@ class GoingTrain:
 
             elif i < self.wheels-1:
                 pinionThick = arbours[-1].wheelThick * pinionThickMultiplier
-
+                pinionExtension = 0
                 if self.chainWheels == 0 and i == 1:
                     #this pinion is for the chain wheel
                     pinionThick = arbours[-1].wheelThick * chainWheelPinionThickMultiplier
-
+                if i == self.wheels-2 and self.has_second_hand_on_last_wheel() and stack_away_from_powered_wheel:
+                    #extend this pinion a bit to keep the giant pinion on the escape wheel from clashing
+                    pinionExtension = pinionThick*0.6
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i), pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
-                                distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i),
+                                      pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength, pinionExtension=pinionExtension,
+                                      distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
                 #Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
                 #automating would require knowing how far apart the plates are, which we don't at this point, so just do it manually
@@ -1335,7 +1381,7 @@ class SimpleClockPlates:
 
 
             if self.has_seconds_hand():
-                second_hand_relative_pos = npToSet(np.subtract(self.bearingPositions[-2], self.bearingPositions[self.goingTrain.chainWheels]))[0:2]
+                second_hand_relative_pos = npToSet(np.subtract(self.get_seconds_hand_position(), self.hands_position))
 
                 if self.centred_second_hand:
                     # second_hand_mini_dial_d = -1
@@ -1780,9 +1826,19 @@ class SimpleClockPlates:
             return False
         return True
 
+    def get_seconds_hand_position(self):
+        if self.centred_second_hand:
+            return self.hands_position
+
+        if self.goingTrain.has_seconds_hand_on_escape_wheel():
+            return self.bearingPositions[-2][:2]
+
+        if self.goingTrain.has_second_hand_on_last_wheel():
+            #wheel before the escape wheel
+            return self.bearingPositions[-3][:2]
+
     def has_seconds_hand(self):
-        #true if the going train supports it and it's enabled for this clock
-        return self.goingTrain.has_seconds_hand() and self.second_hand
+        return self.second_hand and (self.goingTrain.has_seconds_hand_on_escape_wheel() or self.goingTrain.has_second_hand_on_last_wheel())
 
     def need_front_anchor_bearing_holder(self):
         #no longer supporting anything that doesn't (with the escapement on the front) - the large bearings have way too much friction so we have to hold the anchor arbour from both ends
@@ -3203,7 +3259,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, weights=None):
+    def __init__(self, plates, hands=None, timeMins=10, timeHours=10, timeSeconds=0, pulley=None, weights=None, pretty_bob=None):
         self.plates = plates
         self.hands = hands
         self.dial= plates.dial
@@ -3221,6 +3277,10 @@ class Assembly:
         self.weights=weights
         if self.weights is None:
             self.weights = []
+
+        #cosmetic parts taht override the defaults
+
+        self.pretty_bob = pretty_bob
 
     def printInfo(self):
 
@@ -3303,7 +3363,7 @@ class Assembly:
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
                     rod_length = hand_arbor_length + self.hands.secondFixing_thick + self.hands.secondThick
-                elif self.plates.has_seconds_hand():
+                elif self.plates.has_seconds_hand_on_escape_wheel():
                     if self.dial is not None and self.dial.has_seconds_sub_dial():
                         #if the rod doesn't go all the way through the second hand
                         hand_thick_accounting = self.hands.secondThick - self.hands.second_rod_end_thick
@@ -3447,7 +3507,7 @@ class Assembly:
             #second hand!! yay
             secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
-            secondHandPos = self.plates.bearingPositions[-2][:2]
+            secondHandPos =  self.plates.get_seconds_hand_position()
             secondHandPos.append(self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick)
 
             if self.plates.dial is not None:
@@ -3485,8 +3545,12 @@ class Assembly:
 
         if with_pendulum:
 
+            bob = self.pendulum.getBob(hollow=False)
 
-            clock = clock.add(self.pendulum.getBob(hollow=False).rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ - self.pendulum.bobThick / 2)))
+            if self.pretty_bob is not None:
+                bob = self.pretty_bob.get_model()
+
+            clock = clock.add(bob.rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ - self.pendulum.bobThick / 2)))
 
             clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ)))
 

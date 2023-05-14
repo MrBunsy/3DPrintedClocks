@@ -316,7 +316,7 @@ class AutoWallClock:
             if not self.centred_second_hand:
                 dial_diameter = 200
                 bottom_fixing = True
-                if self.train.has_seconds_hand():
+                if self.train.has_seconds():
                     #need sub dial for second hand so this dial has to be large (and will print in two pieces)
                     dial_diameter=245
                     #second hand length calculated after plates have reconfigured the dial
@@ -344,7 +344,7 @@ class AutoWallClock:
                                          backPlateFromWall=self.pendulumSticksOut * 2, fixingScrews=MachineScrew(metric_thread=3, countersunk=True, length=40),
                                          chainThroughPillarRequired=True, dial=self.dial, centred_second_hand=self.centred_second_hand, pillars_separate=True)
 
-        if self.has_dial and not self.centred_second_hand and self.train.has_seconds_hand():
+        if self.has_dial and not self.centred_second_hand and (self.train.has_seconds_hand_on_escape_wheel() or self.train.has_second_hand_on_last_wheel()):
             self.second_hand_length = self.dial.second_hand_mini_dial_d*0.5
 
         outline = 1 if self.hand_has_outline else 0
