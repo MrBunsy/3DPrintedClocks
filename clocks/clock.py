@@ -757,7 +757,7 @@ class GoingTrain:
         #make the escape wheel as large as possible, by default
         if stack_away_from_powered_wheel:
             #avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
-            escapeWheelDiameter = (pairs[len(pairs) - 1].centre_distance - holeD*2 - 2) * 2
+            escapeWheelDiameter = (pairs[len(pairs) - 1].centre_distance - holeD - 2) * 2
         else:
             #avoid previous pinion
             escapeWheelDiameter = (pairs[len(pairs)-1].centre_distance - pairs[len(pairs)-1].pinion.getMaxRadius() - 2)*2
@@ -2318,28 +2318,35 @@ class SimpleClockPlates:
             #     plate = plate.union(get_stroke_line(points,self.minPlateWidth, self.getPlateThick(back=back)))
             points = []
 
-            sticky_out_ness = abs(self.bearingPositions[self.goingTrain.chainWheels][0]- self.bearingPositions[self.goingTrain.chainWheels + 1 ][0])
 
-            if sticky_out_ness > 30:
-                #a-frame arms
-                #reducing to thin arms and chunky circle around bearings
-                if self.goingTrain.wheels == 4:
-                    points = [self.bearingPositions[self.goingTrain.chainWheels], self.bearingPositions[self.goingTrain.chainWheels + 1 ], self.bearingPositions[self.goingTrain.chainWheels + 3], self.bearingPositions[self.goingTrain.chainWheels + 4 ]]
-                    plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth / 2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 1][:2]))
-                    plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth / 2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 3][:2]))
-                else:
-                    points = [self.bearingPositions[self.goingTrain.chainWheels], self.bearingPositions[self.goingTrain.chainWheels + 1], self.bearingPositions[self.goingTrain.chainWheels + 2]]
-                    plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth/2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 1][:2]))
-                points = [(x, y) for x, y, z in points]
-                plate = plate.union(get_stroke_line(points, self.minPlateWidth/2, thick))
 
+            sticky_out_bearing_indexes = []
+            if self.goingTrain.wheels == 4:
+                sticky_out_bearing_indexes = [self.goingTrain.chainWheels+1, self.goingTrain.chainWheels+3]
             else:
-                #just stick a tiny arm out the side for each bearing
-                arm_from_bearing = [0]
-                if self.goingTrain.wheels == 4:
-                    arm_from_bearing=[0,2]
-                for i in arm_from_bearing:
-                    bearing_pos = self.bearingPositions[self.goingTrain.chainWheels+1+i]
+                sticky_out_bearing_indexes = [self.goingTrain.chainWheels+1]
+
+            for bearing_index in sticky_out_bearing_indexes:
+                sticky_out_ness = abs(self.bearingPositions[self.goingTrain.chainWheels][0] - self.bearingPositions[bearing_index][0])
+                if sticky_out_ness > 30:
+                    #a-frame arms
+                    #reducing to thin arms and chunky circle around bearings
+                    if self.goingTrain.wheels == 4:
+                        points = [
+                            self.bearingPositions[bearing_index - 1][:2],
+                            self.bearingPositions[bearing_index][:2],
+                            self.bearingPositions[bearing_index + 1][:2]
+                        ]
+                        plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth / 2).extrude(thick).translate(self.bearingPositions[bearing_index][:2]))
+                    else:
+                        points = [self.bearingPositions[self.goingTrain.chainWheels], self.bearingPositions[self.goingTrain.chainWheels + 1], self.bearingPositions[self.goingTrain.chainWheels + 2]]
+                        plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth/2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 1][:2]))
+                    # points = [(x, y) for x, y, z in points]
+                    plate = plate.union(get_stroke_line(points, self.minPlateWidth/2, thick))
+
+                else:
+                    #just stick a tiny arm out the side for each bearing
+                    bearing_pos = self.bearingPositions[bearing_index]
                     points = [(0, bearing_pos[1]), (bearing_pos[0], bearing_pos[1])]
                     plate = plate.union(get_stroke_line(points, self.minPlateWidth, thick))
 
