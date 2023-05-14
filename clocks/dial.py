@@ -524,8 +524,8 @@ class Dial:
         dA = math.pi * 2 / lines
 
         detail = cq.Workplane("XY").tag("base")
-        detail = detail.add(cq.Workplane("XY").circle(outer_circle_r + line_width / 2).circle(outer_circle_r - line_width / 2).extrude(self.detail_thick))
-        detail = detail.add(cq.Workplane("XY").circle(inner_circle_r + line_width / 2).circle(inner_circle_r - line_width / 2).extrude(self.detail_thick))
+        detail = detail.union(cq.Workplane("XY").circle(outer_circle_r + line_width / 2).circle(outer_circle_r - line_width / 2).extrude(self.detail_thick))
+        detail = detail.union(cq.Workplane("XY").circle(inner_circle_r + line_width / 2).circle(inner_circle_r - line_width / 2).extrude(self.detail_thick))
 
 
         for i in range(lines):
@@ -533,7 +533,7 @@ class Dial:
             this_line_width = line_width*2 if big else line_width
             angle = math.pi / 2 - i * dA
 
-            detail = detail.add(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(self.detail_thick).translate((0, (outer_circle_r + inner_circle_r) / 2)).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle)))
+            detail = detail.union(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(self.detail_thick).translate((0, (outer_circle_r + inner_circle_r) / 2)).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle)))
 
         return detail
 

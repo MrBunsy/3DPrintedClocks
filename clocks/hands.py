@@ -1122,7 +1122,7 @@ class Hands:
         if self.outline > 0:
             for type in HandType:
                 try:
-                    hands[type]["outline"] = self.getHand(hand_type=HandType.SECOND, generate_outline=True)
+                    hands[type]["outline"] = self.getHand(hand_type=type, generate_outline=True)
                 except:
                     pass
 

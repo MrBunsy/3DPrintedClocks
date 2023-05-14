@@ -75,7 +75,8 @@ hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="square",  minu
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)
 
-show_object(assembly.getClock(with_key=True, with_pendulum=True))
+# show_object(assembly.getClock(with_key=True, with_pendulum=True))
+assembly.show_clock(show_object)
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
