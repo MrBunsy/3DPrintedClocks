@@ -780,6 +780,9 @@ class Dial:
 
         return dial
 
+
+
+
     def get_all_detail(self):
         '''
         all detail printed in the same colour

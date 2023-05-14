@@ -210,11 +210,11 @@ if 'show_object' not in globals():
 
 # show_object(poweredArbour.getExtraRatchet())
 
-pair = WheelPinionPair(80,10, module=1)
-#
-arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.HONEYCOMB, pinionExtension=5, endCapThick=1)
-#
-show_object(arbour.getShape())
+# pair = WheelPinionPair(80,10, module=1)
+# #
+# arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.HONEYCOMB, pinionExtension=5, endCapThick=1)
+# #
+# show_object(arbour.getShape())
 #
 # # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB_SMALL))
 # show_object(getGearDemo(justStyle=GearStyle.HONEYCOMB))
@@ -279,9 +279,11 @@ if False:
 #
 # show_object(holder)
 #
-# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
-# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
+motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
+hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
+
+show_object(hands.getHand())
 # # #
 # # # hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 # # #                      length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)

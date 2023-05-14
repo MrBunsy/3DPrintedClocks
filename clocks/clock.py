@@ -17,6 +17,11 @@ import datetime
 from .cuckoo_bits import roman_numerals
 from .cq_svg import exportSVG
 
+# if 'show_object' not in globals():
+#     #don't output STL when we're in cadquery editor
+#     outputSTL = True
+#     def show_object(*args, **kwargs):
+#         pass
 
 
 
@@ -3165,6 +3170,34 @@ class SimpleClockPlates:
 
         return key_body
 
+    def get_assembled(self):
+        '''
+        3D model of teh assembled plates
+        '''
+        bottomPlate = self.getPlate(True, for_printing=False)
+        topPlate = self.getPlate(False, for_printing=False)
+        frontOfClockZ = self.getPlateThick(True) + self.getPlateThick(False) + self.plateDistance
+
+        if self.pillars_separate:
+            for bottomPillarPos in self.bottomPillarPositions:
+                bottomPlate = bottomPlate.add(self.get_bottom_pillar().translate(bottomPillarPos).translate((0, 0, self.getPlateThick(back=True))))
+            bottomPlate = bottomPlate.add(self.get_top_pillar().translate(self.topPillarPos).translate((0, 0, self.getPlateThick(back=True))))
+
+        plates = bottomPlate.add(topPlate.translate((0, 0, self.plateDistance + self.getPlateThick(back=True))))
+
+        if self.backPlateFromWall > 0:
+            # need wall standoffs
+            plates = plates.add(self.getWallStandoff(top=True, forPrinting=False))
+            plates = plates.add(self.getWallStandoff(top=False, forPrinting=False))
+
+        if self.need_front_anchor_bearing_holder():
+            plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
+
+        if self.need_motion_works_holder:
+            plates = plates.add(self.get_motion_works_holder().translate((self.motionWorksPos[0], self.motionWorksPos[1], frontOfClockZ)))
+
+        return plates
+
     def outputSTLs(self, name="clock", path="../out"):
 
         if self.dial is not None:
@@ -3289,6 +3322,37 @@ class Assembly:
 
         self.pretty_bob = pretty_bob
 
+
+        #shared geometry
+        self.frontOfClockZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
+
+        # where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
+        self.motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
+        self.motionWorksZ = self.frontOfClockZ + self.motionWorksZOffset
+
+        self.motion_works_pos = (self.plates.hands_position[0], self.plates.hands_position[1])
+
+        # total, not relative, height because that's been taken into accounr with motionworksZOffset
+        self.minuteHandZ = self.frontOfClockZ + self.motionWorksZOffset + self.motionWorks.get_cannon_pinion_total_height() - self.hands.thick
+
+        self.secondHandPos = self.plates.get_seconds_hand_position()
+        self.secondHandPos.append(self.frontOfClockZ + self.hands.secondFixing_thick)
+
+        self.minuteAngle = - 360 * (self.timeMins / 60)
+        self.hourAngle = - 360 * (self.timeHours + self.timeMins / 60) / 12
+        self.secondAngle = -360 * (self.timeSeconds / 60)
+
+        if self.plates.dial is not None:
+            self.secondHandPos[2] = self.frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick
+
+            self.dial_pos = (self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + self.frontOfClockZ)
+            #for eyes
+            self.wire_to_arbor_fixer_pos = (self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], self.frontOfClockZ + self.plates.endshake + 1)
+
+        if self.plates.centred_second_hand:
+            self.secondHandPos = self.plates.hands_position[:]
+            self.secondHandPos.append(self.minuteHandZ + self.hands.thick + self.hands.secondFixing_thick)
+
     def printInfo(self):
 
         for holeInfo in self.goingTrain.poweredWheel.getChainPositionsFromTop():
@@ -3411,89 +3475,45 @@ class Assembly:
         '''
 
 
-
     def getClock(self, with_rods=False, with_key=False, with_pendulum=False):
         '''
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
         '''
 
-        bottomPlate = self.plates.getPlate(True, for_printing=False)
-        topPlate  = self.plates.getPlate(False, for_printing=False)
 
-        if self.plates.pillars_separate:
-            for bottomPillarPos in self.plates.bottomPillarPositions:
-                bottomPlate = bottomPlate.add(self.plates.get_bottom_pillar().translate(bottomPillarPos).translate((0, 0, self.plates.getPlateThick(back=True))))
-            bottomPlate = bottomPlate.add(self.plates.get_top_pillar().translate(self.plates.topPillarPos).translate((0, 0, self.plates.getPlateThick(back=True))))
 
-        frontOfClockZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
+        clock = self.plates.get_assembled()
 
-        clock = bottomPlate.add(topPlate.translate((0,0,self.plates.plateDistance + self.plates.getPlateThick(back=True))))
-
-        if self.plates.backPlateFromWall > 0:
-            #need wall standoffs
-            clock = clock.add(self.plates.getWallStandoff(top=True, forPrinting=False))
-            clock = clock.add(self.plates.getWallStandoff(top=False, forPrinting=False))
-            # clock = clock.add(self.plates.getWallStandOff())
-            # clock = clock.add(self.plates.getDrillTemplate(6))
-
-        if self.plates.need_front_anchor_bearing_holder():
-            clock = clock.add(self.plates.get_front_anchor_bearing_holder(for_printing=False))
-
-        #the wheels
-        # arbours = self.goingTrain.wheels + self.goingTrain.chainWheels + 1
-        # for a in range(arbours):
-        #     arbour = self.goingTrain.getArbourWithConventionalNaming(a)
-        #     clock = clock.add(arbour.getAssembled().translate(self.plates.bearingPositions[a]).translate((0,0,self.plates.getPlateThick(back=True) + self.plates.endshake/2)))
         for a,arbour in enumerate(self.plates.arboursForPlate):
             clock = clock.add(arbour.get_assembled())
 
-        # if self.plates.escapementOnFront:
-        #
-        #     escapeWheelIndex = -2
-        #     #double endshake on the extra front plate
-        #     wheel = self.goingTrain.getArbourWithConventionalNaming(escapeWheelIndex).getEscapeWheel(forPrinting=False)
-        #     #note getWheelBaseToAnchorBaseZ is negative
-        #     clock = clock.add(wheel.translate((self.plates.bearingPositions[escapeWheelIndex][0], self.plates.bearingPositions[escapeWheelIndex][1], frontOfClockZ + self.plates.endshake -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ())))
-        #
-        #     anchor = self.goingTrain.getArbourWithConventionalNaming(-1).getAnchor(forPrinting=False)#getExtras()["anchor"]
-        #     clock = clock.add(anchor.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake)))
-
-
-        #where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
-        motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
 
         time_min = self.timeMins
         time_hour = self.timeHours
 
 
-        minuteAngle = - 360 * (time_min / 60)
-        hourAngle = - 360 * (time_hour + time_min / 60) / 12
-        secondAngle = -360 * (self.timeSeconds / 60)
 
-        motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos,minuteAngle=minuteAngle)
-        motionWorksZ = frontOfClockZ + motionWorksZOffset
 
-        motion_works_pos = (self.plates.hands_position[0], self.plates.hands_position[1])
+        motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
 
-        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], motionWorksZ)))
+        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)))
 
         if self.moon_complication is not None:
-            clock = clock.add(self.moon_complication.get_assembled().translate((motion_works_pos[0], motion_works_pos[1], frontOfClockZ)))
+            clock = clock.add(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.frontOfClockZ)))
             moon = self.moon_complication.get_moon_half()
             moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
-            clock = clock.add(moon.translate((0,self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + frontOfClockZ)))
+            clock = clock.add(moon.translate((0,self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + self.frontOfClockZ)))
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time
-            clock = clock.add(self.motionWorks.getCannonPinionPinion(standalone=True).translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], motionWorksZ )))
-        if self.plates.need_motion_works_holder:
-            clock = clock.add(self.plates.get_motion_works_holder().translate((self.plates.motionWorksPos[0], self.plates.motionWorksPos[1], frontOfClockZ)))
+            clock = clock.add(self.motionWorks.getCannonPinionPinion(standalone=True).translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.motionWorksZ )))
+
 
         if self.dial is not None:
             dial = self.dial.get_assembled()#get_dial().rotate((0,0,0),(0,1,0),180)
-            clock = clock.add(dial.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + frontOfClockZ)))
+            clock = clock.add(dial.translate(self.dial_pos))
             if self.dial.has_eyes():
-                clock = clock.add(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate((self.plates.bearingPositions[-1][0],self.plates.bearingPositions[-1][1], frontOfClockZ + self.plates.endshake + 1)))
+                clock = clock.add(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate((self.plates.bearingPositions[-1][0],self.plates.bearingPositions[-1][1], self.frontOfClockZ + self.plates.endshake + 1)))
 
 
         #hands on the motion work, showing the time
@@ -3501,35 +3521,23 @@ class Assembly:
         # minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
         # hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
         hands = self.hands.getAssembled(time_minute = time_min, time_hour=time_hour, include_seconds=False ,gap_size = self.motionWorks.hourHandSlotHeight - self.hands.thick)
-        #total, not effective, height because that's been taken into accounr with motionworksZOffset
-        minuteHandZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + motionWorksZOffset \
-                      + self.motionWorks.get_cannon_pinion_total_height() - self.hands.thick
+
 
         # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
         clock = clock.add(hands.translate((self.plates.hands_position[0], self.plates.hands_position[1],
-                                              minuteHandZ - self.motionWorks.hourHandSlotHeight)))
+                                              self.minuteHandZ - self.motionWorks.hourHandSlotHeight)))
 
         if self.plates.has_seconds_hand():
             #second hand!! yay
-            secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+            secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), self.secondAngle)
 
-            secondHandPos =  self.plates.get_seconds_hand_position()
-            secondHandPos.append(self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance+self.hands.secondFixing_thick)
-
-            if self.plates.dial is not None:
-                secondHandPos[2] = frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick
-
-            if self.plates.centred_second_hand:
-                secondHandPos = self.plates.hands_position[:]
-                secondHandPos.append(minuteHandZ + self.hands.thick + self.hands.secondFixing_thick)
-
-            clock = clock.add(secondHand.translate(secondHandPos))
+            clock = clock.add(secondHand.translate(self.secondHandPos))
 
         if with_key:
             key = self.plates.get_winding_key(for_printing=False)
             if key is not None:
-                clock = clock.add(key.translate((self.plates.bearingPositions[0][0], self.plates.bearingPositions[0][1], frontOfClockZ + self.plates.key_offset_from_front_plate + self.plates.endshake/2)))
+                clock = clock.add(key.translate((self.plates.bearingPositions[0][0], self.plates.bearingPositions[0][1], self.frontOfClockZ + self.plates.key_offset_from_front_plate + self.plates.endshake/2)))
 
         pendulumRodExtraZ = 2
 
@@ -3649,10 +3657,81 @@ class Assembly:
 
         return clock
 
-    def getSpanner(self, size, length=180):
-        '''
 
+    def show_clock(self,show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None, bob_colour="purple"):
         '''
+        use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
+        hoping to re-use some of this to produce coloured SVGs
+        '''
+        if gear_colours is None:
+            gear_colours = Colour.RAINBOW
+        if dial_colours is None:
+            dial_colours = ["white", "black"]
+        if hand_colours is None:
+            hand_colours = ["white", "black"]
+
+
+        show_object(self.plates.get_assembled(), options={"color":plate_colour})
+
+        for a, arbour in enumerate(self.plates.arboursForPlate):
+            show_object(arbour.get_assembled(), options={"color": gear_colours[(len(self.plates.arboursForPlate)-1 - a) % len(gear_colours)]})
+
+        motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
+
+        show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":gear_colours[self.goingTrain.wheels]})
+
+
+
+        if self.moon_complication is not None:
+            #TODO colours of moon complication arbors
+            show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.frontOfClockZ)))
+            moon = self.moon_complication.get_moon_half()
+            # moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
+            show_object(moon.translate((0,self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + self.frontOfClockZ)),
+                        options={"color":"gray"})
+            show_object(moon.rotate((0,0,0),(0,1,0),180).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + self.frontOfClockZ)),
+                        options={"color":"black"})
+
+        if self.plates.centred_second_hand:
+            #the bit with a knob to set the time
+            #TODO colour
+            show_object(self.motionWorks.getCannonPinionPinion(standalone=True).translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.motionWorksZ )))
+
+
+        if self.dial is not None:
+            dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
+            detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
+
+            show_object(dial, options={"color": dial_colours[0]})
+            show_object(detail, options={"color": dial_colours[1]})
+            if self.dial.has_eyes():
+                show_object(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate(self.wire_to_arbor_fixer_pos), options={"color": gear_colours[0]})
+
+
+        #hands on the motion work, showing the time
+        #mirror them so the outline is visible (consistent with second hand)
+        hands = self.hands.get_in_situ(time_minute=self.timeMins, time_hour=self.timeHours, time_seconds=self.timeSeconds, gap_size=self.motionWorks.hourHandSlotHeight - self.hands.thick)
+
+        for type in HandType:
+            for colour in hands[type]:
+                show_colour = colour
+                if show_colour is None:
+                    show_colour = hand_colours[0]
+                if show_colour == "outline":
+                    show_colour = hand_colours[1]
+
+                show_colour = Colour.colour_tidier(show_colour)
+
+                if type != HandType.SECOND:
+                    show_object(hands[type][colour].translate((self.plates.hands_position[0], self.plates.hands_position[1],
+                                                  self.minuteHandZ - self.motionWorks.hourHandSlotHeight)), options={"color": show_colour})
+                elif self.plates.has_seconds_hand():
+                    #second hand!! yay
+                    secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), self.secondAngle)\
+                        .translate(self.secondHandPos)
+                    show_object(secondHand, options={"color": show_colour})
+
+
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))

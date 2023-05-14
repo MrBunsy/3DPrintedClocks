@@ -1099,6 +1099,48 @@ class Hands:
 
         return hand
 
+    def get_in_situ(self,time_minute=10, time_hour=10, time_seconds=0, gap_size=0):
+        '''
+        get individual hands in the right position for assembling a model
+        '''
+
+        minuteAngle = - 360 * (time_minute / 60)
+        hourAngle = - 360 * (time_hour + time_minute / 60) / 12
+        secondAngle = -360 * (time_seconds / 60)
+
+        hands = {HandType.MINUTE: {},
+                 HandType.HOUR: {},
+                 HandType.SECOND: {}
+                 }
+
+
+        for colour in self.getExtraColours():
+            #None means the main hand colour
+            for type in HandType:
+                hands[type][colour] = self.getHand(hand_type=type, colour=colour)
+
+        if self.outline > 0:
+            for type in HandType:
+                try:
+                    hands[type]["outline"] = self.getHand(hand_type=HandType.SECOND, generate_outline=True)
+                except:
+                    pass
+
+        #rotate and translate into position
+        for colour in hands[HandType.MINUTE]:
+            hands[HandType.MINUTE][colour] = hands[HandType.MINUTE][colour].mirror().translate((0, 0, self.thick * 2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+        for colour in hands[HandType.HOUR]:
+            hands[HandType.HOUR][colour] = hands[HandType.HOUR][colour].mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+        for colour in hands[HandType.SECOND]:
+            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+
+            if self.second_hand_centred:
+                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 3))
+            else:
+                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, self.length * 0.5, 0))
+
+        return hands
+
     def getAssembled(self, time_minute=10, time_hour=10, time_seconds=0, gap_size=0, include_seconds=True):
         '''
         get minute and hour hands assembled centred around 0,0

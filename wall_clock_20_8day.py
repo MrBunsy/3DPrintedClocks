@@ -40,7 +40,7 @@ train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThic
 
 
 
-pendulumSticksOut=20
+pendulumSticksOut=15
 
 train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
@@ -58,7 +58,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.LINES_ARC)
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 20",style=clock.ClockPlateStyle.COMPACT,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=9, pendulumSticksOut=pendulumSticksOut, name="Wall 20",style=clock.ClockPlateStyle.COMPACT,
                                  motionWorksAbove=True, heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=2, motion_works_angle_deg=45)
@@ -77,7 +77,9 @@ print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#weights=[clock.Weight(height=245,diameter=55)]
 
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock(with_key=False, with_pendulum=True))
+# show_object(assembly.getClock(with_key=False, with_pendulum=True))
+
+assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS])
 
 # show_object(plates.getDrillTemplate(6))
 

@@ -392,6 +392,35 @@ def getTangentsThroughPoint(circle_centre, circle_r, point):
     Point P≡(%g,%g) is inside the circle with centre C≡(%g,%g) and radius r=%g.
     No tangent is possible...''' % (Px, Py, Cx, Cy, r))
 
+class Colour:
+    '''
+    for use in show_object(...,options:{"color": colour})
+    '''
+    GOLD = (153, 102, 0)
+    BRASS = (71, 65, 26)
+    RED = "red"
+    ORANGE = (255, 102, 0)
+    YELLOW = "yellow"
+    GREEN = "green"
+    LIGHTBLUE = (0, 153, 255)
+    BLUE = "blue"
+    PURPLE = (153, 51, 255)
+
+    RAINBOW = [RED,
+               ORANGE,
+               YELLOW,
+               GREEN,
+               LIGHTBLUE,
+               BLUE,
+               PURPLE]
+
+    @staticmethod
+    def colour_tidier(string):
+        '''
+        given a colour name (from, for example, cosmetics or hands) return something that cq_editor will display
+        '''
+        return string
+
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):
         '''
