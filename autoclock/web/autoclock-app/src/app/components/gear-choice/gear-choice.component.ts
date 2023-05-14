@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { ClocksService } from 'src/app/clocks.service';
 import { GearStyle, GearStyle_list } from 'src/app/models/types';
 
-let ignoreGears = [GearStyle.CIRCLES_HOLLOW]
+let ignoreGears = [GearStyle.CIRCLES_HOLLOW, GearStyle.TREE, GearStyle.MOONS]
 
 @Component({
   selector: 'gear-choice',
