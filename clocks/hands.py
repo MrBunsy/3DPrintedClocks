@@ -1132,12 +1132,13 @@ class Hands:
         for colour in hands[HandType.HOUR]:
             hands[HandType.HOUR][colour] = hands[HandType.HOUR][colour].mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
         for colour in hands[HandType.SECOND]:
-            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+            #relative position of second hand is irrelevant because Hands object doesn't know where to put it, so it's only valid for centred second hand
+            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
             if self.second_hand_centred:
-                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 3))
-            else:
-                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, self.length * 0.5, 0))
+                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 2 + gap_size + self.secondFixing_thick))
+            # else:
+            #     hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, self.length * 0.5, 0))
 
         return hands
 

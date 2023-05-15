@@ -3364,17 +3364,39 @@ class Assembly:
 
         if self.plates.centred_second_hand:
             self.secondHandPos = self.plates.hands_position.copy()
-            self.secondHandPos.append(self.minuteHandZ + self.hands.thick + self.hands.secondFixing_thick)
+            self.secondHandPos.append(self.minuteHandZ - self.motionWorks.hourHandSlotHeight)# + self.hands.thick + self.hands.secondFixing_thick)
         if self.plates.pendulumAtFront:
-            pendulumRodExtraZ = 2
+            self.pendulumRodExtraZ = 2
 
-            pendulumRodCentreZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + self.pendulum.pendulumTopThick / 2
+            pendulumRodCentreZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + self.pendulum.pendulumTopThick / 2
         else:
             pendulumRodCentreZ = -self.plates.pendulumSticksOut
 
         pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
 
         self.pendulum_bob_centre_pos = (self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ)
+
+        self.ring_pos = [0,0,self.pendulum_bob_centre_pos[2]]
+        self.has_ring = False
+
+        if self.plates.pendulumAtFront:
+            # if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
+            if self.plates.style != ClockPlateStyle.ROUND:
+                # centre around the hands by default
+                self.ring_pos[1] = self.plates.bearingPositions[self.goingTrain.chainWheels][1]
+                if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
+                    # centre between the hands and the winding key
+                    self.ring_pos[1] = (self.plates.bearingPositions[self.goingTrain.chainWheels][1] + self.plates.bearingPositions[0][1]) / 2
+
+                handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick) / 2
+                # ring is over the minute wheel/hands
+                self.ring_pos[2] = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + handAvoiderExtraZ
+                self.has_ring = True
+        else:
+            # pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable)
+            if len(self.plates.bottomPillarPositions) == 1:
+                self.ring_pos = (self.plates.bottomPillarPositions[0][0], self.plates.bottomPillarPositions[0][1], -self.plates.pendulumSticksOut - self.pendulum.handAvoiderThick / 2)
+                self.has_ring = True
 
     def printInfo(self):
 
@@ -3620,7 +3642,7 @@ class Assembly:
 
                 handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
                 #ring is over the minute wheel/hands
-                clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + handAvoiderExtraZ)))
+                clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + handAvoiderExtraZ)))
             else:
                 #pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable)
                 if len(self.plates.bottomPillarPositions) == 1:
@@ -3665,7 +3687,7 @@ class Assembly:
 
 
     def show_clock(self,show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
-                   bob_colour="purple", motion_works_colour=None, with_pendulum=True):
+                   bob_colour="purple", motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3675,21 +3697,28 @@ class Assembly:
         if dial_colours is None:
             dial_colours = ["white", "black"]
         if hand_colours is None:
+            #main hand, outline, second hand if different
             hand_colours = ["white", "black"]
-        if motion_works_colour is None:
-            #TODO multiple colours for motion works
-            motion_works_colour = gear_colours[self.goingTrain.wheels]
-
+        if motion_works_colours is None:
+            #cannonpinion, hour holder, arbor, time-setting pinion
+            motion_works_colours = [gear_colours[self.goingTrain.wheels]]
+        if ring_colour is None:
+            ring_colour = gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + 1) % len(gear_colours)]
+        if huygens_colour is None:
+            huygens_colour = gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + 2) % len(gear_colours)]
 
         show_object(self.plates.get_assembled(), options={"color":plate_colour})
 
         for a, arbour in enumerate(self.plates.arboursForPlate):
             show_object(arbour.get_assembled(), options={"color": gear_colours[(len(self.plates.arboursForPlate)-1 - a) % len(gear_colours)]})
 
-        motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
-
-        show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":motion_works_colour})
-
+        # # motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
+        # #
+        # # show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":motion_works_colour})
+        motion_works_parts = self.motionWorks.get_parts_in_situ(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
+        for i,part in enumerate(motion_works_parts):
+            colour = motion_works_colours[i % len(motion_works_colours)]
+            show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":colour})
 
 
         if self.moon_complication is not None:
@@ -3701,12 +3730,6 @@ class Assembly:
                         options={"color":"gray"})
             show_object(moon.rotate((0,0,0),(0,1,0),180).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + self.frontOfClockZ)),
                         options={"color":"black"})
-
-        if self.plates.centred_second_hand:
-            #the bit with a knob to set the time
-            #TODO colour
-            show_object(self.motionWorks.getCannonPinionPinion(standalone=True).translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0],self.plates.bearingPositions[self.goingTrain.chainWheels][1], self.motionWorksZ )))
-
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
@@ -3737,6 +3760,8 @@ class Assembly:
                 show_colour = colour
                 if show_colour is None:
                     show_colour = hand_colours[0]
+                    if type == HandType.SECOND:
+                        show_colour = hand_colours[2 % len(hand_colours)]
                 if show_colour == "outline":
                     show_colour = hand_colours[1]
 
@@ -3747,9 +3772,17 @@ class Assembly:
                                                   self.minuteHandZ - self.motionWorks.hourHandSlotHeight)), options={"color": show_colour})
                 elif self.plates.has_seconds_hand():
                     #second hand!! yay
-                    secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), self.secondAngle)\
-                        .translate(self.secondHandPos)
+                    secondHand = hands[type][colour].translate(self.secondHandPos)
                     show_object(secondHand, options={"color": show_colour})
+
+        if self.has_ring:
+
+            show_object(self.pendulum.getHandAvoider().translate(self.ring_pos), options={"color": ring_colour})
+
+        if self.plates.huygensMaintainingPower:
+            #assumes one pillar
+            show_object(self.plates.huygensWheel.getAssembled().translate(self.plates.bottomPillarPositions[0]).translate((0, self.plates.huygens_wheel_y_offset, self.frontOfClockZ + WASHER_THICK_M3)), options={"color": huygens_colour})
+
 
         if with_pendulum:
             # bob_colour = gear_colours[len(self.plates.bearingPositions) % len(gear_colours)]

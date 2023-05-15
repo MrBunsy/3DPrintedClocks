@@ -93,7 +93,9 @@ weight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
 # show_object(assembly.getClock())
-assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,clocks.utility.Colour.BRASS])
+assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,clocks.utility.Colour.BRASS],
+                    motion_works_colours=[clocks.utility.Colour.ORANGE,clocks.utility.Colour.ORANGE,clocks.utility.Colour.YELLOW,clocks.utility.Colour.GREEN],
+                    hand_colours=["white", "black", "red"])
 
 
 if outputSTL:

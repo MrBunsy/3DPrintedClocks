@@ -2570,18 +2570,29 @@ class MotionWorks:
         self.calc_bearing_holder_thick()
 
     def getAssembled(self, motionWorksRelativePos=None,minuteAngle=10):
+
+        parts = self.get_parts_in_situ(motionWorksRelativePos, minuteAngle)
+
+        model = cq.Workplane("XY")
+
+        for part in parts:
+            model = model.add(parts[part])
+
+        return model
+
+    def get_parts_in_situ(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
             motionWorksRelativePos = [0, -self.getArbourDistance()]
-
-        motionWorksModel = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
-        motionWorksModel = motionWorksModel.add(self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick())))
-        motionWorksModel = motionWorksModel.add(self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.getCannonPinionBaseThick()-self.bearingHolderThick) / 2 +self.bearingHolderThick- self.thick/2)))
+        parts = {}
+        parts["cannon_pinion"] = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+        parts["hour_holder"] = self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick()))
+        parts["arbor"] = self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.getCannonPinionBaseThick() - self.bearingHolderThick) / 2 + self.bearingHolderThick - self.thick / 2))
 
         if self.centred_second_hand:
-            relative_pos = npToSet(np.multiply(motionWorksRelativePos,2))
-            motionWorksModel = motionWorksModel.add(self.getCannonPinionPinion(standalone=True).translate(relative_pos))
+            relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
+            parts["time_setter_pinion"] = self.getCannonPinionPinion(standalone=True).translate(relative_pos)
 
-        return motionWorksModel
+        return parts
 
     def getHourHandHoleD(self):
         '''
