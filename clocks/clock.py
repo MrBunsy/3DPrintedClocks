@@ -2352,7 +2352,7 @@ class SimpleClockPlates:
                         ]
                         plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth / 2).extrude(thick).translate(self.bearingPositions[bearing_index][:2]))
                     else:
-                        points = [self.bearingPositions[self.goingTrain.chainWheels], self.bearingPositions[self.goingTrain.chainWheels + 1], self.bearingPositions[self.goingTrain.chainWheels + 2]]
+                        points = [self.bearingPositions[self.goingTrain.chainWheels][:2], self.bearingPositions[self.goingTrain.chainWheels + 1][:2], self.bearingPositions[self.goingTrain.chainWheels + 2][:2]]
                         plate = plate.union(cq.Workplane("XY").circle(self.minPlateWidth/2).extrude(thick).translate(self.bearingPositions[self.goingTrain.chainWheels + 1][:2]))
                     # points = [(x, y) for x, y, z in points]
                     plate = plate.union(get_stroke_line(points, self.minPlateWidth/2, thick))
@@ -3393,8 +3393,8 @@ class Assembly:
                 self.ring_pos[2] = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + handAvoiderExtraZ
                 self.has_ring = True
         else:
-            # pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable)
-            if len(self.plates.bottomPillarPositions) == 1:
+            # pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable) if the pendulum is long enough to need it
+            if len(self.plates.bottomPillarPositions) == 1 and np.linalg.norm(np.subtract(self.plates.bearingPositions[-1][:2],self.plates.bottomPillarPositions[0][:2])) < self.goingTrain.pendulum_length*1000:
                 self.ring_pos = (self.plates.bottomPillarPositions[0][0], self.plates.bottomPillarPositions[0][1], -self.plates.pendulumSticksOut - self.pendulum.handAvoiderThick / 2)
                 self.has_ring = True
 
