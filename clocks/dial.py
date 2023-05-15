@@ -727,6 +727,9 @@ class Dial:
 
         return dial
 
+    def get_eye_positions(self):
+        return [(-self.eye_distance_apart / 2, self.eye_y), ( self.eye_distance_apart / 2, self.eye_y)]
+
     def add_eyes(self, dial):
         '''
         cut out hole and add pivot holders for a pair of eyes

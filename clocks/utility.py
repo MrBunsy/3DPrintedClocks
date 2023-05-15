@@ -405,6 +405,7 @@ class Colour:
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
     PURPLE = (153, 51, 255)
+    LIGHTGREY = (211,211,211)
 
     RAINBOW = [RED,
                ORANGE,

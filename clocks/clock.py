@@ -190,6 +190,9 @@ class GoingTrain:
         module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
         penultimate_wheel_min_ratio - check that the ratio of teeth on the last wheel is greater than the previous wheel's teeth * penultimate_wheel_min_ratio (mainly for trains
         where the second hand is on the penultimate wheel rather than the escape wheel - since we prioritise smaller trains we can end up with a teeny tiny escape wheel)
+
+        now favours a low standard deviation of number of teeth on the wheels - this should stop situations where we get a giant first wheel and tiny final wheels (and tiny escape wheel)
+        This is slow, but seems to work well
         '''
 
         pinion_min = min_pinion_teeth
@@ -221,7 +224,7 @@ class GoingTrain:
         if self.supportSecondHand and not self.has_seconds_hand_on_escape_wheel():
             for p in range(pinion_min, pinion_max*3):
                 for w in range(pinion_max, wheel_max*4):
-                    print(p, w, self.escapement_time / (p/w))
+                    # print(p, w, self.escapement_time / (p/w))
                     if self.escapement_time / (p/w) == 60:
                         allSecondsWheelCombos.append([w,p])
         if loud:
@@ -292,6 +295,9 @@ class GoingTrain:
                     fits = False
                     break
                 lastSize = size
+            #favour evenly sized wheels
+            wheel_tooth_counts = [pair[0] for pair in allTrains[c]]
+            weighting += np.std(wheel_tooth_counts)
             if self.supportSecondHand and not self.has_seconds_hand_on_escape_wheel():
                 #want to check last wheel won't be too tiny (would rather add more teeth than increase the module size for asthetics)
                 if allTrains[c][-1][0] < allTrains[c][-2][0]*penultimate_wheel_min_ratio:
@@ -807,7 +813,8 @@ class GoingTrain:
         self.chainWheelArbours=[]
         self.chainWheelPairs=[]
         chain_module_base = module_size
-        fits = False
+        #fits if we don't have any chain wheels, otherwise run the loop
+        fits = self.chainWheels == 0
         loop = 0
         while not fits and loop < 100:
             self.chainWheelPairs = []
@@ -1061,7 +1068,7 @@ class SimpleClockPlates:
     def __init__(self, goingTrain, motionWorks, pendulum, style=ClockPlateStyle.VERTICAL, arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
-                 centred_second_hand=False, pillars_separate=False, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
+                 centred_second_hand=False, pillars_separate=True, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
@@ -1833,7 +1840,7 @@ class SimpleClockPlates:
 
     def get_seconds_hand_position(self):
         if self.centred_second_hand:
-            return self.hands_position
+            return self.hands_position.copy()
 
         if self.goingTrain.has_seconds_hand_on_escape_wheel():
             return self.bearingPositions[-2][:2]
@@ -1841,6 +1848,7 @@ class SimpleClockPlates:
         if self.goingTrain.has_second_hand_on_last_wheel():
             #wheel before the escape wheel
             return self.bearingPositions[-3][:2]
+        return None
 
     def has_seconds_hand(self):
         return self.second_hand and (self.goingTrain.has_seconds_hand_on_escape_wheel() or self.goingTrain.has_second_hand_on_last_wheel())
@@ -1978,7 +1986,7 @@ class SimpleClockPlates:
             else:
                 bottomScrewHolePos = (0, self.bottomPillarPositions[0][1])
 
-            if self.heavy:
+            if self.heavy or True:
                 return [topScrewHolePos, bottomScrewHolePos]
             else:
                 return [topScrewHolePos]
@@ -2390,6 +2398,7 @@ class SimpleClockPlates:
         else:
             for bottomPillarPos in self.bottomPillarPositions:
                 plate = plate.union(get_stroke_line([bottomPillarPos, bottom_pillar_joins_plate_pos], wide=bottomBitWide, thick = thick))
+                plate = plate.union(cq.Workplane("XY").moveTo(bottomPillarPos[0], bottomPillarPos[1]).circle(self.bottomPillarR-0.00001).extrude(thick))
 
 
 
@@ -3036,11 +3045,13 @@ class SimpleClockPlates:
 
             ratchet = ratchet.cut(cutter)
 
-
-
-            plate = plate.union(ratchet.translate(self.bottomPillarPositions).translate((0, self.huygens_wheel_y_offset, self.getPlateThick(back=False))))
+            if self.bottom_pillars > 1:
+                raise ValueError("Hyugens wheel not yet supported with more than 1 bottom pillar")
+            #assumes single pillar
+            huygens_pos = self.bottomPillarPositions[0]
+            plate = plate.union(ratchet.translate(huygens_pos).translate((0, self.huygens_wheel_y_offset, self.getPlateThick(back=False))))
             if ratchetD > self.bottomPillarR:
-                plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(self.getPlateThick(back=False)).translate(self.bottomPillarPositions).translate((0, self.huygens_wheel_y_offset)))
+                plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(self.getPlateThick(back=False)).translate(huygens_pos).translate((0, self.huygens_wheel_y_offset)))
 
         if not self.escapementOnFront and not self.huygensMaintainingPower and not self.pendulumAtFront and self.bottom_pillars > 1 and not self.goingTrain.chainAtBack:
             #add a semicircular bit under the chain wheel (like on huygens) to stop chain from being able to fall off easily
@@ -3323,35 +3334,47 @@ class Assembly:
         self.pretty_bob = pretty_bob
 
 
-        #shared geometry
+        # =============== shared geometry (between clock model and show_clock) ================
         self.frontOfClockZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
 
         # where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
         self.motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
         self.motionWorksZ = self.frontOfClockZ + self.motionWorksZOffset
 
-        self.motion_works_pos = (self.plates.hands_position[0], self.plates.hands_position[1])
+        self.motion_works_pos = self.plates.hands_position.copy()
 
         # total, not relative, height because that's been taken into accounr with motionworksZOffset
         self.minuteHandZ = self.frontOfClockZ + self.motionWorksZOffset + self.motionWorks.get_cannon_pinion_total_height() - self.hands.thick
-
-        self.secondHandPos = self.plates.get_seconds_hand_position()
-        self.secondHandPos.append(self.frontOfClockZ + self.hands.secondFixing_thick)
+        if self.plates.has_seconds_hand():
+            self.secondHandPos = self.plates.get_seconds_hand_position()
+            self.secondHandPos.append(self.frontOfClockZ + self.hands.secondFixing_thick)
 
         self.minuteAngle = - 360 * (self.timeMins / 60)
         self.hourAngle = - 360 * (self.timeHours + self.timeMins / 60) / 12
         self.secondAngle = -360 * (self.timeSeconds / 60)
 
         if self.plates.dial is not None:
-            self.secondHandPos[2] = self.frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick
+            if self.plates.has_seconds_hand():
+                self.secondHandPos[2] = self.frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick
 
+            #position of the front centre of the dial
             self.dial_pos = (self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + self.frontOfClockZ)
             #for eyes
             self.wire_to_arbor_fixer_pos = (self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], self.frontOfClockZ + self.plates.endshake + 1)
 
         if self.plates.centred_second_hand:
-            self.secondHandPos = self.plates.hands_position[:]
+            self.secondHandPos = self.plates.hands_position.copy()
             self.secondHandPos.append(self.minuteHandZ + self.hands.thick + self.hands.secondFixing_thick)
+        if self.plates.pendulumAtFront:
+            pendulumRodExtraZ = 2
+
+            pendulumRodCentreZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ + self.pendulum.pendulumTopThick / 2
+        else:
+            pendulumRodCentreZ = -self.plates.pendulumSticksOut
+
+        pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
+
+        self.pendulum_bob_centre_pos = (self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ)
 
     def printInfo(self):
 
@@ -3539,41 +3562,23 @@ class Assembly:
             if key is not None:
                 clock = clock.add(key.translate((self.plates.bearingPositions[0][0], self.plates.bearingPositions[0][1], self.frontOfClockZ + self.plates.key_offset_from_front_plate + self.plates.endshake/2)))
 
-        pendulumRodExtraZ = 2
-
-        pendulumRodFixing = self.pendulum.getPendulumForRod(forPrinting=False)
-
-        # pendulumHolderBaseZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + pendulumRodExtraZ
-        pendulumRodCentreZ =  self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut +  pendulumRodExtraZ + self.pendulum.pendulumTopThick / 2
-        # pendulumRodCentreZ = pendulumHolderBaseZ + self.pendulum.pendulumTopThick / 2
-        # pendulumBobBaseZ = pendulumRodCentreZ - self.pendulum.bobThick / 2
-        pendulumBobCentreY = self.plates.bearingPositions[-1][1] - self.goingTrain.pendulum_length * 1000
-
-        if not self.plates.pendulumAtFront:
-            # pendulumHolderBaseZ = -self.plates.pendulumSticksOut - self.pendulum.pendulumTopThick/2
-            pendulumRodCentreZ = -self.plates.pendulumSticksOut
-
-        # if self.plates.pendulumFixing == PendulumFixing.FRICTION_ROD:
-        #     clock = clock.add(pendulumRodFixing.translate((self.plates.bearingPositions[-1][0], self.plates.bearingPositions[-1][1], pendulumHolderBaseZ)))
-
 
 
         if with_pendulum:
-
             bob = self.pendulum.getBob(hollow=False)
 
             if self.pretty_bob is not None:
                 bob = self.pretty_bob.get_model()
 
-            clock = clock.add(bob.rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ - self.pendulum.bobThick / 2)))
+            clock = clock.add(bob.rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate(self.pendulum_bob_centre_pos))
 
-            clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate((self.plates.bearingPositions[-1][0], pendulumBobCentreY, pendulumRodCentreZ)))
+            clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos))
 
 
         if len(self.weights) > 0:
             for i, weight in enumerate(self.weights):
                 #line them up so I can see if they'll bump into each other
-                weightTopY = pendulumBobCentreY
+                weightTopY = self.pendulum_bob_centre_pos[1]
 
                 holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
 
@@ -3643,7 +3648,8 @@ class Assembly:
                 clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick()/2)))
 
         if self.plates.huygensMaintainingPower:
-            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(self.plates.bottomPillarPositions).translate((0, self.plates.huygens_wheel_y_offset, self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK_M3)))
+            #assumes one pillar
+            clock = clock.add(self.plates.huygensWheel.getAssembled().translate(self.plates.bottomPillarPositions[0]).translate((0, self.plates.huygens_wheel_y_offset, self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance + WASHER_THICK_M3)))
 
         #TODO pendulum bob and nut?
 
@@ -3658,7 +3664,8 @@ class Assembly:
         return clock
 
 
-    def show_clock(self,show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None, bob_colour="purple"):
+    def show_clock(self,show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
+                   bob_colour="purple", motion_works_colour=None, with_pendulum=True):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3669,6 +3676,9 @@ class Assembly:
             dial_colours = ["white", "black"]
         if hand_colours is None:
             hand_colours = ["white", "black"]
+        if motion_works_colour is None:
+            #TODO multiple colours for motion works
+            motion_works_colour = gear_colours[self.goingTrain.wheels]
 
 
         show_object(self.plates.get_assembled(), options={"color":plate_colour})
@@ -3678,7 +3688,7 @@ class Assembly:
 
         motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
 
-        show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":gear_colours[self.goingTrain.wheels]})
+        show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":motion_works_colour})
 
 
 
@@ -3704,8 +3714,18 @@ class Assembly:
 
             show_object(dial, options={"color": dial_colours[0]})
             show_object(detail, options={"color": dial_colours[1]})
+
+            if self.dial.style == DialStyle.TONY_THE_CLOCK:
+                extras = self.dial.get_extras()
+                #TODO - excessive since I'm probably never going to print tony again?
+
             if self.dial.has_eyes():
                 show_object(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate(self.wire_to_arbor_fixer_pos), options={"color": gear_colours[0]})
+                eye, pupil = self.dial.get_eye()
+
+                for eye_pos in self.dial.get_eye_positions():
+                    show_object(eye.translate(eye_pos).translate(self.dial_pos).translate((0,0,-self.dial.thick - self.dial.eye_pivot_z)), options={"color": "white"})
+                    show_object(pupil.translate(eye_pos).translate(self.dial_pos).translate((0,0,-self.dial.thick - self.dial.eye_pivot_z)), options={"color": "black"})
 
 
         #hands on the motion work, showing the time
@@ -3731,6 +3751,17 @@ class Assembly:
                         .translate(self.secondHandPos)
                     show_object(secondHand, options={"color": show_colour})
 
+        if with_pendulum:
+            # bob_colour = gear_colours[len(self.plates.bearingPositions) % len(gear_colours)]
+            bob_colour = Colour.colour_tidier(bob_colour)
+            bob = self.pendulum.getBob(hollow=False)
+
+            if self.pretty_bob is not None:
+                bob = self.pretty_bob.get_model()
+
+            show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum.bobThick/2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour})
+
+            show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour})
 
 
     def outputSTLs(self, name="clock", path="../out"):

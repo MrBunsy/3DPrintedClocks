@@ -73,7 +73,8 @@ weight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+assembly.show_clock(show_object)
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)

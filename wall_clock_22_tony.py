@@ -112,8 +112,8 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pretty_bob=pretty
 
 
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock(with_key=False, with_pendulum=True, with_rods=True))
-
+# show_object(assembly.getClock(with_key=False, with_pendulum=True, with_rods=True))
+assembly.show_clock(show_object, hand_colours=["red"], dial_colours=["blue", "yellow"], motion_works_colour="red")
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:

@@ -1,5 +1,6 @@
 import math
 
+import clocks.utility
 from clocks.power import *
 from clocks.escapements import *
 from clocks.striking import *
@@ -91,7 +92,9 @@ weight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,clocks.utility.Colour.BRASS])
+
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
