@@ -495,7 +495,7 @@ class Hands:
         style = self.style
         min_base_r=0
         if minute or hour:
-            min_base_r = max(self.minuteFixing_d1, self.minuteFixing_d2, self.hourFixing_d)* 0.7
+            min_base_r = max(self.minuteFixing_d1, self.minuteFixing_d2, self.hourFixing_d)* 0.75
 
         if second:
             min_base_r = self.secondFixing_d* 0.7
@@ -521,6 +521,8 @@ class Hands:
             else:
                 length = self.secondLength
                 base_r = self.secondLength * 0.2
+
+
 
         ignoreOutline = False
 
@@ -976,6 +978,8 @@ class Hands:
             except:
                 print("Unable to cut detail in cuckoo hand")
 
+        if base_r < min_base_r:
+            base_r = min_base_r
 
         if need_base_r:
             hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)

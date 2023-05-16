@@ -396,6 +396,8 @@ class Colour:
     '''
     for use in show_object(...,options:{"color": colour})
     '''
+    WHITE = "white"
+    PINK = (255,182,193)
     GOLD = (153, 102, 0)
     BRASS = (71, 65, 26)
     RED = "red"
@@ -406,6 +408,8 @@ class Colour:
     BLUE = "blue"
     PURPLE = (153, 51, 255)
     LIGHTGREY = (211,211,211)
+    DARKGREY = (50,50,50)
+    BLACK = "black"
 
     RAINBOW = [RED,
                ORANGE,

@@ -49,6 +49,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
     for gear_style in GearStyle:
         demo_file_name = "gear_demo_{}.svg".format( gear_style.value)
         preview_file_name = "gear_preview_{}.svg".format(gear_style.value)
+        preview_3d_file_name = "gear_preview_{}.tjs".format(gear_style.value)
 
         # demo = getGearDemo(justStyle=gear_style)
         demo = cq.Workplane("XY")
@@ -66,6 +67,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
         preview = demoArbours[1].getShape()#getGearDemo(justStyle=gear_style, oneGear=True)
         exportSVG(preview, os.path.join(out_path,preview_file_name),  opts={"width":150,"height":150, "showAxes":False, "strokeWidth":0.5,
                                                                                   "showHidden":False, "projectionDir": (0, 0, 1)})
+        cq.exporters.export(preview,os.path.join(out_path, preview_3d_file_name))
 
 def gen_anchor_previews(out_path="autoclock"):
     for style in AnchorStyle:

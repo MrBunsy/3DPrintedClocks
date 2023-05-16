@@ -95,7 +95,8 @@ weight.printInfo()
 # show_object(assembly.getClock())
 assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,clocks.utility.Colour.BRASS],
                     motion_works_colours=[clocks.utility.Colour.ORANGE,clocks.utility.Colour.ORANGE,clocks.utility.Colour.YELLOW,clocks.utility.Colour.GREEN],
-                    hand_colours=["white", "black", "red"])
+                    hand_colours=["white", "black", "red"],
+                    plate_colour=clocks.utility.Colour.DARKGREY)
 
 
 if outputSTL:

@@ -144,8 +144,12 @@ print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#weights=[clock.Weight(height=245,diameter=55)]
 assembly.get_arbour_rod_lengths()
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock(with_rods=True, with_key=True))
+# show_object(assembly.getClock(with_rods=True, with_key=True))
 # show_object(plates.get_winding_key(for_printing=False))
+
+assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK],
+                    motion_works_colours=[clock.Colour.ORANGE,clock.Colour.ORANGE,clock.Colour.YELLOW,clock.Colour.GREEN],
+                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED])
 
 # show_object(plates.getDrillTemplate(6))
 
