@@ -14,7 +14,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_07c"
+clockName="wall_clock_07_redux"
 clockOutDir="out"
 
 
@@ -34,7 +34,7 @@ train.genCordWheels(ratchetThick=5, cordThick=1, cordCoilThick=11)
 
 train.printInfo()
 
-pendulumSticksOut=8
+pendulumSticksOut=20
 
 train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
 
@@ -67,7 +67,8 @@ weight.printInfo()
 bigweight = clock.Weight(height=125, diameter=45)
 bigweight.printInfo()
 
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE])
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)

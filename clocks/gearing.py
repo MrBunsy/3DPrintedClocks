@@ -663,7 +663,7 @@ class Gear:
     def cutHACStyle(gear,outer_r, inner_r):
         # vaguely styled after some HAC gears I've got, with nice arcing shapes cut out
         #same as ARCS2
-        armThick = max(4, outer_r * 0.1)
+        armThick = max(4, outer_r * 0.125)
         armAngle = armThick / outer_r
         arms = 5
 
@@ -1142,6 +1142,76 @@ class WheelPinionBeveledPair:
 
         return assembly
 
+class FrictionFitPendulumBits:
+    '''
+    Pendulum holder that attaches to a threaded rod by friction, can be manually adjusted to set in beat
+    Do not use for new designs - was a pain to set the beat and easy to knock out of beat
+    '''
+
+    def __init__(self, arbour_d=3):
+        self.pendulumTopThick = 15
+        self.arbour_d = arbour_d
+
+    def get_pendulum_holder(self, holeD=3, forPrinting=True):
+        '''
+        Will allow a threaded rod for the pendulum to be attached to threaded rod for the arbour
+        '''
+
+        pendulum = cq.Workplane("XY")
+
+        width = 12#holeD*4
+        height = 22#26#holeD*6
+
+        #I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
+        extraRodSpace=1
+
+        #(0,0,0) is the rod from the anchor, the rod is along the z axis
+
+        #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
+        holeStartY=-getNutContainingDiameter(self.arbour_d)*0.5-0.4#-5#-8#-height*0.2
+        holeHeight = getNutHeight(self.arbour_d,nyloc=True) + getNutHeight(self.arbour_d) + 1
+
+        nutD = getNutContainingDiameter(holeD)
+
+        wall_thick = (width - (nutD + 1))/2
+
+        pendulum = pendulum.moveTo(-width/2,0).radiusArc((width/2,0), width/2).line(0,-height).radiusArc((-width/2,-height), width/2).close().extrude(self.pendulumTopThick)
+
+        pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
+
+        #nut to hold to anchor rod
+        nutThick = getNutHeight(holeD, nyloc=True)
+        nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
+        pendulum = pendulum.cut(nutSpace)
+
+
+        # pendulum = pendulum.faces(">Z").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).cutThruAll()
+        space = cq.Workplane("XY").moveTo(0,holeStartY-holeHeight/2).rect(width-wall_thick*2,holeHeight).extrude(self.pendulumTopThick).translate((0,0,LAYER_THICK*3))
+        pendulum = pendulum.cut(space)
+
+        extraSpaceForRod = 0.1
+        extraSpaceForNut = 0.2
+        #
+        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2 - extraRodSpace).circle(self.arbour_d/2 + extraSpaceForRod/2).extrude(100)
+        # add slot for rod to come in and out
+        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick - extraRodSpace).rect(self.arbour_d + extraSpaceForRod, self.pendulumTopThick).extrude(100)
+
+        rod = rod.translate((0,holeStartY,0))
+
+
+
+
+        pendulum = pendulum.cut(rod)
+
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForNut).extrude(nutThick).translate((0,holeStartY-holeHeight,0))
+        pendulum = pendulum.cut(nutSpace2)
+
+
+        if not forPrinting:
+            pendulum = pendulum.mirror().translate((0, 0, self.pendulumTopThick))
+
+        return pendulum
+
 class SuspensionSpringPendulumBits:
     '''
     Crutch and pendulum holder for a suspension spring, contained here to avoid making ArborForPlate far too large
@@ -1266,6 +1336,7 @@ class ArbourForPlate:
         self.crutch_thick = crutch_space - self.crutch_holder_slack_space
 
         self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
+        self.friction_fit_bits = FrictionFitPendulumBits(arbour_d=self.arbour.arbourD)
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1344,6 +1415,9 @@ class ArbourForPlate:
         previous_bearing_to_here = npToSet(np.subtract(self.bearing_position, self.previous_bearing_position))
         anchor_angle = math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2
         anchor = self.arbour.escapement.getAnchor().rotate((0,0,0), (0,0,1), radToDeg(anchor_angle))
+        anchor_thick = self.arbour.escapement.getAnchorThick()
+        # flip over so the front is on the print bed
+        anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, anchor_thick))
         if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
 
 
@@ -1403,14 +1477,13 @@ class ArbourForPlate:
                         cylinder_length = self.back_plate_thick + self.endshake + self.bearing_position[2]
                     shapes["arbour_extension"] = self.get_arbour_extension(front=True)
 
-                anchor_thick = self.arbour.escapement.getAnchorThick()
+
 
 
 
                 wall_bearing = getBearingInfo(self.arbour.arbourD)
 
-                # flip over so the front is on the print bed
-                anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,anchor_thick))
+
                 #circular bit
                 anchor = anchor.union(cq.Workplane("XY").circle(self.cylinder_r).extrude(cylinder_length + anchor_thick))
                 #square bit
@@ -1429,7 +1502,9 @@ class ArbourForPlate:
                 raise NotImplementedError("Unsuported escapement and pendulum combination!")
         else:
             #friction fitting pendulum
-            raise ValueError("Only direct arbour pendulum fixing supported currently")
+            shapes["pendulum_holder"] = self.friction_fit_bits.get_pendulum_holder()
+            shapes["arbour_extension"] = self.get_arbour_extension(front=True)
+            anchor = anchor.union(self.get_arbour_extension(front=False).translate((0,0,anchor_thick)))
             # print("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
 

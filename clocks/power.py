@@ -1507,10 +1507,9 @@ class CordWheel:
 
         # hole for the rod
         clickwheel = clickwheel.faces(">Z").circle(self.holeD / 2).cutThruAll()
-
+        cutter = cq.Workplane("XY")
         if self.useKey:
             #space for a nut
-            cutter = cq.Workplane("XY")
             for fixingPoint in self.fixingPoints:
                 cutter = cutter.add(self.fixingScrew.getNutCutter(height=self.ratchet.thick/2, withBridging=True, withScrewLength=1000).translate(fixingPoint))
         else:

@@ -1069,7 +1069,7 @@ class SimpleClockPlates:
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1):
+                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1111,6 +1111,12 @@ class SimpleClockPlates:
 
         #to print on the back
         self.name = name
+
+        # how much the arbours can wobble back and forth. aka End-shake.
+        # 2mm seemed a bit much
+        # I've been using 1mm for ages, but clock 12 seemed to have gears binding, but wondering if actually it was gears wedged between the bearings (keeping an eye on it)
+        # after the plates flexed over time - new technique of m4 bolts all the way through the pillars may help, but maybe a bit more endshake too?
+        self.endshake = endshake
 
         # override default position of the motion works (for example if it would be in the way of a keywind and it can't go above because there's a moon complication)
         self.motion_works_angle = degToRad(motion_works_angle_deg)
@@ -1482,10 +1488,10 @@ class SimpleClockPlates:
         # juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
         minDistanceForChainHoles = (furthestX * 2 + self.chainHoleD + 5) / 2
 
-
-
-
-        self.bottomPillarR = self.plateDistance / 2
+        if self.heavy:
+            self.bottomPillarR = self.plateDistance / 2
+        else:
+            self.bottomPillarR = minDistanceForChainHoles
 
         if self.bottomPillarR < self.plateWidth/2:
             #rare, but can happen
@@ -1697,9 +1703,7 @@ class SimpleClockPlates:
         # TODO consider putting the anchor on a bushing
         # self.bushingPositions=[]
         self.arbourThicknesses = []
-        # how much the arbours can wobble back and forth. aka End-shake.
-        # 2mm seemed a bit much
-        self.endshake = 1
+
         # height of the centre of the wheel that will drive the next pinion
         drivingZ = 0
         for i in range(-self.goingTrain.chainWheels, self.goingTrain.wheels + 1):
@@ -2924,10 +2928,12 @@ class SimpleClockPlates:
         # new plan: just put the pendulum on the same rod as the anchor, and use nyloc nuts to keep both firmly on the rod.
         # no idea if it'll work without the rod bending!
 
-        if self.pendulumAtFront and self.pendulumSticksOut > 0 and self.pendulumFixing == PendulumFixing.FRICTION_ROD:
-            #a cylinder that sticks out the front and holds a bearing on the end
-            extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
-            plate = plate.add(extraBearingHolder)
+        #not using anymore - don't want extra bearings on the pendulum (adds too much friction and it doesn't really droop much)
+        #but unlikely to ever re-print a clock with the friction fitting pendulum anyway
+        # if self.pendulumAtFront and self.pendulumSticksOut > 0 and self.pendulumFixing == PendulumFixing.FRICTION_ROD:
+        #     #a cylinder that sticks out the front and holds a bearing on the end
+        #     extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
+        #     plate = plate.add(extraBearingHolder)
 
 
         mini_arm_width = self.motion_works_screws.getNutContainingDiameter() * 2
@@ -3366,9 +3372,8 @@ class Assembly:
             self.secondHandPos = self.plates.hands_position.copy()
             self.secondHandPos.append(self.minuteHandZ - self.motionWorks.hourHandSlotHeight)# + self.hands.thick + self.hands.secondFixing_thick)
         if self.plates.pendulumAtFront:
-            self.pendulumRodExtraZ = 2
 
-            pendulumRodCentreZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + self.pendulum.pendulumTopThick / 2
+            pendulumRodCentreZ = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut
         else:
             pendulumRodCentreZ = -self.plates.pendulumSticksOut
 
@@ -3388,9 +3393,8 @@ class Assembly:
                     # centre between the hands and the winding key
                     self.ring_pos[1] = (self.plates.bearingPositions[self.goingTrain.chainWheels][1] + self.plates.bearingPositions[0][1]) / 2
 
-                handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick) / 2
                 # ring is over the minute wheel/hands
-                self.ring_pos[2] = self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + handAvoiderExtraZ
+                self.ring_pos[2] = pendulumRodCentreZ - self.pendulum.handAvoiderThick / 2
                 self.has_ring = True
         else:
             # pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable) if the pendulum is long enough to need it
@@ -3642,7 +3646,7 @@ class Assembly:
 
                 handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
                 #ring is over the minute wheel/hands
-                clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + self.pendulumRodExtraZ + handAvoiderExtraZ)))
+                clock = clock.add(ring.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], ringY, self.plates.getPlateThick(back=True) + self.plates.getPlateThick(back=False) + self.plates.plateDistance + self.plates.pendulumSticksOut + handAvoiderExtraZ)))
             else:
                 #pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable)
                 if len(self.plates.bottomPillarPositions) == 1:
@@ -3686,8 +3690,8 @@ class Assembly:
         return clock
 
 
-    def show_clock(self,show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
-                   bob_colour="purple", motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None):
+    def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
+                   bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3706,6 +3710,11 @@ class Assembly:
             ring_colour = gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + 1) % len(gear_colours)]
         if huygens_colour is None:
             huygens_colour = gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + 2) % len(gear_colours)]
+        if bob_colours is None:
+            offset = 2
+            if self.goingTrain.huygensMaintainingPower:
+                offset = 3
+            bob_colours = [gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + offset) % len(gear_colours)]]
 
         show_object(self.plates.get_assembled(), options={"color":plate_colour})
 
@@ -3786,7 +3795,8 @@ class Assembly:
 
         if with_pendulum:
             # bob_colour = gear_colours[len(self.plates.bearingPositions) % len(gear_colours)]
-            bob_colour = Colour.colour_tidier(bob_colour)
+            bob_colour = bob_colours[0]
+            nut_colour = bob_colours[ 1 % len(bob_colours)]
             bob = self.pendulum.getBob(hollow=False)
 
             if self.pretty_bob is not None:
@@ -3794,7 +3804,7 @@ class Assembly:
 
             show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum.bobThick/2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour})
 
-            show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour})
+            show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour})
 
 
     def outputSTLs(self, name="clock", path="../out"):

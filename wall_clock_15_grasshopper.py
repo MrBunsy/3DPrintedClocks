@@ -69,7 +69,8 @@ assembly.printInfo()
 weight = clock.Weight(height=130, diameter=50)
 weight.printInfo()
 
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+assembly.show_clock(show_object)
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
