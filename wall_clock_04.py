@@ -17,7 +17,7 @@ if 'show_object' not in globals():
         pass
 
 
-clockName="wall_clock_04b"
+clockName="wall_clock_04c"
 clockOutDir="out"
 
 # drop =1.5
@@ -32,7 +32,7 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement_teeth=30, maxWeightDrop=2100, chainAtBack=False, escapeWheelPinionAtFront=True)#, escapement=escapement)
+train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement_teeth=30, maxWeightDrop=2100, chainAtBack=False, escapeWheelPinionAtFront=False)#, escapement=escapement)
 
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9)
 # train.setRatios([[81, 12], [80, 9]])
@@ -48,20 +48,20 @@ pendulum length: 0.9939608115313336m period: 2s
 escapement time: 60s teeth: 30
 cicumference: 68.60000000000001, run time of:28.9hours
 '''
-pendulumSticksOut=20
+pendulumSticksOut=30
 #keeping chain wheel slightly thicker so it might be less wonky on the rod?
 train.genGears(module_size=1,moduleReduction=0.85, thick=2, chainWheelThick=5, useNyloc=False, escapeWheelMaxD=0.75,ratchetInset=False)
 
 
-motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 40, )
+motionWorks = clock.MotionWorks(extra_height=40)
 
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, handAvoiderInnerD=50, bobD=60, bobThick=10, useNylocForAnchor=False)
 
-pendulum.outputSTLs(clockName, clockOutDir)
 
-dial = clock.Dial(110, support_length=pendulumSticksOut + 20)
+
+# dial = clock.Dial(110, support_length=pendulumSticksOut + 20)
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 04")#, dial=dial)
@@ -76,7 +76,8 @@ weight.printInfo()
 
 assembly = clock.Assembly(plates, hands=hands)
 
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+assembly.show_clock(show_object)
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
@@ -84,4 +85,5 @@ if outputSTL:
     plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
     weight.outputSTLs(clockName, clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
     assembly.outputSTLs(clockName, clockOutDir)

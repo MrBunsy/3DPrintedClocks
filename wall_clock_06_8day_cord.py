@@ -112,8 +112,9 @@ print("Plate distance: ", plates.plateDistance)
 # show_object(train.getArbourWithConventionalNaming(0).getShape())
 
 #
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
 #
+assembly.show_clock(show_object, plate_colour=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW])
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)

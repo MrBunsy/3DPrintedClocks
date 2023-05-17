@@ -2098,7 +2098,7 @@ class PocketChainWheel:
         self.power_clockwise = power_clockwise
 
         if ratchetOuterD < 0:
-            ratchetOuterD = self.diameter * 2.5
+            ratchetOuterD = self.diameter * 2.2
 
         if ratchet_thick > 0:
             self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=0.9999*self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)

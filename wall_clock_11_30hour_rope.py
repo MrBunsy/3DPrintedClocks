@@ -5,6 +5,8 @@ Simple one day clock with shortest pendulum I can manage and first test of the r
 
 Attempting to reduce plate distance and size of the one day clock
 
+works, but I can't get rope wheels working reliably without big counterweights, so I'm not planning to persue this any further
+
 '''
 outputSTL=False
 
@@ -42,13 +44,13 @@ train.genRopeWheels()
 
 train.printInfo()
 
-pendulumSticksOut=8
+pendulumSticksOut=8+15
 
 #module size of 0.85 looks printable without stringing!
 train.genGears(module_size=0.85,moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=2, useNyloc=False, ratchetInset=True, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3, style=gearStyle, ratchetScrews=clock.MachineScrew(2,countersunk=True))
 
 train.getArbourWithConventionalNaming(0).printScrewLength()
-motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle)
+motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle)
 
 
 #trying a thicker anchor and glue rather than nyloc
@@ -74,11 +76,12 @@ counterweight = clock.Weight(height=100, diameter=18, wallThick=1.35, bolt=clock
 counterweight.printInfo()
 
 
-assembly = clock.Assembly(plates, hands=hands, showPendulum=True, weights=[weight, counterweight])
+assembly = clock.Assembly(plates, hands=hands,weights=[weight, counterweight])
 
 
 
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], gear_colours=[clock.Colour.RED, clock.Colour.ORANGE, clock.Colour.YELLOW, clock.Colour.GREEN, clock.Colour.BLUE, clock.Colour.PURPLE])
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)

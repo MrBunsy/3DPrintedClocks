@@ -1536,7 +1536,9 @@ class ArbourForPlate:
                 anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbour.escapement.getAnchorThick() - self.endshake/2
             else:
                 anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbour.escapement.getAnchorThick()
-                assembly = assembly.add(shapes["arbour_extension"])
+                if "arbour_extension" in shapes and shapes["arbour_extension"] is not None:
+                    #can be none if the anchor is pressed up against a plate
+                    assembly = assembly.add(shapes["arbour_extension"])
             assembly = assembly.translate((0,0,anchor_assembly_end_z))
             if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR and self.escapement_on_front and not self.pendulum_at_front:
                 collet = shapes["collet"]
@@ -2059,8 +2061,9 @@ class Arbour:
             #undecided here, textured sheet looks good on teh front, put supergluing the anchor's arbour extension on (which helps setting the beat as only one side can move) makes it a bit ugly
             #no spanner, just a normal arbour extension, on the back, so the front is printed on the plate (looks better with the textured PETG)
             arbourExtension = self.getArbourExtension(front=True)
-            arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
-            anchor = anchor.add(arbourExtension)
+            if arbourExtension is not None:
+                arbourExtension = arbourExtension.translate((0, 0, self.wheelThick))
+                anchor = anchor.add(arbourExtension)
 
         return anchor
 

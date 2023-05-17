@@ -92,7 +92,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 #rear plate super thick mainly just to ensure there's enough space for the weight to not bump into the wall!
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 10",style=clock.ClockPlateStyle.VERTICAL, motionWorksAbove=True, heavy=True, extraHeavy=True, usingPulley=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 10",style=clock.ClockPlateStyle.VERTICAL, motionWorksAbove=True, heavy=True, extraHeavy=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.SWORD, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=110, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
@@ -105,7 +105,9 @@ pulley = clock.BearingPulley(diameter=26, bearing=clock.getBearingInfo(4))
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley)
 assembly.printInfo()
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock())
+# show_object(assembly.getClock())
+
+assembly.show_clock(show_object, plate_colour=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW])
 
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getShape())

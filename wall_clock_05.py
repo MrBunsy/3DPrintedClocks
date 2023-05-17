@@ -64,6 +64,7 @@ shell = clock.WeightShell(45,220, twoParts=True, holeD=5)
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=47)
 
+assembly.show_clock(show_object)
 
 if outputSTL:
     train.outputSTLs(clockName, clockOutDir)

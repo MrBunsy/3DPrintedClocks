@@ -7,6 +7,7 @@ from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
 from clocks.cuckoo_bits import roman_numerals, CuckooWhistle
+from clocks.viewer import *
 
 from clocks.cq_gears import BevelGear, BevelGearPair, CrownGearPair
 
@@ -279,11 +280,11 @@ if False:
 #
 # show_object(holder)
 #
-motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
-hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
-
-show_object(hands.getHand())
+# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
+# hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+#                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
+#
+# show_object(hands.getHand())
 # # #
 # # # hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 # # #                      length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)
@@ -672,3 +673,7 @@ if False:
 
 # show_object(cq.Solid.makeSphere(10))
 
+viewer = ViewGenerator()
+
+viewer.display(cq.Workplane("XY").rect(10,10).extrude(10))
+viewer.save_screenshot("out/screenshottest.png")
