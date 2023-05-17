@@ -1069,7 +1069,8 @@ class SimpleClockPlates:
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1):
+                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
+                 embed_nuts_in_plate=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1208,8 +1209,8 @@ class SimpleClockPlates:
         #for some dials (filled-in ones like tony) it won't be possible to get a screwdriver (or the screw!) in from the front, so instead screw in from the back
         #currently this also implies that the nuts will be sticking out the front plate (I don't want to embed them in the plate and weaken it)
         self.screws_from_back = screws_from_back
-
-        self.embed_nuts_in_plate = False
+        #plates try to put screws that hold the pillars together in the rear standoff, but can override to put them in the back plate (if there isn't a wall standoff)
+        self.embed_nuts_in_plate = embed_nuts_in_plate
 
         # how thick the bearing holder out the back or front should be
         # can't use bearing from ArborForPlate yet as they haven't been generated
@@ -3716,10 +3717,10 @@ class Assembly:
                 offset = 3
             bob_colours = [gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + offset) % len(gear_colours)]]
 
-        show_object(self.plates.get_assembled(), options={"color":plate_colour})
+        show_object(self.plates.get_assembled(), options={"color":plate_colour}, name="Plates")
 
         for a, arbour in enumerate(self.plates.arboursForPlate):
-            show_object(arbour.get_assembled(), options={"color": gear_colours[(len(self.plates.arboursForPlate)-1 - a) % len(gear_colours)]})
+            show_object(arbour.get_assembled(), options={"color": gear_colours[(len(self.plates.arboursForPlate)-1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
 
         # # motionWorksModel = self.motionWorks.getAssembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
         # #
@@ -3727,37 +3728,37 @@ class Assembly:
         motion_works_parts = self.motionWorks.get_parts_in_situ(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
         for i,part in enumerate(motion_works_parts):
             colour = motion_works_colours[i % len(motion_works_colours)]
-            show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":colour})
+            show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":colour}, name="Motion Works {}".format(i))
 
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors
-            show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.frontOfClockZ)))
+            show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.frontOfClockZ)), name="Moon Complication")
             moon = self.moon_complication.get_moon_half()
             # moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
             show_object(moon.translate((0,self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + self.frontOfClockZ)),
-                        options={"color":"gray"})
+                        options={"color":"gray"}, name="Dark Side of the Moon")
             show_object(moon.rotate((0,0,0),(0,1,0),180).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_moon_z() + self.frontOfClockZ)),
-                        options={"color":"black"})
+                        options={"color":"black"}, name="Light Side of the Moon")
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
             detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
 
-            show_object(dial, options={"color": dial_colours[0]})
-            show_object(detail, options={"color": dial_colours[1]})
+            show_object(dial, options={"color": dial_colours[0]}, name="Dial")
+            show_object(detail, options={"color": dial_colours[1]}, name="Dial Detail")
 
             if self.dial.style == DialStyle.TONY_THE_CLOCK:
                 extras = self.dial.get_extras()
                 #TODO - excessive since I'm probably never going to print tony again?
 
             if self.dial.has_eyes():
-                show_object(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate(self.wire_to_arbor_fixer_pos), options={"color": gear_colours[0]})
+                show_object(self.dial.get_wire_to_arbor_fixer(for_printing=False).translate(self.wire_to_arbor_fixer_pos), options={"color": gear_colours[0]}, name="Eye Wire Fixer")
                 eye, pupil = self.dial.get_eye()
 
-                for eye_pos in self.dial.get_eye_positions():
-                    show_object(eye.translate(eye_pos).translate(self.dial_pos).translate((0,0,-self.dial.thick - self.dial.eye_pivot_z)), options={"color": "white"})
-                    show_object(pupil.translate(eye_pos).translate(self.dial_pos).translate((0,0,-self.dial.thick - self.dial.eye_pivot_z)), options={"color": "black"})
+                for i,eye_pos in enumerate(self.dial.get_eye_positions()):
+                    show_object(eye.translate(eye_pos).translate(self.dial_pos).translate((0,0,-self.dial.thick - self.dial.eye_pivot_z)), options={"color": "white"}, name="Eye {} Whites".format(i))
+                    show_object(pupil.translate(eye_pos).translate(self.dial_pos).translate((0,0,-self.dial.thick - self.dial.eye_pivot_z)), options={"color": "black"}, name="Eye Pupil".format(i))
 
 
         #hands on the motion work, showing the time
@@ -3767,6 +3768,7 @@ class Assembly:
         for type in HandType:
             for colour in hands[type]:
                 show_colour = colour
+                description="{} Hand{}".format(type.value.capitalize(), " "+colour.capitalize() if colour is not None else "")
                 if show_colour is None:
                     show_colour = hand_colours[0]
                     if type == HandType.SECOND:
@@ -3778,19 +3780,20 @@ class Assembly:
 
                 if type != HandType.SECOND:
                     show_object(hands[type][colour].translate((self.plates.hands_position[0], self.plates.hands_position[1],
-                                                  self.minuteHandZ - self.motionWorks.hourHandSlotHeight)), options={"color": show_colour})
+                                                  self.minuteHandZ - self.motionWorks.hourHandSlotHeight)), options={"color": show_colour}, name=description)
                 elif self.plates.has_seconds_hand():
                     #second hand!! yay
                     secondHand = hands[type][colour].translate(self.secondHandPos)
-                    show_object(secondHand, options={"color": show_colour})
+                    show_object(secondHand, options={"color": show_colour}, name=description)
 
         if self.has_ring:
 
-            show_object(self.pendulum.getHandAvoider().translate(self.ring_pos), options={"color": ring_colour})
+            show_object(self.pendulum.getHandAvoider().translate(self.ring_pos), options={"color": ring_colour}, name="Pendulum Ring")
 
         if self.plates.huygensMaintainingPower:
             #assumes one pillar
-            show_object(self.plates.huygensWheel.getAssembled().translate(self.plates.bottomPillarPositions[0]).translate((0, self.plates.huygens_wheel_y_offset, self.frontOfClockZ + WASHER_THICK_M3)), options={"color": huygens_colour})
+            show_object(self.plates.huygensWheel.getAssembled().translate(self.plates.bottomPillarPositions[0]).
+                        translate((0, self.plates.huygens_wheel_y_offset, self.frontOfClockZ + WASHER_THICK_M3)), options={"color": huygens_colour}, name="Huygens Wheel")
 
 
         if with_pendulum:
@@ -3802,9 +3805,9 @@ class Assembly:
             if self.pretty_bob is not None:
                 bob = self.pretty_bob.get_model()
 
-            show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum.bobThick/2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour})
+            show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum.bobThick/2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour}, name="Pendulum Bob")
 
-            show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour})
+            show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour}, name="Pendulum Bob Nut")
 
 
     def outputSTLs(self, name="clock", path="../out"):

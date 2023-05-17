@@ -50,7 +50,8 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 07",style=clock.ClockPlateStyle.VERTICAL)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 07", style=clock.ClockPlateStyle.VERTICAL,
+                                 embed_nuts_in_plate=True)
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
@@ -68,7 +69,8 @@ bigweight = clock.Weight(height=125, diameter=45)
 bigweight.printInfo()
 
 # show_object(assembly.getClock())
-assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE])
+assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE], plate_colour=clock.Colour.DARKGREY,
+                    hand_colours=[clock.Colour.WHITE, clock.Colour.DARKGREY])
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)
