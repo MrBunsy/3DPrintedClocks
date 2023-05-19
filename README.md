@@ -60,13 +60,13 @@ Deadbeat is implemented, recoil is not (yet). Greatest efficiency is achieved if
 drop =1.5
 lift =3
 lock=1.5
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, style=AnchorStyle.CURVED_MATCHING_WHEEL)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 
 # for 30 teeth (1RPM with a period of 2s, approx 1m pendulum)
 lift=4
 drop=2
 lock=2
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock)
 ```
 
 I intend to create a method that would automatically calculate lift and drop for any given number of teeth as well as adjusting the shape of the teeth.
@@ -93,7 +93,7 @@ moduleReduction=0.9
 
 #relatively simple eight day clock, needs one chain wheel in order to provide enough runtime
 #Large pendulum period so it can calculate a valid train with only 3 wheels
-train = GoingTrain(pendulum_period=2, wheels=3, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=7.5*24)
+train = clock.GoingTrain(pendulum_period=2, wheels=3, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=7.5*24)
 
 #find a valid combination of gears that meets the constraints specified. This can get slow with 4 wheels, but is usually fast with only 3.
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
@@ -112,21 +112,56 @@ train.printInfo(weight_kg=2)
 ## Motion Works
 The motion works gears down from the minute hand to the hour hand and provides a means to mount both the hour and minute hands.
 
+The cannon pinion holds the minute hand and slots through the centre of the hour holder. The cannon pinion is held onto the arbor by friction - a pair of nuts locked against each other with a spring washer at the base, and another pair of nuts locked against each other on the front of the hands. This allows you to set the time independently of the going train. 
+
+Adding extra_height will make the motion works longer than the minimum - useful if you need the hands further from the clock plates (or dial)
+
+![Motion works](images/motion_works.svg "Motion Works")
+
+`inset_at_base` provides a hole in the bottom of the cannon pinion large enough to fit the nuts and spring washer. This enables the motion works to be more snug to the plate. You will need to manually specify the arbor distance to generate larger motion works with `.calculateGears(arbourDistance=30)` for the cannon pinion to be large enough for this to work.
+
 ```python
-motionWorks = MotionWorks(extra_height=10, style=GearStyle.ARCS, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=10, style=GearStyle.ARCS, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks.calculateGears(arbourDistance=30)
 ```
+
+## Pendulum Bob
+
+The Pendulum class retains a lot of unused features. It used to be responsible for generating the 3D anchor, but this is now part of ArborsForPlate.
+
+The bob and the ring (for avoiding the hands on front mounted pendulums, or the bottom pillar on rear pendulums) are still used.
+
+```python
+pendulum = clock.Pendulum(train.escapement, train.pendulum_length, nutMetricSize=3, handAvoiderInnerD=100, bobD=50, bobThick=8)
+```
+
+## Dial
+Dials consist of an outer ring and an optional inner seconds-hand ring. Each can have different styles. 
+
+Eye-clocks with eyes that look left and right with the pendulum swing are supported, but with only one implementation currently.
+
+![Concentric Circles Dial](images/dial_concentric_circles.svg "Concentric Circles Dial")
+![Concentric Circles Dial](images/dial_lines_arc.svg "Concentric Circles Dial")
+![Concentric Circles Dial](images/dial_roman.svg "Concentric Circles Dial")
+![Concentric Circles Dial](images/dial_tony_the_clock.svg "Concentric Circles Dial")
+
+Top and bottom fixings to the clock plates are both optional (but you'll need at least one). These are overriden if using compact clock plates with a filled-in dial. 
+
+```python
+dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+```
+
+## Clock Plates
+The plates tie everything together. They arrange the arbors, provide wall fixings and hold the dial.
 
 ## Other Bits
 ### Cuckoo_bits
-This can generate a pendulum rod + pendulum bob fixing for a cuckoo clock. Designed to be the same as traditional cuckoo clocks, and therefore as hard to set accurately.
+This can generate a pendulum rod + pendulum bob fixing for a cuckoo clock. Designed to be the same as traditional cuckoo clocks using friction rather than a nut to hold the bob in place. As such, it's about as accurate as traditional cuckoos!
 
 Working whistles and bellow parts also!
 
 ### Leaves
-Can generate a reasonable cuckoo clock leaf, designed for gluing to the pendulum bob fixing.
-
-### Clock
-Beginnings of an entire clock from scratch.
+Can generate a few types of leaves, used for cuckoo clocks and the Christmas clock.
 
 # Multi-Colour on a non Multi-Material Printer
 This is surprisingly easy to do and looks great when printed on a textured sheet. Since I don't own a multi-material printer I've used a variation on a technique I found on a [blog post](http://schlosshan.eu/blog/2019/03/02/prusa-i3-mk3-real-multicolour-prints-without-mmu/) that works with PrusaSlicer and my Prusa Mk3:

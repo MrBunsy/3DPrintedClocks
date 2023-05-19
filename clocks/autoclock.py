@@ -118,14 +118,21 @@ def gen_hand_previews(out_path="autoclock", length=120):
                 exportSVG(demo, os.path.join(out_path, file_name), opts={"width": 600, "height": 600, "showAxes": False, "strokeWidth": 0.5,
                                                                            "showHidden": False, "projectionDir": (0, 0, 1)})
 
-def gen_dial_previews(out_path="autoclock", diameter=180):
+def gen_dial_previews(out_path="autoclock", diameter=180, image_size=300):
     for style in DialStyle:
         dial = Dial(diameter, style=style)
 
         print("Generating preview for {} dial".format(style.value))
         file_name = "dial_{}.svg".format(style.value)
-        exportSVG(dial.get_dial(), os.path.join(out_path, file_name),opts={"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
+        exportSVG(dial.get_dial(), os.path.join(out_path, file_name),opts={"width": image_size, "height": image_size, "showAxes": False, "strokeWidth": 0.5,
                                                                            "showHidden": False, "projectionDir": (0, 0, -1)})
+def gen_motion_works_preview(out_path="autoclock", image_size=300):
+    motion_works = MotionWorks(compact=True)
+
+    file_name = "motion_works.svg"
+    exportSVG(motion_works.getAssembled(), os.path.join(out_path, file_name), opts={"width": image_size, "height": image_size, "showAxes": False, "strokeWidth": 0.5,
+                                                                        "showHidden": False})
+
 
 def gen_clock_previews(out_path="autoclock"):
     days=8
