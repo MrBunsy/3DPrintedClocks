@@ -7,7 +7,6 @@ from .types import *
 
 from .utility import *
 from .gearing import *
-from .decoration import *
 import cadquery as cq
 
 from cadquery import exporters
