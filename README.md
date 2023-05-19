@@ -48,6 +48,8 @@ I found [an excellent write up on designing deadbeat escapements](https://www.oc
 # Using the Library
 Below I will go through the main files and describe how to use the classes required to design your own clock.
 
+I assume a fairly detailed knowledge of the workings of clocks through the code and readme. I recommend at least a cursory read through The Modern Clock if you're starting from scratch (although probably skip chapters II and VII, there are better explanations of the mathematics behind clocks and most of it isn't necessary for gaining an overview).
+
 ## Escapements (clocks/escapements.py)
 The heart of a clock is its escapement. This provides power to the pendulum and also regulates the time.
 
@@ -119,6 +121,8 @@ Adding extra_height will make the motion works longer than the minimum - useful 
 ![Motion works](images/motion_works.svg "Motion Works")
 
 `inset_at_base` provides a hole in the bottom of the cannon pinion large enough to fit the nuts and spring washer. This enables the motion works to be more snug to the plate. You will need to manually specify the arbor distance to generate larger motion works with `.calculateGears(arbourDistance=30)` for the cannon pinion to be large enough for this to work.
+
+If the arbor is going to sit above the cannon pinion `compensateLooseArbour` will elongate the teeth of the gears slightly. This helps prevent the hour hand slipping if the clock plates droop slightly over time.
 
 ```python
 motionWorks = clock.MotionWorks(extra_height=10, style=GearStyle.ARCS, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
