@@ -1,3 +1,8 @@
+'''
+This is a fork of a source file from CadQuery, licenced under the Apache Licence.
+https://github.com/CadQuery/cadquery/blob/master/cadquery/occ_impl/exporters/svg.py
+'''
+
 import io as StringIO
 from cadquery import Workplane
 from cadquery.occ_impl.exporters import toCompound

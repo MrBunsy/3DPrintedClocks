@@ -1,8 +1,6 @@
 # 3DPrintedClocks
 A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic.
 
-Licenced under GNU GPL-3.0-or-later.
-
 Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.
 
 See the wall_clock_* python scripts in the root directory for examples of generating complete clocks. Clocks 5 and earlier were from when the library was in a state of flux and are unlikely to work without checking out old tags. All later clocks will generate a preview if opened in the CadQuery editor. 
@@ -10,6 +8,24 @@ See the wall_clock_* python scripts in the root directory for examples of genera
 Documentation is lacking as this is a hobby project and I'm easily distracted. This readme aims to provide a general overview and the code is commented with my intentions throughout. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading The Modern Clock if you are interested in using it to produce your own clock.
 
 Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase.
+
+## Licence
+This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
+
+ You may redistribute and modify this source and make products using it under 
+ the terms of the CERN-OHL-S v2 or any later version (https://ohwr.org/cern_ohl_s_v2.txt).         
+                                                                              
+ This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY,          
+ INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A         
+ PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.  
+                                                                              
+ Source location: https://github.com/MrBunsy/3DPrintedClocks                                        
+                                                                              
+ As per CERN-OHL-S v2 section 4, should you produce hardware based on this    
+ source, You must where practicable maintain the Source Location visible      
+ on the external case of the clock or other products you make using this      
+ source.    
+
 
 ![Clock 12 Render](images/wall_clock_12.png "Clock 12")
 

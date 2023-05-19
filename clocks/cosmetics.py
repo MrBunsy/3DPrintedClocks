@@ -1,3 +1,22 @@
+'''
+Copyright Luke Wallin 2023
+
+This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
+
+You may redistribute and modify this source and make products using it under
+the terms of the CERN-OHL-S v2 or any later version (https://ohwr.org/cern_ohl_s_v2.txt).
+
+This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY,
+INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A
+PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.
+
+Source location: https://github.com/MrBunsy/3DPrintedClocks
+
+As per CERN-OHL-S v2 section 4, should you produce hardware based on this
+source, You must where practicable maintain the Source Location visible
+on the external case of the clock or other products you make using this
+source.
+'''
 from .utility import *
 from .leaves import *
 import cadquery as cq
@@ -289,3 +308,24 @@ class ChristmasPudding:
 
 
         return cosmetics
+
+
+def get_star(star_thick=3, star_size = 75):
+
+
+    star_arm_wide = star_size * 0.2
+    secondary_star_arm_length = star_size * 0.3
+    secondary_star_arm_wide = star_arm_wide*0.9
+
+    star = cq.Workplane("XY").tag("base").moveTo(-star_size/2,0).lineTo(0, star_arm_wide/2).lineTo(star_size/2, 0).lineTo(0, -star_arm_wide/2).close().extrude(star_thick)
+    star = star.workplaneFromTagged("base").moveTo(-star_arm_wide / 2, 0).lineTo(0, star_size / 2).lineTo(star_arm_wide / 2, 0).lineTo(0, -star_size/2).close().extrude(star_thick)
+
+    secondary_top_left = polar(math.pi*3/4,secondary_star_arm_length)
+    secondary_top = (0, secondary_star_arm_wide/2)
+    star = star.workplaneFromTagged("base").moveTo(secondary_top_left[0], secondary_top_left[1]).lineTo(secondary_top[0], secondary_top[1]).lineTo(-secondary_top_left[0], -secondary_top_left[1])\
+        .lineTo(-secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
+
+    star = star.workplaneFromTagged("base").moveTo(-secondary_top_left[0], secondary_top_left[1]).lineTo(-secondary_top[0], secondary_top[1]).lineTo(secondary_top_left[0], -secondary_top_left[1]) \
+        .lineTo(secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
+
+    return star
