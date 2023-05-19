@@ -40,23 +40,22 @@ train.genChainWheels2(clock.REGULA_8_DAY_1_05MM_CHAIN, ratchetThick=5, preferedD
 
 train.printInfo()
 
-pendulumSticksOut=0
+pendulumSticksOut=15
 
 train.genGears(module_size=1,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)#, chainModuleIncrease=1.1)
 
-motionWorks = clock.MotionWorks(extra_height=30)
+motionWorks = clock.MotionWorks(extra_height=10)
 
 #trying a thicker anchor and glue rather than nyloc
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, bobD=60, bobThick=10, useNylocForAnchor=False)
-
-dial = clock.Dial(120)
 
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style=clock.ClockPlateStyle.ROUND, heavy=True)
 
 # hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False, outline=0.6)
+#outline of 0.6 works but this clock was actually printed with old cuckoo hands without an outline, so set without outline for the preview
+hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)#, outline=0.6)
 
 #no weight for this clock, using the cheap 2.5kg weight from cousins
 #which needs a shell to look better!
@@ -64,7 +63,7 @@ shell = clock.WeightShell(45,220, twoParts=True, holeD=5)
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=47)
 
-assembly.show_clock(show_object)
+assembly.show_clock(show_object, bob_colours=[clock.Colour.PURPLE], motion_works_colours=[clock.Colour.LIGHTBLUE,clock.Colour.LIGHTBLUE,clock.Colour.BLUE])
 
 if outputSTL:
     train.outputSTLs(clockName, clockOutDir)

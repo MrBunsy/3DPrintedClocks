@@ -1,7 +1,7 @@
 # 3DPrintedClocks
 A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic.
 
-Licenced under GNU GPL-3.0-or-later. Note that it is my understanding that the exported STL (or any format of 3D model) files are the "object code" representation of the clocks, and thus you must make available the source code used to produce the STLs when redistributing.
+Licenced under GNU GPL-3.0-or-later.
 
 Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.
 
@@ -11,8 +11,7 @@ Documentation is lacking as this is a hobby project and I'm easily distracted. T
 
 Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase.
 
-![Clock 15 render](images/clock_15_grasshopper_render_small.png "Clock 15")
-![Clock 07 photo](images/clock_07_photo_small.jpg "Clock 7")
+![Clock 12 Render](images/wall_clock_12.png "Clock 12")
 
 # Acknowledgements
 
@@ -22,7 +21,7 @@ I'm standing on the shoulders of giants and would like to acknowledge the follow
 
 A small amount of source code is from [Dr Rainer Hessmer's gear generator](http://hessmer.org/gears/CycloidalGearBuilder.html) (MIT Licence).
 
-[The Modern Clock by Ward L Goodich](https://www.gutenberg.org/ebooks/61494) (and project Gutenberg!).
+[The Modern Clock by Ward L Goodich](https://www.gutenberg.org/ebooks/61494) (and project Gutenberg!). Especially the chapter on escapements.
 
 [Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin](https://soptera.files.wordpress.com/2013/10/cad-twin-pivot-and-balance2.pdf) (His [other documents](https://soptera.wordpress.com/downloads/) and blog are worth looking at too).
 
@@ -59,9 +58,47 @@ I intend to create a method that would automatically calculate lift and drop for
 Note that the style of anchor is configured here. The default has straight arms.
 
 ### Grasshopper Escapement
-Using default arguments the grasshopper will attempt to meet Harrison's stipulations (via David Heskin's interpretation) and use a few binary searches to generate compliant geometry. This is slow, so I recommend using GrasshopperEscapement.get_harrison_compliant_grasshopper() to fetch one using pre-calculated set of parameters.
+Using default arguments the grasshopper will attempt to meet Harrison's stipulations (via David Heskin's interpretation) and use a few binary searches to generate compliant geometry. This is slow, so I recommend using `GrasshopperEscapement.get_harrison_compliant_grasshopper()` to fetch one using pre-calculated set of parameters.
 
 The grasshopper is only supported on the front of the clock - it is too large to fit between the plates.
+
+## Going Train
+The going train is the name given to the series of gears that link the power (weight on a chain or cord) to the escapement. The small gears are called pinions and the large gears are called wheels. In a gearbox for a motor you'll usually be gearing down to increase torque and decrease speed. On a clock you're gearing up from the power source to increase the run time of the clock.
+
+Gear sizes are defined by [module size](https://en.wikipedia.org/wiki/List_of_gear_nomenclature#Module). `moduleReduction` can be configured to result in decreasing module size along the going train. Each wheel needs to be smaller than the last to fit and module reduction is an easy way to help calculate a valid train. 
+
+Smaller pendulum periods (aprox < 1s) will probably need 4 wheels to find a valid train which isn't physically huge.
+
+Using degreased and oiled bearings clocks can run reliably with ~40uW. With greased bearings you will need at least ~65uW. There is always a trade off to be had: heavier weights provide more power and in theory make the clock more reliable - except they also require more robust plates and can cause the plates to bend, making the clock less reliable. Newer designs use M4 machine screws through the whole length of the pillars which help with rigidity.
+
+Finally `genGears` creates the Arbor objects which represent the physical gears that will be printed. Reducing the thickness of the gears reduces friction (so we can run with a lighter weight) but also reduces their strength. Therefore I usually have thick gears for the chain wheel and reduce the thickness towards the escapement.
+```python
+moduleReduction=0.9
+
+#relatively simple eight day clock, needs one chain wheel in order to provide enough runtime
+#Large pendulum period so it can calculate a valid train with only 3 wheels
+train = GoingTrain(pendulum_period=2, wheels=3, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=7.5*24)
+
+#find a valid combination of gears that meets the constraints specified. This can get slow with 4 wheels, but is usually fast with only 3.
+train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
+
+#configure what type of power the going train will have and this will calculate the gear ratios to provide the requested runtime for the maxWeightDrop
+#genChainWheels2 uses the newer pocket chain wheel which is strong and reliable enough to cope with heavy duty chain for eight day clocks
+train.genChainWheels2(COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30)
+
+train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+
+#print to console how much power we can expect for the calculated chain wheel
+train.printInfo(weight_kg=2)
+```
+
+## Motion Works
+The motion works gears down from the minute hand to the hour hand and provides a means to mount both the hour and minute hands.
+
+```python
+motionWorks = MotionWorks(extra_height=10, style=GearStyle.ARCS, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+```
 
 ## Other Bits
 ### Cuckoo_bits

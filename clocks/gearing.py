@@ -2096,7 +2096,9 @@ class Arbour:
             tipR = outerR
 
         if length - self.arbourBearingStandoff >= 0:
-            if length > self.arbourBearingStandoff:
+            #0.1 because I've seen some floating point issues where the length was the bearing standoff + 0.0000something and then CQ throws a wobbly trying to extrude a tiny amount
+            if length > self.arbourBearingStandoff+0.1:
+                print("length", length, "arbourBearingStandoff", self.arbourBearingStandoff)
                 extendoArbour = cq.Workplane("XY").tag("base").circle(outerR).circle(innerR).extrude(length-self.arbourBearingStandoff).faces(">Z").workplane()
             else:
                 extendoArbour=cq.Workplane("XY")

@@ -74,7 +74,7 @@ weight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
 
 # show_object(assembly.getClock())
-assembly.show_clock(show_object)
+assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE])
 
 if outputSTL:
     train.outputSTLs(clockName,clockOutDir)

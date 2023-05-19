@@ -1652,7 +1652,7 @@ class SimpleClockPlates:
         if self.style == ClockPlateStyle.ROUND:
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
-            self.hands_on_side = 1 if self.goingTrain.isWeightOnTheRight() else -1
+            self.hands_on_side = -1 if self.goingTrain.isWeightOnTheRight() else 1
             arbours = [self.goingTrain.getArbourWithConventionalNaming(arbour) for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels)]
             distances = [arbour.distanceToNextArbour for arbour in arbours]
             maxRs = [arbour.getMaxRadius() for arbour in arbours]
@@ -1976,7 +1976,7 @@ class SimpleClockPlates:
         returns [(x,y, supported),]
         for where the holes to fix the clock to the wall will be
 
-        This logic is a bit of a mess, it was pulled out of the tangle in clock plates and could do with tidying up
+        The older logic (when there is no wall standoff) is a bit of a mess, it was pulled out of the tangle in clock plates and could do with tidying up
         '''
         if self.backPlateFromWall > 0:
 
@@ -2015,7 +2015,9 @@ class SimpleClockPlates:
 
             if self.style == ClockPlateStyle.ROUND:
                 #screwHoleY = chainWheelR * 1.4
-                raise NotImplementedError("Haven't fixed this for round clocks")
+                #raise NotImplementedError("Haven't fixed this for round clocks")
+                print("TODO: fix screwholes for round clocks properly")
+                return [(weightX, self.compactRadius, True)]
 
             elif self.style == ClockPlateStyle.VERTICAL:
                 if self.extraHeavy:
