@@ -1968,7 +1968,7 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getAssembled(self, style=None, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
+    def getAssembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2

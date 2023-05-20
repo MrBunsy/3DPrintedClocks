@@ -60,6 +60,7 @@ if 'show_object' not in globals():
 
 #
 # motionWorks=MotionWorks(compensateLooseArbour=True, compact= True, bearing=getBearingInfo(3))
+# motionWorks.calculateGears(arbourDistance=30)
 # show_object(motionWorks.getAssembled())
 
 # ballWheel = BallWheel(ballsAtOnce=15)
@@ -673,7 +674,7 @@ if False:
 
 # show_object(cq.Solid.makeSphere(10))
 
-viewer = ViewGenerator()
-
-viewer.display(cq.Workplane("XY").rect(10,10).extrude(10))
-viewer.save_screenshot("out/screenshottest.png")
+# viewer = ViewGenerator()
+#
+# viewer.display(cq.Workplane("XY").rect(10,10).extrude(10))
+# viewer.save_screenshot("out/screenshottest.png")

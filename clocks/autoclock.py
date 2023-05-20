@@ -88,13 +88,29 @@ def gen_gear_previews(out_path="autoclock", module=1):
                                                                                   "showHidden":False, "projectionDir": (0, 0, 1)})
         cq.exporters.export(preview,os.path.join(out_path, preview_3d_file_name))
 
-def gen_anchor_previews(out_path="autoclock"):
+def gen_anchor_previews(out_path="autoclock", two_d = True):
     for style in AnchorStyle:
         file_name = "anchor_preview_{}.svg".format(style.value)
         print("Exporting Anchor {}".format(style.value))
         demo = getAnchorDemo(style)
-        exportSVG(demo, os.path.join(out_path, file_name), opts={"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
-                                                                                  "showHidden": False, "projectionDir": (0, 0, 1)})
+        opts = {"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
+                "showHidden": False}
+        if two_d:
+            opts["projectionDir"]= (0, 0, 1)
+
+        exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
+
+def gen_grasshopper_previews(out_path="autoclock", two_d = True):
+    file_name="grasshopper_preview.svg"
+    print("Exporting {}".format(file_name))
+    demo = GrasshopperEscapement.get_harrison_compliant_grasshopper().getAssembled()
+
+    opts = {"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
+            "showHidden": False}
+    if two_d:
+        opts["projectionDir"] = (0, 0, 1)
+
+    exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
 
 def gen_hand_previews(out_path="autoclock", length=120):
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
@@ -126,10 +142,13 @@ def gen_dial_previews(out_path="autoclock", diameter=180, image_size=300):
         file_name = "dial_{}.svg".format(style.value)
         exportSVG(dial.get_dial(), os.path.join(out_path, file_name),opts={"width": image_size, "height": image_size, "showAxes": False, "strokeWidth": 0.5,
                                                                            "showHidden": False, "projectionDir": (0, 0, -1)})
-def gen_motion_works_preview(out_path="autoclock", image_size=300):
-    motion_works = MotionWorks(compact=True)
+def gen_motion_works_preview(out_path="autoclock", motion_works=None, image_size=300):
+    if motion_works is None:
+        motion_works = MotionWorks(compact=False)
 
-    file_name = "motion_works.svg"
+    name = "{}{}".format("_compact" if motion_works.compact else "", "_bearing" if motion_works.bearing is not None else "")
+
+    file_name = "motion_works{}.svg".format(name)
     exportSVG(motion_works.getAssembled(), os.path.join(out_path, file_name), opts={"width": image_size, "height": image_size, "showAxes": False, "strokeWidth": 0.5,
                                                                         "showHidden": False})
 

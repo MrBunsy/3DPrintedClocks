@@ -3904,6 +3904,7 @@ def getAnchorDemo(style=AnchorStyle.STRAIGHT):
     escapment = AnchorEscapement(style=style)
     return escapment.getAnchor()
 
+
 def get_ratchet_demo():
     min_outer_d = 40
     max_outer_d = 80

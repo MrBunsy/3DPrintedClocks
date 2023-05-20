@@ -7,7 +7,7 @@ See the wall_clock_* python scripts in the root directory for examples of genera
 
 Documentation is lacking as this is a hobby project and I'm easily distracted. This readme aims to provide a general overview and the code is commented with my intentions throughout. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading The Modern Clock if you are interested in using it to produce your own clock.
 
-Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase.
+Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase. There are also two styles of code format throughout, where newer and refactored code is attempting to adhere to PEP8 and more conventional python norms. My day job is in C/C++ and it shows.
 
 ## Licence
 This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
@@ -26,6 +26,7 @@ This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
  on the external case of the clock or other products you make using this      
  source.    
 
+My entirely non-lawyerly understanding is that this is like the GPL for hardware design (since the STLs are the output of the software, I cannot use the more conventional GPL to cover them). I don't wish to limit anyone's use of this library, but I do wish to prevent clocks developed using the library becoming closed source. If you distribute (paid or free) STLs for a clock, you must also provide the source code used to generate those STLs.
 
 ![Clock 12 Render](images/wall_clock_12.png "Clock 12")
 
@@ -46,7 +47,7 @@ An honourary mention to [Brian Law's Wooden Clocks](https://www.woodenclocks.co.
 I found [an excellent write up on designing deadbeat escapements](https://www.ocf.berkeley.edu/~wwu/cgi-bin/yabb/YaBB.cgi?board=riddles_general;action=display;num=1437253052) _after_ I'd designed mine. If you're starting from scratch, I'd recommend it. This is very similar to the approach I decided on.
 
 # Using the Library
-Below I will go through the main files and describe how to use the classes required to design your own clock.
+Below I will go through the main files and give a rough overview of how to use the classes required to design your own clock. Much of the design is in flux, especially the SimpleClockPlates which tend to require more options and refactoring with every new design. I try and ensure comments are sufficient to understand the intent of each class and their major functions.
 
 I assume a fairly detailed knowledge of the workings of clocks through the code and readme. I recommend at least a cursory read through The Modern Clock if you're starting from scratch (although probably skip chapters II and VII, there are better explanations of the mathematics behind clocks and most of it isn't necessary for gaining an overview).
 
@@ -57,6 +58,7 @@ First create an escapement object. For details of what the parameters for the de
 
 ### Anchor Escapement
 Deadbeat is implemented, recoil is not (yet). Greatest efficiency is achieved if the pallets are at 45 degrees. At the moment this is done by eye and I've settled on the following configurations for 30 and 40 toothed escape wheels:
+
 ```python
 #for 40 teeth (1 RPM with a period of 1.5s, approx 55cm pendulum)
 drop =1.5
@@ -70,6 +72,7 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock)
 ```
+![Anchor](images/anchor_preview_curved2.svg "Anchor")
 
 I intend to create a method that would automatically calculate lift and drop for any given number of teeth as well as adjusting the shape of the teeth.
 
@@ -80,6 +83,10 @@ Using default arguments the grasshopper will attempt to meet Harrison's stipulat
 
 The grasshopper is only supported on the front of the clock - it is too large to fit between the plates.
 
+The geometry calculations in this class are a direct implementation of David Heskin's write up and use his naming schemes.
+
+![Grasshopper](images/grasshopper_preview.svg "Grasshopper")
+
 ## Going Train
 The going train is the name given to the series of gears that link the power (weight on a chain or cord) to the escapement. The small gears are called pinions and the large gears are called wheels. In a gearbox for a motor you'll usually be gearing down to increase torque and decrease speed. On a clock you're gearing up from the power source to increase the run time of the clock.
 
@@ -89,7 +96,7 @@ Smaller pendulum periods (aprox < 1s) will probably need 4 wheels to find a vali
 
 Using degreased and oiled bearings clocks can run reliably with ~40uW. With greased bearings you will need at least ~65uW. There is always a trade off to be had: heavier weights provide more power and in theory make the clock more reliable - except they also require more robust plates and can cause the plates to bend, making the clock less reliable. Newer designs use M4 machine screws through the whole length of the pillars which help with rigidity.
 
-Finally `genGears` creates the Arbor objects which represent the physical gears that will be printed. Reducing the thickness of the gears reduces friction (so we can run with a lighter weight) but also reduces their strength. Therefore I usually have thick gears for the chain wheel and reduce the thickness towards the escapement.
+Finally `genGears` creates the Arbor objects which represent the physical gears that will be printed (note that these will be wrapped up in ArborsForPlates later, which provides dimensions not yet known at this stage). Reducing the thickness of the gears reduces friction, so we can run with a lighter weight, but also reduces their strength. Therefore I usually have thick gears for the chain wheel and reduce the thickness towards the escapement.
 ```python
 moduleReduction=0.9
 
@@ -110,6 +117,17 @@ train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thic
 #print to console how much power we can expect for the calculated chain wheel
 train.printInfo(weight_kg=2)
 ```
+An example output from printInfo:
+
+>{'train': [[72, 10], [75, 9], [60, 27]]} 
+>pendulum length: 0.13977573912159377m period: 0.75s 
+>escapement time: 27.0s teeth: 36 
+>Powered wheel diameter: 29 
+>[[86, 10]]
+>layers of cord: 2, cord per hour: 1.2cm to 1.1cm min diameter: 29.0mm
+>Cord used per layer: [1319.468914507713, 680.531085492287]
+>runtime: 178.6hours using 2.0m of cord/chain for a weight drop of 1000. Chain wheel multiplier: 8.6 ([[86, 10]])
+>With a weight of 3kg, this results in an average power usage of 45.8μW
 
 ## Motion Works
 The motion works gears down from the minute hand to the hour hand and provides a means to mount both the hour and minute hands.
@@ -118,15 +136,18 @@ The cannon pinion holds the minute hand and slots through the centre of the hour
 
 Adding extra_height will make the motion works longer than the minimum - useful if you need the hands further from the clock plates (or dial)
 
-![Motion works](images/motion_works.svg "Motion Works")
+![Motion works](images/motion_works.svg "Motion Works")![Motion works for bearing](images/motion_works_compact_bearing.svg "Motion Works")
 
 `inset_at_base` provides a hole in the bottom of the cannon pinion large enough to fit the nuts and spring washer. This enables the motion works to be more snug to the plate. You will need to manually specify the arbor distance to generate larger motion works with `.calculateGears(arbourDistance=30)` for the cannon pinion to be large enough for this to work.
+If a bearing is provided to the motion works, it will generate space to slot a bearing into the top and bottom of the cannon pinion. This is for slotting the second hand through the motion works. This will assume you need a time setting arbor (the flower gear).
 
 If the arbor is going to sit above the cannon pinion `compensateLooseArbour` will elongate the teeth of the gears slightly. This helps prevent the hour hand slipping if the clock plates droop slightly over time.
 
 ```python
-motionWorks = clock.MotionWorks(extra_height=10, style=GearStyle.ARCS, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
-motionWorks.calculateGears(arbourDistance=30)
+motionWorks = clock.MotionWorks(extra_height=10, compact=False)
+
+motion_works = MotionWorks(compact=True, bearing=getBearingInfo(3), extra_height=20)
+motion_works.calculateGears(arbourDistance=30)
 ```
 
 ## Pendulum Bob
