@@ -104,7 +104,7 @@ motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearS
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=120, bobD=80, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(bobD=80, bobThick=10)
 
 
 

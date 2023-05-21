@@ -95,8 +95,7 @@ train.getArbourWithConventionalNaming(0).printScrewLength()
 motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 # motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
-                          bobD=60, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=60, bobThick=10)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.TONY_THE_CLOCK, detail_thick=clock.LAYER_THICK*3)
 

@@ -8,13 +8,28 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
+def xmas_pub(pendulum):
+    leaf_thick = 1
+    pud = ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR * 2, cut_rect_width=pendulum.gapWidth + 0.1, cut_rect_height=pendulum.gapHeight + 0.1)
+
+    pretty_bob = ItemWithCosmetics(pendulum.getBob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green": leaf_thick})
+
+    return pretty_bob.get_model().rotate((0,0,pendulum.bobThick/2), (0,1,pendulum.bobThick/2), 180)
+
 if outputSTL:
     # gen_dial_previews("images/", image_size=125)
-    gen_motion_works_preview("images/")
-    motion_works = MotionWorks(compact=True, bearing=getBearingInfo(3), extra_height=20)
-    motion_works.calculateGears(arbourDistance=30)
-    gen_motion_works_preview("images/", motion_works)
+    out_dir = "images/"
+    # gen_motion_works_preview(out_dir)
+    # motion_works = MotionWorks(compact=True, bearing=getBearingInfo(3), extra_height=20)
+    # motion_works.calculateGears(arbourDistance=30)
+    # gen_motion_works_preview(out_dir, motion_works)
+    #
+    # gen_anchor_previews(out_dir, two_d=False)
+    #
+    # gen_grasshopper_previews(out_dir, two_d=False)
 
-    gen_anchor_previews("images/", two_d=False)
+    pendulum = Pendulum(bobD=65)
+    demo = pendulum.getBob()
+    gen_shape_preview(demo, "bob_preview", out_dir)
+    gen_shape_preview(xmas_pub(pendulum), "xmas_pub_bob_preview", out_dir)
 
-    gen_grasshopper_previews("images/", two_d=False)

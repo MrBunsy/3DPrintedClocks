@@ -76,7 +76,7 @@ motionWorks = clock.MotionWorks(extra_height=40)
 
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, handAvoiderInnerD=50, bobD=60, bobThick=10, useNylocForAnchor=False)
+pendulum = clock.Pendulum(handAvoiderInnerD=50, bobD=60, bobThick=10)
 
 
 

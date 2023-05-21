@@ -84,7 +84,7 @@ train.printInfo(weight_kg=0.32)
 #reprinting these after the work to reduce module size back to 1, hoping it removes the jam problem
 motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=1, compensateLooseArbour=False, compact=True, thick=1.8, pinionThick=8)
 
-pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=90, bobD=70, bobThick=10, useNylocForAnchor=False)
+pendulum = Pendulum(handAvoiderInnerD=90, bobD=70, bobThick=10)
 
 
 dial_diameter = 175

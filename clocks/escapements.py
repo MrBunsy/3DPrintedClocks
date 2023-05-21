@@ -2042,60 +2042,19 @@ class GrasshopperEscapement:
 
 class Pendulum:
     '''
-    DEPRECATED - only the hand avoider is still used in anything other than the deprecated friction-fitting pendulum attachment.
-     Responsibility for most of the parts here are now in ArborsForPlate
-    Plan is to make a new version of this class for all the bits required for a suspension spring.
+    NOTE - this used to be responsible for generating the anchor and crutch
+    Responsibility for the anchor and suspension are now part of ArborForPlate (and SuspensionSpringPendulumBits, FrictionFitPendulumBits or entirely internal to ArborForPlate)
 
-    TODO overhaul this so I can still produce the old friction-fit clocks from ArborForPlate then move it to gearing
-
-    Class to generate the anchor&crutch arbour and pendulum parts
-    NOTE - the anchor is now usually accessed via being a special case of Arbour
-
-    plan: add a square bit to the anchor (probably in the Arbour class, part of the arbour extensions)
-    and make two special longish spanners in order to make setting the beat much easier (thinking ahead to fixing clock to the wall with two screws, will need ability to delicately adjust beat)
+    now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
-    def __init__(self, escapement, length, crutchLength=50, anchorThick=10, anchorAngle=-math.pi/2, anchorHoleD=2, crutchBoltD=3, suspensionScrewD=3, threadedRodM=3, nutMetricSize=0, handAvoiderInnerD=100, bobD=100, bobThick=15, useNylocForAnchor=True, handAvoiderHeight=-1):
-        self.escapement = escapement
-        self.crutchLength = crutchLength
-        self.anchorAngle = anchorAngle
-        #NOTE - deprecated, trying to switch over to making the anchor another arbour
-        self.anchorThick=anchorThick
+    def __init__(self, threadedRodM=3, handAvoiderInnerD=100, bobD=100, bobThick=15, handAvoiderHeight=-1):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
         self.handAvoiderHeight=handAvoiderHeight
-
         if self.handAvoiderHeight < 0:
             self.handAvoiderHeight = handAvoiderInnerD
 
-        #nominal length of the pendulum
-        self.length = length
-        # self.crutchWidth = 9
-
-        #if true, we're using a nyloc nut to fix the anchor to the rod, if false we're not worried about fixing it, or we're using glue
-        self.useNylocForAnchor=useNylocForAnchor
-
-        #space for a nut to hold the anchor to the rod
-        self.nutMetricSize=nutMetricSize
-
-        # self.anchor = self.escapement.getAnchorArbour(holeD=anchorHoleD, anchorThick=anchorThick, arbourLength=0, crutchLength=crutchLength, crutchBoltD=crutchBoltD, pendulumThick=threadedRodM, nutMetricSize=nutMetricSize if useNylocForAnchor else 0)
-
-        self.crutchSlackWidth=crutchBoltD*1.5
-        self.crutchSlackHeight = 30
-        self.suspensionD=20
-        self.pendulumTopD = self.suspensionD*1.75
-        self.pendulumTopExtraRadius = 5
-        self.pendulumTopThick = 15#getNutContainingDiameter(threadedRodM) + 2
         self.handAvoiderThick = getNutContainingDiameter(threadedRodM) + 2
         self.threadedRodM=threadedRodM
-
-        self.suspensionOpenAngle=degToRad(120)
-        self.knifeEdgeAngle = self.suspensionOpenAngle*0.25
-        self.suspension_length=25
-        self.suspension_cap_length=2
-        self.suspension_cap_d = self.suspensionD*1.2
-        self.thick = 5
-        self.suspensionScrewD=suspensionScrewD
-
-        self.suspensionAttachmentPoints=[(-20,25),(20,25)]
 
         self.handAvoiderInnerD=handAvoiderInnerD
 
@@ -2116,146 +2075,6 @@ class Pendulum:
         #self.bobLidNutPositions=[(self.gapWidth/3, self.bobR*0.55), (-self.gapWidth/3, self.bobR*0.55)]
 
         self.bobLidNutPositions = [(self.gapWidth / 3, self.bobR * 0.75), (-self.gapWidth / 3, self.bobR * 0.75)]
-
-
-    def getSuspensionAttachmentHoles(self):
-        '''
-        get relative positions of the holes used to screw the pendulum suspension to the front/back plate
-        '''
-        return self.suspensionAttachmentPoints
-
-
-    def getSuspension(self, withAttachment=True, bottomThick=0):
-        '''
-        Can be attached to the front plate to hold the weight of the pendulum.
-        if withAttachment is false, this is just the knife-edge holder ready to be combined with the clock plate
-        Knife-edge rather than suspension spring
-        '''
-
-        smallAngle = (math.pi - self.suspensionOpenAngle) / 2
-
-        left = polar(math.pi - smallAngle, self.suspensionD / 2)
-        right = polar(smallAngle, self.suspensionD / 2)
-
-        sus = cq.Workplane("XY")
-        if withAttachment:
-            padding = 7.5
-            sus = sus.moveTo(self.suspensionD/2, 0).radiusArc((-self.suspensionD/2,0),self.suspensionD/2).lineTo(self.suspensionAttachmentPoints[0][0]-padding, self.suspensionAttachmentPoints[0][1]).\
-                radiusArc((self.suspensionAttachmentPoints[0][0], self.suspensionAttachmentPoints[0][1]+padding), padding).lineTo(self.suspensionAttachmentPoints[1][0], self.suspensionAttachmentPoints[1][1]+padding).\
-                radiusArc((self.suspensionAttachmentPoints[1][0] + padding, self.suspensionAttachmentPoints[0][1]), padding).close()
-
-            sus = sus.extrude(self.thick)
-
-            #screw holes
-            sus = sus.faces(">Z").pushPoints(self.suspensionAttachmentPoints).circle(self.suspensionScrewD/2).cutThruAll()
-
-            sus = sus.faces(">Z").workplane()
-        elif bottomThick > 0:
-            sus = sus.moveTo(right[0], right[1]).radiusArc((self.suspensionD / 2, 0), self.suspensionD / 2).radiusArc((-self.suspensionD / 2, 0), self.suspensionD / 2). \
-                radiusArc(left, self.suspensionD / 2).close().extrude(bottomThick)
-        # width = self.suspensionAttachmentPoints[0][0] - self.suspensionAttachmentPoints[1][0] + padding*2
-        # height = self.suspensionAttachmentPoints[0][1] + padding + su
-
-
-
-        sus = sus.moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
-            radiusArc(left, self.suspensionD/2).lineTo(0,0).close().extrude(self.suspension_length)
-
-        # sus = sus.faces(">Z").workplane().moveTo(0,0).circle(self.suspension_cap_d/2).extrude(self.suspension_cap_length)
-        sus = sus.faces(">Z").workplane().moveTo(right[0], right[1]).radiusArc((self.suspensionD/2,0),self.suspensionD/2).radiusArc((-self.suspensionD/2,0), self.suspensionD/2).\
-            radiusArc(left, self.suspensionD/2).close().extrude(self.suspension_cap_length)
-        return sus
-
-    def getPendulumForKnifeEdge(self):
-
-        pendulum = cq.Workplane("XY")
-
-        left = polar(math.pi/2 + self.knifeEdgeAngle/2, self.pendulumTopD/2)
-        right = polar(math.pi / 2 - self.knifeEdgeAngle / 2, self.pendulumTopD/2)
-
-        #head that knife-edges on the suspension point
-        pendulum = pendulum.circle(self.pendulumTopD / 2 + self.pendulumTopExtraRadius).extrude(self.pendulumTopThick)
-        pendulum = pendulum.faces(">Z").workplane().moveTo(0,0).lineTo(right[0], right[1]).radiusArc((0,-self.pendulumTopD/2), self.pendulumTopD/2).radiusArc(left, self.pendulumTopD/2).close().cutThruAll()
-
-        #arm to the crutch
-        #current plan - have a Y shape from the crutch come to meet the pendulum, which is just the top + a threaded rod
-        # top = -self.pendulumTopD/2
-        # note - this seems to result in a malformed shape
-        # rod = cq.Workplane("XZ").moveTo(0,self.pendulumTopThick/2).circle(self.threadedRodM/2).extrude(100)
-        #workaroudn is to use a polygon
-        rod = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(20,self.threadedRodM ).extrude(100)
-        # return rod
-
-        pendulum = pendulum.cut(rod)
-
-        # pendulum = pendulum.faces("<Y").workplane().circle(self.threadedRodM/2).cutThruAll()#.moveTo(0, self.pendulumTopThick)
-
-
-        # arm = cq.Workplane("XY").moveTo()
-
-        return pendulum
-
-
-
-    def getPendulumForRod(self, holeD=3, forPrinting=True):
-        '''
-        Will allow a threaded rod for the pendulum to be attached to threaded rod for the arbour
-        '''
-
-        pendulum = cq.Workplane("XY")
-
-        width = 12#holeD*4
-        height = 22#26#holeD*6
-
-        #I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
-        extraRodSpace=1
-
-        #(0,0,0) is the rod from the anchor, the rod is along the z axis
-
-        #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
-        holeStartY=-getNutContainingDiameter(self.threadedRodM)*0.5-0.4#-5#-8#-height*0.2
-        holeHeight = getNutHeight(self.threadedRodM,nyloc=True) + getNutHeight(self.threadedRodM) + 1
-
-        nutD = getNutContainingDiameter(holeD)
-
-        wall_thick = (width - (nutD + 1))/2
-
-        pendulum = pendulum.moveTo(-width/2,0).radiusArc((width/2,0), width/2).line(0,-height).radiusArc((-width/2,-height), width/2).close().extrude(self.pendulumTopThick)
-
-        pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
-
-        #nut to hold to anchor rod
-        nutThick = getNutHeight(holeD, nyloc=True)
-        nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
-        pendulum = pendulum.cut(nutSpace)
-
-
-        # pendulum = pendulum.faces(">Z").moveTo(0,-height*3/4).rect(width-wall_thick*2,height/2).cutThruAll()
-        space = cq.Workplane("XY").moveTo(0,holeStartY-holeHeight/2).rect(width-wall_thick*2,holeHeight).extrude(self.pendulumTopThick).translate((0,0,LAYER_THICK*3))
-        pendulum = pendulum.cut(space)
-
-        extraSpaceForRod = 0.1
-        extraSpaceForNut = 0.2
-        #
-        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2 - extraRodSpace).circle(self.threadedRodM/2 + extraSpaceForRod/2).extrude(100)
-        # add slot for rod to come in and out
-        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick - extraRodSpace).rect(self.threadedRodM + extraSpaceForRod, self.pendulumTopThick).extrude(100)
-
-        rod = rod.translate((0,holeStartY,0))
-
-
-
-
-        pendulum = pendulum.cut(rod)
-
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.pendulumTopThick / 2).polygon(6, nutD+extraSpaceForNut).extrude(nutThick).translate((0,holeStartY-holeHeight,0))
-        pendulum = pendulum.cut(nutSpace2)
-
-
-        if not forPrinting:
-            pendulum = pendulum.mirror().translate((0, 0, self.pendulumTopThick))
-
-        return pendulum
 
     def handAvoiderIsCircle(self):
         return self.handAvoiderHeight == self.handAvoiderInnerD
@@ -2290,13 +2109,6 @@ class Pendulum:
 
         return avoider
 
-
-    def getCrutchExtension(self):
-        '''
-        Attaches to the bottom of the anchor to finish linking the crutch to the pendulum
-        '''
-
-
     def getBob(self, hollow=True):
 
 
@@ -2326,7 +2138,7 @@ class Pendulum:
             notHole = notHole.union(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
 
             for pos in self.bobLidNutPositions:
-                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.nutMetricSize*1.5).circle(self.nutMetricSize/2).extrude(self.bobThick-self.wallThick))
+                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.threadedRodM*1.5).circle(self.threadedRodM/2).extrude(self.bobThick-self.wallThick))
 
             weightHole = weightHole.cut(notHole)
 
@@ -2403,29 +2215,9 @@ class Pendulum:
         nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0,0,self.bobNutThick-nutHeight))
 
         nut = nut.cut(nutSpace)
-
-        # nut = cq.Workplane("XY").polygon(20,self.bobNutD/2)
-        #TODO print in place nut
         return nut
 
     def outputSTLs(self, name="clock", path="../out"):
-        # out = os.path.join(path, "{}_anchor.stl".format(name))
-        # print("Outputting ", out)
-        # exporters.export(self.anchor, out)
-
-        #these haven't been used since the very first prototype clock!
-        # out = os.path.join(path, "{}_suspension.stl".format(name))
-        # print("Outputting ", out)
-        # exporters.export(self.getSuspension(), out)
-        #
-        # out = os.path.join(path, "{}_pendulum_for_knife_edge.stl".format(name))
-        # print("Outputting ", out)
-        # exporters.export(self.getPendulumForKnifeEdge(), out)#,tolerance=0.01)
-
-        out = os.path.join(path, "{}_pendulum_for_rod.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getPendulumForRod(), out)
-
         out = os.path.join(path, "{}_pendulum_hand_avoider.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHandAvoider(), out)

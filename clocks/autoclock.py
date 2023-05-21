@@ -40,6 +40,9 @@ except:
 Tools for a configurable clock, destined to be driven by a web GUI
 '''
 
+DEFAULT_SVG_EXPORT_OPTIONS = {"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
+            "showHidden": False}
+
 def gen_gear_previews(out_path="autoclock", module=1):
     #lots copy pasted from gearDemo
     train = GoingTrain(pendulum_period=2, fourth_wheel=False, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5 * 24)
@@ -105,10 +108,17 @@ def gen_grasshopper_previews(out_path="autoclock", two_d = True):
     print("Exporting {}".format(file_name))
     demo = GrasshopperEscapement.get_harrison_compliant_grasshopper().getAssembled()
 
-    opts = {"width": 300, "height": 300, "showAxes": False, "strokeWidth": 0.5,
-            "showHidden": False}
+    opts = DEFAULT_SVG_EXPORT_OPTIONS.copy()
     if two_d:
         opts["projectionDir"] = (0, 0, 1)
+
+    exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
+
+def gen_shape_preview(demo, name, out_path="autoclock"):
+
+    opts = DEFAULT_SVG_EXPORT_OPTIONS.copy()
+
+    file_name = "{}.svg".format(name)
 
     exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
 

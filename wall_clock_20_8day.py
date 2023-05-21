@@ -76,7 +76,7 @@ motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compe
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length,nutMetricSize=3, handAvoiderInnerD=100, bobD=50, bobThick=8)
+pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 
 dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 

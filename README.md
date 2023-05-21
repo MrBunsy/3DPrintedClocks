@@ -117,17 +117,19 @@ train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thic
 #print to console how much power we can expect for the calculated chain wheel
 train.printInfo(weight_kg=2)
 ```
-An example output from printInfo:
+An example output from printInfo for a 4-wheel going train with short pendulum:
 
->{'train': [[72, 10], [75, 9], [60, 27]]} 
->pendulum length: 0.13977573912159377m period: 0.75s 
->escapement time: 27.0s teeth: 36 
->Powered wheel diameter: 29 
->[[86, 10]]
->layers of cord: 2, cord per hour: 1.2cm to 1.1cm min diameter: 29.0mm
->Cord used per layer: [1319.468914507713, 680.531085492287]
->runtime: 178.6hours using 2.0m of cord/chain for a weight drop of 1000. Chain wheel multiplier: 8.6 ([[86, 10]])
->With a weight of 3kg, this results in an average power usage of 45.8μW
+>{'train': [[72, 10], [75, 9], [60, 27]]}  
+>pendulum length: 0.13977573912159377m period: 0.75s  
+>escapement time: 27.0s teeth: 36  
+>Powered wheel diameter: 29  
+>[[86, 10]]  
+>layers of cord: 2, cord per hour: 1.2cm to 1.1cm min diameter: 29.0mm  
+>Cord used per layer: [1319.468914507713, 680.531085492287]  
+>runtime: 178.6hours using 2.0m of cord/chain for a weight drop of 1000. Chain wheel multiplier: 8.6 ([[86, 10]])  
+>With a weight of 3kg, this results in an average power usage of 45.8μW  
+
+Finding the expected power usage for a given weight is useful - it will show if the clock is viable. Using degreased and oiled bearings can result in a reliable clock with a power of 40μW, but if this is your first attempt at printing a clock I recommend aiming for more like 80μW.
 
 ## Motion Works
 The motion works gears down from the minute hand to the hour hand and provides a means to mount both the hour and minute hands.
@@ -152,9 +154,9 @@ motion_works.calculateGears(arbourDistance=30)
 
 ## Pendulum Bob
 
-The Pendulum class retains a lot of unused features. It used to be responsible for generating the 3D anchor, but this is now part of ArborsForPlate.
+The Pendulum class generates the bob and the ring (for avoiding the hands on front mounted pendulums, or the bottom pillar on rear pendulums).
 
-The bob and the ring (for avoiding the hands on front mounted pendulums, or the bottom pillar on rear pendulums) are still used.
+![Pendulum_bob](images/bob_preview.svg "Pendulum Bob")
 
 ```python
 pendulum = clock.Pendulum(train.escapement, train.pendulum_length, nutMetricSize=3, handAvoiderInnerD=100, bobD=50, bobThick=8)
@@ -166,9 +168,9 @@ Dials consist of an outer ring and an optional inner seconds-hand ring. Each can
 Eye-clocks with eyes that look left and right with the pendulum swing are supported, but with only one implementation currently.
 
 ![Concentric Circles Dial](images/dial_concentric_circles.svg "Concentric Circles Dial")
-![Concentric Circles Dial](images/dial_lines_arc.svg "Concentric Circles Dial")
-![Concentric Circles Dial](images/dial_roman.svg "Concentric Circles Dial")
-![Concentric Circles Dial](images/dial_tony_the_clock.svg "Concentric Circles Dial")
+![Lines Dial](images/dial_lines_arc.svg "Lines Dial")
+![Roman Dial](images/dial_roman.svg "Roman Dial")
+![Tony Dial](images/dial_tony_the_clock.svg "Tony Dial")
 
 Top and bottom fixings to the clock plates are both optional (but you'll need at least one). These are overriden if using compact clock plates with a filled-in dial. 
 
