@@ -26,7 +26,7 @@ This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
  on the external case of the clock or other products you make using this      
  source.    
 
-My entirely non-lawyerly understanding is that this is like the GPL for hardware design (since the STLs are the output of the software, I cannot use the more conventional GPL to cover them). I don't wish to limit anyone's use of this library, but I do wish to prevent clocks developed using the library becoming closed source. If you distribute (paid or free) STLs for a clock, you must also provide the source code used to generate those STLs.
+My entirely non-lawyerly understanding is that this is like the GPL for hardware design (since the STLs are the output of the software, I cannot use the more conventional GPL to cover them). I don't wish to limit anyone's use of this library, but I do wish to prevent clocks developed using the library becoming closed source. If you distribute (paid or free) STLs for a clock, or a printed clock, you must also provide the source code used to generate those STLs.
 
 ![Clock 12 Render](images/wall_clock_12.png "Clock 12")
 
