@@ -3,9 +3,9 @@ A sprawling library of python code for 3D printing clocks and accessories. CadQu
 
 Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.
 
-See the wall_clock_* python scripts in the root directory for examples of generating complete clocks. Clocks 5 and earlier were from when the library was in a state of flux and are unlikely to work without checking out old tags. All later clocks will generate a preview if opened in the CadQuery editor. 
+See the wall_clock_* python scripts in the root directory for examples of generating complete clocks. Clocks 3 and earlier were from when the library was in a state of flux and are unlikely to work without checking out old tags. All later clocks will generate a preview if opened in the CadQuery editor. 
 
-Documentation is lacking as this is a hobby project and I'm easily distracted. This readme aims to provide a general overview and the code is commented with my intentions throughout. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading The Modern Clock if you are interested in using it to produce your own clock.
+Documentation is lacking as this is a hobby project and I'm easily distracted. This readme was mostly written with my future self in mind: it aims to provide a general overview. The code is commented with my intentions throughout so for more information I recommend digging into the relevant class. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading The Modern Clock if you are interested in using it to produce your own clock.
 
 Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase. There are also two styles of code format throughout, where newer and refactored code is attempting to adhere to PEP8 and more conventional python norms. My day job is in C/C++ and it shows.
 
@@ -94,7 +94,17 @@ Gear sizes are defined by [module size](https://en.wikipedia.org/wiki/List_of_ge
 
 Smaller pendulum periods (aprox < 1s) will probably need 4 wheels to find a valid train which isn't physically huge.
 
+30 hours is about the most you can achieve from a clock without a chainwheel (powered wheels are interchangable called chainwheels or powered wheels throughout, because the chain was the first implemented). For eight day clocks you will need one chainwheel.
+
 Using degreased and oiled bearings clocks can run reliably with ~40uW. With greased bearings you will need at least ~65uW. There is always a trade off to be had: heavier weights provide more power and in theory make the clock more reliable - except they also require more robust plates and can cause the plates to bend, making the clock less reliable. Newer designs use M4 machine screws through the whole length of the pillars which help with rigidity.
+
+A variety of different power sources are supported. All are weight driven (for now, I have plans for springs):
+ - ChainWheel: The very first implemented, works for lightweight chains only. Deprecated - use ChainWheel2 instead, it's better and has no drawbacks.
+ - ChainWheel2: A much better chainwheel, with a suitably strong chain it can easily support many kilos.
+ - CordWheel
+   - With key: a key can be used to wind the weight back up. This results in a more narrow wheel (closer together and thus stronger plates) but requires access for the key. See clocks like wall clock 12.
+   - Without key: two cords, one with the weight and the other to pull to wind the weight back up. Only been used on 30hour clocks (see wall clock 07).
+ - RopeWheel: Multiple attempts to use a rope (tried hemp as it had most friction) with a counterweight and friction. It _does_ work but requires too much counterweight for me to explore the idea further. See wall clock 11.
 
 Finally `genGears` creates the Arbor objects which represent the physical gears that will be printed (note that these will be wrapped up in ArborsForPlates later, which provides dimensions not yet known at this stage). Reducing the thickness of the gears reduces friction, so we can run with a lighter weight, but also reduces their strength. Therefore I usually have thick gears for the chain wheel and reduce the thickness towards the escapement.
 ```python
@@ -145,9 +155,13 @@ If a bearing is provided to the motion works, it will generate space to slot a b
 
 If the arbor is going to sit above the cannon pinion `compensateLooseArbour` will elongate the teeth of the gears slightly. This helps prevent the hour hand slipping if the clock plates droop slightly over time.
 
+Compact motion works may require two nylock screws to hold the arbor in the right place.
+
 ```python
+#motion works as used in the earlier clocks, with caps on the pinions
 motionWorks = clock.MotionWorks(extra_height=10, compact=False)
 
+#a motion works that could be used with a centred second hand
 motion_works = MotionWorks(compact=True, bearing=getBearingInfo(3), extra_height=20)
 motion_works.calculateGears(arbourDistance=30)
 ```
@@ -156,10 +170,12 @@ motion_works.calculateGears(arbourDistance=30)
 
 The Pendulum class generates the bob and the ring (for avoiding the hands on front mounted pendulums, or the bottom pillar on rear pendulums).
 
+This class can produce two types of bob: solid and hollow. The hollow bob is designed to be filled with something heavy (I use steel shot) and have the lid screwed in place.
+
 ![Pendulum_bob](images/bob_preview.svg "Pendulum Bob")
 
 ```python
-pendulum = clock.Pendulum(train.escapement, train.pendulum_length, nutMetricSize=3, handAvoiderInnerD=100, bobD=50, bobThick=8)
+pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=15)
 ```
 
 ## Dial
@@ -179,7 +195,48 @@ dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=cloc
 ```
 
 ## Clock Plates
-The plates tie everything together. They arrange the arbors, provide wall fixings and hold the dial.
+The plates tie everything together. They arrange the arbors, provide wall fixings and hold the dial. From clock 4 onwards they are backwards compatibility has been preserved, with all new features being optional. The different options available are best demonstrated in the various working clock designs.
+
+By default the motion works arbor is directly bellow the cannon pinion. This can be overriden with `motion_works_angle_deg` (which replaces the deprecated option `motionWorksAbove`).
+
+There are three main styles of clock plate:
+- `VERTICAL`: The default options provide a vertical plate strong enough for a 30 hour clock (see clock 4).
+- `ROUND`: A circular layout is possible, but results in an offset pendulum and hands (see clock 5)
+- `COMPACT`: Similar to `VERTICAL` but will place some arbors out to the side to reduce the total height. See clock 22.
+
+For vertical eight day clocks, the option `heavy` will increase the radius of the bottom pillar and `extraHeavy` will increase the top pillar and plate width as well as increasing the bottom pillar shape to slightly engulf the chain wheel.
+
+`pendulumFixing` sets the way the pendulum is attached to the anchor. Working options are `FRICTION_ROD` and `DIRECT_ARBOUR_SMALL_BEARINGS`. Friction rod has both the anchor and pendulum holder attached to the same rod with friction, and the beat can be set by adjusting the pendulum holder. "Direct Arbor" extends the arbor with the crutch and has the pendulum holder as part of a special collet which slots onto the arbor. The beat can only be set by bending the pendulum rod or adjusting the angle of the clock on the wall, but it should already be in beat if the pendulum and clock are perfectly vertical. See clocks 12 and 19 for the first working direct arbor implementation. 
+
+`direct_arbour_d` will set the radius of the arbor if the pendulum fixing is `DIRECT_ARBOUR_SMALL_BEARINGS`. The default has proven to be acceptable.
+
+By default the pendulum is at the front and the back plate is directly against the wall. This is controlled with `pendulumAtFront` and `backPlateFromWall` will result in what is called the "wall standoff" which generates extra pillars which are attached to the back of the back plate. Clock 14 was the first use of `backPlateFromWall` for the grasshopper escapement.
+
+`fixingScrews` expects a MachineScrew. This defaults to countersunk M3 screws, but most clocks will need M4 if you want to easily find screws long enough to pass through the front, back and wall standoff.
+
+`escapementOnFront` will mount the escape wheel and anchor on the front of the clock. This was done for the grasshoppers (Clocks 14, 15 and 17) but should be supported for anchor escapements too.
+
+`extraFrontPlate` is deprecated, but was an attempt to add another plate to help hold the escape wheel in place for a front mounted escapement.
+
+`chainThroughPillarRequired` forces the bottom pillar to be wide enough for the chain (or cord) to pass through the pillar. Generally you will want this to be true for a chain driven clock to prevent the chain falling off if the clock is left running for long enough.
+
+`centred_second_hand` routes the escape wheel rod through the centre of the motion works. See Clocks 12 and 19. This requires the motion works to be configured with a bearing.
+
+`pillars_separate` defaults to true and results in the pillars between the plates being separate parts. If it is false they are printed attached to the back plate. To re-print old designs without a wall standoff (pre clock 14) this will probably need to be true in order for there to be somewhere to put the nuts for the fixing screws without compromising strength.
+
+`dial` accepts a Dial object. `configure_dimensions` on the dial will be called to set the support length. `override_fixing_positions` will be called if the dial is "filled in" (tony) and the plates are configured with two bottom pillars. 
+
+`huygens_wheel_min_d`: If the going train is configured with a "huygens wheel" (my term for the clock using [Huygen's maintaining power](https://en.wikipedia.org/wiki/Maintaining_power#Huygens)) you can override the diameter of the extra chain wheel. By default it will be to fit on top of the bottom pillar
+
+`allow_bottom_pillar_height_reduction` is experimental and intended to reduce the height of the clock plates if the plates are `extraHeavy`. It is still untested.
+
+By default there is only one `bottom_pillars`, but it can be set to 2. See Clock 22 for an example of this. Useful for shorter pendulums and more compact clock designs.
+
+`centre_weight` is experimental, intended to move the chain wheel to the side so the weight (when no pulley is used) is in the centre of the clock. it is untested.
+
+`screws_from_back` will place the nuts for the fixing screws that hold the plates together at the front of the clock, rather than the back.
+
+`endshake` is how much extra space there is between the plates for the arbors to "shake". I recommend increasing above the default of 1mm for heavy clocks as the arbors can jam between the plates if the plates droop slightly.
 
 ## Other Bits
 ### Cuckoo_bits

@@ -28,7 +28,7 @@ if outputSTL:
     #
     # gen_grasshopper_previews(out_dir, two_d=False)
 
-    pendulum = Pendulum(bobD=65)
+    pendulum = Pendulum(bobD=80)
     demo = pendulum.getBob()
     gen_shape_preview(demo, "bob_preview", out_dir)
     gen_shape_preview(xmas_pub(pendulum), "xmas_pub_bob_preview", out_dir)
