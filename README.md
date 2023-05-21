@@ -1,4 +1,8 @@
 # 3DPrintedClocks
+
+![Clock 12 Render](images/wall_clock_12_small.png "Clock 12 Render")
+![Clock 12 Photo](images/wall_clock_12_small.jpg "Clock 12 Photo")
+
 A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic. I use the Cadquery editor (cq-editor) to visualise the clock as I'm developing. 
 
 Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.
@@ -28,8 +32,7 @@ This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
 
 My entirely non-lawyerly understanding is that this is like the GPL for hardware design (since the STLs are the output of the software, I cannot use the more conventional GPL to cover them). I don't wish to limit anyone's use of this library, but I do wish to prevent clocks developed using the library becoming closed source. If you distribute (paid or free) STLs for a clock, or a printed clock, you must also provide the source code used to generate those STLs.
 
-![Clock 12 Render](images/wall_clock_12.png "Clock 12 Render")
-![Clock 12 Photo](images/wall_clock_12_small.jpg "Clock 12 Photo")
+
 
 # Acknowledgements
 
