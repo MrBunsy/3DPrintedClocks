@@ -1,5 +1,5 @@
 # 3DPrintedClocks
-A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic.
+A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic. I use the Cadquery editor (cq-editor) to visualise the clock as I'm developing. 
 
 Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.
 
@@ -91,6 +91,8 @@ The geometry calculations in this class are a direct implementation of David Hes
 The going train is the name given to the series of gears that link the power (weight on a chain or cord) to the escapement. The small gears are called pinions and the large gears are called wheels. In a gearbox for a motor you'll usually be gearing down to increase torque and decrease speed. On a clock you're gearing up from the power source to increase the run time of the clock.
 
 Gear sizes are defined by [module size](https://en.wikipedia.org/wiki/List_of_gear_nomenclature#Module). `moduleReduction` can be configured to result in decreasing module size along the going train. Each wheel needs to be smaller than the last to fit and module reduction is an easy way to help calculate a valid train. 
+
+You can configure the use of a pulley with `usePulley`. This changes the calculations for the runtime of the clock and will affect the plates slightly.
 
 Smaller pendulum periods (aprox < 1s) will probably need 4 wheels to find a valid train which isn't physically huge.
 
@@ -237,6 +239,61 @@ By default there is only one `bottom_pillars`, but it can be set to 2. See Clock
 `screws_from_back` will place the nuts for the fixing screws that hold the plates together at the front of the clock, rather than the back.
 
 `endshake` is how much extra space there is between the plates for the arbors to "shake". I recommend increasing above the default of 1mm for heavy clocks as the arbors can jam between the plates if the plates droop slightly.
+
+```python
+pendulumSticksOut=10
+backPlateFromWall=30
+
+#clock 20's clock plates
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=10, pendulumSticksOut=pendulumSticksOut, name="Wall 20",style=clock.ClockPlateStyle.COMPACT,
+                                 motionWorksAbove=True, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
+                                 backPlateFromWall=backPlateFromWall, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
+                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=45,
+                                 allow_bottom_pillar_height_reduction=False, endshake=1.5)
+```
+
+## Hands
+
+A large variety of hand styles exist, with the following options:
+
+- Outline of a different colour, or set to 0 for no outline. Doesn't work with small cuckoo hands or baroque hands.
+- Centred second hand. Only produces good second hands with `SIMPLE_ROUNDED` and `BREGUET`
+- Chunky: makes the hand generally wider, some hands don't look good without a dial behind them (only affects `BREGUET`)
+
+`getHandDemo()` will produce models of all hand styles for a quick overview.
+
+![Simple hands](images/hands_simple_rounded_with_outline_centred_seconds.svg "Simple hands")
+![Baroque hands](images/hands_baroque.svg "Baroque hands")
+
+```python
+#clock 12's hands with a centred second hand
+hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="circle",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True)
+```
+
+## Pulleys
+Two pulleys exist, a simple `LightweightPulley` with a wheel that can be printed in one piece or the more heavy duty `BearingPulley` which fits a bearing inside the pulley wheel. For eight day clocks with a heavier weight I recommend the `BearingPulley`.
+
+The `LightweightPulley` supports either slotting a steel tube into the wheel (`use_steel_rod=True`), or running with plastic on the machine screw directly. I suspect the steel tube is overkill because this is only used on lightweight clocks anyway, but it might make it possible to use with heavier weights. 
+
+Both pulleys use a standard cuckoo weight hook to provide a hook for the weight.
+
+```python
+pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
+```
+
+![Pulley](images/pulley_preview.svg "Heavy Duty Pulley")
+![Lightweight pulley](images/lightweight_pulley_preview.svg "Lightweight pulley")
+
+## Assembly
+The `Assembly` is used for generating previews of the clock for inspection to ensure the geometry is correct and the clock is printable. The going train and plates logic isn't perfect, it is possible to produce designs where things overlap or would be impossible to assemble. The ability to see an assembled clock rendered helps avoid discovering these problems after you've started printing.
+
+`get_clock()` provides a CaqQuery workplane that represents the entire assembled clock. This can be exported to STL.
+`show_clock()` only works in CQ-editor but provides a coloured preview of the clock.
+
+![show_clock example](images/show_clock_example.png "show_clock example")
+![get_clock example](images/STL_model_example.png "get_clock example")
 
 ## Other Bits
 ### Cuckoo_bits

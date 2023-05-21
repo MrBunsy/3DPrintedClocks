@@ -23,6 +23,25 @@ from enum import Enum
 This is in a separate file to avoid circular dependencies
 '''
 
+class HandStyle(Enum):
+    SQUARE = "square"
+    SIMPLE = "simple"
+    SIMPLE_ROUND = "simple_rounded"
+    CUCKOO = "cuckoo"
+    SPADE = "spade"
+    BREGUET = "breguet" # has a single circle on each hand
+    SYRINGE="syringe"
+    SWORD="sword"
+    CIRCLES="circles" # very much inspired by the same clock on the horological journal that inspired the circle style gears
+    XMAS_TREE="xmas_tree"
+    BAROQUE="baroque"
+    ARROWS="arrows"#specicially for Tony the Clock
+
+class HandType(Enum):
+    HOUR = "hour"
+    MINUTE = "minute"
+    SECOND = "second"
+
 class EscapementType(Enum):
     #only one fully implemented is deadbeat, recoil has been broken since deadbeat was introduced
     DEADBEAT = "deadbeat"

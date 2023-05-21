@@ -96,7 +96,7 @@ assembly.printInfo()
 
 weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
 
-show_object(assembly.getClock())
+show_object(assembly.get_clock())
 
 leaf_thick=1
 pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR*2, cut_rect_width=pendulum.gapWidth+0.1, cut_rect_height=pendulum.gapHeight+0.1)

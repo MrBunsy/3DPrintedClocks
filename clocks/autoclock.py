@@ -114,35 +114,39 @@ def gen_grasshopper_previews(out_path="autoclock", two_d = True):
 
     exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
 
-def gen_shape_preview(demo, name, out_path="autoclock"):
+def gen_shape_preview(demo, name, out_path="autoclock", size=300):
 
     opts = DEFAULT_SVG_EXPORT_OPTIONS.copy()
+
+    opts["width"] = size
+    opts["height"] = size
 
     file_name = "{}.svg".format(name)
 
     exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
 
-def gen_hand_previews(out_path="autoclock", length=120):
+def gen_hand_previews(out_path="autoclock", length=120, size=600, only_these=None):
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
     for style in HandStyle:
-        for centred_seconds in [True, False]:
-            for outline in [0, 1]:
+        if only_these is None or style in only_these:
+            for centred_seconds in [True, False]:
+                for outline in [0, 1]:
 
-                outline_string="_with_outline" if outline > 0 else ""
-                seconds_string = "_centred_seconds" if centred_seconds else ""
+                    outline_string="_with_outline" if outline > 0 else ""
+                    seconds_string = "_centred_seconds" if centred_seconds else ""
 
-                print("Generating preview for {}{}{}".format(style.value, outline_string.replace("_"," "), seconds_string.replace("_", " ")))
+                    print("Generating preview for {}{}{}".format(style.value, outline_string.replace("_"," "), seconds_string.replace("_", " ")))
 
-                hands = Hands(style=style, length=length, outline=outline, second_hand_centred=centred_seconds,
-                              thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                              hourfixing_d=motionWorks.getHourHandHoleD())
-                demo = hands.getAssembled()#include_seconds=centred_seconds
+                    hands = Hands(style=style, length=length, outline=outline, second_hand_centred=centred_seconds,
+                                  thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
+                                  hourfixing_d=motionWorks.getHourHandHoleD())
+                    demo = hands.getAssembled()#include_seconds=centred_seconds
 
-                file_name = "hands_{}{}{}.svg".format(style.value,outline_string, seconds_string)
+                    file_name = "hands_{}{}{}.svg".format(style.value,outline_string, seconds_string)
 
-                exportSVG(demo, os.path.join(out_path, file_name), opts={"width": 600, "height": 600, "showAxes": False, "strokeWidth": 0.5,
-                                                                           "showHidden": False, "projectionDir": (0, 0, 1)})
+                    exportSVG(demo, os.path.join(out_path, file_name), opts={"width": size, "height": size, "showAxes": False, "strokeWidth": 0.5,
+                                                                               "showHidden": False, "projectionDir": (0, 0, 1)})
 
 def gen_dial_previews(out_path="autoclock", diameter=180, image_size=300):
     for style in DialStyle:
@@ -423,7 +427,7 @@ class AutoWallClock:
     def get_svg_text(self):
         if not self.clock_generated:
             self.gen_clock()
-        return exportSVG(self.model.getClock(), None, opts={"width": 720, "height": 720, "strokeWidth": 0.2, "showHidden": False})
+        return exportSVG(self.model.get_clock(), None, opts={"width": 720, "height": 720, "strokeWidth": 0.2, "showHidden": False})
 
     def output_svg(self, path):
         if not self.clock_generated:
@@ -432,7 +436,7 @@ class AutoWallClock:
         out = basename + ".svg"
 
         print("Exporting {}".format(out))
-        svg = exportSVG(self.model.getClock(), out, opts={"width":720, "height":720, "strokeWidth": 0.2, "showHidden": False})
+        svg = exportSVG(self.model.get_clock(), out, opts={"width":720, "height":720, "strokeWidth": 0.2, "showHidden": False})
         svg2png(url=out, write_to=basename+".png", background_color="rgb(255,255,255)", output_width=1440)
         svg2png(url=out, write_to=basename + "_small.png", background_color="rgb(255,255,255)", output_width=720)
         return svg

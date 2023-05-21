@@ -68,7 +68,7 @@ pulley = clock.BearingPulley(diameter=26, bearing=clock.getBearingInfo(4), screw
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley, showPendulum=True)#weights=[clock.Weight(height=245,diameter=55)]
 
 # show_object(plates.getPlate(back=True))
-show_object(assembly.getClock())
+show_object(assembly.get_clock())
 
 if outputSTL:
     #

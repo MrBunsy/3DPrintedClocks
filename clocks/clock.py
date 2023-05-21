@@ -3546,7 +3546,7 @@ class Assembly:
         '''
 
 
-    def getClock(self, with_rods=False, with_key=False, with_pendulum=False):
+    def get_clock(self, with_rods=False, with_key=False, with_pendulum=False):
         '''
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
         '''
@@ -3834,12 +3834,12 @@ class Assembly:
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getClock(), out)
+        exporters.export(self.get_clock(), out)
 
     def outputSVG(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.svg".format(name))
         print("Outputting ", out)
-        exportSVG(self.getClock(), out, opts={"width":720,"height":1280})
+        exportSVG(self.get_clock(), out, opts={"width":720, "height":1280})
 
 
 def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):

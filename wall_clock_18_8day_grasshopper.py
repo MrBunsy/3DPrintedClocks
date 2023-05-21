@@ -89,7 +89,7 @@ assembly.printInfo()
 
 weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
 
-show_object(assembly.getClock())
+show_object(assembly.get_clock())
 
 if outputSTL:
 

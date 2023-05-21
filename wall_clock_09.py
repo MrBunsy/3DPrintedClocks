@@ -100,7 +100,7 @@ hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30)
 
 
-show_object(assembly.getClock())
+show_object(assembly.get_clock())
 # show_object(train.getArbourWithConventionalNaming(0).getShape())
 
 if outputSTL:
