@@ -2,7 +2,8 @@
 
 ![Clock 12 Render](images/wall_clock_12_small.png "Clock 12 Render")
 ![Clock 12 Photo](images/wall_clock_12_small.jpg "Clock 12 Photo")
-
+![Clock 07 Render](images/wall_clock_07_render_small.png "Clock 07 Render")
+![Clock 07 Photo](images/clock_07_photo_small.jpg "Clock 12 Photo")
 A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic. I use the Cadquery editor (cq-editor) to visualise the clock as I'm developing. 
 
 Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.

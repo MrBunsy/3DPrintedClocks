@@ -79,7 +79,7 @@ hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands)
+
 
 weight = clock.Weight(height=100, diameter=35)
 weight.printInfo()
@@ -87,6 +87,7 @@ weight.printInfo()
 bigweight = clock.Weight(height=125, diameter=45)
 bigweight.printInfo()
 
+assembly = clock.Assembly(plates, hands=hands, weights=[weight])
 # show_object(assembly.getClock())
 assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE], plate_colour=clock.Colour.DARKGREY,
                     hand_colours=[clock.Colour.WHITE, clock.Colour.DARKGREY])

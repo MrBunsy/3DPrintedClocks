@@ -3423,6 +3423,29 @@ class Assembly:
             if len(self.plates.bottomPillarPositions) == 1 and np.linalg.norm(np.subtract(self.plates.bearingPositions[-1][:2],self.plates.bottomPillarPositions[0][:2])) < self.goingTrain.pendulum_length*1000:
                 self.ring_pos = (self.plates.bottomPillarPositions[0][0], self.plates.bottomPillarPositions[0][1], -self.plates.pendulumSticksOut - self.pendulum.handAvoiderThick / 2)
                 self.has_ring = True
+        self.weight_positions = []
+        if len(self.weights) > 0:
+            for i, weight in enumerate(self.weights):
+                #line them up so I can see if they'll bump into each other
+                weightTopY = self.pendulum_bob_centre_pos[1] + weight.height
+
+                holePositions = self.goingTrain.poweredWheel.getChainPositionsFromTop()
+
+                #side the main weight is on
+                side = 1 if self.goingTrain.isWeightOnTheRight() else -1
+
+                if i == 1:
+                    #counterweight
+                    side*=-1
+
+                #in X,Y,Z
+                weightPos = None
+
+                for holeInfo in holePositions:
+                    if (holeInfo[0][0] > 0) == (side > 0):
+                        #hole for the weight
+                        weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + holeInfo[0][1])
+                        self.weight_positions.append(weightPos)
 
     def printInfo(self):
 
@@ -3713,7 +3736,7 @@ class Assembly:
 
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
-                   bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None):
+                   bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3830,6 +3853,13 @@ class Assembly:
 
             show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour}, name="Pendulum Bob Nut")
 
+
+        if len(self.weights) > 0:
+            for i, weight_pos in enumerate(self.weight_positions):
+
+                weightShape = self.weights[i].getWeight().rotate((0,0,0), (1,0,0),-90)
+
+                show_object(weightShape.translate(weight_pos), options={"color": weight_colour})
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))
