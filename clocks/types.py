@@ -23,6 +23,10 @@ from enum import Enum
 This is in a separate file to avoid circular dependencies
 '''
 
+class RomanNumeralStyle(Enum):
+    CUCKOO = "cuckoo"
+    SIMPLE = "simple"
+
 class HandStyle(Enum):
     SQUARE = "square"
     SIMPLE = "simple"

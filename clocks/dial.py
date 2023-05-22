@@ -334,6 +334,12 @@ class MoonPhaseComplication3D:
         print("Outputting ", out)
         exporters.export(self.get_moon_half(), out)
 
+class RomanNumerals:
+
+    def __init__(self, height, thick=LAYER_THICK*2, style=RomanNumeralStyle.CUCKOO, inverted=False):
+        self.height = height
+        self.thick = thick
+        self.style = style
 
 class Dial:
     '''
