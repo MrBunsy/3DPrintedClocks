@@ -56,8 +56,10 @@ train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=
 
 #for the first draft let's stick to a chain I know works, and hope that we're not over its weight limit
 # 61 links/ft 1-day regula chain. copied from clock 04
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
+# train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
 # train.genChainWheels(ratchetThick=4,wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075, screwThreadLength=8, holeD=3)
+train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30,
+                      fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 
 #pendulum is on the back
@@ -75,8 +77,8 @@ motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, 
 pendulum = clock.Pendulum(bobD=80, bobThick=10)
 
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="clk 17",style=clock.ClockPlateStyle.VERTICAL, pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=10, pendulumSticksOut=pendulumSticksOut, name="clk 18",style=clock.ClockPlateStyle.VERTICAL, pendulumAtFront=False,
+                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, bottom_pillars=2)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 

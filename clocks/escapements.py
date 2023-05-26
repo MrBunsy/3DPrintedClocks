@@ -2181,7 +2181,7 @@ class Pendulum:
             wallThick - slotThick)
         if not forCutting:
             for pos in self.bobLidNutPositions:
-                lid =  lid.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.nutMetricSize/2).cutThruAll()
+                lid =  lid.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.threadedRodM/2).cutThruAll()
 
         return lid
 

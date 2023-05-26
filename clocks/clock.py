@@ -203,7 +203,8 @@ class GoingTrain:
     '''
     TODO make this generic and re-usable, I've got similar logic over in calculating chain wheel ratios and motion works
     '''
-    def calculateRatios(self, moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50, max_error=0.1, loud=False, penultimate_wheel_min_ratio=0):
+    def calculateRatios(self, moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
+                        max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
@@ -308,7 +309,11 @@ class GoingTrain:
                 totalPinionTeeth += allTrains[c][p][1]
                 # module * number of wheel teeth - proportional to diameter
                 size = math.pow(moduleReduction, p) * allTrains[c][p][0]
-                weighting += size
+                if favour_smallest:
+                    weighting += size
+                else:
+                    #still don't want to just choose largest by mistake
+                    weighting += size*0.3
                 if p > 0 and size > lastSize * 0.9:
                     # this wheel is unlikely to physically fit
                     fits = False
@@ -854,15 +859,15 @@ class GoingTrain:
                 pair = WheelPinionPair(self.chainWheelRatios[i][0], self.chainWheelRatios[i][1], chainModule)
                 self.chainWheelPairs.append(pair)
 
-            minuteWheelSpace = pairs[0].wheel.getMaxRadius() + holeD * 2
+            minuteWheelSpace = pairs[0].wheel.getMaxRadius() + holeD
             last_chain_wheel_space = self.chainWheelPairs[-1].wheel.getMaxRadius()
             if not self.poweredWheel.looseOnRod:
                 # need space for the steel rod as the wheel itself is loose on the threaded rod
-                minuteWheelSpace += 2
+                minuteWheelSpace += 1
 
             if last_chain_wheel_space < minuteWheelSpace:
                 # calculate module for the chain wheel based on teh space available
-                chain_module_base *= 1.1
+                chain_module_base *= 1.01
                 print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chain_module_base))
             else:
                 fits = True
@@ -1376,6 +1381,9 @@ class SimpleClockPlates:
         self.motion_works_holder_wide = self.plateWidth
         self.motion_works_fixings_relative_pos = [(-self.plateWidth/4,self.motion_works_holder_length/2) ,
                                                   (self.plateWidth/4,-(self.motion_works_holder_length/2))]
+
+        self.top_of_hands_z = self.motionWorks.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+
         if self.dial is not None:
             #calculate dial height after motion works gears have been generated, in case the height changed with the bearing
             # height of dial from top of front plate
@@ -1385,7 +1393,7 @@ class SimpleClockPlates:
             if self.has_seconds_hand() and not self.centred_second_hand:
                 #mini second hand! give a smidge more clearance
                 self.dial_z -= 2
-            self.top_of_hands_z = self.motionWorks.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+
             print("dial z", self.dial_z)
             dial_support_d = self.plateWidth
 
@@ -2192,7 +2200,7 @@ class SimpleClockPlates:
 
         return standoff
 
-    def getText(self):
+    def get_text(self):
 
         class TextSpace:
             def __init__(self, x, y, width, height, horizontal, inverted=True):
@@ -2466,7 +2474,7 @@ class SimpleClockPlates:
                     plate = plate.union(self.get_bottom_pillar().translate(bottomPillarPos).translate((0, 0, thick)))
                 plate = plate.union(self.get_top_pillar().translate(self.topPillarPos).translate((0, 0, thick)))
 
-            plate = plate.cut(self.getText())
+            plate = plate.cut(self.get_text())
 
 
 
@@ -3252,7 +3260,7 @@ class SimpleClockPlates:
 
         out = os.path.join(path, "{}_back_plate_textcolour.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getText(), out)
+        exporters.export(self.get_text(), out)
 
         if self.pillars_separate:
             out = os.path.join(path, "{}_bottom_pillar.stl".format(name))
@@ -3736,7 +3744,8 @@ class Assembly:
 
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
-                   bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE):
+                   bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
+                   text_colour=Colour.WHITE):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3762,6 +3771,8 @@ class Assembly:
             bob_colours = [gear_colours[(self.goingTrain.wheels + self.goingTrain.chainWheels + offset) % len(gear_colours)]]
 
         show_object(self.plates.get_assembled(), options={"color":plate_colour}, name="Plates")
+        show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
+
 
         for a, arbour in enumerate(self.plates.arboursForPlate):
             show_object(arbour.get_assembled(), options={"color": gear_colours[(len(self.plates.arboursForPlate)-1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
