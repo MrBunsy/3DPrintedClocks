@@ -1636,18 +1636,20 @@ class ArbourForPlate:
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
                 assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
-        elif self.type == ArbourType.ESCAPE_WHEEL:
+        elif self.type == ArbourType.ESCAPE_WHEEL and self.escapement_on_front:
 
-            if self.escapement_on_front:
-                assembly = assembly.add(self.get_standalone_pinion_with_arbor_extension(for_printing=False).translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2)))
-                assembly = assembly.add(self.get_escape_wheel(for_printing=False).translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ())))
-            else:
-                assembly =  assembly.add(self.get_escape_wheel(for_printing=False).translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2)))
-
+            assembly = assembly.add(self.get_standalone_pinion_with_arbor_extension(for_printing=False).translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2)))
+            assembly = assembly.add(self.get_escape_wheel(for_printing=False).translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ())))
+        elif self.type == ArbourType.CHAIN_WHEEL:
+            assembly = assembly.add(self.arbor.getAssembled().translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2)))
         else:
-            assembly = assembly.add(self.arbor.getAssembled())
+            #"normal" wheel-pinion pair
+            arbor = shapes["wheel"]
 
-            assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
+            if not self.arbor.pinionAtFront:
+                arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.arbor.getTotalThickness()))
+
+            assembly = assembly.add(arbor.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2)))
 
 
         if self.need_separate_arbor_extension(front=True):
@@ -1672,7 +1674,13 @@ class ArbourForPlate:
             shapes = self.get_escape_wheel_shapes()
 
         if self.arbor.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.CHAIN_WHEEL]:
-            shapes["wheel"]=self.arbor.getShape()
+            wheel = self.arbor.getShape()
+
+            if self.need_arbor_extension(front=self.arbor.pinionAtFront):
+                #need arbor extension on the pinion
+                wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinionAtFront).translate((0,0,self.arbor.getTotalThickness())))
+
+            shapes["wheel"] = wheel
             extras = self.arbor.getExtras()
             for extraName in extras:
                 shapes[extraName]=extras[extraName]
@@ -1721,10 +1729,13 @@ class ArbourForPlate:
                 #front one is longest
                 return front
 
-        if self.arbor.pinionAtFront and self.need_arbor_extension(front=False):
+        if not front and self.arbor.pinionAtFront and self.need_arbor_extension(front=False):
+            #need a rear arbor extension
             return True
-        if not self.arbor.pinionAtFront and self.need_arbor_extension(front=True):
+        if front and not self.arbor.pinionAtFront and self.need_arbor_extension(front=True):
+            #need a front arbor extension
             return True
+        return False
 
     def need_arbor_extension(self, front=True):
         '''
