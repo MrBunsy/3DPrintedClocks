@@ -40,7 +40,9 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
+#increasing run only for asthetic reasons
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4,
+                                    style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 
 train = clock.GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, maxWeightDrop=1100, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24, supportSecondHand=True)#, huygensMaintainingPower=True)
 
@@ -59,15 +61,15 @@ train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThic
 pendulumSticksOut=10
 backPlateFromWall=30
 
-train.genGears(module_size=1.05, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=4, style=gearStyle,
-               chainModuleIncrease=1, chainWheelPinionThickMultiplier=3, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2.25, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-motionWorks.calculateGears(arbourDistance=35)
+motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 
@@ -79,7 +81,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, bac
                                  heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=backPlateFromWall, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360-40,
-                                 allow_bottom_pillar_height_reduction=False, endshake=1.5, second_hand=False)
+                                 allow_bottom_pillar_height_reduction=False, endshake=1.5, second_hand=False, escapementOnFront=True)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -104,7 +106,7 @@ assembly.show_clock(show_object, motion_works_colours=[clock.Colour.GREEN, clock
 if outputSTL:
     #
     #
-    train.outputSTLs(clockName,clockOutDir)
+    # train.outputSTLs(clockName,clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)

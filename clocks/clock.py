@@ -1094,7 +1094,7 @@ class SimpleClockPlates:
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
-                 embed_nuts_in_plate=False):
+                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1126,8 +1126,11 @@ class SimpleClockPlates:
         #does the chain/rope/cord pass through the bottom pillar?
         self.chainThroughPillar = chainThroughPillarRequired
 
+        #None or a MoonComplication object
         self.moon_complication = moon_complication
 
+        #if escapementOnFront then extend out the front plate to hold the bearing - reduces wobble when platedistance is low
+        self.extra_support_for_escape_wheel = extra_support_for_escape_wheel
 
         anglesFromMinute = None
         anglesFromChain = None
@@ -1565,7 +1568,7 @@ class SimpleClockPlates:
             # from_next_wheel = self.arboursForPlate[1].arbour.getMaxRadius() + self.bottomPillarR + self.gearGap
             # between_wheels = np.linalg.norm(np.subtract(self.bearingPositions[0][:2], self.bearingPositions[1][:2]))
             pillar_width = self.bottom_pillar_width if self.narrow_bottom_pillar else self.bottomPillarR*2
-            chain_wheel_r = self.arboursForPlate[0].arbour.getMaxRadius() + self.gearGap
+            chain_wheel_r = self.arboursForPlate[0].arbor.getMaxRadius() + self.gearGap
             self.bottomPillarPositions=[
                 (self.bearingPositions[0][0] - (chain_wheel_r + pillar_width/2), self.bearingPositions[0][1]),
                 (self.bearingPositions[0][0] + (chain_wheel_r + pillar_width/2), self.bearingPositions[0][1]),
@@ -1894,7 +1897,7 @@ class SimpleClockPlates:
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
         if self.need_front_anchor_bearing_holder():
-            holder_long = self.arboursForPlate[-1].front_anchor_from_plate + self.arboursForPlate[-1].arbour.escapement.getAnchorThick() \
+            holder_long = self.arboursForPlate[-1].front_anchor_from_plate + self.arboursForPlate[-1].arbor.escapement.getAnchorThick() \
                           + self.get_lone_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing) + WASHER_THICK_M3
         else:
             holder_long = 0
@@ -1922,7 +1925,7 @@ class SimpleClockPlates:
         holder = holder.union(cq.Workplane("XY").moveTo(self.topPillarPos[0], self.topPillarPos[1]).circle(self.plateWidth / 2 + 0.0001).extrude(pillar_tall + holder_thick))
 
 
-        holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=getBearingInfo(self.arboursForPlate[-1].arbour.arbourD)).translate((self.bearingPositions[-1][0], self.bearingPositions[-1][1])))
+        holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=getBearingInfo(self.arboursForPlate[-1].arbor.arbourD)).translate((self.bearingPositions[-1][0], self.bearingPositions[-1][1])))
         #rotate into position to cut fixing holes
         holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
         holder= holder.cut(self.get_fixing_screws_cutter().translate((0,0,-self.front_z)))
@@ -3123,8 +3126,8 @@ class SimpleClockPlates:
 
 
 
-        if self.escapementOnFront and not self.extraFrontPlate and False:
-            #this is a bearing extended out the front. I'm no longer convinced it's needed for the grasshopper
+        if self.escapementOnFront and not self.extraFrontPlate and self.extra_support_for_escape_wheel:
+            #this is a bearing extended out the front, helps maintain the geometry for a grasshopper on plates with a narrow plateDistance
             plate = plate.add(self.getBearingHolder(-self.goingTrain.escapement.getWheelBaseToAnchorBaseZ()).translate((self.bearingPositions[-2][0], self.bearingPositions[-2][1], self.getPlateThick(back=False))))
 
         return plate
@@ -3488,7 +3491,7 @@ class Assembly:
             rod_length = -1
 
             arbourForPlate = self.plates.arboursForPlate[i]
-            arbour = arbourForPlate.arbour
+            arbour = arbourForPlate.arbor
             bearing = getBearingInfo(arbour.arbourD)
             bearing_thick = bearing.bearingHeight
 

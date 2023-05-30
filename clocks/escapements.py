@@ -319,6 +319,9 @@ class AnchorEscapement:
 
         # ========== points on the anchor =========
 
+
+
+
         #distance of the end of the entry pallet from the anchor centre
         entryPalletEndR = np.linalg.norm(np.subtract(entryPalletEndPos, anchorCentre))
         entryPalletStartR = np.linalg.norm(np.subtract(entryPalletStartPos, anchorCentre))
@@ -332,6 +335,9 @@ class AnchorEscapement:
         armThickAngleExit = armThick/exitPalletEndR
         outerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle + armThickAngleExit, exitPalletEndR), anchorCentre))
 
+
+
+
         self.largest_anchor_r = max(entryPalletStartR, exitPalletEndR)
 
         if self.style == AnchorStyle.CURVED:
@@ -344,7 +350,19 @@ class AnchorEscapement:
             top_arm_r = bottom_arm_r + armThick
         elif self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
             bottom_arm_r = np.linalg.norm(innerRightPoint)
+            # check to see if the arm will intersect the centre circle enough and make it thicker if not
             top_arm_r = bottom_arm_r + armThick
+            # if self.anchor_centre_distance - top_arm_r > self.centre_r *0.4:
+            #     print("thickening arm")
+            #     #would I be better off with just a rounded rectangle from the anchor arbor down to the arm?
+            #     armThick = self.anchor_centre_distance - bottom_arm_r - self.centre_r *0.6
+            #     #copy-paste recalculate
+            #     armThickAngleEntry = armThick / entryPalletEndR
+            #     outerLeftPoint = tuple(np.add(polar(math.pi * 1.5 - self.anchorAngle / 2 - palletLengthAngle / 2 - armThickAngleEntry - deadbeatAngle, entryPalletStartR), anchorCentre))
+            #     armThickAngleExit = armThick / exitPalletEndR
+            #     outerRightPoint = tuple(np.add(polar(math.pi * 1.5 + self.anchorAngle / 2 + palletLengthAngle / 2 + deadbeatAngle + armThickAngleExit, exitPalletEndR), anchorCentre))
+            #     bottom_arm_r = np.linalg.norm(innerRightPoint)
+            #     top_arm_r = bottom_arm_r + armThick
 
         '''
         note - the locking faces are not equidistant (entryPalletStartR != exitPalletStartR). I don't know how necessary this actually is
