@@ -162,11 +162,97 @@ class AnchorEscapement:
         #just to calculate all the maths
         # self.calcMaths()
 
-    def calcMaths(self):
+    def calcGeometry(self):
         '''
         calculate all the relevant maths for dimensions
         '''
-        self.getAnchor2D()
+        self.anchorCentre = (0, self.anchor_centre_distance)
+        self.wheelCentre = (0, 0)
+
+        armThick = self.diameter * 0.05
+        # aprox
+        midEntryPalet = polar(math.pi + self.wheelAngle / 2, self.radius)
+        armLength = np.linalg.norm(np.subtract(midEntryPalet, self.anchorCentre))
+        armThickAngle = armThick / armLength
+
+        # angle of the arms holding the pallets - doesn't affect performance of escapement unless arc is really large (and then the arms crash into the teeth)
+        deadbeatAngle = self.run  # math.pi*0.05
+
+        # for calculating the positions of the straight arms - this isn't quite right, but works
+        if self.style == AnchorStyle.STRAIGHT:
+            self.anchorCentreBottom = (0, self.anchor_centre_distance - (armThick / 2) / sin(self.anchorAngle / 2))
+            self.anchorCentreTop = (0, self.anchor_centre_distance + (armThick / 2) / sin(self.anchorAngle / 2))
+        else:
+            self.anchorCentreBottom = (0, self.anchor_centre_distance - self.centre_r)
+            self.anchorCentreTop = (0, self.anchor_centre_distance + self.centre_r)
+
+        # from the anchor centre, the length of the pallets determines how wide the pendulum will swing (the lift)
+        palletLengthAngle = self.lift
+        # from the scape wheel, this is the angle of the pallet thickness. For a perfect clock it's half the tooth angle,
+        # but we must subtract drop (the angle the escape wheel spins before coming back into contact with the anchor)
+        palletThickAngle = self.toothAngle / 2 - self.drop
+
+        anchorToEntryPalletCentreAngle = math.pi * 1.5 - self.anchorAngle / 2 + self.lock / 2
+        anchorToExitPalletCentreAngle = math.pi * 1.5 + self.anchorAngle / 2 - self.lock / 2
+        wheelToEntryPalletCentreAngle = math.pi / 2 + self.wheelAngle / 2
+        wheelToExitPalletCentreAngle = math.pi / 2 - self.wheelAngle / 2
+
+        # =========== entry pallet ============
+        entryPalletStartLineFromAnchor = Line(self.anchorCentre, anchorToEntryPalletCentreAngle - palletLengthAngle / 2)
+        entryPalletEndLineFromAnchor = Line(self.anchorCentre, anchorToEntryPalletCentreAngle + palletLengthAngle / 2)
+
+        entryPalletStartLineFromWheel = Line(self.wheelCentre, wheelToEntryPalletCentreAngle + palletThickAngle / 2)
+        entryPalletEndLineFromWheel = Line(self.wheelCentre, wheelToEntryPalletCentreAngle - palletThickAngle / 2)
+
+        self.entryPalletStartPos = entryPalletStartLineFromAnchor.intersection(entryPalletStartLineFromWheel)
+        self.entryPalletEndPos = entryPalletEndLineFromAnchor.intersection(entryPalletEndLineFromWheel)
+
+        # =========== exit pallet ============
+        exitPalletStartLineFromAnchor = Line(self.anchorCentre, anchorToExitPalletCentreAngle + palletLengthAngle / 2)
+        exitPalletEndLineFromAnchor = Line(self.anchorCentre, anchorToExitPalletCentreAngle - palletLengthAngle / 2)
+
+        exitPalletStartLineFromWheel = Line(self.wheelCentre, wheelToExitPalletCentreAngle + palletThickAngle / 2)
+        exitPalletEndLineFromWheel = Line(self.wheelCentre, wheelToExitPalletCentreAngle - palletThickAngle / 2)
+
+        self.exitPalletStartPos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
+        self.exitPalletEndPos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
+
+        # ========== pallet angles ==========
+
+        entryPalletDifference = np.subtract(self.entryPalletEndPos, self.entryPalletStartPos)
+        exitPalletDifference = np.subtract(self.exitPalletEndPos, self.exitPalletStartPos)
+
+        self.pallet_angles = [math.atan2(entryPalletDifference[1], entryPalletDifference[0]), math.atan2(exitPalletDifference[1], exitPalletDifference[0])]
+
+        # ========== points on the anchor =========
+
+        # distance of the end of the entry pallet from the anchor centre
+        self.entryPalletEndR = np.linalg.norm(np.subtract(self.entryPalletEndPos, self.anchorCentre))
+        self.entryPalletStartR = np.linalg.norm(np.subtract(self.entryPalletStartPos, self.anchorCentre))
+        self.innerLeftPoint = tuple(np.add(polar(math.pi * 1.5 - self.anchorAngle / 2 - palletLengthAngle / 2 - deadbeatAngle, self.entryPalletEndR), self.anchorCentre))
+        self.armThickAngleEntry = armThick / self.entryPalletEndR
+        self.outerLeftPoint = tuple(np.add(polar(math.pi * 1.5 - self.anchorAngle / 2 - palletLengthAngle / 2 - self.armThickAngleEntry - deadbeatAngle, self.entryPalletStartR), self.anchorCentre))
+
+        self.exitPalletEndR = np.linalg.norm(np.subtract(self.exitPalletEndPos, self.anchorCentre))
+        self.exitPalletStartR = np.linalg.norm(np.subtract(self.exitPalletStartPos, self.anchorCentre))
+        self.innerRightPoint = tuple(np.add(polar(math.pi * 1.5 + self.anchorAngle / 2 + palletLengthAngle / 2 + deadbeatAngle, self.exitPalletStartR), self.anchorCentre))
+        self.armThickAngleExit = armThick / self.exitPalletEndR
+        self.outerRightPoint = tuple(np.add(polar(math.pi * 1.5 + self.anchorAngle / 2 + palletLengthAngle / 2 + deadbeatAngle + self.armThickAngleExit, self.exitPalletEndR), self.anchorCentre))
+
+        self.largest_anchor_r = max(self.entryPalletStartR, self.exitPalletEndR)
+
+        if self.style == AnchorStyle.CURVED:
+            # calculate the radii of the curved bits
+            # sagitta (from wikipedia)
+            # innerLeft and innerRight aren't quite parallel - inner right is slightly lower. I think this is expected as I don't attempt to keep inner radii the same
+            s = self.anchorCentreBottom[1] - self.innerRightPoint[1]
+            l = self.innerRightPoint[0] - self.innerLeftPoint[0]
+            self.bottom_arm_r = s / 2 + l ** 2 / (8 * s)
+            self.top_arm_r = self.bottom_arm_r + armThick
+        elif self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
+            self.bottom_arm_r = np.linalg.norm(self.innerRightPoint)
+            # check to see if the arm will intersect the centre circle enough and make it thicker if not
+            self.top_arm_r = self.bottom_arm_r + armThick
 
     def getAnchorArbourD(self):
         return self.arbourD
@@ -220,8 +306,8 @@ class AnchorEscapement:
         self.anchorTopThickTop = (self.anchor_centre_distance - self.radius) * 0.75
 
         #recalculate the maths
-        self.calcMaths()
-
+        self.calcGeometry()
+    
     def getAnchor2D(self):
         '''
         Old design works, but is a bit lopsided and I'm not sure it's that efficient.
@@ -244,112 +330,7 @@ class AnchorEscapement:
 
         anchor = cq.Workplane("XY").tag("anchorbase")
 
-        anchorCentre = (0,self.anchor_centre_distance)
-        wheelCentre = (0,0)
-
-
-
-        armThick = self.diameter*0.05
-        #aprox
-        midEntryPalet = polar(math.pi + self.wheelAngle/2, self.radius)
-        armLength = np.linalg.norm(np.subtract(midEntryPalet, anchorCentre))
-        armThickAngle = armThick / armLength
-
-        #angle of the arms holding the pallets - doesn't affect performance of escapement unless arc is really large (and then the arms crash into the teeth)
-        deadbeatAngle=self.run#math.pi*0.05
-
-        #for calculating the positions of the straight arms - this isn't quite right, but works
-        if self.style == AnchorStyle.STRAIGHT:
-            anchorCentreBottom = (0, self.anchor_centre_distance - (armThick/2)/ sin(self.anchorAngle/2))
-            anchorCentreTop =  (0, self.anchor_centre_distance + (armThick/2)/ sin(self.anchorAngle/2))
-        else:
-            anchorCentreBottom = (0, self.anchor_centre_distance - self.centre_r)
-            anchorCentreTop = (0, self.anchor_centre_distance + self.centre_r)
-
-        #from the anchor centre, the length of the pallets determines how wide the pendulum will swing (the lift)
-        palletLengthAngle=self.lift
-        #from the scape wheel, this is the angle of the pallet thickness. For a perfect clock it's half the tooth angle,
-        # but we must subtract drop (the angle the escape wheel spins before coming back into contact with the anchor)
-        palletThickAngle = self.toothAngle/2 - self.drop
-
-        anchorToEntryPalletCentreAngle = math.pi*1.5 - self.anchorAngle/2 + self.lock/2
-        anchorToExitPalletCentreAngle = math.pi * 1.5 + self.anchorAngle / 2 - self.lock/2
-        wheelToEntryPalletCentreAngle = math.pi/2 + self.wheelAngle/2
-        wheelToExitPalletCentreAngle = math.pi/2 - self.wheelAngle/2
-
-        # =========== entry pallet ============
-        entryPalletStartLineFromAnchor = Line(anchorCentre, anchorToEntryPalletCentreAngle - palletLengthAngle/2)
-        entryPalletEndLineFromAnchor = Line(anchorCentre, anchorToEntryPalletCentreAngle + palletLengthAngle / 2)
-
-        entryPalletStartLineFromWheel = Line(wheelCentre, wheelToEntryPalletCentreAngle + palletThickAngle/2)
-        entryPalletEndLineFromWheel = Line(wheelCentre, wheelToEntryPalletCentreAngle - palletThickAngle /2 )
-
-        entryPalletStartPos = entryPalletStartLineFromAnchor.intersection(entryPalletStartLineFromWheel)
-        entryPalletEndPos = entryPalletEndLineFromAnchor.intersection(entryPalletEndLineFromWheel)
-
-        # =========== exit pallet ============
-        exitPalletStartLineFromAnchor = Line(anchorCentre, anchorToExitPalletCentreAngle + palletLengthAngle / 2)
-        exitPalletEndLineFromAnchor = Line(anchorCentre, anchorToExitPalletCentreAngle - palletLengthAngle / 2)
-
-        exitPalletStartLineFromWheel = Line(wheelCentre, wheelToExitPalletCentreAngle + palletThickAngle / 2)
-        exitPalletEndLineFromWheel = Line(wheelCentre, wheelToExitPalletCentreAngle - palletThickAngle / 2)
-
-        exitPalletStartPos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
-        exitPalletEndPos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
-
-        # ========== pallet angles ==========
-
-        entryPalletDifference = np.subtract(entryPalletEndPos, entryPalletStartPos)
-        exitPalletDifference = np.subtract(exitPalletEndPos, exitPalletStartPos)
-
-        self.pallet_angles = [math.atan2(entryPalletDifference[1], entryPalletDifference[0]), math.atan2(exitPalletDifference[1], exitPalletDifference[0])]
-
-        # ========== points on the anchor =========
-
-
-
-
-        #distance of the end of the entry pallet from the anchor centre
-        entryPalletEndR = np.linalg.norm(np.subtract(entryPalletEndPos, anchorCentre))
-        entryPalletStartR = np.linalg.norm(np.subtract(entryPalletStartPos, anchorCentre))
-        innerLeftPoint = tuple(np.add(polar(math.pi*1.5 - self.anchorAngle/2 - palletLengthAngle/2 - deadbeatAngle, entryPalletEndR), anchorCentre))
-        armThickAngleEntry = armThick/entryPalletEndR
-        outerLeftPoint = tuple(np.add(polar(math.pi*1.5 - self.anchorAngle/2 - palletLengthAngle/2 - armThickAngleEntry - deadbeatAngle, entryPalletStartR), anchorCentre))
-
-        exitPalletEndR = np.linalg.norm(np.subtract(exitPalletEndPos, anchorCentre))
-        exitPalletStartR = np.linalg.norm(np.subtract(exitPalletStartPos, anchorCentre))
-        innerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle, exitPalletStartR), anchorCentre))
-        armThickAngleExit = armThick/exitPalletEndR
-        outerRightPoint = tuple(np.add(polar(math.pi*1.5 + self.anchorAngle/2 + palletLengthAngle/2 + deadbeatAngle + armThickAngleExit, exitPalletEndR), anchorCentre))
-
-
-
-
-        self.largest_anchor_r = max(entryPalletStartR, exitPalletEndR)
-
-        if self.style == AnchorStyle.CURVED:
-            #calculate the radii of the curved bits
-            #sagitta (from wikipedia)
-            #innerLeft and innerRight aren't quite parallel - inner right is slightly lower. I think this is expected as I don't attempt to keep inner radii the same
-            s = anchorCentreBottom[1] - innerRightPoint[1]
-            l = innerRightPoint[0] - innerLeftPoint[0]
-            bottom_arm_r = s/2 + l**2/(8*s)
-            top_arm_r = bottom_arm_r + armThick
-        elif self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
-            bottom_arm_r = np.linalg.norm(innerRightPoint)
-            # check to see if the arm will intersect the centre circle enough and make it thicker if not
-            top_arm_r = bottom_arm_r + armThick
-            # if self.anchor_centre_distance - top_arm_r > self.centre_r *0.4:
-            #     print("thickening arm")
-            #     #would I be better off with just a rounded rectangle from the anchor arbor down to the arm?
-            #     armThick = self.anchor_centre_distance - bottom_arm_r - self.centre_r *0.6
-            #     #copy-paste recalculate
-            #     armThickAngleEntry = armThick / entryPalletEndR
-            #     outerLeftPoint = tuple(np.add(polar(math.pi * 1.5 - self.anchorAngle / 2 - palletLengthAngle / 2 - armThickAngleEntry - deadbeatAngle, entryPalletStartR), anchorCentre))
-            #     armThickAngleExit = armThick / exitPalletEndR
-            #     outerRightPoint = tuple(np.add(polar(math.pi * 1.5 + self.anchorAngle / 2 + palletLengthAngle / 2 + deadbeatAngle + armThickAngleExit, exitPalletEndR), anchorCentre))
-            #     bottom_arm_r = np.linalg.norm(innerRightPoint)
-            #     top_arm_r = bottom_arm_r + armThick
+        
 
         '''
         note - the locking faces are not equidistant (entryPalletStartR != exitPalletStartR). I don't know how necessary this actually is
@@ -378,39 +359,35 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         '''
 
         # entry pallet
-        anchor = anchor.moveTo(entryPalletEndPos[0], entryPalletEndPos[1]).lineTo(entryPalletStartPos[0],entryPalletStartPos[1])
+        anchor = anchor.moveTo(self.entryPalletEndPos[0], self.entryPalletEndPos[1]).lineTo(self.entryPalletStartPos[0],self.entryPalletStartPos[1])
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(outerLeftPoint, entryPalletEndR+0.01)
+            anchor = anchor.radiusArc(self.outerLeftPoint, self.entryPalletEndR+0.01)
 
         if self.style == AnchorStyle.STRAIGHT:
             #just temp - need proper arm and centre
-            anchor = anchor.lineTo(anchorCentreTop[0], anchorCentreTop[1]).lineTo(outerRightPoint[0], outerRightPoint[1])
+            anchor = anchor.lineTo(self.anchorCentreTop[0], self.anchorCentreTop[1]).lineTo(self.outerRightPoint[0], self.outerRightPoint[1])
         elif self.style in [AnchorStyle.CURVED, AnchorStyle.CURVED_MATCHING_WHEEL]:
-            anchor = anchor.radiusArc(outerRightPoint, top_arm_r)
+            anchor = anchor.radiusArc(self.outerRightPoint, self.top_arm_r)
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(exitPalletEndPos, exitPalletEndR)
+            anchor = anchor.radiusArc(self.exitPalletEndPos, self.exitPalletEndR)
 
-        anchor = anchor.lineTo(exitPalletStartPos[0], exitPalletStartPos[1])
+        anchor = anchor.lineTo(self.exitPalletStartPos[0], self.exitPalletStartPos[1])
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(innerRightPoint, -exitPalletStartR)
+            anchor = anchor.radiusArc(self.innerRightPoint, -self.exitPalletStartR)
 
         if self.style == AnchorStyle.STRAIGHT:
-            anchor = anchor.lineTo(anchorCentreBottom[0], anchorCentreBottom[1]).lineTo(innerLeftPoint[0], innerLeftPoint[1])
+            anchor = anchor.lineTo(self.anchorCentreBottom[0], self.anchorCentreBottom[1]).lineTo(self.innerLeftPoint[0], self.innerLeftPoint[1])
         elif self.style in [AnchorStyle.CURVED, AnchorStyle.CURVED_MATCHING_WHEEL]:
-            anchor = anchor.radiusArc(innerLeftPoint, -bottom_arm_r)
+            anchor = anchor.radiusArc(self.innerLeftPoint, -self.bottom_arm_r)
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(entryPalletEndPos, -entryPalletEndR)
+            anchor = anchor.radiusArc(self.entryPalletEndPos, -self.entryPalletEndR)
 
 
         anchor = anchor.close()
-
-        entryPalletAngle = math.atan2(entryPalletEndPos[1] - entryPalletStartPos[1], entryPalletEndPos[0] - entryPalletStartPos[0])
-
-        # print("Entry Pallet Angle", radToDeg(entryPalletAngle))
 
         return anchor
 
@@ -520,9 +497,18 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         anchor = self.getAnchor2D()
 
+        # cylinder around the rod
         anchor = anchor.union(cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(thick))
-
-
+        
+        if self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
+            #beef this up a bit
+            
+            
+            pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance/2).rect(self.centre_r*2, self.anchor_centre_distance).extrude(thick)
+            pillar = pillar.cut(cq.Workplane("XY").circle(self.bottom_arm_r).extrude(thick))
+            
+            anchor = anchor.union(pillar)
+            
 
         anchor = anchor.extrude(thick)
 
