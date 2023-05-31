@@ -59,7 +59,7 @@ class AnchorEscapement:
         diff = radToDeg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
         print(diff, "degrees")
 
-    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2, clockwiseFromPinionSide=True,
+    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
                  escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, wheelThick=3, forceDiameter=False, anchorThick=12,
                  style=AnchorStyle.STRAIGHT):
         '''
@@ -92,7 +92,7 @@ class AnchorEscapement:
         only makes sense for deadbeat
         Run is basically controlled by the weight/spring - it's how much power goes in. The value here is maximum run - the shape of the anchor
 
-        clockwiseFromPinionSide is for the escape wheel
+        Assumes clockwise and lets ArborForPlate tidy it up if not
 
         anchorTeeth can override the size of teh anchor - by default we cover 1/4 of the teeth between the pallets to
 
@@ -120,9 +120,6 @@ class AnchorEscapement:
         self.toothTipAngle=degToRad(toothTipAngle)
         self.toothBaseAngle=degToRad(toothBaseAngle)
 
-        #note, these set in setGearTrainInfo() called by the GoingTrain
-        self.clockwiseFromPinionSide=clockwiseFromPinionSide
-        self.escapeWheelClockwise=escapeWheelClockwise
         self.run_deg = run
         self.run = degToRad(run)
 
@@ -185,16 +182,6 @@ class AnchorEscapement:
         REturn Z change between the bottom of the wheel and the bottom of the anchor
         '''
         return -(self.anchorThick - self.wheelThick)/2
-
-    def setGearTrainInfo(self, escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise):
-        '''
-        Once the gear train has been calculated, it needs to provide info to the escapement (mostly used by the anchor escapment, not sure there's anything
-        that the grasshopper actually needs to adjust here)
-        '''
-        if not self.forceDiameter:
-            self.setDiameter(escapeWheelDiameter)
-        self.clockwiseFromPinionSide = escapeWheelClockwiseFromPinionSide
-        self.escapeWheelClockwise = escapeWheelClockwise
 
     def getDistanceBeteenArbours(self):
         return self.anchor_centre_distance
@@ -550,7 +537,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         '''
         compliant with the new escapement interface (now the grasshopper also exists)
         '''
-        return self.getAnchor3D(thick = self.anchorThick, holeD=self.arbourD,clockwise=self.escapeWheelClockwise).translate((0,-self.anchor_centre_distance,0))
+        return self.getAnchor3D(thick = self.anchorThick, holeD=self.arbourD,clockwise=True).translate((0,-self.anchor_centre_distance,0))
 
     def getAnchorMaxR(self):
         '''
@@ -559,66 +546,13 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         return self.largest_anchor_r
         # return self.arbourD*2
 
-    def getAnchorArbour(self, holeD=3, anchorThick=10, arbourLength=0, crutchLength=0, crutchBoltD=3, pendulumThick=3, crutchToPendulum=35, nutMetricSize=0):#, forPrinting=True):
-        '''
-        Final plan: The crutch will be a solid part of the anchor, and a bolt will link it to a slot in the pendulum
-        Thinking the anchor will be at the bottom of the clock, so the pendulum can be on the front
-
-        length for how long to extend the 3d printed bit of the arbour - I'm still toying with the idea of using this to help keep things in place
-
-        crutchToPendulum - top of the anchor to the start of the pendulum
-
-        if nutMetricSize is provided, leave space for two nuts on either side (intended to be nyloc to fix the anchor to the rod)
-
-        clockwise from the point of view of the side with the crutch - which may or may not be the front of the clock
-
-        '''
-
-        clockwise = self.escapeWheelClockwise
-
-        # crutchWidth = crutchBoltD*3
-        crutchWidth = pendulumThick*4
-
-        pendulum_space = 30
-        if crutchLength > 0:
-            crutch = cq.Workplane("XY").tag("base").moveTo(0,crutchLength/2).rect(crutchWidth,crutchLength).extrude(anchorThick/2)
-            crutch = crutch.workplaneFromTagged("base").moveTo(0,crutchLength-crutchWidth/2).rect(crutchWidth,crutchWidth).extrude(crutchToPendulum + anchorThick - pendulum_space/2)
-
-            crutch = crutch.faces(">Z").workplane().pushPoints([(-crutchWidth/2 + pendulumThick/2, crutchLength-crutchWidth/2 ), (crutchWidth/2 - pendulumThick/2 , crutchLength-crutchWidth/2)]).rect(pendulumThick, crutchWidth).extrude(pendulum_space)
-
-            #.moveTo(0,crutchLength-crutchBoltD*1.5).circle(crutchBoltD/2)
-            crutch = crutch.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
-
-
-        #add a length for the arbour - if required
-
-        #don't do this here, getting confusing
-        # if crutchLength == 0 and nutMetricSize == 0 and arbourLength == 0 and forPrinting:
-        #     #if we've got no crutch or nyloc nut, deliberately reverse it so the side facing forwards is the side printed on the nice textured sheet
-        #     clockwise = not clockwise
-
-        #get the anchor the other way around so we can build on top of it, and centre it on the pinion
-        arbour = self.getAnchor3D(anchorThick, holeD, clockwise).translate([0,-self.anchor_centre_distance,0])
-
-        #clearly soemthing's wrong in the maths so anchorTopThickBase isn't being used as I'd hoped
-        #bodgetime
-        arbourRadius = min(self.anchorTopThickBase*0.85, self.anchorTopThickTop)
-
-        if arbourLength > 0:
-            arbour = arbour.faces(">Z").workplane().circle(arbourRadius).circle(holeD/2).extrude(arbourLength - anchorThick)
-
-        if crutchLength > 0:
-            arbour = arbour.add(crutch)
-
-
-        if nutMetricSize > 0:
-            nutThick = METRIC_NUT_DEPTH_MULT * nutMetricSize
-            nutSpace = cq.Workplane("XY").polygon(6,getNutContainingDiameter(nutMetricSize,NUT_WIGGLE_ROOM)).extrude(nutThick)
-            arbour = arbour.cut(nutSpace.translate((0,0, anchorThick-nutThick)))
-
-        return arbour
+    def getWheelInnerR(self):
+        return self.innerRadius
 
     def getWheel2D(self):
+        '''
+        Return a 2D version of the wheel, assuming clockwise rotation.
+        '''
 
         diameterForPrinting = self.diameter + (self.printedToothHeight - self.toothHeight)*2
 
@@ -659,26 +593,6 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         return wheel
     def getWheelMaxR(self):
         return self.diameter/2
-
-    def getWheel3D(self, thick=5, holeD=5, style="HAC", innerRadiusForStyle=-1):
-        gear = self.getWheel2D().extrude(thick)
-
-        if not self.clockwiseFromPinionSide:
-            gear = gear.mirror("YZ", (0,0,0))
-
-        gear = Gear.cutStyle(gear,outerRadius=self.innerRadius - holeD*0.5,innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=self.clockwiseFromPinionSide)
-
-        gear = gear.faces(">Z").workplane().circle(holeD/2).cutThruAll()
-
-        return gear
-
-
-    def getWheel(self, style=None, arbour_or_pivot_r=-1, holeD=3):
-        return self.getWheel3D(thick = self.wheelThick, style=style,innerRadiusForStyle=arbour_or_pivot_r, holeD=holeD)
-
-    #hack to masquerade as a Gear, then we can use this with getArbour()
-    def get3D(self, thick=5, holeD=5, style="HAC", innerRadiusForStyle=-1):
-        return self.getWheel3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=innerRadiusForStyle)
 
     def getTestRig(self, holeD=3, tall=4):
         #simple rig to place both parts on and check they actually work
@@ -739,6 +653,12 @@ class EscapmentInterface:
     def getWheelMaxR(self):
         raise NotImplementedError()
 
+    def getWheelInnerR(self):
+        '''
+        Get the radius of the solid bit of the wheel without the teeth
+        '''
+        raise NotImplementedError()
+
     def getAnchorMaxR(self):
         raise NotImplementedError()
 
@@ -751,7 +671,7 @@ class EscapmentInterface:
     def getAnchorThick(self):
         return None
 
-    def getWheel(self, style=None, arbour_or_pivot_r=-1, holeD=3):
+    def getWheel2D(self):
         return None
 
     def getWheelBaseToAnchorBaseZ(self):
@@ -910,21 +830,7 @@ class GrasshopperEscapement:
             self.radius = diameter / 2
 
         self.checkGeometry(loud=loud_checks)
-
-        self.clockwiseFromPinionSide=True
         self.clockwise = True
-
-    def setGearTrainInfo(self, escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise):
-        '''
-        Once the gear train has been calculated, it needs to provide info to the escapement (mostly used by the anchor escapment, not sure there's anything
-        that the grasshopper actually needs to adjust here)
-        '''
-        # self.escapement.setDiameter(escapeWheelDiameter)
-        #if this isn't true, we'll need to flip the escape wheel when it's printed as part of the arbour
-        self.clockwiseFromPinionSide = escapeWheelClockwiseFromPinionSide
-        self.clockwise = escapeWheelClockwise
-        if not self.clockwise:
-            raise ValueError("Grasshopper escapement not yet supported anticlockwise")
 
     def getDistanceBeteenArbours(self):
         return distanceBetweenTwoPoints(self.geometry["Z"],self.geometry["O"])
@@ -1940,22 +1846,20 @@ class GrasshopperEscapement:
         '''
         return self.frame_thick# + self.composer_z_distance_from_frame + self.composer_thick + self.pallet_thick + self.composer_thick + self.composer_pivot_space
 
-    def getWheel(self, style=None, arbour_or_pivot_r=-1, holeD=3):
+    def getWheelInnerR(self):
+        tooth_height = self.radius * 0.1
+        return self.radius - tooth_height
 
-        if holeD < 0:
-            holeD = self.arbourD
+    def getWheel2D(self):
 
-        #only used for the gear style cutter
-        if arbour_or_pivot_r < 0:
-            arbour_or_pivot_r = holeD# / 2
 
         #angles from O
         tooth_base_angle=(math.pi*2/self.teeth)*0.3
         tooth_tip_angle=(math.pi*2/self.teeth)/2
         tooth_tip_width=1.2
         tooth_tip_width_angle = tooth_tip_width/self.diameter
-        tooth_height = self.radius*0.1
-        inner_r = self.radius - tooth_height
+        inner_r = self.getWheelInnerR()
+        tooth_height = self.radius - inner_r
         tooth_angle = math.pi * 2 / self.teeth
 
         wheel = cq.Workplane("XY")
@@ -1978,11 +1882,7 @@ class GrasshopperEscapement:
             wheel = wheel.lineTo(base[0], base[1])
             wheel = wheel.radiusArc(end, -inner_r)
 
-        wheel = wheel.close().extrude(self.wheel_thick)
-
-        wheel = Gear.cutStyle(wheel, outerRadius=inner_r, innerRadius=arbour_or_pivot_r, style=style)
-
-        wheel = wheel.cut(cq.Workplane("XY").circle(holeD / 2).extrude(self.wheel_thick))
+        wheel = wheel.close()
 
         return wheel
 
@@ -1999,7 +1899,7 @@ class GrasshopperEscapement:
             return anchor_part
 
         if not leave_out_wheel_and_frame:
-            grasshopper = grasshopper.add(self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
+            grasshopper = grasshopper.add(self.getWheel().extrude(self.wheel_thick).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
             grasshopper = grasshopper.add(rotate_anchor(self.rotateToUpright(self.getFrame(leave_in_situ=True))))
 
         pivot_extenders = self.getFramePivotArmExtenders()

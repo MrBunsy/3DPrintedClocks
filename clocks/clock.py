@@ -804,6 +804,9 @@ class GoingTrain:
             #treat as fraction of previous wheel
             escapeWheelDiameter = pairs[len(pairs) - 1].wheel.getMaxRadius() * 2 * escapeWheelMaxD
 
+        #little bit of a bodge
+        self.escapement.setDiameter(escapeWheelDiameter)
+
         # chain wheel imaginary pinion (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
         chainWheelImaginaryPinionAtFront = self.chainAtBack
 
@@ -827,13 +830,6 @@ class GoingTrain:
 
         pinionAtFront = chainWheelImaginaryPinionAtFront
 
-        # print("Escape wheel pinion at front: {}, clockwise (from front) {}, clockwise from pinion side: {} ".format(escapeWheelPinionAtFront, escapeWheelClockwise, escapeWheelClockwiseFromPinionSide))
-        #escapment is now provided or configured in the constructor
-        # self.escapement = Escapement(teeth=self.escapement_teeth, diameter=escapeWheelDiameter, type=self.escapement_type, lift=self.escapement_lift, lock=self.escapement_lock, drop=self.escapement_drop, anchorTeeth=None, clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide)
-        # self.escapement.setDiameter(escapeWheelDiameter)
-        # self.escapement.clockwiseFromPinionSide=escapeWheelClockwiseFromPinionSide
-        # self.escapement.escapeWheelClockwise=escapeWheelClockwise
-        self.escapement.setGearTrainInfo(escapeWheelDiameter, escapeWheelClockwiseFromPinionSide, escapeWheelClockwise)
         self.chainWheelArbours=[]
         self.chainWheelPairs=[]
         chain_module_base = module_size
@@ -896,7 +892,7 @@ class GoingTrain:
         for i in range(self.wheels):
 
             if i == 0:
-                #minute wheel
+                # == minute wheel ==
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
                     arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d, distanceToNextArbour=pairs[i].centre_distance,
@@ -924,6 +920,7 @@ class GoingTrain:
                     pinionAtFront = not pinionAtFront
 
             elif i < self.wheels-1:
+                ## == wheel-pinion pair ==
                 pinionThick = arbours[-1].wheelThick * pinionThickMultiplier
                 pinionExtension = 0
                 if self.chainWheels == 0 and i == 1:
@@ -938,6 +935,7 @@ class GoingTrain:
                                       pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength, pinionExtension=pinionExtension,
                                       distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
+                # == escape wheel ==
                 #Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
                 #automating would require knowing how far apart the plates are, which we don't at this point, so just do it manually
                 pinionAtFront = self.escapeWheelPinionAtFront
@@ -945,14 +943,14 @@ class GoingTrain:
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
                 arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
-                                      distanceToNextArbour=self.escapement.getDistanceBeteenArbours(), style=style, pinionAtFront=pinionAtFront))
+                                      distanceToNextArbour=self.escapement.getDistanceBeteenArbours(), style=style, pinionAtFront=pinionAtFront, clockwise_from_pinion_side=escapeWheelClockwiseFromPinionSide))
             if not stack_away_from_powered_wheel:
                 pinionAtFront = not pinionAtFront
 
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
         #this doesn't need arbourD or thickness as this is controlled by the escapement
-        arbours.append(Arbour(escapement=self.escapement, pinionAtFront=self.penulumAtFront, pendulumFixing=pendulumFixing))
+        arbours.append(Arbour(escapement=self.escapement, pinionAtFront=self.penulumAtFront, pendulumFixing=pendulumFixing, clockwise_from_pinion_side=escapeWheelClockwise))
 
         self.wheelPinionPairs = pairs
         self.arbours = arbours
