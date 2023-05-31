@@ -1889,7 +1889,7 @@ class SimpleClockPlates:
         '''
         if self.need_front_anchor_bearing_holder():
             holder_long = self.arboursForPlate[-1].front_anchor_from_plate + self.arboursForPlate[-1].arbor.escapement.getAnchorThick() \
-                          + self.get_lone_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing) + WASHER_THICK_M3
+                          + self.get_lone_anchor_bearing_holder_thick(self.arboursForPlate[-1].bearing) + SMALL_WASHER_THICK_M3
         else:
             holder_long = 0
         return holder_long

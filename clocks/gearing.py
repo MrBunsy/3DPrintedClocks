@@ -1290,15 +1290,15 @@ class ArbourForPlate:
         Given a basic Arbour and a specific plate class do the following:
 
         Add arbour extensions where needed
-        Produce special pinion-only arbours for escapements on front
-        produce special extended arbours for escapement anchors which are using the direct arbour fixing
+        Produce tweaks to escape wheel and anchor for escapements on front
+        Produce the finished arbor for the anchor (with whichever form of pendulum fixing is being used)
 
 
         distance_from_back: how far from the back plate is the bottom of this arbour (the rearSideExtension as was in the old Arbour)
         arbour_extension_max_radius: how much space around the arbour (not the bit with a wheel or pinion) there is, to calculate how thick the arbour extension could be
 
         Note - there is only one plate type at the moment, but the aim is that this should be applicable to others in the future
-        as such, I'm trying not to tie it to the internals of SimpleClockPlates
+        as such, I'm trying not to tie it to the internals of SimpleClockPlates (this may be a fool's errand)
         '''
         self.arbor = arbour
         self.plates = plates
@@ -1339,7 +1339,8 @@ class ArbourForPlate:
 
         #for an escapement on the front, how far from the front plate is the anchor?
         #want space for a washer to act as a standoff against the bearing and a bit of wobble to account for the top wall standoff to flex a bit
-        self.front_anchor_from_plate =  SMALL_WASHER_THICK_M3 + self.endshake + 1
+        # - I think I'm completely wrong including teh washer thick here, but I do want it extended anyway
+        self.front_anchor_from_plate =  self.endshake + 2
         # ============ anchor bits ===============
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
@@ -1457,21 +1458,28 @@ class ArbourForPlate:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
-            extra_arbour_length =10
+            extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ() - self.endshake - 1
             extend_out_front = self.plates.extra_support_for_escape_wheel
             arbourThreadedRod = MachineScrew(metric_thread=self.arbor_d)
+
+            #using a half height nut so we get more rigidity on the rod, and we're clamping this in with a nut on the front anyway
+            nut_height = arbourThreadedRod.getNutHeight(half=True)
+
             #if there's a bearing support out the front, extend out the front of the escape wheel, otherwise extend behind
             if extend_out_front:
                 face = ">Z"
-                nut_base_z = self.arbor.wheelThick + extra_arbour_length - arbourThreadedRod.getNutHeight(nyloc=True)
+                nut_base_z = self.arbor.wheelThick + extra_arbour_length - nut_height
             else:
                 face = "<Z"
                 nut_base_z = -extra_arbour_length
 
-            wheel = self.arbor.get_escape_wheel(standalone=True).faces(face).workplane().moveTo(0,0).circle(self.arbor_d*2).circle(self.arbor_d/2).extrude(extra_arbour_length)
+            wheel = self.arbor.get_escape_wheel(standalone=True).faces(">Z").circle(self.arbor_d/2).cutThruAll()
 
-            #going to see if a nyloc nut is enough to secure the wheel to the arbour. Nyloc wasn't enough for the chainwheel, but this doesn't have a chain being dragged over it once a day
-            wheel = wheel.cut(arbourThreadedRod.getNutCutter(nyloc=True).translate((0, 0, nut_base_z)))
+            wheel = wheel.faces(face).workplane().moveTo(0,0).circle(self.arbor_d*2).circle(self.arbor_d/2).extrude(extra_arbour_length)
+
+
+            #Clamping this both sides - plannign to use a dome nut on the front
+            wheel = wheel.cut(arbourThreadedRod.getNutCutter(half=True).translate((0, 0, nut_base_z)))
 
             if for_printing and not extend_out_front:
                 wheel = wheel.rotate((0,0,0),(1,0,0),180).translate((0,0,self.arbor.wheelThick))
@@ -1544,14 +1552,6 @@ class ArbourForPlate:
                 if self.escapement_on_front:
                     #cylinder passes through plates and out the front
                     cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
-                    # if self.arbour.escapement.type == EscapementType.GRASSHOPPER:
-                    #     #anchor is split into two parts, the back part has to be printed front-side down because of the link to the pendulum,
-                    #     #but we need a gap for the bearing-holder on teh front , otherwise it'll crash into the composers
-                    #     bearing_standoff_thick = LAYER_THICK*2
-                    #     front_thick = bearing_standoff_thick + 1.5
-                    #     back_thick = self.arbour.escapement.getAnchorThick() - front_thick - self.plates.get_front_anchor_bearing_holder_thick()
-                    #
-                    #     anchor = self.arbour.escapement.getFrame(leave_in_situ=False, thick=back_thick)
 
                 else:
                     #cylinder passes only through the back plate and up to the anchor
@@ -1620,6 +1620,7 @@ class ArbourForPlate:
 
 
             if self.escapement_on_front:
+                #minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
                 anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.getAnchorThick() - self.endshake / 2
             else:
                 anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbor.escapement.getAnchorThick()
@@ -1641,9 +1642,14 @@ class ArbourForPlate:
                 assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArbourType.ESCAPE_WHEEL and self.escapement_on_front:
+            pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
+            pinion = pinion.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
+            assembly = assembly.add(pinion)
 
-            assembly = assembly.add(self.get_standalone_pinion_with_arbor_extension(for_printing=False).translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2)))
-            assembly = assembly.add(self.get_escape_wheel(for_printing=False).translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ())))
+            wheel = self.get_escape_wheel(for_printing=False)
+            #same as anchor, pulling back by half the endshake
+            wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ() - self.endshake/2))
+            assembly = assembly.add(wheel)
         elif self.type == ArbourType.CHAIN_WHEEL:
 
             if "ratchet" in shapes:
@@ -1817,25 +1823,12 @@ class Arbour:
         - escape wheel is pinion + escape wheel
         - anchor is just the escapement anchor
 
-        This is being slowly refactored so it's purely theoretical and you need the ArbourForPlate to produce an STL that can be printed
+        This is purely theoretical and you need the ArbourForPlate to produce an STL that can be printed
 
-        its primary purpose is to help perform the layout of a gear train. Originally it was trying to store all the special logic for thicknesses and radii in one place
+        its primary purpose is to help perform the layout of a gear train.
 
 
         NOTE currently assumes chain/cord is at the front - needs to be controlled by something like pinionAtFront
-
-
-
-        Note - this is becoming a bit bloated with the inclusion of escapementOnFront. Would it be worth trimming this class down, and getting the plates
-        to produce the final shapes for all arbours/wheels? then lots of the special cases don't need to be dealt with here
-        Planning to do this, I think everythign that depends on setPlateInfo should be removed from this class
-        Then it can be given more options for getShape() - like option for pinion_only
-        the direct arbour anchor will be the first thing to be done in the plates instead of here, and the rest should be moved over slowly
-
-        Or maybe a new ArbourForPlate class? the input would be this Arbour and plate info, then it's explicit that this arbour is a theorical arbour used for calculating
-        the layout of the gear train, and ArbourForPlate is responsible for
-
-        , looseOnRod=False
         '''
         #diameter of the threaded rod. Usually assumed to also be the size of the hole
         self.arbourD=arbourD
