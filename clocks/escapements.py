@@ -154,13 +154,11 @@ class AnchorEscapement:
 
         self.centre_r = self.arbourD*2
 
-        #currently calcualted in getAnchor2D TODO refactor maths to be done elsewhere
+        #calculated in calcGeometry() which is called from setDiameter
         self.largest_anchor_r = -1
 
         # calculates things like tooth height from diameter, also recalculates the maths
         self.setDiameter(diameter)
-        #just to calculate all the maths
-        # self.calcMaths()
 
     def calcGeometry(self):
         '''

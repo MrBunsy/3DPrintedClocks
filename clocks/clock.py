@@ -1089,7 +1089,7 @@ class SimpleClockPlates:
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style=ClockPlateStyle.VERTICAL, arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
-                 pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, extraFrontPlate=False, chainThroughPillarRequired=True,
+                 pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False):
@@ -1157,10 +1157,6 @@ class SimpleClockPlates:
 
         #escapement is on top of the front plate
         self.escapementOnFront = escapementOnFront
-        #only valid if escapementOnFront. This adds an extra front plate that goes up to the escape wheel, to add stability for the large grasshopper esacpe wheel
-        #not used yet, trying extending a bearing out the front to just behind the escape wheel first
-        #DEPRECATED
-        self.extraFrontPlate = extraFrontPlate
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
         #if false, it's between the plates like the rest of the gear train
@@ -1286,22 +1282,6 @@ class SimpleClockPlates:
                 (bottom_pillar_pos[0], bottom_pillar_pos[1] - self.bottomPillarR * 0.5)
             ]
         self.plate_fixings = self.plate_top_fixings + self.plate_bottom_fixings
-
-        self.extraFrontPlateDistance = 0
-        #mounting position (that's not the bottom pillar)
-        self.extraFrontPlateMountingPos = None
-        self.extraFrontPlateFixings = []
-
-        if self.escapementOnFront and self.extraFrontPlate:
-            escapeWheelTopZFromFront = -self.goingTrain.escapement.getWheelBaseToAnchorBaseZ() + self.goingTrain.escapement.getWheelThick()
-
-            self.extraFrontPlateDistance = escapeWheelTopZFromFront + self.endshake*2
-            topSafe = self.bearingPositions[-2][1] - self.goingTrain.escapement.getWheelMaxR() - self.gearGap
-            bottomSafe = self.bearingPositions[self.goingTrain.chainWheels][1] + self.motionWorks.getHourHolderMaxRadius() + self.gearGap
-            self.extraFrontPlateMountingPos = (self.bearingPositions[-2][0], (topSafe + bottomSafe)/2)
-            self.extraFrontPlateMountingLength = topSafe - bottomSafe
-            self.extraFrontPlateFixings =  [(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] - self.extraFrontPlateMountingLength / 2 + self.plateWidth / 4), (self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1] + self.extraFrontPlateMountingLength / 2 - self.plateWidth / 4)]
-
         self.huygensWheel = None
         #offset in y? This enables the plate to stay smaller (and fit on the print bed) while still offering a large huygens wheel
         self.huygens_wheel_y_offset = 0
@@ -2480,11 +2460,6 @@ class SimpleClockPlates:
         if not back:
             #front
             plate = self.frontAdditionsToPlate(plate)
-            if self.extraFrontPlate:
-                # plate = plate.add(cq.Workplane("XY").moveTo(self.extraFrontPlateMountingPos[0], self.extraFrontPlateMountingPos[1]).circle(self.plateWidth/2).extrude(self.extraFrontPlateDistance).translate((0,0,self.getPlateThick(back=False))))
-                # self.extraFrontPlateMountingPos
-                for pos in self.extraFrontPlateFixings:
-                    plate = plate.cut(self.fixingScrews.getCutter(withBridging=True).translate(pos))
 
         plate = self.punchBearingHoles(plate, back)
 
@@ -3117,7 +3092,7 @@ class SimpleClockPlates:
 
 
 
-        if self.escapementOnFront and not self.extraFrontPlate and self.extra_support_for_escape_wheel:
+        if self.escapementOnFront and self.extra_support_for_escape_wheel:
             #this is a bearing extended out the front, helps maintain the geometry for a grasshopper on plates with a narrow plateDistance
             plate = plate.add(self.getBearingHolder(-self.goingTrain.escapement.getWheelBaseToAnchorBaseZ()).translate((self.bearingPositions[-2][0], self.bearingPositions[-2][1], self.getPlateThick(back=False))))
 
@@ -3285,16 +3260,14 @@ class SimpleClockPlates:
             print("Outputting ", out)
             exporters.export(self.getWallStandoff(top=False), out)
 
-        if self.extraFrontPlate:
-            out = os.path.join(path, "{}_extra_front_plate.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.getExtraFrontPlate(), out)
-
         if self.huygensMaintainingPower:
             self.huygensWheel.outputSTLs(name+"_huygens", path)
 
         for i,arbourForPlate in enumerate(self.arboursForPlate):
             shapes = arbourForPlate.get_shapes()
+            #TODO maybe include powered wheel in shapes? not sure if it's worth the effort
+            if arbourForPlate.type == ArbourType.CHAIN_WHEEL:
+                arbourForPlate.arbor.poweredWheel.outputSTLs(name+"_arbour_{}".format(i), path)
             for shapeName in shapes.keys():
                 out = os.path.join(path, "{}_arbour_{}_{}.stl".format(name, i, shapeName))
                 print("Outputting ", out)

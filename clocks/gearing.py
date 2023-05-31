@@ -1800,9 +1800,10 @@ class ArbourForPlate:
         if tip_r > outer_r:
             tip_r = outer_r
 
-        #0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
-        if length - self.arbour_bearing_standoff_length >= 0.1:
-            if length > self.arbour_bearing_standoff_length:
+
+        if length - self.arbour_bearing_standoff_length >= 0:
+            # 0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
+            if length - self.arbour_bearing_standoff_length > 0.1:
                 extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).circle(inner_r).extrude(length-self.arbour_bearing_standoff_length).faces(">Z").workplane()
             else:
                 extendo_arbour=cq.Workplane("XY")
