@@ -1751,6 +1751,8 @@ class PocketChainWheel2:
 
     still got a 'clunk' from this, which looked like it was due to teh chain twisting slightly so it ended up in the gap. Might try making that gap smaller.
     Also possible that the chainproducts chain is just not very high quality as it seems to hang twisted
+
+    Works well with the heavy duty cousins chain (happy with 3kg). Looks like it might be occasionally slipping with the lighter regula 8 day chain. Need to investigate further.
     '''
 
     def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, looseOnRod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):

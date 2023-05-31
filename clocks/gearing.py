@@ -1876,17 +1876,6 @@ class Arbour:
             else:
                 self.holeD = self.arbourD + LOOSE_FIT_ON_ROD
 
-        #bits set by setPlateInfo - this isn't known until the plates are generated
-        self.frontSideExtension=0
-        self.rearSideExtension=0
-        self.arbourExtensionMaxR=self.arbourD
-        self.useArbourExtenders=False
-        self.frontPlateThick = 0
-        self.pendulumSticksOut = 0
-        self.escapementOnFront = False
-        #so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
-        self.arbourBearingStandoff=LAYER_THICK*2
-
         if self.getType() == ArbourType.UNKNOWN:
             raise ValueError("Not a valid arbour")
 
