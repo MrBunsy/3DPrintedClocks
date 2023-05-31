@@ -1479,12 +1479,11 @@ class SimpleClockPlates:
                 maxR = arbour.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(i+1).getMaxRadius() - self.smallGearGap
             else:
                 maxR = 0
-            #hacky hack hack, I really think I should put escapementOnFront into GoingTrain
-            arbour.escapementOnFront = self.escapementOnFront
-            #deprecated way of doing it - passing loads of info to the Arbour class
-            arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
-                                frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
-                                plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
+
+            #deprecated way of doing it - passing loads of info to the Arbour class. still used only for the chain wheel
+            # arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
+            #                     frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
+            #                     plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
 
             bearing = getBearingInfo(arbour.arbourD)
 
@@ -1849,12 +1848,6 @@ class SimpleClockPlates:
 
         # print(self.bearingPositions)
         self.plateDistance = max(topZs) + self.endshake + extraFront + extraBack
-
-        if self.escapementOnFront:
-            # little bodge to try and make things easier (not sure if it does)
-            # the arbour for the anchor is just two arbourextensions, but one is prentending to be the main shape
-            # so pretend it's placed exactly in the centre
-            self.bearingPositions[-1][2] = self.plateDistance / 2 - self.endshake / 2
 
     def bottom_of_hour_hand_z(self):
         return self.motionWorks.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
