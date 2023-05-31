@@ -1325,7 +1325,10 @@ class ArbourForPlate:
         self.previous_bearing_position = previous_bearing_position
         #from the top of the back plate to the bottom of the wheel/anchor
         self.distance_from_back = bearing_position[2]
-        self.distance_from_front = (self.plate_distance - self.endshake) - self.arbor.getTotalThickness() - self.distance_from_back
+
+        self.total_thickness = self.arbor.getTotalThickness(just_pinion = escapement_on_front and self.arbor.getType() == ArbourType.ESCAPE_WHEEL)
+
+        self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
         self.pendulum_fixing = pendulum_fixing
         if self.bearing is None:
@@ -1658,13 +1661,13 @@ class ArbourForPlate:
             arbor = shapes["wheel"]
 
             if not self.arbor.pinionAtFront:
-                arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.arbor.getTotalThickness()))
+                arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.total_thickness))
 
             assembly = assembly.add(arbor.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2)))
 
 
         if self.need_separate_arbor_extension(front=True):
-            assembly = assembly.add(self.get_arbour_extension(front = True).translate(self.bearing_position).translate((0,0, self.endshake/2 + self.arbor.getTotalThickness() + self.back_plate_thick)))
+            assembly = assembly.add(self.get_arbour_extension(front = True).translate(self.bearing_position).translate((0,0, self.endshake/2 + self.total_thickness + self.back_plate_thick)))
         if self.need_arbor_extension(front = False):
             assembly = assembly.add(self.get_arbour_extension(front = False).rotate((0,0,0),(1,0,0),180).translate(self.bearing_position).translate((0,0,self.endshake/2 + self.back_plate_thick)))
 
@@ -1689,7 +1692,7 @@ class ArbourForPlate:
 
             if self.need_arbor_extension(front=self.arbor.pinionAtFront):
                 #need arbor extension on the pinion
-                wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinionAtFront).translate((0,0,self.arbor.getTotalThickness())))
+                wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinionAtFront).translate((0,0,self.total_thickness)))
 
             shapes["wheel"] = wheel
 
@@ -1719,12 +1722,12 @@ class ArbourForPlate:
         # note, the included extension is always on the pinion side (unprintable otherwise)
         if self.need_arbor_extension(front=True) and self.arbor.pinionAtFront:
             # need arbour extension on the front
-            extendo = self.get_arbour_extension(front=True).translate((0, 0, self.arbor.getTotalThickness()))
+            extendo = self.get_arbour_extension(front=True).translate((0, 0, self.total_thickness))
             shape = shape.union(extendo)
 
         if self.need_arbor_extension(front=False) and not self.arbor.pinionAtFront:
             # need arbour extension on the rear
-            extendo = self.get_arbour_extension(front=False).translate((0, 0, self.arbor.getTotalThickness()))
+            extendo = self.get_arbour_extension(front=False).translate((0, 0, self.total_thickness))
             shape = shape.union(extendo)
 
         return shape
@@ -1940,13 +1943,13 @@ class Arbour:
         return self.arbourD
 
 
-    def getTotalThickness(self):
+    def getTotalThickness(self, just_pinion=False):
         '''
         return total thickness of everything that will be on the rod (between the plates!)
         '''
         if self.getType() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
 
-            if self.escapementOnFront and self.getType() == ArbourType.ESCAPE_WHEEL:
+            if just_pinion:
                 #just the pinion is within the plates
                 return self.pinionThick + self.pinionExtension + self.endCapThick*2
 
@@ -1955,12 +1958,8 @@ class Arbour:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             return self.wheelThick + self.poweredWheel.getHeight()
         if self.getType() == ArbourType.ANCHOR:
-            if self.escapementOnFront:
-                #no main shape, just two arbour extensions
-                return 0
-            else:
-                # wheel thick being used for anchor thick
-                return self.wheelThick
+            # wheel thick being used for anchor thick
+            return self.wheelThick
 
     def getWheelCentreZ(self):
         '''

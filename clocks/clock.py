@@ -741,7 +741,7 @@ class GoingTrain:
             print("Cordwheel power varies from {:.1f}μW to {:.1f}μW".format(min_power, max_power))
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
-                 chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, ratchetInset=False, thicknessReduction=1,
+                 chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, thicknessReduction=1,
                  ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
@@ -878,7 +878,7 @@ class GoingTrain:
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 #the powered wheel
                 self.chainWheelArbours.append(Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
-                                               distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews,
+                                               distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style,ratchetScrews=ratchetScrews,
                                                useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
             else:
                 #just a bog standard wheel and pinion
@@ -896,7 +896,7 @@ class GoingTrain:
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
                     arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d, distanceToNextArbour=pairs[i].centre_distance,
-                                    style=style, pinionAtFront=not self.chainAtBack, ratchetInset=ratchetInset, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower,
+                                    style=style, pinionAtFront=not self.chainAtBack, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower,
                                     clockwise_from_pinion_side=not self.chainAtBack)
                 else:
                     # just a normal gear
@@ -950,7 +950,7 @@ class GoingTrain:
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
         #this doesn't need arbourD or thickness as this is controlled by the escapement
-        arbours.append(Arbour(escapement=self.escapement, pinionAtFront=self.penulumAtFront, pendulumFixing=pendulumFixing, clockwise_from_pinion_side=escapeWheelClockwise))
+        arbours.append(Arbour(escapement=self.escapement, pinionAtFront=self.penulumAtFront, clockwise_from_pinion_side=escapeWheelClockwise))
 
         self.wheelPinionPairs = pairs
         self.arbours = arbours
@@ -3960,8 +3960,7 @@ def getGearDemo(module=1, justStyle=None, oneGear=False):
     # override default until it calculates an ideally sized wheel
     train.calculatePoweredWheelRatios(wheel_max=100)
 
-    train.genGears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2,
-                   ratchetInset=False)
+    train.genGears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
 
