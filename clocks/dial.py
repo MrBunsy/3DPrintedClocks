@@ -443,6 +443,7 @@ class Dial:
             #from centre of eye, where should we switch to black to make a pupil with the right diameter?
             self.pupil_z = math.sqrt(self.eye_radius**2 - (self.get_tony_dimension("pupil_diameter")/2)**2)
             print("eye diameter", self.eye_radius*2)
+            #2.2 works for the m2 eye bolts
             self.eye_rod_d = 2 + 0.2
             self.eye_screw = MachineScrew(2)
             self.eye_distance_apart = self.get_tony_dimension("eye_spacing")
@@ -843,8 +844,8 @@ class Dial:
         #just self.eye_screw.metric_thread/2 radius was really a faff to get the screws in and tight enough not to need the nuts, so could leave it at that and remove nuts
         #or make it looser and keep nut
         eye = eye.cut(cq.Workplane("XY").moveTo(x_offset,0).circle(self.eye_screw.metric_thread/2).extrude(self.eye_extend_beyond_pivot + self.eye_radius*0.75).translate((0,0, -self.eye_extend_beyond_pivot)))
-        nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
-        eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((x_offset,0,self.eye_rod_d/2 + 1)))
+        # nut_hole_depth = self.eye_screw.getNutHeight(half=True)+1
+        # eye = eye.cut(self.eye_screw.getNutCutter(height=nut_hole_depth, withBridging=True).translate((x_offset,0,self.eye_rod_d/2 + 1)))
 
         # wire_hole_depth = self.eye_pivot_z + self.eye_extend_beyond_pivot
         # eye = eye.cut(cq.Workplane("XY").circle(self.eye_bendy_wire_d/2).extrude(wire_hole_depth).translate((0,0,-wire_hole_depth)))
