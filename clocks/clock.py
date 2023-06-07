@@ -742,7 +742,7 @@ class GoingTrain:
 
     def genGears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
                  chainModuleIncrease=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, thicknessReduction=1,
-                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False):
+                 ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None):
         '''
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -755,6 +755,11 @@ class GoingTrain:
 
         if chainModuleIncrease is None:
             chainModuleIncrease = (1 / moduleReduction)
+
+        #can manually override the pinion extensions on a per arbor basis - used for some of the compact designs. Ideally I should automate this, but it feels like
+        #a bit problem so solve so I'm offering the option to do it manually for now
+        if pinion_extensions is None:
+            pinion_extensions = {}
 
         self.pendulumFixing = pendulumFixing
         arbours = []
@@ -926,9 +931,12 @@ class GoingTrain:
                 if self.chainWheels == 0 and i == 1:
                     #this pinion is for the chain wheel
                     pinionThick = arbours[-1].wheelThick * chainWheelPinionThickMultiplier
-                if i == self.wheels-2 and self.has_second_hand_on_last_wheel() and stack_away_from_powered_wheel:
-                    #extend this pinion a bit to keep the giant pinion on the escape wheel from clashing
-                    pinionExtension = pinionThick*0.6
+                # if i == self.wheels-2 and self.has_second_hand_on_last_wheel() and stack_away_from_powered_wheel:
+                #     #extend this pinion a bit to keep the giant pinion on the escape wheel from clashing
+                #     #old bodge logic, use pinion_extensions instead now
+                #     pinionExtension = pinionThick*0.6
+                if i in pinion_extensions:
+                    pinionExtension = pinion_extensions[i]
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
                 arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i),
@@ -1605,6 +1613,20 @@ class SimpleClockPlates:
             minute_wheel_pos = (0,0)
             third_wheel_pos = (0,minute_wheel_to_third_wheel)
             second_wheel_pos = polar(self.anglesFromMinute[0],minute_wheel_to_second_wheel)
+            if self.goingTrain.chainWheels > 0:
+                chain_wheel_pos = (0, -self.goingTrain.getArbour(-1).distanceToNextArbour)
+                current_chain_wheel_to_second_wheel = np.subtract(second_wheel_pos, chain_wheel_pos)
+
+                if np.linalg.norm(current_chain_wheel_to_second_wheel) < self.goingTrain.getArbour(-1).getMaxRadius() + self.smallGearGap + self.goingTrain.getArbour(1).getMaxRadius():
+                    '''
+                    the second wheel is too close to the chain wheel
+                    Note - could probably re-arrange this in z by extending the pinion, but for now we'll just shift it to being slightly less compact
+                    update - instead added pinion_extensions option to do this by hand
+                    '''
+                    #TODO
+                    # chain_wheel_to_second_wheel
+
+
             third_wheel_from_second_wheel = npToSet(np.subtract(third_wheel_pos, second_wheel_pos))
             self.anglesFromMinute[1] = math.atan2(third_wheel_from_second_wheel[1], third_wheel_from_second_wheel[0])
             #TODO if the second wheel would clash with the powered wheel, push the third wheel up higher

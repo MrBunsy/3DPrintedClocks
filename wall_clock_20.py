@@ -68,8 +68,10 @@ train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThic
 pendulumSticksOut=10
 backPlateFromWall=30
 
+pinion_extensions = {1:6, 2:4}
+
 train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
 train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
@@ -112,12 +114,11 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works
 if outputSTL:
     #
     #
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
+    # train.outputSTLs(clockName,clockOutDir)
+    # motionWorks.outputSTLs(clockName,clockOutDir)
+    # pendulum.outputSTLs(clockName, clockOutDir)
+    # plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    # pulley.outputSTLs(clockName, clockOutDir)
+    # assembly.outputSTLs(clockName, clockOutDir)
 
-    # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)

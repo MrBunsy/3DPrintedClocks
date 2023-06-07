@@ -244,6 +244,7 @@ class BaroqueHands(HandGenerator):
         if self.second_hand_cache is not None:
             return self.second_hand_cache
         line_width=1.2
+        # line_width=1.6
         hand = cq.Workplane("XY").tag("base").circle(base_r).extrude(thick)
 
         length = total_length - base_r
@@ -522,7 +523,7 @@ class Hands:
                 # style = HandStyle.SIMPLE_ROUND
             else:
                 length = self.secondLength
-                base_r = self.secondLength * 0.2
+                base_r = self.secondLength * 0.15
 
 
 
