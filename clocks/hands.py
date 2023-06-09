@@ -1124,12 +1124,16 @@ class Hands:
         for colour in self.getExtraColours():
             #None means the main hand colour
             for type in HandType:
-                hands[type][colour] = self.getHand(hand_type=type, colour=colour)
+                hand = self.getHand(hand_type=type, colour=colour)
+                if hand is not None:
+                    hands[type][colour] = hand
 
         if self.outline > 0:
             for type in HandType:
                 try:
-                    hands[type]["outline"] = self.getHand(hand_type=type, generate_outline=True)
+                    hand = self.getHand(hand_type=type, generate_outline=True)
+                    if hand is not None:
+                        hands[type]["outline"] = hand
                 except:
                     pass
 

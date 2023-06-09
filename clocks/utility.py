@@ -425,7 +425,8 @@ class Colour:
     GREEN = "green"
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
-    PURPLE = (148,0,211)
+    PURPLE = (138,43,226)#(148,0,211)
+    LILAC = (210,175,255)
     LIGHTGREY = (211,211,211)
     DARKGREY = (50,50,50)
     BLACK = "black"
