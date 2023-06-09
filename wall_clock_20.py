@@ -115,10 +115,10 @@ if outputSTL:
     #
     #
     # train.outputSTLs(clockName,clockOutDir)
-    # motionWorks.outputSTLs(clockName,clockOutDir)
-    # pendulum.outputSTLs(clockName, clockOutDir)
-    # plates.outputSTLs(clockName, clockOutDir)
+    motionWorks.outputSTLs(clockName,clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
+    plates.outputSTLs(clockName, clockOutDir)
     hands.outputSTLs(clockName, clockOutDir)
-    # pulley.outputSTLs(clockName, clockOutDir)
-    # assembly.outputSTLs(clockName, clockOutDir)
+    pulley.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)
 

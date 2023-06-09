@@ -1489,6 +1489,10 @@ class ArbourForPlate:
 
             wheel = self.arbor.get_escape_wheel()
 
+            if self.need_arbor_extension(front=self.arbor.pinionAtFront):
+                #need arbor extension on the pinion
+                wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinionAtFront).translate((0,0,self.total_thickness)))
+
         return wheel
 
     def get_escape_wheel_shapes(self):
@@ -1743,8 +1747,10 @@ class ArbourForPlate:
         Need a separate component for teh arbor extension on thsi side
         '''
 
-        if self.arbor.getType() == ArbourType.ANCHOR and self.pendulum_fixing != PendulumFixing.FRICTION_ROD and self.escapement_on_front:
-            return False
+        if self.arbor.getType() == ArbourType.ANCHOR and self.pendulum_fixing != PendulumFixing.FRICTION_ROD:
+            if self.escapement_on_front:
+                return False
+            return self.pendulum_at_front != front
 
         if self.arbor.getType() == ArbourType.ESCAPE_WHEEL and self.escapement_on_front:
             #the longest is the one separate
