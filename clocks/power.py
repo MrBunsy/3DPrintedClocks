@@ -2414,7 +2414,7 @@ class Ratchet:
         #arc aprox ratchetThick
         clickArcAngle = self.anticlockwise * thick / innerClickR
 
-        clickOffsetAngle = -(math.pi*2/(self.clicks))*1 * self.anticlockwise
+        clickOffsetAngle = -(math.pi*2/(self.clicks))*0.9 * self.anticlockwise
 
         # since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
         # mostly affects ratchets with a larger inner radius and a not-so-large outer radius
