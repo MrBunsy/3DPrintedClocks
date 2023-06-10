@@ -51,7 +51,8 @@ class Gear:
         if innerRadius < 0:
             innerRadius = 3
         #thought - some things (caps for cord wheel?) don't need a thick rim
-        rimThick = max(outerRadius * 0.175, 3)
+        #rimThick = max(outerRadius * 0.175, 3)
+        rimThick = max(outerRadius * 0.15, 2.5)
         outerRadius -= rimThick
         # lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
@@ -908,8 +909,8 @@ class Gear:
             gear = gear.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
 
         if self.iswheel:
-            rimThick = max(self.pitch_diameter * 0.035, 3)
-            rimRadius = self.pitch_diameter / 2 - self.dedendum_factor * self.module - rimThick
+            # rimThick = max(self.pitch_diameter * 0.035, 3)
+            # rimRadius = self.pitch_diameter / 2 - self.dedendum_factor * self.module - rimThick
 
             # armThick = rimThick
             # if style == "HAC":

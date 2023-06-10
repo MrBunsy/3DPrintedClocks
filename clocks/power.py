@@ -1246,7 +1246,7 @@ class CordWheel:
             self.overlapSlotWiggle=0.1
 
         #keeping large so there's space for the screws and screwheads
-        self.capDiameter = diameter + 30#diameter*2#.5
+        self.capDiameter = diameter + 27.5#30#diameter*2#.5
         self.rodMetricSize = rodMetricSize
         self.arbour_d = rodMetricSize
         self.holeD = rodMetricSize
@@ -1296,7 +1296,7 @@ class CordWheel:
         if ratchet_thick <=0:
             raise ValueError("Cannot make cord wheel without a ratchet")
 
-        self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.capDiameter/2 - 12.5)
+        self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.capDiameter/2 - 10)#12.5
         self.keyScrewHoleD = self.screwThreadMetric
         self.power_clockwise = power_clockwise
         self.keyWiggleRoom = 0.75
