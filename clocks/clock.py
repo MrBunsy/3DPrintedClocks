@@ -3363,7 +3363,7 @@ class Assembly:
         self.frontOfClockZ = self.plates.getPlateThick(True) + self.plates.getPlateThick(False) + self.plates.plateDistance
 
         # where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
-        self.motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base
+        self.motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motionWorks.inset_at_base + self.plates.endshake/2
         self.motionWorksZ = self.frontOfClockZ + self.motionWorksZOffset
 
         self.motion_works_pos = self.plates.hands_position.copy()
@@ -3380,7 +3380,7 @@ class Assembly:
 
         if self.plates.dial is not None:
             if self.plates.has_seconds_hand():
-                self.secondHandPos[2] = self.frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick
+                self.secondHandPos[2] = self.frontOfClockZ + self.plates.dial.support_length + self.plates.dial.thick + self.plates.endshake/2 + 0.5
 
             #position of the front centre of the dial
             self.dial_pos = (self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + self.frontOfClockZ)
@@ -3503,6 +3503,26 @@ class Assembly:
                     #assume all other types of powered wheel lack a key and thus are just inside the plates
                     rod_length = simple_arbour_length
 
+
+            elif self.plates.second_hand and ((arbour.type == ArbourType.ESCAPE_WHEEL and self.plates.goingTrain.has_seconds_hand_on_escape_wheel()) or (
+                    i == self.goingTrain.wheels + self.goingTrain.chainWheels - 2 and self.plates.goingTrain.has_second_hand_on_last_wheel())):
+                #this has a second hand on it
+                if self.plates.escapementOnFront:
+                    raise ValueError("TODO calculate rod lengths for escapement on front")
+                elif self.plates.centred_second_hand:
+                    #safe to assume mutually exclusive with escapement on front?
+                    rod_length = hand_arbor_length + self.hands.secondFixing_thick + self.hands.secondThick
+                else:
+                    if self.dial is not None and self.dial.has_seconds_sub_dial():
+                        #if the rod doesn't go all the way through the second hand
+                        hand_thick_accounting = self.hands.secondThick - self.hands.second_rod_end_thick
+                        if self.hands.seconds_hand_through_hole:
+                            hand_thick_accounting = self.hands.secondThick
+                        #rod_length = length_up_to_inside_front_plate + front_plate_thick + self.dial.support_length + self.dial.thick + self.hands.secondFixing_thick + hand_thick_accounting
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + (self.secondHandPos[2] - total_plate_thick )+ hand_thick_accounting
+                    else:
+                        #little seconds hand just in front of the plate
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
             elif arbour.type == ArbourType.WHEEL_AND_PINION:
                 if i == self.goingTrain.chainWheels:
                     #minute wheel
@@ -3519,25 +3539,10 @@ class Assembly:
                 else:
                     # "normal" arbour
                     rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+
             elif arbour.type == ArbourType.ESCAPE_WHEEL:
-                if self.plates.escapementOnFront:
-                    raise ValueError("TODO calculate rod lengths for escapement on front")
-                elif self.plates.centred_second_hand:
-                    #safe to assume mutually exclusive with escapement on front?
-                    rod_length = hand_arbor_length + self.hands.secondFixing_thick + self.hands.secondThick
-                elif self.plates.has_seconds_hand_on_escape_wheel():
-                    if self.dial is not None and self.dial.has_seconds_sub_dial():
-                        #if the rod doesn't go all the way through the second hand
-                        hand_thick_accounting = self.hands.secondThick - self.hands.second_rod_end_thick
-                        if self.hands.seconds_hand_through_hole:
-                            hand_thick_accounting = self.hands.secondThick
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.dial.support_length + self.dial.thick + self.hands.secondFixing_thick + hand_thick_accounting
-                    else:
-                        #little seconds hand just in front of the plate
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
-                else:
-                    #"normal" arbour
-                    rod_length = simple_arbour_length
+                #"normal" arbour
+                rod_length = simple_arbour_length
             elif arbour.type == ArbourType.ANCHOR:
                 if self.plates.escapementOnFront:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
@@ -3734,7 +3739,7 @@ class Assembly:
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
-                   text_colour=Colour.WHITE):
+                   text_colour=Colour.WHITE, with_rods=False):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3860,6 +3865,13 @@ class Assembly:
                 weightShape = self.weights[i].getWeight().rotate((0,0,0), (1,0,0),-90)
 
                 show_object(weightShape.translate(weight_pos), options={"color": weight_colour})
+
+        if with_rods:
+            rod_colour = Colour.SILVER
+            rod_lengths, rod_zs = self.get_arbour_rod_lengths()
+            for i in range(len(rod_lengths)):
+                rod = cq.Workplane("XY").circle(self.goingTrain.getArbourWithConventionalNaming(i).arbourD/2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearingPositions[i][0], self.plates.bearingPositions[i][1], rod_zs[i]))
+                show_object(rod, options={"color": rod_colour})
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))

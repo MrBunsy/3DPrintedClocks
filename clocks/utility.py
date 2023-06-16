@@ -428,6 +428,7 @@ class Colour:
     PURPLE = (138,43,226)#(148,0,211)
     LILAC = (210,175,255)
     LIGHTGREY = (211,211,211)
+    SILVER = (192,192,192)
     DARKGREY = (50,50,50)
     BLACK = "black"
 

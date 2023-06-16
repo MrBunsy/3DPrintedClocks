@@ -107,7 +107,8 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
 
-assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works_colours=[clock.Colour.LIGHTBLUE, clock.Colour.LIGHTBLUE, clock.Colour.GREEN], bob_colours=[clock.Colour.PURPLE])
+assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works_colours=[clock.Colour.LIGHTBLUE, clock.Colour.LIGHTBLUE, clock.Colour.GREEN],
+                    bob_colours=[clock.Colour.PURPLE], with_rods=True)
 
 # show_object(plates.getDrillTemplate(6))
 
