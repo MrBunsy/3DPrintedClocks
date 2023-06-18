@@ -68,6 +68,8 @@ DIRECT_ARBOUR_D = 7#7.5
 #includes a bit of slack
 TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT = 6
 
+#actually nearer 3.6, but this leaves wiggle room
+M3_DOMED_NUT_THREAD_DEPTH=3.5
 
 #assuming m2 screw has a head 2*m2, etc
 #note, pretty sure this is often wrong.

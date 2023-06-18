@@ -3489,7 +3489,8 @@ class Assembly:
 
             #"normal" arbour that does not extend out the front or back
             simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
-            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+            # hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minuteHandZ + self.hands.thick - total_plate_thick) + getNutHeight(arbour.arbourD) + M3_DOMED_NUT_THREAD_DEPTH - 1
 
             #trying to arrange all the additions from back to front to make it easy to check
             if arbour.type == ArbourType.CHAIN_WHEEL:
@@ -3530,7 +3531,7 @@ class Assembly:
                         #only goes up to the canon pinion with hand turner
                         minimum_rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.getCannonPinionPinionThick() + WASHER_THICK_M3 + getNutHeight(arbour.arbourD, halfHeight=True) * 2
                         if self.plates.dial is not None:
-                            #small as possible as it might need to fit behind the dial
+                            #small as possible as it might need to fit behind the dial (...not sure what I was talking about here??)
                             rod_length = minimum_rod_length + 1.5
                         else:
                             rod_length = minimum_rod_length + spare_rod_length_in_front
