@@ -3740,7 +3740,7 @@ class Assembly:
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
-                   text_colour=Colour.WHITE, with_rods=False):
+                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3872,7 +3872,13 @@ class Assembly:
             rod_lengths, rod_zs = self.get_arbour_rod_lengths()
             for i in range(len(rod_lengths)):
                 rod = cq.Workplane("XY").circle(self.goingTrain.getArbourWithConventionalNaming(i).arbourD/2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearingPositions[i][0], self.plates.bearingPositions[i][1], rod_zs[i]))
-                show_object(rod, options={"color": rod_colour})
+                show_object(rod, options={"color": rod_colour, "name":"Rod_{}".format(i)})
+
+        if with_key:
+            key = self.plates.get_winding_key(for_printing=False)
+            if key is not None:
+                show_object(key.translate((self.plates.bearingPositions[0][0], self.plates.bearingPositions[0][1], self.frontOfClockZ + self.plates.key_offset_from_front_plate + self.plates.endshake / 2)),
+                            options={"color": key_colour, "name":"key"})
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))

@@ -33,7 +33,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_20"
+clockName="wall_clock_20_geartweak"
 clockOutDir="out"
 gearStyle=clock.GearStyle.ARCS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -108,7 +108,7 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works_colours=[clock.Colour.LIGHTBLUE, clock.Colour.LIGHTBLUE, clock.Colour.GREEN],
-                    bob_colours=[clock.Colour.PURPLE], with_rods=True)
+                    bob_colours=[clock.Colour.PURPLE], with_rods=True, with_key=True)
 
 # show_object(plates.getDrillTemplate(6))
 
@@ -116,10 +116,10 @@ if outputSTL:
     #
     #
     # train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
+    # motionWorks.outputSTLs(clockName,clockOutDir)
+    # pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    # hands.outputSTLs(clockName, clockOutDir)
+    # pulley.outputSTLs(clockName, clockOutDir)
+    # assembly.outputSTLs(clockName, clockOutDir)
 

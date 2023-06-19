@@ -855,7 +855,7 @@ class Gear:
 
 
 
-    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, innerRadiusForStyle=-1, is_crown=False):
+    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, is_crown=False):
         self.iswheel = isWheel
         self.teeth = teeth
         self.module=module
@@ -1067,13 +1067,20 @@ class WheelPinionPair:
             #extend the addendum a bit
             wheel_addendum_factor*=1.2
 
+        if pinionTeeth > 20 and self.gear_ratio > 2:
+            #bodge - got a clock with a really large pinion on the escape wheel and it keeps binding with the previous wheel
+            wheel_addendum_factor *= 0.8
+
         # BS 978 via https://www.csparks.com/watchmaking/CycloidalGears/index.jxl says addendum radius factor is 1.4*addendum factor
         #(this is aproximating the real curve, i think?)
         wheel_addendum_radius_factor=wheel_addendum_factor*1.4
         #TODO consider custom slop, this is from http://hessmer.org/gears/CycloidalGearBuilder.html
         wheel_dedendum_factor = math.pi/2
         self.wheel = Gear(True, wheelTeeth, module, wheel_addendum_factor, wheel_addendum_radius_factor, wheel_dedendum_factor)
-
+        print("wheel teeth: {}, pinion teeth: {}, wheel_addendum_factor: {}, wheel_addendum_radius_factor: {}, wheel_dedendum_factor:{}".format(wheelTeeth, pinionTeeth,
+                                                                                                                                                wheel_addendum_factor,
+                                                                                                                                                wheel_addendum_radius_factor,
+                                                                                                                                                wheel_dedendum_factor))
         #based on the practical wheel addendum factor
         pinion_dedendum_factor = wheel_addendum_factor*0.95 + 0.4
         pinion_tooth_factor = 1.25
@@ -1090,7 +1097,7 @@ class WheelPinionPair:
             pinion_addendum_factor = 0.625
             pinion_addendum_radius_factor = 0.625
 
-
+        print("pinion_addendum_factor: {}, pinion_addendum_radius_factor: {}, pinion_dedendum_factor:{}".format(pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor))
         self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor)
 
     def calcWheelAddendumFactor(self,pinionTeeth):
