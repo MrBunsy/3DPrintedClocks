@@ -72,7 +72,7 @@ pinion_extensions = {1:6, 2:4}
 
 train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
-train.printInfo(weight_kg=3)
+train.printInfo(weight_kg=2.5)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
@@ -113,13 +113,10 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-    #
-    #
-    # train.outputSTLs(clockName,clockOutDir)
-    # motionWorks.outputSTLs(clockName,clockOutDir)
-    # pendulum.outputSTLs(clockName, clockOutDir)
+    motionWorks.outputSTLs(clockName,clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
-    # hands.outputSTLs(clockName, clockOutDir)
-    # pulley.outputSTLs(clockName, clockOutDir)
-    # assembly.outputSTLs(clockName, clockOutDir)
+    hands.outputSTLs(clockName, clockOutDir)
+    pulley.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)
 
