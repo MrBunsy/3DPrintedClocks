@@ -3182,6 +3182,7 @@ class SimpleClockPlates:
         print("winding key length {:.1f}mm".format(self.goingTrain.poweredWheel.keySquareBitHeight))
 
     def get_winding_key(self, for_printing=True):
+        #TODO new WindingKey class to tidy this up
         key_body = None
 
         if self.goingTrain.poweredWheel.type == PowerType.CORD and self.goingTrain.poweredWheel.useKey:
@@ -3198,8 +3199,8 @@ class SimpleClockPlates:
             else:
                 # above the hands (the key is inside the dial)
                 cylinder_length = self.top_of_hands_z + 6 - self.key_offset_from_front_plate
-                # avoid the centre of the hands
-                handle_length = self.hands_position[1] - self.bearingPositions[0][1] - 10
+                # avoid the centre of the hands (but make as long as possible to ease winding)
+                handle_length = self.hands_position[1] - self.bearingPositions[0][1] - 6#10
 
             # print the key, with the right dimensions
             key_body = self.goingTrain.poweredWheel.getWindingKey(cylinder_length=cylinder_length, handle_length=handle_length, key_hole_deep = key_hole_deep, for_printing=for_printing)

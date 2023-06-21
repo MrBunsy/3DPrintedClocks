@@ -933,19 +933,25 @@ def getBearingInfo(innerD):
     Get some stock bearings
     '''
     if innerD == 3:
+        #most arbors
         return BearingInfo(bearingOuterD=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerSafeDAtAPush=5.2)
     if innerD == 4:
-        return BearingInfo(bearingOuterD=13.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
+        #used for power arbor on eight day clocks
+        #was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
+        return BearingInfo(bearingOuterD=13.1, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 6:
-        #these are really chunky, might need to get some which are less chunky
+        #these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
         return BearingInfo(bearingOuterD=19.2, outerSafeD=12, bearingHeight=6, innerD=6, innerSafeD=8)
     if innerD == 10:
+        #not used much since direct-arbor with small bearings (this had too much friction)
         #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
         return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
+        #(used for the winding key)
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         #printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
-        return BearingInfo(bearingOuterD=24.15,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
+        # with 24.15 light grey again latest print fell out again, wondering if tolerences are better since the new nozzle?
+        return BearingInfo(bearingOuterD=24.1,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
     return None
 
 

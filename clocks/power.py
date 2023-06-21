@@ -1549,6 +1549,8 @@ class CordWheel:
         key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
 
         if withKnob, it's like an old longcase key with handle. If not, it's like a mantle key
+
+        TODO - make Key a separate class and then it can have the cordwheel fed into it, controlled by something else
         '''
 
         if cylinder_length < 0:

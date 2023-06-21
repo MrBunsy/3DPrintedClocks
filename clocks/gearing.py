@@ -1036,7 +1036,7 @@ class WheelPinionPair:
     '''
 
     errorLimit=0.000001
-    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False):
+    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, ):
         '''
 
         :param teeth:
@@ -1067,9 +1067,10 @@ class WheelPinionPair:
             #extend the addendum a bit
             wheel_addendum_factor*=1.2
 
-        if pinionTeeth > 20 and self.gear_ratio > 2:
-            print("Reducing wheel addendum factor")
+        if pinionTeeth > 20 and self.gear_ratio < 3:
+            # print("Reducing wheel addendum factor wheel teeth: {}, pinion teeth: {}".format(wheelTeeth, pinionTeeth))
             #bodge - got a clock with a really large pinion on the escape wheel and it keeps binding with the previous wheel
+            #TODO investigate this further - it might affect the motion works jamming I had on clock 19 and would be good to understand properly
             wheel_addendum_factor *= 0.8
 
         # BS 978 via https://www.csparks.com/watchmaking/CycloidalGears/index.jxl says addendum radius factor is 1.4*addendum factor
@@ -1421,10 +1422,12 @@ class ArbourForPlate:
 
         square_size = self.square_side_length + self.pendulum_fixing_extra_space
 
-        gap_between_square_and_pendulum_hole = self.collet_screws.getNutHeight(half=True) + 1 + self.collet_screws.getHeadHeight()
+        extra_distance_from_bearing = + 5
+        #plus extra so it's easier to slot the pendulum out when it's near the bearing holder on the top wall standoff
+        gap_between_square_and_pendulum_hole = self.collet_screws.getNutHeight(half=True) + 1 + self.collet_screws.getHeadHeight() + extra_distance_from_bearing
 
-        height = outer_d*2.5
-
+        height = outer_d*2.5 + extra_distance_from_bearing
+        print("gap_between_square_and_pendulum_hole (and m2 screw) = ",gap_between_square_and_pendulum_hole)
         r = outer_d/2
 
         collet = cq.Workplane("XY").tag("base").circle(r).extrude(self.pendulum_holder_thick)
@@ -1597,8 +1600,9 @@ class ArbourForPlate:
             else:
                 '''
                 I don't think I'm going to design many more with the pendulum on the front, so I'm not going to bother supporting that with a direct arbour unless I have to
-                TODO - would be useful to have old designs working again
-                UPDATE: several people have remarked that they like the style of the old pendulum on front clocks, so I might ressurect it free of the friction fitting
+                TODO - would be useful to have old designs working again (done, supported with old friction fitting)
+                UPDATE: several people have remarked that they like the style of the old pendulum on front clocks, so I might ressurect it free of the friction fitting, using something like
+                the escapement on front mechanism
                 '''
                 raise NotImplementedError("Unsuported escapement and pendulum combination!")
         else:

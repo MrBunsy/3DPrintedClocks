@@ -63,9 +63,9 @@ if 'show_object' not in globals():
 # motionWorks.calculateGears(arbourDistance=30)
 # show_object(motionWorks.getAssembled())
 
-# ballWheel = BallWheel(ballsAtOnce=15)
+ballWheel = BallWheel(ballsAtOnce=15)
 #
-# print(ballWheel.getPower(rotationsPerHour=1))
+print(ballWheel.getPower(rotationsPerHour=0.5))
 
 #
 # print(ballWheel.getTorque())
