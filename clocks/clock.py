@@ -3445,6 +3445,26 @@ class Assembly:
                         weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearingPositions[0][2] + self.plates.getPlateThick(back=True) + self.goingTrain.poweredWheel.getHeight() + holeInfo[0][1])
                         self.weight_positions.append(weightPos)
 
+        self.pulley_model = None
+        if self.pulley is not None:
+            #put the pulley model in position
+            chainWheelTopZ = self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() + self.plates.getPlateThick(back=True) + self.plates.endshake / 2
+
+            chainZ = chainWheelTopZ + self.goingTrain.poweredWheel.getChainPositionsFromTop()[0][0][1]
+
+            # TODO for two bottom pillars
+            pulleyY = self.plates.bottomPillarPositions[0][1] - self.plates.bottomPillarR - self.pulley.diameter
+
+            if self.plates.huygensMaintainingPower:
+                pulley = self.pulley.getAssembled().translate((0, 0, -self.pulley.getTotalThick() / 2)).rotate((0, 0, 0), (0, 1, 0), 90)
+                self.pulley_model = pulley.translate((self.goingTrain.poweredWheel.diameter / 2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter / 2))
+                if self.goingTrain.poweredWheel.type == PowerType.ROPE:
+                    # second pulley for the counterweight
+                    self.pulley_model = self.pulley_model.add(pulley.translate((-self.goingTrain.poweredWheel.diameter / 2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter / 2)))
+            else:
+
+                self.pulley_model = self.pulley.getAssembled().rotate((0, 0, 0), (0, 0, 1), 90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick() / 2))
+
     def printInfo(self):
 
         for holeInfo in self.goingTrain.poweredWheel.getChainPositionsFromTop():
@@ -3704,23 +3724,8 @@ class Assembly:
 
 
         if self.pulley is not None:
+            clock = clock.add(self.pulley_model)
 
-            chainWheelTopZ = self.plates.bearingPositions[0][2] + self.goingTrain.getArbour(-self.goingTrain.chainWheels).getTotalThickness() + self.plates.getPlateThick(back=True) + self.plates.endshake / 2
-
-            chainZ = chainWheelTopZ + self.goingTrain.poweredWheel.getChainPositionsFromTop()[0][0][1]
-
-            #TODO for two bottom pillars
-            pulleyY = self.plates.bottomPillarPositions[0][1] - self.plates.bottomPillarR - self.pulley.diameter
-
-            if self.plates.huygensMaintainingPower:
-                pulley = self.pulley.getAssembled().translate((0,0,-self.pulley.getTotalThick()/2)).rotate((0,0,0), (0,1,0),90)
-                clock = clock. add(pulley.translate((self.goingTrain.poweredWheel.diameter/2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter/2)))
-                if self.goingTrain.poweredWheel.type == PowerType.ROPE:
-                    #second pulley for the counterweight
-                    clock = clock.add(pulley.translate((-self.goingTrain.poweredWheel.diameter / 2, pulleyY, chainZ + self.goingTrain.poweredWheel.diameter / 2)))
-            else:
-
-                clock = clock.add(self.pulley.getAssembled().rotate((0,0,0),(0,0,1),90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick()/2)))
 
         if self.plates.huygensMaintainingPower:
             #assumes one pillar
@@ -3741,7 +3746,7 @@ class Assembly:
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
-                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE):
+                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3879,7 +3884,10 @@ class Assembly:
             key = self.plates.get_winding_key(for_printing=False)
             if key is not None:
                 show_object(key.translate((self.plates.bearingPositions[0][0], self.plates.bearingPositions[0][1], self.frontOfClockZ + self.plates.key_offset_from_front_plate + self.plates.endshake / 2)),
-                            options={"color": key_colour, "name":"key"})
+                            options={"color": key_colour, "name":"Key"})
+
+        if self.pulley is not None:
+            show_object(self.pulley_model, options={"color": pulley_colour, "name":"Pulley"})
 
     def outputSTLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))
