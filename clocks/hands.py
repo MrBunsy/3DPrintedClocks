@@ -596,8 +596,8 @@ class Hands:
             if not second:
                 base_r = self.length * 0.08
 
-            handWidth = base_r * 2
-            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(handWidth, length).extrude(thick)
+            hand_width = base_r * 2
+            hand = hand.workplaneFromTagged("base").moveTo(0, length / 2 - base_r).rect(hand_width, length).extrude(thick)
         elif style == HandStyle.XMAS_TREE:
             trunkWidth = self.length * 0.075
             leafyWidth = length * 0.5
@@ -769,36 +769,73 @@ class Hands:
 
             hand = hand.workplaneFromTagged("base").moveTo(-base_width / 2, 0).lineTo(0, length).lineTo(base_width / 2, 0).lineTo(0, -rear_length).close().extrude(thick)
 
+        elif style == HandStyle.MOON:
+            #similar to brequet but with two circles forming a moon-like shape
+
+            #copypasted from BREGUET below
+            hand_width = self.length * 0.06
+            tip_width = self.length * 0.02
+
+            circle_r = self.length * 0.125
+            if hour:
+                circle_r*=1.05
+            circle_y = length * 0.65
+            # #point where teh arm starts to bend towards the tip
+            bend_point_y = circle_y
+            # if self.chunky:
+            #     hand_width = self.length * 0.06
+            #     tip_width = self.length * 0.02  # *0.0125
+            #     circle_r = self.length * 0.1
+            #     base_r = circle_r
+            # else:
+            base_r = self.length * 0.075
+
+            moon_thickness = hand_width*0.75
+            inner_moon_r = circle_r * 0.6
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, bend_point_y / 2).rect(hand_width, bend_point_y).extrude(thick)
+            # some sizes are complaining the radius isn't long enough to complete the arc, so bodge it a bit
+            hand = hand.workplaneFromTagged("base").moveTo(-hand_width / 2, bend_point_y).lineTo(-tip_width / 2, length).radiusArc((tip_width / 2, length), tip_width / 2 + 0.01).lineTo(hand_width / 2, bend_point_y).close().extrude(thick)
+            if second:
+                # this is out the back, extend the main body of the arm
+                hand = hand.workplaneFromTagged("base").moveTo(0, circle_y / 2).rect(hand_width, abs(circle_y)).extrude(thick)
+                # hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(base_r).extrude(thick)
+
+            hand = hand.workplaneFromTagged("base").moveTo(0, circle_y).circle(circle_r).extrude(thick)
+            hand = hand.faces(">Z").moveTo(0, circle_y).circle(circle_r - moon_thickness).cutThruAll()
+
+            hand = hand.union(cq.Workplane("XY").moveTo(0,circle_y - (circle_r - inner_moon_r)).circle(inner_moon_r).circle(inner_moon_r - moon_thickness).extrude(thick))
+
         elif style == HandStyle.BREGUET:
 
-            handWidth = self.length * 0.04
-            tipWidth = self.length * 0.01
+            hand_width = self.length * 0.04
+            tip_width = self.length * 0.01
 
-            circleR = self.length * 0.08
-            circleY = length * 0.75
+            circle_r = self.length * 0.08
+            circle_y = length * 0.75
             # #point where teh arm starts to bend towards the tip
-            bend_point_y = circleY
+            bend_point_y = circle_y
 
             if self.chunky:
-                handWidth = self.length * 0.06
-                tipWidth = self.length * 0.02  # *0.0125
-                circleR = self.length * 0.1
-                base_r = circleR
+                hand_width = self.length * 0.06
+                tip_width = self.length * 0.02  # *0.0125
+                circle_r = self.length * 0.1
+                base_r = circle_r
             else:
                 base_r = self.length * 0.075
 
             if hour:
-                handWidth *= 1.16
-                circleR = self.length * 0.125
-                circleY = length * 0.65
-                bend_point_y = circleY
+                hand_width *= 1.16
+                circle_r = self.length * 0.125
+                circle_y = length * 0.65
+                bend_point_y = circle_y
             if second:
                 if self.second_hand_centred:
                     base_r = self.length * 0.04
-                    handWidth = self.length * 0.055
+                    hand_width = self.length * 0.055
                     # tipWidth = self.length * 0.015
-                    circleY = - self.length * 0.3
-                    circleY = - self.length * 0.5
+                    circle_y = - self.length * 0.3
+                    circle_y = - self.length * 0.5
                     bend_point_y = self.length * 0.75
 
                     '''
@@ -806,20 +843,20 @@ class Hands:
                     this could be done analytically, but it was quicker to write a binary search than do the algebra
                     '''
 
-                    other_side_area = bend_point_y * handWidth + (length - bend_point_y) * (handWidth + tipWidth) / 2
+                    other_side_area = bend_point_y * hand_width + (length - bend_point_y) * (hand_width + tip_width) / 2
                     # accurately(ish) counterbalance the second hand (treats tip as trapezium)
                     # this is currently adjusting size of circle based on my chosen length, but would it look better if I instead calculated length to keep size of circle same as one of the other hands?
                     # but both circles on hour and minute hand are difference sizes, so I'll leave it like this
 
-                    moment = (bend_point_y ** 2) * handWidth / 2 + ((length - bend_point_y) * (tipWidth + handWidth) / 2) * (length - (length - bend_point_y) / 2)
+                    moment = (bend_point_y ** 2) * hand_width / 2 + ((length - bend_point_y) * (tip_width + hand_width) / 2) * (length - (length - bend_point_y) / 2)
 
                     def counterweight_moment(circle_r, distance):
-                        return distance * (math.pi * circle_r ** 2 - math.pi * (circle_r - handWidth) ** 2) + (handWidth * (distance - circle_r) ** 2) / 2
+                        return distance * (math.pi * circle_r ** 2 - math.pi * (circle_r - hand_width) ** 2) + (hand_width * (distance - circle_r) ** 2) / 2
 
-                    min_r = handWidth * 2.1
-                    max_r = abs(circleY)
+                    min_r = hand_width * 2.1
+                    max_r = abs(circle_y)
                     test_r = min_r
-                    counterweight_moment_test = counterweight_moment(test_r, abs(circleY))
+                    counterweight_moment_test = counterweight_moment(test_r, abs(circle_y))
                     error = counterweight_moment_test - moment
                     last_error = 1000
                     # TODO write a generic binary search solver, this is just a variant over the one used a few times in escapements
@@ -834,12 +871,12 @@ class Hands:
                             max_r = test_r
                         if error == 0 or abs(error - last_error) < 0.001:
                             print("best counterweight difference: {}, test_r:{} i {}".format(error, test_r, i))
-                            circleR = test_r
+                            circle_r = test_r
                             break
 
                         last_error = error
                         test_r = (min_r + max_r) / 2
-                        counterweight_moment_test = counterweight_moment(test_r, abs(circleY))
+                        counterweight_moment_test = counterweight_moment(test_r, abs(circle_y))
                         error = counterweight_moment_test - moment
                     # possible_circle_rs = [r for r in range(handWidth*2.5,abs(circleY),0.1)]
                     #
@@ -851,31 +888,31 @@ class Hands:
 
 
                 else:
-                    handWidth = self.length * 0.03
-                    circleR = self.length * 0.04
-                    circleY = - self.length * 0.04 * 2.5
-                    base_r = circleR
-                    bend_point_y = abs(circleY)
+                    hand_width = self.length * 0.03
+                    circle_r = self.length * 0.04
+                    circle_y = - self.length * 0.04 * 2.5
+                    base_r = circle_r
+                    bend_point_y = abs(circle_y)
                 # ignoreOutline=True
 
-            hand = hand.workplaneFromTagged("base").moveTo(0, bend_point_y / 2).rect(handWidth, bend_point_y).extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0, bend_point_y / 2).rect(hand_width, bend_point_y).extrude(thick)
             # some sizes are complaining the radius isn't long enough to complete the arc, so bodge it a bit
-            hand = hand.workplaneFromTagged("base").moveTo(-handWidth / 2, bend_point_y).lineTo(-tipWidth / 2, length).radiusArc((tipWidth / 2, length), tipWidth / 2 + 0.01).lineTo(handWidth / 2, bend_point_y).close().extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(-hand_width / 2, bend_point_y).lineTo(-tip_width / 2, length).radiusArc((tip_width / 2, length), tip_width / 2 + 0.01).lineTo(hand_width / 2, bend_point_y).close().extrude(thick)
             if second:
                 # this is out the back, extend the main body of the arm
-                hand = hand.workplaneFromTagged("base").moveTo(0, circleY / 2).rect(handWidth, abs(circleY)).extrude(thick)
+                hand = hand.workplaneFromTagged("base").moveTo(0, circle_y / 2).rect(hand_width, abs(circle_y)).extrude(thick)
                 # hand = hand.workplaneFromTagged("base").moveTo(0,0).circle(base_r).extrude(thick)
 
-            hand = hand.workplaneFromTagged("base").moveTo(0, circleY).circle(circleR).extrude(thick)
-            hand = hand.faces(">Z").moveTo(0, circleY).circle(circleR - handWidth).cutThruAll()
+            hand = hand.workplaneFromTagged("base").moveTo(0, circle_y).circle(circle_r).extrude(thick)
+            hand = hand.faces(">Z").moveTo(0, circle_y).circle(circle_r - hand_width).cutThruAll()
 
 
 
         elif style == HandStyle.SPADE:
             base_r = self.length * 0.075
-            handWidth = self.length * 0.05
+            hand_width = self.length * 0.05
             if second:
-                handWidth = self.length * 0.025
+                hand_width = self.length * 0.025
                 base_r = self.length * 0.02
 
             # for the bottom of the spade, not the usual baseR
@@ -885,7 +922,7 @@ class Hands:
                 spadeBaseR *= 1.4
 
             spadeTopLength = length * 0.4
-            spadeTipWidth = handWidth * 0.5
+            spadeTipWidth = hand_width * 0.5
             tipLength = length * 0.1
 
             # if second:
@@ -900,7 +937,7 @@ class Hands:
             tipEndSide = (spadeTipWidth / 2, armLength + spadeTopLength + tipLength)
             tip = (0, armLength + spadeTopLength + tipLength + spadeTipWidth / 2)
 
-            hand = hand.workplaneFromTagged("base").moveTo(0, armLength / 2).rect(handWidth, armLength).extrude(thick)
+            hand = hand.workplaneFromTagged("base").moveTo(0, armLength / 2).rect(hand_width, armLength).extrude(thick)
 
             hand = hand.workplaneFromTagged("base").moveTo(0, armLength - spadeBaseR).radiusArc((spadeBaseR, armLength), -spadeBaseR) \
                 .tangentArcPoint(midPoint, relative=False) \

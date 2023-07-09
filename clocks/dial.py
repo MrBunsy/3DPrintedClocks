@@ -77,7 +77,7 @@ class MoonPhaseComplication3D:
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half (moon spoon!)
     '''
-    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=3, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,on_left=True):
+    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=2.4, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,on_left=True):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module

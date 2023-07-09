@@ -63,9 +63,9 @@ if 'show_object' not in globals():
 # motionWorks.calculateGears(arbourDistance=30)
 # show_object(motionWorks.getAssembled())
 
-ballWheel = BallWheel(ballsAtOnce=15)
-#
-print(ballWheel.getPower(rotationsPerHour=0.5))
+# ballWheel = BallWheel(ballsAtOnce=15)
+# #
+# print(ballWheel.getPower(rotationsPerHour=0.5))
 
 #
 # print(ballWheel.getTorque())
@@ -126,7 +126,7 @@ print(ballWheel.getPower(rotationsPerHour=0.5))
 # show_object(hands.getHand(second=True).translate((-40,0)))
 
 
-# show_object(getHandDemo(assembled=True, chunky=True, justStyle=HandStyle.XMAS_TREE))
+show_object(getHandDemo(assembled=True, chunky=True, justStyle=HandStyle.MOON, outline=1, length=85))
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
 

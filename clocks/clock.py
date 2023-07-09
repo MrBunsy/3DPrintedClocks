@@ -647,7 +647,8 @@ class GoingTrain:
 
         self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
-    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, looseOnRod=True, prefer_small=False):
+    def genCordWheels(self,ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, looseOnRod=True, prefer_small=False,
+                      ratchet_diameter=-1):
         '''
         If preferred diameter is provided, use that rather than the min diameter
         '''
@@ -659,7 +660,9 @@ class GoingTrain:
             raise ValueError("Cannot use cord wheel with huygens maintaining power")
 
         self.calculatePoweredWheelInfo(diameter)
-        self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod)
+        self.poweredWheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,
+                                      rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod,
+                                      cap_diameter=ratchet_diameter)
         self.calculatePoweredWheelRatios(prefer_small=prefer_small)
 
     def genRopeWheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):
@@ -3947,7 +3950,12 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
             demo = demo.add(hands.getAssembled(include_seconds=False, time_seconds=time_sec, time_minute=time_min, time_hour=time_hour).translate((x, y, 0)))
 
             if secondsHand is not None and include_seconds:
-                demo = demo.add(secondsHand.translate((x, y + length * 0.3)))
+                secondsHand = secondsHand.translate((x, y + length * 0.3))
+
+                if not hands.second_hand_centred:
+                    secondsHand = secondsHand.rotate((0,0,0),(0,1,0),180)
+                demo = demo.add(secondsHand)
+
 
         else:
             demo = demo.add(hands.getHand(hand_type=HandType.HOUR).translate((x, y)))

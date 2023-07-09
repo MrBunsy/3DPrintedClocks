@@ -60,7 +60,7 @@ moduleReduction=0.9#0.85
 train.setRatios( [[72, 10], [75, 9], [60, 27]])
 
 #think this is promising for good compromise of size
-train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
+train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True, ratchet_diameter=29 + 27.5)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 
@@ -108,15 +108,15 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works_colours=[clock.Colour.LIGHTBLUE, clock.Colour.LIGHTBLUE, clock.Colour.GREEN],
-                    bob_colours=[clock.Colour.PURPLE], with_rods=True, with_key=True)
+                    bob_colours=[clock.Colour.PURPLE], with_rods=False, with_key=False)
 
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
+    # motionWorks.outputSTLs(clockName,clockOutDir)
+    # pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    # hands.outputSTLs(clockName, clockOutDir)
+    # pulley.outputSTLs(clockName, clockOutDir)
+    # assembly.outputSTLs(clockName, clockOutDir)
 

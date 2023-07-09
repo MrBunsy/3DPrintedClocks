@@ -40,6 +40,7 @@ class HandStyle(Enum):
     XMAS_TREE="xmas_tree"
     BAROQUE="baroque"
     ARROWS="arrows"#specicially for Tony the Clock
+    MOON = "moon"
 
 class HandType(Enum):
     HOUR = "hour"

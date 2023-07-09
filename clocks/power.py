@@ -1203,7 +1203,8 @@ class CordWheel:
         '''
         return 21
 
-    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30, gearThick=5, frontPlateThick=8, style="HAC", cordLength=2000, looseOnRod=True):
+    def __init__(self,  diameter, ratchet_thick=4, power_clockwise=True, rodMetricSize=3, thick=10, useKey=False, screwThreadMetric=3, cordThick=2, bearing=None, keySquareBitHeight=30,
+                 gearThick=5, frontPlateThick=8, style="HAC", cordLength=2000, looseOnRod=True, cap_diameter=-1):
         '''
         looseOnRod - if True then the cord/chain/rope section of the wheel (this bit) is loose on the arbour. If true, then that is fixed and the actual gear wheel is loose on the arbour
         for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings
@@ -1246,7 +1247,10 @@ class CordWheel:
             self.overlapSlotWiggle=0.1
 
         #keeping large so there's space for the screws and screwheads
-        self.capDiameter = diameter + 27.5#30#diameter*2#.5
+        if cap_diameter < 0:
+            self.cap_diameter = diameter + 30#diameter*2#.5
+        else:
+            self.cap_diameter = cap_diameter
         self.rodMetricSize = rodMetricSize
         self.arbour_d = rodMetricSize
         self.holeD = rodMetricSize
@@ -1296,7 +1300,8 @@ class CordWheel:
         if ratchet_thick <=0:
             raise ValueError("Cannot make cord wheel without a ratchet")
 
-        self.ratchet = Ratchet(totalD=self.capDiameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.capDiameter/2 - 10)#12.5
+        #inner radius slightly larger than cord diameter so there's space for nuts
+        self.ratchet = Ratchet(totalD=self.cap_diameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.diameter / 2 + 2)
         self.keyScrewHoleD = self.screwThreadMetric
         self.power_clockwise = power_clockwise
         self.keyWiggleRoom = 0.75
@@ -1488,7 +1493,7 @@ class CordWheel:
 
     def getCap(self, top=False, extraThick=0):
         capThick = self.topCapThick if top else self.capThick
-        cap = cq.Workplane("XY").circle(self.capDiameter/2).extrude(capThick + extraThick)
+        cap = cq.Workplane("XY").circle(self.cap_diameter / 2).extrude(capThick + extraThick)
 
         holeR = self.holeD / 2
         if self.useKey and top:
@@ -1510,7 +1515,7 @@ class CordWheel:
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixingPoints).circle(self.screwThreadMetric / 2).cutThruAll()
-        cap = Gear.cutStyle(cap, self.capDiameter/2-self.holeD*0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
+        cap = Gear.cutStyle(cap, self.cap_diameter / 2 - self.holeD * 0.75, innerRadius=self.diameter / 2 + self.cordThick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
         return cap
 
     def getClickWheelForCord(self, for_printing=True):
@@ -1525,7 +1530,7 @@ class CordWheel:
         clickwheel = clickwheel.faces(">Z").workplane().circle(self.ratchet.clickInnerRadius*0.999).extrude(self.clickWheelStandoffHeight)
 
         # hole for the rod
-        clickwheel = clickwheel.faces(">Z").circle(self.holeD / 2).cutThruAll()
+        clickwheel = clickwheel.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.thick*2))
         cutter = cq.Workplane("XY")
         if self.useKey:
             #space for a nut
@@ -2416,7 +2421,9 @@ class Ratchet:
         #arc aprox ratchetThick
         clickArcAngle = self.anticlockwise * thick / innerClickR
 
-        clickOffsetAngle = -(math.pi*2/(self.clicks))*0.9 * self.anticlockwise
+        #makes for a strong ratchet, but it's harder to wind the ratchet than pull the weight!
+        #clickOffsetAngle = -(math.pi*2/(self.clicks))*0.9 * self.anticlockwise
+        clickOffsetAngle = -(math.pi*2/(self.clicks))*1.2 * self.anticlockwise
 
         # since the clicks are at such an angle, this is a bodge to ensure they're actually that thick, rather than that thick at teh base
         # mostly affects ratchets with a larger inner radius and a not-so-large outer radius
