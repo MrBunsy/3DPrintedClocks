@@ -61,7 +61,7 @@ train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThic
 
 
 pendulumSticksOut=10
-backPlateFromWall=35
+backPlateFromWall=40
 
 train.genGears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=2/2.4, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
@@ -80,7 +80,7 @@ moon_complication.set_motion_works_sizes(motionWorks)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=60, bobThick=10)
+pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=10)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.CIRCLES, seconds_style=clock.DialStyle.LINES_ARC)
 
@@ -88,7 +88,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, bac
                                  heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=backPlateFromWall, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
-                                 second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225)
+                                 second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225, screws_from_back=[True, False])
 
 hands = clock.Hands(style=clock.HandStyle.MOON,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)

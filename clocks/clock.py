@@ -1064,6 +1064,7 @@ class MoonHolder:
         # max_y = self.plates.plate_top_fixings[0][1] - self.plates.fixingScrews.getNutContainingDiameter()/2
         max_y = self.plates.topPillarPos[1] + self.plates.topPillarR
 
+        #top of the last wheel in the complication
         min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.getMaxRadius()
 
         self.height = max_y - min_y
@@ -1102,7 +1103,7 @@ class SimpleClockPlates:
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
                  pendulumAtFront=True, backPlateFromWall=0, fixingScrews=None, escapementOnFront=False, chainThroughPillarRequired=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbour_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, centre_weight=False, screws_from_back=False, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
+                 bottom_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
@@ -1240,7 +1241,10 @@ class SimpleClockPlates:
 
         #for some dials (filled-in ones like tony) it won't be possible to get a screwdriver (or the screw!) in from the front, so instead screw in from the back
         #currently this also implies that the nuts will be sticking out the front plate (I don't want to embed them in the plate and weaken it)
+        #originally just a boolean, now a list of booleans for each pillar, starting at hte top. eg top pillar only screws from back: [True, False]
         self.screws_from_back = screws_from_back
+        if self.screws_from_back is None:
+            self.screws_from_back = [False, False]
         #plates try to put screws that hold the pillars together in the rear standoff, but can override to put them in the back plate (if there isn't a wall standoff)
         self.embed_nuts_in_plate = embed_nuts_in_plate
 
@@ -2511,6 +2515,8 @@ class SimpleClockPlates:
         Previously used two sets of screws: one to attach the front plate and one to attach the rear standoffs, both with embedded nuts.
         Now assumes you've got screws long enough to attach everything. This should make it stronger
         especially as the pillars are now separate and the new suspension spring will result in two bits of standoff
+
+        bit messy since adding the option for screws_from_back to be different for each pillar (needed to make the moon clock assembleable and look neat)
         '''
 
 
@@ -2522,14 +2528,19 @@ class SimpleClockPlates:
         bottom_total_length = self.backPlateFromWall + self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False)
         top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
 
-        if not self.screws_from_back and self.backPlateFromWall > 0:
+        if not self.screws_from_back[0] and self.backPlateFromWall > 0:
             #space to embed the nut in the standoff
             top_screw_length = top_total_length - (top_total_length%10)
+        else:
+            #nut will stick out the front or back
+            top_screw_length = top_total_length + self.fixingScrews.getNutHeight() - ( top_total_length + self.fixingScrews.getNutHeight()) %10
+
+        if not self.screws_from_back[1] and self.backPlateFromWall > 0:
+            #space to embed the nut in the standoff
             bottom_screw_length = bottom_total_length - (bottom_total_length % 10)
         else:
             #nut will stick out the front or back
-            top_screw_length = top_total_length + self.fixingScrews.getNutHeight()
-            bottom_screw_length = bottom_total_length + self.fixingScrews.getNutHeight()
+            bottom_screw_length = bottom_total_length + self.fixingScrews.getNutHeight() - (bottom_total_length + self.fixingScrews.getNutHeight()) %10
 
         #top and bottom screws are different lengths if there is a front-mounted escapement
 
@@ -2541,37 +2552,55 @@ class SimpleClockPlates:
             print("WARNING may not be able to source screws long enough, try M4")
         cutter = cq.Workplane("XY")
 
-        nut_base_z = -self.backPlateFromWall
+        top_nut_base_z = -self.backPlateFromWall
+        bottom_nut_base_z = -self.backPlateFromWall
         top_nut_hole_height = self.fixingScrews.getNutHeight()
         bottom_nut_hole_height = top_nut_hole_height
 
         if self.backPlateFromWall > 0:
+            #depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
             #extra nut height just in case
             top_nut_hole_height = (top_total_length%10) + self.fixingScrews.getNutHeight()
             bottom_nut_hole_height = (bottom_total_length%10) + self.fixingScrews.getNutHeight()
         elif self.embed_nuts_in_plate:
-            # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks
+            # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
             print("you may have to cut the fixing screws to length in the case of no back standoff")
-            if self.screws_from_back:
-                nut_base_z = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False) - self.fixingScrews.getNutHeight()
+            if self.screws_from_back[0]:
+                top_nut_base_z = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False) - self.fixingScrews.getNutHeight()
+            if self.screws_from_back[1]:
+                bottom_nut_base_z = self.getPlateThick(back=True) + self.plateDistance + self.getPlateThick(back=False) - self.fixingScrews.getNutHeight()
 
 
-        for fixingPos in self.plate_fixings:
-
-
-            z = self.front_z
-            if self.embed_nuts_in_plate or (self.backPlateFromWall > 0 and not self.screws_from_back):
-                #make a hole for the nut
-                if fixingPos in self.plate_top_fixings and self.need_front_anchor_bearing_holder():
-                    z += self.get_front_anchor_bearing_holder_total_length()
-                    cutter = cutter.union(self.fixingScrews.getNutCutter(height=top_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, nut_base_z)))
-                else:
-                    cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, nut_base_z)))
-            # holes for the screws
-            if self.screws_from_back:
-                cutter = cutter.add(self.fixingScrews.getCutter(loose=True).translate(fixingPos).translate((0, 0, -self.backPlateFromWall)))
+        for pillar in [0, 1]:
+            screws_from_back = self.screws_from_back[pillar]
+            if pillar == 0:
+                plate_fixings = self.plate_top_fixings
+                nut_base_z = top_nut_base_z
             else:
-                cutter = cutter.add(self.fixingScrews.getCutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
+                plate_fixings = self.plate_bottom_fixings
+                nut_base_z = bottom_nut_base_z
+
+            for fixingPos in plate_fixings:
+
+
+                z = self.front_z
+                if self.embed_nuts_in_plate or (self.backPlateFromWall > 0 and not screws_from_back):
+                    #make a hole for the nut
+                    if fixingPos in self.plate_top_fixings and self.need_front_anchor_bearing_holder():
+                        z += self.get_front_anchor_bearing_holder_total_length()
+                        cutter = cutter.union(self.fixingScrews.getNutCutter(height=top_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, nut_base_z)))
+                    else:
+                        cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, nut_base_z)))
+                # holes for the screws
+                if screws_from_back:
+                    if pillar == 0:
+                        screw_start_z = top_nut_hole_height
+                    else:
+                        screw_start_z = bottom_nut_hole_height
+
+                    cutter = cutter.add(self.fixingScrews.getCutter(loose=True).translate(fixingPos).translate((0, 0, -self.backPlateFromWall + screw_start_z)))
+                else:
+                    cutter = cutter.add(self.fixingScrews.getCutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
 
 
 

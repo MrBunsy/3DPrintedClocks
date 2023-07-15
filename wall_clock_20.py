@@ -113,10 +113,10 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.BRASS], motion_works
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-    # motionWorks.outputSTLs(clockName,clockOutDir)
-    # pendulum.outputSTLs(clockName, clockOutDir)
+    motionWorks.outputSTLs(clockName,clockOutDir)
+    pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)
-    # hands.outputSTLs(clockName, clockOutDir)
-    # pulley.outputSTLs(clockName, clockOutDir)
-    # assembly.outputSTLs(clockName, clockOutDir)
+    hands.outputSTLs(clockName, clockOutDir)
+    pulley.outputSTLs(clockName, clockOutDir)
+    assembly.outputSTLs(clockName, clockOutDir)
 
