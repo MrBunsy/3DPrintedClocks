@@ -69,10 +69,10 @@ train.printInfo(weight_kg=3)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 #tweaking angle slightly so that the second gear doesn't line up with an arbor that's between the plates
-moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False)
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.2)
 
 #not inset at base as there's not enough space for the moon complication to fit behind it
-motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon_complication)
+motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon_complication)
 
 
 #TODO try out larger pinions on the motion works - it'll be a fiddle to slot together at the moment
@@ -88,7 +88,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, bac
                                  heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=backPlateFromWall, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
-                                 second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225, screws_from_back=[True, False])
+                                 second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225)#, screws_from_back=[True, False])
 
 hands = clock.Hands(style=clock.HandStyle.MOON,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)

@@ -124,7 +124,7 @@ assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=00)
 assembly.printInfo()
 train.printInfo(weight_kg=2.5)
 train.printInfo(weight_kg=2)
-print("Plate distance: ", plates.plateDistance)
+print("Plate distance: ", plates.plate_distance)
 
 # show_object(train.getArbourWithConventionalNaming(0).getAssembled())
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())

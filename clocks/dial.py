@@ -76,8 +76,10 @@ class MoonPhaseComplication3D:
     One gear from the hour holder on the motion works, which will drive a bevel gear to a rod going up through the top holder for the dial
 
     then a grey/black sphere for the moon - possibly with a hemisphere cup around the back half (moon spoon!)
+    module of 0.9 on first experiment
     '''
-    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=2.4, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,on_left=True):
+    def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=2.4, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,
+                 on_left=True, bevel_module=-1):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
@@ -113,8 +115,13 @@ class MoonPhaseComplication3D:
         pinion_max = 20
 
         self.arbor_d = 3
+        self.screws = MachineScrew(self.arbor_d, countersunk=True)
         self.arbor_loose_d = self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS
-        self.lone_bevel_min_height = 10
+        self.lone_bevel_min_height = 15
+
+        self.bevel_module = bevel_module
+        if self.bevel_module < 0:
+            self.bevel_module = self.module
 
         '''
         wheel driven by a pinion from the hour holder
@@ -172,7 +179,7 @@ class MoonPhaseComplication3D:
             options = [{'ratio': 0.016931599773883546, '1/ratio': 59.06116452991454, 'w0': 55, 'p1': 18, 'w1': 58, 'p2': 13, 'w2': 61, 'bevel_pinion': 22, 'bevel_wheel': 25, 'weighting': 3, 'error': 1.5470085457991445e-05}]
         #pinions driving wheels here
         self.train = [(self.pinion_teeth_on_hour_wheel, options[0]["w0"]), (options[0]["p1"], options[0]["w1"]), (options[0]["p2"], options[0]["w2"]), (options[0]["bevel_wheel"], options[0]["bevel_pinion"])]
-        self.bevel_pair = WheelPinionBeveledPair(options[0]["bevel_wheel"], options[0]["bevel_pinion"], module=self.module)
+        self.bevel_pair = WheelPinionBeveledPair(options[0]["bevel_wheel"], options[0]["bevel_pinion"], module=self.bevel_module)
 
         #want second wheel to be larger so there's space for the bevel, can do this by meddling with tooth count but I'd rather keep the ratio accuracy and meddle size with module size
         size_ratio_target = 1.05
@@ -234,8 +241,14 @@ class MoonPhaseComplication3D:
 
             return arbor
         elif index == 3:
-            return self.bevel_pair.wheel.union(cq.Workplane("XY").circle(self.arbor_d).extrude(self.lone_bevel_min_height)).cut(cq.Workplane("XY").circle(self.arbor_d / 2).extrude(1000))
-            # return , wheelThick=self.gear_thick, pinion=self.pairs[2])
+            #lone bevel that sits at the bottom of the rod with the moon on the other end
+            bevel = self.bevel_pair.wheel.union(cq.Workplane("XY").circle(self.arbor_d*1.6).extrude(self.lone_bevel_min_height))
+            #hole to thread onto rod
+            bevel = bevel.cut(cq.Workplane("XY").circle(self.arbor_d / 2).extrude(1000))
+            #nyloc nut space
+            bevel = bevel.cut(self.screws.getNutCutter(nyloc=True).translate((0,0,self.lone_bevel_min_height - self.screws.getNutHeight(nyloc=True))))
+            return bevel
+
         else:
             raise ValueError("Arbor {} not valid".format(index))
 
@@ -303,9 +316,12 @@ class MoonPhaseComplication3D:
 
         return moon
 
-    def get_moon_z(self):
+    def get_relative_moon_z(self):
         #front of the last arbor, then the bevel
         return self.get_arbor_positions_relative_to_motion_works()[2][2] + self.gear_thick + self.bevel_pair.get_centre_of_wheel_to_back_of_pinion()
+
+    def get_last_wheel_r(self):
+        return self.pairs[-2].wheel.getMaxRadius()
 
     def get_assembled(self):
         model = cq.Workplane("XY")
@@ -318,7 +334,7 @@ class MoonPhaseComplication3D:
         model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).translate(
             (0,
              positions[2][1] - self.bevel_pair.get_centre_of_pinion_to_back_of_wheel(),
-             self.get_moon_z())
+             self.get_relative_moon_z())
         ))
 
         return model

@@ -1315,10 +1315,10 @@ class ArbourForPlate:
 
         self.arbor_d = self.arbor.arbourD
 
-        self.plate_distance = self.plates.getPlateDistance()
-        self.front_plate_thick = self.plates.getPlateThick(back=False)
-        self.back_plate_thick = self.plates.getPlateThick(back=True)
-        self.standoff_plate_thick = self.plates.getPlateThick(standoff=True)
+        self.plate_distance = self.plates.get_plate_distance()
+        self.front_plate_thick = self.plates.get_plate_thick(back=False)
+        self.back_plate_thick = self.plates.get_plate_thick(back=True)
+        self.standoff_plate_thick = self.plates.get_plate_thick(standoff=True)
 
         self.arbour_extension_max_radius = arbour_extension_max_radius
         self.pendulum_sticks_out = pendulum_sticks_out
