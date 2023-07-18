@@ -309,7 +309,7 @@ class MoonPhaseComplication3D:
         moon = cq.Workplane("XY").add(cq.Solid.makeSphere(self.moon_radius))
 
         #hole for rod - we're clamping the moon in place like the motion works, so it can be rotated with friction from the split washer
-        moon = moon.cut(cq.Workplane("XY").circle(self.arbor_loose_d/2).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius,0)))
+        moon = moon.cut(cq.Workplane("XY").circle((self.arbor_d + LOOSE_FIT_ON_ROD)/2).extrude(self.moon_radius*2).rotate((0,0,0),(1,0,0),-90).translate((0,-self.moon_radius,0)))
 
         #TODO way to attach the two halves together? Inset little areas to hold glue like on the model trains?
         #panhead screws stick and out it slots on and rotates?
@@ -348,7 +348,8 @@ class MoonPhaseComplication3D:
 
         out = os.path.join(path, "{}_moon_half.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_moon_half(), out)
+        #worth bumping up the quality for this!
+        exporters.export(self.get_moon_half(), out, tolerance=0.01, angularTolerance=0.01)
 
 class RomanNumerals:
 

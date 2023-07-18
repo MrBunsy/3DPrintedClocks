@@ -1083,14 +1083,19 @@ class MoonHolder:
     def get_fixing_positions(self):
         #between pillar screws and anchor arbor
         top_fixing_y = (self.plates.top_pillar_pos[1] + self.plates.bearingPositions[-1][1]) / 2
-        return [(-self.plates.plate_width / 4, top_fixing_y), (self.plates.plate_width / 4, self.centre_y - self.height / 3)]
+        #just inside the dial, by fluke
+        bottom_fixing_y = self.centre_y - self.height / 2 + 8
+        return [(-self.plates.plate_width / 3, top_fixing_y), (self.plates.plate_width / 3, bottom_fixing_y)]
 
-    def get_moon_holder(self, for_printing=True):
+    def get_moon_holder_parts(self, for_printing=True):
         '''
         piece screwed onto the front of the front plate with a steel tube slotted into it to take the moon on a threaded rod
         '''
 
+        lid_thick = 10
+
         moon_z = self.moon_complication.get_relative_moon_z()# + self.plates.get_front_z()
+        moon_r = self.moon_complication.moon_radius
         width = self.plates.plate_width
         # top_y = self.plates.top_pillar_pos[1] + self.plates.top_pillar_r
 
@@ -1099,21 +1104,48 @@ class MoonHolder:
 
 
         bottom_r = r + sagitta
-
         holder = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
-            radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(moon_z)
+                radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(moon_z)
 
-        moon_and_more = cq.Workplane("XY").sphere(self.moon_complication.moon_radius + self.moon_extra_space + self.moon_spoon_thick)
-        moon_half = moon_and_more.cut(cq.Workplane("XY").rect(self.moon_complication.moon_radius*4, self.moon_complication.moon_radius*4).extrude(self.moon_complication.moon_radius*4))
+        moon_and_more = cq.Workplane("XY").sphere(moon_r + self.moon_extra_space + self.moon_spoon_thick)
+        moon_half = moon_and_more.cut(cq.Workplane("XY").rect(moon_r*4, moon_r*4).extrude(moon_r*4))
 
-        moon_centre_pos = (0,self.centre_y + self.height/2 + self.moon_complication.moon_radius, moon_z )
+        moon_centre_pos = (0,self.centre_y + self.height/2 + moon_r, moon_z )
         #moon spoon!
         holder = holder.union(moon_half.translate(moon_centre_pos))
 
-        #cut out the spoon bit (afterwards so it cuts into the main shape too)
-        holder = holder.cut(cq.Workplane("XY").sphere(self.moon_complication.moon_radius + self.moon_extra_space).translate(moon_centre_pos))
 
-        return holder
+        #moon hole
+        cutter = cq.Workplane("XY").sphere(self.moon_complication.moon_radius + self.moon_extra_space).translate(moon_centre_pos)
+
+        for screw_pos in self.get_fixing_positions():
+            cutter = cutter.add(self.fixing_screws.getCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).rotate((0,0,0),(1,0,0),180).translate((screw_pos[0],screw_pos[1],moon_z + lid_thick)))
+
+        #the steel tube
+        cutter = cutter.add(cq.Workplane("XY").circle(STEEL_TUBE_DIAMETER/2).extrude(1000).translate((0,0,-500)).rotate((0,0,0),(1,0,0), 90).translate((0,0,moon_z)))
+
+        space_d = self.fixing_screws.get_washer_diameter()+1
+
+        # space for the two nuts, spring washer and normal washer at the bottom of the moon and nut at the top of the moon
+        nut_space = cq.Workplane("XY").circle(space_d/2).extrude(moon_r)
+        #space for nuts at the top of the moon (like on the front of the hands)
+        nut_space = nut_space.union(cq.Workplane("XY").circle(self.fixing_screws.getNutContainingDiameter()/2+0.5).extrude(self.moon_complication.moon_radius*2).translate((0,0,moon_r)))
+
+        #.faces(">Z").workplane().circle(self.fixing_screws.getNutContainingDiameter()/2+0.5)).extrude(self.moon_complication.moon_radius*2)
+
+        cutter = cutter.add(nut_space.rotate((0,0,0),(1,0,0),-90).translate(moon_centre_pos).translate((0,-moon_r-TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT, 0)))
+
+        #copypaste from above
+        # lid = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
+        #         radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(lid_thick).translate((0,0,moon_z))
+
+        holder = holder.cut(cutter)
+        # lid = lid.cut(cutter)
+
+        if for_printing:
+            holder = holder.rotate((0,0,0),(0,1,0),180)
+
+        return [holder]
 
 class SimpleClockPlates:
     '''
@@ -1122,7 +1154,7 @@ class SimpleClockPlates:
     Given that the simple plate is the only working implementation, would it make more sense to turn this class into the SimpleClockPlates?
 
     Any future plates are likely to be be very different in terms out laying out gears, and anything that is needed can always be spun out
-
+    endshake of 1.5 worthwhile for larger clocks
     '''
     def __init__(self, goingTrain, motionWorks, pendulum, style=ClockPlateStyle.VERTICAL, arbourD=3, pendulumAtTop=True, plateThick=5, backPlateThick=None,
                  pendulumSticksOut=20, name="", heavy=False, extraHeavy=False, motionWorksAbove=False, pendulumFixing = PendulumFixing.FRICTION_ROD,
@@ -2131,7 +2163,7 @@ class SimpleClockPlates:
 
         return standoff
 
-    def getWallStandoff(self, top=True, forPrinting=True):
+    def get_wall_standoff(self, top=True, forPrinting=True):
         '''
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
@@ -2616,9 +2648,9 @@ class SimpleClockPlates:
                     #make a hole for the nut
                     if fixingPos in self.plate_top_fixings and self.need_front_anchor_bearing_holder():
                         z += self.get_front_anchor_bearing_holder_total_length()
-                        cutter = cutter.union(self.fixingScrews.getNutCutter(height=top_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixingScrews.getNutCutter(height=top_nut_hole_height, withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
                     else:
-                        cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height, withBridging=True).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixingScrews.getNutCutter(height=bottom_nut_hole_height, withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
                 # holes for the screws
                 if screws_from_back:
                     if pillar == 0:
@@ -2654,7 +2686,7 @@ class SimpleClockPlates:
                     nutZ = self.get_plate_thick(back=True) + self.plate_distance - (self.fixingScrews.getNutHeight(nyloc=True) - self.fixingScrews.getNutHeight(nyloc=False))
 
             cutter = cutter.add(cq.Workplane("XY").moveTo(self.huygens_wheel_pos[0], self.huygens_wheel_pos[1] + self.huygens_wheel_y_offset).circle(self.fixingScrews.metric_thread / 2).extrude(1000).translate((0, 0, base_z)))
-            cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=nyloc, withBridging=bridging).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
+            cutter = cutter.add(self.fixingScrews.getNutCutter(nyloc=nyloc, withBridging=bridging, layerThick=LAYER_THICK_EXTRATHICK).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
 
         if self.moon_complication is not None:
             moon_screws = self.moon_holder.get_fixing_positions()
@@ -2663,7 +2695,7 @@ class SimpleClockPlates:
                 pos = (pos[0], pos[1], self.get_plate_thick(back=True) + self.plate_distance)
                 # cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate(pos))
                 # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
-                cutter = cutter.add(self.motion_works_screws.getNutCutter().translate(pos))
+                cutter = cutter.add(self.motion_works_screws.getNutCutter().rotate((0,0,0),(0,0,1),360/12).translate(pos))
                 cutter = cutter.add(cq.Workplane("XY").circle(self.motion_works_screws.metric_thread / 2).extrude(1000).translate(pos))
 
 
@@ -2793,6 +2825,8 @@ class SimpleClockPlates:
         if self.usingPulley and self.goingTrain.poweredWheel.type == PowerType.CORD:
             #hole for cord to be tied in
 
+            cord_holding_screw = MachineScrew(3, countersunk=True)
+
             chainX = holePositions[0][0][0]
             chainZTop = topZ + holePositions[0][0][1]
             pulleyX = -chainX
@@ -2812,9 +2846,9 @@ class SimpleClockPlates:
             pulleyY = self.bottom_pillar_positions[0][1]# + self.bottomPillarR / 2
             if self.extraHeavy:
                 #bring it nearer the top, making it easier to tie the cord around it
-                pulleyY = self.bottom_pillar_positions[0][1] + self.bottomPillarR - self.fixingScrews.metric_thread
+                pulleyY = self.bottom_pillar_positions[0][1] + self.bottomPillarR - cord_holding_screw.metric_thread
             # this screw will provide something for the cord to be tied round
-            pulleyScrewHole = self.fixingScrews.getCutter().rotate((0,0,0),(1,0,0),180).translate((pulleyX,pulleyY,self.plate_distance))
+            pulleyScrewHole = cord_holding_screw.getCutter().rotate((0,0,0),(1,0,0),180).translate((pulleyX,pulleyY,self.plate_distance))
 
             #but it's fiddly so give it a hole and protect the screw
             max_extra_space = self.bottomPillarR - pulleyX - 1
@@ -3066,7 +3100,7 @@ class SimpleClockPlates:
 
 
             for pos in dial_fixing_positions:
-                plate = plate.cut(self.dial.fixing_screws.getCutter(loose=True,withBridging=True).translate(pos))
+                plate = plate.cut(self.dial.fixing_screws.getCutter(loose=True,withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(pos))
 
         if self.moon_complication is not None:
 
@@ -3081,7 +3115,7 @@ class SimpleClockPlates:
                     plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plateThick))
 
 
-                plate = plate.cut(self.motion_works_screws.getCutter(withBridging=True).translate(pos))
+                plate = plate.cut(self.motion_works_screws.getCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(pos))
 
 
         # need an extra chunky hole for the big bearing that the key slots through
@@ -3291,8 +3325,8 @@ class SimpleClockPlates:
 
         if self.backPlateFromWall > 0:
             # need wall standoffs
-            plates = plates.add(self.getWallStandoff(top=True, forPrinting=False))
-            plates = plates.add(self.getWallStandoff(top=False, forPrinting=False))
+            plates = plates.add(self.get_wall_standoff(top=True, forPrinting=False))
+            plates = plates.add(self.get_wall_standoff(top=False, forPrinting=False))
 
         if self.need_front_anchor_bearing_holder():
             plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
@@ -3342,11 +3376,11 @@ class SimpleClockPlates:
 
             out = os.path.join(path, "{}_wall_top_standoff.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getWallStandoff(top=True), out)
+            exporters.export(self.get_wall_standoff(top=True), out)
 
             out = os.path.join(path, "{}_wall_bottom_standoff.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getWallStandoff(top=False), out)
+            exporters.export(self.get_wall_standoff(top=False), out)
 
         if self.huygensMaintainingPower:
             self.huygensWheel.outputSTLs(name+"_huygens", path)
@@ -3383,6 +3417,13 @@ class SimpleClockPlates:
             out = os.path.join(path, "{}_front_anchor_bearing_holder.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_front_anchor_bearing_holder(), out)
+
+        if self.moon_holder is not None:
+            holder_parts = self.moon_holder.get_moon_holder_parts()
+            for i, holder in enumerate(holder_parts):
+                out = os.path.join(path, "{}_moon_holder_part{}.stl".format(name,i))
+                print("Outputting ", out)
+                exporters.export(holder, out)
 
         # for arbour in range(self.goingTrain.wheels + self.goingTrain.chainWheels + 1):
         #     for top in [True, False]:
@@ -3862,8 +3903,9 @@ class Assembly:
             show_object(moon.rotate((0,0,0),(0,1,0),180).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)),
                         options={"color":"black"}, name="Light Side of the Moon")
 
-            holder = self.plates.moon_holder.get_moon_holder(for_printing=False).translate((0,0,self.front_of_clock_z))
-            show_object(holder, options={"color":plate_colour, "name":"moon_holder"})
+            holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
+            for i,holder in enumerate(holder_parts):
+                show_object(holder.translate((0, 0, self.front_of_clock_z)), options={"color":plate_colour, "name":"moon_holder_part{}".format(i)})
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)

@@ -190,6 +190,9 @@ class MachineScrew:
     def get_diameter_for_die_cutting(self):
         return get_diameter_for_die_cutting(self.metric_thread)
 
+    def get_washer_diameter(self):
+        return get_washer_diameter(self.metric_thread)
+
     def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK, headSpaceLength=1000, loose=False, for_tap_die=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
