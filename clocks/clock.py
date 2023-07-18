@@ -1136,16 +1136,20 @@ class MoonHolder:
         cutter = cutter.add(nut_space.rotate((0,0,0),(1,0,0),-90).translate(moon_centre_pos).translate((0,-moon_r-TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT, 0)))
 
         #copypaste from above
-        # lid = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
-        #         radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(lid_thick).translate((0,0,moon_z))
+        lid = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
+                radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(lid_thick)
+        lid = lid.cut(cq.Workplane("XY").circle(moon_r + self.moon_extra_space).extrude(lid_thick).translate((0,moon_centre_pos[1],0)))
+        lid = lid.translate((0,0,moon_z))
 
         holder = holder.cut(cutter)
-        # lid = lid.cut(cutter)
+        lid = lid.cut(cutter)
 
         if for_printing:
             holder = holder.rotate((0,0,0),(0,1,0),180)
+        else:
+            lid = lid.translate((0,0,0.1))
 
-        return [holder]
+        return [holder, lid]
 
 class SimpleClockPlates:
     '''
