@@ -54,6 +54,7 @@ moduleReduction=0.85
 train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
 
 #think this is promising for good compromise of size
+#TODO NEXT CLOCK add 1 mm to cord coil thick (so 15mm) so 25mm screws will fit properly!
 train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
@@ -90,15 +91,20 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, bac
                                  chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
                                  second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225, endshake=1.75)#, screws_from_back=[True, False])
 
+pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
+
 hands = clock.Hands(style=clock.HandStyle.MOON,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)
 
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
-assembly.show_clock(show_object)
+assembly.show_clock(show_object, with_rods=True)
 
+assembly.get_arbour_rod_lengths()
 if outputSTL:
+    pulley.outputSTLs(clockName, clockOutDir)
     motionWorks.outputSTLs(clockName,clockOutDir)
     pendulum.outputSTLs(clockName, clockOutDir)
     plates.outputSTLs(clockName, clockOutDir)

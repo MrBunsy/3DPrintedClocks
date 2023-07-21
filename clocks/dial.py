@@ -314,6 +314,9 @@ class MoonPhaseComplication3D:
         #TODO way to attach the two halves together? Inset little areas to hold glue like on the model trains?
         #panhead screws stick and out it slots on and rotates?
 
+        #slight inset areas to provide grip and space for glue, crude but should work
+        moon = moon.cut(cq.Workplane("XY").pushPoints([(self.moon_radius/2,0),(-self.moon_radius/2,0)]).rect(15,15).extrude(LAYER_THICK*2))
+
         return moon
 
     def get_relative_moon_z(self):
@@ -358,6 +361,32 @@ class RomanNumerals:
         self.thick = thick
         self.style = style
 
+class DialPillar:
+    def __init__(self, position, screws_absolute_positions, radius, length, embedded_nuts=False, screws=None):
+        #pillar position relative to the centre of the dial
+        self.position = position
+        #list of sets [(x,y),]
+        self.screws_absolute_positions = screws_absolute_positions
+        self.radius = radius
+        self.length = length
+        self.embedded_nuts = embedded_nuts
+        self.screws = screws
+        if self.screws is None:
+            self.screws = MachineScrew(3, countersunk=True)
+
+    def get_screws_relative_positions(self):
+        return [npToSet(np.subtract(screwpos, self.position)) for screwpos in self.screws_absolute_positions]
+
+    def get_pillar(self):
+        relative_screws = self.get_screws_relative_positions()
+        pillar = cq.Workplane("XY").circle(self.radius).extrude(self.length).faces(">Z").workplane().pushPoints().circle(self.screws.metric_thread/2).cutThruAll()
+
+        if self.embedded_nuts:
+            for screwpos in relative_screws:
+                pillar = pillar.cut(self.screws.getNutCutter(height=self.screws.getNutHeight()+1, withBridging=True).translate(screwpos))
+
+        return pillar
+
 class Dial:
     '''
     should really be created by the plates class
@@ -391,8 +420,9 @@ class Dial:
         #something for debugging
         self.configure_dimensions(support_length=30, support_d=15, outside_d=outside_d)
 
-        #overrides for the default fixing screw and pillar positions
+        #overrides for the default fixing screw and pillar positions DEPRECATED, switching to configuring whole pillars instead
         self.fixing_positions = []
+        self.pillars = []
 
     def get_hand_space_z(self):
         #how much space between the front of the dial and the hands should there be?
