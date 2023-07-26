@@ -498,6 +498,8 @@ class Line:
     def dot_product(self, b):
         return np.dot(self.dir, b.dir)
 
+
+
     # def intersection_with_circle(self, circle_centre, circle_r):
     #     '''
     #

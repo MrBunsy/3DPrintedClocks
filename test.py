@@ -130,9 +130,9 @@ if 'show_object' not in globals():
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
 
-fillet_test = cq.Workplane("XY").rect(50,20).extrude(10).edges(">Z").fillet(2)
-
-show_object(fillet_test)
+# fillet_test = cq.Workplane("XY").rect(50,20).extrude(10).edges(">Z").fillet(2)
+#
+# show_object(fillet_test)
 
 
 # pulley = BearingPulley(diameter=29, bearing=getBearingInfo(4))
@@ -683,3 +683,8 @@ if False:
 #
 # viewer.display(cq.Workplane("XY").rect(10,10).extrude(10))
 # viewer.save_screenshot("out/screenshottest.png")
+
+
+rolling_ball = RollingBallEscapement()
+
+show_object(rolling_ball.get_tray())

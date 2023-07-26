@@ -67,6 +67,9 @@ backPlateFromWall=40
 train.genGears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=2/2.4, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.printInfo(weight_kg=3)
+train.printInfo(weight_kg=2.5)
+train.printInfo(weight_kg=1)
+train.printInfo(weight_kg=2)
 train.getArbourWithConventionalNaming(0).printScrewLength()
 
 #tweaking angle slightly so that the second gear doesn't line up with an arbor that's between the plates
@@ -100,7 +103,7 @@ hands = clock.Hands(style=clock.HandStyle.MOON,  minuteFixing="square",  minuteF
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)
 
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
-assembly.show_clock(show_object, with_rods=True)
+assembly.show_clock(show_object, with_rods=True, plate_colour=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])
 
 assembly.get_arbour_rod_lengths()
 if outputSTL:

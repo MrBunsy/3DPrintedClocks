@@ -2293,3 +2293,113 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
         # # # print(svgString)
 
     os.system("{} -delay {}, -loop 0 {}/{}_*.svg {}/{}.gif".format(IMAGEMAGICK_CONVERT_PATH, timePerFrame,  path, name,path, name))
+
+class RollingBallEscapement:
+    def __init__(self, ball_diameter=15, tray_wide=200, tray_deep=150):
+        self.ball_diameter = ball_diameter
+        self.tray_wide = tray_wide
+        self.tray_deep = tray_deep
+        self.tray_thick=5
+
+    def get_tray(self):
+        tray = cq.Workplane("XY").rect(self.tray_wide, self.tray_deep).extrude(self.tray_thick)
+
+        #TODO
+        track_wide = self.ball_diameter*0.5
+        track_deep = 10#self.ball_diameter*0.2
+
+        zigzags = 4
+
+
+        zigzag_total_width = self.tray_wide
+        zigzag_total_depth = self.tray_deep
+
+        zigzag_inner_depth = self.tray_wide - self.ball_diameter*6.5
+
+        #width of one V
+        zigzag_distance = zigzag_total_width / zigzags
+        # from_edge = self.ball_diameter*1
+        # corner_positions = []
+        # #at back, number of \/
+        # zigzags = floor((self.tray_wide - from_edge*2)/zigzag_distance)
+        # centre_points = []
+        # depth = self.tray_deep
+        #
+        # zigzag_straight_depth = self.tray_deep - self.ball_diameter*2
+        # #length of zigzag if it didn't have rounded ends
+        # zigzag_total_depth = self.tray_deep
+
+        angle = math.atan(zigzag_distance/(2*zigzag_total_depth))
+
+        # y_back = -zigzag_inner_depth/2
+        # y_front = zigzag_inner_depth/2
+        # x_back = -self.tray_wide/2 + from_edge
+        # x_front = x_back + zig_distance/2
+        # for i in range(zigzags):
+        #     points.append((x_back + i*zig_distance, y_back))
+        #     points.append((x_front + i * zig_distance, y_front))
+        # print(points)
+
+
+
+
+        #of the pointy bit of a zigzag
+        last_back_point = (-zigzag_total_width/2, -zigzag_total_depth/2)
+
+        points = [last_back_point]
+
+        # front_point = (last_back_left[0] + zigzag_distance / 2, zigzag_total_depth / 2)
+        # left_line = Line(last_back_left, anotherPoint=front_point)
+
+        angle = math.atan((zigzag_distance/2)/zigzag_total_depth)
+
+        cutter = cq.Workplane("XY")
+
+        straight_section_length = zigzag_inner_depth/math.cos(angle)
+
+        cylinder = cq.Workplane("XZ").circle(self.ball_diameter/2).extrude(straight_section_length)
+
+        path = cq.Workplane("XY").moveTo(last_back_point[0], last_back_point[1])
+
+        front_cutoff_line = Line((0,zigzag_inner_depth/2), direction=(1,0))
+        back_cutoff_line = Line((0, -zigzag_inner_depth / 2), direction=(1, 0))
+        centre_line = Line((0,0), direction=(1,0))
+
+        track_rectangle = cq.Workplane("XY").rect(track_wide, straight_section_length).extrude(track_deep)
+
+        for i in range(zigzags):
+            #points where the "true" zigzag is pointy, but we'll cut off earlier with a curve
+            front_point = (last_back_point[0] + zigzag_distance/2, zigzag_total_depth/2)
+            back_right = (last_back_point[0] + zigzag_distance, last_back_point[1])
+            left_line = Line(last_back_point, anotherPoint=front_point)
+            right_line = Line(front_point, anotherPoint=back_right)
+            points = points + [front_point, back_right]
+            #
+            last_back_point = back_right
+
+            back_left_curve_start = back_cutoff_line.intersection(left_line)
+            front_left_curve_start = front_cutoff_line.intersection(left_line)
+            front_right_curve_start = front_cutoff_line.intersection(right_line)
+            back_right_curve_start = back_cutoff_line.intersection(right_line)
+            centre_left = centre_line.intersection(left_line)
+            centre_right = centre_line.intersection(right_line)
+
+            cutter = cutter.union(track_rectangle.rotate((0,0,0),(0,0,1),radToDeg(left_line.getAngle()+math.pi/2)).translate(centre_left))
+            cutter = cutter.union(track_rectangle.rotate((0, 0, 0), (0, 0, 1), radToDeg(right_line.getAngle()+math.pi/2)).translate(centre_right))
+
+            if i > 0:
+                path = path.spline([back_left_curve_start], includeCurrent=True, tangents=[right_line.dir, left_line.dir])
+
+            path = path.lineTo(front_left_curve_start[0], front_left_curve_start[1]).spline([front_right_curve_start], includeCurrent=True, tangents=[left_line.dir, right_line.dir]).lineTo(back_right[0], back_right[1])
+
+
+        # return path
+        zigzag = cq.Workplane("XY").polyline(points)
+        # return zigzag
+        # return get_stroke_line(points, track_wide, track_deep)
+        # zigzag = cq.Workplane("XY").lineTo(100,100).lineTo(200,50)
+
+        return cq.Workplane("XZ").circle(self.ball_diameter/2).sweep(path)#, makeSolid=True, isFrenet=True)
+        # return cutter
+        # print(points)
+        return tray.cut(cutter)
