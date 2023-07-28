@@ -2295,7 +2295,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
     os.system("{} -delay {}, -loop 0 {}/{}_*.svg {}/{}.gif".format(IMAGEMAGICK_CONVERT_PATH, timePerFrame,  path, name,path, name))
 
 class RollingBallEscapement:
-    def __init__(self, ball_diameter=15, tray_wide=200, tray_deep=150):
+    def __init__(self, ball_diameter=15, tray_wide=250, tray_deep=150):
         self.ball_diameter = ball_diameter
         self.tray_wide = tray_wide
         self.tray_deep = tray_deep
@@ -2308,13 +2308,13 @@ class RollingBallEscapement:
         track_wide = self.ball_diameter*0.5
         track_deep = 10#self.ball_diameter*0.2
 
-        zigzags = 4
+        zigzags = 7
 
 
         zigzag_total_width = self.tray_wide
-        zigzag_total_depth = self.tray_deep
+        zigzag_total_depth = self.tray_deep*1.5
 
-        zigzag_inner_depth = self.tray_wide - self.ball_diameter*6.5
+        zigzag_inner_depth = self.tray_deep-self.ball_diameter*2
 
         #width of one V
         zigzag_distance = zigzag_total_width / zigzags
@@ -2368,15 +2368,16 @@ class RollingBallEscapement:
         track_rectangle = cq.Workplane("XY").rect(track_wide, straight_section_length).extrude(track_deep)
 
         for i in range(zigzags):
-            #points where the "true" zigzag is pointy, but we'll cut off earlier with a curve
+            #points in the centre of the line where the "true" zigzag is pointy, but we'll cut off earlier with a curve
             front_point = (last_back_point[0] + zigzag_distance/2, zigzag_total_depth/2)
             back_right = (last_back_point[0] + zigzag_distance, last_back_point[1])
             left_line = Line(last_back_point, anotherPoint=front_point)
             right_line = Line(front_point, anotherPoint=back_right)
             points = points + [front_point, back_right]
             #
-            last_back_point = back_right
 
+
+            #again points in the centre of the line
             back_left_curve_start = back_cutoff_line.intersection(left_line)
             front_left_curve_start = front_cutoff_line.intersection(left_line)
             front_right_curve_start = front_cutoff_line.intersection(right_line)
@@ -2384,13 +2385,42 @@ class RollingBallEscapement:
             centre_left = centre_line.intersection(left_line)
             centre_right = centre_line.intersection(right_line)
 
+            #the curve at the front of the zigzag
+            left_front_end_line = Line(front_left_curve_start, direction=left_line.get_perpendicular_direction())
+            right_front_end_line = Line(front_right_curve_start, direction= right_line.get_perpendicular_direction())
+
+            front_circle_centre = left_front_end_line.intersection(right_front_end_line)
+            circle_centre_r = distanceBetweenTwoPoints(front_left_curve_start, front_circle_centre)
+            circle_inner_r = circle_centre_r - track_wide/2
+            circle_outer_r = circle_centre_r + track_wide/2
+
+
             cutter = cutter.union(track_rectangle.rotate((0,0,0),(0,0,1),radToDeg(left_line.getAngle()+math.pi/2)).translate(centre_left))
             cutter = cutter.union(track_rectangle.rotate((0, 0, 0), (0, 0, 1), radToDeg(right_line.getAngle()+math.pi/2)).translate(centre_right))
 
-            if i > 0:
-                path = path.spline([back_left_curve_start], includeCurrent=True, tangents=[right_line.dir, left_line.dir])
+            #crude but easy to calculate cutter to turn the circle into just the curved bit of track we want
+            front_circle_cutter = cq.Workplane("XY").moveTo(front_circle_centre[0], front_circle_centre[1]).lineTo(front_left_curve_start[0], front_left_curve_start[1])\
+                .lineTo(back_left_curve_start[0], back_left_curve_start[1]).lineTo(back_right_curve_start[0], back_right_curve_start[1]).\
+                lineTo(front_right_curve_start[0], front_right_curve_start[1]).close().extrude(track_deep)
 
-            path = path.lineTo(front_left_curve_start[0], front_left_curve_start[1]).spline([front_right_curve_start], includeCurrent=True, tangents=[left_line.dir, right_line.dir]).lineTo(back_right[0], back_right[1])
+            cutter = cutter.union(cq.Workplane("XY").circle(circle_outer_r).circle(circle_inner_r).extrude(track_deep).translate(front_circle_centre).cut(front_circle_cutter))
+
+            if i > 0:
+                #the curve at the BACK of the zigzag, from the previous zigzag to this one
+                # left_back_end_line = Line(back_left_curve_start, direction=left_line.get_perpendicular_direction())
+                # previous_right_back_end_line = Line(last_back_point, direction=right_line.get_perpendicular_direction())
+                # back_circle_centre = left_back_end_line.intersection(previous_right_back_end_line)
+                back_circle_centre = (front_circle_centre[0] - zigzag_distance/2, -front_circle_centre[1])
+                back_circle_cutter = cq.Workplane("XY").moveTo(back_circle_centre[0], back_circle_centre[1]).lineTo(back_left_curve_start[0], back_left_curve_start[1]).\
+                    lineTo(front_left_curve_start[0], front_left_curve_start[1]).lineTo(front_right_curve_start[0] - zigzag_distance, front_right_curve_start[1]).\
+                    lineTo(back_right_curve_start[0] - zigzag_distance, back_right_curve_start[1]).close().extrude(track_deep)
+                cutter = cutter.union(cq.Workplane("XY").circle(circle_outer_r).circle(circle_inner_r).extrude(track_deep).translate(back_circle_centre).cut(back_circle_cutter))
+
+            last_back_point = back_right
+
+            #     path = path.spline([back_left_curve_start], includeCurrent=True, tangents=[right_line.get_direction(True), left_line.get_direction(True)])
+            #
+            # path = path.lineTo(front_left_curve_start[0], front_left_curve_start[1]).spline([front_right_curve_start], includeCurrent=True, tangents=[left_line.dir, right_line.dir]).lineTo(back_right[0], back_right[1])
 
 
         # return path
@@ -2399,7 +2429,7 @@ class RollingBallEscapement:
         # return get_stroke_line(points, track_wide, track_deep)
         # zigzag = cq.Workplane("XY").lineTo(100,100).lineTo(200,50)
 
-        return cq.Workplane("XZ").circle(self.ball_diameter/2).sweep(path)#, makeSolid=True, isFrenet=True)
+        # return cq.Workplane("XZ").circle(self.ball_diameter/2).sweep(path)#, makeSolid=True, isFrenet=True)
         # return cutter
         # print(points)
         return tray.cut(cutter)

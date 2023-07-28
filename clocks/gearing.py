@@ -1068,10 +1068,10 @@ class WheelPinionPair:
             wheel_addendum_factor*=1.2
 
         if pinionTeeth > 20 and self.gear_ratio < 3:
-            # print("Reducing wheel addendum factor wheel teeth: {}, pinion teeth: {}".format(wheelTeeth, pinionTeeth))
+            print("Reducing wheel addendum factor wheel teeth: {}, pinion teeth: {}".format(wheelTeeth, pinionTeeth))
             #bodge - got a clock with a really large pinion on the escape wheel and it keeps binding with the previous wheel
             #TODO investigate this further - it might affect the motion works jamming I had on clock 19 and would be good to understand properly
-            wheel_addendum_factor *= 0.8
+            wheel_addendum_factor *= 0.7
 
         # BS 978 via https://www.csparks.com/watchmaking/CycloidalGears/index.jxl says addendum radius factor is 1.4*addendum factor
         #(this is aproximating the real curve, i think?)
@@ -1085,6 +1085,11 @@ class WheelPinionPair:
         #                                                                                                                                         wheel_dedendum_factor))
         #based on the practical wheel addendum factor
         pinion_dedendum_factor = wheel_addendum_factor*0.95 + 0.4
+
+        if module < 0.9:
+            # another bodge
+            pinion_dedendum_factor*=1.1
+
         pinion_tooth_factor = 1.25
         if pinionTeeth <= 10:
             pinion_tooth_factor = 1.05
@@ -1121,6 +1126,13 @@ class WheelPinionPair:
         addendumFactor = pinionTeeth / 4.0 * (1.0 - k + math.sqrt( 1.0 + k * k - 2.0 * k * math.cos(theta)) )
         # print("addendum Factor", addendumFactor)
         return addendumFactor
+
+    def get_model(self, thick=2, offset_angle_deg=0):
+        pinion = self.pinion.get3D(3,thick=thick)
+        wheel = self.wheel.get3D(3, thick=thick).rotate((0,0,0), (0,0,1), offset_angle_deg)
+        model = wheel.add(pinion.translate((self.centre_distance,0,0)))
+        return model
+
 
 class WheelPinionBeveledPair:
     '''

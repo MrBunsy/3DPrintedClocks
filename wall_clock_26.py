@@ -20,9 +20,7 @@ source.
 from clocks import clock
 
 '''
-Trying a short pendulum with the second hand in a sub dial
-
-Probably a good one to give to granny
+Copy of clock 20, but with a larger module size (might fix reliability issues) and 1/3s pendulum
 
 '''
 outputSTL = False
@@ -33,7 +31,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_20_geartweak2"
+clockName="wall_clock_26"
 clockOutDir="out"
 gearStyle=clock.GearStyle.ARCS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -51,13 +49,16 @@ drop=1.75
 lock=1.75
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 
-train = clock.GoingTrain(pendulum_period=0.75, wheels=4, escapement=escapement, maxWeightDrop=1000, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24, supportSecondHand=True)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, maxWeightDrop=1000, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24, supportSecondHand=True)#, huygensMaintainingPower=True)
 
 moduleReduction=0.9#0.85
 
-# train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=20, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
-# train.calculateRatios(max_wheel_teeth=70, min_pinion_teeth=12, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True)
-train.setRatios( [[72, 10], [75, 9], [60, 27]])
+# train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
+# train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
+#1s
+# train.setRatios( [[75, 9], [72, 10], [55, 33]])
+#2/3s
+train.setRatios([[75, 9], [72, 10], [55, 22]])
 
 #think this is promising for good compromise of size
 #TODO NEXT CLOCK add 1 mm to cord coil thick (so 15mm) so 25mm screws will fit properly!
@@ -71,7 +72,7 @@ backPlateFromWall=30
 
 pinion_extensions = {1:6, 2:4}
 
-train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+train.genGears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
 train.printInfo(weight_kg=1.5)
 train.getArbourWithConventionalNaming(0).printScrewLength()
@@ -83,7 +84,7 @@ motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 
-dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=10, pendulumSticksOut=pendulumSticksOut, name="Wall 20",style=clock.ClockPlateStyle.COMPACT,

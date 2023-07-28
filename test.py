@@ -688,3 +688,7 @@ if False:
 rolling_ball = RollingBallEscapement()
 
 show_object(rolling_ball.get_tray())
+
+# pair = WheelPinionPair(wheelTeeth=55,pinionTeeth= 22, module=0.891)
+#
+# show_object(pair.get_model(offset_angle_deg=-0.3))

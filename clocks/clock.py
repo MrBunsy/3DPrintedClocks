@@ -204,7 +204,7 @@ class GoingTrain:
     TODO make this generic and re-usable, I've got similar logic over in calculating chain wheel ratios and motion works
     '''
     def calculateRatios(self, moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
-                        max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True):
+                        max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True, allow_integer_ratio=False):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
@@ -302,7 +302,8 @@ class GoingTrain:
                 ratio = allTrains[c][p][0] / allTrains[c][p][1]
                 if ratio == round(ratio):
                     intRatio = True
-                    break
+                    if not allow_integer_ratio:
+                        break
                 totalRatio *= ratio
                 totalTeeth += allTrains[c][p][0] + allTrains[c][p][1]
                 totalWheelTeeth += allTrains[c][p][0]
@@ -331,6 +332,9 @@ class GoingTrain:
 
             totalTime = totalRatio * self.escapement_time
             error = targetTime - totalTime
+            if intRatio:
+                #avoid if we can
+                weighting+=100
 
             train = {"time": totalTime, "train": allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting}
             if fits and abs(error) < max_error and not intRatio:

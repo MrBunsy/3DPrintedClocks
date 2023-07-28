@@ -482,6 +482,19 @@ class Line:
         if both_directions:
             line = line.add(cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(-self.dir[0]*length, -self.dir[1]*length))
         return line
+    def get_direction(self, negative=False):
+        if negative:
+            return (-self.dir[0], -self.dir[1])
+        else:
+            return self.dir
+    def get_direction_towards(self, b):
+        '''
+        get direction, positive towards the point
+        '''
+        if self.dot_product(b) > 0:
+            return self.dir
+        else:
+            return self.get_direction(negative=True)
 
     # def getGradient(self):
     #     return self.dir[1] / self.dir[0]
