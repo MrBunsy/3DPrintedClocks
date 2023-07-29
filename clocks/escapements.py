@@ -2299,20 +2299,20 @@ class RollingBallEscapement:
         self.ball_diameter = ball_diameter
         self.tray_wide = tray_wide
         self.tray_deep = tray_deep
-        self.tray_thick=5
+        self.tray_thick=4
 
     def get_tray(self):
         tray = cq.Workplane("XY").rect(self.tray_wide, self.tray_deep).extrude(self.tray_thick)
 
         #TODO
         track_wide = self.ball_diameter*0.5
-        track_deep = 10#self.ball_diameter*0.2
+        track_deep = 5#self.ball_diameter*0.2
 
         zigzags = 7
 
 
-        zigzag_total_width = self.tray_wide
-        zigzag_total_depth = self.tray_deep*1.5
+        zigzag_total_width = self.tray_wide-4
+        zigzag_total_depth = self.tray_deep*1.75
 
         zigzag_inner_depth = self.tray_deep-self.ball_diameter*2
 
