@@ -2358,18 +2358,19 @@ class RollingBallEscapement:
         #debug
         # for pivot in front_pivot_points + back_pivot_points:
         #     cutter = cutter.add(cq.Workplane("XY").circle(inner_radius).extrude(track_deep).translate(pivot))
-
+        previous_f2b_straight_section_angle = None
+        previous_f2b_straight_section_centre = None
         for i, front_pivot in enumerate(front_pivot_points):
-            last_back_pivot = back_pivot_points[i]
+            back_pivot = back_pivot_points[i]
             next_back_pivot = back_pivot_points[i+1]
             x = inner_radius + track_wide / 2
 
             #from last back to front
-            b2f_distance = np.linalg.norm(np.subtract(last_back_pivot, front_pivot))
-            b2f_diff = np.subtract(front_pivot, last_back_pivot)
+            b2f_distance = np.linalg.norm(np.subtract(back_pivot, front_pivot))
+            b2f_diff = np.subtract(front_pivot, back_pivot)
 
             b2f_straight_section_length = 2 * math.sqrt((b2f_distance**2)/4 - x**2)
-            b2f_straight_section_centre = averageOfTwoPoints(last_back_pivot, front_pivot)
+            b2f_straight_section_centre = averageOfTwoPoints(back_pivot, front_pivot)
             b2f_straight_section_angle = math.atan2(b2f_diff[1], b2f_diff[0])+math.acos(2*x/b2f_distance)
 
             cutter = cutter.union(cq.Workplane("XY").rect(track_wide, b2f_straight_section_length).extrude(track_deep).rotate((0,0,0), (0,0,1), radToDeg(b2f_straight_section_angle)).translate(b2f_straight_section_centre))
@@ -2395,6 +2396,20 @@ class RollingBallEscapement:
             circle = circle.cut(circle_cutter)
             cutter = cutter.union(circle)
 
+            if i > 0:
+                #curve at the back left of this zigzag
+                last_front_pivot = front_pivot_points[i-1]
+                back_right = np.add(back_pivot, polar(b2f_straight_section_angle, inner_radius))
+                back_left = np.add(back_pivot, polar(f2b_straight_section_angle+math.pi, inner_radius))
+
+                circle = cq.Workplane("XY").circle(inner_radius + track_wide).circle(inner_radius).extrude(track_deep).translate(back_pivot)
+                circle_cutter = cq.Workplane("XY").moveTo(previous_f2b_straight_section_centre[0], previous_f2b_straight_section_centre[1]).\
+                    lineTo(b2f_straight_section_centre[0], b2f_straight_section_centre[1]).lineTo(back_right[0], back_right[1]).lineTo(back_left[0], back_left[1]).close().extrude(track_deep)
+                # cutter = cutter.union(circle_cutter)
+                cutter = cutter.union(circle.cut(circle_cutter))
+
+            previous_f2b_straight_section_angle = f2b_straight_section_angle
+            previous_f2b_straight_section_centre = f2b_straight_section_centre
         # return cutter
         #
         #
