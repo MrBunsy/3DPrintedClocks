@@ -2314,7 +2314,7 @@ class RollingBallEscapement:
 
 
         inner_radius = 3
-        centre_pivots_distance = self.ball_diameter*3
+        centre_pivots_distance = self.ball_diameter*2.4
         edge_pivots_distance = self.ball_diameter*3.5
 
         zigzags = floor((tray_wide - 2 * edge_pivots_distance) / centre_pivots_distance) + 2
@@ -2407,6 +2407,15 @@ class RollingBallEscapement:
                     lineTo(b2f_straight_section_centre[0], b2f_straight_section_centre[1]).lineTo(back_right[0], back_right[1]).lineTo(back_left[0], back_left[1]).close().extrude(track_deep)
                 # cutter = cutter.union(circle_cutter)
                 cutter = cutter.union(circle.cut(circle_cutter))
+            else:
+                #cap off the start
+                cutter = cutter.union(cq.Workplane("XY").circle(track_wide/2).extrude(track_deep).translate((0,b2f_straight_section_length/2))
+                                      .rotate((0,0,0),(0,0,1), radToDeg(b2f_straight_section_angle)).translate(b2f_straight_section_centre))
+
+            if i == zigzags-1:
+                #cap off the end
+                cutter = cutter.union(cq.Workplane("XY").circle(track_wide/2).extrude(track_deep).translate((0, f2b_straight_section_length/2))
+                                      .rotate((0,0,0),(0,0,1),radToDeg(f2b_straight_section_angle)).translate(f2b_straight_section_centre))
 
             previous_f2b_straight_section_angle = f2b_straight_section_angle
             previous_f2b_straight_section_centre = f2b_straight_section_centre
