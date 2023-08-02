@@ -687,12 +687,12 @@ if False:
 
 rolling_ball = RollingBallEscapement()
 
-tray = rolling_ball.get_tray()
+tray = rolling_ball.get_track_assembled()
 
 show_object(tray)
 out = "tray.stl"
 print("Outputting ", out)
-exporters.export(tray, out)
+exporters.export(rolling_ball.get_track(), out)
 
 # pair = WheelPinionPair(wheelTeeth=55,pinionTeeth= 22, module=0.891)
 #

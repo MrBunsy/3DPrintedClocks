@@ -937,7 +937,7 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.getMaxRadius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def addToWheel(self,wheel, holeD=0, thick=4, style="HAC", pinionThick=8, capThick=2, clockwise_from_pinion_side=True, pinion_extension=0):
+    def addToWheel(self,wheel, holeD=0, thick=4, style=GearStyle.ARCS, pinionThick=8, capThick=2, clockwise_from_pinion_side=True, pinion_extension=0):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
