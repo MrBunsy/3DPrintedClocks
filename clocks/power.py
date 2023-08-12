@@ -18,6 +18,7 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import math
+import numpy as np
 
 from .utility import *
 from .gearing import *
@@ -699,16 +700,20 @@ class MainSpring:
     '''
     Class to represent the dimensions of a mainspring
     '''
-    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True):
+    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50):
         self.height=height
         if hook_height < 0:
             hook_height = height / 3
         self.hook_height = hook_height
         self.thick=thick
         self.loop_end=loop_end
+        self.barrel_diameter = barrel_diameter
 
 
 class SpringArbour:
+    '''
+    not taking this design further, attempting springs with SpringBarrel
+    '''
 
     def __init__(self, metric_rod_size=3, spring=None, bearing=None, min_inner_diameter=4.5, power_clockwise=True, ratchet_thick=4):
         '''
@@ -2343,8 +2348,8 @@ class PocketChainWheel:
 class Ratchet:
 
     '''
-    Plan is to do this slightly backwards - so the 'clicks' are attached to the chain wheel and the teeth are on the
-    gear-wheel.
+    This is backwards from a traditional ratchet, the 'clicks' are attached to the chain wheel and the teeth are on the
+    gear-wheel. The entire thing is 3D printed and relies on the springyness of PETG
 
     This means that they can be printed as only two parts with minimal screws to keep everything together
     '''
@@ -2497,3 +2502,117 @@ class Ratchet:
 
 
         return wheel
+
+class TraditionalRatchet:
+    '''
+    For the spring barrel I need to be able to let down the mainspring, so this is a more traditional ratchet where I can release the pawl manually
+
+    made up of a gear (with teeth), a pawl (which goes click) and a spring (which keeps the pawl in position)
+
+    undecided on 3D printed spring or steel spring
+
+    '''
+
+    def __init__(self, gear_diameter, thick=5, power_clockwise=True, fixing_screws=None):
+        self.gear_diameter = gear_diameter
+        self.thick = thick
+        self.power_clockwise = power_clockwise
+
+        self.fixing_screws = fixing_screws
+
+        if self.fixing_screws is None:
+            #pan headed M3 by default
+            self.fixing_screws = MachineScrew(3)
+
+
+
+        self.tooth_deep=3
+        self.teeth = floor(self.gear_diameter / 5)
+
+        self.tooth_angle = math.pi * 2 / self.teeth
+
+        self.pawl_diameter = self.fixing_screws.metric_thread*2.5
+
+        # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
+
+        self.pawl_length = self.gear_diameter*0.5
+
+        direction = -1 if self.power_clockwise else 1
+        #TODO some way of ensuring it's "safe": it will stay locked without the spring
+        #this should be a case of ensuring it's to the correct side of the line perpendicular to the tooth radial
+        #I think this is also the same as ensuring it's on the "outside" of the tangent from the end of the tooth it locks against
+        # self.pawl_fixing = polar(direction * self.tooth_angle*self.pawl_length, self.max_diameter/2 - self.pawl_diameter/2)
+
+        #this should always be safe, it's half a tooth depth further outside the tangent than needed to be safe, so even if it just
+        #catches the tip of the tooth it should be forced into a safer position
+        self.pawl_fixing = (self.gear_diameter/2 + self.tooth_deep/2, direction*self.pawl_length)
+
+        if not self.is_pawl_position_safe():
+            raise ValueError("Pawl is unsafe!")
+
+
+
+    def get_max_diameter(self):
+        return np.linalg.norm(self.pawl_fixing) + self.pawl_diameter/2
+
+    def is_pawl_position_safe(self):
+        '''
+        assume pawl engages with the "first" tooth, which is on the +ve x axis
+
+        take the tangent of the gear at the tip of the first tooth
+
+        if the pawl fixing (the point it pivots around) is on the other side of this tangent than the gear centre, it's safe
+        it will lock against the tooth under pressure even without the spring holding it there
+
+        '''
+        tooth_tip_pos = (self.gear_diameter/2, 0)
+        tooth_to_pawl = np.subtract(self.pawl_fixing, tooth_tip_pos)
+
+        dot_product = np.dot(tooth_tip_pos, tooth_to_pawl)
+        return dot_product > 0
+
+
+    def get_gear(self):
+        gear = cq.Workplane("XY").moveTo(self.gear_diameter/2, 0)
+
+        direction = -1 if self.power_clockwise else 1
+
+        for tooth in range(self.teeth):
+            start_angle = tooth * self.tooth_angle * direction
+            end_angle = start_angle + self.tooth_angle * direction
+
+            start_inner = polar(start_angle, self.gear_diameter/2 - self.tooth_deep)
+            end = polar(end_angle, self.gear_diameter/2)
+
+            gear = gear.lineTo(start_inner[0], start_inner[1]).radiusArc(end, -direction*self.gear_diameter/2)
+
+        gear = gear.close()
+
+        gear = gear.extrude(self.thick)
+
+        return gear
+
+    def get_pawl(self):
+        # pawl = cq.Workplane("XY").circle(3).translate(self.pawl_fixing)
+
+        direction = -1 if self.power_clockwise else 1
+
+        tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
+        next_tooth_outer = polar(direction * self.tooth_angle, self.gear_diameter/2)
+
+        pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0).lineTo(self.pawl_fixing[0] + self.pawl_diameter/2, self.pawl_fixing[1])
+
+
+
+        pawl_inner = (self.pawl_fixing[0] - self.pawl_diameter/2, self.pawl_fixing[1])
+
+        pawl = pawl.radiusArc(pawl_inner, self.pawl_diameter/2).lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
+
+
+
+        pawl = pawl.close().extrude(self.thick)
+
+        pawl = pawl.faces(">Z").workplane().moveTo(self.pawl_fixing[0], self.pawl_fixing[1]).circle((self.fixing_screws.metric_thread + LOOSE_FIT_ON_ROD) / 2).cutThruAll()
+
+
+        return pawl

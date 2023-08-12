@@ -47,7 +47,8 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 lift=3.5
 drop=1.75
 lock=1.75
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5,
+                                    toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, maxWeightDrop=1000, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.5*24, supportSecondHand=True)#, huygensMaintainingPower=True)
 
@@ -88,7 +89,7 @@ dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=cloc
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=10, pendulumSticksOut=pendulumSticksOut, name="Wall 20",style=clock.ClockPlateStyle.COMPACT,
-                                 heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
+                                 heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,
                                  backPlateFromWall=backPlateFromWall, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=40,
                                  allow_bottom_pillar_height_reduction=False, endshake=1.5)
