@@ -2513,10 +2513,12 @@ class TraditionalRatchet:
 
     '''
 
-    def __init__(self, gear_diameter, thick=5, power_clockwise=True, fixing_screws=None):
+    def __init__(self, gear_diameter, thick=5, power_clockwise=True, fixing_screws=None, pawl_angle=math.pi/2):
         self.gear_diameter = gear_diameter
         self.thick = thick
         self.power_clockwise = power_clockwise
+        # by default set angle to pi/2 so the pawl is at the top of the ratchet - then if the spring fails gravity should help keep it locked in position
+        self.pawl_angle = pawl_angle
 
         self.fixing_screws = fixing_screws
 
@@ -2531,7 +2533,7 @@ class TraditionalRatchet:
 
         self.tooth_angle = math.pi * 2 / self.teeth
 
-        self.pawl_diameter = self.fixing_screws.metric_thread*2.5
+        self.pawl_diameter = self.fixing_screws.metric_thread*3
 
         # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
 
@@ -2549,6 +2551,8 @@ class TraditionalRatchet:
 
         if not self.is_pawl_position_safe():
             raise ValueError("Pawl is unsafe!")
+
+        self.rotate_by_deg = radToDeg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
 
 
@@ -2590,7 +2594,7 @@ class TraditionalRatchet:
 
         gear = gear.extrude(self.thick)
 
-        return gear
+        return gear.rotate((0,0,0),(0,0,1), self.rotate_by_deg)
 
     def get_pawl(self):
         # pawl = cq.Workplane("XY").circle(3).translate(self.pawl_fixing)
@@ -2600,13 +2604,20 @@ class TraditionalRatchet:
         tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
         next_tooth_outer = polar(direction * self.tooth_angle, self.gear_diameter/2)
 
-        pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0).lineTo(self.pawl_fixing[0] + self.pawl_diameter/2, self.pawl_fixing[1])
+        pawl_inner = (self.pawl_fixing[0] - self.pawl_diameter / 2, self.pawl_fixing[1])
+        pawl_outer = (self.pawl_fixing[0] + self.pawl_diameter / 2, self.pawl_fixing[1])
 
+        #contact with the tooth
+        pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0)
 
+        pawl = pawl.lineTo(pawl_outer[0], pawl_outer[1])
+        # #round the back of the fixing
+        pawl = pawl.radiusArc(pawl_inner, -direction*self.pawl_diameter/2)
+        # pawl = pawl.tangentArcPoint(pawl_inner)
+        pawl = pawl.lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
+        # pawl = pawl.radiusArc(tooth_inner, direction * self.gear_diameter*0.75)
 
-        pawl_inner = (self.pawl_fixing[0] - self.pawl_diameter/2, self.pawl_fixing[1])
-
-        pawl = pawl.radiusArc(pawl_inner, self.pawl_diameter/2).lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
+        # pawl = pawl.spline([pawl_outer, pawl_inner, next_tooth_outer] ,includeCurrent=True, tangents=[(0,direction), (0,direction), (0,-direction), None]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
 
 
 
@@ -2615,4 +2626,4 @@ class TraditionalRatchet:
         pawl = pawl.faces(">Z").workplane().moveTo(self.pawl_fixing[0], self.pawl_fixing[1]).circle((self.fixing_screws.metric_thread + LOOSE_FIT_ON_ROD) / 2).cutThruAll()
 
 
-        return pawl
+        return pawl.rotate((0,0,0),(0,0,1), self.rotate_by_deg)
