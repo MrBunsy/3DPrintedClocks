@@ -796,6 +796,7 @@ class GoingTrain:
 
         #the module of each wheel is slightly smaller than the preceeding wheel
         pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i]) for i,wheel in enumerate(self.trains[0]["train"])]
+        pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i]) for i,wheel in enumerate(self.trains[0]["train"])]
 
 
 
@@ -2283,49 +2284,7 @@ class SimpleClockPlates:
 
     def get_text(self):
 
-        class TextSpace:
-            def __init__(self, x, y, width, height, horizontal, inverted=True):
-                self.x = x
-                self.y = y
-                self.width = width
-                self.height = height
-                self.horizontal = horizontal
-                self.text = None
-                self.text_size = 10
-                self.inverted = inverted
 
-            def set_text(self,text):
-                self.text = text
-
-            def set_size(self, size):
-                self.text_size = size
-
-            def get_text_shape(self):
-                '''
-                get the text centred properly
-                '''
-                shape = cq.Workplane("XY").text(self.text, self.text_size, LAYER_THICK, kind="bold")
-                bb = shape.val().BoundingBox()
-
-                #actually centre it, the align feature of text does...something else
-                shape = shape.translate((-bb.center.x, -bb.center.y))
-
-                if not self.horizontal:
-                    shape = shape.rotate((0,0,0),(0,0,1),90)
-
-                if self.inverted:
-                    shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0,0,LAYER_THICK))
-                shape = shape.translate((self.x,self.y))
-
-                return shape
-
-            def get_text_max_size(self):
-                shape = self.get_text_shape()
-                bb = shape.val().BoundingBox()
-                width_ratio = self.width / bb.xlen
-                height_ratio = self.height / bb.ylen
-
-                return self.text_size * min(width_ratio, height_ratio)
 
 
         all_text = cq.Workplane("XY")

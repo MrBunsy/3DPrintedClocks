@@ -1190,7 +1190,7 @@ class Hands:
 
         return hands
 
-    def getAssembled(self, time_minute=10, time_hour=10, time_seconds=0, gap_size=0, include_seconds=True):
+    def getAssembled(self, time_minute=10, time_hour=10, time_seconds=0, gap_size=0, include_seconds=True, flatten=False):
         '''
         get minute and hour hands assembled centred around 0,0
         gap_size is how much gap between top of hour hand and bottom of minute hand
@@ -1217,19 +1217,19 @@ class Hands:
             except:
                 pass
 
-        minuteHand = minuteHand.mirror().translate((0, 0, self.thick*2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
-        hourHand = hourHand.mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-        secondHand = secondHand.mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+        minuteHand = minuteHand.mirror().translate((0, 0, 0 if flatten else self.thick*2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+        hourHand = hourHand.mirror().translate((0, 0, 0 if flatten else self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+        secondHand = secondHand.mirror().translate((0, 0, 0 if flatten else self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
         if self.second_hand_centred:
             secondHand = secondHand.translate((0,0,self.thick*3))
         else:
             secondHand = secondHand.translate((0, self.length * 0.5, 0))
 
-        all = minuteHand.add(hourHand)
+        all = minuteHand.union(hourHand)
 
         if include_seconds:
-            all = all.add(secondHand)
+            all = all.union(secondHand)
 
         return all
 

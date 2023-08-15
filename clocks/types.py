@@ -163,3 +163,5 @@ class DialStyle(Enum):
     #TODO dots for minutes
     CIRCLES = "circles"
     TONY_THE_CLOCK="tony_the_clock"
+    #just numbers
+    SIMPLE_ARABIC="simple_arabic"

@@ -681,7 +681,28 @@ class Dial:
             extra = 2
             return self.get_quad_marks(self.outside_d/2, self.outside_d * tony_the_clock["dial_marker_length"]/tony_the_clock["diameter"] + extra,
                                        self.outside_d * tony_the_clock["dial_marker_width"]/tony_the_clock["diameter"], self.outside_d * tony_the_clock["dial_edge_width"]/tony_the_clock["diameter"] - extra)
+        elif self.style == DialStyle.SIMPLE_ARABIC:
+            return self.get_numbers_detail(self.outside_d/2 - self.dial_width/2, self.dial_width*0.9)
         raise ValueError("Unsupported dial type")
+
+    def get_numbers_detail(self, centre_r, number_height):
+        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i)) for i in range(1,13)]
+
+        max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
+
+        for space in number_spaces:
+            space.set_size(max_text_size)
+
+        dial = cq.Workplane("XY")
+        for i in range(12):
+            angle = math.pi/2 + (i+1)*math.pi*2/12
+            number_spaces[i].x, number_spaces[i].y = polar(angle, centre_r)
+            # dial = dial.add(number_spaces[i].get_text_shape().rotate((0,0,0),(0,0,1), radToDeg(angle+math.pi/2)).translate(polar(angle, centre_r)))
+            dial = dial.add(number_spaces[i].get_text_shape())
+
+
+
+        return dial
 
     def get_seconds_dial_detail(self):
         dial = None

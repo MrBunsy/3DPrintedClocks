@@ -483,9 +483,9 @@ if False:
 
     show_object(pretty_bob.get_models())
 
-# dial = Dial(200, DialStyle.CIRCLES)
-#
-# show_object(dial.get_dial())
+dial = Dial(200, DialStyle.SIMPLE_ARABIC)
+
+show_object(dial.get_dial())
 
 # text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 #
@@ -699,7 +699,7 @@ if False:
 # show_object(pair.get_model(offset_angle_deg=-0.3))
 
 
-ratchet = TraditionalRatchet(50, power_clockwise=True)
-
-show_object(ratchet.get_gear())
-show_object(ratchet.get_pawl())
+# ratchet = TraditionalRatchet(50, power_clockwise=True)
+#
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())

@@ -2518,6 +2518,7 @@ class TraditionalRatchet:
         self.thick = thick
         self.power_clockwise = power_clockwise
         # by default set angle to pi/2 so the pawl is at the top of the ratchet - then if the spring fails gravity should help keep it locked in position
+        #(only relevant to a spring barrel where the ratchet is on the plates, won't affect a cord movement)
         self.pawl_angle = pawl_angle
 
         self.fixing_screws = fixing_screws
