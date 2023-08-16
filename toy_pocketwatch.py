@@ -71,14 +71,28 @@ class ToyPocketwatch:
         # body = body.fillet(self.thick/3)
         body = body.fillet(self.thick / 4)
 
+        hole_d = 3
 
+        crown_base_wide = self.diameter*0.15
+        crown_top_wide = crown_base_wide*1.5
+        crown_tall = crown_top_wide*0.8
+        crown_taper = crown_tall*0.25
+
+        crown = cq.Workplane("XY").moveTo(-crown_base_wide/2, 0).lineTo(-crown_base_wide/2, self.diameter/2).lineTo(-crown_top_wide/2, self.diameter/2 + crown_taper)\
+            .line(0, crown_tall-crown_taper).radiusArc((crown_top_wide/2,self.diameter/2 + crown_tall), self.diameter/2).line(0, -(crown_tall - crown_taper)).lineTo(crown_base_wide/2, self.diameter/2).lineTo(crown_base_wide/2, 0)\
+            .close().extrude(self.thick)
+
+        # crown = crown.cut(cq.Workplane("YZ").moveTo(self.diameter/2 + crown_taper + (crown_tall - crown_taper)/2, self.thick/2).circle(hole_d/2).)
+        crown = crown.faces(">X").workplane().moveTo(self.diameter/2 + crown_taper + (crown_tall - crown_taper)/2, self.thick/2).circle(hole_d/2).cutThruAll()
+
+        body = body.union(crown)
 
         return body
 
     def outputSTLs(self, name="toy_pocketwatch", path="out"):
         out = os.path.join(path, "{}_body.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_body(), out)
+        exporters.export(self.get_body(), out, tolerance=0.01, angularTolerance=0.05)
 
         out = os.path.join(path, "{}_hands.stl".format(name))
         print("Outputting ", out)
