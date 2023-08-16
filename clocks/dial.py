@@ -686,7 +686,7 @@ class Dial:
         raise ValueError("Unsupported dial type")
 
     def get_numbers_detail(self, centre_r, number_height):
-        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i)) for i in range(1,13)]
+        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i), thick=self.detail_thick) for i in range(1,13)]
 
         max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 

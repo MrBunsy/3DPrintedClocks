@@ -1038,7 +1038,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
 
 class TextSpace:
-    def __init__(self, x, y, width, height, horizontal, inverted=True, text=None):
+    def __init__(self, x, y, width, height, horizontal, inverted=True, text=None, thick=LAYER_THICK):
         self.x = x
         self.y = y
         self.width = width
@@ -1047,6 +1047,7 @@ class TextSpace:
         self.text = text
         self.text_size = 10
         self.inverted = inverted
+        self.thick = thick
 
     def set_text(self, text):
         self.text = text
@@ -1058,7 +1059,7 @@ class TextSpace:
         '''
         get the text centred properly
         '''
-        shape = cq.Workplane("XY").text(self.text, self.text_size, LAYER_THICK, kind="bold")
+        shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind="bold")
         bb = shape.val().BoundingBox()
 
         # actually centre it, the align feature of text does...something else
@@ -1068,7 +1069,7 @@ class TextSpace:
             shape = shape.rotate((0, 0, 0), (0, 0, 1), 90)
 
         if self.inverted:
-            shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, LAYER_THICK))
+            shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.thick))
         shape = shape.translate((self.x, self.y))
 
         return shape

@@ -26,37 +26,71 @@ class ToyPocketwatch:
 
         self.dial_diameter = self.diameter*0.8
 
-        self.hand_thick = 0.4
+        self.hand_thick = self.detail_thick
 
 
         self.dial = Dial(outside_d=self.dial_diameter, style=dial, detail_thick = self.detail_thick)
         self.dial.configure_dimensions(support_length=0, support_d=0, outside_d=self.dial_diameter)
+        self.dial.dial_width = self.dial_diameter * 0.15
 
         self.hands = Hands(style=hands, length=self.dial.get_hand_length(), outline=0, thick=self.hand_thick)
 
-
+        self.hands_shape = self.gen_hands()
+        self.dial_detail_shape = self.gen_dial_detail().cut(self.hands_shape)
+        self.dial_shape = self.gen_dial().cut(self.dial_detail_shape).cut(self.hands_shape)
+        self.body_shape = self.gen_body().cut(self.dial_shape).cut(self.dial_detail_shape).cut(self.hands_shape)
 
     def get_dial_detail(self):
+        return self.dial_detail_shape
+
+    def gen_dial_detail(self):
         return self.dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180).translate((0,0, self.thick))
 
     def get_dial(self):
-        return cq.Workplane("XY").circle(self.dial_diameter/2).extrude(self.detail_thick).translate((0,0, self.thick - self.detail_thick)).cut(self.get_dial_detail())
+        return self.dial_shape
+
+    def gen_dial(self):
+        return cq.Workplane("XY").circle(self.dial_diameter/2).extrude(self.detail_thick).translate((0,0, self.thick - self.detail_thick))
 
     def get_hands(self):
-        hands = self.hands.getAssembled(time_minute=10, time_hour=10, flatten=True, include_seconds=False).translate((0,0,self.thick+self.hand_thick))
-        hands = hands.union(cq.Workplane("XY").circle(self.hands.length * 0.05 * 2*1.4).extrude(self.hand_thick).translate((0,0,self.thick)))
+        return self.hands_shape
+
+    def gen_hands(self):
+        hands = self.hands.getAssembled(time_minute=10, time_hour=10, flatten=True, include_seconds=False).translate((0,0,self.thick))
+        hands = hands.union(cq.Workplane("XY").circle(self.hands.length * 0.05 * 2*1.4).extrude(self.hand_thick).translate((0,0,self.thick-self.hand_thick)))
 
         return hands
 
     def get_body(self):
+        return self.body_shape
+
+    def gen_body(self):
         body = cq.Workplane("XY").circle(self.diameter/2).extrude(self.thick)
 
-        body = body.fillet(self.thick/3)
-        body = body.cut(self.get_dial())
-        body = body.cut(self.get_dial_detail())
-        body = body.cut(self.get_hands())
+        #looks great, not sure it'll print wel
+        # body = body.fillet(self.thick/3)
+        body = body.fillet(self.thick / 4)
+
+
 
         return body
+
+    def outputSTLs(self, name="toy_pocketwatch", path="out"):
+        out = os.path.join(path, "{}_body.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_body(), out)
+
+        out = os.path.join(path, "{}_hands.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_hands(), out)
+
+        out = os.path.join(path, "{}_dial.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_dial(), out)
+
+        out = os.path.join(path, "{}_dial_detail.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_dial_detail(), out)
 
 pocketwatch = ToyPocketwatch()
 
@@ -64,3 +98,6 @@ show_object(pocketwatch.get_dial(), options={"color":Colour.WHITE}, name="Dial")
 show_object(pocketwatch.get_dial_detail(), options={"color":Colour.BLACK}, name="Numbers")
 show_object(pocketwatch.get_hands(), options={"color":Colour.BLACK}, name="Hands")
 show_object(pocketwatch.get_body(), options={"color":Colour.BRASS}, name="Body")
+
+if outputSTL:
+    pocketwatch.outputSTLs()
