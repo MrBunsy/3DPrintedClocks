@@ -614,10 +614,25 @@ class Dial:
         detail = cq.Workplane("XY")
         numeral_height = dial_width - 2*from_edge - outer_ring_width
 
+        #if font, use that, otherwise use the old hand-written cuckoo numerals
+        number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font) for number in numbers]
+
+        max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
+
+        for space in number_spaces:
+            space.set_size(max_text_size)
+
+
         for i,number in enumerate(numbers):
             angle = math.pi/2 + i*math.pi*2/12
             pos = polar(angle, numeral_r)
-            detail = detail.add(roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle - math.pi / 2)).translate(pos))
+
+            if self.font is None:
+                numeral_shape = roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True)
+            else:
+                numeral_shape = number_spaces[i].get_text_shape()
+
+            detail = detail.add(numeral_shape.rotate((0, 0, 0), (0, 0, 1), radToDeg(angle - math.pi / 2)).translate(pos))
         if with_lines:
             # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
             detail = detail.add(self.get_concentric_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
