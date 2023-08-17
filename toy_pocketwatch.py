@@ -18,7 +18,7 @@ if 'show_object' not in globals():
         pass
 
 class ToyPocketwatch:
-    def __init__(self, diameter=50, thick=10, hands=HandStyle.SPADE, dial=DialStyle.SIMPLE_ARABIC):
+    def __init__(self, diameter=50, thick=10, hands=HandStyle.SPADE, dial=DialStyle.ARABIC_NUMBERS):
         self.detail_thick = LAYER_THICK * 2
 
         self.diameter=diameter

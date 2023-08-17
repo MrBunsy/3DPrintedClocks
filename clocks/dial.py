@@ -393,12 +393,18 @@ class Dial:
 
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outside_d, style=DialStyle.LINES_ARC, seconds_style=None, fixing_screws=None,thick=2, top_fixing=True, bottom_fixing=False, hand_hole_d=18,
-                 detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2):
+    def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True, bottom_fixing=False, hand_hole_d=18,
+                 detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font="Arial"):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
+
+        if just a style is provided, that's all that's used.
+        Alternatively a style an inner and/or outer edge style can be provided. Intention: numbers with a ring around the outside.
+
         '''
         self.style = style
+        self.outer_edge_style = outer_edge_style
+        self.inner_edge_style = inner_edge_style
         self.seconds_style = seconds_style
         if self.seconds_style is None:
             self.seconds_style = self.style
@@ -423,6 +429,9 @@ class Dial:
         #overrides for the default fixing screw and pillar positions DEPRECATED, switching to configuring whole pillars instead
         self.fixing_positions = []
         self.pillars = []
+
+        #for any styles which use a font
+        self.font = font
 
     def get_hand_space_z(self):
         #how much space between the front of the dial and the hands should there be?
@@ -550,6 +559,8 @@ class Dial:
         centre_radius = outer_r - dial_width/2
 
         max_dot_r = centre_radius * math.sin(dA/2)
+        if max_dot_r > dial_width/2:
+            max_dot_r = dial_width/2
 
         big_dot_r = max_dot_r
         small_dot_r = max_dot_r/2
@@ -594,6 +605,8 @@ class Dial:
     def get_roman_numerals_detail(self, outer_r, dial_width, from_edge, with_lines=True):
 
         outer_ring_width = from_edge*2
+        if not with_lines:
+            outer_ring_width = 0
 
         centre_r = outer_r - dial_width/2
         numeral_r = centre_r - outer_ring_width/2
@@ -605,9 +618,9 @@ class Dial:
             angle = math.pi/2 + i*math.pi*2/12
             pos = polar(angle, numeral_r)
             detail = detail.add(roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle - math.pi / 2)).translate(pos))
-
-        # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
-        detail = detail.add(self.get_concentric_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
+        if with_lines:
+            # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
+            detail = detail.add(self.get_concentric_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
 
         return detail
 
@@ -664,29 +677,75 @@ class Dial:
 
         return marks
 
+    def get_ring_detail(self, outer_r, width, detail_from_edges):
+        return cq.Workplane("XY").circle(outer_r - detail_from_edges).circle(outer_r - (width - detail_from_edges*2)).extrude(self.detail_thick)
+
+    def get_edge_style_width(self, edge_style=None, outer=True):
+        if edge_style is None:
+            return 0
+        else:
+            if edge_style is DialStyle.RING:
+                return 0.8
+            return self.dial_width*0.2
+    
+    def get_style_for_dial(self, style, outer_r, width, detail_from_edges):
+        if style == DialStyle.LINES_ARC:
+            return self.get_lines_detail(outer_r, width, detail_from_edges)
+        elif style == DialStyle.CONCENTRIC_CIRCLES:
+            return self.get_concentric_circles_detail(outer_r, width, detail_from_edges)
+        elif style == DialStyle.ROMAN:
+            return self.get_roman_numerals_detail(outer_r, width, detail_from_edges)
+        elif style == DialStyle.DOTS:
+            return self.get_dots_detail(outer_r, width)
+        elif style == DialStyle.ARABIC_NUMBERS:
+            return self.get_numbers_detail(outer_r, width, detail_from_edges)
+        elif style == DialStyle.ROMAN_NUMERALS:
+            return self.get_roman_numerals_detail(outer_r, width, detail_from_edges, with_lines=False)
+        elif style == DialStyle.RING:
+            return self.get_ring_detail(outer_r, width, detail_from_edges)
+        else:
+            raise ValueError("Unsupported dial type")
+
     def get_main_dial_detail(self):
         '''
         detailing for the big dial
         '''
-        if self.style == DialStyle.LINES_ARC:
-            return self.get_lines_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
-        elif self.style == DialStyle.CONCENTRIC_CIRCLES:
-            return self.get_concentric_circles_detail(self.outside_d / 2, self.dial_width, self.dial_detail_from_edges)
-        elif self.style == DialStyle.ROMAN:
-            return self.get_roman_numerals_detail(self.outside_d/2, self.dial_width, self.dial_detail_from_edges)
-        elif self.style == DialStyle.CIRCLES:
-            return self.get_dots_detail(self.outside_d/2, self.dial_width)
-        elif self.style == DialStyle.TONY_THE_CLOCK:
-            #extend the marks so they go underneath the black ring to allow for some slop attaching the ring
-            extra = 2
-            return self.get_quad_marks(self.outside_d/2, self.outside_d * tony_the_clock["dial_marker_length"]/tony_the_clock["diameter"] + extra,
-                                       self.outside_d * tony_the_clock["dial_marker_width"]/tony_the_clock["diameter"], self.outside_d * tony_the_clock["dial_edge_width"]/tony_the_clock["diameter"] - extra)
-        elif self.style == DialStyle.SIMPLE_ARABIC:
-            return self.get_numbers_detail(self.outside_d/2 - self.dial_width/2, self.dial_width*0.9)
-        raise ValueError("Unsupported dial type")
 
-    def get_numbers_detail(self, centre_r, number_height):
-        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i), thick=self.detail_thick) for i in range(1,13)]
+        if self.style == DialStyle.TONY_THE_CLOCK:
+            if self.outer_edge_style is not None and self.inner_edge_style is not None:
+                raise ValueError("Tony not supported with inner or outer edge styles")
+            # extend the marks so they go underneath the black ring to allow for some slop attaching the ring
+            extra = 2
+            return self.get_quad_marks(self.outside_d / 2, self.outside_d * tony_the_clock["dial_marker_length"] / tony_the_clock["diameter"] + extra,
+                                       self.outside_d * tony_the_clock["dial_marker_width"] / tony_the_clock["diameter"], self.outside_d * tony_the_clock["dial_edge_width"] / tony_the_clock["diameter"] - extra)
+
+        main_style_outer_r = self.outside_d/2
+        main_style_dial_width = self.dial_width
+        main_style_detail_from_edges = self.dial_detail_from_edges
+
+        outer_width = self.get_edge_style_width(self.outer_edge_style, outer=True)
+        inner_width = self.get_edge_style_width(self.inner_edge_style, outer=False)
+
+        main_style_outer_r -= outer_width
+        main_style_dial_width -= outer_width
+
+        main_style_dial_width -= inner_width
+
+        main_style = self.get_style_for_dial(self.style, main_style_outer_r, main_style_dial_width, main_style_detail_from_edges)
+
+        dial = main_style
+
+        if self.outer_edge_style is not None:
+            dial = dial.union(self.get_style_for_dial(self.outer_edge_style, self.outside_d/2, outer_width, 0))
+        if self.inner_edge_style is not None:
+            dial = dial.union(self.get_style_for_dial(self.inner_edge_style, main_style_outer_r - main_style_dial_width, inner_width, 0))
+
+        return dial
+
+    def get_numbers_detail(self, outer_r, dial_width, dial_detail_from_edges):
+        centre_r = outer_r - dial_width/2
+        number_height = dial_width - dial_detail_from_edges*2
+        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i), thick=self.detail_thick, font=self.font) for i in range(1,13)]
 
         max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 

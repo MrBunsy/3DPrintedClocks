@@ -86,7 +86,7 @@ moon_complication.set_motion_works_sizes(motionWorks)
 
 pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=10)
 
-dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.CIRCLES, seconds_style=clock.DialStyle.LINES_ARC)
+dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.LINES_ARC)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 23",style=clock.ClockPlateStyle.COMPACT,
                                  heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,

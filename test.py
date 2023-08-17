@@ -483,9 +483,10 @@ if False:
 
     show_object(pretty_bob.get_models())
 
-dial = Dial(200, DialStyle.SIMPLE_ARABIC)
+dial = Dial(200, DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
 
-show_object(dial.get_dial())
+show_object(dial.get_dial(),options={"color":"white"} )
+show_object(dial.get_main_dial_detail(),options={"color":"black"} )
 
 # text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 #
@@ -580,8 +581,8 @@ show_object(dial.get_dial())
 # show_object(testfillet)
 
 if False:
-    moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.CIRCLES)
-    motionWorks = MotionWorks(extra_height=10, style=GearStyle.CIRCLES, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
+    moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.DOTS)
+    motionWorks = MotionWorks(extra_height=10, style=GearStyle.DOTS, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
     moon.set_motion_works_sizes(motionWorks)
     # show_object(motionWorks.getAssembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
     # show_object(moon.get_assembled())

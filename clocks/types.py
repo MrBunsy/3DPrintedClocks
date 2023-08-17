@@ -154,14 +154,18 @@ class DialStyle(Enum):
     LINES_ARC = "lines_arc"
     #simple lines that are just rectangles
     # LINES_RECT = "lines_rect"
+    #deprecated, replaced with ROMAN_NUMERALS as main style and CONCENTRIC_CIRCLES as outer edge style
     ROMAN = "roman"
     #flat cuckoo style (not the fully 3D cuckoo style in cuckoo bits)
     # CUCKOO = "cuckoo"
     # DOTS = "dots"
     #two concentric circles joined by lines along spokes
     CONCENTRIC_CIRCLES="concentric_circles"
-    #TODO dots for minutes
-    CIRCLES = "circles"
+    DOTS = "circles"
     TONY_THE_CLOCK="tony_the_clock"
     #just numbers
-    SIMPLE_ARABIC="simple_arabic"
+    ARABIC_NUMBERS= "simple_arabic"
+    #just roman numerals
+    ROMAN_NUMERALS = "roman_numerals"
+    #just a solid ring
+    RING = "ring"
