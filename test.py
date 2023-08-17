@@ -483,7 +483,9 @@ if False:
 
     show_object(pretty_bob.get_models())
 
-dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
+# dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
+# dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Arial", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
+dial = Dial(200, DialStyle.ROMAN_NUMERALS, font=None, outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
 
 show_object(dial.get_dial(),options={"color":"white"} )
 show_object(dial.get_main_dial_detail(),options={"color":"black"} )
