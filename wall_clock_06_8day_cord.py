@@ -59,7 +59,7 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=2090 - 270, chain_at_back=False, chain_wheels=1, hours=24 * 7.25, escape_wheel_pinion_at_front=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=2090 - 270, chain_at_back=False, chain_wheels=1, runtime_hours=24 * 7.25, escape_wheel_pinion_at_front=True)
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.calculateRatios()
@@ -76,7 +76,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.gen_cord_wheels(ratchetThick=5, rodMetricThread=4, cordThick=2, cordCoilThick=16, style=gearStyle, useKey=True, preferedDiameter=29.5, looseOnRod=False)
+train.gen_cord_wheels(ratchetThick=5, rodMetricThread=4, cordThick=2, cordCoilThick=16, style=gearStyle, useKey=True, preferedDiameter=29.5, loose_on_rod=False)
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s

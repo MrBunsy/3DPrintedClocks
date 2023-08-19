@@ -1068,7 +1068,7 @@ class WheelPinionPair:
             wheel_addendum_factor*=1.2
 
         if pinionTeeth > 20 and self.gear_ratio < 3:
-            print("Reducing wheel addendum factor wheel teeth: {}, pinion teeth: {}".format(wheelTeeth, pinionTeeth))
+            # print("Reducing wheel addendum factor wheel teeth: {}, pinion teeth: {}".format(wheelTeeth, pinionTeeth))
             #bodge - got a clock with a really large pinion on the escape wheel and it keeps binding with the previous wheel
             #TODO investigate this further - it might affect the motion works jamming I had on clock 19 and would be good to understand properly
             wheel_addendum_factor *= 0.7
@@ -1687,8 +1687,8 @@ class ArbourForPlate:
 
             if not self.arbor.combine_with_powered_wheel:
                 assembly = assembly.add(self.arbor.powered_wheel.get_assembled().translate((0, 0, self.arbor.wheel_thick)))
-
-            assembly = assembly.add(shapes["wheel"].rotate((0,0,0),(1,0,0),180).translate((0,0, self.arbor.wheel_thick)))
+            if self.arbor.weight_driven:
+                assembly = assembly.add(shapes["wheel"].rotate((0,0,0),(1,0,0),180).translate((0,0, self.arbor.wheel_thick)))
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
@@ -1892,7 +1892,7 @@ class Arbour:
 
         if self.get_type() == ArbourType.POWERED_WHEEL:
             # currently this can only be used with the cord wheel
-            self.loose_on_rod = (not self.powered_wheel.looseOnRod) and use_ratchet
+            self.loose_on_rod = (not self.powered_wheel.loose_on_rod) and use_ratchet
 
         self.hole_d = arbour_d
         if self.loose_on_rod:
@@ -1909,11 +1909,13 @@ class Arbour:
         #just to help debugging
         self.type = self.get_type()
 
+        self.combine_with_powered_wheel = False
+
         if self.get_type() == ArbourType.POWERED_WHEEL:
             #chain/cord wheel specific bits:
-
+            self.weight_driven = PowerType.is_weight(self.powered_wheel.type)
             #remove support for not bolt on ratchet and inset ratchet as they're never used anymore - the bolt on ratchet has proven to be a good design
-            if PowerType.is_weight(self.powered_wheel.type):
+            if self.weight_driven:
                 if self.use_ratchet:
                     bolts = 4
                     outer_r = self.ratchet.outsideDiameter / 2
@@ -1924,20 +1926,21 @@ class Arbour:
                     self.bolt_positions=[polar(i * math.pi * 2 / bolts + math.pi / self.ratchet.ratchetTeeth, bolt_distance) for i in range(bolts)]
                 else:
                     #bolting powered wheel on without a ratchet
-                    self.bolt_positions = self.powered_wheel.getScrewPositions()
+                    self.bolt_positions = self.powered_wheel.get_screw_positions()
 
                 self.ratchet_screws = ratchet_screws
                 if self.ratchet_screws is None:
                     self.ratchet_screws = MachineScrew(2, countersunk=True)
+
+                if not self.use_ratchet and self.powered_wheel.type == PowerType.ROPE:
+                    #this can be printed in one peice, so combine with the wheel and use a standard arbour extension
+                    self.combine_with_powered_wheel = True
             else:
-                #spring
-                self.bolt_positions = self.powered_wheel.getScrewPositions()
-
-
-            self.combine_with_powered_wheel = False
-            if not self.use_ratchet and self.powered_wheel.type == PowerType.ROPE:
-                #this can be printed in one peice, so combine with the wheel and use a standard arbour extension
+                #spring type
                 self.combine_with_powered_wheel = True
+                if self.powered_wheel.type == PowerType.SPRING_BARREL:
+                    self.hole_d = self.powered_wheel.get_barrel_hole_d()
+                    self.use_ratchet = False
 
         if self.get_type() == ArbourType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
@@ -1976,7 +1979,7 @@ class Arbour:
             return self.wheel_thick + self.pinion_thick + self.pinion_extension + self.end_cap_thick
         if self.get_type() == ArbourType.POWERED_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
-            return self.wheel_thick + self.powered_wheel.getHeight()
+            return self.wheel_thick + self.powered_wheel.get_height()
         if self.get_type() == ArbourType.ANCHOR:
             # wheel thick being used for anchor thick
             return self.wheel_thick
@@ -2207,16 +2210,22 @@ class Arbour:
         The Arbor class no longer knows about the placement of the arbors in teh plates, so if we want to generate a complete wheel rear_side_extension and arbour_extension_max_r must be provided
         This will gracefully fall back to still producing a chain wheel if they're not
         '''
-        if self.use_ratchet:
-            inner_radius_for_style=self.ratchet.outsideDiameter * 0.5
+        style = self.style
+        if PowerType.is_weight(self.powered_wheel):
+
+            if self.use_ratchet:
+                inner_radius_for_style=self.ratchet.outsideDiameter * 0.5
+            else:
+                inner_radius_for_style = self.powered_wheel.diameter * 1.1 / 2
         else:
-            inner_radius_for_style = self.powered_wheel.diameter * 1.1 / 2
+            inner_radius_for_style = 0
+            style = None
         #invert clockwise from pinion side as the "pinion" is used for the side of the powered wheel, which is wrong
         #TODO review logic if I ever get chain at back working again
-        gear_wheel = self.wheel.get3D(holeD=self.hole_d, thick=self.wheel_thick, style=self.style, innerRadiusForStyle=inner_radius_for_style, clockwise_from_pinion_side=not self.clockwise_from_pinion_side)
+        gear_wheel = self.wheel.get3D(holeD=self.hole_d, thick=self.wheel_thick, style=style, innerRadiusForStyle=inner_radius_for_style, clockwise_from_pinion_side=not self.clockwise_from_pinion_side)
 
         if self.combine_with_powered_wheel:
-            #currently only rope wheel can do this for huygens, which is also a combination I'm unlikely to ever print again as splicing cord is a faff
+            #currently only rope wheel with huygens or spring barrel
             gear_wheel = gear_wheel.union(self.powered_wheel.get_assembled().translate((0, 0, self.wheel_thick)))
 
         if rear_side_extension > 0 and not self.combine_with_powered_wheel:
@@ -2249,7 +2258,7 @@ class Arbour:
 
             gear_wheel = gear_wheel.add(extended_arbour.rotate((0,0,0),(1,0,0),180))
 
-        if self.get_extra_ratchet() is not None or not self.use_ratchet:
+        if self.get_extra_ratchet() is not None or not self.use_ratchet and self.weight_driven:
             #need screwholes to attach the rest of the ratchet or the chain wheel (the boltPositions have alreayd been adjusted accordingly)
             # either to hold on the outer part of the ratchet or the powered wheel itself
             for hole_pos in self.bolt_positions:
@@ -2261,7 +2270,7 @@ class Arbour:
                 gear_wheel = gear_wheel.cut(cutter)
 
 
-        if for_printing:
+        if for_printing and not self.combine_with_powered_wheel:
             #put flat side down
             gear_wheel = gear_wheel.rotate((0,0,0),(1,0,0),180).translate((0,0, self.wheel_thick))
 

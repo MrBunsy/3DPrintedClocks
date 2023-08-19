@@ -55,7 +55,7 @@ escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorT
 moduleReduction=0.875
 
 #minute wheel ratio so we can use a pinion of 10 teeth to turn the standard motion works arbour and keep the cannon pinion rotating once an hour
-train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, chain_wheels=0, hours=30,
+train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, chain_wheels=0, runtime_hours=30,
                  use_pulley=True, huygens_maintaining_power=True, escape_wheel_pinion_at_front=True)#, minuteWheelRatio=10/12)
 
 #lie about module reduction, we don't want smallest possible clock, we want a clock where the 2nd arbour isn't too close to the motion works arbour

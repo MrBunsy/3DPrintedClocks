@@ -44,7 +44,7 @@ lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4,
                                     style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 
-train = clock.GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False, chain_wheels=2, hours=32 * 24, support_second_hand=True)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False, chain_wheels=2, runtime_hours=32 * 24, support_second_hand=True)#, huygensMaintainingPower=True)
 
 moduleReduction=1#0.85
 
@@ -52,10 +52,10 @@ train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=
 # train.calculateRatios(max_wheel_teeth=70, min_pinion_teeth=12, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True)
 # train.setRatios( [[72, 10], [75, 9], [60, 27]])
 
-train.gen_cord_wheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=75, looseOnRod=False, prefer_small=True)
+train.gen_cord_wheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=75, loose_on_rod=False, prefer_small=True)
 #think this is promising for good compromise of size
-#train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
-# train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
+#train.genCordWheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, loose_on_rod=False, prefer_small=True)
+# train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 
 

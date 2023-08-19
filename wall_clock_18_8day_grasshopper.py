@@ -47,7 +47,7 @@ escapement = clock.GrasshopperEscapement.get_harrison_compliant_grasshopper()
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1250, use_pulley=True,
-                       chain_at_back=False, chain_wheels=1, hours=24 * 7 + 6, huygens_maintaining_power=True)
+                       chain_at_back=False, chain_wheels=1, runtime_hours=24 * 7 + 6, huygens_maintaining_power=True)
 
 train.calculate_ratios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
@@ -58,7 +58,7 @@ train.calculate_ratios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth
 # 61 links/ft 1-day regula chain. copied from clock 04
 # train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
 # train.genChainWheels(ratchetThick=4,wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075, screwThreadLength=8, holeD=3)
-train.gen_chain_wheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30,
+train.gen_chain_wheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=30,
                         fixing_screws=clock.MachineScrew(3, countersunk=True), ratchetOuterThick=6)
 
 

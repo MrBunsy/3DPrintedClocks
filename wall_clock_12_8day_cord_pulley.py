@@ -72,7 +72,7 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 #this clock was originally printed with the maxweightdrodp of 1400 by accident. a cord wheel of diameter 25, keeping the existing ratio, works to get it back down to 1200
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, hours=7.25 * 24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.25 * 24)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 
@@ -80,9 +80,9 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.setChainWheelRatio([93, 10])
 
 #original test
-# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=18, style=gearStyle, useKey=True, preferedDiameter=42.5, looseOnRod=False)
+# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=18, style=gearStyle, useKey=True, preferedDiameter=42.5, loose_on_rod=False)
 #think this is promising for good compromise of size
-train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, looseOnRod=False, prefer_small=True)
+train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, loose_on_rod=False, prefer_small=True)
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
 

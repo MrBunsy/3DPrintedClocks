@@ -714,5 +714,5 @@ if False:
 spring = SpringBarrel()
 
 # show_object(spring.get_barrel())
-show_object(spring.get_assembled())
+show_object(spring.get_model())
 # show_object(spring.get_arbor(for_printing=False))

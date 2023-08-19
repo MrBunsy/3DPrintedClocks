@@ -50,7 +50,7 @@ lift =3
 lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train=clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, max_weight_drop=2000, chain_at_back=False, chain_wheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, max_weight_drop=2000, chain_at_back=False, chain_wheels=0, runtime_hours=30)
 
 #note, going below a module of 0.85 makes the pinions are bit hard to print - can do it, but I think it's worth sticking with 0.85 as an absolute minimum with a 0.4mm nozzle
 moduleReduction=0.9

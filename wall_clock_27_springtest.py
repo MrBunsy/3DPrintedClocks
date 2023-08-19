@@ -31,7 +31,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_26"
+clockName="wall_clock_27"
 clockOutDir="out"
 gearStyle=clock.GearStyle.ARCS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -50,10 +50,10 @@ lock=1.75
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5,
                                     toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24, support_second_hand=True)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2, runtime_hours=7.5 * 24, support_second_hand=True)#, huygensMaintainingPower=True)
 
 moduleReduction=0.9#0.85
-
+train.gen_spring_barrel()
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s
@@ -61,10 +61,6 @@ moduleReduction=0.9#0.85
 #2/3s
 train.set_ratios([[75, 9], [72, 10], [55, 22]])
 
-#think this is promising for good compromise of size
-#TODO NEXT CLOCK add 1 mm to cord coil thick (so 15mm) so 25mm screws will fit properly!
-train.gen_cord_wheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, loose_on_rod=False, prefer_small=True, ratchet_diameter=29 + 27.5)
-# train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 
 
@@ -75,7 +71,7 @@ pinion_extensions = {1:6, 2:4}
 
 train.gen_gears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
                 chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
-train.print_info(weight_kg=1.5)
+# train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
@@ -101,11 +97,8 @@ hands = clock.Hands(style=clock.HandStyle.BAROQUE,  minuteFixing="square",  minu
                     length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0, outlineSameAsBody=False, chunky=True, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
-pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
-print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
-
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pulley = pulley)#weights=[clock.Weight(height=245,diameter=55)]
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#weights=[clock.Weight(height=245,diameter=55)]
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
@@ -120,6 +113,5 @@ if outputSTL:
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)
     hands.output_STLs(clockName, clockOutDir)
-    pulley.output_STLs(clockName, clockOutDir)
     assembly.output_STLs(clockName, clockOutDir)
 

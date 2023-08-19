@@ -42,7 +42,7 @@ lift =3
 lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1700, chain_at_back=False, chain_wheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1700, chain_at_back=False, chain_wheels=0, runtime_hours=30)
 
 #, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4
 # train.setEscapementDetails(drop=1.5, lift=3, lock=1.5)

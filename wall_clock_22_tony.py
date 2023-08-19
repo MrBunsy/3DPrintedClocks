@@ -51,7 +51,7 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, a
 # lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 #pendulum_length=0.225
-train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, max_weight_drop=1400, use_pulley=False, chain_at_back=False, chain_wheels=1, hours=7.25 * 24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, max_weight_drop=1400, use_pulley=False, chain_at_back=False, chain_wheels=1, runtime_hours=7.25 * 24)#, huygensMaintainingPower=True)
 
 moduleReduction=1#0.85
 
@@ -78,9 +78,9 @@ power wheel ratios [{'ratio': 7.7272727272727275, 'pair': [85, 11], 'error': 0.0
 '''
 
 #think this is promising for good compromise of size
-# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
+# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, loose_on_rod=False, prefer_small=True)
 #fixing chain wheel to the rod and having the wheel loose (with a steel rod) as this worked really well with the cord wheel and i suspect it will with the chain wheel too
-train.gen_chain_wheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True), ratchetOuterThick=6)
+train.gen_chain_wheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True), ratchetOuterThick=6)
 
 pendulumSticksOut=15
 

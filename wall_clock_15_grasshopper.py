@@ -47,7 +47,7 @@ escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, 
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True,
-                       chain_at_back=False, chain_wheels=0, hours=28, huygens_maintaining_power=True)
+                       chain_at_back=False, chain_wheels=0, runtime_hours=28, huygens_maintaining_power=True)
 
 train.calculate_ratios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 

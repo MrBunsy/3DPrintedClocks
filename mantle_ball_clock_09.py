@@ -26,7 +26,7 @@ toothTipAngle = 4
 toothBaseAngle = 3
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
-train=clock.GoingTrain(pendulum_period=0.75, fourth_wheel=True, escapement=escapement, max_weight_drop=1700, chain_at_back=False, chain_wheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=0.75, fourth_wheel=True, escapement=escapement, max_weight_drop=1700, chain_at_back=False, chain_wheels=0, runtime_hours=30)
 train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, loud=True)
 '''
 {'time': 3600.0, 'train': [[60, 14], [63, 12], [64, 12]], 'error': 0.0, 'ratio': 120.0, 'teeth': 187, 'weighting': 159.79}

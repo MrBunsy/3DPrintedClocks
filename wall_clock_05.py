@@ -42,7 +42,7 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1, fourth_wheel=True, escapement_teeth=30, max_weight_drop=1800, chain_at_back=False, chain_wheels=1, hours=180)
+train=clock.GoingTrain(pendulum_period=1, fourth_wheel=True, escapement_teeth=30, max_weight_drop=1800, chain_at_back=False, chain_wheels=1, runtime_hours=180)
 
 # train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.setRatios([[60, 14], [63, 12], [64, 12]])
@@ -54,7 +54,7 @@ train.set_chain_wheel_ratio([74, 11])
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-#new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, looseOnRod=True, arbour_d=3, fixings=2, wall_thick=1.5)
+#new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, loose_on_rod=True, arbour_d=3, fixings=2, wall_thick=1.5)
 train.gen_chain_wheels2(clock.REGULA_8_DAY_1_05MM_CHAIN, ratchetThick=5, preferedDiameter=25, prefer_small=True)
 
 train.print_info()

@@ -84,7 +84,7 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 
 class GoingTrain:
 
-    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, hours=30, chain_at_back=True, max_weight_drop=1800,
+    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
                  escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio = 1, support_second_hand=False):
         '''
 
@@ -162,7 +162,7 @@ class GoingTrain:
         #if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
         self.powered_wheels = chain_wheels
         #to calculate sizes of the powered wheels and ratios later
-        self.hours = hours
+        self.runtime_hours = runtime_hours
         self.max_weight_drop = max_weight_drop
         self.use_pulley=use_pulley
 
@@ -469,7 +469,7 @@ class GoingTrain:
     def calculate_powered_wheel_ratios(self, pinion_min = 10, pinion_max = 20, wheel_min = 20, wheel_max = 160, prefer_small=False):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
-        TODO currently this tries to choose the largest wheel possible so it can fit. ideally we want the smallest wheel that fits to reduce plate size
+        used to prefer largest wheel, now is hard coded to prefer smallest.
         '''
         if self.powered_wheels == 0:
             '''
@@ -478,10 +478,10 @@ class GoingTrain:
         else:
             #this should be made to scale down to 1 and then I can reduce the logic here
 
-            turns = self.powered_wheel.getTurnsForDrop(self.get_cord_usage())
+            turns = self.powered_wheel.get_turns(cord_usage=self.get_cord_usage())
 
             # find the ratio we need from the chain wheel to the minute wheel
-            turnsPerHour = turns / (self.hours * self.minute_wheel_ratio)
+            turnsPerHour = turns / (self.runtime_hours * self.minute_wheel_ratio)
 
             desiredRatio = 1 / turnsPerHour
 
@@ -578,7 +578,7 @@ class GoingTrain:
         returns true if the weight dangles from the right side of the chain wheel (as seen from the front)
         '''
 
-        clockwise = self.powered_wheel.isClockwise()
+        clockwise = self.powered_wheel.is_clockwise()
         chainAtFront = not self.chain_at_back
 
         #XNOR
@@ -592,7 +592,7 @@ class GoingTrain:
         '''
         if self.powered_wheels == 0:
             #no choice but to set diameter to what fits with the drop and hours
-            self.powered_wheel_circumference = self.get_cord_usage() / (self.hours * self.minute_wheel_ratio)
+            self.powered_wheel_circumference = self.get_cord_usage() / (self.runtime_hours * self.minute_wheel_ratio)
             self.powered_wheel_diameter = self.powered_wheel_circumference / math.pi
 
         else:
@@ -610,7 +610,7 @@ class GoingTrain:
 
         self.powered_wheel_clockwise = not anticlockwise
 
-    def gen_chain_wheels2(self, chain, ratchetThick=7.5, arbourD=3, looseOnRod=True, prefer_small=False, preferedDiameter=-1, fixing_screws=None, ratchetOuterThick=5):
+    def gen_chain_wheels2(self, chain, ratchetThick=7.5, arbourD=3, loose_on_rod=True, prefer_small=False, preferedDiameter=-1, fixing_screws=None, ratchetOuterThick=5):
 
         diameter = preferedDiameter
         if diameter < 0:
@@ -622,7 +622,7 @@ class GoingTrain:
             ratchetThick = 0
             # TODO check holeD?
 
-        self.powered_wheel = PocketChainWheel2(ratchet_thick=ratchetThick, arbour_d=arbourD, looseOnRod=looseOnRod,
+        self.powered_wheel = PocketChainWheel2(ratchet_thick=ratchetThick, arbour_d=arbourD, loose_on_rod=loose_on_rod,
                                                power_clockwise=self.powered_wheel_clockwise, chain=chain, max_diameter=self.powered_wheel_diameter, fixing_screws=fixing_screws, ratchetOuterThick=ratchetOuterThick)
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
@@ -651,7 +651,7 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_cord_wheels(self, ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, looseOnRod=True, prefer_small=False,
+    def gen_cord_wheels(self, ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, loose_on_rod=True, prefer_small=False,
                         ratchet_diameter=-1):
         '''
         If preferred diameter is provided, use that rather than the min diameter
@@ -665,7 +665,7 @@ class GoingTrain:
 
         self.calculate_powered_wheel_info(diameter)
         self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,
-                                       rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, looseOnRod=looseOnRod,
+                                       rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, loose_on_rod=loose_on_rod,
                                        cap_diameter=ratchet_diameter)
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
@@ -692,6 +692,10 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
+    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4):
+        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0)
+
+        self.calculate_powered_wheel_ratios()
 
     def set_train(self, train):
         '''
@@ -705,7 +709,8 @@ class GoingTrain:
 
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
-        print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
+        if PowerType.is_weight(self.powered_wheel.type):
+            print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
         chainRatio = self.minute_wheel_ratio
         chainRatios=[1]
@@ -826,7 +831,7 @@ class GoingTrain:
         #this was an attempt to put the second wheel over the top of the powered wheel, if it fits, but now there are so many different setups I'm just disabling it
         secondWheelR = pairs[1].wheel.get_max_radius()
         firstWheelR = pairs[0].wheel.get_max_radius() + pairs[0].pinion.get_max_radius()
-        poweredWheelEncasingRadius = self.powered_wheel.getEncasingRadius()#.ratchet.outsideDiameter/2
+        poweredWheelEncasingRadius = self.powered_wheel.get_encasing_radius()#.ratchet.outsideDiameter/2
         space = firstWheelR - poweredWheelEncasingRadius
         if secondWheelR < space - 3:
             #the second wheel can actually fit on the same side as the ratchet
@@ -870,7 +875,8 @@ class GoingTrain:
 
             minuteWheelSpace = pairs[0].wheel.get_max_radius() + holeD
             last_chain_wheel_space = self.powered_wheel_pairs[-1].wheel.get_max_radius()
-            if not self.powered_wheel.looseOnRod:
+            if not self.powered_wheel.loose_on_rod:
+                #TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel
                 # need space for the steel rod as the wheel itself is loose on the threaded rod
                 minuteWheelSpace += 1
 
@@ -1346,7 +1352,12 @@ class SimpleClockPlates:
         self.calc_bearing_positions()
         self.generate_arbours_for_plate()
 
-        self.chain_hole_d = self.going_train.powered_wheel.getChainHoleD()
+        if PowerType.is_weight(self.going_train.powered_wheel.type):
+            self.weight_driven = True
+            self.chain_hole_d = self.going_train.powered_wheel.getChainHoleD()
+        else:
+            self.weight_driven = False
+        self.chain_hole_d =0
 
         if self.chain_hole_d < 4:
             self.chain_hole_d = 4
@@ -1396,7 +1407,7 @@ class SimpleClockPlates:
                                                       width=self.going_train.powered_wheel.chain_width, inside_length=self.going_train.powered_wheel.chain_inside_length,
                                                       tolerance=self.going_train.powered_wheel.tolerance, ratchetOuterD=self.bottom_pillar_r * 2, ratchetOuterThick=ratchetOuterThick)
             elif self.going_train.powered_wheel.type == PowerType.CHAIN2:
-                self.huygens_wheel = PocketChainWheel2(ratchet_thick=5, max_diameter=max_diameter, chain=self.going_train.powered_wheel.chain, looseOnRod=True,
+                self.huygens_wheel = PocketChainWheel2(ratchet_thick=5, max_diameter=max_diameter, chain=self.going_train.powered_wheel.chain, loose_on_rod=True,
                                                        ratchetOuterD=ratchetOuterD, ratchetOuterThick=ratchetOuterThick, arbour_d=self.going_train.powered_wheel.arbour_d)
             elif self.going_train.powered_wheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
@@ -1578,26 +1589,28 @@ class SimpleClockPlates:
 
         # original thinking was to make it the equivilant of a 45deg shelf bracket, but this is massive once cord wheels are used
         # so instead, make it just big enough to contain the holes for the chains/cord
+        if self.weight_driven :
+            furthest_x = max([abs(holePos[0][0]) for holePos in self.going_train.powered_wheel.getChainPositionsFromTop()])
 
-        furthestX = max([abs(holePos[0][0]) for holePos in self.going_train.powered_wheel.getChainPositionsFromTop()])
-
-        # juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
-        minDistanceForChainHoles = (furthestX * 2 + self.chain_hole_d + 5) / 2
+            # juuust wide enough for the small bits on the edge of the bottom pillar to print cleanly
+            min_distance_for_chain_holes = (furthest_x * 2 + self.chain_hole_d + 5) / 2
+        else:
+            min_distance_for_chain_holes = 0
 
         if self.heavy:
             self.bottom_pillar_r = self.plate_distance / 2
         else:
-            self.bottom_pillar_r = minDistanceForChainHoles
+            self.bottom_pillar_r = min_distance_for_chain_holes
 
         if self.bottom_pillar_r < self.plate_width/2:
             #rare, but can happen
             self.bottom_pillar_r = self.plate_width / 2
 
         self.reduce_bottom_pillar_height = 0
-        if self.bottom_pillar_r < minDistanceForChainHoles and self.chainThroughPillar:
+        if self.bottom_pillar_r < min_distance_for_chain_holes and self.chainThroughPillar:
             if self.allow_bottom_pillar_height_reduction:
-                self.reduce_bottom_pillar_height = minDistanceForChainHoles - self.bottom_pillar_r
-            self.bottom_pillar_r = minDistanceForChainHoles
+                self.reduce_bottom_pillar_height = min_distance_for_chain_holes - self.bottom_pillar_r
+            self.bottom_pillar_r = min_distance_for_chain_holes
 
         if self.narrow_bottom_pillar:
             self.bottom_pillar_height = self.bottom_pillar_r * 2
@@ -2727,7 +2740,7 @@ class SimpleClockPlates:
                 r = abs(self.bearing_positions[0][1] - (self.bottom_pillar_positions[0][1] + self.bottom_pillar_r - self.reduce_bottom_pillar_height))
                 bottom_pillar = bottom_pillar.cut(cq.Workplane("XY").moveTo(0, r - self.reduce_bottom_pillar_height + self.bottom_pillar_r).circle(r).extrude(self.plate_distance))
 
-        if self.bottom_pillars == 1:
+        if self.bottom_pillars == 1 and self.weight_driven:
             chainHoles = self.get_chain_holes()
             bottom_pillar = bottom_pillar.cut(chainHoles.translate((-bottomPillarPos[0], -bottomPillarPos[1], self.endshake / 2)))
 
@@ -3125,7 +3138,7 @@ class SimpleClockPlates:
             minThickAroundChainHole = 2
             #make a fancy bit that sticks out the bottom with holes for the chain - this makes it hard for the chain to detatch from the wheel
 
-            extraHeight = relevantChainHoles[0][1] + self.huygens_wheel.getHeight() - self.huygens_wheel.ratchet.thick + chainholeD / 2 + minThickAroundChainHole
+            extraHeight = relevantChainHoles[0][1] + self.huygens_wheel.get_height() - self.huygens_wheel.ratchet.thick + chainholeD / 2 + minThickAroundChainHole
             ratchetD = self.huygens_wheel.ratchet.outsideDiameter
             # ratchet for the chainwheel on the front of the clock
             ratchet = self.huygens_wheel.ratchet.getOuterWheel(extraThick=WASHER_THICK_M3)
@@ -3139,7 +3152,7 @@ class SimpleClockPlates:
                 .lineTo(ratchetD/2,totalHeight).close().extrude(ratchetD).translate((-ratchetD/2,0,0))
             for holePosition in holePositions:
                 #chainholes are relative to the assumed height of the chainwheel, which includes a washer
-                chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + (self.huygens_wheel.getHeight() + WASHER_THICK_M3)).circle(chainholeD / 2).extrude(1000)
+                chainHole = cq.Workplane("XZ").moveTo(holePosition[0][0], holePosition[0][1] + (self.huygens_wheel.get_height() + WASHER_THICK_M3)).circle(chainholeD / 2).extrude(1000)
                 cutter.add(chainHole)
 
 
@@ -3169,7 +3182,7 @@ class SimpleClockPlates:
 
 
             outer_r = powered_wheel.ratchet.outsideDiameter / 2 + self.gear_gap + thick
-            deep = powered_wheel.getHeight()-powered_wheel.ratchet.thick/2
+            deep = powered_wheel.get_height()-powered_wheel.ratchet.thick/2
 
             extra_plate = cq.Workplane("XY").circle(outer_r).extrude(plateThick)
             extra_plate = extra_plate.union(cq.Workplane("XY").circle(outer_r).circle(outer_r - thick).extrude(deep).translate((0,0,-deep)))
@@ -3203,7 +3216,7 @@ class SimpleClockPlates:
             chainWheelChainZ = chainWheelTopZ + holePositions[0][0][1]
             huygensChainPoses = self.huygens_wheel.getChainPositionsFromTop()
             #washer is under the chain wheel
-            huygensChainZ = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance + self.huygens_wheel.getHeight() + WASHER_THICK_M3 + huygensChainPoses[0][0][1]
+            huygensChainZ = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance + self.huygens_wheel.get_height() + WASHER_THICK_M3 + huygensChainPoses[0][0][1]
 
             return huygensChainZ - chainWheelChainZ
         else:
@@ -3522,7 +3535,7 @@ class Assembly:
                 for holeInfo in holePositions:
                     if (holeInfo[0][0] > 0) == (side > 0):
                         #hole for the weight
-                        weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.goingTrain.powered_wheel.getHeight() + holeInfo[0][1])
+                        weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.goingTrain.powered_wheel.get_height() + holeInfo[0][1])
                         self.weight_positions.append(weightPos)
 
         self.pulley_model = None
@@ -3549,7 +3562,7 @@ class Assembly:
 
         for holeInfo in self.goingTrain.powered_wheel.getChainPositionsFromTop():
             #TODO improve this a bit for cordwheels which have a slot rather than just a hole
-            z = self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.goingTrain.powered_wheel.getHeight() + self.plates.endshake / 2 + holeInfo[0][1]
+            z = self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.goingTrain.powered_wheel.get_height() + self.plates.endshake / 2 + holeInfo[0][1]
             print("{} hole from wall = {}mm".format(self.goingTrain.powered_wheel.type.value, z))
 
     def get_arbour_rod_lengths(self):
@@ -3770,7 +3783,7 @@ class Assembly:
                 for holeInfo in holePositions:
                     if (holeInfo[0][0] > 0) == (side > 0):
                         #hole for the weight
-                        weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.goingTrain.powered_wheel.getHeight() + holeInfo[0][1])
+                        weightPos = (holeInfo[0][0], weightTopY - weight.height, self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.goingTrain.powered_wheel.get_height() + holeInfo[0][1])
 
                 if weightPos is not None:
                     weightShape = weight.getWeight().rotate((0,0,0), (1,0,0),-90)
@@ -4061,7 +4074,7 @@ def get_ratchet_demo():
 def getGearDemo(module=1, justStyle=None, oneGear=False):
     demo = cq.Workplane("XY")
 
-    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, hours=7.5 * 24)
+    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)
 
     moduleReduction = 0.9
 
