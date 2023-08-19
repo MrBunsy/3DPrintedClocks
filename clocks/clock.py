@@ -890,13 +890,13 @@ class GoingTrain:
             if i == 0:
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 #the powered wheel
-                self.chainWheelArbours.append(Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d,
-                                               distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style,ratchetScrews=ratchetScrews,
-                                               useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
+                self.chainWheelArbours.append(Arbour(poweredWheel=self.poweredWheel, wheel = self.chainWheelPairs[i].wheel, wheelThick=chainWheelThick, arbour_d=self.poweredWheel.arbour_d,
+                                                     distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style, ratchetScrews=ratchetScrews,
+                                                     useRatchet=not self.huygensMaintainingPower, pinionAtFront=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
             else:
                 #just a bog standard wheel and pinion
                 pinionThick = self.chainWheelArbours[i-1].wheelThick * chainWheelPinionThickMultiplier
-                self.chainWheelArbours.append(Arbour(wheel = self.chainWheelPairs[i].wheel, wheelThick=thick * (1/thicknessReduction), arbourD=holeD, pinion=self.chainWheelPairs[i-1].pinion,
+                self.chainWheelArbours.append(Arbour(wheel = self.chainWheelPairs[i].wheel, wheelThick=thick * (1/thicknessReduction), arbour_d=holeD, pinion=self.chainWheelPairs[i - 1].pinion,
                                                      pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
                                                      distanceToNextArbour=self.chainWheelPairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront
                                                      ))
@@ -908,7 +908,7 @@ class GoingTrain:
                 # == minute wheel ==
                 if self.chainWheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbourD=self.poweredWheel.arbour_d, distanceToNextArbour=pairs[i].centre_distance,
+                    arbour = Arbour(poweredWheel=self.poweredWheel, wheel = pairs[i].wheel, wheelThick=chainWheelThick, arbour_d=self.poweredWheel.arbour_d, distanceToNextArbour=pairs[i].centre_distance,
                                     style=style, pinionAtFront=not self.chainAtBack, ratchetScrews=ratchetScrews, useRatchet=not self.huygensMaintainingPower,
                                     clockwise_from_pinion_side=not self.chainAtBack)
                 else:
@@ -920,7 +920,7 @@ class GoingTrain:
                         pinionThick = self.chainWheelArbours[-1].wheelThick * chainWheelPinionThickMultiplier
                     else:
                         pinionThick = self.chainWheelArbours[-1].wheelThick * pinionThickMultiplier
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPairs[-1].pinion, arbourD=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.chainWheelPairs[-1].pinion, arbour_d=holeD, wheelThick=thick, pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength,
                                     distanceToNextArbour= pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
                 if useNyloc:
@@ -947,7 +947,7 @@ class GoingTrain:
                     pinionExtension = pinion_extensions[i]
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbourD=holeD, wheelThick=thick*(thicknessReduction**i),
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbour_d=holeD, wheelThick=thick * (thicknessReduction ** i),
                                       pinionThick=pinionThick, endCapThick=self.gearPinionEndCapLength, pinionExtension=pinionExtension,
                                       distanceToNextArbour=pairs[i].centre_distance, style=style, pinionAtFront=pinionAtFront))
             else:
@@ -958,7 +958,7 @@ class GoingTrain:
 
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbourD=holeD, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbour_d=holeD, pinionThick=arbours[-1].wheelThick * pinionThickMultiplier, endCapThick=self.gearPinionEndCapLength,
                                       distanceToNextArbour=self.escapement.getDistanceBeteenArbours(), style=style, pinionAtFront=pinionAtFront, clockwise_from_pinion_side=escapeWheelClockwiseFromPinionSide))
             if not stack_away_from_powered_wheel:
                 pinionAtFront = not pinionAtFront
@@ -1906,7 +1906,7 @@ class SimpleClockPlates:
             # check front plate
             canIgnoreFront = False
             canIgnoreBack = False
-            if self.goingTrain.getArbourWithConventionalNaming(i).getType() == ArbourType.CHAIN_WHEEL:
+            if self.goingTrain.getArbourWithConventionalNaming(i).getType() == ArbourType.POWERED_WHEEL:
                 if self.goingTrain.chainAtBack:
                     canIgnoreBack = True
                 else:
@@ -3365,7 +3365,7 @@ class SimpleClockPlates:
         for i,arbourForPlate in enumerate(self.arboursForPlate):
             shapes = arbourForPlate.get_shapes()
             #TODO maybe include powered wheel in shapes? not sure if it's worth the effort
-            if arbourForPlate.type == ArbourType.CHAIN_WHEEL:
+            if arbourForPlate.type == ArbourType.POWERED_WHEEL:
                 arbourForPlate.arbor.poweredWheel.outputSTLs(name+"_arbour_{}".format(i), path)
             for shapeName in shapes.keys():
                 out = os.path.join(path, "{}_arbour_{}_{}.stl".format(name, i, shapeName))
@@ -3597,7 +3597,7 @@ class Assembly:
             hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minuteHandZ + self.hands.thick - total_plate_thick) + getNutHeight(arbour.arbourD) + M3_DOMED_NUT_THREAD_DEPTH - 1
 
             #trying to arrange all the additions from back to front to make it easy to check
-            if arbour.type == ArbourType.CHAIN_WHEEL:
+            if arbour.type == ArbourType.POWERED_WHEEL:
                 powered_wheel = arbour.poweredWheel
                 if powered_wheel.type == PowerType.CORD:
                     if powered_wheel.useKey:

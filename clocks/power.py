@@ -850,6 +850,8 @@ class SpringBarrel:
     '''
 
     def __init__(self, spring = None, key_bearing=None, rod_d=4):
+        self.type = PowerType.SPRING_BARREL
+
         self.spring = spring
         if self.spring is None:
             self.spring = MainSpring(height=18, thick=0.4, barrel_diameter=45)
@@ -933,9 +935,12 @@ class SpringBarrel:
         arbor = cq.Workplane("XY").circle(self.back_bearing.innerSafeD/2).extrude(self.back_bearing_standoff)
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_barrel_base/2).extrude(extra_after_barrel + self.base_thick + self.internal_endshake/2)
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_spring/2).extrude(self.barrel_height - self.internal_endshake)
-        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_lid/2).extrude(self.internal_endshake/2 + self.lid_thick + self.front_bearing_standoff)
+        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_lid/2).extrude(self.internal_endshake/2 + self.lid_thick + self.front_bearing_standoff + extra_after_lid)
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.key_bearing.height)
         arbor = arbor.faces(">Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(key_length)
+
+        #hole for rod out the back
+        arbor = arbor.cut(cq.Workplane("XY").circle(self.rod_d/2).extrude(self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.barrel_height/2 - self.spring_hook_screws.metric_thread*2))
 
         arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.key_square_side_length/2))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
 

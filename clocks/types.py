@@ -132,7 +132,7 @@ ideas for new styles:
 
 class ArbourType(Enum):
     WHEEL_AND_PINION = "WheelAndPinion"
-    CHAIN_WHEEL = "ChainWheel"
+    POWERED_WHEEL = "PoweredWheel"
     ESCAPE_WHEEL = "EscapeWheel"
     ANCHOR = "Anchor"
     UNKNOWN = "Unknown"
@@ -141,13 +141,22 @@ class PowerType(Enum):
     NOT_CONFIGURED = None
     # === Weight types ===
     CHAIN = "chain"
+    #the better version
     CHAIN2 = "chain2"
-    #drop in for chain, using friction and a hemp rope
+    #drop in for chain, using friction and a hemp rope (not great, needs massive counterweight)
     ROPE = "rope"
     #thin synthetic cord, coiled multiple times
     CORD = "cord"
     # === Spring types ===
-    SPRING = "spring" # either loop end or barrel
+    SPRING_BARREL = "spring" # either loop end or barrel
+
+    @staticmethod
+    def is_weight(type):
+        return type in [PowerType.CHAIN, PowerType.CHAIN2, PowerType.ROPE, PowerType.CORD]
+
+    @staticmethod
+    def is_spring(type):
+        return not self.is_weight()
 
 class DialStyle(Enum):
     #simple lines that are actually slightly wedge shaped
