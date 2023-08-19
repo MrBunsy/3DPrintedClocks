@@ -833,6 +833,133 @@ class LoopEndSpringArbour:
             spring = MainSpring()
         self.spring = spring
 
+class SpringBarrel:
+    '''
+    Experiment! Can heavy duty 3D printed PETG hold up to an eight day spring? Let's find out!
+
+    Plan: chunkier arbor than normal (and might need to make barrel diameter slightly larger as a result)
+    Use M3 screws for the hooks on both the arbor and the barrel inside.
+    Barrel will need a seriously thick wall - 5mm? 10mm?
+    Arbor will be printed lying on its side, so the side the screw screws into will be the flat side Hopefully this will give it enough strength
+
+    TODO determine how many turns the barrel should make - can easily count teeth on an old smiths.
+    Worth making an experimental rig to see how much weight the spring can pull up? then I can estimate the power
+    Current plan: work out how many turns are needed, then make a clock that runs for only 3 days using those turns
+
+    In theory the going train already supports multiple chain wheels, time to shake out the bugs!
+    '''
+
+    def __init__(self, spring = None, key_bearing=None, rod_d=4):
+        self.spring = spring
+        if self.spring is None:
+            self.spring = MainSpring(height=18, thick=0.4, barrel_diameter=45)
+
+        self.key_bearing = key_bearing
+
+        if self.key_bearing is None:
+            self.key_bearing = getBearingInfo(10)
+
+        self.rod_d = rod_d
+
+        self.back_bearing = getBearingInfo(self.rod_d)
+
+        #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
+        self.barrel_diameter=self.spring.barrel_diameter + 5
+        self.barrel_height = self.spring.height + 2
+        self.arbor_inner_diameter=10
+
+        self.wall_thick = 10
+        self.base_thick = 10
+        self.lid_thick=3
+
+        self.internal_endshake=0.5
+
+        # copied from CordWheel
+        self.bearing_wiggle_room = 0.05
+
+        self.lid_hole_d = self.key_bearing.innerSafeD + LOOSE_FIT_ON_ROD
+
+        self.arbor_d_lid = self.key_bearing.innerSafeD
+
+        self.arbor_d_bearing = self.key_bearing.innerD - self.bearing_wiggle_room
+
+        self.arbor_d_barrel_base = self.arbor_d_lid
+        self.barrel_hole_d = self.arbor_d_barrel_base + LOOSE_FIT_ON_ROD
+
+        self.arbor_d_spring = self.arbor_d_barrel_base + 2.5
+        print("arbor d inside spring: {}mm".format(self.arbor_d_spring))
+
+        self.back_bearing_standoff = 0.5
+        self.front_bearing_standoff = 0.5
+
+        self.key_square_side_length = self.arbor_d_bearing*0.5*math.sqrt(2)
+
+        self.lid_fixing_screws_count = 3
+        self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
+        self.spring_hook_screws = MachineScrew(3, length=10)
+
+        self.spring_hook_space=2
+
+    def get_lid_fixing_screws_cutter(self):
+        cutter = cq.Workplane("XY")
+
+        for i in range(self.lid_fixing_screws_count):
+            #offset so it doesn't coincide with the spring hook
+            pos = polar((i+0.25 )* math.pi * 2 / self.lid_fixing_screws_count, self.barrel_diameter / 2 + self.wall_thick / 2)
+
+            cutter = cutter.add(self.lid_fixing_screws.getCutter().rotate((0,0,0),(1,0,0),180).translate(pos).translate((0,0,self.base_thick + self.barrel_height + self.lid_thick)))
+
+        return cutter
+
+
+    def get_barrel(self):
+        barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_hole_d/2).extrude(self.base_thick)
+        barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
+
+        barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
+        barrel = barrel.cut(self.spring_hook_screws.getCutter(for_tap_die=True).rotate((0,0,0),(0,1,0),90).translate((self.barrel_diameter/2 - self.spring_hook_space - self.spring_hook_screws.getHeadHeight(),0,self.base_thick + self.barrel_height/2)))
+
+        return barrel
+
+    def get_lid(self):
+        lid = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.lid_hole_d/2).extrude(self.lid_thick)
+
+        lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
+
+        return lid
+
+    def get_arbor(self, extra_after_barrel=0, extra_after_lid=0, key_length=30, for_printing=True):
+        #standoff from rear bearing
+        arbor = cq.Workplane("XY").circle(self.back_bearing.innerSafeD/2).extrude(self.back_bearing_standoff)
+        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_barrel_base/2).extrude(extra_after_barrel + self.base_thick + self.internal_endshake/2)
+        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_spring/2).extrude(self.barrel_height - self.internal_endshake)
+        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_lid/2).extrude(self.internal_endshake/2 + self.lid_thick + self.front_bearing_standoff)
+        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.key_bearing.height)
+        arbor = arbor.faces(">Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(key_length)
+
+        arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.key_square_side_length/2))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
+
+        arbor = arbor.cut(cq.Workplane("XY").rect(1000,1000).extrude(100).translate((0,0,-100)))
+
+        cutoff_height = self.arbor_d_spring/2 - self.key_square_side_length/2
+
+        screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - cutoff_height)
+        screwhole = screwhole.translate((self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.internal_endshake/2 + self.barrel_height/2,0,0))
+        arbor = arbor.cut(screwhole)
+
+        if not for_printing:
+            arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.key_square_side_length/2, 0, -self.back_bearing_standoff - (extra_after_barrel)))
+
+        return arbor
+
+    def get_assembled(self):
+        model = self.get_barrel()
+
+        model = model.add(self.get_lid().translate((0,0,self.base_thick + self.barrel_height)))
+        model = model.add(self.get_arbor(for_printing=False))
+
+        return model
+
 class WeightPoweredWheel:
     '''
     Python doesn't have interfaces, but this is the interface for the powered wheel classes (for weights! I forgot entirely about springs when I wrote this)
@@ -1765,6 +1892,11 @@ class PocketChainWheel2:
     Also possible that the chainproducts chain is just not very high quality as it seems to hang twisted
 
     Works well with the heavy duty cousins chain (happy with 3kg). Looks like it might be occasionally slipping with the lighter regula 8 day chain. Need to investigate further.
+
+    it does slip with the lighter Regula 8 day chain and a 1.25kg weight, however with a small counterweight of some M10 washers it doesn't slip anymore!
+    So I think this is viable with old longcase style counterweights on the chains
+
+    Worth trying on a 30 hour clock if I ever make one again?
     '''
 
     def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, looseOnRod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):

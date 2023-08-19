@@ -483,12 +483,16 @@ if False:
 
     show_object(pretty_bob.get_models())
 
+#Tahoma might be a good font for arabic numbers?
+#this one is fun:
 # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
-# dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Arial", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
-dial = Dial(200, DialStyle.ROMAN_NUMERALS, font=None, outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
+#these three look good:
+# dial = Dial(200, DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=DialStyle.RING, inner_edge_style=DialStyle.LINES_ARC)
+# dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Times New Roman", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None)
+# dial = Dial(200, DialStyle.ROMAN_NUMERALS, font=None, outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
 
-show_object(dial.get_dial(),options={"color":"white"} )
-show_object(dial.get_main_dial_detail(),options={"color":"black"} )
+# show_object(dial.get_dial(),options={"color":"white"} )
+# show_object(dial.get_main_dial_detail(),options={"color":"black"} )
 
 # text = cq.Workplane("XY").moveTo(0, 0).text("Testing", 10, LAYER_THICK, kind="bold")
 #
@@ -706,3 +710,9 @@ if False:
 #
 # show_object(ratchet.get_gear())
 # show_object(ratchet.get_pawl())
+
+spring = SpringBarrel()
+
+# show_object(spring.get_barrel())
+show_object(spring.get_assembled())
+# show_object(spring.get_arbor(for_printing=False))
