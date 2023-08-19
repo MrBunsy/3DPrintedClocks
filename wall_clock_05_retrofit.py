@@ -52,8 +52,8 @@ new_chainwheel.ratchet.ratchetTeeth=16
 new_chainwheel.ratchet.clicks=8
 print("diameter:",new_chainwheel.diameter, "height", new_chainwheel.getHeight())
 
-new_chainwheel.outputSTLs(clockName, clockOutDir)
+new_chainwheel.output_STLs(clockName, clockOutDir)
 
-show_object(new_chainwheel.getAssembled())
+show_object(new_chainwheel.get_assembled())
 
 # show_object(new_chainwheel.get_bottom_half())

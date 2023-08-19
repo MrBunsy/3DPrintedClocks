@@ -440,7 +440,7 @@ class Hands:
 
             bearing_standoff_thick = 0
             #mega hacky, review if I ever want to try a 2mm arbour for the escape wheel
-            bearing = getBearingInfo(3)
+            bearing = get_bearing_info(3)
 
             if bearing is not None:
                 bearing_standoff_thick =  LAYER_THICK*2
@@ -1190,7 +1190,7 @@ class Hands:
 
         return hands
 
-    def getAssembled(self, time_minute=10, time_hour=10, time_seconds=0, gap_size=0, include_seconds=True, flatten=False):
+    def get_assembled(self, time_minute=10, time_hour=10, time_seconds=0, gap_size=0, include_seconds=True, flatten=False):
         '''
         get minute and hour hands assembled centred around 0,0
         gap_size is how much gap between top of hour hand and bottom of minute hand
@@ -1233,7 +1233,7 @@ class Hands:
 
         return all
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
 
         colours = self.getExtraColours()
 

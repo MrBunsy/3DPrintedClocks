@@ -48,17 +48,17 @@ toothTipAngle = 4
 toothBaseAngle = 3
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=48, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
 
-train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement=escapement, maxWeightDrop=1700, chainAtBack=False, chainWheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement=escapement, max_weight_drop=1700, chain_at_back=False, chain_wheels=0, hours=30)
 
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 
-train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
+train.gen_cord_wheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
 
-train.printInfo()
+train.print_info()
 
 pendulumSticksOut=8
 
-train.genGears(module_size=1.25,moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
+train.gen_gears(module_size=1.25, moduleReduction=0.875, thick=3, chainWheelThick=6, useNyloc=False)
 
 
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30)
@@ -72,7 +72,7 @@ pendulum = clock.Pendulum(bobD=70, bobThick=10)
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 07",style=clock.ClockPlateStyle.VERTICAL)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Wall 07", style=clock.ClockPlateStyle.VERTICAL)
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
@@ -92,12 +92,12 @@ bigweight.printInfo()
 show_object(assembly.get_clock())
 
 if outputSTL:
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    weight.outputSTLs(clockName, clockOutDir)
-    bigweight.outputSTLs(clockName+"_big", clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    dial.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    weight.output_STLs(clockName, clockOutDir)
+    bigweight.output_STLs(clockName+"_big", clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)

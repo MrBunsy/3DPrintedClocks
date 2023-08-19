@@ -72,17 +72,17 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 #this clock was originally printed with the maxweightdrodp of 1400 by accident. a cord wheel of diameter 25, keeping the existing ratio, works to get it back down to 1200
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, hours=7.25 * 24)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 # train.setChainWheelRatio([93, 10])
 
 #original test
 # train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=18, style=gearStyle, useKey=True, preferedDiameter=42.5, looseOnRod=False)
 #think this is promising for good compromise of size
-train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, looseOnRod=False, prefer_small=True)
+train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25, looseOnRod=False, prefer_small=True)
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
 
@@ -93,13 +93,13 @@ train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThic
 # train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=40,o_ring_diameter=2)
 # train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=35,o_ring_diameter=2, prefer_small=True)
 
-train.setChainWheelRatio([67, 11])
+train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
-train.printInfo(weight_kg=2)
+train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+train.print_info(weight_kg=2)
 '''
 Powered wheel diameter: 29
 [67, 11]
@@ -111,16 +111,16 @@ Ratchet needs M2 (CS) screws of length 8mm
 cord wheel screw (m3) length between 20.6 22.6
 Cordwheel power varies from 42.2μW to 47.8μW
 '''
-train.getArbourWithConventionalNaming(0).printScrewLength()
+train.get_arbour_with_conventional_naming(0).print_screw_length()
 
-cordwheel = train.getArbourWithConventionalNaming(0)
+cordwheel = train.get_arbour_with_conventional_naming(0)
 
-# show_object(cordwheel.poweredWheel.getAssembled())
+# show_object(cordwheel.poweredWheel.get_assembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=11, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.getBearingInfo(3), compact=True, module=1)
+motionWorks = clock.MotionWorks(extra_height=11, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
 
 pendulum = clock.Pendulum(handAvoiderInnerD=100,bobD=80, bobThick=10)#, handAvoiderHeight=100)
 
@@ -140,10 +140,10 @@ use a rounded square shape for the minute hand, then the minute hand can be used
 or just stick with original plan of arm on top with rounded suqare for hand?
 '''
 dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 12",style=clock.ClockPlateStyle.VERTICAL,
-                                 motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
-                                 backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chainThroughPillarRequired=True, dial=dial, centred_second_hand=True, pillars_separate=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 12", style=clock.ClockPlateStyle.VERTICAL,
+                                 motion_works_above=False, heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+                                 back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
+                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -153,7 +153,7 @@ hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="circle",  minu
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))
-pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 # #no weight for this clock, as it's going to probably be too heavy to make myself.
 # pulley = None
 
@@ -174,13 +174,13 @@ assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.
 if outputSTL:
     #
     #
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    dial.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    pulley.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)

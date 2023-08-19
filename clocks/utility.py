@@ -946,7 +946,7 @@ class BearingInfo:
     def __str__(self):
         return self.get_string()
 
-def getBearingInfo(innerD):
+def get_bearing_info(innerD):
     '''
     Get some stock bearings
     '''

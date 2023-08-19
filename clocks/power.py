@@ -153,7 +153,7 @@ class Weight:
 
         return weight
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_weight.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getWeight(), out)
@@ -251,7 +251,7 @@ class WeightShell:
 
         return lid
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
 
         out = os.path.join(path, "{}_weight_shell_top.stl".format(name))
         print("Outputting ", out)
@@ -446,7 +446,7 @@ class LightweightPulley:
     def getTotalThick(self):
         return self.get_total_thickness()
 
-    def getAssembled(self):
+    def get_assembled(self):
 
         wheel_base_z = self.holder_thick + self.gap_size
 
@@ -456,7 +456,7 @@ class LightweightPulley:
 
         return pulley
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_lightweight_pulley_wheel.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_wheel(), out)
@@ -667,7 +667,7 @@ class BearingPulley:
 
         return hook
 
-    def getAssembled(self):
+    def get_assembled(self):
         pulley = self.getHalf(top=False).add(self.getHalf(top=True).rotate((0,0,self.getTotalThick()/2),(1,0,self.getTotalThick()/2),180))
 
         if self.bearing is not None:
@@ -682,7 +682,7 @@ class BearingPulley:
     def printInfo(self):
         print("pulley needs screws {} {}mm and {} {}mm".format(self.screws, self.getTotalThick(), self.hook_screws, self.getHookTotalThick()))
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pulley_wheel_top.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHalf(top=True), out)
@@ -734,7 +734,7 @@ class SpringArbour:
         self.metric_rod_size = metric_rod_size
         if bearing is None:
             #default to a 10mm inner diameter bearing (I've got little cheap plastic ones of these)
-            bearing = getBearingInfo(10)
+            bearing = get_bearing_info(10)
         self.bearing = bearing
         #the bit the inside of the spring wraps around, if it's too small then larger springs will struggle, but I imagine with the small
         #alarm clock springs I'll usually be too big
@@ -859,11 +859,11 @@ class SpringBarrel:
         self.key_bearing = key_bearing
 
         if self.key_bearing is None:
-            self.key_bearing = getBearingInfo(10)
+            self.key_bearing = get_bearing_info(10)
 
         self.rod_d = rod_d
 
-        self.back_bearing = getBearingInfo(self.rod_d)
+        self.back_bearing = get_bearing_info(self.rod_d)
 
         #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
         self.barrel_diameter=self.spring.barrel_diameter + 5
@@ -1003,7 +1003,7 @@ class WeightPoweredWheel:
         return true if this wheel is powered to rotate clockwise
         '''
 
-    def getAssembled(self):
+    def get_assembled(self):
         '''
         return 3D model of fully assembled wheel with ratchet (for the model, not printing)
         '''
@@ -1013,7 +1013,7 @@ class WeightPoweredWheel:
         returns total thickness of the assembled wheel, with ratchet. If it needs a washer, this is included in the height
         '''
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         '''
         save STL files to disc for all the objects required to print this wheel
         '''
@@ -1049,7 +1049,7 @@ class WeightPoweredWheel:
         print information about runtime based on the info provided
         '''
 
-    def printScrewLength(self):
+    def print_screw_length(self):
         '''
         print to console information on screws required to assemble
         '''
@@ -1157,7 +1157,7 @@ class RopeWheel:
         else:
             return self.outer_diameter/2
 
-    def printScrewLength(self):
+    def print_screw_length(self):
         if self.screw.countersunk:
             screwLength = self.getHeight() - WASHER_THICK_M3
         else:
@@ -1264,7 +1264,7 @@ class RopeWheel:
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.wheel_thick))
 
-        bearing_inner_safe_d = getBearingInfo(self.arbour_d).innerSafeD
+        bearing_inner_safe_d = get_bearing_info(self.arbour_d).innerSafeD
 
         if self.bearing_standoff_thick > 0 and bearing_inner_safe_d > self.hole_d:
             wheel = wheel.add(cq.Workplane("XY").circle(bearing_inner_safe_d/2).circle(self.hole_d/2).extrude(self.bearing_standoff_thick).translate((0,0,self.wheel_thick)))
@@ -1283,7 +1283,7 @@ class RopeWheel:
         return wheel
 
 
-    def getAssembled(self):
+    def get_assembled(self):
         if self.ratchet is not None:
             return self.get_wheel_with_ratchet()
         else:
@@ -1292,10 +1292,10 @@ class RopeWheel:
     def getHeight(self):
         return self.wheel_thick + self.bearing_standoff_thick + self.ratchet_thick
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path,"{}_rope_wheel.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getAssembled(), out)
+        exporters.export(self.get_assembled(), out)
 
     def getChainPositionsFromTop(self):
         '''
@@ -1405,7 +1405,7 @@ class CordWheel:
         '''
 
         if bearing is None:
-            bearing = getBearingInfo(15)
+            bearing = get_bearing_info(15)
 
         #only if useKey is true will this be used
         self.bearing = bearing
@@ -1474,7 +1474,7 @@ class CordWheel:
     def getScrewPositions(self):
         return self.fixingPoints
 
-    def printScrewLength(self):
+    def print_screw_length(self):
         if self.useKey:
             minScrewLength = self.ratchet.thick/2 + self.capThick + self.topCapThick + self.thick
             print("cord wheel screw (m{}) length between".format(self.screwThreadMetric), minScrewLength, minScrewLength + self.ratchet.thick/2)
@@ -1816,7 +1816,7 @@ class CordWheel:
         return self.getCordTurningInfo(cordLength)[0]
 
 
-    def getAssembled(self):
+    def get_assembled(self):
 
         model = self.getClickWheelForCord(for_printing=False)
         if self.useKey:
@@ -1843,7 +1843,7 @@ class CordWheel:
 
         return self.ratchet.thick + self.clickWheelStandoffHeight + self.capThick * 2 + self.topCapThick + self.thick * 2 + WASHER_THICK_M3
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
 
         out = os.path.join(path, "{}_cordwheel_bottom_segment.stl".format(name))
         print("Outputting ", out)
@@ -2087,7 +2087,7 @@ class PocketChainWheel2:
         '''
         return self.power_clockwise
 
-    def getAssembled(self):
+    def get_assembled(self):
         '''
         return 3D model of fully assembled wheel with ratchet (for the model, not printing)
         '''
@@ -2108,7 +2108,7 @@ class PocketChainWheel2:
             height += self.ratchet.thick
         return height
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         '''
         save STL files to disc for all the objects required to print this wheel
         '''
@@ -2158,7 +2158,7 @@ class PocketChainWheel2:
         '''
         return self.getTurnsForDrop(cordLength)*minuteRatio
 
-    def printScrewLength(self):
+    def print_screw_length(self):
         '''
         print to console information on screws required to assemble
         '''
@@ -2444,7 +2444,7 @@ class PocketChainWheel:
 
         return combined
 
-    def printScrewLength(self):
+    def print_screw_length(self):
         if self.ratchet is None:
             print("No ratchet, can't estimate screw lenght")
             return
@@ -2452,7 +2452,7 @@ class PocketChainWheel:
         print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.screw.getString(), self.getHeight(), minScrewLength))
 
 
-    def getAssembled(self):
+    def get_assembled(self):
 
 
         if self.ratchet is not None:
@@ -2467,7 +2467,7 @@ class PocketChainWheel:
     def setRatchet(self, ratchet):
         self.ratchet=ratchet
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
 
         if self.ratchet is None:
             out = os.path.join(path, "{}_chain_wheel_bottom_half.stl".format(name))

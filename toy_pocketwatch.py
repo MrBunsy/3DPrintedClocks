@@ -56,7 +56,7 @@ class ToyPocketwatch:
         return self.hands_shape
 
     def gen_hands(self):
-        hands = self.hands.getAssembled(time_minute=10, time_hour=10, flatten=True, include_seconds=False).translate((0,0,self.thick))
+        hands = self.hands.get_assembled(time_minute=10, time_hour=10, flatten=True, include_seconds=False).translate((0,0,self.thick))
         hands = hands.union(cq.Workplane("XY").circle(self.hands.length * 0.05 * 2*1.4).extrude(self.hand_thick).translate((0,0,self.thick-self.hand_thick)))
 
         return hands
@@ -89,7 +89,7 @@ class ToyPocketwatch:
 
         return body
 
-    def outputSTLs(self, name="toy_pocketwatch", path="out"):
+    def output_STLs(self, name="toy_pocketwatch", path="out"):
         out = os.path.join(path, "{}_body.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_body(), out, tolerance=0.01, angularTolerance=0.05)
@@ -114,4 +114,4 @@ show_object(pocketwatch.get_hands(), options={"color":Colour.BLACK}, name="Hands
 show_object(pocketwatch.get_body(), options={"color":Colour.BRASS}, name="Body")
 
 if outputSTL:
-    pocketwatch.outputSTLs()
+    pocketwatch.output_STLs()

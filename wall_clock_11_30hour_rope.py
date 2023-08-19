@@ -50,25 +50,25 @@ lift =3
 lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train=clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, maxWeightDrop=2000, chainAtBack=False, chainWheels=0, hours=30)
+train=clock.GoingTrain(pendulum_period=1, fourth_wheel=False, escapement=escapement, max_weight_drop=2000, chain_at_back=False, chain_wheels=0, hours=30)
 
 #note, going below a module of 0.85 makes the pinions are bit hard to print - can do it, but I think it's worth sticking with 0.85 as an absolute minimum with a 0.4mm nozzle
 moduleReduction=0.9
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1,moduleReduction=moduleReduction)
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
 
 # train.genCordWheels(ratchetThick=2.2, cordThick=1, cordCoilThick=6, style=gearStyle)
 # train.genChainWheels(ratchetThick=2.5, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
-train.genRopeWheels()
+train.gen_rope_wheels()
 
-train.printInfo()
+train.print_info()
 
 pendulumSticksOut=8+15
 
 #module size of 0.85 looks printable without stringing!
-train.genGears(module_size=0.85,moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=2, useNyloc=False, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3, style=gearStyle, ratchetScrews=clock.MachineScrew(2,countersunk=True))
+train.gen_gears(module_size=0.85, moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=2, useNyloc=False, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3, style=gearStyle, ratchetScrews=clock.MachineScrew(2, countersunk=True))
 
-train.getArbourWithConventionalNaming(0).printScrewLength()
+train.get_arbour_with_conventional_naming(0).print_screw_length()
 motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle)
 
 
@@ -80,7 +80,7 @@ pendulum = clock.Pendulum(bobD=70, bobThick=10)
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=6, pendulumSticksOut=pendulumSticksOut, name="Wall 11",style=clock.ClockPlateStyle.VERTICAL)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Wall 11", style=clock.ClockPlateStyle.VERTICAL)
 
 
 # hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=17)
@@ -103,12 +103,12 @@ assembly = clock.Assembly(plates, hands=hands,weights=[weight, counterweight])
 assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], gear_colours=[clock.Colour.RED, clock.Colour.ORANGE, clock.Colour.YELLOW, clock.Colour.GREEN, clock.Colour.BLUE, clock.Colour.PURPLE])
 
 if outputSTL:
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    weight.outputSTLs(clockName, clockOutDir)
-    counterweight.outputSTLs(clockName+"_counter", clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    dial.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    weight.output_STLs(clockName, clockOutDir)
+    counterweight.output_STLs(clockName+"_counter", clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)

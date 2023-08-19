@@ -51,7 +51,7 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, a
 # lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 #pendulum_length=0.225
-train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, maxWeightDrop=1400, usePulley=False, chainAtBack=False, chainWheels=1, hours=7.25*24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_length=0.225, fourth_wheel=True, escapement=escapement, max_weight_drop=1400, use_pulley=False, chain_at_back=False, chain_wheels=1, hours=7.25 * 24)#, huygensMaintainingPower=True)
 
 moduleReduction=1#0.85
 
@@ -66,7 +66,7 @@ moduleReduction=1#0.85
 #for 0.22m pendulum:
 # train.setRatios( [[77, 10], [60, 16], [53, 12]])
 #for 0.225
-train.setRatios([[68, 10], [60, 11], [51, 15]])
+train.set_ratios([[68, 10], [60, 11], [51, 15]])
 #for 0.25m pendulum:
 # train.setRatios([[73, 10], [59, 10], [50, 18]])
 #1s pendulum:
@@ -80,16 +80,16 @@ power wheel ratios [{'ratio': 7.7272727272727275, 'pair': [85, 11], 'error': 0.0
 #think this is promising for good compromise of size
 # train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=29, looseOnRod=False, prefer_small=True)
 #fixing chain wheel to the rod and having the wheel loose (with a steel rod) as this worked really well with the cord wheel and i suspect it will with the chain wheel too
-train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
+train.gen_chain_wheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True), ratchetOuterThick=6)
 
 pendulumSticksOut=15
 
 #0.9 with no module reduction produces gears that slice perfectly
 #0.8 looks printable, but with only one perimeter in the teeth - will they be strong enough? Will the escapement work?
-train.genGears(module_size=0.8, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
-train.printInfo(weight_kg=3)
-train.getArbourWithConventionalNaming(0).printScrewLength()
+train.gen_gears(module_size=0.8, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+train.print_info(weight_kg=3)
+train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 
 motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
@@ -100,10 +100,10 @@ pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=60, bobThick=10)
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.TONY_THE_CLOCK, detail_thick=clock.LAYER_THICK*3)
 
 #using non-countersunk screws and screwing from front so I can build this with threaded rod before the long screws are delivered
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall22 Tony", style=clock.ClockPlateStyle.COMPACT,
-                                 motionWorksAbove=False, heavy=True, extraHeavy=False, pendulumFixing=pendulumFixing, pendulumAtFront=False,
-                                 backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=False),
-                                 chainThroughPillarRequired=False, pillars_separate=True, dial=dial, allow_bottom_pillar_height_reduction=False, bottom_pillars=2)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall22 Tony", style=clock.ClockPlateStyle.COMPACT,
+                                 motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+                                 back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=False),
+                                 chain_through_pillar_required=False, pillars_separate=True, dial=dial, allow_bottom_pillar_height_reduction=False, bottom_pillars=2)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -135,10 +135,10 @@ assembly.show_clock(show_object, hand_colours=["red"], dial_colours=["blue", "ye
 if outputSTL:
 
     pretty_bob.output_STLs(clockName, clockOutDir)
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    # pulley.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    # pulley.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)

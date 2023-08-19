@@ -212,7 +212,7 @@ class MoonPhaseComplication3D:
         return self.pairs[0].pinion.get3D(thick=self.hour_hand_pinion_thick)
 
     def get_pinion_for_motion_works_max_radius(self):
-        return self.pairs[0].pinion.getMaxRadius()
+        return self.pairs[0].pinion.get_max_radius()
 
     def get_arbor_shape(self, index, for_printing=True):
         '''
@@ -226,8 +226,8 @@ class MoonPhaseComplication3D:
         if index < 2:
             pinion_length = self.first_pinion_thick if index == 0 else self.pinion_thick
             #TODO pinion should be long enough to reach all the way to the plate so the next arbor can be as close as possible and thus the moon not stick out too much
-            arbor = Arbour(arbour_d= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheelThick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinionThick=self.pinion_thick,
-                           pinionExtension=pinion_length - self.pinion_thick, pinionAtFront=False, clockwise_from_pinion_side=True, style=self.gear_style, endCapThick=0).getShape()
+            arbor = Arbour(arbour_d= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheel_thick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinion_thick=self.pinion_thick,
+                           pinion_extension=pinion_length - self.pinion_thick, pinion_at_front=False, clockwise_from_pinion_side=True, style=self.gear_style, end_cap_thick=0).get_shape()
 
             if not for_printing and index == 0:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.gear_thick + pinion_length))
@@ -267,7 +267,7 @@ class MoonPhaseComplication3D:
         positions = []
 
         #directly above and as close to the motion works as possible
-        motion_works_to_belvel0 = self.cannon_pinion_max_r + self.pairs[1].wheel.getMaxRadius() + 3
+        motion_works_to_belvel0 = self.cannon_pinion_max_r + self.pairs[1].wheel.get_max_radius() + 3
         bevel0_pos = (0, motion_works_to_belvel0)
         # directly to the left of teh motion works
         arbor0_pos = polar(self.first_gear_angle, self.get_arbor_distances(0))#(-self.get_arbor_distances(0),0)
@@ -324,7 +324,7 @@ class MoonPhaseComplication3D:
         return self.get_arbor_positions_relative_to_motion_works()[2][2] + self.gear_thick + self.bevel_pair.get_centre_of_wheel_to_back_of_pinion()
 
     def get_last_wheel_r(self):
-        return self.pairs[-2].wheel.getMaxRadius()
+        return self.pairs[-2].wheel.get_max_radius()
 
     def get_assembled(self):
         model = cq.Workplane("XY")
@@ -342,7 +342,7 @@ class MoonPhaseComplication3D:
 
         return model
 
-    def outputSTLs(self, name="clock", path="../out", max_wide=250, max_long=210):
+    def output_STLs(self, name="clock", path="../out", max_wide=250, max_long=210):
 
         for i in range(4):
             out = os.path.join(path, "{}_moon_arbor_{}.stl".format(name,i))
@@ -1063,7 +1063,7 @@ class Dial:
         return halves
 
 
-    def outputSTLs(self, name="clock", path="../out", max_wide=250, max_long=210):
+    def output_STLs(self, name="clock", path="../out", max_wide=250, max_long=210):
 
         if self.outside_d < min(max_wide, max_long):
             out = os.path.join(path, "{}_dial.stl".format(name))

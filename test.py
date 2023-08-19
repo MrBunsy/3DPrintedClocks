@@ -22,7 +22,7 @@ if 'show_object' not in globals():
 # ratchet = Ratchet()
 # # frictionCord = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet,useFriction=True, cordThick=4)
 #
-# # show_object(frictionCord.getAssembled())
+# # show_object(frictionCord.get_assembled())
 #
 #
 # # cordwheel = CordWheel( diameter=25, capDiameter=50, ratchet=ratchet, useKey=True, cordThick=2)
@@ -30,7 +30,7 @@ if 'show_object' not in globals():
 # cordwheel = CordWheel( diameter=17, capDiameter=50, ratchet=ratchet,cordThick=1)
 #
 #
-# show_object(cordwheel.getAssembled())
+# show_object(cordwheel.get_assembled())
 # show_object(cordwheel.getKey(withKnob=False))
 
 
@@ -44,24 +44,24 @@ if 'show_object' not in globals():
 # ratchet = Ratchet()
 # chainWheel.setRatchet(ratchet)
 #
-# show_object(chainWheel.getAssembled())
+# show_object(chainWheel.get_assembled())
 
 # chainWheel = PocketChainWheel2(max_diameter=35, chain=CHAIN_PRODUCTS_1_4MM_CHAIN, ratchet_thick=4, ratchetOuterD=50)
 #
 # # show_object(chainWheel.get_pocket_cutter())
 # # show_object(chainWheel.get_whole_wheel())
-# # show_object(chainWheel.getAssembled())
+# # show_object(chainWheel.get_assembled())
 # # show_object(chainWheel.get_top_half())
 # show_object(chainWheel.get_bottom_half())
 
 # show_object(chainWheel.get_between_pocket_cutter())
 
-# show_object(chainWheel.getAssembled())
+# show_object(chainWheel.get_assembled())
 
 #
 # motionWorks=MotionWorks(compensateLooseArbour=True, compact= True, bearing=getBearingInfo(3))
 # motionWorks.calculateGears(arbourDistance=30)
-# show_object(motionWorks.getAssembled())
+# show_object(motionWorks.get_assembled())
 
 # ballWheel = BallWheel(ballsAtOnce=15)
 # #
@@ -80,12 +80,12 @@ if 'show_object' not in globals():
 
 # pulley = BearingPulley(diameter=30, vShaped=True)
 #
-# show_object(pulley.getAssembled())
+# show_object(pulley.get_assembled())
 
 # bob = LightweightPulley(30)
 #
 # # show_object(bob.get_wheel())
-# show_object(bob.getAssembled())
+# show_object(bob.get_assembled())
 
 # weight = Weight(height=130, diameter=50)
 # weight.printInfo()
@@ -95,13 +95,13 @@ if 'show_object' not in globals():
 #actual rope distance apart: 31.3mm
 
 # ropeWheel = RopeWheel(diameter=20, ratchet_thick=2, screw=MachineScrew(2, countersunk=False), wallThick=2.2)
-# show_object(ropeWheel.getAssembled())
+# show_object(ropeWheel.get_assembled())
 #
 # chainWheel = ChainWheel(ratchet_thick=3, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075,screwThreadLength=8)
 #
-# show_object(chainWheel.getAssembled().translate((50,0,0)))
+# show_object(chainWheel.get_assembled().translate((50,0,0)))
 
-# ropeWheel.outputSTLs("test","out")
+# ropeWheel.output_STLs("test","out")
 
 
 # pendulum = Pendulum(Escapement(), 200, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=50, bobD=70, bobThick=10, useNylocForAnchor=False, handAvoiderHeight=100)
@@ -153,7 +153,7 @@ if 'show_object' not in globals():
 #
 # show_object(weight.getLid())
 #
-# weight.outputSTLs("temp", "out")
+# weight.output_STLs("temp", "out")
 
 
 # weight = Weight()
@@ -168,12 +168,12 @@ if 'show_object' not in globals():
 #
 # show_object(weightShell.getShell())
 #
-# weightShell.outputSTLs("test","out")
+# weightShell.output_STLs("test","out")
 
 # snail = Snail()
 # trigger = StrikeTrigger()
 # motionWorks=MotionWorks(compensateLooseArbour=True, strikeTrigger=trigger, snail=snail, module=1.2)
-# show_object(motionWorks.getAssembled())
+# show_object(motionWorks.get_assembled())
 # show_object(motionWorks.getHourHolder())
 
 # a = Line((0,0), 0)
@@ -193,7 +193,7 @@ if 'show_object' not in globals():
 # # show_object(pulley.getHalf(False))
 # # show_object(pulley.getHalf(True).translate((50,0,0)))
 # # show_object(pulley.getHookHalf().translate((0,50,0)))
-# show_object(pulley.getAssembled())
+# show_object(pulley.get_assembled())
 #
 #
 # print(pulley.getTotalThick())
@@ -207,7 +207,7 @@ if 'show_object' not in globals():
 # poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
 # # # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 # #
-# show_object(poweredArbour.getAssembled())
+# show_object(poweredArbour.get_assembled())
 
 # show_object(poweredArbour.poweredWheel.getCap(top=True))
 # show_object(poweredArbour.poweredWheel.getSegment(front=False))
@@ -247,10 +247,10 @@ if 'show_object' not in globals():
 # # # # #
 # show_object(grasshopper.getAnchor())
 # # # # show_object(grasshopper.getEscapementWheel())
-# show_object(grasshopper.getAssembled(style=GearStyle.CURVES))
+# show_object(grasshopper.get_assembled(style=GearStyle.CURVES))
 #
 # if outputSTL:
-#     grasshopper.outputSTLs("grasshopper", "out")
+#     grasshopper.output_STLs("grasshopper", "out")
 
 
 # shell = WeightShell(diameter=38, height=120, twoParts=False)
@@ -295,17 +295,17 @@ if False:
 # # # hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 # # #                      length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)
 # # #
-# # show_object(motionWorks.getAssembled())
+# # show_object(motionWorks.get_assembled())
 # #
 # # # show_object(motionWorks.getCannonPinion())
 # # # show_object(motionWorks.getHourHolder())
 # #
 # show_object(hands.getHand())
 #
-# show_object(hands.getAssembled())
+# show_object(hands.get_assembled())
 #
 # if outputSTL:
-#     motionWorks.outputSTLs(name="test", path="out")
+#     motionWorks.output_STLs(name="test", path="out")
 
 #
 # hands = Hands(style=HandStyle.BREGUET, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -328,7 +328,7 @@ if False:
 # show_object(hands.getHand(hour=False,second=True, generate_outline=True).translate((-50,0,0)))
 # show_object(hands.getHand(hour=False).translate((50,0,0)))
 #
-# show_object(hands.getAssembled())
+# show_object(hands.get_assembled())
 #
 # # holly_leaf = HollyLeaf()
 # #
@@ -533,8 +533,8 @@ if False:
 # #                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
 # # #
 # # #
-# # # show_object(hands.getAssembled())
-# show_object(motionWorks.getAssembled())
+# # # show_object(hands.get_assembled())
+# show_object(motionWorks.get_assembled())
 # show_object(hands.getHand(hour=False, minute=False, second=True))
 
 
@@ -590,7 +590,7 @@ if False:
     moon = MoonPhaseComplication3D(pinion_teeth_on_hour_wheel=18, module=1, gear_style=GearStyle.DOTS)
     motionWorks = MotionWorks(extra_height=10, style=GearStyle.DOTS, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon)#, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
     moon.set_motion_works_sizes(motionWorks)
-    # show_object(motionWorks.getAssembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
+    # show_object(motionWorks.get_assembled().translate((0,0,TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motionWorks.inset_at_base)))
     # show_object(moon.get_assembled())
     #
     show_object(moon.get_moon_half())

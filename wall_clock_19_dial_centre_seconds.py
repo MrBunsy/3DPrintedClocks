@@ -55,15 +55,15 @@ escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorT
 moduleReduction=0.875
 
 #minute wheel ratio so we can use a pinion of 10 teeth to turn the standard motion works arbour and keep the cannon pinion rotating once an hour
-train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=0, hours=30,
-                       usePulley=True, huygensMaintainingPower=True, escapeWheelPinionAtFront=True)#, minuteWheelRatio=10/12)
+train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, chain_wheels=0, hours=30,
+                 use_pulley=True, huygens_maintaining_power=True, escape_wheel_pinion_at_front=True)#, minuteWheelRatio=10/12)
 
 #lie about module reduction, we don't want smallest possible clock, we want a clock where the 2nd arbour isn't too close to the motion works arbour
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=1)
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=1)
 
 # train.genCordWheels(ratchetThick=5, cordThick=1, cordCoilThick=11, style=gearStyle)
 # 61 links/ft 1-day regula chain. copied from clock 04
-train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
+train.gen_chain_wheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
 # train.genRopeWheels(ratchetThick=4, ropeThick=2.2, use_steel_tube=False)
 
 pendulumSticksOut=25
@@ -76,13 +76,13 @@ pendulumSticksOut=25
 # module_sizes = [first_module_size, first_module_size * ratio_of_teeth]
 module_sizes = None
 
-train.genGears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3,
-               pendulumFixing=pendulumFixing, module_sizes=module_sizes)
+train.gen_gears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3,
+                pendulumFixing=pendulumFixing, module_sizes=module_sizes)
 # train.printInfo(weight_kg=0.75-0.15)
-train.printInfo(weight_kg=0.32)
+train.print_info(weight_kg=0.32)
 
 #reprinting these after the work to reduce module size back to 1, hoping it removes the jam problem
-motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=getBearingInfo(3), module=1, compensateLooseArbour=False, compact=True, thick=1.8, pinionThick=8)
+motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=get_bearing_info(3), module=1, compensateLooseArbour=False, compact=True, thick=1.8, pinionThick=8)
 
 pendulum = Pendulum(handAvoiderInnerD=90, bobD=70, bobThick=10)
 
@@ -90,8 +90,8 @@ pendulum = Pendulum(handAvoiderInnerD=90, bobD=70, bobThick=10)
 dial_diameter = 175
 dial = Dial(outside_d=dial_diameter, bottom_fixing=False, top_fixing=True)
 
-plates = SimpleClockPlates(train, motionWorks, pendulum, plateThick=7, pendulumSticksOut=pendulumSticksOut, name="clock 19",
-                          style=ClockPlateStyle.VERTICAL, backPlateFromWall=40, pendulumFixing=pendulumFixing, pendulumAtFront=False, centred_second_hand=True, chainThroughPillarRequired=True,
+plates = SimpleClockPlates(train, motionWorks, pendulum, plate_thick=7, pendulum_sticks_out=pendulumSticksOut, name="clock 19",
+                           style=ClockPlateStyle.VERTICAL, back_plate_from_wall=40, pendulum_fixing=pendulumFixing, pendulum_at_front=False, centred_second_hand=True, chain_through_pillar_required=True,
                            dial=dial, pillars_separate=True)
 pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
@@ -108,8 +108,8 @@ weight.printInfo()
 
 # bigweight = Weight(height=125, diameter=45)
 # bigweight.printInfo()
-# show_object(train.getArbourWithConventionalNaming(0).getAssembled())
-# show_object(train.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
+# show_object(train.getArbourWithConventionalNaming(0).get_assembled())
+# show_object(train.getArbourWithConventionalNaming(0).poweredWheel.get_assembled())
 
 # show_object(assembly.getClock())
 assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,clocks.utility.Colour.BRASS],
@@ -119,12 +119,12 @@ assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,c
 
 
 if outputSTL:
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    weight.outputSTLs(clockName, clockOutDir)
-    # bigweight.outputSTLs(clockName+"_big", clockOutDir)
-    pulley_no_pipe.outputSTLs(clockName + "_no_pipe", clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    weight.output_STLs(clockName, clockOutDir)
+    # bigweight.output_STLs(clockName+"_big", clockOutDir)
+    pulley_no_pipe.output_STLs(clockName + "_no_pipe", clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)

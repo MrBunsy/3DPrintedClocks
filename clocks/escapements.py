@@ -517,7 +517,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         return anchor
 
-    def getAnchor(self):
+    def get_anchor(self):
         '''
         compliant with the new escapement interface (now the grasshopper also exists)
         '''
@@ -649,7 +649,7 @@ class EscapmentInterface:
     def getAnchorArbourD(self):
         return 3
 
-    def getAnchor(self):
+    def get_anchor(self):
         return None
 
     def getAnchorThick(self):
@@ -1453,7 +1453,7 @@ class GrasshopperEscapement:
             assert abs(FZG - NZP) < acceptableError, "Escaping angles aren't balanced"
             assert abs(FZG - self.escaping_arc) < degToRad(0.1), "Escaping arc isn't close to designed escaping arc"
 
-    def getAnchor(self):
+    def get_anchor(self):
         #comply with expected interface
         return self.getFrame(leave_in_situ=False)
 
@@ -1870,7 +1870,7 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getAssembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
+    def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
@@ -1911,7 +1911,7 @@ class GrasshopperEscapement:
         '''
         return -(self.getComposerZThick()/2 + self.composer_z_distance_from_frame + self.frame_thick - self.wheel_thick/2)
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_grasshopper_wheel.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getWheel(), out)
@@ -2119,7 +2119,7 @@ class Pendulum:
         nut = nut.cut(nutSpace)
         return nut
 
-    def outputSTLs(self, name="clock", path="../out"):
+    def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pendulum_hand_avoider.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getHandAvoider(), out)

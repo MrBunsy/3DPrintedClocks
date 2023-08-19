@@ -45,11 +45,11 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=180, usePulley=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, chain_wheels=1, hours=180, use_pulley=True)
 
 moduleReduction=0.875
 
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 # train.calculateRatios()
 # train.setRatios([[60, 14], [63, 12], [64, 12]])
 # train.setRatios([[64, 12], [63, 12], [60, 14]])
@@ -57,14 +57,14 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # train.setRatios([[108, 10], [80, 9]])
 # train.setChainWheelRatio([74, 11])
 
-train.setChainWheelRatio([93, 10])
+train.set_chain_wheel_ratio([93, 10])
 
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #1mm cord retrofit, planning to print just a ring to retrofit the retrofit
-train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=1, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=39)
+train.gen_cord_wheels(ratchetThick=3.5, rodMetricThread=4, cordThick=1, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=39)
 
 #2mm cord retrofit, note this has a very wide range of power so doesn't work reliably towards the end of the week with 3.5kg
 #train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=2, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=32)
@@ -87,18 +87,18 @@ With a weight of 4kg, this results in an average power usage of 76.1μW
 Generate gears to get screw information
 Cordwheel power varies from 62.6μW to 92.1μW
 '''
-train.setChainWheelRatio([93, 10])
+train.set_chain_wheel_ratio([93, 10])
 # train.calculateChainWheelRatios()
 
-train.printInfo(weight_kg=3.5)
-train.printInfo(weight_kg=4)
-train.printInfo(weight_kg=4.25)
+train.print_info(weight_kg=3.5)
+train.print_info(weight_kg=4)
+train.print_info(weight_kg=4.25)
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1,moduleReduction=moduleReduction,  thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#,ratchetInset=True)#, chainModuleIncrease=1.1)
+train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#,ratchetInset=True)#, chainModuleIncrease=1.1)
 
-train.getArbourWithConventionalNaming(0).printScrewLength()
+train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2, compensateLooseArbour=True)
 
@@ -111,14 +111,14 @@ pendulum = clock.Pendulum(bobD=80, bobThick=10)
 dial = clock.Dial(120)
 
 #rear plate super thick mainly just to ensure there's enough space for the weight to not bump into the wall!
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, backPlateThick=15, pendulumSticksOut=pendulumSticksOut, name="Wall 10",style=clock.ClockPlateStyle.VERTICAL, motionWorksAbove=True, heavy=True, extraHeavy=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, back_plate_thick=15, pendulum_sticks_out=pendulumSticksOut, name="Wall 10", style=clock.ClockPlateStyle.VERTICAL, motion_works_above=True, heavy=True, extra_heavy=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.SWORD, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=110, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))
-pulley = clock.BearingPulley(diameter=26, bearing=clock.getBearingInfo(4))
+pulley = clock.BearingPulley(diameter=26, bearing=clock.get_bearing_info(4))
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
 assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley)
@@ -128,23 +128,23 @@ assembly.printInfo()
 
 assembly.show_clock(show_object, plate_colour=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW])
 
-# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getAssembled())
+# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).get_assembled())
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getShape())
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getExtraRatchet())
-# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.getAssembled())
+# show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.get_assembled())
 
 # assembly.goingTrain.getArbourWithConventionalNaming(0).poweredWheel.printScrewLength()
 
 if outputSTL:
     #
     #
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    dial.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    pulley.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)

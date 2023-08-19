@@ -48,10 +48,10 @@ need_space = clock.SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + cl
 escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space+1, composer_min_distance=need_space)#clock.GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
-train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1200, usePulley=True,
-                       chainAtBack=False, chainWheels=1, hours=7*24+6, huygensMaintainingPower=True)
+train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True,
+                       chain_at_back=False, chain_wheels=1, hours=7 * 24 + 6, huygens_maintaining_power=True)
 
-train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
+train.calculate_ratios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
 
 # Trying the thinner 47 LPF regula chain
 # train.genChainWheels(ratchetThick=4,  wire_thick=1.05,width=4.4, inside_length=8.4-1.05*2, tolerance=0.075, screwThreadLength=8)
@@ -59,7 +59,7 @@ train.calculateRatios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=
 #for the first draft let's stick to a chain I know works, and hope that we're not over its weight limit
 # 61 links/ft 1-day regula chain. copied from clock 04
 # train.genChainWheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length=6.65 - 0.85 * 2, tolerance=0.075, screwThreadLength=8, holeD=3)
-train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=4, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=35, fixing_screws=clock.MachineScrew(3, countersunk=True))
+train.gen_chain_wheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=4, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=35, fixing_screws=clock.MachineScrew(3, countersunk=True))
 # train.genChainWheels(ratchetThick=4,wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075, screwThreadLength=8, holeD=3)
 
 
@@ -70,8 +70,8 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.genGears(module_size=1,moduleReduction=1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
-train.printInfo(weight_kg=0.5)
+train.gen_gears(module_size=1, moduleReduction=1, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+train.print_info(weight_kg=0.5)
 
 motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, compact=True, thick=2)
 
@@ -80,9 +80,9 @@ pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=10)
 # dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC)
 dial = None
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=10, pendulumSticksOut=pendulumSticksOut, name="clk 21",style=clock.ClockPlateStyle.VERTICAL, pendulumAtFront=False,
-                                 backPlateFromWall=40, escapementOnFront=True, pendulumFixing=pendulumFixing, heavy=True, extraHeavy=True, dial=dial, pillars_separate=True,
-                                 chainThroughPillarRequired=True, huygens_wheel_min_d=30, fixingScrews=clock.MachineScrew(4, countersunk=True), allow_bottom_pillar_height_reduction=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="clk 21", style=clock.ClockPlateStyle.VERTICAL, pendulum_at_front=False,
+                                 back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, heavy=True, extra_heavy=True, dial=dial, pillars_separate=True,
+                                 chain_through_pillar_required=True, huygens_wheel_min_d=30, fixing_screws=clock.MachineScrew(4, countersunk=True), allow_bottom_pillar_height_reduction=True)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
@@ -102,15 +102,15 @@ show_object(assembly.get_clock())
 
 if outputSTL:
 
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    weight_shell.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
-    pulley.outputSTLs(clockName, clockOutDir)
-    pulley_no_pipe.outputSTLs(clockName+"_no_pipe", clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    weight_shell.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)
+    pulley.output_STLs(clockName, clockOutDir)
+    pulley_no_pipe.output_STLs(clockName+"_no_pipe", clockOutDir)
 
     # pretty_bob.output_STLs(clockName, clockOutDir)
     # pretty_hand_avoider.output_STLs(clockName, clockOutDir)
@@ -120,4 +120,4 @@ if outputSTL:
     # exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
     #
     # for i in ["_a", "_b", "_c"]:
-    #     train.outputSTLs(clockName+i, clockOutDir)
+    #     train.output_STLs(clockName+i, clockOutDir)

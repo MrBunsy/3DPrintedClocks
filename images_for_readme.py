@@ -33,9 +33,9 @@ if outputSTL:
 
     # gen_hand_previews("images/", size=200, only_these=[HandStyle.BAROQUE, HandStyle.SIMPLE_ROUND])
 
-    pulley = BearingPulley(diameter=35, bearing=getBearingInfo(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))
+    pulley = BearingPulley(diameter=35, bearing=get_bearing_info(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))
     lightweight_pulley = LightweightPulley(diameter=35, use_steel_rod=False)
 
-    gen_shape_preview(pulley.getAssembled().rotate((0,0,0),(0,0,1),90), "pulley_preview", out_dir)
-    gen_shape_preview(lightweight_pulley.getAssembled(), "lightweight_pulley_preview", out_dir)
+    gen_shape_preview(pulley.get_assembled().rotate((0,0,0),(0,0,1),90), "pulley_preview", out_dir)
+    gen_shape_preview(lightweight_pulley.get_assembled(), "lightweight_pulley_preview", out_dir)
 

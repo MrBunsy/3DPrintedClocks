@@ -49,9 +49,9 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, maxWeightDrop=1800, chainAtBack=False, chainWheels=1, hours=180, max_chain_wheel_d=28)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1800, chain_at_back=False, chain_wheels=1, hours=180, max_chain_wheel_d=28)
 
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 # train.calculateRatios()
 # train.setRatios([[60, 14], [63, 12], [64, 12]])
 # train.setRatios([[64, 12], [63, 12], [60, 14]])
@@ -66,16 +66,16 @@ train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=6
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.genCordWheels(ratchetThick=5, cordThick=2, cordCoilThick=17, style=gearStyle, useKey=True, rodMetricThread=4)
+train.gen_cord_wheels(ratchetThick=5, cordThick=2, cordCoilThick=17, style=gearStyle, useKey=True, rodMetricThread=4)
 
-train.calculatePoweredWheelRatios()
+train.calculate_powered_wheel_ratios()
 
-train.printInfo()
+train.print_info()
 
 pendulumSticksOut=20
 
-train.genGears(module_size=1
-               ,moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle,chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
+train.gen_gears(module_size=1
+                , moduleReduction=0.875, thick=2, chainWheelThick=6, useNyloc=False, pinionThickMultiplier=4, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
 
 
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2)
@@ -88,7 +88,7 @@ pendulum = clock.Pendulum(bobD=80, bobThick=10)
 
 dial = clock.Dial(120)
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 06",style=clock.ClockPlateStyle.VERTICAL, motionWorksAbove=True, heavy=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="Wall 06", style=clock.ClockPlateStyle.VERTICAL, motion_works_above=True, heavy=True)
 
 
 hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=100, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
@@ -104,10 +104,10 @@ show_object(assembly.get_clock())
 # show_object(train.getArbourWithConventionalNaming(0).getShape())
 
 if outputSTL:
-    train.outputSTLs(clockName,clockOutDir)
-    motionWorks.outputSTLs(clockName,clockOutDir)
-    pendulum.outputSTLs(clockName, clockOutDir)
-    dial.outputSTLs(clockName, clockOutDir)
-    plates.outputSTLs(clockName, clockOutDir)
-    hands.outputSTLs(clockName, clockOutDir)
-    assembly.outputSTLs(clockName, clockOutDir)
+    train.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    dial.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)

@@ -115,25 +115,26 @@ A variety of different power sources are supported. All are weight driven (for n
  - RopeWheel: Multiple attempts to use a rope (tried hemp as it had most friction) with a counterweight and friction. It _does_ work but requires too much counterweight for me to explore the idea further. See wall clock 11.
 
 Finally `genGears` creates the Arbor objects which represent the physical gears that will be printed (note that these will be wrapped up in ArborsForPlates later, which provides dimensions not yet known at this stage). Reducing the thickness of the gears reduces friction, so we can run with a lighter weight, but also reduces their strength. Therefore I usually have thick gears for the chain wheel and reduce the thickness towards the escapement.
+
 ```python
-moduleReduction=0.9
+moduleReduction = 0.9
 
-#relatively simple eight day clock, needs one chain wheel in order to provide enough runtime
-#Large pendulum period so it can calculate a valid train with only 3 wheels
-train = clock.GoingTrain(pendulum_period=2, wheels=3, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=7.5*24)
+# relatively simple eight day clock, needs one chain wheel in order to provide enough runtime
+# Large pendulum period so it can calculate a valid train with only 3 wheels
+train = clock.GoingTrain(pendulum_period=2, wheels=3, escapement=escapement, maxWeightDrop=1200, chainAtBack=False, chainWheels=1, hours=7.5 * 24)
 
-#find a valid combination of gears that meets the constraints specified. This can get slow with 4 wheels, but is usually fast with only 3.
-train.calculateRatios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction)
+# find a valid combination of gears that meets the constraints specified. This can get slow with 4 wheels, but is usually fast with only 3.
+train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
-#configure what type of power the going train will have and this will calculate the gear ratios to provide the requested runtime for the maxWeightDrop
-#genChainWheels2 uses the newer pocket chain wheel which is strong and reliable enough to cope with heavy duty chain for eight day clocks
-train.genChainWheels2(COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30)
+# configure what type of power the going train will have and this will calculate the gear ratios to provide the requested runtime for the maxWeightDrop
+# genChainWheels2 uses the newer pocket chain wheel which is strong and reliable enough to cope with heavy duty chain for eight day clocks
+train.gen_chain_wheels2(COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30)
 
-train.genGears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-               chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 
-#print to console how much power we can expect for the calculated chain wheel
-train.printInfo(weight_kg=2)
+# print to console how much power we can expect for the calculated chain wheel
+train.print_info(weight_kg=2)
 ```
 An example output from printInfo for a 4-wheel going train with short pendulum:
 
@@ -285,7 +286,7 @@ The `LightweightPulley` supports either slotting a steel tube into the wheel (`u
 Both pulleys use a standard cuckoo weight hook to provide a hook for the weight.
 
 ```python
-pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 ```
 
