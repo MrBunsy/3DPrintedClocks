@@ -1687,8 +1687,12 @@ class ArbourForPlate:
 
             if not self.arbor.combine_with_powered_wheel:
                 assembly = assembly.add(self.arbor.powered_wheel.get_assembled().translate((0, 0, self.arbor.wheel_thick)))
+
+            wheel = shapes["wheel"]
             if self.arbor.weight_driven:
-                assembly = assembly.add(shapes["wheel"].rotate((0,0,0),(1,0,0),180).translate((0,0, self.arbor.wheel_thick)))
+                wheel = wheel.rotate((0,0,0),(1,0,0),180).translate((0,0, self.arbor.wheel_thick))
+
+            assembly = assembly.add(wheel)
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
