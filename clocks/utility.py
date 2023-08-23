@@ -227,7 +227,7 @@ class MachineScrew:
             if not withBridging:
                 screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
             else:
-                screw = screw.add(getHoleWithHole(innerD=r*2, outerD=self.getHeadDiameter()+NUT_WIGGLE_ROOM, deep=self.getHeadHeight() ,layerThick=layerThick))
+                screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.getHeadDiameter() + NUT_WIGGLE_ROOM, deep=self.getHeadHeight(), layerThick=layerThick))
             screw = screw.faces(">Z").workplane().circle(r).extrude(length)
 
         #extend out from the headbackwards too
@@ -251,7 +251,7 @@ class MachineScrew:
             height = nutHeight
         nutD = self.getNutContainingDiameter() + wiggle
         if withBridging:
-            nut = getHoleWithHole(innerD=self.metric_thread, outerD=nutD,deep = height, sides=6, layerThick=layerThick)
+            nut = get_hole_with_hole(innerD=self.metric_thread, outerD=nutD, deep = height, sides=6, layerThick=layerThick)
         else:
             nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(height)
         if withScrewLength > 0:
@@ -771,7 +771,7 @@ def toPolar(x,y):
     return (angle, r)
 
 
-def getHoleWithHole(innerD,outerD,deep, sides=1, layerThick=LAYER_THICK):
+def get_hole_with_hole(innerD, outerD, deep, sides=1, layerThick=LAYER_THICK):
     '''
     Generate the shape of a hole ( to be used to cut out of another shape)
     that can be printed with bridging

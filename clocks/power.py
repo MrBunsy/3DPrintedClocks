@@ -773,7 +773,7 @@ class SpringArbour:
 
         self.ratchet = None
         if self.ratchet_thick > 0:
-            self.ratchet = Ratchet(totalD=self.diameter*4,thick=self.ratchet_thick, power_clockwise = self.power_clockwise)
+            self.ratchet = Ratchet(totalD=self.diameter*4, thick=self.ratchet_thick, blocks_clockwise= self.power_clockwise)
 
     def getArbour(self):
         arbour = cq.Workplane("XY")
@@ -865,7 +865,7 @@ class SpringBarrel:
         self.key_bearing = key_bearing
 
         if self.key_bearing is None:
-            self.key_bearing = get_bearing_info(10)
+            self.key_bearing = get_bearing_info(15)
 
         self.rod_d = rod_d
         self.arbour_d = rod_d
@@ -878,13 +878,13 @@ class SpringBarrel:
         self.arbor_inner_diameter=10
 
         self.wall_thick = 10
-        self.base_thick = 10
+        self.base_thick = 6
         self.lid_thick=3
 
         self.internal_endshake=0.5
 
-        # copied from CordWheel
-        self.bearing_wiggle_room = 0.05
+        # copied from CordWheel (where it's added to radius)
+        self.bearing_wiggle_room = 0.05*2
 
         self.lid_hole_d = self.key_bearing.innerSafeD + LOOSE_FIT_ON_ROD
 
@@ -909,8 +909,14 @@ class SpringBarrel:
 
         self.spring_hook_space=2
 
+    def get_key_size(self):
+        return self.key_square_side_length
+
     def is_clockwise(self):
         return self.clockwise
+
+    def get_outer_diameter(self):
+        return self.barrel_diameter + self.wall_thick*2
 
     def get_lid_fixing_screws_cutter(self):
         cutter = cq.Workplane("XY")
@@ -984,7 +990,7 @@ class SpringBarrel:
 
     def get_assembled(self):
         '''
-        nothing to actually assemble on the spring barrel, but this slots in neatly with the other powered wheels
+        this is assembled such that it can be combined with the powered wheel, cord wheel conflates this a bit as it can't be combined
         '''
         return self.get_barrel()
 
@@ -1020,6 +1026,12 @@ class WeightPoweredWheel:
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
         return 30
+
+    def get_model(self):
+        '''
+        get an assembled model that can be combined with the arbor for previews
+        '''
+        return None
 
     def get_encasing_radius(self):
         '''
@@ -1062,7 +1074,7 @@ class WeightPoweredWheel:
         save STL files to disc for all the objects required to print this wheel
         '''
 
-    def getChainPositionsFromTop(self):
+    def get_chain_positions_from_top(self):
         '''
         Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
         but two coordinates [top, bottom] if the hole should be elongated.
@@ -1173,7 +1185,7 @@ class RopeWheel:
             ratchet_outer_d = self.outer_diameter+Ratchet.APROX_EXTRA_RADIUS_NEEDED*2
         self.ratchet_thick = ratchet_thick
         if ratchet_thick > 0:
-            self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchet_outer_d, innerRadius=self.outer_diameter/2, power_clockwise=power_clockwise, outer_thick=ratchet_outer_thick)
+            self.ratchet = Ratchet(thick=ratchet_thick, totalD=ratchet_outer_d, innerRadius=self.outer_diameter/2, blocks_clockwise=power_clockwise, outer_thick=ratchet_outer_thick)
         else:
             self.ratchet = None
 
@@ -1210,7 +1222,7 @@ class RopeWheel:
         print("RopeWheel needs: {} screw length {}-{}".format(self.screw.getString(), screwLength, screwLength-self.ratchet_thick))
 
     def get_turns(self, cord_usage=0):
-        return maxChainDrop/self.circumference
+        return cord_usage/self.circumference
 
     def getChainHoleD(self):
         return self.rope_diameter + 4
@@ -1333,6 +1345,9 @@ class RopeWheel:
         else:
             return self.get_wheel()
 
+    def get_model(self):
+        return self.get_assembled()
+
     def get_height(self):
         return self.wheel_thick + self.bearing_standoff_thick + self.ratchet_thick
 
@@ -1341,7 +1356,7 @@ class RopeWheel:
         print("Outputting ", out)
         exporters.export(self.get_assembled(), out)
 
-    def getChainPositionsFromTop(self):
+    def get_chain_positions_from_top(self):
         '''
         Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
         but two coordinates [top, bottom] if the hole should be elongated.
@@ -1362,6 +1377,110 @@ class RopeWheel:
         #minute hand rotates once per hour, so this answer will be in hours
         return minuteRatio*chainLength/self.circumference
 
+class WindingKey:
+    def __init__(self, square_side_length, cylinder_length, key_hole_deep, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75, wall_thick=2.5, handle_thick = 5):
+        #the square bit the key slots over - what size is it?
+        self.square_side_length = square_side_length
+        #how long is the cylinder that will slot over the key? key_hole_deep needs to be less than this
+        #increase this to ensure the key will be able to wind without crashing into the hands
+        self.cylinder_length = cylinder_length
+        #the crank handle, long as possible without risk of crashing into anything
+        self.handle_length = handle_length
+        #use a crank handle?
+        self.crank = crank
+
+        self.wall_thick = wall_thick
+
+        self.handle_thick = handle_thick
+
+        #how much wider to make the hole than the square rod
+        self.wiggle_room = key_wiggle_room
+
+        self.body_wide = 2*self.square_side_length / math.sqrt(2) + self.wall_thick * 2
+
+
+        #screw for fixing the knob to the crank arm if this is a crank key, not needed otherwise
+        self.knob_fixing_screw = knob_fixing_screw
+        if self.knob_fixing_screw is None:
+            self.knob_fixing_screw = MachineScrew(3, length=30)
+
+        self.knob_length = self.knob_fixing_screw.length - self.handle_thick
+
+        #how deep the hole that slots onto the square bit should be - keep shallow to ensure you can push the key all the way without crashing inot hte front plate or pushing the bearing out
+        self.key_hole_deep = key_hole_deep
+
+        if self.key_hole_deep > self.cylinder_length:
+            self.key_hole_deep = self.cylinder_length
+
+    def get_key(self, for_printing=True):
+        '''
+        winding key! this is one with a little arm and handle
+
+        handle_length is to the end of the handle, not the middle of the knob (makes calculating the size of the key easier)
+
+        Exact size of the key is based on the bearing and tolerance:
+        key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
+
+        if withKnob, it's like an old longcase key with handle. If not, it's like a mantle key
+
+        '''
+
+        if self.crank:
+            #base for handle
+            key = cq.Workplane("XY").moveTo(-self.body_wide/2,0).radiusArc((self.body_wide/2, 0), -self.body_wide / 2).lineTo(self.body_wide/2, self.handle_length - self.body_wide / 2).radiusArc((-self.body_wide/2, self.handle_length - self.body_wide / 2), -self.body_wide / 2).close().extrude(self.handle_thick)
+            # hole to screw in the knob (loose)
+            key = key.faces(">Z").workplane().tag("top").moveTo(0, self.handle_length - self.body_wide / 2).circle(self.knob_fixing_screw.metric_thread / 2 + 0.2).cutThruAll()
+        else:
+            key = cq.Workplane("XY").tag("top")
+
+            key_grip_tall = min(self.cylinder_length * 0.3, 15)
+            key_grip_wide = self.body_wide * 2.5
+
+            r=key_grip_wide*0.1
+
+            grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide/2,0).lineTo(key_grip_wide/2,key_grip_tall).tangentArcPoint((-r,r*1.25))\
+                .tangentArcPoint((0,key_grip_tall),relative=False).mirrorY().extrude(self.handle_thick)
+            key = key.union(grippyBit.translate((self.body_wide / 2, self.handle_thick / 2, 0)))
+
+
+
+        #key bit
+        key = key.workplaneFromTagged("top").circle(0.999 * self.body_wide / 2).extrude(self.cylinder_length)
+
+
+
+        #5mm shorter than the key as a bodge to stand off from the front plate
+        key_hole = cq.Workplane("XY").rect(self.square_side_length + self.wiggle_room, self.square_side_length + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, self.handle_thick + self.cylinder_length - self.key_hole_deep))
+
+        key = key.cut(key_hole)
+
+        if not for_printing:
+            # for the model
+            key = key.translate((-self.body_wide / 2, 0))
+            key = key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0,0,0), (0,0,1),180).translate((0, 0, self.cylinder_length + self.handle_thick))
+            key = key.add(self.get_knob().translate((0, self.handle_length - self.body_wide / 2, self.cylinder_length + self.handle_thick)))
+
+        return key
+
+    def get_knob(self):
+
+
+
+        knob = cq.Workplane("XY").circle(self.body_wide/2).extrude(self.knob_length)
+
+
+        nut_height_space = self.knob_fixing_screw.getNutHeight(nyloc=True)
+        screw_hole = cq.Workplane("XY").circle(self.knob_fixing_screw.metric_thread/2).extrude(self.knob_length*1.5)
+        screw_hole = screw_hole.add(self.knob_fixing_screw.getNutCutter(nyloc=True).translate((0,0,self.knob_length-nut_height_space)))
+
+        knob = knob.cut(screw_hole)
+
+        return knob
+    def get_assembled(self):
+        key = self.get_key()
+        if self.crank:
+            key = key.add(self.get_knob().rotate((0,0,0),(1,0,0),180).translate((0,self.handle_length-self.body_wide/2,0)))
+        return key
 
 class CordWheel:
     '''
@@ -1452,14 +1571,16 @@ class CordWheel:
             bearing = get_bearing_info(15)
 
         #only if useKey is true will this be used
-        self.bearing = bearing
-        print("cord wheel bearing:{}".format(self.bearing))
+        self.key_bearing = bearing
+        print("cord wheel bearing:{}".format(self.key_bearing))
         # extra radius to subtract from the bit that goes through the large bearing for a key
         self.bearingWiggleRoom = 0.05
         #this is the square bit that sticks out the front of the clock. I suck at names
         self.keySquareBitHeight=keySquareBitHeight
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
+
+        self.key_square_side_length = self.key_bearing.innerD*0.5*math.sqrt(2)# self.key_bearing.innerD - self.bearingWiggleRoom * 2
 
         #default length, in mm
         self.cordLength=cordLength
@@ -1482,10 +1603,10 @@ class CordWheel:
             raise ValueError("Cannot make cord wheel without a ratchet")
 
         #inner radius slightly larger than cord diameter so there's space for nuts
-        self.ratchet = Ratchet(totalD=self.cap_diameter, thick=ratchet_thick, power_clockwise=power_clockwise, innerRadius=self.diameter / 2 + 2)
+        self.ratchet = Ratchet(totalD=self.cap_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, innerRadius=self.diameter / 2 + 2)
         self.keyScrewHoleD = self.screwThreadMetric
         self.power_clockwise = power_clockwise
-        self.keyWiggleRoom = 0.75
+
 
         #slowly switch over to using this
         self.fixingScrew = MachineScrew(self.screwThreadMetric, countersunk=True)
@@ -1493,7 +1614,7 @@ class CordWheel:
         if self.useKey:
             self.keyWallThick = 2.5
             # enough to cut out the key itself
-            self.keyWidth = self.keyWallThick * 2 + self.bearing.innerD
+            self.keyWidth = self.keyWallThick * 2 + self.key_bearing.innerD
             #this is the length of the handle of the key if it's knob-type (needs to be short enough that it won't bump into the motion works, or else windingKeyHeightFromPlate needs to be
             #long enough that we're above the motion works)
             self.defaultWindingKeyHandleLength = 30,
@@ -1537,7 +1658,7 @@ class CordWheel:
         #assume that the cord is going to squish a bit, so don't need to make this too excessive
         return self.cordThick * layers
 
-    def getChainPositionsFromTop(self):
+    def get_chain_positions_from_top(self):
         '''
         Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
         but two coordinates [top, bottom] if the hole should be elongated.
@@ -1582,8 +1703,8 @@ class CordWheel:
     def getNutHoles(self):
 
         #rotate by 1/12th so there's a tiny bit more space near the main hole
-        cutter = cq.Workplane("XY").add(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0,0,0),(0,0,1),360/12).translate(self.fixingPoints[0]))
-        cutter = cutter.union(getHoleWithHole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0,0,0),(0,0,1),360/12).translate(self.fixingPoints[1]))
+        cutter = cq.Workplane("XY").add(get_hole_with_hole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(self.fixingPoints[0]))
+        cutter = cutter.union(get_hole_with_hole(self.screwThreadMetric, getNutContainingDiameter(self.screwThreadMetric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(self.fixingPoints[1]))
         return cutter
 
     def getSegment(self, front=True):
@@ -1603,10 +1724,12 @@ class CordWheel:
             #space for the cap
 
             # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
-            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.innerD / 2 - self.bearingWiggleRoom).extrude(self.bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)
+            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.innerD / 2 - self.bearingWiggleRoom).extrude(self.key_bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
-            key = cq.Workplane("XY").polygon(4, self.bearing.innerD - self.bearingWiggleRoom*2).extrude(self.keySquareBitHeight)
-            segment = segment.union(key.rotate((0,0,0),(0,0,1),45).translate((0,0,self.capThick + self.thick + self.bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)))
+            #key = cq.Workplane("XY").polygon(4, self.key_bearing.innerD - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
+            key = cq.Workplane("XY").rect(self.key_square_side_length, self.key_square_side_length).extrude(self.keySquareBitHeight)
+            #.rotate((0,0,0),(0,0,1),45)
+            segment = segment.union(key.translate((0, 0, self.capThick + self.thick + self.key_bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)))
 
 
 
@@ -1678,10 +1801,10 @@ class CordWheel:
 
         holeR = self.holeD / 2
         if self.useKey and top:
-            holeR = self.bearing.innerD/2 + self.bearingWiggleRoom
-            print("cord wheel cap holeR: {} innerSafe raduis:{}".format(holeR,self.bearing.innerSafeD/2))
+            holeR = self.key_bearing.innerD / 2 + self.bearingWiggleRoom
+            print("cord wheel cap holeR: {} innerSafe raduis:{}".format(holeR, self.key_bearing.innerSafeD / 2))
             #add small ring to keep this further away from the bearing
-            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD/2).extrude(self.beforeBearingExtraHeight)
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.key_bearing.innerSafeD / 2).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
             countersink = self.getScrewCountersinkCutter(capThick + extraThick)
             cap = cap.cut(countersink)
@@ -1775,7 +1898,7 @@ class CordWheel:
             key_hole_deep = cylinder_length
 
         #5mm shorter than the key as a bodge to stand off from the front plate
-        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.bearing.innerD - self.bearingWiggleRoom*2 + self.keyWiggleRoom).extrude(key_hole_deep).translate((0, 0, self.windingKeyHandleThick + cylinder_length - key_hole_deep))
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.key_bearing.innerD - self.bearingWiggleRoom * 2 + self.keyWiggleRoom).extrude(key_hole_deep).translate((0, 0, self.windingKeyHandleThick + cylinder_length - key_hole_deep))
 
         key = key.cut(keyHole)
 
@@ -1787,9 +1910,11 @@ class CordWheel:
 
         return key
 
+    def get_key_size(self):
+        return self.key_square_side_length
 
     def getWindingKnob(self):
-        r = self.bearing.innerD/2
+        r = self.key_bearing.innerD / 2
 
         screwLength = 30 - self.windingKeyHandleThick
 
@@ -1854,14 +1979,16 @@ class CordWheel:
         return (rotationsSoFar, layer + 1, cordPerRotationPerLayer, cordPerLayer)
 
 
-    def get_turns(self, cordLength):
+    def get_turns(self, cord_usage):
 
 
-        return self.getCordTurningInfo(cordLength)[0]
+        return self.getCordTurningInfo(cord_usage)[0]
 
 
     def get_assembled(self):
-
+        '''
+        for most of the other wheels this bit can be combined with the powered wheel - TODO tidy up
+        '''
         model = self.getClickWheelForCord(for_printing=False)
         if self.useKey:
             model = model.add(self.getSegment(False).translate((0,0,self.ratchet.thick + self.clickWheelStandoffHeight)))
@@ -1874,6 +2001,9 @@ class CordWheel:
 
 
         return model
+
+    def get_model(self):
+        return self.get_assembled()
 
     def get_height(self):
         '''
@@ -2003,7 +2133,7 @@ class PocketChainWheel2:
             ratchetOuterD = self.diameter * 1.6 + ratchetOuterThick
 
         if ratchet_thick > 0:
-            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outer_radius*0.9999, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
+            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outer_radius*0.9999, thick=ratchet_thick, blocks_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
         else:
             self.ratchet = None
 
@@ -2143,6 +2273,9 @@ class PocketChainWheel2:
         wheel = wheel.add(top.translate((0,0,bottom_thick)))
         return wheel
 
+    def get_model(self):
+        return self.get_assembled()
+
     def get_height(self):
         '''
         returns total thickness of the assembled wheel, with ratchet. If it needs a washer, this is included in the height
@@ -2164,7 +2297,7 @@ class PocketChainWheel2:
         print("Outputting ", out)
         exporters.export(self.get_top_half(), out)
 
-    def getChainPositionsFromTop(self):
+    def get_chain_positions_from_top(self):
         '''
         Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
         but two coordinates [top, bottom] if the hole should be elongated.
@@ -2315,7 +2448,7 @@ class PocketChainWheel:
             ratchetOuterD = self.diameter * 2.2
 
         if ratchet_thick > 0:
-            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=0.9999*self.outerDiameter / 2, thick=ratchet_thick, power_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
+            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=0.9999*self.outerDiameter / 2, thick=ratchet_thick, blocks_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
         else:
             self.ratchet = None
 
@@ -2335,7 +2468,7 @@ class PocketChainWheel:
         #diameter of the hole in the bottom of the plate for the chain to dangle through
         return self.chain_width + 2
 
-    def getChainPositionsFromTop(self):
+    def get_chain_positions_from_top(self):
         '''
         Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
         but two coordinates [top, bottom] if the hole should be elongated.
@@ -2508,6 +2641,9 @@ class PocketChainWheel:
 
         return assembly.add(chainWheelTop)
 
+    def get_model(self):
+        return self.get_assembled()
+
     def setRatchet(self, ratchet):
         self.ratchet=ratchet
 
@@ -2537,7 +2673,7 @@ class Ratchet:
 
     APROX_EXTRA_RADIUS_NEEDED=12
 
-    def __init__(self, totalD=50, thick=5, power_clockwise=True, innerRadius=0, outer_thick=5, click_arms=-1, click_teeth=-1):
+    def __init__(self, totalD=50, thick=5, blocks_clockwise=True, innerRadius=0, outer_thick=5, click_arms=-1, click_teeth=-1):
         '''
         innerRadius is the radius of the round bit of the click wheel
         '''
@@ -2556,7 +2692,7 @@ class Ratchet:
         else:
             self.clickInnerRadius = innerRadius
 
-        self.anticlockwise = -1 if power_clockwise else 1
+        self.anticlockwise = -1 if blocks_clockwise else 1
 
         self.toothLength = max(self.outsideDiameter*0.025, 1)
         self.toothAngle = degToRad(2)* self.anticlockwise
@@ -2694,10 +2830,10 @@ class TraditionalRatchet:
 
     '''
 
-    def __init__(self, gear_diameter, thick=5, power_clockwise=True, fixing_screws=None, pawl_angle=math.pi/2):
+    def __init__(self, gear_diameter, thick=5, blocks_clockwise=True, fixing_screws=None, pawl_angle=math.pi / 2):
         self.gear_diameter = gear_diameter
         self.thick = thick
-        self.power_clockwise = power_clockwise
+        self.blocks_clockwise = blocks_clockwise
         # by default set angle to pi/2 so the pawl is at the top of the ratchet - then if the spring fails gravity should help keep it locked in position
         #(only relevant to a spring barrel where the ratchet is on the plates, won't affect a cord movement)
         self.pawl_angle = pawl_angle
@@ -2721,7 +2857,7 @@ class TraditionalRatchet:
 
         self.pawl_length = self.gear_diameter*0.5
 
-        direction = -1 if self.power_clockwise else 1
+        direction = -1 if self.blocks_clockwise else 1
         #TODO some way of ensuring it's "safe": it will stay locked without the spring
         #this should be a case of ensuring it's to the correct side of the line perpendicular to the tooth radial
         #I think this is also the same as ensuring it's on the "outside" of the tangent from the end of the tooth it locks against
@@ -2761,7 +2897,7 @@ class TraditionalRatchet:
     def get_gear(self):
         gear = cq.Workplane("XY").moveTo(self.gear_diameter/2, 0)
 
-        direction = -1 if self.power_clockwise else 1
+        direction = -1 if self.blocks_clockwise else 1
 
         for tooth in range(self.teeth):
             start_angle = tooth * self.tooth_angle * direction
@@ -2781,7 +2917,7 @@ class TraditionalRatchet:
     def get_pawl(self):
         # pawl = cq.Workplane("XY").circle(3).translate(self.pawl_fixing)
 
-        direction = -1 if self.power_clockwise else 1
+        direction = -1 if self.blocks_clockwise else 1
 
         tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
         next_tooth_outer = polar(direction * self.tooth_angle, self.gear_diameter/2)

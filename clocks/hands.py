@@ -423,7 +423,7 @@ class Hands:
         circle = cq.Workplane("XY").circle(r)
         nut = cq.Workplane("XZ").moveTo(self.handNutMetricSize/2,0).lineTo(r,0).line(0,height*0.25).lineTo(self.handNutMetricSize/2,height).close().sweep(circle)
 
-        nutSpace = getHoleWithHole(innerD=self.handNutMetricSize,outerD=getNutContainingDiameter(self.handNutMetricSize),sides=6, deep=getNutHeight(self.handNutMetricSize))
+        nutSpace = get_hole_with_hole(innerD=self.handNutMetricSize, outerD=getNutContainingDiameter(self.handNutMetricSize), sides=6, deep=getNutHeight(self.handNutMetricSize))
 
         nut = nut.cut(nutSpace)
 

@@ -714,5 +714,9 @@ if False:
 spring = SpringBarrel()
 
 # show_object(spring.get_barrel())
-show_object(spring.get_model())
+show_object(spring.get_assembled())
 # show_object(spring.get_arbor(for_printing=False))
+
+# key = WindingKey(square_side_length=10,cylinder_length=30,key_hole_deep=20,handle_length=40)
+#
+# show_object(key.get_assembled())

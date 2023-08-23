@@ -156,7 +156,7 @@ class PowerType(Enum):
 
     @staticmethod
     def is_spring(type):
-        return not self.is_weight()
+        return not PowerType.is_weight(type)
 
 class DialStyle(Enum):
     #simple lines that are actually slightly wedge shaped
