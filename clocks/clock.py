@@ -1151,7 +1151,7 @@ class MoonHolder:
         cutter = cq.Workplane("XY").sphere(self.moon_complication.moon_radius + self.moon_extra_space).translate(moon_centre_pos)
 
         for screw_pos in self.get_fixing_positions():
-            cutter = cutter.add(self.fixing_screws.getCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).rotate((0,0,0),(1,0,0),180).translate((screw_pos[0],screw_pos[1],moon_z + lid_thick)))
+            cutter = cutter.add(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).rotate((0, 0, 0), (1, 0, 0), 180).translate((screw_pos[0], screw_pos[1], moon_z + lid_thick)))
 
         #the steel tube
         cutter = cutter.add(cq.Workplane("XY").circle(STEEL_TUBE_DIAMETER/2).extrude(1000).translate((0,0,-500)).rotate((0,0,0),(1,0,0), 90).translate((0,0,moon_z)))
@@ -2096,10 +2096,10 @@ class SimpleClockPlates:
         #small standoff for motion works arbour
         holder = holder.faces(">Z").workplane().circle(self.fixing_screws.metric_thread).extrude(standoff_thick)
 
-        holder = holder.cut(self.fixing_screws.getCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK, for_tap_die=True))
+        holder = holder.cut(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK, for_tap_die=True))
 
         for pos in self.motion_works_fixings_relative_pos:
-            holder = holder.cut(self.fixing_screws.getCutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
+            holder = holder.cut(self.fixing_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
 
         return holder
 
@@ -2679,9 +2679,9 @@ class SimpleClockPlates:
                     else:
                         screw_start_z = bottom_nut_hole_height
 
-                    cutter = cutter.add(self.fixing_screws.getCutter(loose=True).translate(fixingPos).translate((0, 0, -self.back_plate_from_wall + screw_start_z)))
+                    cutter = cutter.add(self.fixing_screws.get_cutter(loose=True).translate(fixingPos).translate((0, 0, -self.back_plate_from_wall + screw_start_z)))
                 else:
-                    cutter = cutter.add(self.fixing_screws.getCutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
+                    cutter = cutter.add(self.fixing_screws.get_cutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
 
 
 
@@ -2869,7 +2869,7 @@ class SimpleClockPlates:
                 #bring it nearer the top, making it easier to tie the cord around it
                 pulleyY = self.bottom_pillar_positions[0][1] + self.bottom_pillar_r - cord_holding_screw.metric_thread
             # this screw will provide something for the cord to be tied round
-            pulleyScrewHole = cord_holding_screw.getCutter().rotate((0,0,0),(1,0,0),180).translate((pulleyX,pulleyY,self.plate_distance))
+            pulleyScrewHole = cord_holding_screw.get_cutter().rotate((0, 0, 0), (1, 0, 0), 180).translate((pulleyX, pulleyY, self.plate_distance))
 
             #but it's fiddly so give it a hole and protect the screw
             max_extra_space = self.bottom_pillar_r - pulleyX - 1
@@ -3087,7 +3087,7 @@ class SimpleClockPlates:
             #extra material in case the motion works is at an angle off to one side
             plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
             #hole for screw to hold motion works arbour
-            plate = plate.cut(self.motion_works_screws.getCutter().translate(self.motion_works_pos))
+            plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
 
         #embedded nut on the front so we can tighten this screw in
         #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.
@@ -3121,7 +3121,7 @@ class SimpleClockPlates:
 
 
             for pos in dial_fixing_positions:
-                plate = plate.cut(self.dial.fixing_screws.getCutter(loose=True,withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(pos))
+                plate = plate.cut(self.dial.fixing_screws.get_cutter(loose=True, with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(pos))
 
         if self.moon_complication is not None:
 
@@ -3136,7 +3136,7 @@ class SimpleClockPlates:
                     plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
 
 
-                plate = plate.cut(self.motion_works_screws.getCutter(withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(pos))
+                plate = plate.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(pos))
 
 
         # need an extra chunky hole for the big bearing that the key slots through
@@ -3152,6 +3152,15 @@ class SimpleClockPlates:
             cord_bearing_hole = cord_bearing_hole.faces(">Z").workplane().circle(self.key_hole_d / 2).extrude(plate_thick)
 
             plate = plate.cut(cord_bearing_hole.translate((self.bearing_positions[0][0], self.bearing_positions[0][1], 0)))
+
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
+            #spring powered, need the ratchet!
+            screw = self.going_train.powered_wheel.ratchet.fixing_screws
+
+            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
+                pos = npToSet(np.add(self.bearing_positions[0][:2],relative_pos))
+                plate = plate.cut(screw.get_cutter(for_tap_die=True, with_bridging=True).translate(pos))
+
 
         if self.huygens_maintaining_power:
 
@@ -3250,15 +3259,6 @@ class SimpleClockPlates:
         else:
             return abs(holePositions[0][0] - holePositions[1][0])
 
-    def getAnchorWithDirectPendulumFixing(self):
-        '''
-        For the direct pendulum fixing (where you can't set the beat) the anchor is heavily modified to fit the plates
-        so do this here where we have all the info
-
-        Planning to move more over to the plates to do than overload teh already messy Arbour class
-        '''
-
-        anchor = self.going_train.escapement.g
 
     def calc_winding_key_info(self):
         '''
@@ -3279,8 +3279,9 @@ class SimpleClockPlates:
         key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
 
         # self.key_hole_d = self.going_train.powered_wheel.keyWidth + 1.5
-        if self.bottom_of_hour_hand_z() < 25:# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.bearingOuterD - 1:
+        if self.bottom_of_hour_hand_z() < 25 and self.weight_driven:# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.bearingOuterD - 1:
             # only if the key would otherwise be a bit too short (for dials very close to the front plate) make the hole just big enough to fit the key into
+            #can't do this for spring driven as the ratchet is on the front (could move it to the back but it would make letting down the spring harder)
             print("Making the front hole just big enough for the cord key")
             #offset *into* the front plate
             self.key_offset_from_front_plate = -key_within_front_plate
@@ -3550,6 +3551,11 @@ class Assembly:
 
         self.ring_pos = [0,0,self.pendulum_bob_centre_pos[2]]
         self.has_ring = False
+
+        self.ratchet_on_front = None
+
+        if self.goingTrain.powered_wheel.type == PowerType.SPRING_BARREL:
+            self.ratchet_on_front = self.goingTrain.powered_wheel.ratchet.get_assembled().translate(self.plates.bearing_positions[0][:2]).translate((0,0,self.front_of_clock_z))
 
         if self.plates.pendulum_at_front:
             # if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
@@ -3894,7 +3900,7 @@ class Assembly:
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
-                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE):
+                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -3918,6 +3924,9 @@ class Assembly:
             if self.goingTrain.huygens_maintaining_power:
                 offset = 3
             bob_colours = [gear_colours[(self.goingTrain.wheels + self.goingTrain.powered_wheels + offset) % len(gear_colours)]]
+
+        if ratchet_colour is None:
+            ratchet_colour = plate_colour
 
         show_object(self.plates.get_assembled(), options={"color":plate_colour}, name="Plates")
         show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
@@ -4003,6 +4012,8 @@ class Assembly:
             show_object(self.plates.huygens_wheel.get_assembled().translate(self.plates.bottom_pillar_positions[0]).
                         translate((0, self.plates.huygens_wheel_y_offset, self.front_of_clock_z + WASHER_THICK_M3)), options={"color": huygens_colour}, name="Huygens Wheel")
 
+        if self.ratchet_on_front is not None:
+            show_object(self.ratchet_on_front, options={"color": ratchet_colour}, name="ratchet")
 
         if with_pendulum:
             # bob_colour = gear_colours[len(self.plates.bearingPositions) % len(gear_colours)]
@@ -4033,7 +4044,7 @@ class Assembly:
                 show_object(rod, options={"color": rod_colour, "name":"Rod_{}".format(i)})
 
         if with_key:
-            key = self.plates.get_winding_key(for_printing=False)
+            key = self.plates.get_winding_key()
             if key is not None:
                 show_object(key.translate((self.plates.bearing_positions[0][0], self.plates.bearing_positions[0][1], self.front_of_clock_z + self.plates.key_offset_from_front_plate + self.plates.endshake / 2)),
                             options={"color": key_colour, "name":"Key"})

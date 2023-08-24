@@ -79,3 +79,25 @@ def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=
         line = line.union(cq.Workplane("XY").circle(wide / 2).extrude(thick).translate(points[-1]))
 
     return line
+
+#https://stackoverflow.com/a/6802723
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = np.asarray(axis)
+    axis = axis / math.sqrt(np.dot(axis, axis))
+    a = math.cos(theta / 2.0)
+    b, c, d = -axis * math.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+
+def rotate_vector(vector, axis, angle_rad):
+    rotate_vector = list(vector)
+    if len(rotate_vector) < 3:
+        rotate_vector += [0]
+    return npToSet(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))

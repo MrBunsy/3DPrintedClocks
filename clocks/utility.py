@@ -193,7 +193,7 @@ class MachineScrew:
     def get_washer_diameter(self):
         return get_washer_diameter(self.metric_thread)
 
-    def getCutter(self, length=-1, withBridging=False, layerThick=LAYER_THICK, headSpaceLength=1000, loose=False, for_tap_die=False):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -224,15 +224,15 @@ class MachineScrew:
             screw= screw.add(cq.Workplane("XY").circle(r).extrude(length))
         else:
             # pan head screw lengths do not include the head
-            if not withBridging:
+            if not with_bridging:
                 screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
             else:
-                screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.getHeadDiameter() + NUT_WIGGLE_ROOM, deep=self.getHeadHeight(), layerThick=layerThick))
+                screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.getHeadDiameter() + NUT_WIGGLE_ROOM, deep=self.getHeadHeight(), layerThick=layer_thick))
             screw = screw.faces(">Z").workplane().circle(r).extrude(length)
 
         #extend out from the headbackwards too
-        if headSpaceLength > 0:
-            screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(headSpaceLength)
+        if head_space_length > 0:
+            screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(head_space_length)
 
         return screw
 
@@ -917,9 +917,9 @@ class BearingInfo:
 
     TODO - add and use safeouterD (where we can come into contact with the outside of the bearing without grating on the inner bit which will rotate)
     '''
-    def __init__(self, bearingOuterD=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1, innerSafeDAtAPush=-1):
-        self.bearingOuterD = bearingOuterD
-        self.outerD = bearingOuterD
+    def __init__(self, outer_d=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1, innerSafeDAtAPush=-1):
+        self.bearingOuterD = outer_d
+        self.outerD = outer_d
         # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
         #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
         #deprecated, use outerSafeD, this was how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
@@ -951,25 +951,30 @@ def get_bearing_info(innerD):
     Get some stock bearings
     '''
     if innerD == 3:
+        #3x10x4
         #most arbors
-        return BearingInfo(bearingOuterD=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerSafeDAtAPush=5.2)
+        return BearingInfo(outer_d=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerSafeDAtAPush=5.2)
     if innerD == 4:
+        #4x13x5
         #used for power arbor on eight day clocks
         #was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
-        return BearingInfo(bearingOuterD=13.1, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
+        return BearingInfo(outer_d=13.1, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
     if innerD == 6:
         #these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
-        return BearingInfo(bearingOuterD=19.2, outerSafeD=12, bearingHeight=6, innerD=6, innerSafeD=8)
+        return BearingInfo(outer_d=19.2, outerSafeD=12, bearingHeight=6, innerD=6, innerSafeD=8)
+    if innerD == 12:
+        #TODO 12x21x5 (haven't seen in person yet)
+        return BearingInfo(outer_d=21.2, bearingHeight=5, innerD=12, outerSafeD=20, innerSafeD=14)
     if innerD == 10:
         #not used much since direct-arbor with small bearings (this had too much friction)
         #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
-        return BearingInfo(bearingOuterD=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
+        return BearingInfo(outer_d=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
         #(used for the winding key)
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         #printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
         # with 24.15 light grey again latest print fell out again, wondering if tolerences are better since the new nozzle?
-        return BearingInfo(bearingOuterD=24.1,  bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
+        return BearingInfo(outer_d=24.1, bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
     return None
 
 

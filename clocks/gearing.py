@@ -931,9 +931,12 @@ class Gear:
         return a shape that covers just the teeth to help apply tweaks to the slicing settings
         '''
 
-        inner_r = self.getMinRadius() - 1.8
-        if inner_r < min_inner_r:
-            inner_r = min_inner_r
+        # inner_r = self.getMinRadius() - 1.8
+        # if inner_r < min_inner_r:
+        #     inner_r = min_inner_r
+
+        #two 0.45 traces extra
+        inner_r = self.getMinRadius() - 0.9
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
@@ -1283,7 +1286,7 @@ class SuspensionSpringPendulumBits:
     def get_crutch(self):
         crutch = cq.Workplane("XY").circle(self.radius).extrude(self.crutch_thick)
         # means to hold screw that will hold this in place
-        crutch = crutch.cut(self.collet_screws.getCutter(length=self.radius, headSpaceLength=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.radius, self.crutch_thick / 2)))
+        crutch = crutch.cut(self.collet_screws.get_cutter(length=self.radius, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.radius, self.crutch_thick / 2)))
         #rotating so bridging shouldn't be needed to print
         crutch = crutch.cut(self.collet_screws.getNutCutter(half=True).rotate((0,0,0),(0,0,1),360/12).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.square_side_length / 2, self.crutch_thick / 2)))
 
@@ -1292,7 +1295,7 @@ class SuspensionSpringPendulumBits:
         crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length).circle(self.crutch_wide/2).extrude(self.crutch_thick))
 
         #screw to link with pendulum
-        crutch = crutch.cut(self.crutch_screw.getCutter(withBridging=True).translate((0,-self.crutch_length)))
+        crutch = crutch.cut(self.crutch_screw.get_cutter(with_bridging=True).translate((0, -self.crutch_length)))
 
         crutch = crutch.faces(">Z").workplane().rect(self.square_side_length, self.square_side_length).cutThruAll()
 
@@ -1415,7 +1418,7 @@ class ArbourForPlate:
         collet = cq.Workplane("XY").circle(outer_d/2).rect(square_size, square_size).extrude(height)
         collet = collet.faces(">Z").workplane().circle(self.bearing.innerSafeD/2).rect(square_size, square_size).extrude(self.collet_thick - height)
 
-        collet = collet.cut(self.collet_screws.getCutter(length=outer_d/2).rotate((0,0,0),(1,0,0),-90).translate((0,-outer_d/2,self.collet_thick/2)))
+        collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.collet_thick / 2)))
         collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.collet_thick / 2)))
 
         return collet
@@ -1456,7 +1459,7 @@ class ArbourForPlate:
         collet = collet.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick/2).translate((0,-self.square_side_length/2-gap_between_square_and_pendulum_hole)))
 
         #means to hold screw that will hold this in place
-        collet = collet.cut(self.collet_screws.getCutter(length=outer_d / 2, headSpaceLength=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
+        collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
         collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.pendulum_holder_thick / 2)))
 
 
@@ -1699,9 +1702,10 @@ class ArbourForPlate:
             assembly = assembly.add(wheel)
             if self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
                 spring_barrel = self.arbor.powered_wheel
-                arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.key_square_side_length/2, 0, -spring_barrel.back_bearing_standoff - (self.distance_from_back)))
+                #deliberately not including back bearing standoff as that's taken out of the distance_from_back
+                arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.key_square_side_length/2, 0, - self.distance_from_back))
                 assembly = assembly.add(arbor)
-                assembly = assembly.add(spring_barrel.get_lid().translate((0,0,spring_barrel.barrel_height)))
+                assembly = assembly.add(shapes["lid"].translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
@@ -2189,6 +2193,7 @@ class Arbour:
 
         if self.get_type() == ArbourType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
             extras['spring_arbor']=self.powered_wheel.get_arbor(extra_after_barrel=rear_side_extension, extra_after_lid=front_side_extension, key_length=key_length)
+            extras['lid'] = self.powered_wheel.get_lid()
 
         return extras
     def get_extra_ratchet(self, forPrinting=True):
@@ -2209,7 +2214,7 @@ class Arbour:
 
         #add holes
         for hole_pos in self.bolt_positions:
-            cutter = self.ratchet_screws.getCutter(withBridging=False).rotate((0, 0, 0), (0, 1, 0), 180).translate((hole_pos[0], hole_pos[1], self.ratchet.thick))
+            cutter = self.ratchet_screws.get_cutter(with_bridging=False).rotate((0, 0, 0), (0, 1, 0), 180).translate((hole_pos[0], hole_pos[1], self.ratchet.thick))
             # return cutter
             ratchet_wheel = ratchet_wheel.cut(cutter)
 

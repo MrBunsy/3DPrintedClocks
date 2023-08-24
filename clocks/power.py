@@ -136,7 +136,7 @@ class Weight:
 
         screwHeight = r - self.bolt.getHeadDiameter()
 
-        screwSpace = self.bolt.getCutter().rotate((0,0,0),(0,1,0),90).translate((-r + self.bolt.getHeadHeight()/2,0,screwHeight + self.height))
+        screwSpace = self.bolt.get_cutter().rotate((0, 0, 0), (0, 1, 0), 90).translate((-r + self.bolt.getHeadHeight() / 2, 0, screwHeight + self.height))
 
         screwSpace = screwSpace.add(self.bolt.getNutCutter(height=1000).rotate((0,0,0),(0,1,0),90).translate((r*0.6,0,screwHeight + self.height)))
 
@@ -429,7 +429,7 @@ class LightweightPulley:
         screw_positions = [(0,0), (0, -centre_to_centre)]
         upright = left
         for pos in screw_positions:
-            screw_cutter = self.screws.getCutter(withBridging=True)
+            screw_cutter = self.screws.get_cutter(with_bridging=True)
             if upright:
                 screw_cutter = screw_cutter.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, self.get_total_thickness()))
                 screw_cutter = screw_cutter.add(self.screws.getNutCutter(nyloc=True, withBridging=True))
@@ -596,7 +596,7 @@ class BearingPulley:
 
 
             if top:
-               screwHoles = screwHoles.add(self.screws.getCutter(withBridging=True).translate(screwPos))
+               screwHoles = screwHoles.add(self.screws.get_cutter(with_bridging=True).translate(screwPos))
             else:
                 screwHoles = screwHoles.add(self.screws.getNutCutter(withBridging=True, withScrewLength=1000).translate(screwPos))
 
@@ -847,6 +847,9 @@ class SpringBarrel:
     Current plan: work out how many turns are needed, then make a clock that runs for only 3 days using those turns
 
     In theory the going train already supports multiple chain wheels, time to shake out the bugs!
+
+    TODO have the winding key on the back for the first mantel clock
+
     '''
 
     def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True):
@@ -854,7 +857,7 @@ class SpringBarrel:
 
         #comply with PoweredWheel interface
         self.loose_on_rod=True
-        self.ratchet = None
+
 
         self.spring = spring
         if self.spring is None:
@@ -908,6 +911,8 @@ class SpringBarrel:
         self.spring_hook_screws = MachineScrew(3, length=10)
 
         self.spring_hook_space=2
+        ratchet_d = self.arbor_d_bearing*2
+        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= not self.clockwise)
 
     def get_key_size(self):
         return self.key_square_side_length
@@ -925,7 +930,7 @@ class SpringBarrel:
             #offset so it doesn't coincide with the spring hook
             pos = polar((i+0.25 )* math.pi * 2 / self.lid_fixing_screws_count, self.barrel_diameter / 2 + self.wall_thick / 2)
 
-            cutter = cutter.add(self.lid_fixing_screws.getCutter().rotate((0,0,0),(1,0,0),180).translate(pos).translate((0,0,self.base_thick + self.barrel_height + self.lid_thick)))
+            cutter = cutter.add(self.lid_fixing_screws.get_cutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
 
         return cutter
 
@@ -937,7 +942,7 @@ class SpringBarrel:
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
-        barrel = barrel.cut(self.spring_hook_screws.getCutter(for_tap_die=True).rotate((0,0,0),(0,1,0),90).translate((self.barrel_diameter/2 - self.spring_hook_space - self.spring_hook_screws.getHeadHeight(),0,self.base_thick + self.barrel_height/2)))
+        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space - self.spring_hook_screws.getHeadHeight(), 0, self.base_thick + self.barrel_height / 2)))
 
         return barrel
 
@@ -950,6 +955,10 @@ class SpringBarrel:
 
     def get_arbor(self, extra_after_barrel=0, extra_after_lid=0, key_length=30, for_printing=True):
         #standoff from rear bearing
+
+        if extra_after_barrel > self.back_bearing_standoff:
+            extra_after_barrel -= self.back_bearing_standoff
+
         arbor = cq.Workplane("XY").circle(self.back_bearing.innerSafeD/2).extrude(self.back_bearing_standoff)
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_barrel_base/2).extrude(extra_after_barrel + self.base_thick + self.internal_endshake/2)
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_spring/2).extrude(self.barrel_height - self.internal_endshake)
@@ -986,7 +995,9 @@ class SpringBarrel:
         return 5
 
     def get_height(self):
-        return self.back_bearing_standoff + self.base_thick + self.barrel_height + self.lid_thick + self.front_bearing_standoff
+        #thought: should I be including the back standoff here? it's overriden when the plate distance is calculated
+        #self.back_bearing_standoff +
+        return self.base_thick + self.barrel_height + self.lid_thick + self.front_bearing_standoff
 
     def get_assembled(self):
         '''
@@ -1843,7 +1854,7 @@ class CordWheel:
         else:
             #cut out space for screwheads
             for fixingPoint in self.fixingPoints:
-                cutter = cutter.add(self.fixingScrew.getCutter(withBridging=True).translate(fixingPoint))
+                cutter = cutter.add(self.fixingScrew.get_cutter(with_bridging=True).translate(fixingPoint))
         clickwheel = clickwheel.cut(cutter)
 
         return clickwheel
@@ -2203,7 +2214,7 @@ class PocketChainWheel2:
         wheel = wheel.faces(">Z").workplane().circle(self.hole_d/2).cutThruAll()
 
         for pos in self.fixing_positions:
-            wheel = wheel.cut(self.fixing_screws.getCutter().rotate((0,0,0), (1,0,0),180).translate(pos).translate((0,0,self.wheel_thick/2)))
+            wheel = wheel.cut(self.fixing_screws.get_cutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.wheel_thick / 2)))
             #no bottom fixing nut space, this is always being bolted to something, be it a ratchet or wheel
             # if self.ratchet is None:
             #     wheel = wheel.cut(self.fixing_screws.getNutCutter(height=self.wheel_thick/4, withBridging=True).translate(pos).translate((0,0,-self.wheel_thick/2)))
@@ -2565,7 +2576,7 @@ class PocketChainWheel:
                 #screw holes and nut space
                 for holePos in self.hole_positions:
                     # half the height for a nut so the screw length can vary
-                    halfWheel = halfWheel.cut(self.screw.getCutter(withBridging=True).translate(holePos))
+                    halfWheel = halfWheel.cut(self.screw.get_cutter(with_bridging=True).translate(holePos))
 
             return halfWheel
 
@@ -2841,13 +2852,12 @@ class TraditionalRatchet:
         self.fixing_screws = fixing_screws
 
         if self.fixing_screws is None:
-            #pan headed M3 by default
-            self.fixing_screws = MachineScrew(3)
+            self.fixing_screws = MachineScrew(3, countersunk=True)
 
 
 
         self.tooth_deep=3
-        self.teeth = floor(self.gear_diameter / 5)
+        self.teeth = floor(self.gear_diameter / 2)
 
         self.tooth_angle = math.pi * 2 / self.teeth
 
@@ -2855,7 +2865,7 @@ class TraditionalRatchet:
 
         # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
 
-        self.pawl_length = self.gear_diameter*0.5
+        self.pawl_length = self.gear_diameter*1
 
         direction = -1 if self.blocks_clockwise else 1
         #TODO some way of ensuring it's "safe": it will stay locked without the spring
@@ -2872,7 +2882,11 @@ class TraditionalRatchet:
 
         self.rotate_by_deg = radToDeg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
+        # self.pawl_fixing = rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
 
+
+    def get_screw_positions(self):
+        return[rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))]
 
     def get_max_diameter(self):
         return np.linalg.norm(self.pawl_fixing) + self.pawl_diameter/2
@@ -2945,3 +2959,6 @@ class TraditionalRatchet:
 
 
         return pawl.rotate((0,0,0),(0,0,1), self.rotate_by_deg)
+
+    def get_assembled(self):
+        return self.get_gear().add(self.get_pawl())

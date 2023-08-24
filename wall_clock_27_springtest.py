@@ -83,12 +83,12 @@ pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 
-#dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
+#enshake smaller because there's no weight dangling to warp the plates! (hopefully)
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", style=clock.ClockPlateStyle.COMPACT,
                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=False, pillars_separate=True, dial=dial, bottom_pillars=2, motion_works_angle_deg=40,
-                                 allow_bottom_pillar_height_reduction=False, endshake=1.5)
+                                 allow_bottom_pillar_height_reduction=False, endshake=1)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -105,7 +105,7 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#weights=[clock.We
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.LIGHTBLUE, clock.Colour.LIGHTBLUE, clock.Colour.GREEN],
-                    bob_colours=[clock.Colour.PURPLE], with_rods=False, with_key=False)
+                    bob_colours=[clock.Colour.PURPLE], with_rods=False, with_key=False, ratchet_colour=clock.Colour.BRASS)
 
 # show_object(plates.getDrillTemplate(6))
 
