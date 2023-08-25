@@ -2943,21 +2943,27 @@ class TraditionalRatchet:
         pawl_tip_pos = (self.gear_diameter/2 - self.tooth_angle, 0)
         pawl_direction = np.subtract(self.pawl_fixing, pawl_tip_pos)
         pawl_angle = math.atan2(pawl_direction[1], pawl_direction[0])
+        pawl_from_centre_angle = math.atan2(self.pawl_fixing[1], self.pawl_fixing[0])
 
         tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
         next_tooth_outer = polar(self.direction * self.tooth_angle, self.gear_diameter/2)
 
         pawl_inner = npToSet(np.add(self.pawl_fixing, polar(pawl_angle + math.pi/2, self.pawl_diameter/2)))
         pawl_outer = npToSet(np.add(self.pawl_fixing, polar(pawl_angle - math.pi/2, self.pawl_diameter/2)))
+        pawl_base = npToSet(np.add(self.pawl_fixing, polar(pawl_from_centre_angle + math.pi + -self.direction*self.tooth_angle, self.pawl_diameter/2)))
 
         #contact with the tooth
         pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0)
 
-        pawl = pawl.lineTo(pawl_outer[0], pawl_outer[1])
+        # pawl = pawl.lineTo(pawl_outer[0], pawl_outer[1])
+        pawl = pawl.spline([pawl_outer], tangents=[None, polar(pawl_angle, 1)], includeCurrent=True)
         # #round the back of the fixing
         pawl = pawl.radiusArc(pawl_inner, -self.direction*(self.pawl_diameter/2+0.0001))
         # pawl = pawl.lineTo(pawl_inner[0], pawl_inner[1])
-        pawl = pawl.lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, self.direction*self.gear_diameter/2)
+        # pawl = pawl.lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, self.direction*self.gear_diameter/2)
+        pawl = pawl.radiusArc(pawl_base, -self.direction*(self.pawl_diameter/2+0.0001) )
+        pawl = pawl.tangentArcPoint(next_tooth_outer, relative=False).radiusArc(tooth_inner, self.direction * self.gear_diameter / 2)
+        # pawl = pawl.radiusArc(tooth_inner, self.direction * self.gear_diameter / 2)
         # pawl = pawl.radiusArc(tooth_inner, direction * self.gear_diameter*0.75)
 
         # pawl = pawl.spline([pawl_outer, pawl_inner, next_tooth_outer] ,includeCurrent=True, tangents=[(0,direction), (0,direction), (0,-direction), None]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
