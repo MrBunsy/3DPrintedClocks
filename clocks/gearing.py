@@ -2194,6 +2194,8 @@ class Arbour:
         if self.get_type() == ArbourType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
             extras['spring_arbor']=self.powered_wheel.get_arbor(extra_after_barrel=rear_side_extension, extra_after_lid=front_side_extension, key_length=key_length)
             extras['lid'] = self.powered_wheel.get_lid()
+            extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_with_hole()
+            extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
 
         return extras
     def get_extra_ratchet(self, forPrinting=True):

@@ -706,15 +706,15 @@ if False:
 # show_object(pair.get_model(offset_angle_deg=-0.3))
 
 
-# ratchet = TraditionalRatchet(50, power_clockwise=True)
+ratchet = TraditionalRatchet(50, blocks_clockwise=False)
+
+show_object(ratchet.get_gear())
+show_object(ratchet.get_pawl())
+
+# spring = SpringBarrel()
 #
-# show_object(ratchet.get_gear())
-# show_object(ratchet.get_pawl())
-
-spring = SpringBarrel()
-
-# show_object(spring.get_barrel())
-show_object(spring.get_model())
+# # show_object(spring.get_barrel())
+# show_object(spring.get_model())
 # show_object(spring.get_arbor(for_printing=False))
 
 # key = WindingKey(square_side_length=10,cylinder_length=30,key_hole_deep=20,handle_length=40)

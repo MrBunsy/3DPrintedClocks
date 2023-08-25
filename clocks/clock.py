@@ -3555,7 +3555,8 @@ class Assembly:
         self.ratchet_on_front = None
 
         if self.goingTrain.powered_wheel.type == PowerType.SPRING_BARREL:
-            self.ratchet_on_front = self.goingTrain.powered_wheel.ratchet.get_assembled().translate(self.plates.bearing_positions[0][:2]).translate((0,0,self.front_of_clock_z))
+            self.ratchet_on_front = self.goingTrain.powered_wheel.get_ratchet_gear_with_hole().add(self.goingTrain.powered_wheel.ratchet.get_pawl())\
+                .translate(self.plates.bearing_positions[0][:2]).translate((0,0,self.front_of_clock_z))
 
         if self.plates.pendulum_at_front:
             # if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)

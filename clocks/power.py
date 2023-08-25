@@ -876,7 +876,7 @@ class SpringBarrel:
         self.back_bearing = get_bearing_info(self.rod_d)
 
         #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
-        self.barrel_diameter=self.spring.barrel_diameter + 5
+        self.barrel_diameter=self.spring.barrel_diameter + self.key_bearing.outerD-6
         self.barrel_height = self.spring.height + 2
         self.arbor_inner_diameter=10
 
@@ -906,12 +906,14 @@ class SpringBarrel:
 
         self.key_square_side_length = self.arbor_d_bearing*0.5*math.sqrt(2)
 
+        self.ratchet_wiggle_room = 0.5
+
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.spring_hook_screws = MachineScrew(3, length=10)
 
         self.spring_hook_space=2
-        ratchet_d = self.arbor_d_bearing*2
+        ratchet_d = self.arbor_d_bearing*2.5
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= not self.clockwise)
 
     def get_key_size(self):
@@ -1012,6 +1014,13 @@ class SpringBarrel:
         model = model.add(self.get_arbor(for_printing=False))
 
         return model
+
+    def get_ratchet_gear_with_hole(self):
+        gear = self.ratchet.get_gear()
+
+        gear = gear.faces(">Z").workplane().rect(self.key_square_side_length+self.ratchet_wiggle_room, self.key_square_side_length + self.ratchet_wiggle_room).cutThruAll()
+
+        return gear
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path,"{}_spring_barrel.stl".format(name))
@@ -2839,6 +2848,8 @@ class TraditionalRatchet:
 
     undecided on 3D printed spring or steel spring
 
+    note: no hole is provided in the ratchet gear, this class assumes it's adapted elsewhere (for spring barrel or cord wheel)
+
     '''
 
     def __init__(self, gear_diameter, thick=5, blocks_clockwise=True, fixing_screws=None, pawl_angle=math.pi / 2):
@@ -2861,21 +2872,22 @@ class TraditionalRatchet:
 
         self.tooth_angle = math.pi * 2 / self.teeth
 
+        self.tooth_length = math.pi*self.gear_diameter/self.teeth
+
         self.pawl_diameter = self.fixing_screws.metric_thread*3
 
         # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
 
-        self.pawl_length = self.gear_diameter*1
+        # self.pawl_length = self.tooth_deep+self.pawl_diameter
 
-        direction = -1 if self.blocks_clockwise else 1
+        self.direction = -1 if self.blocks_clockwise else 1
         #TODO some way of ensuring it's "safe": it will stay locked without the spring
         #this should be a case of ensuring it's to the correct side of the line perpendicular to the tooth radial
         #I think this is also the same as ensuring it's on the "outside" of the tangent from the end of the tooth it locks against
         # self.pawl_fixing = polar(direction * self.tooth_angle*self.pawl_length, self.max_diameter/2 - self.pawl_diameter/2)
 
-        #this should always be safe, it's half a tooth depth further outside the tangent than needed to be safe, so even if it just
-        #catches the tip of the tooth it should be forced into a safer position
-        self.pawl_fixing = (self.gear_diameter/2 + self.tooth_deep/2, direction*self.pawl_length)
+        #this should always be safe, pawl now spans aproximately two teeth
+        self.pawl_fixing = (self.gear_diameter/2 + self.pawl_diameter*0.5, self.direction*self.tooth_length*2)
 
         if not self.is_pawl_position_safe():
             raise ValueError("Pawl is unsafe!")
@@ -2910,17 +2922,14 @@ class TraditionalRatchet:
 
     def get_gear(self):
         gear = cq.Workplane("XY").moveTo(self.gear_diameter/2, 0)
-
-        direction = -1 if self.blocks_clockwise else 1
-
         for tooth in range(self.teeth):
-            start_angle = tooth * self.tooth_angle * direction
-            end_angle = start_angle + self.tooth_angle * direction
+            start_angle = tooth * self.tooth_angle * self.direction
+            end_angle = start_angle + self.tooth_angle * self.direction
 
             start_inner = polar(start_angle, self.gear_diameter/2 - self.tooth_deep)
             end = polar(end_angle, self.gear_diameter/2)
 
-            gear = gear.lineTo(start_inner[0], start_inner[1]).radiusArc(end, -direction*self.gear_diameter/2)
+            gear = gear.lineTo(start_inner[0], start_inner[1]).radiusArc(end, -self.direction*self.gear_diameter/2)
 
         gear = gear.close()
 
@@ -2931,22 +2940,24 @@ class TraditionalRatchet:
     def get_pawl(self):
         # pawl = cq.Workplane("XY").circle(3).translate(self.pawl_fixing)
 
-        direction = -1 if self.blocks_clockwise else 1
+        pawl_tip_pos = (self.gear_diameter/2 - self.tooth_angle, 0)
+        pawl_direction = np.subtract(self.pawl_fixing, pawl_tip_pos)
+        pawl_angle = math.atan2(pawl_direction[1], pawl_direction[0])
 
         tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
-        next_tooth_outer = polar(direction * self.tooth_angle, self.gear_diameter/2)
+        next_tooth_outer = polar(self.direction * self.tooth_angle, self.gear_diameter/2)
 
-        pawl_inner = (self.pawl_fixing[0] - self.pawl_diameter / 2, self.pawl_fixing[1])
-        pawl_outer = (self.pawl_fixing[0] + self.pawl_diameter / 2, self.pawl_fixing[1])
+        pawl_inner = npToSet(np.add(self.pawl_fixing, polar(pawl_angle + math.pi/2, self.pawl_diameter/2)))
+        pawl_outer = npToSet(np.add(self.pawl_fixing, polar(pawl_angle - math.pi/2, self.pawl_diameter/2)))
 
         #contact with the tooth
         pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0)
 
         pawl = pawl.lineTo(pawl_outer[0], pawl_outer[1])
         # #round the back of the fixing
-        pawl = pawl.radiusArc(pawl_inner, -direction*self.pawl_diameter/2)
-        # pawl = pawl.tangentArcPoint(pawl_inner)
-        pawl = pawl.lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
+        pawl = pawl.radiusArc(pawl_inner, -self.direction*(self.pawl_diameter/2+0.0001))
+        # pawl = pawl.lineTo(pawl_inner[0], pawl_inner[1])
+        pawl = pawl.lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, self.direction*self.gear_diameter/2)
         # pawl = pawl.radiusArc(tooth_inner, direction * self.gear_diameter*0.75)
 
         # pawl = pawl.spline([pawl_outer, pawl_inner, next_tooth_outer] ,includeCurrent=True, tangents=[(0,direction), (0,direction), (0,-direction), None]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
