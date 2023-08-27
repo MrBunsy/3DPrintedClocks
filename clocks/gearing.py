@@ -1400,6 +1400,7 @@ class ArbourForPlate:
     def get_max_radius(self):
         if self.arbor.type == ArbourType.ANCHOR:
             #too much of the anchor is dependant on the plate, even though a method exists to use the base arbor
+            return self.arbor.escapement.largest_anchor_r
             return self.outer_d/2
         else:
             return self.arbor.get_max_radius()

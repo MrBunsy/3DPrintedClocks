@@ -1389,6 +1389,7 @@ class SimpleClockPlates:
 
         self.powered_wheel_r = self.going_train.get_arbour(-self.going_train.powered_wheels).get_max_radius() + self.gear_gap
 
+        self.reduce_bottom_pillar_height = 0
         self.calc_pillar_info()
 
 
@@ -3521,8 +3522,82 @@ class MantelClockPlates(SimpleClockPlates):
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                      second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1, compact_zigzag=True)
 
+        self.narrow_bottom_pillar = False
+
+    def calc_pillar_info(self):
+        '''
+        current plan: asymetric to be compact, with anchor arbor sticking out the top above the topmost pillar
+
+        This is completely hard coded around a spring powered clock with 4 wheels and 2 powered wheels using the compact layout.
+        if the spring clock is a success, it'll be worth making it more flexible
+        '''
+
+        bearingInfo = get_bearing_info(self.arbour_d)
+        # TODO review this from old logic width of thin bit
+        self.plate_width = bearingInfo.bearingOuterD + self.bearing_wall_thick * 2
+        self.min_plate_width = self.plate_width
+        if self.heavy or self.extra_heavy:
+            self.plate_width *= 1.2
+
+        self.bottom_pillar_positions = []
+        self.top_pillar_positions = []
+        self.top_pillar_r = self.bottom_pillar_r = self.plate_width/2
+
+        bottom_distance = self.arbours_for_plate[0].get_max_radius() + self.gear_gap + self.bottom_pillar_r
+        #TODO check this doesn't collide with next wheel
+        bottom_angle = -math.pi/4
+        self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
+
+        # right_pillar_line = Line(self.bearing_positions[1][:2], anotherPoint=self.bearing_positions[-2][:2])
+        # #how far between the arbors 1 and -2
+        # right_distance = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[-2][:2]))
+        # #calculate how far along is "in the middle" of the empty space between them
+        # right_bottom_distance = self.arbours_for_plate[1].get_max_radius()
+        # along_distance = right_bottom_distance + (right_distance - self.arbours_for_plate[-2].get_max_radius() - right_bottom_distance)/2
+        # right_bottom_equidistance_point = npToSet(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, along_distance)))
+        # #now go outwards from teh minute wheel along the line that goes through the minutewheel and this point
+        # right_pillar_line2 = Line(self.bearing_positions[self.going_train.powered_wheels][:2], anotherPoint=right_bottom_equidistance_point)
+        #
+        # from_minute_wheel = self.arbours_for_plate[self.going_train.powered_wheels].get_max_radius() + self.gear_gap + self.top_pillar_r
+        # right_pillar_pos = npToSet(np.add(right_pillar_line2.start,np.multiply(right_pillar_line2.dir, from_minute_wheel)))
+        #
+        # self.top_pillar_positions = [right_pillar_pos]
+        right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
+        # left_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[self.going_train.powered_wheels+1][:2])
+        self.top_pillar_positions = [
+            npToSet(np.add(self.bearing_positions[self.going_train.powered_wheels+1][:2], np.multiply(polar(math.pi*0.525), self.arbours_for_plate[self.going_train.powered_wheels+1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+            npToSet(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbours_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+        ]
+        print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbours_for_plate[-1].get_max_radius())
+
+
+
     def get_plate(self, back=True, for_printing=True):
-        plate = cq.Workplane("XY").circle(10).extrude(10)
+
+        plate_thick = self.get_plate_thick(back=back)
+
+        plate = cq.Workplane("XY")
+
+        main_arm_wide = self.plate_width
+        medium_arm_wide = self.plate_width*0.8
+        small_arm_wide = 5
+
+        pillar_positions = self.top_pillar_positions + self.bottom_pillar_positions
+
+        # for pillar in range(len(pillar_positions)):
+        #     pillar_pos = pillar_positions[pillar]
+        #     next_pillar_pos = pillar_positions[(pillar + 1)% len(pillar_positions)]
+        #
+        #link up the side pillars with each other
+        for side in [0,1]:
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bottom_pillar_positions[side]], wide=self.plate_width, thick = plate_thick))
+            plate = plate.union(get_stroke_line([self.bottom_pillar_positions[side], self.bearing_positions[0][:2]], wide=self.plate_width, thick=plate_thick))
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-1][:2]], wide=self.plate_width, thick=plate_thick))
+
+        plate = plate.union(get_stroke_line([self.bearing_positions[0][:2], self.bearing_positions[-3][:2]], wide=self.plate_width*0.8, thick=plate_thick))
+        plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels+1][:2], self.bearing_positions[1][:2]], wide=self.plate_width * 0.8, thick=plate_thick))
+
+        plate = self.punchBearingHoles(plate, back)
 
         return plate
 

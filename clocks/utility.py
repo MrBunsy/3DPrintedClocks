@@ -762,7 +762,7 @@ def degToRad(deg):
 def radToDeg(rad):
     return rad*180/math.pi
 
-def polar(angle, radius):
+def polar(angle, radius=1):
     return (math.cos(angle) * radius, math.sin(angle) * radius)
 
 def toPolar(x,y):
