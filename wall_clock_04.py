@@ -93,7 +93,7 @@ weight = clock.Weight(height=100, diameter=35)
 
 weight.printInfo()
 
-assembly = clock.Assembly(plates, hands=hands)
+assembly = clock.Assembly(plates, hands=hands, pendulum=pendulum)
 
 # show_object(assembly.getClock())
 assembly.show_clock(show_object)

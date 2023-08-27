@@ -79,7 +79,7 @@ print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
 hands = clock.Hands(style=clock.HandStyle.SPADE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
-assembly = clock.Assembly(plates, hands=hands, timeHours=12, pulley=pulley)
+assembly = clock.Assembly(plates, hands=hands, timeHours=12, pulley=pulley, pendulum=pendulum)
 
 assembly.printInfo()
 

@@ -2955,20 +2955,13 @@ class TraditionalRatchet:
         #contact with the tooth
         pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0)
 
-        # pawl = pawl.lineTo(pawl_outer[0], pawl_outer[1])
         pawl = pawl.spline([pawl_outer], tangents=[None, polar(pawl_angle, 1)], includeCurrent=True)
         # #round the back of the fixing
         pawl = pawl.radiusArc(pawl_inner, -self.direction*(self.pawl_diameter/2+0.0001))
-        # pawl = pawl.lineTo(pawl_inner[0], pawl_inner[1])
-        # pawl = pawl.lineTo(next_tooth_outer[0],next_tooth_outer[1]).radiusArc(tooth_inner, self.direction*self.gear_diameter/2)
+        #carry on round to near the base
         pawl = pawl.radiusArc(pawl_base, -self.direction*(self.pawl_diameter/2+0.0001) )
+        #curve to the tip of the next tooth then along the tooth shape
         pawl = pawl.tangentArcPoint(next_tooth_outer, relative=False).radiusArc(tooth_inner, self.direction * self.gear_diameter / 2)
-        # pawl = pawl.radiusArc(tooth_inner, self.direction * self.gear_diameter / 2)
-        # pawl = pawl.radiusArc(tooth_inner, direction * self.gear_diameter*0.75)
-
-        # pawl = pawl.spline([pawl_outer, pawl_inner, next_tooth_outer] ,includeCurrent=True, tangents=[(0,direction), (0,direction), (0,-direction), None]).radiusArc(tooth_inner, direction*self.gear_diameter/2)
-
-
 
         pawl = pawl.close().extrude(self.thick)
 

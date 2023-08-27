@@ -418,7 +418,7 @@ class AutoWallClock:
 
         self.pulley = BearingPulley(diameter=self.train.powered_wheel.diameter, bearing=get_bearing_info(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))
 
-        self.model = Assembly(self.plates, hands=self.hands, timeSeconds=30, pulley=self.pulley)
+        self.model = Assembly(self.plates, hands=self.hands, timeSeconds=30, pulley=self.pulley, pendulum=self.pendulum)
 
 
 

@@ -80,7 +80,7 @@ hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing=
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands)
+assembly = clock.Assembly(plates, hands=hands, pendulum=pendulum)
 
 assembly.printInfo()
 

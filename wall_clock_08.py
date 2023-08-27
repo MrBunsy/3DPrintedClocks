@@ -81,7 +81,7 @@ hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands)
+assembly = clock.Assembly(plates, hands=hands, pendulum=pendulum)
 
 weight = clock.Weight(height=100, diameter=35)
 weight.printInfo()

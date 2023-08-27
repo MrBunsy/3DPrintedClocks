@@ -100,7 +100,7 @@ print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get
 hands = clock.Hands(style=clock.HandStyle.MOON,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum)
 
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
 assembly.show_clock(show_object, with_rods=True, plate_colour=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])

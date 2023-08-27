@@ -95,7 +95,7 @@ counterweight = clock.Weight(height=100, diameter=18, wallThick=1.35, bolt=clock
 counterweight.printInfo()
 
 
-assembly = clock.Assembly(plates, hands=hands,weights=[weight, counterweight])
+assembly = clock.Assembly(plates, hands=hands,weights=[weight, counterweight], pendulum=pendulum)
 
 
 

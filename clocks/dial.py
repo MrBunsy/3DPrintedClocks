@@ -482,6 +482,10 @@ class Dial:
             # add a mini dial for the second hand (NOTE assumes second hand is vertical)
             self.second_hand_mini_dial_d = ((self.outside_d/2 - self.dial_width + self.dial_detail_from_edges) - self.second_hand_relative_pos[1])*2
 
+            if self.seconds_dial_width > self.second_hand_mini_dial_d/2:
+                print("seconds dial too small for default seconds dial width")
+                self.seconds_dial_width = self.second_hand_mini_dial_d*0.2
+
         if self.style == DialStyle.TONY_THE_CLOCK:
             self.outer_ring_thick=2
             #the dial will drop into the outer ring, from the back

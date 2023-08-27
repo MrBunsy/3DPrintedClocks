@@ -80,7 +80,7 @@ hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteF
 #which needs a shell to look better!
 shell = clock.WeightShell(45,220, twoParts=True, holeD=5)
 
-assembly = clock.Assembly(plates, hands=hands, timeMins=47)
+assembly = clock.Assembly(plates, hands=hands, timeMins=47, pendulum=pendulum)
 
 assembly.show_clock(show_object, bob_colours=[clock.Colour.PURPLE], motion_works_colours=[clock.Colour.LIGHTBLUE,clock.Colour.LIGHTBLUE,clock.Colour.BLUE])
 

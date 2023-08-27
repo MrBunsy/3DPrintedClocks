@@ -75,31 +75,27 @@ train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thick
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-motionWorks.calculateGears(arbourDistance=30)
+# motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
-
+dial=None
 #enshake smaller because there's no weight dangling to warp the plates! (hopefully)
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", style=clock.ClockPlateStyle.COMPACT,
-                                 heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
-                                 back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=False, pillars_separate=True, dial=dial, bottom_pillars=2, motion_works_angle_deg=40,
-                                 allow_bottom_pillar_height_reduction=False, endshake=1)
+plates = clock.MantelClockPlates(train, motionWorks, dial=dial)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.8, outlineSameAsBody=False, chunky=True,
-                    secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5, outline_on_seconds=0.6)
-# hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
+# hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+#                     length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.8, outlineSameAsBody=False, chunky=True,
+#                     secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5, outline_on_seconds=0.6)
+hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30)#weights=[clock.Weight(height=245,diameter=55)]
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))

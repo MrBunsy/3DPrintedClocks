@@ -124,7 +124,7 @@ cosmetics={"red": bow_tie.get_red(),
 #yellow is slightly translucent - a layer of solid white behind two layers of yellow works well.
 pretty_bob = clock.ItemWithCosmetics(shape = pendulum.getBob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics, colour_thick_overrides={"yellow":clock.LAYER_THICK*3})
 
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pretty_bob=pretty_bob)#,weights=[clock.Weight(height=245,diameter=55)])
+assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pretty_bob=pretty_bob, pendulum=pendulum)#,weights=[clock.Weight(height=245,diameter=55)])
 
 
 # show_object(plates.getPlate(back=True))

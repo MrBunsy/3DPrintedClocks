@@ -90,7 +90,7 @@ pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley
 
 hands = clock.Hands(style=clock.HandStyle.CIRCLES, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
-assembly = clock.Assembly(plates, hands=hands, pulley=pulley)
+assembly = clock.Assembly(plates, hands=hands, pulley=pulley, pendulum=pendulum)
 
 assembly.printInfo()
 

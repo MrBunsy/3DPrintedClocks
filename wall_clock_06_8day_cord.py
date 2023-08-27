@@ -119,7 +119,7 @@ hands = clock.Hands(style=clock.HandStyle.CIRCLES, minuteFixing="square", minute
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=00)
+assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=00, pendulum=pendulum)
 
 assembly.printInfo()
 train.print_info(weight_kg=2.5)
