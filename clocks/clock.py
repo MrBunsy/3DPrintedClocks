@@ -3579,7 +3579,7 @@ class MantelClockPlates(SimpleClockPlates):
         plate = cq.Workplane("XY")
 
         main_arm_wide = self.plate_width
-        medium_arm_wide = self.plate_width*0.8
+        medium_arm_wide = get_bearing_info(3).outerD+self.bearing_wall_thick*2
         small_arm_wide = 5
 
         pillar_positions = self.top_pillar_positions + self.bottom_pillar_positions
@@ -3590,14 +3590,37 @@ class MantelClockPlates(SimpleClockPlates):
         #
         #link up the side pillars with each other
         for side in [0,1]:
-            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bottom_pillar_positions[side]], wide=self.plate_width, thick = plate_thick))
-            plate = plate.union(get_stroke_line([self.bottom_pillar_positions[side], self.bearing_positions[0][:2]], wide=self.plate_width, thick=plate_thick))
-            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-1][:2]], wide=self.plate_width, thick=plate_thick))
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bottom_pillar_positions[side]], wide=main_arm_wide, thick = plate_thick))
+            plate = plate.union(get_stroke_line([self.bottom_pillar_positions[side], self.bearing_positions[0][:2]], wide=main_arm_wide, thick=plate_thick))
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-1][:2]], wide=medium_arm_wide, thick=plate_thick))
 
-        plate = plate.union(get_stroke_line([self.bearing_positions[0][:2], self.bearing_positions[-3][:2]], wide=self.plate_width*0.8, thick=plate_thick))
-        plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels+1][:2], self.bearing_positions[1][:2]], wide=self.plate_width * 0.8, thick=plate_thick))
+        #barrel to minute wheel
+        plate = plate.union(get_stroke_line([self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2]], wide=medium_arm_wide, thick=plate_thick))
+
+        #across the front of the plate
+        plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels+1][:2], self.bearing_positions[1][:2]], wide=medium_arm_wide, thick=plate_thick))
+
+        #idea - 3 thin arms all linking to the second hand arbor? medium from barrel to minute wheel, thick just for the edges
+        links = [self.bearing_positions[self.going_train.powered_wheels][:2],
+                 self.bearing_positions[self.going_train.powered_wheels+3][:2],
+                 self.top_pillar_positions[0]
+                 ]
+        for link_pos in links:
+            plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels + 2][:2], link_pos], wide=small_arm_wide, thick=plate_thick))
+
+        for i, pos in enumerate(self.bearing_positions):
+            bearing_info = self.arbours_for_plate[i].bearing
+
+            plate = plate.union(cq.Workplane("XY").circle(bearing_info.outerD/2+self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
+
+        plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outerD/2 + self.bearing_wall_thick*1.5).extrude(plate_thick))
 
         plate = self.punchBearingHoles(plate, back)
+
+        plate = plate.cut(self.get_fixing_screws_cutter())
+
+        if not back:
+            plate = self.frontAdditionsToPlate(plate)
 
         return plate
 
