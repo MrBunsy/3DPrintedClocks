@@ -852,7 +852,7 @@ class SpringBarrel:
 
     '''
 
-    def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True):
+    def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True, ratchet_at_back=True):
         self.type = PowerType.SPRING_BARREL
 
         #comply with PoweredWheel interface
@@ -873,7 +873,13 @@ class SpringBarrel:
         self.rod_d = rod_d
         self.arbour_d = rod_d
 
+        #ratchet is out the back plate, rather than on the front plate?
+        self.ratchet_at_back = ratchet_at_back
+
         self.back_bearing = get_bearing_info(self.rod_d)
+
+        if self.ratchet_at_back:
+            self.back_bearing = self.key_bearing
 
         #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
         self.barrel_diameter=self.spring.barrel_diameter + self.key_bearing.outerD-6
@@ -914,7 +920,14 @@ class SpringBarrel:
 
         self.spring_hook_space=2
         ratchet_d = self.arbor_d_bearing*2.5
-        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= not self.clockwise)
+
+        ratchet_blocks_clockwise = not self.clockwise
+        if self.ratchet_at_back:
+            ratchet_blocks_clockwise = self.clockwise
+
+        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise)
+
+        self.ratchet_collet_thick = self.lid_fixing_screws.metric_thread*2.5
 
     def get_key_size(self):
         return self.key_square_side_length
@@ -944,7 +957,7 @@ class SpringBarrel:
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
-        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space - self.spring_hook_screws.getHeadHeight(), 0, self.base_thick + self.barrel_height / 2)))
+        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space - self.spring_hook_screws.getHeadHeight(), 0, self.base_thick + self.barrel_height / 2)))
 
         return barrel
 
@@ -955,7 +968,7 @@ class SpringBarrel:
 
         return lid
 
-    def get_arbor(self, extra_after_barrel=0, extra_after_lid=0, key_length=30, for_printing=True):
+    def get_arbor(self, extra_after_barrel=0, extra_after_lid=0, key_length=30, for_printing=True, ratchet_key_extra_length=0):
         #standoff from rear bearing
 
         if extra_after_barrel > self.back_bearing_standoff:
@@ -968,8 +981,13 @@ class SpringBarrel:
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.key_bearing.height)
         arbor = arbor.faces(">Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(key_length)
 
-        #hole for rod out the back
-        arbor = arbor.cut(cq.Workplane("XY").circle(self.rod_d/2).extrude(self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.barrel_height/2 - self.spring_hook_screws.metric_thread*2))
+        if self.ratchet_at_back:
+            arbor = arbor.faces("<Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.back_bearing.height)
+            arbor = arbor.faces("<Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(ratchet_key_extra_length + self.ratchet_collet_thick + self.ratchet.thick)
+            #TODO cut hole for the collect screw
+        else:
+            #hole for rod out the back
+            arbor = arbor.cut(cq.Workplane("XY").circle(self.rod_d/2).extrude(self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.barrel_height/2 - self.spring_hook_screws.metric_thread*2))
 
         arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.key_square_side_length/2))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
 
@@ -1015,8 +1033,13 @@ class SpringBarrel:
 
         return model
 
-    def get_ratchet_gear_with_hole(self):
+    def get_ratchet_gear_for_arbor(self):
+        '''
+        get the ratchet gear with a hole to slot over the key, and a space for a grub screw to fix it to the key
+        '''
         gear = self.ratchet.get_gear()
+        if self.ratchet_at_back:
+            gear = gear.faces(">Z").workplane().circle(self.arbor_d_bearing/2+3).extrude(self.ratchet_collet_thick)
 
         gear = gear.faces(">Z").workplane().rect(self.key_square_side_length+self.ratchet_wiggle_room, self.key_square_side_length + self.ratchet_wiggle_room).cutThruAll()
 
@@ -2948,8 +2971,8 @@ class TraditionalRatchet:
         tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
         next_tooth_outer = polar(self.direction * self.tooth_angle, self.gear_diameter/2)
 
-        pawl_inner = npToSet(np.add(self.pawl_fixing, polar(pawl_angle + math.pi/2, self.pawl_diameter/2)))
-        pawl_outer = npToSet(np.add(self.pawl_fixing, polar(pawl_angle - math.pi/2, self.pawl_diameter/2)))
+        pawl_inner = npToSet(np.add(self.pawl_fixing, polar(pawl_angle + self.direction*math.pi/2, self.pawl_diameter/2)))
+        pawl_outer = npToSet(np.add(self.pawl_fixing, polar(pawl_angle - self.direction*math.pi/2, self.pawl_diameter/2)))
         pawl_base = npToSet(np.add(self.pawl_fixing, polar(pawl_from_centre_angle + math.pi + -self.direction*self.tooth_angle, self.pawl_diameter/2)))
 
         #contact with the tooth

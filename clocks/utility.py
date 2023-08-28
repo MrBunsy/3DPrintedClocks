@@ -150,10 +150,15 @@ def getScrewHeadDiameter(metric_thread, countersunk=False):
 SCREW_LENGTH_EXTRA = 2
 
 
-def get_diameter_for_die_cutting(M):
+def get_diameter_for_die_cutting(M, sideways=False):
+    '''
+    with a bodge that circles printed sideways aren't very round
+    '''
     if M == 2:
         return 1.6
     if M == 3:
+        if sideways:
+            return 2.75
         return 2.5
     if M == 4:
         return 3.3
@@ -187,13 +192,13 @@ class MachineScrew:
         screw = cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).extrude(self.getHeadHeight()).circle(self.metric_thread/2).extrude(length)
         return screw
 
-    def get_diameter_for_die_cutting(self):
-        return get_diameter_for_die_cutting(self.metric_thread)
+    def get_diameter_for_die_cutting(self, sideways=False):
+        return get_diameter_for_die_cutting(self.metric_thread, sideways=sideways)
 
     def get_washer_diameter(self):
         return get_washer_diameter(self.metric_thread)
 
-    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -213,7 +218,7 @@ class MachineScrew:
         if loose:
             r+= LOOSE_SCREW/2
         if for_tap_die:
-            r=self.get_diameter_for_die_cutting()/2
+            r=self.get_diameter_for_die_cutting(sideways=sideways)/2
 
         screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
 

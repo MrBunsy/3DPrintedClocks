@@ -706,11 +706,18 @@ if False:
 # show_object(pair.get_model(offset_angle_deg=-0.3))
 
 
-ratchet = TraditionalRatchet(50, blocks_clockwise=False)
+# ratchet = TraditionalRatchet(50, blocks_clockwise=True)
+#
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())
 
-show_object(ratchet.get_gear())
-show_object(ratchet.get_pawl())
+screw = MachineScrew(3)
 
+test_screwhole = cq.Workplane("XY").rect(10,10).extrude(10).faces(">X").workplane().moveTo(0,5).circle((screw.metric_thread+screw.get_diameter_for_die_cutting())/4).cutThruAll()
+out = "out/test_screwhole.stl"
+print("Outputting ", out)
+exporters.export(test_screwhole, out)
+show_object(test_screwhole)
 # spring = SpringBarrel()
 #
 # # show_object(spring.get_barrel())

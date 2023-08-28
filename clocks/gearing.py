@@ -1356,8 +1356,6 @@ class ArbourForPlate:
         self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
         self.pendulum_fixing = pendulum_fixing
-        if self.bearing is None:
-            self.bearing = get_bearing_info(3)
         self.escapement_on_front = escapement_on_front
 
         self.type = self.arbor.get_type()
@@ -1394,8 +1392,13 @@ class ArbourForPlate:
         # so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
         self.arbour_bearing_standoff_length = LAYER_THICK * 2
 
+        if self.type == ArbourType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
+            self.bearing = self.arbor.powered_wheel.back_bearing
+
         #for powered wheels with keys, the plates calculates this
         self.key_length = 0
+        #if out the back
+        self.ratchet_key_length=self.plates.get_plate_thick(back=True) - self.bearing.height + self.plates.endshake
 
     def get_max_radius(self):
         if self.arbor.type == ArbourType.ANCHOR:
@@ -1755,7 +1758,7 @@ class ArbourForPlate:
             #TODO support chain at front?
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
             shapes["wheel"] = wheel
-            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back, key_length = self.key_length)
+            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back, key_length = self.key_length, ratchet_key_extra_length=self.ratchet_key_length)
             for extraName in extras:
                 shapes[extraName] = extras[extraName]
 
@@ -2182,7 +2185,7 @@ class Arbour:
 
         return pinion
 
-    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0):
+    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, ratchet_key_extra_length=0):
         '''
         are there any extra bits taht need printing for this arbour?
         returns {'name': shape,}
@@ -2193,9 +2196,9 @@ class Arbour:
             extras['ratchet']= self.get_extra_ratchet()
 
         if self.get_type() == ArbourType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
-            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_after_barrel=rear_side_extension, extra_after_lid=front_side_extension, key_length=key_length)
+            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_after_barrel=rear_side_extension, extra_after_lid=front_side_extension, key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length)
             extras['lid'] = self.powered_wheel.get_lid()
-            extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_with_hole()
+            extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_for_arbor()
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
 
         return extras

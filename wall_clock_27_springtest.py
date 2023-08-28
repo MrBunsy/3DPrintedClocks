@@ -50,7 +50,8 @@ lock=1.75
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5,
                                     toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2, runtime_hours=7.5 * 24, support_second_hand=True)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+                         runtime_hours=7.5 * 24, support_second_hand=True, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.9#0.85
 train.gen_spring_barrel()
@@ -75,24 +76,24 @@ train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thick
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
-dial=None
+# dial=None
 #enshake smaller because there's no weight dangling to warp the plates! (hopefully)
 plates = clock.MantelClockPlates(train, motionWorks, dial=dial)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
-# hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.8, outlineSameAsBody=False, chunky=True,
-#                     secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5, outline_on_seconds=0.6)
-hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
+hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.8, outlineSameAsBody=False, chunky=True,
+                    secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5, outline_on_seconds=0.6)
+# hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]

@@ -111,8 +111,8 @@ pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(),
 
 #very brittle code for the mistletoe themed grasshopper frame:
 
-frame = plates.arbours_for_plate[-1].get_anchor_shapes()["anchor"]
-escapement = plates.arbours_for_plate[-1].arbor.escapement
+frame = plates.arbors_for_plate[-1].get_anchor_shapes()["anchor"]
+escapement = plates.arbors_for_plate[-1].arbor.escapement
 entry_pos = clock.npToSet(np.multiply(escapement.entry_side_end_relative,(0.65,-0.65)))
 exit_pos = clock.npToSet(np.multiply(escapement.exit_side_end_relative,(1,-1)))
 random.random()
