@@ -852,7 +852,7 @@ class SpringBarrel:
 
     '''
 
-    def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True, ratchet_at_back=True):
+    def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True, ratchet_at_back=True, pawl_angle=math.pi/2, click_angle=-math.pi/2):
         self.type = PowerType.SPRING_BARREL
 
         #comply with PoweredWheel interface
@@ -916,7 +916,7 @@ class SpringBarrel:
 
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
-        self.spring_hook_screws = MachineScrew(3, length=10)
+        self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
 
         self.spring_hook_space=2
         ratchet_d = self.arbor_d_bearing*2.5
@@ -925,7 +925,7 @@ class SpringBarrel:
         if self.ratchet_at_back:
             ratchet_blocks_clockwise = self.clockwise
 
-        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise)
+        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
         self.ratchet_collet_thick = self.lid_fixing_screws.metric_thread*2.5
 
@@ -957,15 +957,18 @@ class SpringBarrel:
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
-        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space - self.spring_hook_screws.getHeadHeight(), 0, self.base_thick + self.barrel_height / 2)))
+        #self.spring_hook_screws.getHeadHeight()
+        #trying countersunk screw instead of pan head
+        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space, 0, self.base_thick + self.barrel_height / 2)))
 
         return barrel
 
-    def get_lid(self):
+    def get_lid(self, for_printing = True):
         lid = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.lid_hole_d/2).extrude(self.lid_thick)
 
         lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
-
+        if for_printing:
+            lid = lid.rotate((0,0,0),(1,0,0),180).translate((0,0,self.lid_thick))
         return lid
 
     def get_arbor(self, extra_after_barrel=0, extra_after_lid=0, key_length=30, for_printing=True, ratchet_key_extra_length=0):
@@ -981,10 +984,13 @@ class SpringBarrel:
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.key_bearing.height)
         arbor = arbor.faces(">Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(key_length)
 
+        ratchet_key_length = ratchet_key_extra_length + self.ratchet_collet_thick + self.ratchet.thick
+
         if self.ratchet_at_back:
             arbor = arbor.faces("<Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.back_bearing.height)
-            arbor = arbor.faces("<Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(ratchet_key_extra_length + self.ratchet_collet_thick + self.ratchet.thick)
-            #TODO cut hole for the collect screw
+            arbor = arbor.faces("<Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(ratchet_key_length)
+            #cut hole for the collect screw
+            # arbor = arbor.cut(cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.key_square_side_length/2).rotate((0,0,0)))
         else:
             #hole for rod out the back
             arbor = arbor.cut(cq.Workplane("XY").circle(self.rod_d/2).extrude(self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.barrel_height/2 - self.spring_hook_screws.metric_thread*2))
@@ -995,9 +1001,15 @@ class SpringBarrel:
 
         cutoff_height = self.arbor_d_spring/2 - self.key_square_side_length/2
 
-        screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - cutoff_height)
+        #screwhole for spring hook
+        screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - cutoff_height - self.spring_hook_space)
         screwhole = screwhole.translate((self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.internal_endshake/2 + self.barrel_height/2,0,0))
         arbor = arbor.cut(screwhole)
+
+        if self.ratchet_at_back:
+            #screwhole for ratchet collet
+            collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.key_square_side_length/2).translate((-self.back_bearing.height - ratchet_key_length + self.ratchet.thick/2,0,0 ))
+            arbor = arbor.cut(collet_screwhole)
 
         if not for_printing:
             arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.key_square_side_length/2, 0, -self.back_bearing_standoff - (extra_after_barrel)))
@@ -2875,13 +2887,15 @@ class TraditionalRatchet:
 
     '''
 
-    def __init__(self, gear_diameter, thick=5, blocks_clockwise=True, fixing_screws=None, pawl_angle=math.pi / 2):
+    def __init__(self, gear_diameter, thick=5, blocks_clockwise=True, fixing_screws=None, pawl_angle=math.pi / 2, click_fixing_angle =-math.pi / 2):
         self.gear_diameter = gear_diameter
         self.thick = thick
         self.blocks_clockwise = blocks_clockwise
         # by default set angle to pi/2 so the pawl is at the top of the ratchet - then if the spring fails gravity should help keep it locked in position
         #(only relevant to a spring barrel where the ratchet is on the plates, won't affect a cord movement)
         self.pawl_angle = pawl_angle
+
+        self.click_fixing_angle = click_fixing_angle
 
         self.fixing_screws = fixing_screws
 
@@ -2899,6 +2913,8 @@ class TraditionalRatchet:
 
         self.pawl_diameter = self.fixing_screws.metric_thread*3
 
+        self.spring_rest_length = self.pawl_diameter*1.5
+
         # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
 
         # self.pawl_length = self.tooth_deep+self.pawl_diameter
@@ -2912,12 +2928,24 @@ class TraditionalRatchet:
         #this should always be safe, pawl now spans aproximately two teeth
         self.pawl_fixing = (self.gear_diameter/2 + self.pawl_diameter*0.5, self.direction*self.tooth_length*2)
 
+        self.pawl_fixing_angle = math.atan2(self.pawl_fixing[1], self.pawl_fixing[0])
+        self.pawl_fixing_r = np.linalg.norm(self.pawl_fixing)
+
         if not self.is_pawl_position_safe():
             raise ValueError("Pawl is unsafe!")
 
+        #pawl and gear and built in a position I could visualise, then rotated into requested position. the click is always built in the requested position
         self.rotate_by_deg = radToDeg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
-        # self.pawl_fixing = rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
+        click_fixing_centre = polar(self.click_fixing_angle, self.pawl_fixing_r)
+        self.click_fixings_distance = self.fixing_screws.metric_thread*3
+        self.click_fixings_r = self.pawl_fixing_r
+        self.click_wide = 0.4
+
+        self.click_fixings = [
+            npToSet(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance/2))),
+            npToSet(np.add(click_fixing_centre, polar(self.click_fixing_angle - math.pi / 2, self.click_fixings_distance/2)))
+        ]
 
 
     def get_screw_positions(self):
@@ -2988,10 +3016,54 @@ class TraditionalRatchet:
 
         pawl = pawl.close().extrude(self.thick)
 
-        pawl = pawl.faces(">Z").workplane().moveTo(self.pawl_fixing[0], self.pawl_fixing[1]).circle((self.fixing_screws.metric_thread + LOOSE_FIT_ON_ROD) / 2).cutThruAll()
 
+
+        #bit for the spring to rest against
+        # pawl = pawl.union(cq.Workplane("XY").rect(self.pawl_diameter/2, self.spring_rest_length).extrude(self.thick).translate(self.pawl_fixing).translate((self.pawl_diameter/4,-self.spring_rest_length/2)))
+        spring_rest_top_start = polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter/2)
+        spring_rest_top_end = npToSet(np.add(spring_rest_top_start, polar(self.pawl_fixing_angle + self.direction*math.pi/2, self.spring_rest_length)))
+        spring_rest_bottom_end = npToSet(np.add(spring_rest_top_end, polar(self.pawl_fixing_angle + math.pi, self.pawl_diameter/2)))
+
+        #
+        pawl = pawl.union(cq.Workplane("XY").moveTo(spring_rest_top_start[0], spring_rest_top_start[1])
+                          .lineTo(spring_rest_top_end[0], spring_rest_top_end[1])
+                          .radiusArc(spring_rest_bottom_end, self.pawl_diameter/4)
+                          .lineTo(self.pawl_fixing[0], self.pawl_fixing[1])
+                          .close().extrude(self.thick))
+        pawl = pawl.faces(">Z").workplane().moveTo(self.pawl_fixing[0], self.pawl_fixing[1]).circle((self.fixing_screws.metric_thread + LOOSE_FIT_ON_ROD) / 2).cutThruAll()
+        # return pawl
 
         return pawl.rotate((0,0,0),(0,0,1), self.rotate_by_deg)
 
+    def get_click(self):
+
+
+        click_end_pos = npToSet(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter/4), polar(self.pawl_fixing_angle + self.direction*math.pi/2, self.spring_rest_length/2) ))
+
+        click_end_pos = rotate_vector(click_end_pos, (0,0,1), degToRad(self.rotate_by_deg))
+
+        click = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.fixing_screws.metric_thread*3, self.click_fixings_distance + self.fixing_screws.metric_thread*3).extrude(self.thick).rotate((0,0,0),(0,0,1), radToDeg(self.click_fixing_angle))
+
+        click = click.edges("|Z").fillet(2)
+
+        # click = click.union(cq.Workplane("XY").circle(self.click_fixings_r + self.click_wide/2).circle(self.click_fixings_r - self.click_wide/2).extrude(self.thick))
+
+        line_to_click_end = Line((0,0), anotherPoint=click_end_pos)
+
+        click_end_inner_pos = npToSet(np.subtract(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide/2)))
+        click_end_outer_pos = npToSet(np.add(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
+
+        click_spring_r = self.click_fixings_r*1.05
+        click_start_outer = polar(self.click_fixing_angle, self.click_fixings_r + self.click_wide / 2)
+        click_start_inner = polar(self.click_fixing_angle, self.click_fixings_r - self.click_wide / 2)
+
+        click = click.union(cq.Workplane("XY").moveTo(click_start_outer[0], click_start_outer[1]).radiusArc(click_end_outer_pos, -(click_spring_r+self.click_wide/2))
+                            .lineTo(click_end_inner_pos[0], click_end_inner_pos[1]).radiusArc(click_start_inner, (click_spring_r - self.click_wide/2)).close().extrude(self.thick))
+
+        for screwpos in self.click_fixings:
+            click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2 + LOOSE_SCREW/2).extrude(self.thick).translate(screwpos))
+
+        return click
+
     def get_assembled(self):
-        return self.get_gear().add(self.get_pawl())
+        return self.get_gear().add(self.get_pawl()).add(self.get_click())

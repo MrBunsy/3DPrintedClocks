@@ -17,6 +17,8 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
+import math
+
 from clocks import clock
 
 '''
@@ -54,7 +56,7 @@ train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, m
                          runtime_hours=7.5 * 24, support_second_hand=True, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.9#0.85
-train.gen_spring_barrel()
+train.gen_spring_barrel(click_angle=-math.pi*0.275)
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s
@@ -101,8 +103,10 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
 
+# show_object(plates.get_plate())
+# show_object(plates.get_fixing_screws_cutter())
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.LIGHTBLUE, clock.Colour.LIGHTBLUE, clock.Colour.GREEN],
-                    bob_colours=[clock.Colour.PURPLE], with_rods=False, with_key=False, ratchet_colour=clock.Colour.BRASS)
+                    bob_colours=[clock.Colour.GOLD], with_rods=False, with_key=False, ratchet_colour=clock.Colour.BRASS)
 
 # show_object(plates.getDrillTemplate(6))
 

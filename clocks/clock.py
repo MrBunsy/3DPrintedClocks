@@ -698,8 +698,8 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4):
-        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0)
+    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2):
+        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0, pawl_angle = pawl_angle, click_angle = click_angle)
         '''
         smiths: 66 teeth on barrel, 10 on next pinion
         76 teeth on next wheel, 13 on next pinion
@@ -1382,33 +1382,15 @@ class SimpleClockPlates:
         #set in calc_winding_key_info()
         self.winding_key = None
 
-
-
-        #absolute z position for the embedded nuts for the front plate to be held on (from before there was a wall standoff or an extra front plate)
-        self.embedded_nut_height_for_front_plate_fixings = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - (self.fixing_screws.length - 7.5)
-
         self.powered_wheel_r = self.going_train.get_arbour(-self.going_train.powered_wheels).get_max_radius() + self.gear_gap
 
         self.reduce_bottom_pillar_height = 0
         self.calc_pillar_info()
 
 
-        #fixing positions to plates and pillars together
-        self.plate_top_fixings = []
-        #(self.top_pillar_positions[0] - self.top_pillar_r / 2, self.top_pillar_positions[1]), (self.top_pillar_positions[0] + self.top_pillar_r / 2, self.top_pillar_positions[1])]
-        for top_pillar_pos in self.top_pillar_positions:
-            self.plate_top_fixings+=[
-                (top_pillar_pos[0] - self.top_pillar_r / 2, top_pillar_pos[1]),
-                (top_pillar_pos[0] + self.top_pillar_r / 2, top_pillar_pos[1])
-            ]
+        #calcualte the positions of the bolts that hold the plates together
+        self.calc_fixing_info()
 
-        self.plate_bottom_fixings = []
-        for bottom_pillar_pos in self.bottom_pillar_positions:
-            self.plate_bottom_fixings +=[
-                (bottom_pillar_pos[0], bottom_pillar_pos[1] + self.bottom_pillar_r * 0.5 - self.reduce_bottom_pillar_height / 3),
-                (bottom_pillar_pos[0], bottom_pillar_pos[1] - self.bottom_pillar_r * 0.5)
-            ]
-        self.plate_fixings = self.plate_top_fixings + self.plate_bottom_fixings
         self.huygens_wheel = None
         #offset in y? This enables the plate to stay smaller (and fit on the print bed) while still offering a large huygens wheel
         self.huygens_wheel_y_offset = 0
@@ -1688,7 +1670,23 @@ class SimpleClockPlates:
             raise ValueError("Don't currently support huygens with multiple bottom pillars")
         self.huygens_wheel_pos = self.bottom_pillar_positions[0]
 
+    def calc_fixing_info(self):
+        # fixing positions to plates and pillars together
+        self.plate_top_fixings = []
+        # (self.top_pillar_positions[0] - self.top_pillar_r / 2, self.top_pillar_positions[1]), (self.top_pillar_positions[0] + self.top_pillar_r / 2, self.top_pillar_positions[1])]
+        for top_pillar_pos in self.top_pillar_positions:
+            self.plate_top_fixings += [
+                (top_pillar_pos[0] - self.top_pillar_r / 2, top_pillar_pos[1]),
+                (top_pillar_pos[0] + self.top_pillar_r / 2, top_pillar_pos[1])
+            ]
 
+        self.plate_bottom_fixings = []
+        for bottom_pillar_pos in self.bottom_pillar_positions:
+            self.plate_bottom_fixings += [
+                (bottom_pillar_pos[0], bottom_pillar_pos[1] + self.bottom_pillar_r * 0.5 - self.reduce_bottom_pillar_height / 3),
+                (bottom_pillar_pos[0], bottom_pillar_pos[1] - self.bottom_pillar_r * 0.5)
+            ]
+        self.plate_fixings = self.plate_top_fixings + self.plate_bottom_fixings
 
 
     def calc_bearing_positions(self):
@@ -3138,7 +3136,9 @@ class SimpleClockPlates:
                 for pos in pos_list:
                     dial_fixing_positions.append(npToSet(np.add(pos, self.hands_position)))
 
-            need_top_extension = max([pos[1] for pos in dial_fixing_positions]) > self.top_pillar_positions[0][1]
+            top_dial_fixing_y = max([pos[1] for pos in dial_fixing_positions])
+
+            need_top_extension = top_dial_fixing_y > self.top_pillar_positions[0][1] and top_dial_fixing_y > self.bearing_positions[-1][1]
             # need_bottom_extension = min([pos[1] for pos in dial_fixing_positions]) < self.bottomPillarPositions[1]
 
 
@@ -3186,13 +3186,14 @@ class SimpleClockPlates:
 
             plate = plate.cut(cord_bearing_hole.translate((self.bearing_positions[0][0], self.bearing_positions[0][1], 0)))
 
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
-            #spring powered, need the ratchet!
-            screw = self.going_train.powered_wheel.ratchet.fixing_screws
-
-            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
-                pos = npToSet(np.add(self.bearing_positions[0][:2],relative_pos))
-                plate = plate.cut(screw.get_cutter(for_tap_die=True, with_bridging=True).translate(pos))
+        #can't decide where the best place is to do this, currently it lives in the MantelClockPlates
+        # if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
+        #     #spring powered, need the ratchet!
+        #     screw = self.going_train.powered_wheel.ratchet.fixing_screws
+        #
+        #     for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
+        #         pos = npToSet(np.add(self.bearing_positions[0][:2],relative_pos))
+        #         plate = plate.cut(screw.get_cutter(for_tap_die=True, with_bridging=True).translate(pos))
 
 
         if self.huygens_maintaining_power:
@@ -3570,7 +3571,19 @@ class MantelClockPlates(SimpleClockPlates):
         ]
         print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
 
+    def calc_fixing_info(self):
+        # fixing positions to plates and pillars together
+        self.plate_top_fixings = []
+        # (self.top_pillar_positions[0] - self.top_pillar_r / 2, self.top_pillar_positions[1]), (self.top_pillar_positions[0] + self.top_pillar_r / 2, self.top_pillar_positions[1])]
+        for top_pillar_pos in self.top_pillar_positions:
+            self.plate_top_fixings.append((top_pillar_pos[0], top_pillar_pos[1]))
 
+
+        self.plate_bottom_fixings = []
+        for bottom_pillar_pos in self.bottom_pillar_positions:
+            self.plate_bottom_fixings.append((bottom_pillar_pos[0], bottom_pillar_pos[1]))
+
+        self.plate_fixings = self.plate_top_fixings + self.plate_bottom_fixings
 
     def get_plate(self, back=True, for_printing=True):
 
@@ -3592,7 +3605,7 @@ class MantelClockPlates(SimpleClockPlates):
         for side in [0,1]:
             plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bottom_pillar_positions[side]], wide=main_arm_wide, thick = plate_thick))
             plate = plate.union(get_stroke_line([self.bottom_pillar_positions[side], self.bearing_positions[0][:2]], wide=main_arm_wide, thick=plate_thick))
-            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-1][:2]], wide=medium_arm_wide, thick=plate_thick))
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
 
         #barrel to minute wheel
         plate = plate.union(get_stroke_line([self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2]], wide=medium_arm_wide, thick=plate_thick))
@@ -3617,10 +3630,22 @@ class MantelClockPlates(SimpleClockPlates):
 
         plate = self.punchBearingHoles(plate, back)
 
-        plate = plate.cut(self.get_fixing_screws_cutter())
+        if back:
+            plate = plate.cut(self.get_fixing_screws_cutter())
+        else:
+            plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
 
         if not back:
             plate = self.front_additions_to_plate(plate)
+
+
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back:
+            #spring powered, need the ratchet!
+            screw = self.going_train.powered_wheel.ratchet.fixing_screws
+
+            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
+                pos = npToSet(np.add(self.bearing_positions[0][:2],relative_pos))
+                plate = plate.cut(screw.get_cutter(for_tap_die=True, with_bridging=True).translate(pos))
 
         return plate
 
@@ -3708,10 +3733,11 @@ class Assembly:
         self.ratchet_on_plates = None
 
         if self.goingTrain.powered_wheel.type == PowerType.SPRING_BARREL:
-            self.ratchet_on_plates = self.goingTrain.powered_wheel.get_ratchet_gear_for_arbor().add(self.goingTrain.powered_wheel.ratchet.get_pawl())\
+            self.ratchet_on_plates = self.goingTrain.powered_wheel.get_ratchet_gear_for_arbor()\
+                .add(self.goingTrain.powered_wheel.ratchet.get_pawl()).add(self.goingTrain.powered_wheel.ratchet.get_click())\
                 .translate(self.plates.bearing_positions[0][:2])
             if self.goingTrain.powered_wheel.ratchet_at_back:
-                self.ratchet_on_plates = self.ratchet_on_plates.rotate((0,0,0),(0,1,0),180)
+                self.ratchet_on_plates = self.ratchet_on_plates.rotate((0,0,0),(0,1,0),180).translate((0,0,-self.plates.endshake/2))
             else:
                 self.ratchet_on_plates = self.ratchet_on_plates.translate((0, 0, self.front_of_clock_z))
 

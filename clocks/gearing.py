@@ -1709,7 +1709,7 @@ class ArbourForPlate:
                 #deliberately not including back bearing standoff as that's taken out of the distance_from_back
                 arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.key_square_side_length/2, 0, - self.distance_from_back))
                 assembly = assembly.add(arbor)
-                assembly = assembly.add(shapes["lid"].translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
+                assembly = assembly.add(spring_barrel.get_lid(for_printing=False).translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
@@ -2200,6 +2200,7 @@ class Arbour:
             extras['lid'] = self.powered_wheel.get_lid()
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_for_arbor()
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
+            extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
 
         return extras
     def get_extra_ratchet(self, forPrinting=True):
