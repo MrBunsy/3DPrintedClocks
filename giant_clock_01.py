@@ -40,7 +40,7 @@ train.print_info(weight_kg=3.5)
 exit()
 pendulumSticksOut=30
 
-train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chainModuleIncrease=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
+train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chain_module_increase=1, chainWheelPinionThickMultiplier=2)#, chainModuleIncrease=1.1)
 
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 

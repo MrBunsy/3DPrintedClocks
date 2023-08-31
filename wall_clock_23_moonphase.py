@@ -65,7 +65,7 @@ pendulumSticksOut=10
 backPlateFromWall=40
 
 train.gen_gears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=2 / 2.4, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+                chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.print_info(weight_kg=3)
 train.print_info(weight_kg=2.5)
 train.print_info(weight_kg=1)

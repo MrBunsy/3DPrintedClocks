@@ -63,7 +63,7 @@ pendulumSticksOut=10
 backPlateFromWall=30
 
 train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2.25, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+                chain_module_increase=1, chainWheelPinionThickMultiplier=2.25, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.print_info(weight_kg=5.45)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 

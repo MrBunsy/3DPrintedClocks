@@ -1461,6 +1461,8 @@ class WindingKey:
 
         self.knob_length = self.knob_fixing_screw.length - self.handle_thick
 
+        self.key_grip_tall = min(self.cylinder_length * 0.4, 20)
+
         #how deep the hole that slots onto the square bit should be - keep shallow to ensure you can push the key all the way without crashing inot hte front plate or pushing the bearing out
         self.key_hole_deep = key_hole_deep
 
@@ -1480,32 +1482,42 @@ class WindingKey:
 
         '''
 
+        handle_tall = 0
+
         if self.crank:
             #base for handle
             key = cq.Workplane("XY").moveTo(-self.body_wide/2,0).radiusArc((self.body_wide/2, 0), -self.body_wide / 2).lineTo(self.body_wide/2, self.handle_length - self.body_wide / 2).radiusArc((-self.body_wide/2, self.handle_length - self.body_wide / 2), -self.body_wide / 2).close().extrude(self.handle_thick)
             # hole to screw in the knob (loose)
             key = key.faces(">Z").workplane().tag("top").moveTo(0, self.handle_length - self.body_wide / 2).circle(self.knob_fixing_screw.metric_thread / 2 + 0.2).cutThruAll()
-        else:
-            key = cq.Workplane("XY").tag("top")
 
-            key_grip_tall = min(self.cylinder_length * 0.3, 15)
+            handle_tall = self.handle_thick
+        else:
+
+            handle_tall = self.key_grip_tall
+
             key_grip_wide = self.body_wide * 2.5
 
-            r=key_grip_wide*0.1
+            r=self.key_grip_tall/2
 
-            grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide/2,0).lineTo(key_grip_wide/2,key_grip_tall).tangentArcPoint((-r,r*1.25))\
-                .tangentArcPoint((0,key_grip_tall),relative=False).mirrorY().extrude(self.handle_thick)
-            key = key.union(grippyBit.translate((self.body_wide / 2, self.handle_thick / 2, 0)))
+            #I can't remember what shape I was going for, but I've decided to instead go for something more simple
+            # grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide/2,0).lineTo(key_grip_wide/2,key_grip_tall).tangentArcPoint((-r,r*1.25))\
+            #     .tangentArcPoint((0,key_grip_tall),relative=False).mirrorY().extrude(self.handle_thick)
 
+            grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide / 2, 0).lineTo(key_grip_wide / 2, self.key_grip_tall-r).radiusArc((key_grip_wide/2 - r, self.key_grip_tall), radius=-r) \
+                    .lineTo(0, self.key_grip_tall).mirrorY().extrude(self.handle_thick)
+
+            # return grippyBit
+            key = cq.Workplane("XY").circle(self.body_wide/2).extrude(self.key_grip_tall)
+            key = key.union(grippyBit.translate((0, self.handle_thick / 2, 0)))
 
 
         #key bit
-        key = key.workplaneFromTagged("top").circle(0.999 * self.body_wide / 2).extrude(self.cylinder_length)
+        key = key.union(cq.Workplane("XY").circle(self.body_wide / 2).extrude(self.cylinder_length).translate((0,0,handle_tall)))
 
 
 
         #5mm shorter than the key as a bodge to stand off from the front plate
-        key_hole = cq.Workplane("XY").rect(self.square_side_length + self.wiggle_room, self.square_side_length + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, self.handle_thick + self.cylinder_length - self.key_hole_deep))
+        key_hole = cq.Workplane("XY").rect(self.square_side_length + self.wiggle_room, self.square_side_length + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, handle_tall + self.cylinder_length - self.key_hole_deep))
 
         key = key.cut(key_hole)
 
@@ -1516,6 +1528,17 @@ class WindingKey:
             key = key.add(self.get_knob().translate((0, self.handle_length - self.body_wide / 2, self.cylinder_length + self.handle_thick)))
 
         return key
+
+    def get_height(self):
+        handle_tall = 0
+
+        if self.crank:
+            handle_tall = self.handle_thick
+        else:
+
+            handle_tall = self.key_grip_tall
+
+        return handle_tall + self.cylinder_length
 
     def get_knob(self):
 
@@ -1535,6 +1558,9 @@ class WindingKey:
         key = self.get_key()
         if self.crank:
             key = key.add(self.get_knob().rotate((0,0,0),(1,0,0),180).translate((0,self.handle_length-self.body_wide/2,0)))
+
+
+        key = key.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_height()))
         return key
 
 class CordWheel:
@@ -2940,7 +2966,8 @@ class TraditionalRatchet:
         click_fixing_centre = polar(self.click_fixing_angle, self.pawl_fixing_r)
         self.click_fixings_distance = self.fixing_screws.metric_thread*3
         self.click_fixings_r = self.pawl_fixing_r
-        self.click_wide = 0.4
+        #0.9 works for a two-extrusion-wide click, but I think I want something stronger
+        self.click_wide = 1.7#0.9
 
         self.click_fixings = [
             npToSet(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance/2))),
@@ -2949,7 +2976,7 @@ class TraditionalRatchet:
 
 
     def get_screw_positions(self):
-        return[rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))]
+        return [rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))] + self.click_fixings
 
     def get_max_diameter(self):
         return np.linalg.norm(self.pawl_fixing) + self.pawl_diameter/2

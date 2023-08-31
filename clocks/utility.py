@@ -441,6 +441,7 @@ class Colour:
     SILVER = (192,192,192)
     DARKGREY = (50,50,50)
     BLACK = "black"
+    BROWN = (66,40,14)#(139,69,19)
 
     RAINBOW = [RED,
                ORANGE,
@@ -975,6 +976,7 @@ def get_bearing_info(innerD):
         #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
         return BearingInfo(outer_d=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
     if innerD == 15:
+        #15x24x5
         #(used for the winding key)
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         #printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG

@@ -98,7 +98,7 @@ train.set_chain_wheel_ratio([67, 11])
 pendulumSticksOut=20
 
 train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chainModuleIncrease=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+                chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.print_info(weight_kg=2)
 '''
 Powered wheel diameter: 29
