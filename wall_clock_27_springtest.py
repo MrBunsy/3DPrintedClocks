@@ -87,7 +87,7 @@ pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 
-plates = clock.MantelClockPlates(train, motionWorks, dial=dial, plate_thick=6)#, screws_from_back=[True,False])
+plates = clock.MantelClockPlates(train, motionWorks, dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]])
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

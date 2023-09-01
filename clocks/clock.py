@@ -1343,9 +1343,11 @@ class SimpleClockPlates:
         #for some dials (filled-in ones like tony) it won't be possible to get a screwdriver (or the screw!) in from the front, so instead screw in from the back
         #currently this also implies that the nuts will be sticking out the front plate (I don't want to embed them in the plate and weaken it)
         #originally just a boolean, now a list of booleans for each pillar, starting at hte top. eg top pillar only screws from back: [True, False]
+        #now it's a list of list of booleans! [[top0, top1],[bottom0, bottom1]]
+        #I should really re-think this.
         self.screws_from_back = screws_from_back
         if self.screws_from_back is None:
-            self.screws_from_back = [False, False]
+            self.screws_from_back = [[False], [False]]
         #plates try to put screws that hold the pillars together in the rear standoff, but can override to put them in the back plate (if there isn't a wall standoff)
         self.embed_nuts_in_plate = embed_nuts_in_plate
 
@@ -2247,10 +2249,10 @@ class SimpleClockPlates:
         return template
 
     def cut_anchor_bearing_in_standoff(self, standoff):
-        bearingInfo = get_bearing_info(self.going_train.get_arbour_with_conventional_naming(-1).get_rod_d())
+        bearingInfo = self.arbors_for_plate[-1].bearing
 
 
-        standoff = standoff.cut(self.getBearingPunchDeprecated(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((0, self.bearing_positions[-1][1], 0)))
+        standoff = standoff.cut(self.getBearingPunchDeprecated(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
 
         return standoff
 
@@ -2687,7 +2689,7 @@ class SimpleClockPlates:
 
 
         for pillar in [0, 1]:
-            screws_from_back = self.screws_from_back[pillar]
+
             if pillar == 0:
                 plate_fixings = self.plate_top_fixings
                 nut_base_z = top_nut_base_z
@@ -2695,8 +2697,8 @@ class SimpleClockPlates:
                 plate_fixings = self.plate_bottom_fixings
                 nut_base_z = bottom_nut_base_z
 
-            for fixingPos in plate_fixings:
-
+            for i,fixingPos in enumerate(plate_fixings):
+                screws_from_back = self.screws_from_back[pillar][i]
 
                 z = self.front_z
                 if self.embed_nuts_in_plate or (self.back_plate_from_wall > 0 and not screws_from_back):
@@ -3529,7 +3531,7 @@ class MantelClockPlates(SimpleClockPlates):
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
-                     pendulum_at_front=False, back_plate_from_wall=0, fixing_screws=MachineScrew(4, countersunk=True),
+                     pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                      second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1, compact_zigzag=True, screws_from_back=screws_from_back)
 
@@ -3683,6 +3685,26 @@ class MantelClockPlates(SimpleClockPlates):
         this doesn't hang on the wall, so no wall fixings
         '''
         return []
+
+    def get_wall_standoff(self, top=True, forPrinting=True):
+        '''
+        not really a wall standoff, but the bit that holds the pendulum at the top
+        '''
+        if not top:
+            return cq.Workplane("XY")
+
+        plate_thick = self.get_plate_thick(standoff=True)
+        #to match the plate
+        standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=self.plate_width, thick=plate_thick)
+
+        for pillar_pos in self.top_pillar_positions:
+            standoff = standoff.union(cq.Workplane("XY").circle(self.plate_width/2-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
+        standoff = self.cut_anchor_bearing_in_standoff(standoff)
+
+        standoff = standoff.translate((0,0,-self.back_plate_from_wall))
+        standoff = standoff.cut(self.get_fixing_screws_cutter())
+
+        return standoff
 
     def get_bottom_pillar(self, flat=False):
         '''
