@@ -56,7 +56,8 @@ train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, m
                          runtime_hours=7.5 * 24, support_second_hand=True, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.9#0.85
-train.gen_spring_barrel(click_angle=-math.pi*0.25)
+#train.gen_spring_barrel(click_angle=-math.pi*0.25)
+train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4)
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s
@@ -93,7 +94,7 @@ plates = clock.MantelClockPlates(train, motionWorks, dial=dial, plate_thick=6, s
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
 #would like sword, need to fix second hand outline for it
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+hands = clock.Hands(style=clock.HandStyle.SWORD,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
                     length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.8, outlineSameAsBody=False, chunky=True,
                     secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5, outline_on_seconds=0.6)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)

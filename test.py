@@ -130,12 +130,12 @@ if 'show_object' not in globals():
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
 
-fillet_test = cq.Workplane("XY").rect(50,20).extrude(10).edges(">Z").fillet(2)
-
-fillet_test = cq.Workplane("XY").rect(50,20).extrude(10).edges("|Z and <Y").fillet(2)
-
-
-show_object(fillet_test)
+# fillet_test = cq.Workplane("XY").rect(50,20).extrude(10).edges(">Z").fillet(2)
+#
+# fillet_test = cq.Workplane("XY").rect(50,20).extrude(10).edges("|Z and <Y").fillet(2)
+#
+#
+# show_object(fillet_test)
 
 
 # pulley = BearingPulley(diameter=29, bearing=getBearingInfo(4))
@@ -289,11 +289,14 @@ if False:
 #
 # show_object(holder)
 #
-# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, bearing=getBearingInfo(3), compensateLooseArbour=False)
-# hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=150, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=True)
-#
-# show_object(hands.getHand())
+motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, compensateLooseArbour=False)
+hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=68.18131703845526*0.45, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+                    length=200*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.5, outlineSameAsBody=False)
+
+# show_object(hands.get_assembled())
+hands.show_hands(show_object)
+# show_object(hands.getHand(hand_type=HandType.SECOND, generate_outline=False))
+# show_object(hands.getHand(hand_type=HandType.SECOND, generate_outline=True))
 # # #
 # # # hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 # # #                      length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, second_hand_centred=True)
@@ -331,7 +334,9 @@ if False:
 # show_object(hands.getHand(hour=False,second=True, generate_outline=True).translate((-50,0,0)))
 # show_object(hands.getHand(hour=False).translate((50,0,0)))
 #
-# show_object(hands.get_assembled())
+
+
+
 #
 # # holly_leaf = HollyLeaf()
 # #

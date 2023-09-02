@@ -3525,7 +3525,7 @@ class MantelClockPlates(SimpleClockPlates):
     '''
     Skeleton mantel clock
     '''
-    def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=20, name="", centred_second_hand=False, dial=None,
+    def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
@@ -3746,9 +3746,9 @@ class Assembly:
         self.arbourCount = self.goingTrain.powered_wheels + self.goingTrain.wheels + 1
         self.pendulum = pendulum
         self.motion_works = self.plates.motion_works
-        self.timeMins = timeMins
-        self.timeHours = timeHours
-        self.timeSeconds = timeSeconds
+        self.time_mins = timeMins
+        self.time_hours = timeHours
+        self.time_seconds = timeSeconds
         self.pulley=pulley
         self.moon_complication = self.plates.moon_complication
         #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)
@@ -3771,14 +3771,14 @@ class Assembly:
         self.motion_works_pos = self.plates.hands_position.copy()
 
         # total, not relative, height because that's been taken into accounr with motionworksZOffset
-        self.minuteHandZ = self.front_of_clock_z + self.motionWorksZOffset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick
+        self.minute_hand_z = self.front_of_clock_z + self.motionWorksZOffset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick
         if self.plates.has_seconds_hand():
             self.secondHandPos = self.plates.get_seconds_hand_position()
             self.secondHandPos.append(self.front_of_clock_z + self.hands.secondFixing_thick)
 
-        self.minuteAngle = - 360 * (self.timeMins / 60)
-        self.hourAngle = - 360 * (self.timeHours + self.timeMins / 60) / 12
-        self.secondAngle = -360 * (self.timeSeconds / 60)
+        self.minuteAngle = - 360 * (self.time_mins / 60)
+        self.hourAngle = - 360 * (self.time_hours + self.time_mins / 60) / 12
+        self.secondAngle = -360 * (self.time_seconds / 60)
 
         if self.plates.dial is not None:
             if self.plates.has_seconds_hand():
@@ -3791,7 +3791,7 @@ class Assembly:
 
         if self.plates.centred_second_hand:
             self.secondHandPos = self.plates.hands_position.copy()
-            self.secondHandPos.append(self.minuteHandZ - self.motion_works.hourHandSlotHeight)# + self.hands.thick + self.hands.secondFixing_thick)
+            self.secondHandPos.append(self.minute_hand_z - self.motion_works.hour_hand_slot_height)# + self.hands.thick + self.hands.secondFixing_thick)
         if self.plates.pendulum_at_front:
 
             pendulumRodCentreZ = self.plates.get_plate_thick(back=True) + self.plates.get_plate_thick(back=False) + self.plates.plate_distance + self.plates.pendulum_sticks_out
@@ -3923,7 +3923,7 @@ class Assembly:
             #"normal" arbour that does not extend out the front or back
             simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
             # hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
-            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minuteHandZ + self.hands.thick - total_plate_thick) + getNutHeight(arbour.arbour_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
+            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + getNutHeight(arbour.arbour_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
 
             #trying to arrange all the additions from back to front to make it easy to check
             if arbour.type == ArbourType.POWERED_WHEEL:
@@ -4018,8 +4018,8 @@ class Assembly:
             clock = clock.add(arbour.get_assembled())
 
 
-        time_min = self.timeMins
-        time_hour = self.timeHours
+        time_min = self.time_mins
+        time_hour = self.time_hours
 
 
 
@@ -4050,13 +4050,13 @@ class Assembly:
         #mirror them so the outline is visible (consistent with second hand)
         # minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
         # hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-        hands = self.hands.get_assembled(time_minute = time_min, time_hour=time_hour, include_seconds=False, gap_size =self.motion_works.hourHandSlotHeight - self.hands.thick)
+        hands = self.hands.get_assembled(time_minute = time_min, time_hour=time_hour, include_seconds=False, gap_size =self.motion_works.hour_hand_slot_height - self.hands.thick)
 
 
         # clock = clock.add(minuteHand.translate((self.plates.bearingPositions[self.goingTrain.chainWheels][0], self.plates.bearingPositions[self.goingTrain.chainWheels][1], minuteHandZ)))
 
         clock = clock.add(hands.translate((self.plates.hands_position[0], self.plates.hands_position[1],
-                                              self.minuteHandZ - self.motion_works.hourHandSlotHeight)))
+                                           self.minute_hand_z - self.motion_works.hour_hand_slot_height)))
 
         if self.plates.has_seconds_hand():
             #second hand!! yay
@@ -4239,28 +4239,31 @@ class Assembly:
 
         #hands on the motion work, showing the time
         #mirror them so the outline is visible (consistent with second hand)
-        hands = self.hands.get_in_situ(time_minute=self.timeMins, time_hour=self.timeHours, time_seconds=self.timeSeconds, gap_size=self.motion_works.hourHandSlotHeight - self.hands.thick)
-
-        for type in HandType:
-            for colour in hands[type]:
-                show_colour = colour
-                description="{} Hand{}".format(type.value.capitalize(), " "+colour.capitalize() if colour is not None else "")
-                if show_colour is None:
-                    show_colour = hand_colours[0]
-                    if type == HandType.SECOND:
-                        show_colour = hand_colours[2 % len(hand_colours)]
-                if show_colour == "outline":
-                    show_colour = hand_colours[1 % len(hand_colours)]
-
-                show_colour = Colour.colour_tidier(show_colour)
-
-                if type != HandType.SECOND:
-                    show_object(hands[type][colour].translate((self.plates.hands_position[0], self.plates.hands_position[1],
-                                                  self.minuteHandZ - self.motion_works.hourHandSlotHeight)), options={"color": show_colour}, name=description)
-                elif self.plates.has_seconds_hand():
-                    #second hand!! yay
-                    secondHand = hands[type][colour].translate(self.secondHandPos)
-                    show_object(secondHand, options={"color": show_colour}, name=description)
+        hands_position = (self.plates.hands_position[0], self.plates.hands_position[1], self.minute_hand_z - self.motion_works.hour_hand_slot_height)
+        self.hands.show_hands(show_object, hand_colours=hand_colours, position=hands_position, second_hand_pos=self.secondHandPos, hour_hand_slot_height=self.motion_works.hour_hand_slot_height,
+                              time_hours=self.time_hours, time_minutes=self.time_mins, time_seconds=self.time_seconds, show_second_hand=self.plates.has_seconds_hand())
+        # hands = self.hands.get_in_situ(time_minute=self.timeMins, time_hour=self.timeHours, time_seconds=self.timeSeconds, gap_size=self.motion_works.hourHandSlotHeight - self.hands.thick)
+        #
+        # for type in HandType:
+        #     for colour in hands[type]:
+        #         show_colour = colour
+        #         description="{} Hand{}".format(type.value.capitalize(), " "+colour.capitalize() if colour is not None else "")
+        #         if show_colour is None:
+        #             show_colour = hand_colours[0]
+        #             if type == HandType.SECOND:
+        #                 show_colour = hand_colours[2 % len(hand_colours)]
+        #         if show_colour == "outline":
+        #             show_colour = hand_colours[1 % len(hand_colours)]
+        #
+        #         show_colour = Colour.colour_tidier(show_colour)
+        #
+        #         if type != HandType.SECOND:
+        #             show_object(hands[type][colour].translate((self.plates.hands_position[0], self.plates.hands_position[1],
+        #                                           self.minuteHandZ - self.motion_works.hourHandSlotHeight)), options={"color": show_colour}, name=description)
+        #         elif self.plates.has_seconds_hand():
+        #             #second hand!! yay
+        #             secondHand = hands[type][colour].translate(self.secondHandPos)
+        #             show_object(secondHand, options={"color": show_colour}, name=description)
 
         if self.has_ring:
 
@@ -4322,7 +4325,7 @@ class Assembly:
         exportSVG(self.get_clock(), out, opts={"width":720, "height":1280})
 
 
-def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
+def getHandDemo(just_style=None, length = 120, per_row=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
     demo = cq.Workplane("XY")
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
@@ -4335,7 +4338,7 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
     for i,style in enumerate(HandStyle):
 
-        if justStyle is not None and style != justStyle:
+        if just_style is not None and style != just_style:
             continue
 
         hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=outline,
@@ -4343,9 +4346,9 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
         x = 0
         y = 0
-        if justStyle is None:
-            x = space*(i%perRow)
-            y = (space)*math.floor(i/perRow)
+        if just_style is None:
+            x = space*(i % per_row)
+            y = (space)*math.floor(i / per_row)
 
         secondsHand = None
         try:
@@ -4384,6 +4387,28 @@ def getHandDemo(justStyle=None, length = 120, perRow=3, assembled=False, time_mi
 
 
     return demo
+
+def show_hand_demo(show_object, length = 120, per_row=3, assembled=True, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25):
+    motion_works = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    print("motion works r", motion_works.get_widest_radius())
+
+    space = length
+
+    if assembled:
+        space = length * 2
+
+    for i, style in enumerate(HandStyle):
+
+        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motion_works.getMinuteHandSquareSize(), hourfixing_d=motion_works.getHourHandHoleD(),
+                      length=length, thick=motion_works.minuteHandSlotHeight, outline=outline, outlineSameAsBody=False, secondLength=second_length)
+
+        x = space * (i % per_row)
+        y = (space) * math.floor(i / per_row)
+
+
+        if assembled:
+
+            hands.show_hands(show_object, time_hours=time_hour, time_minutes=time_min, time_seconds=time_sec, position=(x,y))
 
 def getAnchorDemo(style=AnchorStyle.STRAIGHT):
     escapment = AnchorEscapement(style=style)

@@ -326,6 +326,40 @@ class Hands:
     '''
 
 
+    def show_hands(self, show_object, hand_colours=None, position=None, second_hand_pos=None, hour_hand_slot_height=6,
+                   time_hours=10, time_minutes=10, time_seconds=0, show_second_hand=True):
+
+        if hand_colours is None:
+            #main hand, outline, second hand if different
+            hand_colours = ["white", "black"]
+        if position is None:
+            position = (0,0,0)
+        if second_hand_pos is None:
+            second_hand_pos = (position[0], position[1] + self.length * 0.75, 0)
+
+        hands = self.get_in_situ(time_minute=time_minutes, time_hour=time_hours, time_seconds=time_seconds, gap_size=hour_hand_slot_height - self.thick)
+
+        for type in HandType:
+            for colour in hands[type]:
+                show_colour = colour
+                description = "{} {} Hand{}".format(self.style.value.capitalize(), type.value.capitalize(), " " + colour.capitalize() if colour is not None else "")
+                if show_colour is None:
+                    show_colour = hand_colours[0]
+                    if type == HandType.SECOND:
+                        show_colour = hand_colours[2 % len(hand_colours)]
+                if show_colour == "outline":
+                    show_colour = hand_colours[1 % len(hand_colours)]
+
+                show_colour = Colour.colour_tidier(show_colour)
+
+                if type != HandType.SECOND:
+                    show_object(hands[type][colour].translate(position), options={"color": show_colour}, name=description)
+                elif show_second_hand:
+                    # second hand!! yay
+                    secondHand = hands[type][colour].translate(second_hand_pos)
+                    show_object(secondHand, options={"color": show_colour}, name=description)
+
+
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
                  hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset_deg=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
                  chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1):
@@ -1052,11 +1086,8 @@ class Hands:
         # if second:
         #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d).extrude(self.secondFixing_thick + thick)
 
-        if not generate_outline:
-            try:
-                hand = self.cutFixing(hand, hand_type)
-            except:
-                pass
+        #cut the fixing AFTERWARDS so we don't accidentally try and make a shell around the hand fixing if outline is not subtractive
+
         thick = self.thick
         outline_wide = self.outline
         if hand_type == HandType.SECOND:
@@ -1114,7 +1145,6 @@ class Hands:
                     bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(slabThick)
 
                     outline = shell.intersect(bigSlab)
-                    outline = self.cutFixing(outline, hand_type)
 
                     if self.outlineSameAsBody:
                         #add the hand, minus a thin layer on the front
@@ -1127,19 +1157,33 @@ class Hands:
                 else:
                     #this is the hand, minus the outline
                     if self.outlineSameAsBody:
-                        bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(self.outlineThick)
+                        bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick)
                         hand = hand.intersect(bigSlab)
                     else:
                         try:
-                            #make the whole hand bigger by the outline amount
-                            shell = hand.shell(outline_wide).intersect(cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
+                            outlineShape = self.getHand(hand_type, generate_outline=True)
+                            # chop out the outline from the shape
 
-                            hand = hand.union(shell)
+                            #make the whole hand bigger by the outline amount
+                            shell = hand.shell(outline_wide)#.intersect(cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick-self.outlineThick).translate((0,0,self.outlineThick)))
+
+                            bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick)
+
+                            hand = hand.union(shell.intersect(bigSlab))
+                            if outlineShape is not None:
+                                hand = hand.cut(outlineShape)
+
+
                         except:
                             print("Unable to add external outline to hand: {} {}".format(hand_type.value, self.style.value))
                         hand = self.cutFixing(hand, hand_type)
                         return hand
 
+        if not generate_outline:
+            try:
+                hand = self.cutFixing(hand, hand_type)
+            except:
+                pass
 
         return hand
 

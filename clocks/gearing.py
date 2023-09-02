@@ -2432,7 +2432,7 @@ class MotionWorks:
 
         self.distanceBetweenHands = minuteHandThick
         self.minuteHandSlotHeight = minuteHandThick
-        self.hourHandSlotHeight = minuteHandThick + self.distanceBetweenHands
+        self.hour_hand_slot_height = minuteHandThick + self.distanceBetweenHands
 
         self.bearingHolderThick = 0
 
@@ -2454,7 +2454,7 @@ class MotionWorks:
             extra_height = self.thick*2
 
         #thick for thickness of hour holder wheel
-        self.cannonPinionTotalHeightAboveBase = extra_height + self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight + self.thick# + self.cannonPinionBaseHeight
+        self.cannonPinionTotalHeightAboveBase = extra_height + self.minuteHandSlotHeight + self.space + self.hour_hand_slot_height + self.thick# + self.cannonPinionBaseHeight
 
 
     def get_hour_wheel_teeth(self):
@@ -2636,7 +2636,7 @@ class MotionWorks:
         '''
         get distance from base of the cannon pinion to the beginning of the hand holders (base of hour hand)
         '''
-        return self.get_cannon_pinion_total_height() - (self.minuteHandSlotHeight + self.space + self.hourHandSlotHeight)
+        return self.get_cannon_pinion_total_height() - (self.minuteHandSlotHeight + self.space + self.hour_hand_slot_height)
 
     def getCannonPinionBaseThick(self):
         '''
@@ -2822,7 +2822,7 @@ class MotionWorks:
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
-        handHolderStartZ = top_z - self.hourHandSlotHeight
+        handHolderStartZ = top_z - self.hour_hand_slot_height
 
         if handHolderStartZ < 0.0001:
             #because CQ won't let you make shapes of zero height
