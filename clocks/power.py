@@ -916,6 +916,7 @@ class SpringBarrel:
 
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
+        self.collet_screws = self.lid_fixing_screws
         self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
 
         self.spring_hook_space=2
@@ -1051,8 +1052,11 @@ class SpringBarrel:
         '''
         gear = self.ratchet.get_gear()
         if self.ratchet_at_back:
-            gear = gear.faces(">Z").workplane().circle(self.arbor_d_bearing/2+3).extrude(self.ratchet_collet_thick)
-
+            outer_d = self.arbor_d_bearing+6
+            gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
+            # means to hold screw that will hold this in place
+            gear = gear.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
+            gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.key_square_side_length / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
         gear = gear.faces(">Z").workplane().rect(self.key_square_side_length+self.ratchet_wiggle_room, self.key_square_side_length + self.ratchet_wiggle_room).cutThruAll()
 
         return gear
