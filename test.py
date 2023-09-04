@@ -289,12 +289,12 @@ if False:
 #
 # show_object(holder)
 #
-motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, compensateLooseArbour=False)
-hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=68.18131703845526*0.45, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=200*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.5, outlineSameAsBody=False)
-
-# show_object(hands.get_assembled())
-hands.show_hands(show_object)
+# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, compensateLooseArbour=False)
+# hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=68.18131703845526*0.45, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+#                     length=200*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.5, outlineSameAsBody=False)
+#
+# # show_object(hands.get_assembled())
+# hands.show_hands(show_object)
 # show_object(hands.getHand(hand_type=HandType.SECOND, generate_outline=False))
 # show_object(hands.getHand(hand_type=HandType.SECOND, generate_outline=True))
 # # #
@@ -714,12 +714,12 @@ if False:
 # show_object(pair.get_model(offset_angle_deg=-0.3))
 
 
-# ratchet = TraditionalRatchet(50, blocks_clockwise=True, click_fixing_angle=-math.pi/4)
-#
-# # show_object(ratchet.get_gear())
-# # show_object(ratchet.get_pawl())
-#
-# show_object(ratchet.get_assembled())
+ratchet = TraditionalRatchet(50, blocks_clockwise=True, click_fixing_angle=-math.pi/4)
+
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())
+
+show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
 #
 # test_screwhole = cq.Workplane("XY").rect(10,10).extrude(10).faces(">X").workplane().moveTo(0,5).circle((screw.metric_thread+screw.get_diameter_for_die_cutting())/4).cutThruAll()

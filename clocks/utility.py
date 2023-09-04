@@ -1050,17 +1050,25 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
 
 class TextSpace:
-    def __init__(self, x, y, width, height, horizontal, inverted=True, text=None, thick=LAYER_THICK, font="Arial"):
+    def __init__(self, x, y, width, height, horizontal=None, inverted=True, text=None, thick=LAYER_THICK, font="Arial", angle_rad=0):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        #deprecated, use angle_rad for more control. If this is a boolean it will override angle_rad to math.pi/2 or 0
         self.horizontal = horizontal
         self.text = text
         self.text_size = 10
         self.inverted = inverted
         self.thick = thick
         self.font = font
+        self.angle_rad = angle_rad
+
+        if self.horizontal is not None:
+            if self.horizontal == False:
+                self.angle_rad = math.pi/2
+            else:
+                self.angle_rad = 0
 
     def set_text(self, text):
         self.text = text
@@ -1078,11 +1086,12 @@ class TextSpace:
         # actually centre it, the align feature of text does...something else
         shape = shape.translate((-bb.center.x, -bb.center.y))
 
-        if not self.horizontal:
-            shape = shape.rotate((0, 0, 0), (0, 0, 1), 90)
-
         if self.inverted:
             shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.thick))
+
+        shape = shape.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.angle_rad))
+
+
         shape = shape.translate((self.x, self.y))
 
         return shape

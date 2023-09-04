@@ -1555,6 +1555,14 @@ class SimpleClockPlates:
         self.fixing_screws_cutter = None
         self.need_motion_works_holder = self.calc_need_motion_works_holder()
 
+
+        self.texts = [
+            self.name,
+            "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
+            "Luke Wallin",
+            "{:.1f}cm".format(self.going_train.pendulum_length * 100)
+        ]
+
     def generate_arbours_for_plate(self):
 
         self.arbors_for_plate = []
@@ -2363,12 +2371,7 @@ class SimpleClockPlates:
 
         all_text = cq.Workplane("XY")
 
-        texts = [
-            self.name,
-            "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
-            "Luke Wallin",
-            "{:.1f}cm".format(self.going_train.pendulum_length * 100)
-        ]
+        texts = self.texts
 
         #(x,y,width,height, horizontal)
         spaces = []
@@ -3000,7 +3003,7 @@ class SimpleClockPlates:
 
         return punch
 
-    def punchBearingHoles(self, plate, back):
+    def punchBearingHoles(self, plate, back, make_plate_bigger=True):
         for i, pos in enumerate(self.bearing_positions):
             bearingInfo = self.arbors_for_plate[i].bearing#get_bearing_info(self.going_train.get_arbour_with_conventional_naming(i).get_rod_d())
             bearingOnTop = back
@@ -3025,7 +3028,7 @@ class SimpleClockPlates:
             if needs_plain_hole:
                 outer_d = self.direct_arbour_d + 3
 
-            if outer_d > self.plate_width - self.bearing_wall_thick*2:
+            if outer_d > self.plate_width - self.bearing_wall_thick*2 and make_plate_bigger:
                 #this is a chunkier bearing, make the plate bigger
                 try:
                     plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(outer_d / 2 + self.bearing_wall_thick).extrude(self.get_plate_thick(back=back)))
@@ -3538,6 +3541,13 @@ class MantelClockPlates(SimpleClockPlates):
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
 
+        if self.dial is not None:
+            #hacky, cut away a bit from the top support so it won't crash into the anchor rod
+            bearing_relative_to_dial = npToSet(np.subtract(self.bearing_positions[-1][:2], self.hands_position))
+            tall = 5
+            self.dial.subtract_from_supports = cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
+                .circle(self.arbors_for_plate[-1].bearing.outerSafeD/2).extrude(tall).translate((0,0,self.dial.thick + self.dial.support_length - tall))
+
     def calc_pillar_info(self):
         '''
         current plan: asymetric to be compact, with anchor arbor sticking out the top above the topmost pillar
@@ -3652,8 +3662,11 @@ class MantelClockPlates(SimpleClockPlates):
 
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
+            plate = plate.cut(self.get_text())
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
+
+
 
         if not back:
             plate = self.front_additions_to_plate(plate)
@@ -3678,7 +3691,51 @@ class MantelClockPlates(SimpleClockPlates):
         return plate
 
     def get_text(self):
-        return cq.Workplane("XY").rect(1,1).extrude(1)
+
+        all_text = cq.Workplane("XY")
+
+        # (x,y,width,height, horizontal)
+        spaces = []
+
+        texts = [" ".join(self.texts[1:]), self.texts[0]]
+
+
+        long_line = Line(self.bottom_pillar_positions[0], anotherPoint=self.top_pillar_positions[0])
+        long_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[0], self.bottom_pillar_positions[0]))
+        long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
+        text_height = self.plate_width * 0.9
+        long_centre = npToSet(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
+        long_angle = long_line.getAngle()
+
+        short_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.top_pillar_positions[1])
+        short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
+        short_line_length = short_space_length - 10
+        short_centre = npToSet(np.add(short_line.start, np.multiply(short_line.dir, short_space_length / 2)))
+        short_angle = short_line.getAngle() + math.pi
+
+
+        # three along the wide bit at the bottom and one above
+        spaces.append(TextSpace(long_centre[0], long_centre[1], text_height,long_line_length, angle_rad=long_angle))
+        spaces.append(TextSpace(short_centre[0], short_centre[1], text_height, short_line_length, angle_rad=short_angle))
+        # spaces.append(TextSpace(bottom_pos[0], (bottom_pos[1] + (chain_pos[1] - chain_space)) / 2, text_height, chain_pos[1] - chain_space - bottom_pos[1], horizontal=False))
+        # spaces.append(TextSpace(bottom_pos[0] + self.bottom_pillar_r - self.bottom_pillar_r / 3, (bottom_pos[1] + chain_pos[1]) / 2, text_height, chain_pos[1] - bottom_pos[1], horizontal=False))
+        #
+        # spaces.append(TextSpace(chain_pos[0], (first_arbour_pos[1] - arbour_space + chain_pos[1] + chain_space) / 2, self.plate_width * 0.9, first_arbour_pos[1] - arbour_space - (chain_pos[1] + chain_space), horizontal=False))
+
+        for i, text in enumerate(texts):
+            spaces[i].set_text(text)
+
+        max_text_size = min([textSpace.get_text_max_size() for textSpace in spaces])
+
+        for space in spaces:
+            space.set_size(max_text_size)
+
+        for space in spaces:
+            all_text = all_text.add(space.get_text_shape())
+
+        all_text = self.punchBearingHoles(all_text, back=True, make_plate_bigger=False)
+
+        return all_text
 
     def get_screwhole_positions(self):
         '''
@@ -3743,7 +3800,7 @@ class Assembly:
         self.dial= plates.dial
         self.goingTrain = plates.going_train
         #+1 for the anchor
-        self.arbourCount = self.goingTrain.powered_wheels + self.goingTrain.wheels + 1
+        self.arbour_count = self.goingTrain.powered_wheels + self.goingTrain.wheels + 1
         self.pendulum = pendulum
         self.motion_works = self.plates.motion_works
         self.time_mins = timeMins
@@ -3895,7 +3952,8 @@ class Assembly:
         back_plate_thick = self.plates.get_plate_thick(back=True)
 
         #how much extra to extend out the bearing
-        spare_rod_length_beyond_bearing=3
+        #used to be 3mm, but when using thinner plates this isn't ideal.
+        spare_rod_length_beyond_bearing=self.plates.endshake*2
         #extra length out the front of hands, or front-mounted escapements
         spare_rod_length_in_front=2
         rod_lengths = []
@@ -3905,13 +3963,13 @@ class Assembly:
 
 
 
-        for i in range(self.arbourCount):
+        for i in range(self.arbour_count):
 
             rod_length = -1
 
-            arbourForPlate = self.plates.arbors_for_plate[i]
-            arbour = arbourForPlate.arbor
-            bearing = get_bearing_info(arbour.arbour_d)
+            arbour_for_plate = self.plates.arbors_for_plate[i]
+            arbour = arbour_for_plate.arbor
+            bearing = arbour_for_plate.bearing
             bearing_thick = bearing.bearingHeight
 
             length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
@@ -3932,7 +3990,8 @@ class Assembly:
                     if powered_wheel.useKey:
                         square_bit_out_front = powered_wheel.keySquareBitHeight - (front_plate_thick - powered_wheel.key_bearing.bearingHeight) - self.plates.endshake / 2
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
-
+                elif powered_wheel.type == PowerType.SPRING_BARREL:
+                    rod_length=-1
                 else:
                     #assume all other types of powered wheel lack a key and thus are just inside the plates
                     rod_length = simple_arbour_length
@@ -3972,7 +4031,7 @@ class Assembly:
                         rod_length = hand_arbor_length
                 else:
                     # "normal" arbour
-                    rod_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+                    rod_length = simple_arbour_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
 
             elif arbour.type == ArbourType.ESCAPE_WHEEL:
                 #"normal" arbour
@@ -3993,7 +4052,8 @@ class Assembly:
             rod_lengths.append(rod_length)
             rod_zs.append(rod_z)
             beyond_back_of_arbours.append(beyond_back_of_arbour)
-            print("Arbour {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].key_bearing.innerD, round(rod_length), beyond_back_of_arbour))
+            if rod_length > 0:
+                print("Arbour {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.innerD, round(rod_length), beyond_back_of_arbour))
 
 
 
@@ -4151,6 +4211,8 @@ class Assembly:
         if with_rods:
             rod_lengths, rod_zs = self.get_arbour_rod_lengths()
             for i in range(len(rod_lengths)):
+                if rod_lengths[i] <= 0:
+                    continue
                 rod = cq.Workplane("XY").circle(self.goingTrain.get_arbour_with_conventional_naming(i).arbour_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
                 clock = clock.add(rod)
 
@@ -4302,6 +4364,8 @@ class Assembly:
             rod_colour = Colour.SILVER
             rod_lengths, rod_zs = self.get_arbour_rod_lengths()
             for i in range(len(rod_lengths)):
+                if rod_lengths[i] <= 0:
+                    continue
                 rod = cq.Workplane("XY").circle(self.goingTrain.get_arbour_with_conventional_naming(i).arbour_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
                 show_object(rod, options={"color": rod_colour, "name":"Rod_{}".format(i)})
 

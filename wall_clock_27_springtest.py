@@ -88,7 +88,7 @@ pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
 dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 
-plates = clock.MantelClockPlates(train, motionWorks, dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]])
+plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 27", dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]])
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
@@ -109,7 +109,7 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.GOLD], with_rods=False, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
+                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
 
 # show_object(plates.getDrillTemplate(6))
 

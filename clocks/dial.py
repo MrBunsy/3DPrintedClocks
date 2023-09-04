@@ -433,6 +433,9 @@ class Dial:
         #for any styles which use a font
         self.font = font
 
+        # a shape to be subtracted from the supports to avoid crashing into things, bit hacky, will be set by plates
+        self.subtract_from_supports = None
+
     def get_hand_space_z(self):
         #how much space between the front of the dial and the hands should there be?
         if self.style == DialStyle.TONY_THE_CLOCK:
@@ -883,6 +886,9 @@ class Dial:
             # cut holes for eyes
             dial = self.add_eyes(dial)
             dial = dial.cut(self.get_tony_face_detail())
+
+        if self.subtract_from_supports is not None:
+            dial = dial.cut(self.subtract_from_supports)
 
         return dial
 
