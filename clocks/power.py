@@ -850,6 +850,17 @@ class SpringBarrel:
 
     TODO have the winding key on the back for the first mantel clock
 
+    Observations:
+     - The barrel is far chunkier than it needs to be - can be given much thinner walls, but will still want a chunky bit to take the m3 screw
+     - M3 countersunk screws worked better than pan head
+     - The chunky arbor was very hard to fit inside the spring, ended up mangling the spring a bit with pliers. Will want to reduce diameter to use a decent spring
+
+     Ideas:
+     Use bearings on the lid and base of barrel, since the barrel rotates in normal usage
+     Try 15mm bearings on lid and barrel, and 12mm in plates.
+     Can round the edges of the key like on the anchor arbor to get as chunky a key as possible through a smaller diameter
+     Since the barrel seems strong enough - try cutting a gear style?
+
     '''
 
     def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True, ratchet_at_back=True, pawl_angle=math.pi/2, click_angle=-math.pi/2):
@@ -963,6 +974,9 @@ class SpringBarrel:
         barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space, 0, self.base_thick + self.barrel_height / 2)))
 
         return barrel
+
+
+
 
     def get_lid(self, for_printing = True):
         lid = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.lid_hole_d/2).extrude(self.lid_thick)
@@ -1544,6 +1558,18 @@ class WindingKey:
 
         return handle_tall + self.cylinder_length
 
+    def get_let_down_adapter(self):
+
+
+        adapter = cq.Workplane("XY").circle(self.body_wide / 2).extrude(self.key_hole_deep + 10)
+
+        adapter = adapter.cut(cq.Workplane("XY").rect(self.square_side_length + self.wiggle_room, self.square_side_length + self.wiggle_room).extrude(self.key_hole_deep))
+
+        r = 11/(2*math.cos(degToRad(30)))
+        adapter = adapter.faces(">Z").polygon(6,r*2).extrude(20)
+
+        return adapter
+
     def get_knob(self):
 
 
@@ -1566,6 +1592,21 @@ class WindingKey:
 
         key = key.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_height()))
         return key
+
+    def output_STLs(self, name, path):
+        out = os.path.join(path, "{}_winding_key.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_key(), out)
+
+        if self.crank:
+            out = os.path.join(path, "{}_winding_key_knob.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_knob(), out)
+        else:
+            #proxy for spring barrel
+            out = os.path.join(path, "{}_let_down_adapter.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_let_down_adapter(), out)
 
 class CordWheel:
     '''
@@ -3092,7 +3133,7 @@ class TraditionalRatchet:
                             .lineTo(click_end_inner_pos[0], click_end_inner_pos[1]).radiusArc(click_start_inner, (click_spring_r - self.click_wide/2)).close().extrude(self.thick))
 
         for screwpos in self.click_fixings:
-            click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2 + LOOSE_SCREW/2).extrude(self.thick).translate(screwpos))
+            click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2 + LOOSE_SCREW).extrude(self.thick).translate(screwpos))
 
         return click
 

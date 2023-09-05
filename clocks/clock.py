@@ -3495,14 +3495,7 @@ class SimpleClockPlates:
 
         key = self.get_winding_key()
         if key is not None:
-            out = os.path.join(path, "{}_winding_key.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(key.get_key(), out)
-
-            if key.crank:
-                out = os.path.join(path, "{}_winding_key_knob.stl".format(name))
-                print("Outputting ", out)
-                exporters.export(key.get_knob(), out)
+            key.output_STLs(name, path)
 
         if self.need_front_anchor_bearing_holder():
             out = os.path.join(path, "{}_front_anchor_bearing_holder.stl".format(name))
