@@ -77,7 +77,7 @@ train.print_info(weight_kg=0.5)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(bobD=80, bobThick=10)
+pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
 
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="clk 17", style=clock.ClockPlateStyle.VERTICAL, pendulum_at_front=False,
@@ -99,15 +99,15 @@ weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidB
 show_object(assembly.get_clock())
 
 leaf_thick=1
-pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bobR*2, cut_rect_width=pendulum.gapWidth+0.1, cut_rect_height=pendulum.gapHeight+0.1)
+pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bob_r * 2, cut_rect_width=pendulum.gap_width + 0.1, cut_rect_height=pendulum.gap_height + 0.1)
 
-pretty_bob = clock.ItemWithCosmetics(pendulum.getBob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
+pretty_bob = clock.ItemWithCosmetics(pendulum.get_bob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
 
-wreath = clock.Wreath(diameter=pendulum.handAvoiderInnerD, thick=leaf_thick)
+wreath = clock.Wreath(diameter=pendulum.hand_avoider_inner_d, thick=leaf_thick)
 cosmetics={"green": wreath.get_leaves(),
            "red": wreath.get_berries()}
 
-pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.getHandAvoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
+pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.get_hand_avoider(), name="hand_avoider", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
 
 #very brittle code for the mistletoe themed grasshopper frame:
 

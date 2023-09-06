@@ -3876,12 +3876,12 @@ class Assembly:
                     self.ring_pos[1] = (self.plates.bearing_positions[self.goingTrain.powered_wheels][1] + self.plates.bearing_positions[0][1]) / 2
 
                 # ring is over the minute wheel/hands
-                self.ring_pos[2] = pendulumRodCentreZ - self.pendulum.handAvoiderThick / 2
+                self.ring_pos[2] = pendulumRodCentreZ - self.pendulum.hand_avoider_thick / 2
                 self.has_ring = True
         else:
             # pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable) if the pendulum is long enough to need it
             if len(self.plates.bottom_pillar_positions) == 1 and np.linalg.norm(np.subtract(self.plates.bearing_positions[-1][:2], self.plates.bottom_pillar_positions[0][:2])) < self.goingTrain.pendulum_length*1000:
-                self.ring_pos = (self.plates.bottom_pillar_positions[0][0], self.plates.bottom_pillar_positions[0][1], -self.plates.pendulum_sticks_out - self.pendulum.handAvoiderThick / 2)
+                self.ring_pos = (self.plates.bottom_pillar_positions[0][0], self.plates.bottom_pillar_positions[0][1], -self.plates.pendulum_sticks_out - self.pendulum.hand_avoider_thick / 2)
                 self.has_ring = True
         self.weight_positions = []
         if len(self.weights) > 0:
@@ -4126,14 +4126,14 @@ class Assembly:
 
 
         if with_pendulum:
-            bob = self.pendulum.getBob(hollow=False)
+            bob = self.pendulum.get_bob(hollow=False)
 
             if self.pretty_bob is not None:
                 bob = self.pretty_bob.get_model()
 
-            clock = clock.add(bob.rotate((0,0,self.pendulum.bobThick / 2),(0,1,self.pendulum.bobThick / 2),180).translate(self.pendulum_bob_centre_pos))
+            clock = clock.add(bob.rotate((0, 0, self.pendulum.bob_thick / 2), (0, 1, self.pendulum.bob_thick / 2), 180).translate(self.pendulum_bob_centre_pos))
 
-            clock = clock.add(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos))
+            clock = clock.add(self.pendulum.get_bob_nut().translate((0, 0, -self.pendulum.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90).translate(self.pendulum_bob_centre_pos))
 
 
         if len(self.weights) > 0:
@@ -4168,7 +4168,7 @@ class Assembly:
         minuteToPendulum = (self.plates.bearing_positions[-1][0] - self.plates.bearing_positions[self.goingTrain.powered_wheels][0], self.plates.bearing_positions[-1][1] - self.plates.bearing_positions[self.goingTrain.powered_wheels][1])
 
         if abs(minuteToPendulum[0]) < 50:
-            ring = self.pendulum.getHandAvoider()
+            ring = self.pendulum.get_hand_avoider()
             if self.plates.pendulum_at_front:
                 #if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
 
@@ -4179,14 +4179,14 @@ class Assembly:
                     ringY = (self.plates.bearing_positions[self.goingTrain.powered_wheels][1] + self.plates.bearing_positions[0][1]) / 2
 
 
-                handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.handAvoiderThick)/2
+                handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.hand_avoider_thick) / 2
                 #ring is over the minute wheel/hands
                 clock = clock.add(ring.translate((self.plates.bearing_positions[self.goingTrain.powered_wheels][0], ringY, self.plates.get_plate_thick(back=True) + self.plates.get_plate_thick(back=False) + self.plates.plate_distance + self.plates.pendulum_sticks_out + handAvoiderExtraZ)))
             else:
                 #pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable)
                 if len(self.plates.bottom_pillar_positions) == 1:
                     ringCentre = self.plates.bottom_pillar_positions[0]
-                    clock = clock.add(ring.translate(ringCentre).translate((0, 0, -self.plates.pendulum_sticks_out - self.pendulum.handAvoiderThick / 2)))
+                    clock = clock.add(ring.translate(ringCentre).translate((0, 0, -self.plates.pendulum_sticks_out - self.pendulum.hand_avoider_thick / 2)))
 
 
         if self.pulley is not None:
@@ -4322,7 +4322,7 @@ class Assembly:
 
         if self.has_ring:
 
-            show_object(self.pendulum.getHandAvoider().translate(self.ring_pos), options={"color": ring_colour}, name="Pendulum Ring")
+            show_object(self.pendulum.get_hand_avoider().translate(self.ring_pos), options={"color": ring_colour}, name="Pendulum Ring")
 
         if self.plates.huygens_maintaining_power:
             #assumes one pillar
@@ -4336,14 +4336,14 @@ class Assembly:
             # bob_colour = gear_colours[len(self.plates.bearingPositions) % len(gear_colours)]
             bob_colour = bob_colours[0]
             nut_colour = bob_colours[ 1 % len(bob_colours)]
-            bob = self.pendulum.getBob(hollow=False)
+            bob = self.pendulum.get_bob(hollow=False)
 
             if self.pretty_bob is not None:
                 bob = self.pretty_bob.get_model()
 
-            show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum.bobThick/2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour}, name="Pendulum Bob")
+            show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour}, name="Pendulum Bob")
 
-            show_object(self.pendulum.getBobNut().translate((0,0,-self.pendulum.bobNutThick/2)).rotate((0,0,0), (1,0,0),90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour}, name="Pendulum Bob Nut")
+            show_object(self.pendulum.get_bob_nut().translate((0, 0, -self.pendulum.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour}, name="Pendulum Bob Nut")
 
 
         if len(self.weights) > 0:

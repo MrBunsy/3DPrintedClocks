@@ -362,8 +362,8 @@ class AutoWallClock:
 
         self.motionWorks = MotionWorks(style=self.gear_style, thick=3, compensateLooseArbour=False, bearing=bearing, compact=True, module=1)
 
-        self.pendulum = Pendulum(self.train.escapement, self.train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, handAvoiderInnerD=self.ring_d,
-                                  bobD=self.bob_d, bobThick=10, useNylocForAnchor=False)
+        self.pendulum = Pendulum(self.train.escapement, self.train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, hand_avoider_inner_d=self.ring_d,
+                                 bob_d=self.bob_d, bob_thick=10, useNylocForAnchor=False)
         self.dial = None
 
 

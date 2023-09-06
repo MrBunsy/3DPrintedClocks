@@ -1949,75 +1949,75 @@ class Pendulum:
 
     now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
-    def __init__(self, threadedRodM=3, handAvoiderInnerD=100, bobD=100, bobThick=15, handAvoiderHeight=-1):
+    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=100, bob_d=100, bob_thick=15, hand_avoider_height=-1):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
-        self.handAvoiderHeight=handAvoiderHeight
-        if self.handAvoiderHeight < 0:
-            self.handAvoiderHeight = handAvoiderInnerD
+        self.hand_avoider_height=hand_avoider_height
+        if self.hand_avoider_height < 0:
+            self.hand_avoider_height = hand_avoider_inner_d
 
-        self.handAvoiderThick = getNutContainingDiameter(threadedRodM) + 2
-        self.threadedRodM=threadedRodM
+        self.hand_avoider_thick = getNutContainingDiameter(threaded_rod_m) + 2
+        self.threaded_rod_m=threaded_rod_m
 
-        self.handAvoiderInnerD=handAvoiderInnerD
+        self.hand_avoider_inner_d=hand_avoider_inner_d
 
-        self.bobNutD = bobD*0.3
-        self.bobNutThick=bobThick*2/3
-        self.bobR=bobD/2
-        self.bobThick = bobThick
+        self.bob_nut_d = bob_d * 0.3
+        self.bob_nut_thick= bob_thick * 2 / 3
+        self.bob_r= bob_d / 2
+        self.bob_thick = bob_thick
 
         #hole for the bob nut
-        self.gapHeight = self.bobNutThick + 0.5
-        self.gapWidth = self.bobNutD + 1
+        self.gap_height = self.bob_nut_thick + 0.5
+        self.gap_width = self.bob_nut_d + 1
 
         # space to put stuff for extra weight! Will try some steel shot soon
-        self.wallThick = 2.5
-        self.slotThick = self.wallThick / 2
+        self.wall_thick = 2.5
+        self.slot_thick = self.wall_thick / 2
 
         #pretty well centred, but might make it hard to fit larger stuff inside!
         #self.bobLidNutPositions=[(self.gapWidth/3, self.bobR*0.55), (-self.gapWidth/3, self.bobR*0.55)]
 
-        self.bobLidNutPositions = [(self.gapWidth / 3, self.bobR * 0.75), (-self.gapWidth / 3, self.bobR * 0.75)]
+        self.bob_lid_nut_positions = [(self.gap_width / 3, self.bob_r * 0.75), (-self.gap_width / 3, self.bob_r * 0.75)]
 
-    def handAvoiderIsCircle(self):
-        return self.handAvoiderHeight == self.handAvoiderInnerD
+    def hand_avoider_is_circle(self):
+        return self.hand_avoider_height == self.hand_avoider_inner_d
 
-    def getHandAvoider(self):
+    def get_hand_avoider(self):
         '''
         Get a circular part which attaches inline with pendulum rod, so it can go over the hands (for a front-pendulum)
         '''
         extraR=5
-        if self.handAvoiderIsCircle():
-            avoider = cq.Workplane("XY").circle(self.handAvoiderInnerD/2).circle(self.handAvoiderInnerD/2 + extraR).extrude(self.handAvoiderThick)
+        if self.hand_avoider_is_circle():
+            avoider = cq.Workplane("XY").circle(self.hand_avoider_inner_d / 2).circle(self.hand_avoider_inner_d / 2 + extraR).extrude(self.hand_avoider_thick)
         else:
-            avoider = cq.Workplane("XY").moveTo(-self.handAvoiderInnerD/2-extraR,0).line(0,self.handAvoiderHeight/2-self.handAvoiderInnerD/2).\
-                radiusArc((self.handAvoiderInnerD/2+extraR,self.handAvoiderHeight/2-self.handAvoiderInnerD/2), self.handAvoiderInnerD/2 + extraR).line(0,-self.handAvoiderHeight/2+self.handAvoiderInnerD/2).mirrorX().extrude(self.handAvoiderThick)
+            avoider = cq.Workplane("XY").moveTo(-self.hand_avoider_inner_d / 2 - extraR, 0).line(0, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2).\
+                radiusArc((self.hand_avoider_inner_d / 2 + extraR, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2), self.hand_avoider_inner_d / 2 + extraR).line(0, -self.hand_avoider_height / 2 + self.hand_avoider_inner_d / 2).mirrorX().extrude(self.hand_avoider_thick)
 
-            avoider = avoider.cut(cq.Workplane("XY").moveTo(-self.handAvoiderInnerD / 2, 0).line(0, self.handAvoiderHeight / 2-self.handAvoiderInnerD/2). \
-                radiusArc((self.handAvoiderInnerD / 2 , self.handAvoiderHeight / 2-self.handAvoiderInnerD/2), self.handAvoiderInnerD / 2).line(0, -self.handAvoiderHeight / 2+self.handAvoiderInnerD/2).mirrorX().extrude(self.handAvoiderThick))
+            avoider = avoider.cut(cq.Workplane("XY").moveTo(-self.hand_avoider_inner_d / 2, 0).line(0, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2). \
+                                  radiusArc((self.hand_avoider_inner_d / 2 , self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2), self.hand_avoider_inner_d / 2).line(0, -self.hand_avoider_height / 2 + self.hand_avoider_inner_d / 2).mirrorX().extrude(self.hand_avoider_thick))
 
 
 
-        nutD = getNutContainingDiameter(self.threadedRodM)
-        nutThick = METRIC_NUT_DEPTH_MULT * self.threadedRodM
+        nutD = getNutContainingDiameter(self.threaded_rod_m)
+        nutThick = METRIC_NUT_DEPTH_MULT * self.threaded_rod_m
 
-        nutSpace = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick/2).polygon(6, nutD).extrude(nutThick).translate((0, -self.handAvoiderHeight/2+0.5, 0))
+        nutSpace = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nutD).extrude(nutThick).translate((0, -self.hand_avoider_height / 2 + 0.5, 0))
         avoider = avoider.cut(nutSpace)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.handAvoiderThick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.handAvoiderHeight / 2 +nutThick - 0.5, 0))
+        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.hand_avoider_height / 2 + nutThick - 0.5, 0))
         avoider = avoider.cut(nutSpace2)
 
         # avoider = avoider.faces(">Y").workplane().moveTo(0,self.handAvoiderThick/2).circle(self.threadedRodM/2).cutThruAll()
-        avoider = avoider.cut(cq.Workplane("XZ").circle(self.threadedRodM/2).extrude(self.handAvoiderHeight*4).translate((0,self.handAvoiderHeight,self.handAvoiderThick/2)))
+        avoider = avoider.cut(cq.Workplane("XZ").circle(self.threaded_rod_m / 2).extrude(self.hand_avoider_height * 4).translate((0, self.hand_avoider_height, self.hand_avoider_thick / 2)))
 
         return avoider
 
-    def getBob(self, hollow=True):
+    def get_bob(self, hollow=True):
 
 
-        circle = cq.Workplane("XY").circle(self.bobR)
+        circle = cq.Workplane("XY").circle(self.bob_r)
 
         #nice rounded edge
-        bob = cq.Workplane("XZ").lineTo(self.bobR,0).radiusArc((self.bobR,self.bobThick),-self.bobThick*0.9).lineTo(0,self.bobThick).close().sweep(circle)
+        bob = cq.Workplane("XZ").lineTo(self.bob_r, 0).radiusArc((self.bob_r, self.bob_thick), -self.bob_thick * 0.9).lineTo(0, self.bob_thick).close().sweep(circle)
 
         #was 0.5, which is plenty of space, but can slowly rotate. 0.1 seems to be a tight fit that help stop it rotate over time
         extraR=0.1
@@ -2025,73 +2025,83 @@ class Pendulum:
 
 
         #rectangle for the nut, with space for the threaded rod up and down
-        cut = cq.Workplane("XY").rect(self.gapWidth, self.gapHeight).extrude(self.bobThick*2).faces(">Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2).\
-            faces("<Y").workplane().moveTo(0,self.bobThick/2).circle(self.threadedRodM/2+extraR).extrude(self.bobR*2)
+        cut = cq.Workplane("XY").rect(self.gap_width, self.gap_height).extrude(self.bob_thick * 2).faces(">Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.threaded_rod_m / 2 + extraR).extrude(self.bob_r * 2).\
+            faces("<Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.threaded_rod_m / 2 + extraR).extrude(self.bob_r * 2)
         bob=bob.cut(cut)
 
 
         if hollow:
             # could make hollow with shell, but that might be hard to print, so doing it manually
             # bob = bob.shell(-2)
-            weightHole = cq.Workplane("XY").circle(self.bobR - self.wallThick).extrude(self.bobThick-self.wallThick*2).translate((0,0,self.wallThick))
+            weightHole = cq.Workplane("XY").circle(self.bob_r - self.wall_thick).extrude(self.bob_thick - self.wall_thick * 2).translate((0, 0, self.wall_thick))
 
-            notHole = cut.shell(self.wallThick)
+            notHole = cut.shell(self.wall_thick)
             #don't have a floating tube through the middle, give it something below
-            notHole = notHole.union(cq.Workplane("XY").rect(self.threadedRodM+extraR*2 + self.wallThick*2, self.bobR*2).extrude(self.bobThick/2 - self.wallThick).translate((0,0,self.wallThick)))
+            notHole = notHole.union(cq.Workplane("XY").rect(self.threaded_rod_m + extraR * 2 + self.wall_thick * 2, self.bob_r * 2).extrude(self.bob_thick / 2 - self.wall_thick).translate((0, 0, self.wall_thick)))
 
-            for pos in self.bobLidNutPositions:
-                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.threadedRodM*1.5).circle(self.threadedRodM/2).extrude(self.bobThick-self.wallThick))
+            for pos in self.bob_lid_nut_positions:
+                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.threaded_rod_m * 1.5).circle(self.threaded_rod_m / 2).extrude(self.bob_thick - self.wall_thick))
 
             weightHole = weightHole.cut(notHole)
 
-            lid = self.getBobLid(True)
+            lid = self.get_bob_lid(True)
 
-            weightHole = weightHole.union(lid.translate((0,0,self.bobThick-self.wallThick)))
+            weightHole = weightHole.union(lid.translate((0, 0, self.bob_thick - self.wall_thick)))
 
             bob = bob.cut(weightHole)
 
         #add a little S <--> F text
-        textSize = self.gapHeight
-        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gapWidth/2 - textSize*0.75, 0, self.bobThick)))
-        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gapWidth/2 + textSize*0.75, 0, self.bobThick)))
+        textSize = self.gap_height
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gap_width / 2 - textSize * 0.75, 0, self.bob_thick)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gap_width / 2 + textSize * 0.75, 0, self.bob_thick)))
 
         return bob
 
-    def getBobLid(self, forCutting=False):
+    def get_bob_lid(self, for_cutting=False):
         '''
         extraslot size for the slot, but not for the lid itself
+
+        it looks like I went to a lot of effort to calculate the arc across the top and I can't really follow my old logic anymore.
         '''
 
-        wallThick = self.wallThick
-        slotThick = self.slotThick
+        wall_thick = self.wall_thick
+        slot_thick = self.slot_thick
 
-        if not forCutting:
+        if not for_cutting:
             #reduce size a tiny bit so it can fit into the slot
-            slotThick-=0.2
-            wallThick+=0.2
+            slot_thick-=0.2
+            wall_thick+=0.2
 
         # add space for a lid
         # don't want the whole of the back open, just some
-        angle = math.acos((self.gapWidth / 2) / (self.bobR - wallThick))
-        angle2 = math.acos((self.gapWidth / 2 + slotThick) / (self.bobR - wallThick + slotThick))
-        lid = cq.Workplane("XY").moveTo(self.gapWidth / 2, self.gapHeight / 2 + wallThick).lineTo(self.gapWidth / 2, math.sin(angle) * (self.bobR - wallThick)). \
-            radiusArc((-self.gapWidth / 2, math.sin(angle) * (self.bobR - wallThick)), -(self.bobR - wallThick)).lineTo(-self.gapWidth / 2, self.gapHeight / 2 + wallThick).close().extrude(wallThick - slotThick)
-        lid = lid.faces(">Z").workplane().moveTo(self.gapWidth / 2 + slotThick, self.gapHeight / 2 + wallThick - slotThick).lineTo(math.cos(angle2) * (self.bobR - wallThick + slotThick),
-                                                                                                                                   math.sin(angle2) * (self.bobR - wallThick + slotThick)). \
-            radiusArc((-math.cos(angle2) * (self.bobR - wallThick + slotThick), math.sin(angle2) * (self.bobR - wallThick + slotThick)), -(self.bobR - wallThick + slotThick)).lineTo(-self.gapWidth / 2 - slotThick,
-                                                                                                                                                                                      self.gapHeight / 2 + wallThick - slotThick).close().extrude(
-            wallThick - slotThick)
-        if not forCutting:
-            for pos in self.bobLidNutPositions:
-                lid =  lid.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.threadedRodM/2).cutThruAll()
+        angle = math.acos((self.gap_width / 2) / (self.bob_r - wall_thick))
+        angle2 = math.acos((self.gap_width / 2 + slot_thick) / (self.bob_r - wall_thick + slot_thick))
+        #I think I can get rid of the "inside" bit - it wasn't calculated right so doesn't fit well anyway
+        if for_cutting:
+            lid = cq.Workplane("XY").moveTo(self.gap_width / 2, self.gap_height / 2 + wall_thick).lineTo(self.gap_width / 2, math.sin(angle) * (self.bob_r - wall_thick)). \
+                radiusArc((-self.gap_width / 2, math.sin(angle) * (self.bob_r - wall_thick)), -(self.bob_r - wall_thick)).lineTo(-self.gap_width / 2, self.gap_height / 2 + wall_thick).close().extrude(wall_thick - slot_thick)
+            lid = lid.faces(">Z").workplane()
+        else:
+            lid = cq.Workplane("XY")
+        lid = lid.moveTo(self.gap_width / 2 + slot_thick, self.gap_height / 2 + wall_thick - slot_thick).lineTo(math.cos(angle2) * (self.bob_r - wall_thick + slot_thick),
+                                                                                                                                     math.sin(angle2) * (self.bob_r - wall_thick + slot_thick)). \
+            radiusArc((-math.cos(angle2) * (self.bob_r - wall_thick + slot_thick), math.sin(angle2) * (self.bob_r - wall_thick + slot_thick)), -(self.bob_r - wall_thick + slot_thick)).lineTo(-self.gap_width / 2 - slot_thick,
+                                                                                                                                                                                         self.gap_height / 2 + wall_thick - slot_thick).close().extrude(
+            wall_thick - slot_thick)
+        if not for_cutting:
+            for pos in self.bob_lid_nut_positions:
+                lid =  lid.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.threaded_rod_m / 2).cutThruAll()
 
         return lid
 
-    def getBobNut(self):
+    def get_bob_nut(self):
+        '''
+        note - replaceable now by HandTurnableNut
+        '''
         #TODO consider calculating how much time+- a single segment might be
         segments = 20
-        knobbleR = self.bobNutD/30
-        r=self.bobNutD/2 - knobbleR
+        knobbleR = self.bob_nut_d / 30
+        r= self.bob_nut_d / 2 - knobbleR
 
         knobbleAngle = knobbleR*2/r
         # nonSegmentAngle=math.pi*2/segments - segmentAngle
@@ -2107,14 +2117,14 @@ class Pendulum:
             nobbleEnd = polar(angle + dA, r)
             nut = nut.radiusArc(nobbleStart,-r)
             nut = nut.radiusArc(nobbleEnd, -knobbleR)
-        nut = nut.close().extrude(self.bobNutThick).faces(">Z").workplane().circle(self.threadedRodM/2+0.25).cutThruAll()
+        nut = nut.close().extrude(self.bob_nut_thick).faces(">Z").workplane().circle(self.threaded_rod_m / 2 + 0.25).cutThruAll()
 
         # currently assuming M3
         nutD=getNutContainingDiameter(3, 0.1)
         #and going to try a nyloc nut to see if that stops it untightening itself
         nutHeight=getNutHeight(3,nyloc=True)
 
-        nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0,0,self.bobNutThick-nutHeight))
+        nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0, 0, self.bob_nut_thick - nutHeight))
 
         nut = nut.cut(nutSpace)
         return nut
@@ -2122,23 +2132,23 @@ class Pendulum:
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pendulum_hand_avoider.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHandAvoider(), out)
+        exporters.export(self.get_hand_avoider(), out)
 
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getBob(), out)
+        exporters.export(self.get_bob(), out)
 
         out = os.path.join(path, "{}_bob_solid.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getBob(hollow=False), out)
+        exporters.export(self.get_bob(hollow=False), out)
 
         out = os.path.join(path, "{}_bob_nut.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getBobNut(), out)
+        exporters.export(self.get_bob_nut(), out)
 
         out = os.path.join(path, "{}_bob_lid.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getBobLid(), out)
+        exporters.export(self.get_bob_lid(), out)
 
 
 

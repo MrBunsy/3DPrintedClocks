@@ -74,7 +74,7 @@ train.print_info(weight_kg=3)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(bobD=80, bobThick=10)
+pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
 
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="clk 18", style=clock.ClockPlateStyle.VERTICAL, pendulum_at_front=False,

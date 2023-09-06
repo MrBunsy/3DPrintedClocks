@@ -171,7 +171,7 @@ Compact motion works may require two nylock screws to hold the arbor in the righ
 motionWorks = clock.MotionWorks(extra_height=10, compact=False)
 
 #a motion works that could be used with a centred second hand
-motion_works = MotionWorks(compact=True, bearing=getBearingInfo(3), extra_height=20)
+motion_works = MotionWorks(compact=True, bearing=get_bearing_info(3), extra_height=20)
 motion_works.calculateGears(arbourDistance=30)
 ```
 
@@ -184,7 +184,7 @@ This class can produce two types of bob: solid and hollow. The hollow bob is des
 ![Pendulum_bob](images/bob_preview.svg "Pendulum Bob")
 
 ```python
-pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=15)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=15)
 ```
 
 ## Dial
@@ -248,14 +248,14 @@ By default there is only one `bottom_pillars`, but it can be set to 2. See Clock
 `endshake` is how much extra space there is between the plates for the arbors to "shake". I recommend increasing above the default of 1mm for heavy clocks as the arbors can jam between the plates if the plates droop slightly.
 
 ```python
-pendulumSticksOut=10
-backPlateFromWall=30
+pendulumSticksOut = 10
+backPlateFromWall = 30
 
-#clock 20's clock plates
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=10, pendulumSticksOut=pendulumSticksOut, name="Wall 20",style=clock.ClockPlateStyle.COMPACT,
-                                 motionWorksAbove=True, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
-                                 backPlateFromWall=backPlateFromWall, fixingScrews=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chainThroughPillarRequired=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=45,
+# clock 20's clock plates
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", style=clock.ClockPlateStyle.COMPACT,
+                                 motion_works_above=True, heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+                                 back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
+                                 chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=45,
                                  allow_bottom_pillar_height_reduction=False, endshake=1.5)
 ```
 

@@ -75,7 +75,7 @@ train.print_info(weight_kg=0.5)
 
 motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=10)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)
 
 # dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC)
 dial = None

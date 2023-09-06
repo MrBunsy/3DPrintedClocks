@@ -478,7 +478,7 @@ if False:
     escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
     pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                               bobD=60, bobThick=10, useNylocForAnchor=False)
-    bow_tie = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
+    bow_tie = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gap_width, bob_nut_height=pendulum.gap_height)
 
     # show_object(bow.get_outline())
     # show_object(bow.get_red(),options={"color":"red"} )
@@ -487,7 +487,7 @@ if False:
     cosmetics={"red": bow_tie.get_red(),
                "yellow": bow_tie.get_yellow()}
 
-    pretty_bob = ItemWithCosmetics(shape = pendulum.getBob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics)
+    pretty_bob = ItemWithCosmetics(shape = pendulum.get_bob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics)
 
     show_object(pretty_bob.get_models())
 
@@ -733,7 +733,14 @@ if False:
 # # show_object(spring.get_model())
 # show_object(spring.get_arbor(for_printing=True))
 
-key = WindingKey(square_side_length=10,cylinder_length=50,key_hole_deep=20,handle_length=40, crank=False)
-#
-show_object(key.get_let_down_adapter())
+# key = WindingKey(square_side_length=10,cylinder_length=50,key_hole_deep=20,handle_length=40, crank=False)
+# #
+# show_object(key.get_let_down_adapter())
 # show_object(key.get_assembled())
+
+pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
+
+show_object(pendulum.get_bob(hollow=True))
+
+show_object(pendulum.get_bob_lid().translate((0,0,pendulum.bob_thick)))
+

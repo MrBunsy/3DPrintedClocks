@@ -76,7 +76,7 @@ motionWorks = clock.MotionWorks(extra_height=40)
 
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour
-pendulum = clock.Pendulum(handAvoiderInnerD=50, bobD=60, bobThick=10)
+pendulum = clock.Pendulum(hand_avoider_inner_d=50, bob_d=60, bob_thick=10)
 
 
 

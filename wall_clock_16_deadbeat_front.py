@@ -67,7 +67,7 @@ train.print_info(weight_kg=0.75)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(bobD=80, bobThick=10)
+pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
 
 
 

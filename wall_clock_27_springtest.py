@@ -83,7 +83,7 @@ motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compe
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=50, bobThick=8)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None

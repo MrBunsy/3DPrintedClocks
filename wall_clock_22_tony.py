@@ -95,7 +95,7 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 # motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=60, bobThick=10)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=10)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.TONY_THE_CLOCK, detail_thick=clock.LAYER_THICK*3)
 
@@ -117,12 +117,12 @@ hands = clock.Hands(style=clock.HandStyle.ARROWS,  minuteFixing="square",  minut
 
 
 
-bow_tie = clock.BowTie(width=dial.outside_d*clock.tony_the_clock["bow_tie_width"]/clock.tony_the_clock["diameter"], bob_nut_width=pendulum.gapWidth, bob_nut_height=pendulum.gapHeight)
+bow_tie = clock.BowTie(width=dial.outside_d*clock.tony_the_clock["bow_tie_width"]/clock.tony_the_clock["diameter"], bob_nut_width=pendulum.gap_width, bob_nut_height=pendulum.gap_height)
 cosmetics={"red": bow_tie.get_red(),
            "yellow": bow_tie.get_yellow()}
 
 #yellow is slightly translucent - a layer of solid white behind two layers of yellow works well.
-pretty_bob = clock.ItemWithCosmetics(shape = pendulum.getBob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics, colour_thick_overrides={"yellow":clock.LAYER_THICK*3})
+pretty_bob = clock.ItemWithCosmetics(shape = pendulum.get_bob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics, colour_thick_overrides={"yellow": clock.LAYER_THICK * 3})
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pretty_bob=pretty_bob, pendulum=pendulum)#,weights=[clock.Weight(height=245,diameter=55)])
 

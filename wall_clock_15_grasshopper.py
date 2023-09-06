@@ -70,7 +70,7 @@ train.print_info(weight_kg=1)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(bobD=80, bobThick=10)
+pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", style=clock.ClockPlateStyle.VERTICAL, pendulum_at_front=False,
                                  back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, direct_arbour_d=6)

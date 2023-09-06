@@ -66,7 +66,7 @@ train.gen_gears(module_size=1, moduleReduction=0.875, thick=3, chainWheelThick=6
 motionWorks = clock.MotionWorks(extra_height=10)
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(bobD=60, bobThick=10)
+pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate

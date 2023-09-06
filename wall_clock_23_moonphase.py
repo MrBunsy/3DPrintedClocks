@@ -84,7 +84,7 @@ moon_complication.set_motion_works_sizes(motionWorks)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(handAvoiderInnerD=100, bobD=80, bobThick=10)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)
 
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.LINES_ARC)
 
