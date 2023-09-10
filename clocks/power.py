@@ -879,6 +879,8 @@ class SpringBarrel:
         #comply with PoweredWheel interface
         self.loose_on_rod=True
 
+        #this has become assumed in the arbor for now
+        self.ratchet_at_back = True
 
         self.spring = spring
         if self.spring is None:
@@ -929,6 +931,14 @@ class SpringBarrel:
 
         self.arbor_d = self.key_bearing.inner_d
 
+        # https://en.wikipedia.org/wiki/Sagitta_(geometry)
+        r = self.arbor_d / 2
+        l = r
+        sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
+
+        # print on its side and flat against the base of the key
+        self.cutoff_height = sagitta
+
         self.arbor_d_spring = self.arbor_d + 1
         print("arbor d inside spring: {}mm".format(self.arbor_d_spring))
 
@@ -967,6 +977,9 @@ class SpringBarrel:
 
     def get_key_size(self):
         return self.key_containing_diameter
+
+    def get_key_sides(self):
+        return 6
 
     def is_clockwise(self):
         return self.clockwise
@@ -1027,7 +1040,7 @@ class SpringBarrel:
 
         behind_spring_length = self.internal_endshake / 2 + self.base_thick + extra_at_back
 
-        in_front_spring_length = self.internal_endshake / 2 + self.lid_thick + extra_in_front
+        in_front_spring_length = self.internal_endshake / 2 + self.lid_thick + self.front_bearing_standoff + extra_in_front
 
         arbor = cq.Workplane("XY").circle(self.arbor_d_spring / 2).extrude(self.barrel_height - self.internal_endshake)
 
@@ -1040,25 +1053,19 @@ class SpringBarrel:
         arbor = arbor.faces("<Z").workplane().polygon(6, self.arbor_d).extrude(ratchet_key_length)
         arbor = arbor.faces(">Z").workplane().polygon(6, self.arbor_d).extrude(key_length)
 
-        # https://en.wikipedia.org/wiki/Sagitta_(geometry)
-        r = self.arbor_d / 2
-        l = r
-        sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
 
-        #print on its side and flat against the base of the key
-        cutoff_height = sagitta
 
         #line up with the base of the hexagon key
         arbor = arbor.rotate((0,0,0), (0,0,1),360/12)
 
-        arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.arbor_d/2 - cutoff_height))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
+        arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.arbor_d/2 - self.cutoff_height))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
 
         arbor = arbor.cut(cq.Workplane("XY").rect(1000,1000).extrude(100).translate((0,0,-100)))
 
 
 
         #screwhole for spring hook
-        screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - cutoff_height - self.spring_hook_space)
+        screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
         screwhole = screwhole.translate(((self.barrel_height - self.internal_endshake)/2, 0, 0))
         arbor = arbor.cut(screwhole)
 
@@ -1066,8 +1073,10 @@ class SpringBarrel:
         # collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((-self.back_bearing.height - ratchet_key_length + self.ratchet.thick/2,0,0 ))
         # arbor = arbor.cut(collet_screwhole)
 
+
+
         if not for_printing:
-            arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.arbor_d/2, 0, -(extra_at_back)))
+            arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.arbor_d/2, 0, 0))
 
         return arbor
 
@@ -1106,12 +1115,12 @@ class SpringBarrel:
         '''
         gear = self.ratchet.get_gear()
         if self.ratchet_at_back:
-            outer_d = self.arbor_d_bearing+6
+            outer_d = self.arbor_d+6
             gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
             # means to hold screw that will hold this in place
-            gear = gear.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
-            gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.key_square_side_length / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
-        gear = gear.faces(">Z").workplane().rect(self.key_square_side_length+self.ratchet_wiggle_room, self.key_square_side_length + self.ratchet_wiggle_room).cutThruAll()
+            gear = gear.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 360/12).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
+            # gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.arbor_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
+        gear = gear.faces(">Z").workplane().polygon(6, self.arbor_d).cutThruAll()
 
         return gear
 
@@ -1491,9 +1500,12 @@ class RopeWheel:
         return minuteRatio*chainLength/self.circumference
 
 class WindingKey:
-    def __init__(self, square_side_length, cylinder_length, key_hole_deep, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75, wall_thick=2.5, handle_thick = 5):
+    def __init__(self, key_containing_diameter, cylinder_length, key_hole_deep, key_sides=4, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75, wall_thick=2.5, handle_thick = 5):
         #the square bit the key slots over - what size is it?
-        self.square_side_length = square_side_length
+        # self.square_side_length = square_side_length
+        self.key_containing_diameter = key_containing_diameter
+        #4 (square) or 6
+        self.key_sides = key_sides
         #how long is the cylinder that will slot over the key? key_hole_deep needs to be less than this
         #increase this to ensure the key will be able to wind without crashing into the hands
         self.cylinder_length = cylinder_length
@@ -1509,8 +1521,8 @@ class WindingKey:
         #how much wider to make the hole than the square rod
         self.wiggle_room = key_wiggle_room
 
-        self.body_wide = 2*self.square_side_length / math.sqrt(2) + self.wall_thick * 2
-
+        # self.body_wide = 2*self.square_side_length / math.sqrt(2) + self.wall_thick * 2
+        self.body_wide = self.key_containing_diameter + self.wall_thick*2
 
         #screw for fixing the knob to the crank arm if this is a crank key, not needed otherwise
         self.knob_fixing_screw = knob_fixing_screw
@@ -1575,7 +1587,7 @@ class WindingKey:
 
 
         #5mm shorter than the key as a bodge to stand off from the front plate
-        key_hole = cq.Workplane("XY").rect(self.square_side_length + self.wiggle_room, self.square_side_length + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, handle_tall + self.cylinder_length - self.key_hole_deep))
+        key_hole = cq.Workplane("XY").polygon(self.key_sides, self.key_containing_diameter + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, handle_tall + self.cylinder_length - self.key_hole_deep))
 
         key = key.cut(key_hole)
 
@@ -1603,7 +1615,7 @@ class WindingKey:
 
         adapter = cq.Workplane("XY").circle(self.body_wide / 2).extrude(self.key_hole_deep + 10)
 
-        adapter = adapter.cut(cq.Workplane("XY").rect(self.square_side_length + self.wiggle_room, self.square_side_length + self.wiggle_room).extrude(self.key_hole_deep))
+        adapter = adapter.cut(cq.Workplane("XY").polygon(self.key_sides, self.key_containing_diameter + self.wiggle_room).extrude(self.key_hole_deep))
 
         r = 11/(2*math.cos(degToRad(30)))
         adapter = adapter.faces(">Z").polygon(6,r*2).extrude(20)
@@ -1747,7 +1759,8 @@ class CordWheel:
         self.frontPlateThick=frontPlateThick
 
         self.key_square_side_length = self.key_bearing.inner_d * 0.5 * math.sqrt(2)# self.key_bearing.innerD - self.bearingWiggleRoom * 2
-
+        #TODO switch over to new WindingKey and containing diameter
+        self.key_containing_diameter = self.key_bearing.inner_d
         #default length, in mm
         self.cordLength=cordLength
 

@@ -2937,7 +2937,7 @@ class SimpleClockPlates:
         wallThick = self.bearing_wall_thick
         # diameter = bearingInfo.outer_d + wallThick*2
         outerR = bearingInfo.outer_d/2 + wallThick
-        innerInnerR = bearingInfo.outerSafeD/2
+        innerInnerR = bearingInfo.outer_safe_d/2
         innerR = bearingInfo.outer_d/2
         holder = cq.Workplane("XY").circle(outerR).extrude(height)
 
@@ -2992,14 +2992,14 @@ class SimpleClockPlates:
             raise ValueError("{} plate not thick enough to hold bearing: {}".format("Back" if back else "Front",bearingInfo.get_string()))
 
         if bearingOnTop:
-            punch = cq.Workplane("XY").circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.height)
+            punch = cq.Workplane("XY").circle(bearingInfo.outer_safe_d/2).extrude(height - bearingInfo.height)
             punch = punch.faces(">Z").workplane().circle(bearingInfo.outer_d/2).extrude(bearingInfo.height)
         else:
             if not back and self.front_plate_has_flat_front():
                 #no need for hole-in-hole!
-                punch = cq.Workplane("XY").circle(bearingInfo.outer_d/2).extrude(bearingInfo.height).faces(">Z").workplane().circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.height)
+                punch = cq.Workplane("XY").circle(bearingInfo.outer_d/2).extrude(bearingInfo.height).faces(">Z").workplane().circle(bearingInfo.outer_safe_d/2).extrude(height - bearingInfo.height)
             else:
-                punch = get_hole_with_hole(bearingInfo.outerSafeD, bearingInfo.outer_d, bearingInfo.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.outerSafeD / 2).extrude(height - bearingInfo.height)
+                punch = get_hole_with_hole(bearingInfo.outer_safe_d, bearingInfo.outer_d, bearingInfo.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.outer_safe_d / 2).extrude(height - bearingInfo.height)
 
         return punch
 
@@ -3360,8 +3360,8 @@ class SimpleClockPlates:
         crank = self.weight_driven
 
 
-        self.winding_key = WindingKey(square_side_length=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
-                                      handle_length=handle_length, crank=crank)
+        self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
+                                      handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides())
 
         if self.key_offset_from_front_plate < 0:
             self.key_hole_d = self.winding_key.body_wide+1.5
