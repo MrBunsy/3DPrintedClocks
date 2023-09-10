@@ -483,7 +483,7 @@ class Hands:
             # try:
             hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick - bearing_standoff_thick).translate((0,0,self.secondThick)))
             if bearing is not None:
-                hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.innerSafeD/2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
+                hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.inner_safe_d / 2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
             # except:
             #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d * 0.99).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
             return hand

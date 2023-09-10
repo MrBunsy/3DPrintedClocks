@@ -1607,7 +1607,7 @@ class SimpleClockPlates:
 
         bearingInfo = get_bearing_info(self.arbour_d)
         # width of thin bit
-        self.plate_width = bearingInfo.bearingOuterD + self.bearing_wall_thick * 2
+        self.plate_width = bearingInfo.outer_d + self.bearing_wall_thick * 2
         self.min_plate_width = self.plate_width
         if self.heavy or self.extra_heavy:
             self.plate_width *= 1.2
@@ -1647,7 +1647,7 @@ class SimpleClockPlates:
 
         self.top_pillar_r = self.plate_width / 2
 
-        anchorSpace = bearingInfo.bearingOuterD / 2 + self.gear_gap
+        anchorSpace = bearingInfo.outer_d / 2 + self.gear_gap
         if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
             anchorSpace = self.direct_arbour_d*2 + self.gear_gap
 
@@ -1662,7 +1662,7 @@ class SimpleClockPlates:
                     topY = y
         else:
 
-            topY = self.bearing_positions[-1][1] + max(self.arbors_for_plate[-1].get_max_radius(), bearingInfo.bearingOuterD / 2) + self.gear_gap
+            topY = self.bearing_positions[-1][1] + max(self.arbors_for_plate[-1].get_max_radius(), bearingInfo.outer_d / 2) + self.gear_gap
 
         if self.bottom_pillars > 1:
             #TODO optimal placement of pillars, for now let's just get them working
@@ -2115,7 +2115,7 @@ class SimpleClockPlates:
                 bearing_pos_y = bearing_pos[1]
                 bearing = get_bearing_info(self.going_train.get_arbour_with_conventional_naming(i).arbour_d)
                 screw = MachineScrew(3, countersunk=True)
-                if abs(bearing_pos_y - motion_works_arbour_y) < bearing.bearingOuterD/2 + screw.getHeadDiameter()/2:
+                if abs(bearing_pos_y - motion_works_arbour_y) < bearing.outer_d/2 + screw.getHeadDiameter()/2:
                     print("motion works holder would clash with bearing holder for arbour", i)
                     return True
 
@@ -2382,7 +2382,7 @@ class SimpleClockPlates:
             #along the bottom of the plate between the two pillars
 
             pillar_wide_half = self.bottom_pillar_width / 2 if self.narrow_bottom_pillar else self.bottom_pillar_r
-            bearing_wide_half = self.arbors_for_plate[0].bearing.outerD / 2
+            bearing_wide_half = self.arbors_for_plate[0].bearing.outer_d / 2
 
             for pillarPos in self.bottom_pillar_positions:
 
@@ -2403,8 +2403,8 @@ class SimpleClockPlates:
             chain_pos = self.bearing_positions[0][:2]
             first_arbour_pos = self.bearing_positions[1][:2]
 
-            chain_space = self.arbors_for_plate[0].bearing.outerD / 2
-            arbour_space = self.arbors_for_plate[1].bearing.outerD / 2
+            chain_space = self.arbors_for_plate[0].bearing.outer_d / 2
+            arbour_space = self.arbors_for_plate[1].bearing.outer_d / 2
 
             if self.heavy:
                 text_height = self.bottom_pillar_r * 2 * 0.3
@@ -2935,19 +2935,19 @@ class SimpleClockPlates:
         if bearingInfo is None:
             bearingInfo = get_bearing_info(self.arbour_d)
         wallThick = self.bearing_wall_thick
-        # diameter = bearingInfo.bearingOuterD + wallThick*2
-        outerR = bearingInfo.bearingOuterD/2 + wallThick
+        # diameter = bearingInfo.outer_d + wallThick*2
+        outerR = bearingInfo.outer_d/2 + wallThick
         innerInnerR = bearingInfo.outerSafeD/2
-        innerR = bearingInfo.bearingOuterD/2
+        innerR = bearingInfo.outer_d/2
         holder = cq.Workplane("XY").circle(outerR).extrude(height)
 
-        # holder = holder.faces(">Z").workplane().circle(diameter/2).circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
+        # holder = holder.faces(">Z").workplane().circle(diameter/2).circle(bearingInfo.outer_d/2).extrude(bearingInfo.height)
         # extra support?
         if addSupport:
             support = cq.Workplane("YZ").moveTo(0,0).lineTo(-height-outerR,0).lineTo(-outerR,height).lineTo(0,height).close().extrude(wallThick).translate((-wallThick/2,0,0))
             holder = holder.add(support)
         holder = holder.cut(cq.Workplane("XY").circle(innerInnerR).extrude(height))
-        holder = holder.cut(cq.Workplane("XY").circle(innerR).extrude(bearingInfo.bearingHeight).translate((0,0,height - bearingInfo.bearingHeight)))
+        holder = holder.cut(cq.Workplane("XY").circle(innerR).extrude(bearingInfo.height).translate((0,0,height - bearingInfo.height)))
 
         return holder
 
@@ -2959,15 +2959,15 @@ class SimpleClockPlates:
             raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
 
         if bearing_on_top:
-            punch = cq.Workplane("XY").circle(bearing.outerSafeD/2).extrude(plate_thick - bearing.height)
-            punch = punch.faces(">Z").workplane().circle(bearing.outerD/2).extrude(bearing.height)
+            punch = cq.Workplane("XY").circle(bearing.outer_safe_d / 2).extrude(plate_thick - bearing.height)
+            punch = punch.faces(">Z").workplane().circle(bearing.outer_d / 2).extrude(bearing.height)
         else:
             if with_support:
-                punch = get_hole_with_hole(bearing.outerSafeD, bearing.outerD, bearing.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearing.outerSafeD / 2).extrude(
+                punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
                     plate_thick - bearing.height)
             else:
                 #no need for hole-in-hole!
-                punch = cq.Workplane("XY").circle(bearing.outerD/2).extrude(bearing.height).faces(">Z").workplane().circle(bearing.outerSafeD/2).extrude(plate_thick - bearing.height)
+                punch = cq.Workplane("XY").circle(bearing.outer_d / 2).extrude(bearing.height).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(plate_thick - bearing.height)
 
         return punch
 
@@ -2992,14 +2992,14 @@ class SimpleClockPlates:
             raise ValueError("{} plate not thick enough to hold bearing: {}".format("Back" if back else "Front",bearingInfo.get_string()))
 
         if bearingOnTop:
-            punch = cq.Workplane("XY").circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.bearingHeight)
-            punch = punch.faces(">Z").workplane().circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight)
+            punch = cq.Workplane("XY").circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.height)
+            punch = punch.faces(">Z").workplane().circle(bearingInfo.outer_d/2).extrude(bearingInfo.height)
         else:
             if not back and self.front_plate_has_flat_front():
                 #no need for hole-in-hole!
-                punch = cq.Workplane("XY").circle(bearingInfo.bearingOuterD/2).extrude(bearingInfo.bearingHeight).faces(">Z").workplane().circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.bearingHeight)
+                punch = cq.Workplane("XY").circle(bearingInfo.outer_d/2).extrude(bearingInfo.height).faces(">Z").workplane().circle(bearingInfo.outerSafeD/2).extrude(height - bearingInfo.height)
             else:
-                punch = get_hole_with_hole(bearingInfo.outerSafeD, bearingInfo.bearingOuterD, bearingInfo.bearingHeight, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.outerSafeD / 2).extrude(height - bearingInfo.bearingHeight)
+                punch = get_hole_with_hole(bearingInfo.outerSafeD, bearingInfo.outer_d, bearingInfo.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.outerSafeD / 2).extrude(height - bearingInfo.height)
 
         return punch
 
@@ -3024,7 +3024,7 @@ class SimpleClockPlates:
                     needs_plain_hole = True
 
 
-            outer_d =  bearingInfo.bearingOuterD
+            outer_d =  bearingInfo.outer_d
             if needs_plain_hole:
                 outer_d = self.direct_arbour_d + 3
 
@@ -3188,9 +3188,9 @@ class SimpleClockPlates:
 
             if self.front_plate_has_flat_front():
                 #can print front-side on the build plate, so the bearing holes are printed on top
-                cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outerD / 2).extrude(powered_wheel.key_bearing.height)
+                cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outer_d / 2).extrude(powered_wheel.key_bearing.height)
             else:
-                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outerD, powered_wheel.key_bearing.height, layerThick=LAYER_THICK_EXTRATHICK)
+                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layerThick=LAYER_THICK_EXTRATHICK)
 
             cord_bearing_hole = cord_bearing_hole.faces(">Z").workplane().circle(self.key_hole_d / 2).extrude(plate_thick)
 
@@ -3318,12 +3318,12 @@ class SimpleClockPlates:
         key_bearing = powered_wheel.key_bearing
 
 
-        self.key_hole_d = key_bearing.outerSafeD
+        self.key_hole_d = key_bearing.outer_safe_d
 
         key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
 
         # self.key_hole_d = self.going_train.powered_wheel.keyWidth + 1.5
-        if self.bottom_of_hour_hand_z() < 25 and (self.weight_driven or self.going_train.powered_wheel.ratchet_at_back):# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.bearingOuterD - 1:
+        if self.bottom_of_hour_hand_z() < 25 and (self.weight_driven or self.going_train.powered_wheel.ratchet_at_back):# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.outer_d - 1:
             # only if the key would otherwise be a bit too short (for dials very close to the front plate) make the hole just big enough to fit the key into
             #can't do this for spring driven as the ratchet is on the front (could move it to the back but it would make letting down the spring harder)
             print("Making the front hole just big enough for the cord key")
@@ -3539,7 +3539,7 @@ class MantelClockPlates(SimpleClockPlates):
             bearing_relative_to_dial = npToSet(np.subtract(self.bearing_positions[-1][:2], self.hands_position))
             tall = 5
             self.dial.subtract_from_supports = cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
-                .circle(self.arbors_for_plate[-1].bearing.outerSafeD/2).extrude(tall).translate((0,0,self.dial.thick + self.dial.support_length - tall))
+                .circle(self.arbors_for_plate[-1].bearing.outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall))
 
     def calc_pillar_info(self):
         '''
@@ -3551,7 +3551,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         bearingInfo = get_bearing_info(self.arbour_d)
         # TODO review this from old logic width of thin bit
-        self.plate_width = bearingInfo.bearingOuterD + self.bearing_wall_thick * 2
+        self.plate_width = bearingInfo.outer_d + self.bearing_wall_thick * 2
         self.min_plate_width = self.plate_width
         if self.heavy or self.extra_heavy:
             self.plate_width *= 1.2
@@ -3610,7 +3610,7 @@ class MantelClockPlates(SimpleClockPlates):
         plate = cq.Workplane("XY")
 
         main_arm_wide = self.plate_width
-        medium_arm_wide = get_bearing_info(3).outerD+self.bearing_wall_thick*2
+        medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
         small_arm_wide = 8
 
         pillar_positions = self.top_pillar_positions + self.bottom_pillar_positions
@@ -3647,9 +3647,9 @@ class MantelClockPlates(SimpleClockPlates):
         for i, pos in enumerate(self.bearing_positions):
             bearing_info = self.arbors_for_plate[i].bearing
 
-            plate = plate.union(cq.Workplane("XY").circle(bearing_info.outerD/2+self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
+            plate = plate.union(cq.Workplane("XY").circle(bearing_info.outer_d / 2 + self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
 
-        plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outerD/2 + self.bearing_wall_thick*1.5).extrude(plate_thick))
+        plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outer_d / 2 + self.bearing_wall_thick * 1.5).extrude(plate_thick))
 
 
 
@@ -3963,7 +3963,7 @@ class Assembly:
             arbour_for_plate = self.plates.arbors_for_plate[i]
             arbour = arbour_for_plate.arbor
             bearing = arbour_for_plate.bearing
-            bearing_thick = bearing.bearingHeight
+            bearing_thick = bearing.height
 
             length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
 
@@ -3981,7 +3981,7 @@ class Assembly:
                 powered_wheel = arbour.powered_wheel
                 if powered_wheel.type == PowerType.CORD:
                     if powered_wheel.useKey:
-                        square_bit_out_front = powered_wheel.keySquareBitHeight - (front_plate_thick - powered_wheel.key_bearing.bearingHeight) - self.plates.endshake / 2
+                        square_bit_out_front = powered_wheel.keySquareBitHeight - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
                 elif powered_wheel.type == PowerType.SPRING_BARREL:
                     rod_length=-1
@@ -4046,7 +4046,7 @@ class Assembly:
             rod_zs.append(rod_z)
             beyond_back_of_arbours.append(beyond_back_of_arbour)
             if rod_length > 0:
-                print("Arbour {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.innerD, round(rod_length), beyond_back_of_arbour))
+                print("Arbour {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, round(rod_length), beyond_back_of_arbour))
 
 
 

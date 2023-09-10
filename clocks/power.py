@@ -512,9 +512,9 @@ class BearingPulley:
             #see if we can adjust our total thickness to be the same as the bearing
             totalThick = self.getTotalThick()
             bearingWiggleHeight=0.4
-            if totalThick < bearing.bearingHeight + self.bearingHolderThick*2 +bearingWiggleHeight:
+            if totalThick < bearing.height + self.bearingHolderThick*2 +bearingWiggleHeight:
                 #too narrow
-                extraThickNeeded = (bearing.bearingHeight + self.bearingHolderThick*2 + bearingWiggleHeight) - totalThick
+                extraThickNeeded = (bearing.height + self.bearingHolderThick*2 + bearingWiggleHeight) - totalThick
                 self.edgeThick+=extraThickNeeded/4
                 self.taperThick+=extraThickNeeded/4
             else :
@@ -570,7 +570,7 @@ class BearingPulley:
 
         holeD = self.rodHoleD
         if self.bearing is not None:
-            holeD = self.bearing.bearingOuterD
+            holeD = self.bearing.outer_d
 
         # TODO cut out rod hole and screwholes if needed
         # if self.rodMetricSize > 0:
@@ -586,7 +586,7 @@ class BearingPulley:
         if self.bearing is not None:
             print("self.bearingHolderThick",self.bearingHolderThick)
             hole = hole.translate((0,0,self.bearingHolderThick))
-            hole = hole.add(cq.Workplane("XY").circle(self.bearing.outerSafeD/2).extrude(1000))
+            hole = hole.add(cq.Workplane("XY").circle(self.bearing.outer_safe_d / 2).extrude(1000))
 
         pulley = pulley.cut(hole)
 
@@ -633,7 +633,7 @@ class BearingPulley:
 
         #leave two sticky out bits on the hook that will press right up to the inside of the bearing
         pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.getTotalThick()-self.bearingHolderThick)\
-             .faces("<Z").workplane().circle(holeR).circle(self.bearing.innerSafeD/2).extrude(self.hookSideGap+self.bearingHolderThick)
+             .faces("<Z").workplane().circle(holeR).circle(self.bearing.inner_safe_d / 2).extrude(self.hookSideGap + self.bearingHolderThick)
 
         #            .faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD).extrude(self.hookSideGap)\
 
@@ -644,14 +644,14 @@ class BearingPulley:
         hook = hook.cut(pulleyHole)
 
         # cut out hole for m4 rod for the pulley axle
-        rodHole = cq.Workplane("XY").circle(self.bearing.innerD / 2).extrude(1000).translate((axleHeight, self.hookWide/2, 0))
+        rodHole = cq.Workplane("XY").circle(self.bearing.inner_d / 2).extrude(1000).translate((axleHeight, self.hookWide / 2, 0))
 
         hook = hook.cut(rodHole)
 
 
         #hole at the bottom for a screw to hold the pulley together and take the cuckoo hook to hold a weight
 
-        screwhole = cq.Workplane("XY").circle(self.bearing.innerD / 2).extrude(1000).translate((0,self.hookWide/2, 0))
+        screwhole = cq.Workplane("XY").circle(self.bearing.inner_d / 2).extrude(1000).translate((0, self.hookWide / 2, 0))
 
         hook = hook.cut(screwhole)
 
@@ -700,7 +700,10 @@ class MainSpring:
     '''
     Class to represent the dimensions of a mainspring
     '''
-    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50):
+
+
+
+    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50, arbor_d=9):
         self.height=height
         if hook_height < 0:
             hook_height = height / 3
@@ -708,7 +711,9 @@ class MainSpring:
         self.thick=thick
         self.loop_end=loop_end
         self.barrel_diameter = barrel_diameter
-
+        self.arbor_d = arbor_d
+# 18 40 45
+SMITHS_EIGHT_DAY_MAINSPRING = MainSpring(height=18, thick=0.4, barrel_diameter=45, arbor_d=9)
 
 class SpringArbour:
     '''
@@ -759,7 +764,7 @@ class SpringArbour:
         self.keySquareBitHeight = 20
 
         #radius for that bit that slots inside the bearing
-        self.bearingBitR = self.bearing.innerD / 2 - self.bearingWiggleRoom
+        self.bearingBitR = self.bearing.inner_d / 2 - self.bearingWiggleRoom
 
         self.bearingStandoffThick=0.6
 
@@ -767,7 +772,7 @@ class SpringArbour:
 
         if self.diameter < self.bearingBitR*2:
             #need to taper up to the bearing, as it's bigger!
-            r = self.bearing.innerSafeD/2  - self.diameter/2
+            r = self.bearing.inner_safe_d / 2 - self.diameter / 2
             angle=degToRad(30)
             self.beforeBearingTaperHeight = r * math.sqrt(1/math.sin(angle) - 1)
 
@@ -812,12 +817,12 @@ class SpringArbour:
         arbour = arbour.add(spring_hook)
 
         if self.beforeBearingTaperHeight > 0:
-            arbour = arbour.add(cq.Solid.makeCone(radius1=self.diameter/2, radius2=self.bearing.innerSafeD/2, height = self.beforeBearingTaperHeight).translate((0,0,self.spring_bit_height + self.ratchet_thick)))
-            arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.innerSafeD/2).extrude(self.bearingStandoffThick)
+            arbour = arbour.add(cq.Solid.makeCone(radius1=self.diameter/2, radius2=self.bearing.inner_safe_d / 2, height = self.beforeBearingTaperHeight).translate((0, 0, self.spring_bit_height + self.ratchet_thick)))
+            arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.inner_safe_d / 2).extrude(self.bearingStandoffThick)
 
-        arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.innerD/2 - self.bearingWiggleRoom).extrude(self.bearing.bearingHeight)
+        arbour = arbour.faces(">Z").workplane().moveTo(0, 0).circle(self.bearing.inner_d / 2 - self.bearingWiggleRoom).extrude(self.bearing.height)
         # using polygon rather than rect so it calcualtes the size to fit in teh circle
-        arbour = arbour.faces(">Z").workplane().polygon(4, self.bearing.innerD - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
+        arbour = arbour.faces(">Z").workplane().polygon(4, self.bearing.inner_d - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
 
         arbour = arbour.faces(">Z").workplane().circle(self.metric_rod_size/2).cutThruAll()
 
@@ -825,13 +830,13 @@ class SpringArbour:
 
         return arbour
 
-class LoopEndSpringArbour:
-
-    def __init__(self, spring=None):
-        if spring is None:
-            #default, which is a smiths alarm clock loop end
-            spring = MainSpring()
-        self.spring = spring
+# class LoopEndSpringArbour:
+#
+#     def __init__(self, spring=None):
+#         if spring is None:
+#             #default, which is a smiths alarm clock loop end
+#             spring = MainSpring()
+#         self.spring = spring
 
 class SpringBarrel:
     '''
@@ -861,67 +866,86 @@ class SpringBarrel:
      Can round the edges of the key like on the anchor arbor to get as chunky a key as possible through a smaller diameter
      Since the barrel seems strong enough - try cutting a gear style?
 
+     more ideas:
+     12mm bearings on lid barrel and plates, and use collets to keep distances
+     maybe a hexagonal key instead of square? Could be stronger for the same diameter than the rounded square?
+
     '''
 
-    def __init__(self, spring = None, key_bearing=None, rod_d=4, clockwise = True, ratchet_at_back=True, pawl_angle=math.pi/2, click_angle=-math.pi/2):
+    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2, base_thick=5):
         self.type = PowerType.SPRING_BARREL
 
+        #ratchet_at_back=True, ratchet is now assumed to be at the back
         #comply with PoweredWheel interface
         self.loose_on_rod=True
 
 
         self.spring = spring
         if self.spring is None:
-            self.spring = MainSpring(height=18, thick=0.4, barrel_diameter=45)
+            self.spring = SMITHS_EIGHT_DAY_MAINSPRING
 
         self.clockwise=clockwise
 
+        #called key_bearing in Cordwheel, so stick with that, even though we'll use one bearing for everything now (except a flanged bearing in the lid?)
         self.key_bearing = key_bearing
 
         if self.key_bearing is None:
-            self.key_bearing = get_bearing_info(15)
+            self.key_bearing = THIN_12MM_BEARING
+
+        self.lid_bearing = lid_bearing
+
+        if self.lid_bearing is None:
+            self.lid_bearing = FLANGED_12MM_BEARING
 
         self.rod_d = rod_d
         self.arbour_d = rod_d
 
         #ratchet is out the back plate, rather than on the front plate?
-        self.ratchet_at_back = ratchet_at_back
+        # self.ratchet_at_back = ratchet_at_back
 
-        self.back_bearing = get_bearing_info(self.rod_d)
+        # self.back_bearing = get_bearing_info(self.rod_d)
 
-        if self.ratchet_at_back:
-            self.back_bearing = self.key_bearing
+        # if self.ratchet_at_back:
+        #     self.back_bearing = self.key_bearing
 
         #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
-        self.barrel_diameter=self.spring.barrel_diameter + self.key_bearing.outerD-6
-        self.barrel_height = self.spring.height + 2
-        self.arbor_inner_diameter=10
+        # self.barrel_diameter=self.spring.barrel_diameter + self.key_bearing.outerD-6
+        #flange from lid will sit inside the barrel, flange in teh base of the barrel will be flush with teh base of the barrel
+        self.barrel_height = self.spring.height + 2 + self.lid_bearing.flange_thick
 
-        self.wall_thick = 10
-        self.base_thick = 6
-        self.lid_thick=3
+        #10 from first experiment seemd like more than needed
+        self.wall_thick = 8
+        #6 seemed enough, can probably get away with less
+        self.base_thick = base_thick
+        self.lid_thick= self.lid_bearing.height - self.lid_bearing.flange_thick
 
         self.internal_endshake=0.5
 
         # copied from CordWheel (where it's added to radius)
         self.bearing_wiggle_room = 0.05*2
 
-        self.lid_hole_d = self.key_bearing.innerSafeD + LOOSE_FIT_ON_ROD
+        #assuming a flanged bearing in the lid
+        self.lid_hole_d = self.lid_bearing.outer_d
 
-        self.arbor_d_lid = self.key_bearing.innerSafeD
+        self.arbor_d = self.key_bearing.inner_d
 
-        self.arbor_d_bearing = self.key_bearing.innerD - self.bearing_wiggle_room
-
-        self.arbor_d_barrel_base = self.arbor_d_lid
-        self.barrel_hole_d = self.arbor_d_barrel_base + LOOSE_FIT_ON_ROD
-
-        self.arbor_d_spring = self.arbor_d_barrel_base + 2.5
+        self.arbor_d_spring = self.arbor_d + 1
         print("arbor d inside spring: {}mm".format(self.arbor_d_spring))
 
         self.back_bearing_standoff = 0.5
         self.front_bearing_standoff = 0.5
 
-        self.key_square_side_length = self.arbor_d_bearing*0.5*math.sqrt(2)
+        #trying a hex key instead of square
+        self.key_containing_diameter = self.arbor_d
+
+        # self.key_square_side_length = self.arbor_d_bearing*0.5*math.sqrt(2)
+        # if self.arbor_d_bearing < 14:
+        #     #make the key larger than would fit through the bearing, but we'll round the edges off later
+        #     self.key_square_side_length = self.arbor_d_bearing*0.6 * math.sqrt(2)
+        # self.key_max_r =
+
+        #slightly less of a bodge, if our arbor is bigger than the spring was intended for, make our barrel slightly bigger too
+        self.barrel_diameter = self.spring.barrel_diameter + (self.arbor_d_spring - self.spring.arbor_d)
 
         self.ratchet_wiggle_room = 0.5
 
@@ -931,18 +955,18 @@ class SpringBarrel:
         self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
 
         self.spring_hook_space=2
-        ratchet_d = self.arbor_d_bearing*2.5
+        ratchet_d = self.arbor_d*2.5
 
-        ratchet_blocks_clockwise = not self.clockwise
-        if self.ratchet_at_back:
-            ratchet_blocks_clockwise = self.clockwise
+        # ratchet_blocks_clockwise = not self.clockwise
+        # if self.ratchet_at_back:
+        ratchet_blocks_clockwise = self.clockwise
 
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
-        self.ratchet_collet_thick = self.lid_fixing_screws.metric_thread*2.5
+        self.ratchet_collet_thick = self.lid_fixing_screws.getNutContainingDiameter() + 2
 
     def get_key_size(self):
-        return self.key_square_side_length
+        return self.key_containing_diameter
 
     def is_clockwise(self):
         return self.clockwise
@@ -962,16 +986,18 @@ class SpringBarrel:
         return cutter
 
     def get_barrel_hole_d(self):
-        return self.barrel_hole_d
+        return self.key_bearing.outer_d
 
     def get_barrel(self):
-        barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_hole_d/2).extrude(self.base_thick)
+        barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
+
+        barrel = barrel.cut(self.key_bearing.get_cutter().rotate((0,0,0),(1,0,0),180).translate((0,0,self.base_thick)))
 
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
         #self.spring_hook_screws.getHeadHeight()
         #trying countersunk screw instead of pan head
-        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((self.barrel_diameter / 2 - self.spring_hook_space, 0, self.base_thick + self.barrel_height / 2)))
+        barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True,length=self.barrel_diameter).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
 
         return barrel
 
@@ -980,54 +1006,68 @@ class SpringBarrel:
 
     def get_lid(self, for_printing = True):
         lid = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.lid_hole_d/2).extrude(self.lid_thick)
-
+        # lid = lid.cut(self.lid_bearing.get_cutter())
+        # lid = lid.cut()
         lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
         if for_printing:
             lid = lid.rotate((0,0,0),(1,0,0),180).translate((0,0,self.lid_thick))
         return lid
 
-    def get_arbor(self, extra_after_barrel=0, extra_after_lid=0, key_length=30, for_printing=True, ratchet_key_extra_length=0):
+    def get_arbor(self, extra_at_back=0, extra_in_front=0, key_length=30, for_printing=True, ratchet_key_extra_length=0):
         #standoff from rear bearing
 
-        if extra_after_barrel > self.back_bearing_standoff:
-            extra_after_barrel -= self.back_bearing_standoff
+        '''
+        this needs to know almost everything about the plates - distance, endshake (to work out where to put the collets), thickness
+        is it better off generating it in the ArborForPlate class?
 
-        arbor = cq.Workplane("XY").circle(self.back_bearing.innerSafeD/2).extrude(self.back_bearing_standoff)
-        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_barrel_base/2).extrude(extra_after_barrel + self.base_thick + self.internal_endshake/2)
-        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_spring/2).extrude(self.barrel_height - self.internal_endshake)
-        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_lid/2).extrude(self.internal_endshake/2 + self.lid_thick + self.front_bearing_standoff + extra_after_lid)
-        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.key_bearing.height)
-        arbor = arbor.faces(">Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(key_length)
+        further thought - the collets could be made in the ArborForPlate class, leaving this a tiny bit at arm's reach?
+
+        currently thinking it doesn't need bearings through the plates, it only rotates in the plates when winding.
+        '''
+
+        behind_spring_length = self.internal_endshake / 2 + self.base_thick + extra_at_back
+
+        in_front_spring_length = self.internal_endshake / 2 + self.lid_thick + extra_in_front
+
+        arbor = cq.Workplane("XY").circle(self.arbor_d_spring / 2).extrude(self.barrel_height - self.internal_endshake)
+
+        arbor = arbor.faces(">Z").workplane().circle(self.arbor_d/2).extrude(in_front_spring_length)
+
+        arbor = arbor.faces("<Z").workplane().circle(self.arbor_d/2).extrude(behind_spring_length)
 
         ratchet_key_length = ratchet_key_extra_length + self.ratchet_collet_thick + self.ratchet.thick
 
-        if self.ratchet_at_back:
-            arbor = arbor.faces("<Z").workplane().circle(self.arbor_d_bearing/2).extrude(self.back_bearing.height)
-            arbor = arbor.faces("<Z").workplane().rect(self.key_square_side_length, self.key_square_side_length).extrude(ratchet_key_length)
-            #cut hole for the collect screw
-            # arbor = arbor.cut(cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.key_square_side_length/2).rotate((0,0,0)))
-        else:
-            #hole for rod out the back
-            arbor = arbor.cut(cq.Workplane("XY").circle(self.rod_d/2).extrude(self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.barrel_height/2 - self.spring_hook_screws.metric_thread*2))
+        arbor = arbor.faces("<Z").workplane().polygon(6, self.arbor_d).extrude(ratchet_key_length)
+        arbor = arbor.faces(">Z").workplane().polygon(6, self.arbor_d).extrude(key_length)
 
-        arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.key_square_side_length/2))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
+        # https://en.wikipedia.org/wiki/Sagitta_(geometry)
+        r = self.arbor_d / 2
+        l = r
+        sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
+
+        #print on its side and flat against the base of the key
+        cutoff_height = sagitta
+
+        #line up with the base of the hexagon key
+        arbor = arbor.rotate((0,0,0), (0,0,1),360/12)
+
+        arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.arbor_d/2 - cutoff_height))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
 
         arbor = arbor.cut(cq.Workplane("XY").rect(1000,1000).extrude(100).translate((0,0,-100)))
 
-        cutoff_height = self.arbor_d_spring/2 - self.key_square_side_length/2
+
 
         #screwhole for spring hook
         screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - cutoff_height - self.spring_hook_space)
-        screwhole = screwhole.translate((self.back_bearing_standoff + extra_after_barrel + self.base_thick + self.internal_endshake/2 + self.barrel_height/2,0,0))
+        screwhole = screwhole.translate(((self.barrel_height - self.internal_endshake)/2, 0, 0))
         arbor = arbor.cut(screwhole)
 
-        if self.ratchet_at_back:
-            #screwhole for ratchet collet
-            collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.key_square_side_length/2).translate((-self.back_bearing.height - ratchet_key_length + self.ratchet.thick/2,0,0 ))
-            arbor = arbor.cut(collet_screwhole)
+        #screwhole for ratchet collet TODO
+        # collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((-self.back_bearing.height - ratchet_key_length + self.ratchet.thick/2,0,0 ))
+        # arbor = arbor.cut(collet_screwhole)
 
         if not for_printing:
-            arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.key_square_side_length/2, 0, -self.back_bearing_standoff - (extra_after_barrel)))
+            arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.arbor_d/2, 0, -(extra_at_back)))
 
         return arbor
 
@@ -1393,7 +1433,7 @@ class RopeWheel:
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.wheel_thick))
 
-        bearing_inner_safe_d = get_bearing_info(self.arbour_d).innerSafeD
+        bearing_inner_safe_d = get_bearing_info(self.arbour_d).inner_safe_d
 
         if self.bearing_standoff_thick > 0 and bearing_inner_safe_d > self.hole_d:
             wheel = wheel.add(cq.Workplane("XY").circle(bearing_inner_safe_d/2).circle(self.hole_d/2).extrude(self.bearing_standoff_thick).translate((0,0,self.wheel_thick)))
@@ -1690,7 +1730,7 @@ class CordWheel:
         '''
         measurements for the 15mm inner diameter bearing, needs the extra outer d so it's not too tight a fit - since it's plastic I don't want it squashed in like the metal ones
         since I fear that might increase friction
-        bearingInnerD=15, bearingHeight=5, bearingLip=2.5, bearingOuterD=24.2,
+        bearingInnerD=15, height=5, bearingLip=2.5, outer_d=24.2,
         '''
 
         if bearing is None:
@@ -1706,7 +1746,7 @@ class CordWheel:
         self.gearThick = gearThick
         self.frontPlateThick=frontPlateThick
 
-        self.key_square_side_length = self.key_bearing.innerD*0.5*math.sqrt(2)# self.key_bearing.innerD - self.bearingWiggleRoom * 2
+        self.key_square_side_length = self.key_bearing.inner_d * 0.5 * math.sqrt(2)# self.key_bearing.innerD - self.bearingWiggleRoom * 2
 
         #default length, in mm
         self.cordLength=cordLength
@@ -1740,7 +1780,7 @@ class CordWheel:
         if self.useKey:
             self.keyWallThick = 2.5
             # enough to cut out the key itself
-            self.keyWidth = self.keyWallThick * 2 + self.key_bearing.innerD
+            self.keyWidth = self.keyWallThick * 2 + self.key_bearing.inner_d
             #this is the length of the handle of the key if it's knob-type (needs to be short enough that it won't bump into the motion works, or else windingKeyHeightFromPlate needs to be
             #long enough that we're above the motion works)
             self.defaultWindingKeyHandleLength = 30,
@@ -1850,12 +1890,12 @@ class CordWheel:
             #space for the cap
 
             # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
-            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.innerD / 2 - self.bearingWiggleRoom).extrude(self.key_bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)
+            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.inner_d / 2 - self.bearingWiggleRoom).extrude(self.key_bearing.height + self.beforeBearingExtraHeight + self.topCapThick)
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
             #key = cq.Workplane("XY").polygon(4, self.key_bearing.innerD - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
             key = cq.Workplane("XY").rect(self.key_square_side_length, self.key_square_side_length).extrude(self.keySquareBitHeight)
             #.rotate((0,0,0),(0,0,1),45)
-            segment = segment.union(key.translate((0, 0, self.capThick + self.thick + self.key_bearing.bearingHeight + self.beforeBearingExtraHeight + self.topCapThick)))
+            segment = segment.union(key.translate((0, 0, self.capThick + self.thick + self.key_bearing.height + self.beforeBearingExtraHeight + self.topCapThick)))
 
 
 
@@ -1927,10 +1967,10 @@ class CordWheel:
 
         holeR = self.holeD / 2
         if self.useKey and top:
-            holeR = self.key_bearing.innerD / 2 + self.bearingWiggleRoom
-            print("cord wheel cap holeR: {} innerSafe raduis:{}".format(holeR, self.key_bearing.innerSafeD / 2))
+            holeR = self.key_bearing.inner_d / 2 + self.bearingWiggleRoom
+            print("cord wheel cap holeR: {} innerSafe raduis:{}".format(holeR, self.key_bearing.inner_safe_d / 2))
             #add small ring to keep this further away from the bearing
-            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.key_bearing.innerSafeD / 2).extrude(self.beforeBearingExtraHeight)
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.key_bearing.inner_safe_d / 2).extrude(self.beforeBearingExtraHeight)
             #add space for countersunk screw heads
             countersink = self.getScrewCountersinkCutter(capThick + extraThick)
             cap = cap.cut(countersink)
@@ -2024,7 +2064,7 @@ class CordWheel:
             key_hole_deep = cylinder_length
 
         #5mm shorter than the key as a bodge to stand off from the front plate
-        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.key_bearing.innerD - self.bearingWiggleRoom * 2 + self.keyWiggleRoom).extrude(key_hole_deep).translate((0, 0, self.windingKeyHandleThick + cylinder_length - key_hole_deep))
+        keyHole = cq.Workplane("XY").moveTo(self.keyWidth/2,0).polygon(4, self.key_bearing.inner_d - self.bearingWiggleRoom * 2 + self.keyWiggleRoom).extrude(key_hole_deep).translate((0, 0, self.windingKeyHandleThick + cylinder_length - key_hole_deep))
 
         key = key.cut(keyHole)
 
@@ -2040,7 +2080,7 @@ class CordWheel:
         return self.key_square_side_length
 
     def getWindingKnob(self):
-        r = self.key_bearing.innerD / 2
+        r = self.key_bearing.inner_d / 2
 
         screwLength = 30 - self.windingKeyHandleThick
 

@@ -1372,7 +1372,7 @@ class ArbourForPlate:
         self.pendulum_fixing_extra_space = 0.2
         self.direct_arbour_d = direct_arbour_d
         #for the collet
-        self.outer_d = (self.bearing.innerSafeD + self.bearing.bearingOuterD) / 2
+        self.outer_d = (self.bearing.inner_safe_d + self.bearing.outer_d) / 2
 
         self.cylinder_r = self.direct_arbour_d / 2
         self.square_side_length = math.sqrt(2) * self.cylinder_r
@@ -1420,7 +1420,7 @@ class ArbourForPlate:
 
 
         collet = cq.Workplane("XY").circle(outer_d/2).rect(square_size, square_size).extrude(height)
-        collet = collet.faces(">Z").workplane().circle(self.bearing.innerSafeD/2).rect(square_size, square_size).extrude(self.collet_thick - height)
+        collet = collet.faces(">Z").workplane().circle(self.bearing.inner_safe_d / 2).rect(square_size, square_size).extrude(self.collet_thick - height)
 
         collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.collet_thick / 2)))
         collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.collet_thick / 2)))
@@ -1615,7 +1615,7 @@ class ArbourForPlate:
                 #square bit
                 anchor = anchor.union(cq.Workplane("XY").rect(self.square_side_length, self.square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(self.cylinder_r).extrude(square_rod_length)).translate((0,0, anchor_thick + cylinder_length)))
                 #bearing standoff
-                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.innerSafeD/2).circle(self.arbor.arbour_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
+                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).circle(self.arbor.arbour_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
                 #cut hole through the middle
                 anchor = anchor.cut(cq.Workplane("XY").circle(self.arbor.arbour_d / 2 + ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
 
@@ -1758,7 +1758,9 @@ class ArbourForPlate:
             #TODO support chain at front?
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
             shapes["wheel"] = wheel
-            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back, key_length = self.key_length, ratchet_key_extra_length=self.ratchet_key_length)
+            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back + self.endshake/2 + self.back_plate_thick,
+                                           front_side_extension=self.endshake/2 + self.front_plate_thick, key_length = self.key_length,
+                                           ratchet_key_extra_length=self.ratchet_key_length)
             for extraName in extras:
                 shapes[extraName] = extras[extraName]
 
@@ -1851,7 +1853,7 @@ class ArbourForPlate:
 
         outer_r = self.arbor.get_rod_d()
         inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
-        tip_r = bearing.innerSafeD/2
+        tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
             tip_r = outer_r
 
@@ -2185,7 +2187,7 @@ class Arbour:
 
         return pinion
 
-    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, ratchet_key_extra_length=0):
+    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, front_plate_thick=0):
         '''
         are there any extra bits taht need printing for this arbour?
         returns {'name': shape,}
@@ -2196,7 +2198,8 @@ class Arbour:
             extras['ratchet']= self.get_extra_ratchet()
 
         if self.get_type() == ArbourType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
-            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_after_barrel=rear_side_extension, extra_after_lid=front_side_extension, key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length)
+            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_at_back=rear_side_extension, extra_in_front=front_side_extension,
+                                                                key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length)
             extras['lid'] = self.powered_wheel.get_lid()
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_for_arbor()
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
@@ -2283,7 +2286,7 @@ class Arbour:
                     extension_r = boltR - self.ratchet_screws.getNutContainingDiameter() / 2
 
             bearing_standoff_height = LAYER_THICK * 2
-            bearing_standoff_r = get_bearing_info(self.arbour_d).innerSafeD / 2
+            bearing_standoff_r = get_bearing_info(self.arbour_d).inner_safe_d / 2
             if bearing_standoff_r > extension_r:
                 bearing_standoff_r = extension_r
 
@@ -2419,10 +2422,10 @@ class MotionWorks:
         self.minuteHandHolderD = self.minuteHandHolderSize*math.sqrt(2)+0.5
 
         if self.bearing is not None:
-            self.minuteHandHolderD = self.bearing.outerD + 4
-            self.inset_at_base_r = self.bearing.outerD/2
-            self.holeD = self.bearing.outerSafeD
-            self.minuteHandHolderSize = self.bearing.outerD + 3
+            self.minuteHandHolderD = self.bearing.outer_d + 4
+            self.inset_at_base_r = self.bearing.outer_d / 2
+            self.holeD = self.bearing.outer_safe_d
+            self.minuteHandHolderSize = self.bearing.outer_d + 3
             # if there is a bearing then there's a rod through the centre for the second hand and the minute hand is friction fit like the hour hand
             self.minuteHandHolderIsSquare = False
         #assume bearing == centred second hand.
@@ -2482,7 +2485,7 @@ class MotionWorks:
     def calc_bearing_holder_thick(self):
 
         if self.bearing is not None:
-            if self.bearing.outerD > self.pairs[0].pinion.getMinRadius()*2 - 1:
+            if self.bearing.outer_d > self.pairs[0].pinion.getMinRadius()*2 - 1:
                 #this bearing won't fit inside the cannon pinion
                 self.bearingHolderThick = self.bearing.height
                 if self.compact:
@@ -2545,7 +2548,7 @@ class MotionWorks:
                                 min_cannon_pinion_r = 0
 
                                 if self.bearing is not None:
-                                    min_cannon_pinion_r = self.bearing.outerD/2
+                                    min_cannon_pinion_r = self.bearing.outer_d / 2
                                 if self.inset_at_base > 0:
                                     min_cannon_pinion_r = self.inset_at_base_r
 
@@ -2753,10 +2756,10 @@ class MotionWorks:
 
         if self.bearing is not None:
             #slot for bearing on top
-            pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outerD / 2).extrude(self.bearing.height).translate((0, 0, self.get_cannon_pinion_total_height() - self.bearing.height)))
+            pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outer_d / 2).extrude(self.bearing.height).translate((0, 0, self.get_cannon_pinion_total_height() - self.bearing.height)))
 
 
-            pinion = pinion.cut(get_hole_with_hole(innerD=self.holeD, outerD=self.bearing.outerD, deep=self.bearing.height + self.inset_at_base))
+            pinion = pinion.cut(get_hole_with_hole(innerD=self.holeD, outerD=self.bearing.outer_d, deep=self.bearing.height + self.inset_at_base))
 
         elif self.inset_at_base > 0:
             # cut out space for the nuts/bearing to go further into the cannon pinion, so it can be closer to the front plate

@@ -921,36 +921,48 @@ class BearingInfo:
     '''
     Like MachineScrew this is designed to be in place of passing around loads of info, just one object that represents different sizes of bearings
 
-    TODO - add and use safeouterD (where we can come into contact with the outside of the bearing without grating on the inner bit which will rotate)
+    TODO - remove holder lip and use entirely safe outer and safe inner diameters
     '''
-    def __init__(self, outer_d=10, bearingHolderLip=-1, bearingHeight=4, innerD=3, innerSafeD=4.25, innerDWiggleRoom=0.05, outerSafeD = -1, innerSafeDAtAPush=-1):
-        self.bearingOuterD = outer_d
-        self.outerD = outer_d
-        # how much space we need to support the bearing (and how much space to leave for the arbour + screw0)
-        #so a circle of radius outerD/2 - bearingHolderLip will safely rest on the outside sectino of the pulley
-        #deprecated, use outerSafeD, this was how many mm in from the outer radius the bearing holder can be without fouling the moving part of the bearing
-        self.bearingHeight = bearingHeight
-        self.height = bearingHeight
-        self.innerD=innerD
+    def __init__(self, outer_d=10,  height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d = -1, inner_safe_d_at_a_push=-1,
+                 flange_thick=0, flange_diameter=0):
+        self.outer_d = outer_d
+        self.height = height
+        self.inner_d=inner_d
         #how large can something that comes into contact with the bearing (from the rod) be
-        self.innerSafeD = innerSafeD
+        self.inner_safe_d = inner_safe_d
         #for times when I really need to push the limits rather than play it safe
-        self.innerSafeDAtAPush = innerSafeDAtAPush
-        if self.innerSafeDAtAPush < 0:
-            self.innerSafeDAtAPush = self.innerSafeD
+        self.inner_safe_d_at_a_push = inner_safe_d_at_a_push
+        if self.inner_safe_d_at_a_push < 0:
+            self.inner_safe_d_at_a_push = self.inner_safe_d
         #something that can touch the outside of the bearing can also touch the front/back of the bearing up to this diameter without fouling on anything that moves when it rotates
-        if outerSafeD < 0 and bearingHolderLip > 0 :
-            self.outerSafeD = self.bearingOuterD - bearingHolderLip*2
-        else:
-            self.outerSafeD = outerSafeD
+        self.outer_safe_d = outer_safe_d
         #subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
-        self.innerDWiggleRoom = innerDWiggleRoom
+        self.inner_d_wiggle_room = inner_d_wiggle_room
+
+        self.flange_thick = flange_thick
+        self.flange_diameter = flange_diameter
+
+    def get_cutter(self):
+        '''
+        flange side down
+        '''
+        if self.flange_diameter > 0:
+            return cq.Workplane("XY").circle(self.flange_diameter/2).extrude(self.flange_thick).faces(">Z").workplane().circle(self.outer_d/2).extrude(self.height - self.flange_thick)
+
+        return cq.Workplane("XY").circle(self.outer_d/2).extrude(self.height)
 
     def get_string(self):
-        return "{inner}x{outer}x{thick}".format(inner = self.innerD, outer = self.outerD, thick=self.height)
+        flange_string=""
+        if self.flange_diameter > 0:
+            flange_string = " (flange {}x{})".format(self.flange_diameter, self.flange_thick)
+        return "{inner}x{outer}x{thick}{flange_string}".format(inner = self.inner_d, outer = self.outer_d, thick=self.height, flange_string=flange_string)
 
     def __str__(self):
         return self.get_string()
+
+#safe dimensions are guesses for now
+FLANGED_12MM_BEARING = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=18-2, inner_safe_d=12+2)
+THIN_12MM_BEARING = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=18-2, inner_safe_d=12+2)
 
 def get_bearing_info(innerD):
     '''
@@ -959,29 +971,29 @@ def get_bearing_info(innerD):
     if innerD == 3:
         #3x10x4
         #most arbors
-        return BearingInfo(outer_d=10.1, bearingHolderLip=1.5, bearingHeight=4, innerD=3, innerSafeD=4.25, innerSafeDAtAPush=5.2)
+        return BearingInfo(outer_d=10.1, outer_safe_d = 10 - 3, height=4, inner_d=3, inner_safe_d=4.25, inner_safe_d_at_a_push=5.2)
     if innerD == 4:
         #4x13x5
         #used for power arbor on eight day clocks
         #was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
-        return BearingInfo(outer_d=13.1, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=5.4)
+        return BearingInfo(outer_d=13.1, outer_safe_d=13-4, height=5, inner_d=innerD, inner_safe_d=5.4)
     if innerD == 6:
         #these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
-        return BearingInfo(outer_d=19.2, outerSafeD=12, bearingHeight=6, innerD=6, innerSafeD=8)
+        return BearingInfo(outer_d=19.2, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8)
     if innerD == 12:
         #TODO 12x21x5 (haven't seen in person yet)
-        return BearingInfo(outer_d=21.2, bearingHeight=5, innerD=12, outerSafeD=20, innerSafeD=14)
+        return BearingInfo(outer_d=21.2, height=5, inner_d=12, outer_safe_d=20, inner_safe_d=14)
     if innerD == 10:
         #not used much since direct-arbor with small bearings (this had too much friction)
         #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
-        return BearingInfo(outer_d=19.2, bearingHolderLip=2, bearingHeight=5, innerD=innerD, innerSafeD=12.5)
+        return BearingInfo(outer_d=19.2, outer_safe_d=19.4, height=5, inner_d=innerD, inner_safe_d=12.5)
     if innerD == 15:
         #15x24x5
         #(used for the winding key)
         #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         #printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
         # with 24.15 light grey again latest print fell out again, wondering if tolerences are better since the new nozzle?
-        return BearingInfo(outer_d=24.1, bearingHolderLip=2.5, bearingHeight=5, innerD=innerD, innerSafeD=17.5)
+        return BearingInfo(outer_d=24.1, outer_safe_d=24-5, height=5, inner_d=innerD, inner_safe_d=17.5)
     return None
 
 
@@ -1103,3 +1115,5 @@ class TextSpace:
         height_ratio = self.height / bb.ylen
 
         return self.text_size * min(width_ratio, height_ratio)
+
+

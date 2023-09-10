@@ -39,7 +39,7 @@ Often I want to fit a new mechanism to an old clock, or something didn't work an
 #
 #     fake_plate = cq.Workplane("XY").rect(100,100).extrude(plate_thick)
 #
-#     slightly_smaller_big_bearing = BearingInfo(bearingOuterD=big_bearing.bearingOuterD-0.2, bearingHolderLip=big_bearing.bearingHolderLip, bearingHeight=big_bearing.bearingHeight,
+#     slightly_smaller_big_bearing = BearingInfo(outer_d=big_bearing.outer_d-0.2, bearingHolderLip=big_bearing.bearingHolderLip, height=big_bearing.height,
 #                                                innerD=big_bearing.innerD, innerSafeD=big_bearing.innerSafeD)
 #
 #     punch = plates.getBearingPunch(bearingOnTop=False, bearingInfo=slightly_smaller_big_bearing, back=back)
