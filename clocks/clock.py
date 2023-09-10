@@ -825,7 +825,7 @@ class GoingTrain:
 
         # print(module_sizes)
         #make the escape wheel as large as possible, by default
-        if stack_away_from_powered_wheel and self.escape_wheel_pinion_at_front == self.chain_at_back:
+        if (stack_away_from_powered_wheel or self.wheels == 3) and self.escape_wheel_pinion_at_front == self.chain_at_back:
             #avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
             escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - holeD - 2) * 2
         else:
@@ -1347,7 +1347,7 @@ class SimpleClockPlates:
         #I should really re-think this.
         self.screws_from_back = screws_from_back
         if self.screws_from_back is None:
-            self.screws_from_back = [[False], [False]]
+            self.screws_from_back = [[False, False], [False, False]]
         #plates try to put screws that hold the pillars together in the rear standoff, but can override to put them in the back plate (if there isn't a wall standoff)
         self.embed_nuts_in_plate = embed_nuts_in_plate
 
@@ -1662,7 +1662,7 @@ class SimpleClockPlates:
                     topY = y
         else:
 
-            topY = self.bearing_positions[-1][1] + max(self.arbors_for_plate[-1].get_max_radius(), bearingInfo.outer_d / 2) + self.gear_gap
+            topY = self.bearing_positions[-1][1] + max(self.arbors_for_plate[-1].get_max_radius(above=True), bearingInfo.outer_d / 2) + self.gear_gap
 
         if self.bottom_pillars > 1:
             #TODO optimal placement of pillars, for now let's just get them working

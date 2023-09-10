@@ -1582,7 +1582,7 @@ class WindingKey:
 
 
         #key bit
-        key = key.union(cq.Workplane("XY").circle(self.body_wide / 2).extrude(self.cylinder_length).translate((0,0,handle_tall)))
+        key = key.union(cq.Workplane("XY").circle(self.body_wide / 2+0.0001).extrude(self.cylinder_length).translate((0,0,handle_tall)))
 
 
 
@@ -1760,7 +1760,7 @@ class CordWheel:
 
         self.key_square_side_length = self.key_bearing.inner_d * 0.5 * math.sqrt(2)# self.key_bearing.innerD - self.bearingWiggleRoom * 2
         #TODO switch over to new WindingKey and containing diameter
-        self.key_containing_diameter = self.key_bearing.inner_d
+        self.key_containing_diameter = self.key_bearing.inner_d - self.bearingWiggleRoom
         #default length, in mm
         self.cordLength=cordLength
 
@@ -2090,7 +2090,11 @@ class CordWheel:
         return key
 
     def get_key_size(self):
-        return self.key_square_side_length
+        # return self.key_square_side_length
+        return self.key_containing_diameter
+
+    def get_key_sides(self):
+        return 4
 
     def getWindingKnob(self):
         r = self.key_bearing.inner_d / 2
