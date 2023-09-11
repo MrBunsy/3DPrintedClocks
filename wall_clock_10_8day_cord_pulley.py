@@ -64,7 +64,7 @@ train.set_chain_wheel_ratio([93, 10])
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #1mm cord retrofit, planning to print just a ring to retrofit the retrofit
-train.gen_cord_wheels(ratchetThick=3.5, rodMetricThread=4, cordThick=1, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=39)
+train.gen_cord_wheels(ratchet_thick=3.5, rod_metric_thread=4, cord_thick=1, cord_coil_thick=8, style=gearStyle, use_key=True, prefered_diameter=39)
 
 #2mm cord retrofit, note this has a very wide range of power so doesn't work reliably towards the end of the week with 3.5kg
 #train.genCordWheels(ratchetThick=3.5, rodMetricThread=4, cordThick=2, cordCoilThick=8, style=gearStyle, useKey=True, preferedDiameter=32)

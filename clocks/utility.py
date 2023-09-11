@@ -137,14 +137,21 @@ def getScrewHeadHeight(metric_thread, countersunk=False):
     if metric_thread == 2:
         #TODO countersunk (1.2?)
         return 1.7
+    if metric_thread == 4:
+        if countersunk:
+            return 2.1
 
-    return metric_thread
+    return metric_thread*0.85
 
 def getScrewHeadDiameter(metric_thread, countersunk=False):
     if metric_thread == 3:
+        if countersunk:
+            return 5.6
         return 6
     if metric_thread == 2:
         return 3.9
+    if metric_thread == 4:
+        return 7.2
     return METRIC_HEAD_D_MULT * metric_thread
 
 SCREW_LENGTH_EXTRA = 2
@@ -268,7 +275,7 @@ class MachineScrew:
     def __str__(self):
         return self.getString()
     def getHeadHeight(self,):
-        return getScrewHeadHeight(self.metric_thread)
+        return getScrewHeadHeight(self.metric_thread, countersunk=self.countersunk)
 
     def getTotalLength(self):
         '''

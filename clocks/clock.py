@@ -657,12 +657,12 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_cord_wheels(self, ratchetThick=7.5, rodMetricThread=3, cordCoilThick=10, useKey=False, cordThick=2, style="HAC", preferedDiameter=-1, loose_on_rod=True, prefer_small=False,
-                        ratchet_diameter=-1):
+    def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style="HAC", prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
+                        ratchet_diameter=-1, traditional_ratchet=False):
         '''
         If preferred diameter is provided, use that rather than the min diameter
         '''
-        diameter = preferedDiameter
+        diameter = prefered_diameter
         if diameter < 0:
             diameter = CordWheel.getMinDiameter()
 
@@ -670,9 +670,9 @@ class GoingTrain:
             raise ValueError("Cannot use cord wheel with huygens maintaining power")
 
         self.calculate_powered_wheel_info(diameter)
-        self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchetThick, power_clockwise=self.powered_wheel_clockwise,
-                                       rodMetricSize=rodMetricThread, thick=cordCoilThick, useKey=useKey, cordThick=cordThick, style=style, loose_on_rod=loose_on_rod,
-                                       cap_diameter=ratchet_diameter)
+        self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchet_thick, power_clockwise=self.powered_wheel_clockwise,
+                                       rod_metric_size=rod_metric_thread, thick=cord_coil_thick, use_key=use_key, cord_thick=cord_thick, style=style, loose_on_rod=loose_on_rod,
+                                       cap_diameter=ratchet_diameter, traditional_ratchet=traditional_ratchet)
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_rope_wheels(self, ratchetThick = 3, arbour_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):
@@ -1540,7 +1540,7 @@ class SimpleClockPlates:
                 self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d)
 
         # if this has a key (do after we've calculated the dial z)
-        if (self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.useKey) or not self.weight_driven:
+        if (self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key) or not self.weight_driven:
             self.calc_winding_key_info()
 
 
@@ -2648,14 +2648,14 @@ class SimpleClockPlates:
         bottom_total_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
         top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
 
-        if not self.screws_from_back[0] and self.back_plate_from_wall > 0:
+        if not self.screws_from_back[0][0] and self.back_plate_from_wall > 0:
             #space to embed the nut in the standoff
             top_screw_length = top_total_length - (top_total_length%10)
         else:
             #nut will stick out the front or back
             top_screw_length = top_total_length + self.fixing_screws.getNutHeight() - (top_total_length + self.fixing_screws.getNutHeight()) % 10
 
-        if not self.screws_from_back[1] and self.back_plate_from_wall > 0:
+        if not self.screws_from_back[1][0] and self.back_plate_from_wall > 0:
             #space to embed the nut in the standoff
             bottom_screw_length = bottom_total_length - (bottom_total_length % 10)
         else:
@@ -2682,16 +2682,18 @@ class SimpleClockPlates:
             #extra nut height just in case
             top_nut_hole_height = (top_total_length%10) + self.fixing_screws.getNutHeight()
             bottom_nut_hole_height = (bottom_total_length%10) + self.fixing_screws.getNutHeight()
-        elif self.embed_nuts_in_plate:
-            # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
-            print("you may have to cut the fixing screws to length in the case of no back standoff")
-            if self.screws_from_back[0]:
-                top_nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.getNutHeight()
-            if self.screws_from_back[1]:
-                bottom_nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.getNutHeight()
+        # elif self.embed_nuts_in_plate:
+        #     # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
+        #     print("you may have to cut the fixing screws to length in the case of no back standoff")
+        #     if self.screws_from_back[0][0]:
+        #         top_nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.getNutHeight()
+        #     if self.screws_from_back[1][0]:
+        #         bottom_nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.getNutHeight()
 
 
         for pillar in [0, 1]:
+
+
 
             if pillar == 0:
                 plate_fixings = self.plate_top_fixings
@@ -2702,6 +2704,12 @@ class SimpleClockPlates:
 
             for i,fixingPos in enumerate(plate_fixings):
                 screws_from_back = self.screws_from_back[pillar][i]
+
+                if self.embed_nuts_in_plate:
+                    # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
+                    print("you may have to cut the fixing screws to length in the case of no back standoff")
+                    if screws_from_back:
+                        nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.getNutHeight()
 
                 z = self.front_z
                 if self.embed_nuts_in_plate or (self.back_plate_from_wall > 0 and not screws_from_back):
@@ -3311,7 +3319,7 @@ class SimpleClockPlates:
         hacky side effect: will set key length on cord wheel
         '''
 
-        if (self.weight_driven and not (self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.useKey)):
+        if (self.weight_driven and not (self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key)):
             raise ValueError("No winding key on this clock!")
 
         powered_wheel = self.going_train.powered_wheel
@@ -3336,7 +3344,7 @@ class SimpleClockPlates:
         #note - do this relative to the hour hand, not the dial, because there may be more space for the hour hand to avoid the second hand
         #TODO remove this for cord wheel
         key_length = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
-        self.going_train.powered_wheel.keySquareBitHeight = key_length
+        self.going_train.powered_wheel.key_square_bit_height = key_length
         #the slightly less hacky way... (although now I think about it, is it actually? we're still reaching into an object to set something)
         self.arbors_for_plate[0].key_length = key_length
 
@@ -3366,19 +3374,19 @@ class SimpleClockPlates:
         if self.key_offset_from_front_plate < 0:
             self.key_hole_d = self.winding_key.body_wide+1.5
 
-        print("winding key length {:.1f}mm".format(self.going_train.powered_wheel.keySquareBitHeight))
+        print("winding key length {:.1f}mm".format(self.going_train.powered_wheel.key_square_bit_height))
 
     def get_winding_key(self):
         return self.winding_key
         #TODO new WindingKey class to tidy this up
         key_body = None
 
-        if self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.useKey:
+        if self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key:
             #height of square bit above front plate, minus one so we're not scrapign the front plate
             square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - self.going_train.powered_wheel.key_bearing.height
 
             #key can only reach the front of the front plate if not front_plate_has_key_hole
-            key_hole_deep = self.going_train.powered_wheel.keySquareBitHeight - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
+            key_hole_deep = self.going_train.powered_wheel.key_square_bit_height - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
             if self.dial is not None and self.centred_second_hand:
                 # just so it doesn't clip the dial (the key is outside the dial)
                 cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
@@ -3871,7 +3879,7 @@ class Assembly:
             if self.plates.style != ClockPlateStyle.ROUND:
                 # centre around the hands by default
                 self.ring_pos[1] = self.plates.bearing_positions[self.goingTrain.powered_wheels][1]
-                if self.goingTrain.powered_wheel.type == PowerType.CORD and self.goingTrain.powered_wheel.useKey:
+                if self.goingTrain.powered_wheel.type == PowerType.CORD and self.goingTrain.powered_wheel.use_key:
                     # centre between the hands and the winding key
                     self.ring_pos[1] = (self.plates.bearing_positions[self.goingTrain.powered_wheels][1] + self.plates.bearing_positions[0][1]) / 2
 
@@ -3980,8 +3988,8 @@ class Assembly:
             if arbour.type == ArbourType.POWERED_WHEEL:
                 powered_wheel = arbour.powered_wheel
                 if powered_wheel.type == PowerType.CORD:
-                    if powered_wheel.useKey:
-                        square_bit_out_front = powered_wheel.keySquareBitHeight - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
+                    if powered_wheel.use_key:
+                        square_bit_out_front = powered_wheel.key_square_bit_height - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
                 elif powered_wheel.type == PowerType.SPRING_BARREL:
                     rod_length=-1
@@ -4174,7 +4182,7 @@ class Assembly:
 
                 #centre around the hands by default
                 ringY = self.plates.bearing_positions[self.goingTrain.powered_wheels][1]
-                if self.goingTrain.powered_wheel.type == PowerType.CORD and self.goingTrain.powered_wheel.useKey:
+                if self.goingTrain.powered_wheel.type == PowerType.CORD and self.goingTrain.powered_wheel.use_key:
                     #centre between the hands and the winding key
                     ringY = (self.plates.bearing_positions[self.goingTrain.powered_wheels][1] + self.plates.bearing_positions[0][1]) / 2
 
@@ -4488,7 +4496,7 @@ def getGearDemo(module=1, justStyle=None, oneGear=False):
     train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
     # train.setChainWheelRatio([93, 10])
 
-    train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=None, useKey=True, preferedDiameter=25)
+    train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1.5, cord_coil_thick=14, style=None, use_key=True, prefered_diameter=25)
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 

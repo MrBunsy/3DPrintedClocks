@@ -52,7 +52,7 @@ train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement=esca
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1)
 
-train.gen_cord_wheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
+train.gen_cord_wheels(ratchet_thick=5, cord_thick=2, cord_coil_thick=11)
 
 train.print_info()
 

@@ -52,7 +52,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
     train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
     # train.setChainWheelRatio([93, 10])
 
-    train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=None, useKey=True, preferedDiameter=25)
+    train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1.5, cord_coil_thick=14, style=None, use_key=True, prefered_diameter=25)
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 
@@ -349,7 +349,7 @@ class AutoWallClock:
         self.moduleReduction = 0.85
         self.train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=self.moduleReduction)
 
-        self.train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=14, style=self.gear_style, useKey=True, preferedDiameter=25, loose_on_rod=False, prefer_small=True)
+        self.train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=self.gear_style, use_key=True, prefered_diameter=25, loose_on_rod=False, prefer_small=True)
 
 
 

@@ -44,7 +44,7 @@ pendulum length: 0.13977573912159377m period: 0.75s
 escapement time: 30.0s teeth: 40
 '''
 
-train.gen_cord_wheels(ratchetThick=5, cordThick=2, cordCoilThick=11)
+train.gen_cord_wheels(ratchet_thick=5, cord_thick=2, cord_coil_thick=11)
 
 train.print_info()
 

@@ -66,7 +66,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.gen_cord_wheels(ratchetThick=5, cordThick=2, cordCoilThick=17, style=gearStyle, useKey=True, rodMetricThread=4)
+train.gen_cord_wheels(ratchet_thick=5, cord_thick=2, cord_coil_thick=17, style=gearStyle, use_key=True, rod_metric_thread=4)
 
 train.calculate_powered_wheel_ratios()
 

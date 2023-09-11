@@ -714,10 +714,11 @@ if False:
 # show_object(pair.get_model(offset_angle_deg=-0.3))
 
 
-# ratchet = TraditionalRatchet(50, blocks_clockwise=True, click_fixing_angle=-math.pi/4)
-#
-# # show_object(ratchet.get_gear())
-# # show_object(ratchet.get_pawl())
+ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
+
+show_object(ratchet.get_gear())
+show_object(ratchet.get_pawl())
+show_object(ratchet.get_click())
 #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
@@ -727,12 +728,12 @@ if False:
 # print("Outputting ", out)
 # exporters.export(test_screwhole, out)
 # show_object(test_screwhole)
-spring = SpringBarrel(key_bearing=FLANGED_12MM_BEARING)
-# #
-# show_object(spring.get_barrel())
-# show_object(spring.get_lid())
-# show_object(spring.get_model())
-show_object(spring.get_arbor(for_printing=True))
+# spring = SpringBarrel(key_bearing=FLANGED_12MM_BEARING)
+# # #
+# # show_object(spring.get_barrel())
+# # show_object(spring.get_lid())
+# # show_object(spring.get_model())
+# show_object(spring.get_arbor(for_printing=True))
 
 # key = WindingKey(square_side_length=10,cylinder_length=50,key_hole_deep=20,handle_length=40, crank=False)
 # #

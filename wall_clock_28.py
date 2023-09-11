@@ -21,6 +21,10 @@ from clocks import clock
 
 '''
 Clock 12 but with some tweaks
+
+TODO ensure key is right length and isn't recessed into front plate - I think current logic assumes it's inside the dial
+also optimise placement of pawl on the ratchet so I can increase the diameter of the ratchet gear wheel and keep lots of the gear style cut
+
 '''
 outputSTL = False
 
@@ -52,13 +56,14 @@ moduleReduction=0.85
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
-train.gen_cord_wheels(ratchetThick=6, rodMetricThread=4, cordThick=1, cordCoilThick=15, style=gearStyle, useKey=True, preferedDiameter=25, loose_on_rod=False, prefer_small=True)#, ratchet_diameter=29 + 27.5)
+train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=25,
+                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
 train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
+train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=5, pinionThickMultiplier=3, style=gearStyle,
                 chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.print_info(weight_kg=2)
 
@@ -67,7 +72,7 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=11, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
+motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
 

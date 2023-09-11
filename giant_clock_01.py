@@ -32,7 +32,7 @@ moduleReduction=1
 train.calculate_ratios(max_wheel_teeth=100000, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True)
 # train.setChainWheelRatio([93, 10])
 
-train.gen_cord_wheels(ratchetThick=4, rodMetricThread=4, cordThick=1.5, cordCoilThick=14, style=gearStyle, useKey=True, preferedDiameter=25)
+train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1.5, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=25)
 #override default until it calculates an ideally sized wheel
 train.calculate_powered_wheel_ratios(wheel_max=100)
 #3.5 should be enough, but plan is to bump it up to 4 if it isn't
