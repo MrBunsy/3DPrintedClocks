@@ -96,11 +96,11 @@ train.print_info(weight_kg=4.25)
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, chain_module_increase=1, chainWheelPinionThickMultiplier=2)#,ratchetInset=True)#, chainModuleIncrease=1.1)
+train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=gearStyle, powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2)#,ratchetInset=True)#, chainModuleIncrease=1.1)
 
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
-motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2, compensateLooseArbour=True)
+motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2, compensate_loose_arbour=True)
 
 
 #trying a thicker anchor and glue rather than nyloc
@@ -114,7 +114,7 @@ dial = clock.Dial(120)
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, back_plate_thick=15, pendulum_sticks_out=pendulumSticksOut, name="Wall 10", style=clock.ClockPlateStyle.VERTICAL, motion_works_above=True, heavy=True, extra_heavy=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.SWORD, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=110, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
+hands = clock.Hands(style=clock.HandStyle.SWORD, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=110, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, secondLength=25)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # pulley = clock.Pulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4))

@@ -2208,7 +2208,7 @@ class Arbour:
             extras['ratchet']= self.get_extra_ratchet()
 
 
-        if self.get_type() == ArbourType.POWERED_WHEEL and self.powered_wheel.traditional_ratchet:
+        if self.get_type() == ArbourType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
             traditional_ratchet = True
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
 
@@ -2354,8 +2354,8 @@ class MotionWorks:
     #enough for two half height nuts, a washer and a slightly compressed spring washer to be contained in the base of the cannon pinion
     STANDARD_INSET_DEPTH = 4.5
 
-    def __init__(self, arbourD=3, thick=3, pinionThick=-1, module=1, minuteHandThick=3, extra_height=0,
-                 style=GearStyle.ARCS, compensateLooseArbour=True, snail=None, strikeTrigger=None, strikeHourAngleDeg=45, compact=False, bearing=None, inset_at_base=-1,
+    def __init__(self, arbour_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
+                 style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=-1,
                  moon_complication=None):
         '''
 
@@ -2386,14 +2386,15 @@ class MotionWorks:
 
          moon_complication - the hour wheel will drive the moon phase complication and needs a pinion at the base of the holder
 
+
         '''
-        self.arbourD = arbourD
-        self.holeD=arbourD + 0.4
+        self.arbour_d = arbour_d
+        self.hole_d= arbour_d + 0.4
         #thickness of gears
         self.thick = thick
-        self.pinionThick = pinionThick
-        if self.pinionThick < 0:
-            self.pinionThick = self.thick*2
+        self.pinion_thick = pinion_thick
+        if self.pinion_thick < 0:
+            self.pinion_thick = self.thick * 2
         self.style=style
         self.compact = compact
 
@@ -2401,24 +2402,24 @@ class MotionWorks:
 
         self.moon_complication = moon_complication
 
-        self.strikeTrigger=strikeTrigger
+        self.strike_trigger=strike_trigger
         #angle the hour strike should be at
-        self.strikeHourAngleDeg=strikeHourAngleDeg
+        self.strike_hour_angle_deg=strike_hour_angle_deg
         self.snail=snail
 
-        self.pinionCapThick = thick/2
+        self.pinion_cap_thick = thick / 2
         if self.compact:
-            self.pinionCapThick = 0
+            self.pinion_cap_thick = 0
 
         self.module = module
-        self.compensateLooseArbour = compensateLooseArbour
+        self.compensate_loose_arbour = compensate_loose_arbour
 
         self.bearing = bearing
 
-        self.inset_at_base_r = (get_washer_diameter(self.arbourD) + 1)/2
+        self.inset_at_base_r = (get_washer_diameter(self.arbour_d) + 1) / 2
 
-        self.cannonPinionPinionThick = self.pinionThick
-        self.calculateGears()
+        self.cannon_pinion_pinion_thick = self.pinion_thick
+        self.calculate_size()
 
 
 
@@ -2433,52 +2434,52 @@ class MotionWorks:
         #minuteHandHolderSize=5,
         #length of the edge of the square that holds the minute hand
         #(if minuteHandHolderIsSquare is false, then it's round and this is a diameter)
-        self.minuteHandHolderSize=self.arbourD + 2
+        self.minute_hand_holder_size= self.arbour_d + 2
 
         #if no bearing this has no second hand in the centre, so is a "normal" motion works
 
-        self.minuteHandHolderIsSquare = True
+        self.minute_hand_holder_is_square = True
 
 
-        self.minuteHandHolderD = self.minuteHandHolderSize*math.sqrt(2)+0.5
+        self.minute_hand_holder_d = self.minute_hand_holder_size * math.sqrt(2) + 0.5
 
         if self.bearing is not None:
-            self.minuteHandHolderD = self.bearing.outer_d + 4
+            self.minute_hand_holder_d = self.bearing.outer_d + 4
             self.inset_at_base_r = self.bearing.outer_d / 2
-            self.holeD = self.bearing.outer_safe_d
-            self.minuteHandHolderSize = self.bearing.outer_d + 3
+            self.hole_d = self.bearing.outer_safe_d
+            self.minute_hand_holder_size = self.bearing.outer_d + 3
             # if there is a bearing then there's a rod through the centre for the second hand and the minute hand is friction fit like the hour hand
-            self.minuteHandHolderIsSquare = False
+            self.minute_hand_holder_is_square = False
         #assume bearing == centred second hand.
         self.centred_second_hand = self.bearing is not None
 
         # print("minute hand holder D: {}".format(self.minuteHandHolderD))
 
-        self.distanceBetweenHands = minuteHandThick
-        self.minuteHandSlotHeight = minuteHandThick
-        self.hour_hand_slot_height = minuteHandThick + self.distanceBetweenHands
+        self.distance_between_hands = minute_hand_thick
+        self.minute_hand_slot_height = minute_hand_thick
+        self.hour_hand_slot_height = minute_hand_thick + self.distance_between_hands
 
-        self.bearingHolderThick = 0
+        self.bearing_holder_thick = 0
 
         self.calc_bearing_holder_thick()
-        print("bearingHolderThick",self.bearingHolderThick)
+        print("bearingHolderThick", self.bearing_holder_thick)
 
         #done in calc_bearing_holder_thick
         # self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
         self.space = 0.5
         #old size of space so I can reprint without reprinting the hands (for the non-bearing version)
-        self.hourHandHolderD = self.minuteHandHolderD + 1 + self.wallThick*2
+        self.hour_hand_holder_d = self.minute_hand_holder_d + 1 + self.wallThick * 2
 
         if self.bearing is not None:
             #remove the backwards compatible bodge, we don't want this any bigger than it needs to be
-            self.hourHandHolderD -= 1
+            self.hour_hand_holder_d -= 1
 
         if extra_height < self.thick*2:
             #to ensure hour hand can't hit the top of the arbour
             extra_height = self.thick*2
 
         #thick for thickness of hour holder wheel
-        self.cannonPinionTotalHeightAboveBase = extra_height + self.minuteHandSlotHeight + self.space + self.hour_hand_slot_height + self.thick# + self.cannonPinionBaseHeight
+        self.cannon_pinion_total_height_above_base = extra_height + self.minute_hand_slot_height + self.space + self.hour_hand_slot_height + self.thick# + self.cannonPinionBaseHeight
 
 
     def get_hour_wheel_teeth(self):
@@ -2491,7 +2492,7 @@ class MotionWorks:
         return self.pairs[0].pinion.get_max_radius()
 
     def get_cannon_pinion_total_height(self):
-        return self.cannonPinionTotalHeightAboveBase + self.cannonPinionBaseHeight
+        return self.cannon_pinion_total_height_above_base + self.cannon_pinion_base_height
 
     def get_cannon_pinion_effective_height(self):
         #because the inset at the base means the locking nuts and spring washer sit inside the motion works
@@ -2501,25 +2502,25 @@ class MotionWorks:
         '''
         get distance in z from bottom of cannon pinion to top of the wheel on the hour holder
         '''
-        return self.cannonPinionBaseHeight
+        return self.cannon_pinion_base_height
 
     def calc_bearing_holder_thick(self):
 
         if self.bearing is not None:
             if self.bearing.outer_d > self.pairs[0].pinion.getMinRadius()*2 - 1:
                 #this bearing won't fit inside the cannon pinion
-                self.bearingHolderThick = self.bearing.height
+                self.bearing_holder_thick = self.bearing.height
                 if self.compact:
-                    self.bearingHolderThick += 1
+                    self.bearing_holder_thick += 1
             else:
-                self.bearingHolderThick = 0
+                self.bearing_holder_thick = 0
             #we're big enough with the bearings, try to reduce size where we can
             self.wallThick = 1.2
         else:
-            self.bearingHolderThick = 0
-        self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
+            self.bearing_holder_thick = 0
+        self.cannon_pinion_base_height = self.cannon_pinion_pinion_thick + self.pinion_cap_thick * 2 + self.bearing_holder_thick
 
-    def calculateGears(self, arbourDistance=-1):
+    def calculate_size(self, arbour_distance=-1):
         '''
         If no arbour distance, use module size to calculate arbour distance, and set it.
         If arbour distance provided, use it to calculate module size and set that
@@ -2536,8 +2537,8 @@ class MotionWorks:
 
         # pinching ratios from The Modern Clock
         # adjust the module so the diameters work properly
-        if arbourDistance < 0:
-            self.arbourDistance = self.module * (wheel0_teeth + pinion0_teeth) / 2
+        if arbour_distance < 0:
+            self.arbour_distance = self.module * (wheel0_teeth + pinion0_teeth) / 2
         else:
             if aim_for_module_size:
                 pinion_min = 10
@@ -2563,8 +2564,8 @@ class MotionWorks:
 
 
 
-                                module0 = arbourDistance / ((w0 + p0) / 2)
-                                module1 = arbourDistance / ((w1 + p1) / 2)
+                                module0 = arbour_distance / ((w0 + p0) / 2)
+                                module1 = arbour_distance / ((w1 + p1) / 2)
 
                                 min_cannon_pinion_r = 0
 
@@ -2574,7 +2575,7 @@ class MotionWorks:
                                     min_cannon_pinion_r = self.inset_at_base_r
 
                                 #v.slow
-                                potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensateLooseArbour)
+                                potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensate_loose_arbour)
                                 if min_cannon_pinion_r > potential_pair.pinion.getMinRadius() - 0.9:
                                     #not enough space to slot in the bearing
                                     # print("pinion_min_r",pinion_min_r)
@@ -2590,7 +2591,7 @@ class MotionWorks:
                 if len(options) == 0:
                     raise ValueError("Unable to calculate gears for motion works")
                 self.module = options[0]["module0"]
-                self.arbourDistance = arbourDistance
+                self.arbour_distance = arbour_distance
                 wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth = options[0]["teeth"]
 
                 # if self.bearing is not None and pinion0_teeth < pinion1_teeth:
@@ -2601,11 +2602,11 @@ class MotionWorks:
 
 
             else:
-                self.module = arbourDistance / ((wheel0_teeth + pinion0_teeth) / 2)
-                self.arbourDistance = arbourDistance
-        secondModule = 2 * self.arbourDistance / (wheel1_teeth + pinion1_teeth)
+                self.module = arbour_distance / ((wheel0_teeth + pinion0_teeth) / 2)
+                self.arbour_distance = arbour_distance
+        secondModule = 2 * self.arbour_distance / (wheel1_teeth + pinion1_teeth)
         print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, secondModule,wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
-        self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensateLooseArbour), WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensateLooseArbour)]
+        self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensate_loose_arbour), WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensate_loose_arbour)]
 
 
         self.calc_bearing_holder_thick()
@@ -2623,44 +2624,46 @@ class MotionWorks:
 
     def get_parts_in_situ(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
-            motionWorksRelativePos = [0, -self.getArbourDistance()]
+            motionWorksRelativePos = [0, -self.get_arbour_distance()]
         parts = {}
         parts["cannon_pinion"] = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         parts["hour_holder"] = self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick()))
-        parts["arbor"] = self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.getCannonPinionBaseThick() - self.bearingHolderThick) / 2 + self.bearingHolderThick - self.thick / 2))
+        parts["arbor"] = self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.getCannonPinionBaseThick() - self.bearing_holder_thick) / 2 + self.bearing_holder_thick - self.thick / 2))
 
         if self.centred_second_hand:
-            relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
+            # relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
+            #is this general purpose?
+            relative_pos = npToSet(np.add(motionWorksRelativePos, (-motionWorksRelativePos[0], motionWorksRelativePos[1])))
             parts["time_setter_pinion"] = self.getCannonPinionPinion(standalone=True).translate(relative_pos)
 
         return parts
 
-    def getHourHandHoleD(self):
+    def get_hour_hand_hole_d(self):
         '''
         get the size of the hole needed for the hand to slot onto the hour hand holder
         '''
-        return self.hourHandHolderD
+        return self.hour_hand_holder_d
 
-    def getMinuteHandSquareSize(self):
+    def get_minute_hand_square_size(self):
         '''
         Get the size of the square needed for the hand to slot onto the cannon pinion
         '''
-        return self.minuteHandHolderSize + 0.2
+        return self.minute_hand_holder_size + 0.2
 
-    def getArbourDistance(self):
-        return self.arbourDistance
+    def get_arbour_distance(self):
+        return self.arbour_distance
 
-    def getHourHolderMaxRadius(self):
+    def get_hour_holder_max_radius(self):
         return self.pairs[1].wheel.get_max_radius()
 
-    def getArbourMaxRadius(self):
+    def get_arbour_max_radius(self):
         return self.pairs[0].wheel.get_max_radius()
 
-    def getHandHolderHeight(self):
+    def get_hand_holder_height(self):
         '''
         get distance from base of the cannon pinion to the beginning of the hand holders (base of hour hand)
         '''
-        return self.get_cannon_pinion_total_height() - (self.minuteHandSlotHeight + self.space + self.hour_hand_slot_height)
+        return self.get_cannon_pinion_total_height() - (self.minute_hand_slot_height + self.space + self.hour_hand_slot_height)
 
     def getCannonPinionBaseThick(self):
         '''
@@ -2668,7 +2671,7 @@ class MotionWorks:
 
         '''
 
-        thick = self.pinionCapThick * 2 + self.cannonPinionPinionThick + self.bearingHolderThick
+        thick = self.pinion_cap_thick * 2 + self.cannon_pinion_pinion_thick + self.bearing_holder_thick
 
 
         return thick
@@ -2686,16 +2689,16 @@ class MotionWorks:
 
         base = cq.Workplane("XY")
 
-        if self.strikeTrigger is not None:
-            base = self.strikeTrigger.get2D().extrude(self.pinionCapThick).rotate((0, 0, 0), (0, 0, 1), self.strikeHourAngleDeg).faces(">Z").workplane()
+        if self.strike_trigger is not None:
+            base = self.strike_trigger.get2D().extrude(self.pinion_cap_thick).rotate((0, 0, 0), (0, 0, 1), self.strike_hour_angle_deg).faces(">Z").workplane()
 
-        if self.pinionCapThick > 0:
-            base = base.circle(pinion_max_r).extrude(self.pinionCapThick)
+        if self.pinion_cap_thick > 0:
+            base = base.circle(pinion_max_r).extrude(self.pinion_cap_thick)
 
-        base = base.union(self.pairs[0].pinion.get2D().extrude(self.cannonPinionPinionThick).translate((0, 0, self.pinionCapThick)))
+        base = base.union(self.pairs[0].pinion.get2D().extrude(self.cannon_pinion_pinion_thick).translate((0, 0, self.pinion_cap_thick)))
 
-        if self.pinionCapThick > 0:
-            base = base.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.pinionCapThick).translate((0, 0, self.pinionCapThick + self.cannonPinionPinionThick)))
+        if self.pinion_cap_thick > 0:
+            base = base.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.pinion_cap_thick).translate((0, 0, self.pinion_cap_thick + self.cannon_pinion_pinion_thick)))
 
         pinion = base
 
@@ -2707,10 +2710,10 @@ class MotionWorks:
 
             knob = get_smooth_knob_2d(inner_r, outer_r, knobs=6).extrude(self.knob_thick)
 
-            pinion = pinion.union(knob.translate((0,0,self.pinionCapThick + self.cannonPinionPinionThick)))
+            pinion = pinion.union(knob.translate((0, 0, self.pinion_cap_thick + self.cannon_pinion_pinion_thick)))
 
             # cut hole to slot onto arbour
-            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbourD + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
+            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbour_d + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
 
 
 
@@ -2718,7 +2721,7 @@ class MotionWorks:
 
     def getCannonPinionPinionSTLModifier(self):
 
-        return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannonPinionPinionThick, offset_z=self.pinionCapThick)
+        return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannon_pinion_pinion_thick, offset_z=self.pinion_cap_thick)
 
 
     def getCannonPinion(self):
@@ -2745,34 +2748,34 @@ class MotionWorks:
 
         pinion = self.getCannonPinionPinion(with_snail=True)
 
-        if self.bearing is not None and self.bearingHolderThick > 0:
+        if self.bearing is not None and self.bearing_holder_thick > 0:
             # extend out the bottom for space for a slot on the bottom
-            pinion = pinion.translate((0, 0, self.bearingHolderThick))
-            pinion = pinion.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearingHolderThick))
+            pinion = pinion.translate((0, 0, self.bearing_holder_thick))
+            pinion = pinion.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearing_holder_thick))
 
         # has an arm to hold the minute hand
-        pinion = pinion.union(cq.Workplane("XY").circle(self.minuteHandHolderD / 2).extrude(self.cannonPinionTotalHeightAboveBase - self.minuteHandSlotHeight).translate((0, 0, self.cannonPinionBaseHeight)))
+        pinion = pinion.union(cq.Workplane("XY").circle(self.minute_hand_holder_d / 2).extrude(self.cannon_pinion_total_height_above_base - self.minute_hand_slot_height).translate((0, 0, self.cannon_pinion_base_height)))
 
 
-        if self.minuteHandHolderIsSquare:
-            pinion = pinion.union(cq.Workplane("XY").rect(self.minuteHandHolderSize,self.minuteHandHolderSize).extrude(self.minuteHandSlotHeight).translate((0, 0, self.get_cannon_pinion_total_height() - self.minuteHandSlotHeight)))
+        if self.minute_hand_holder_is_square:
+            pinion = pinion.union(cq.Workplane("XY").rect(self.minute_hand_holder_size, self.minute_hand_holder_size).extrude(self.minute_hand_slot_height).translate((0, 0, self.get_cannon_pinion_total_height() - self.minute_hand_slot_height)))
         else:
 
-            holder_r = self.minuteHandHolderSize / 2
+            holder_r = self.minute_hand_holder_size / 2
             # minute holder is -0.2 and is pretty snug, but this needs to be really snug
             # -0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
             # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
             #INFO - HANDS ADD 0.2 TO THIS for the hole in the hand
-            holderR_base = self.minuteHandHolderSize / 2 + 0.05
-            holderR_top = self.minuteHandHolderSize / 2 - 0.15
+            holderR_base = self.minute_hand_holder_size / 2 + 0.05
+            holderR_top = self.minute_hand_holder_size / 2 - 0.15
 
             circle = cq.Workplane("XY").circle(holder_r)
-            holder = cq.Workplane("XZ").lineTo(holderR_base, 0).lineTo(holderR_top, self.minuteHandSlotHeight).lineTo(0, self.minuteHandSlotHeight).close().sweep(circle)#.translate((0, 0, self.thick))
-            holder = holder.translate((0, 0, self.get_cannon_pinion_total_height() - self.minuteHandSlotHeight))
+            holder = cq.Workplane("XZ").lineTo(holderR_base, 0).lineTo(holderR_top, self.minute_hand_slot_height).lineTo(0, self.minute_hand_slot_height).close().sweep(circle)#.translate((0, 0, self.thick))
+            holder = holder.translate((0, 0, self.get_cannon_pinion_total_height() - self.minute_hand_slot_height))
 
             pinion = pinion.union(holder)
 
-        pinion = pinion.cut(cq.Workplane("XY").circle(self.holeD/2).extrude(self.get_cannon_pinion_total_height()))
+        pinion = pinion.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_cannon_pinion_total_height()))
 
 
         if self.bearing is not None:
@@ -2780,12 +2783,12 @@ class MotionWorks:
             pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outer_d / 2).extrude(self.bearing.height).translate((0, 0, self.get_cannon_pinion_total_height() - self.bearing.height)))
 
 
-            pinion = pinion.cut(get_hole_with_hole(innerD=self.holeD, outerD=self.bearing.outer_d, deep=self.bearing.height + self.inset_at_base))
+            pinion = pinion.cut(get_hole_with_hole(innerD=self.hole_d, outerD=self.bearing.outer_d, deep=self.bearing.height + self.inset_at_base))
 
         elif self.inset_at_base > 0:
             # cut out space for the nuts/bearing to go further into the cannon pinion, so it can be closer to the front plate
             # pinion = pinion.cut(cq.Workplane("XY").circle(self.inset_at_base_r).extrude(self.inset_at_base))
-            pinion = pinion.cut(get_hole_with_hole(innerD=self.holeD, outerD=self.inset_at_base_r * 2, deep=self.inset_at_base))
+            pinion = pinion.cut(get_hole_with_hole(innerD=self.hole_d, outerD=self.inset_at_base_r * 2, deep=self.inset_at_base))
 
         return pinion
 
@@ -2796,10 +2799,10 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbour_d=self.arbourD + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinionThick + self.pinionCapThick, end_cap_thick=self.pinionCapThick, style=self.style, clockwise_from_pinion_side=False)
+        return Arbour(wheel=wheel, pinion=pinion, arbour_d=self.arbour_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
 
     def getMotionArboutPinionSTLModifier(self):
-        return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinionThick + self.pinionCapThick, offset_z=self.thick)
+        return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinion_thick + self.pinion_cap_thick, offset_z=self.thick)
 
     def getMotionArbourShape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
@@ -2812,7 +2815,7 @@ class MotionWorks:
         '''
 
         # fiddled the numbers so that fill isn't required to print
-        return self.hourHandHolderD / 2 + 0.7
+        return self.hour_hand_holder_d / 2 + 0.7
 
     def getHourHolder(self):
         #the final wheel and arm that friction holds the hour hand
@@ -2832,17 +2835,17 @@ class MotionWorks:
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
         # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
-        holderR_base = self.hourHandHolderD / 2 + 0.1
-        holderR_top = self.hourHandHolderD / 2 - 0.2
+        holderR_base = self.hour_hand_holder_d / 2 + 0.1
+        holderR_top = self.hour_hand_holder_d / 2 - 0.2
 
-        hour = self.pairs[1].wheel.get3D(holeD=self.holeD,thick=self.thick, style=style, innerRadiusForStyle=bottom_r_for_style, clockwise_from_pinion_side=True)
+        hour = self.pairs[1].wheel.get3D(holeD=self.hole_d, thick=self.thick, style=style, innerRadiusForStyle=bottom_r_for_style, clockwise_from_pinion_side=True)
 
         if self.snail is not None:
             hour = hour.union(self.snail.get3D(self.thick))
 
 
 
-        top_z = self.get_cannon_pinion_total_height() - self.space - self.minuteHandSlotHeight - self.cannonPinionBaseHeight
+        top_z = self.get_cannon_pinion_total_height() - self.space - self.minute_hand_slot_height - self.cannon_pinion_base_height
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
@@ -2852,7 +2855,7 @@ class MotionWorks:
             #because CQ won't let you make shapes of zero height
             handHolderStartZ = 0.0001
 
-        holeR = self.minuteHandHolderD / 2 + self.space / 2
+        holeR = self.minute_hand_holder_d / 2 + self.space / 2
 
         # return hour
         circle = cq.Workplane("XY").circle(bottomR)

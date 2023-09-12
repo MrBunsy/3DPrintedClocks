@@ -86,7 +86,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=50, bob_d=60, bob_thick=10)
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Wall 04")#, dial=dial)
 
 
-hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=80, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
+hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=80, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False)
 
 
 weight = clock.Weight(height=100, diameter=35)

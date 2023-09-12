@@ -74,7 +74,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pe
 
 # hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 #outline of 0.6 works but this clock was actually printed with old cuckoo hands without an outline, so set without outline for the preview
-hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)#, outline=0.6)
+hands = clock.Hands(style=clock.HandStyle.CUCKOO, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=60, thick=motionWorks.minute_hand_slot_height, outlineSameAsBody=False)#, outline=0.6)
 
 #no weight for this clock, using the cheap 2.5kg weight from cousins
 #which needs a shell to look better!

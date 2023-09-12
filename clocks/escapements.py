@@ -568,6 +568,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
             # print(tipPos)
             # wheel = wheel.lineTo(0,tipPos[1])
             wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos,self.innerDiameter)
+            # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
 
         wheel = wheel.close()
 

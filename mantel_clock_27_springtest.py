@@ -74,12 +74,12 @@ backPlateFromWall=30
 pinion_extensions = {1:12, 2:5}
 
 train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=6, pinionThickMultiplier=3, style=gearStyle,
-                chain_module_increase=1.25, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
+                powered_wheel_module_increase=1.25, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
@@ -94,8 +94,8 @@ plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 27", dial=dial
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
 #would like sword, need to fix second hand outline for it
-hands = clock.Hands(style=clock.HandStyle.SWORD,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True,
+hands = clock.Hands(style=clock.HandStyle.SWORD, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.outside_d*0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, chunky=True,
                     secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5, outline_on_seconds=1)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 

@@ -131,7 +131,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 train.gen_chain_wheels2(COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, looseOnRod=False, prefer_small=True, preferedDiameter=30)
 
 train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 
 # print to console how much power we can expect for the calculated chain wheel
 train.print_info(weight_kg=2)
@@ -167,12 +167,12 @@ If the arbor is going to sit above the cannon pinion `compensateLooseArbour` wil
 Compact motion works may require two nylock screws to hold the arbor in the right place.
 
 ```python
-#motion works as used in the earlier clocks, with caps on the pinions
+# motion works as used in the earlier clocks, with caps on the pinions
 motionWorks = clock.MotionWorks(extra_height=10, compact=False)
 
-#a motion works that could be used with a centred second hand
+# a motion works that could be used with a centred second hand
 motion_works = MotionWorks(compact=True, bearing=get_bearing_info(3), extra_height=20)
-motion_works.calculateGears(arbourDistance=30)
+motion_works.calculate_size(arbour_distance=30)
 ```
 
 ## Pendulum Bob
@@ -273,9 +273,9 @@ A large variety of hand styles exist, with the following options:
 ![Baroque hands](images/hands_baroque.svg "Baroque hands")
 
 ```python
-#clock 12's hands with a centred second hand
-hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="circle",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True)
+# clock 12's hands with a centred second hand
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.outside_d * 0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True)
 ```
 
 ## Pulleys

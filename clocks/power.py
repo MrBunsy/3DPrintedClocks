@@ -970,7 +970,8 @@ class SpringBarrel:
         # ratchet_blocks_clockwise = not self.clockwise
         # if self.ratchet_at_back:
         ratchet_blocks_clockwise = self.clockwise
-
+        # #TODO proper ratchet type? or am I going to just slowly switch everything over to teh traditional ratchet?
+        # self.traditional_ratchet = True
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
         self.ratchet_collet_thick = self.lid_fixing_screws.getNutContainingDiameter() + 2

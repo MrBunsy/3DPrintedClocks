@@ -82,7 +82,7 @@ train.gen_gears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chai
 train.print_info(weight_kg=0.32)
 
 #reprinting these after the work to reduce module size back to 1, hoping it removes the jam problem
-motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=get_bearing_info(3), module=1, compensateLooseArbour=False, compact=True, thick=1.8, pinionThick=8)
+motionWorks = MotionWorks(extra_height=20, style=gearStyle, bearing=get_bearing_info(3), module=1, compensate_loose_arbour=False, compact=True, thick=1.8, pinion_thick=8)
 
 pendulum = Pendulum(hand_avoider_inner_d=90, bob_d=70, bob_thick=10)
 
@@ -95,9 +95,9 @@ plates = SimpleClockPlates(train, motionWorks, pendulum, plate_thick=7, pendulum
                            dial=dial, pillars_separate=True)
 pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
-hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                    hourfixing_d=motionWorks.getHourHandHoleD(), length=dial.outside_d/2 - 10, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False,
-                    second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), outline_on_seconds=1, seconds_hand_thick=2.5)
+hands = Hands(style=HandStyle.SIMPLE_ROUND, secondLength=40, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
+              hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.outside_d / 2 - 10, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False,
+              second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), outline_on_seconds=1, seconds_hand_thick=2.5)
 
 assembly = Assembly(plates, hands=hands, timeSeconds=15, pulley=pulley_no_pipe)
 

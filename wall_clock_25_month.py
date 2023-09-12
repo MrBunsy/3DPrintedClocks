@@ -63,14 +63,14 @@ pendulumSticksOut=10
 backPlateFromWall=30
 
 train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chain_module_increase=1, chainWheelPinionThickMultiplier=2.25, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2.25, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.print_info(weight_kg=5.45)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensateLooseArbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-motionWorks.calculateGears(arbourDistance=30)
+motionWorks.calculate_size(arbour_distance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 
@@ -87,8 +87,8 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=120, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, secondLength=20, seconds_hand_thick=1.5)
+hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, chunky=True, secondLength=20, seconds_hand_thick=1.5)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))

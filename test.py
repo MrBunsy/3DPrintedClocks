@@ -712,14 +712,20 @@ if False:
 # pair = WheelPinionPair(wheelTeeth=55,pinionTeeth= 22, module=0.891)
 #
 # show_object(pair.get_model(offset_angle_deg=-0.3))
+lift=4
+drop=2
+lock=2
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=7,
+                              toothBaseAngle=6, style=AnchorStyle.CURVED_MATCHING_WHEEL)
+show_object(escapement.getWheel2D())
 
-
-ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
-
-show_object(ratchet.get_gear())
-show_object(ratchet.get_pawl())
-show_object(ratchet.get_click())
 #
+# ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
+#
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())
+# show_object(ratchet.get_click())
+# #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
 #

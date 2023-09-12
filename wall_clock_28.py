@@ -64,7 +64,7 @@ train.set_chain_wheel_ratio([67, 11])
 pendulumSticksOut=20
 
 train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=5, pinionThickMultiplier=3, style=gearStyle,
-                chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.print_info(weight_kg=2)
 
 train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -72,7 +72,7 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensateLooseArbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
+motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
 
@@ -85,8 +85,8 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET,  minuteFixing="circle",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.outside_d*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True)
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.outside_d*0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True)
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 

@@ -765,8 +765,9 @@ class GoingTrain:
             print("Cordwheel power varies from {:.1f}μW to {:.1f}μW".format(min_power, max_power))
 
     def gen_gears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
-                  chain_module_increase=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, thicknessReduction=1,
-                  ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None):
+                  powered_wheel_module_increase=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, thicknessReduction=1,
+                  ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None,
+                  powered_wheel_module_sizes = None):
         '''
         What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up.
         Also this assumes a *lot* about the layout, which really should be in the control of the plates
@@ -779,11 +780,24 @@ class GoingTrain:
 
         stack_away_from_powered_wheel - experimental, put each wheel in "front" of the previous, usually we interleave gears to minimise plate distance,
          but we might want to minimise height instead. Required for compact plates with 4 wheels
-
+        
+        chain_module_increase - increase module size from the minute wheel down to the chainwheel by this multiplier
+        
+        alernatively can specify chain wheel modules directly:
+        powered_wheel_module_sizes = [powered_wheel_0_module, powered_wheel_1_module...]
+        
+        
         '''
-
-        if chain_module_increase is None:
-            chain_module_increase = (1 / moduleReduction)
+        
+        
+        
+        if powered_wheel_module_increase is None:
+            powered_wheel_module_increase = (1 / moduleReduction)
+            
+        if powered_wheel_module_sizes is None:
+            powered_wheel_module_sizes = []
+            for i in range(self.powered_wheels):
+                powered_wheel_module_sizes.append(module_size * powered_wheel_module_increase ** (self.powered_wheels - i))
 
         #can manually override the pinion extensions on a per arbor basis - used for some of the compact designs. Ideally I should automate this, but it feels like
         #a bit problem so solve so I'm offering the option to do it manually for now
@@ -867,7 +881,8 @@ class GoingTrain:
 
         self.powered_wheel_arbours=[]
         self.powered_wheel_pairs=[]
-        chain_module_base = module_size
+        # chain_module_base = module_size
+        chain_module_multiplier = 1
         #fits if we don't have any chain wheels, otherwise run the loop
         fits = self.powered_wheels == 0
         loop = 0
@@ -875,7 +890,8 @@ class GoingTrain:
             self.powered_wheel_pairs = []
             for i in range(self.powered_wheels):
                 #TODO review this
-                chain_module = chain_module_base * chain_module_increase ** (self.powered_wheels - i)
+                # chain_module = chain_module_base * powered_wheel_module_increase ** (self.powered_wheels - i)
+                chain_module = powered_wheel_module_sizes[i] * chain_module_multiplier
                 # chain_wheel_space = chainModule * (self.chainWheelRatios[i][0] + self.chainWheelRatios[i][1]) / 2
 
 
@@ -899,8 +915,8 @@ class GoingTrain:
 
             if last_chain_wheel_space < minuteWheelSpace:
                 # calculate module for the chain wheel based on teh space available
-                chain_module_base *= 1.01
-                print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chain_module_base))
+                chain_module_multiplier *= 1.01
+                print("Chain wheel module multiplier to {} in order to fit next to minute wheel".format(chain_module_multiplier))
             else:
                 fits = True
 
@@ -1437,15 +1453,43 @@ class SimpleClockPlates:
         self.hands_position = self.bearing_positions[self.going_train.powered_wheels][:2]
 
         if self.centred_second_hand:
+
+            seconds_arbor = -2
+            if self.going_train.has_second_hand_on_last_wheel():
+                seconds_arbor = -3
+
+            self.hands_position = [self.bearing_positions[seconds_arbor][0], self.bearing_positions[seconds_arbor][1]]
+            minute_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
+
             #adjust motion works size
-            distance_between_minute_wheel_and_seconds_wheel = np.linalg.norm(np.subtract(self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[-2][:2]))
-            self.motion_works.calculateGears(arbourDistance=distance_between_minute_wheel_and_seconds_wheel / 2)
+            minute_wheel_to_hands = npToSet(np.subtract(minute_wheel_pos, self.hands_position))
+
+            minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
+            minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
+
+            arbor_distance = minute_wheel_to_hands_distance / 2
+
+            if abs(self.motion_works_angle - minute_wheel_to_hands_angle) - math.pi > 0.01:
+                #motion works angle will offset the centre arbor
+
+                line_from_hands = Line(self.hands_position, angle=self.motion_works_angle)
+                mid_line = Line(averageOfTwoPoints(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi/2)
+
+                mid_arbor_pos = line_from_hands.intersection(mid_line)
+                arbor_distance = np.linalg.norm(np.subtract(mid_arbor_pos, minute_wheel_pos))
+
+
+            self.motion_works.calculate_size(arbour_distance=arbor_distance)
 
             #override motion works position
-            self.motion_works_angle = math.pi/2 if not self.pendulum_at_top else math.pi * 1.5
-            self.hands_position = [self.bearing_positions[-2][0], self.bearing_positions[-2][1]]
+            #note - new idea, allow this to function like the compact design of the plates
+            # self.motion_works_angle = math.pi/2 if not self.pendulum_at_top else math.pi * 1.5
 
-        motionWorksDistance = self.motion_works.getArbourDistance()
+
+
+
+
+        motionWorksDistance = self.motion_works.get_arbour_distance()
         # get position of motion works relative to the minute wheel
         if style == ClockPlateStyle.ROUND:
             # place the motion works on the same circle as the rest of the bearings
@@ -2016,7 +2060,7 @@ class SimpleClockPlates:
         '''
         relative to the front of the front plate
         '''
-        return self.motion_works.getHandHolderHeight() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base
+        return self.motion_works.get_hand_holder_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base
 
     def front_plate_has_flat_front(self):
         '''
@@ -3165,8 +3209,9 @@ class SimpleClockPlates:
                 # TODO make this more robust
 
                 dial_support_pos = (self.hands_position[0], self.hands_position[1] + self.dial.outside_d/2- self.dial.dial_width/2)
-                plate = plate.union(cq.Workplane("XY").circle(self.plate_width / 2).extrude(plate_thick).translate(dial_support_pos))
-                plate = plate.union(cq.Workplane("XY").rect(self.plate_width, dial_support_pos[1] - self.top_pillar_positions[0][1]).extrude(plate_thick).translate((self.bearing_positions[-1][0], (self.top_pillar_positions[0][1] + dial_support_pos[1]) / 2)))
+                # plate = plate.union(cq.Workplane("XY").circle(self.plate_width / 2).extrude(plate_thick).translate(dial_support_pos))
+                # plate = plate.union(cq.Workplane("XY").rect(self.plate_width, dial_support_pos[1] - self.top_pillar_positions[0][1]).extrude(plate_thick).translate((self.bearing_positions[-1][0], (self.top_pillar_positions[0][1] + dial_support_pos[1]) / 2)))
+                plate = plate.union(get_stroke_line([dial_support_pos, self.bearing_positions[-1][:2]], wide=self.plate_width, thick = plate_thick))
 
             #TODO bottom extension (am I ever going to want it?)
 
@@ -4393,7 +4438,7 @@ class Assembly:
 def getHandDemo(just_style=None, length = 120, per_row=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
     demo = cq.Workplane("XY")
 
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
     print("motion works r", motionWorks.get_widest_radius())
 
     space = length
@@ -4406,7 +4451,7 @@ def getHandDemo(just_style=None, length = 120, per_row=3, assembled=False, time_
         if just_style is not None and style != just_style:
             continue
 
-        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=length, thick=motionWorks.minuteHandSlotHeight, outline=outline,
+        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=length, thick=motionWorks.minute_hand_slot_height, outline=outline,
                       outlineSameAsBody=False, secondLength=25)
 
         x = 0
@@ -4454,7 +4499,7 @@ def getHandDemo(just_style=None, length = 120, per_row=3, assembled=False, time_
     return demo
 
 def show_hand_demo(show_object, length = 120, per_row=3, assembled=True, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25):
-    motion_works = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motion_works = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
     print("motion works r", motion_works.get_widest_radius())
 
     space = length
@@ -4464,8 +4509,8 @@ def show_hand_demo(show_object, length = 120, per_row=3, assembled=True, time_mi
 
     for i, style in enumerate(HandStyle):
 
-        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motion_works.getMinuteHandSquareSize(), hourfixing_d=motion_works.getHourHandHoleD(),
-                      length=length, thick=motion_works.minuteHandSlotHeight, outline=outline, outlineSameAsBody=False, secondLength=second_length)
+        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                      length=length, thick=motion_works.minute_hand_slot_height, outline=outline, outlineSameAsBody=False, secondLength=second_length)
 
         x = space * (i % per_row)
         y = (space) * math.floor(i / per_row)
@@ -4500,9 +4545,9 @@ def getGearDemo(module=1, justStyle=None, oneGear=False):
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 
-    train.gen_gears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chain_module_increase=1, chainWheelPinionThickMultiplier=2)
+    train.gen_gears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2)
 
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
 
     demoArboursNums = [0, 1, 3]
 

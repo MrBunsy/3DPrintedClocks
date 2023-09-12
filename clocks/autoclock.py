@@ -56,9 +56,9 @@ def gen_gear_previews(out_path="autoclock", module=1):
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 
-    train.gen_gears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, chain_module_increase=1, chainWheelPinionThickMultiplier=2)
+    train.gen_gears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2)
 
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
 
     demoArboursNums = [0, 1, 3]
 
@@ -125,7 +125,7 @@ def gen_shape_preview(demo, name, out_path="autoclock", size=300):
     exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
 
 def gen_hand_previews(out_path="autoclock", length=120, size=600, only_these=None):
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
 
     for style in HandStyle:
         if only_these is None or style in only_these:
@@ -138,8 +138,8 @@ def gen_hand_previews(out_path="autoclock", length=120, size=600, only_these=Non
                     print("Generating preview for {}{}{}".format(style.value, outline_string.replace("_"," "), seconds_string.replace("_", " ")))
 
                     hands = Hands(style=style, length=length, outline=outline, second_hand_centred=centred_seconds,
-                                  thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(),
-                                  hourfixing_d=motionWorks.getHourHandHoleD())
+                                  thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
+                                  hourfixing_d=motionWorks.get_hour_hand_hole_d())
                     demo = hands.get_assembled()#include_seconds=centred_seconds
 
                     file_name = "hands_{}{}{}.svg".format(style.value,outline_string, seconds_string)
@@ -354,13 +354,13 @@ class AutoWallClock:
 
 
         self.train.gen_gears(module_size=self.module_size, moduleReduction=self.moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=self.gear_style,
-                             chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=self.pendulumFixing)
+                             powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=self.pendulumFixing)
 
         bearing = None
         if self.centred_second_hand:
             bearing = get_bearing_info(3)
 
-        self.motionWorks = MotionWorks(style=self.gear_style, thick=3, compensateLooseArbour=False, bearing=bearing, compact=True, module=1)
+        self.motionWorks = MotionWorks(style=self.gear_style, thick=3, compensate_loose_arbour=False, bearing=bearing, compact=True, module=1)
 
         self.pendulum = Pendulum(self.train.escapement, self.train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, hand_avoider_inner_d=self.ring_d,
                                  bob_d=self.bob_d, bob_thick=10, useNylocForAnchor=False)
@@ -412,8 +412,8 @@ class AutoWallClock:
         outlineSameAsBody = False
         if self.hand_style == HandStyle.XMAS_TREE:
             outlineSameAsBody = True
-        self.hands = Hands(style=self.hand_style, minuteFixing=minute_fixing, minuteFixing_d1=self.motionWorks.getMinuteHandSquareSize(), hourfixing_d=self.motionWorks.getHourHandHoleD(),
-                            length=self.hand_length, thick=self.motionWorks.minuteHandSlotHeight, outline=outline, outlineSameAsBody=outlineSameAsBody,
+        self.hands = Hands(style=self.hand_style, minuteFixing=minute_fixing, minuteFixing_d1=self.motionWorks.get_minute_hand_square_size(), hourfixing_d=self.motionWorks.get_hour_hand_hole_d(),
+                           length=self.hand_length, thick=self.motionWorks.minute_hand_slot_height, outline=outline, outlineSameAsBody=outlineSameAsBody,
                            second_hand_centred=self.centred_second_hand, chunky=True, secondLength=self.second_hand_length)
 
         self.pulley = BearingPulley(diameter=self.train.powered_wheel.diameter, bearing=get_bearing_info(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))

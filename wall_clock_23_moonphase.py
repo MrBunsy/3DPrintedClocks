@@ -65,7 +65,7 @@ pendulumSticksOut=10
 backPlateFromWall=40
 
 train.gen_gears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=2 / 2.4, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
 train.print_info(weight_kg=3)
 train.print_info(weight_kg=2.5)
 train.print_info(weight_kg=1)
@@ -76,7 +76,7 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.2)
 
 #not inset at base as there's not enough space for the moon complication to fit behind it
-motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True, moon_complication=moon_complication)
+motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, moon_complication=moon_complication)
 
 
 #TODO try out larger pinions on the motion works - it'll be a fiddle to slot together at the moment
@@ -97,8 +97,8 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
-hands = clock.Hands(style=clock.HandStyle.MOON,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.get_hand_length(), thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+hands = clock.Hands(style=clock.HandStyle.MOON, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
 assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum)
 

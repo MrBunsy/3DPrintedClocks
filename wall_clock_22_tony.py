@@ -87,12 +87,12 @@ pendulumSticksOut=15
 #0.9 with no module reduction produces gears that slice perfectly
 #0.8 looks printable, but with only one perimeter in the teeth - will they be strong enough? Will the escapement work?
 train.gen_gears(module_size=0.8, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                chain_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.print_info(weight_kg=3)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 
-motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensateLooseArbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 # motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=10)
@@ -108,8 +108,8 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
-hands = clock.Hands(style=clock.HandStyle.ARROWS,  minuteFixing="square",  minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-                    length=dial.get_tony_dimension("minute_hand_length"), thick=motionWorks.minuteHandSlotHeight, outline=0, outlineSameAsBody=False, chunky=True)
+hands = clock.Hands(style=clock.HandStyle.ARROWS, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.get_tony_dimension("minute_hand_length"), thick=motionWorks.minute_hand_slot_height, outline=0, outlineSameAsBody=False, chunky=True)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 # pulley = clock.BearingPulley(diameter=train.poweredWheel.diameter, bearing=clock.getBearingInfo(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
