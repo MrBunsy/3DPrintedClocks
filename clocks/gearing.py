@@ -38,7 +38,7 @@ class Gear:
 
 
     @staticmethod
-    def cutStyle(gear, outerRadius, innerRadius = -1, style=None, clockwise_from_pinion_side=True):
+    def cutStyle(gear, outerRadius, innerRadius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1):
         '''
         Could still do with a little more tidying up, outerRadius should be a few mm shy of the edge of teh gear to give a solid rim,
         but innerRadius should be at the edge of whatever can't be cut into
@@ -52,8 +52,9 @@ class Gear:
             innerRadius = 3
         #thought - some things (caps for cord wheel?) don't need a thick rim
         #rimThick = max(outerRadius * 0.175, 3)
-        rimThick = max(outerRadius * 0.15, 2.5)
-        outerRadius -= rimThick
+        if rim_thick < 0:
+            rim_thick = max(outerRadius * 0.15, 2.5)
+        outerRadius -= rim_thick
         # lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
             if innerRadius < outerRadius*0.5:
@@ -2284,8 +2285,10 @@ class Arbour:
             z_offset = self.wheel_thick
             if self.powered_wheel.type == PowerType.SPRING_BARREL:
                 z_offset = 0
-            #currently only rope wheel with huygens or spring barrel
-            gear_wheel = gear_wheel.union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))
+
+            #cut a hole in teh gear wheel so the style in the back of the barrel works
+            gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.radius_for_style).cutThruAll().union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))
+            # gear_wheel = Gear.cutStyle(gear_wheel, outerRadius=self.powered_wheel.radius_for_style, innerRadius=)
 
         if rear_side_extension > 0 and not self.combine_with_powered_wheel:
             #rear side extension - chunky bit out the back to help provide stability on the threaded rod

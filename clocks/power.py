@@ -872,15 +872,16 @@ class SpringBarrel:
 
     '''
 
-    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2, base_thick=5):
+    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2, base_thick=5, ratchet_at_back=True,
+                 style=GearStyle.SOLID):
         self.type = PowerType.SPRING_BARREL
 
-        #ratchet_at_back=True, ratchet is now assumed to be at the back
+        self.style = style
         #comply with PoweredWheel interface
         self.loose_on_rod=True
 
-        #this has become assumed in the arbor for now
-        self.ratchet_at_back = True
+        #ratchet is out the back plate, rather than on the front plate?
+        self.ratchet_at_back = ratchet_at_back
 
         self.spring = spring
         if self.spring is None:
@@ -902,14 +903,6 @@ class SpringBarrel:
         self.rod_d = rod_d
         self.arbour_d = rod_d
 
-        #ratchet is out the back plate, rather than on the front plate?
-        # self.ratchet_at_back = ratchet_at_back
-
-        # self.back_bearing = get_bearing_info(self.rod_d)
-
-        # if self.ratchet_at_back:
-        #     self.back_bearing = self.key_bearing
-
         #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
         # self.barrel_diameter=self.spring.barrel_diameter + self.key_bearing.outerD-6
         #flange from lid will sit inside the barrel, flange in teh base of the barrel will be flush with teh base of the barrel
@@ -919,7 +912,7 @@ class SpringBarrel:
         self.wall_thick = 8
         #6 seemed enough, can probably get away with less
         self.base_thick = base_thick
-        self.lid_thick= self.lid_bearing.height - self.lid_bearing.flange_thick
+        self.lid_thick= self.lid_bearing.height# - self.lid_bearing.flange_thick
 
         self.internal_endshake=0.5
 
@@ -967,14 +960,15 @@ class SpringBarrel:
         self.spring_hook_space=2
         ratchet_d = self.arbor_d*2.5
 
-        # ratchet_blocks_clockwise = not self.clockwise
-        # if self.ratchet_at_back:
-        ratchet_blocks_clockwise = self.clockwise
-        # #TODO proper ratchet type? or am I going to just slowly switch everything over to teh traditional ratchet?
-        # self.traditional_ratchet = True
+        ratchet_blocks_clockwise = not self.clockwise
+        if self.ratchet_at_back:
+            ratchet_blocks_clockwise = self.clockwise
+
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
         self.ratchet_collet_thick = self.lid_fixing_screws.getNutContainingDiameter() + 2
+
+        self.radius_for_style = self.barrel_diameter/2-1
 
     def get_key_size(self):
         return self.key_containing_diameter
@@ -1004,6 +998,10 @@ class SpringBarrel:
 
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
+
+        barrel = Gear.cutStyle(barrel, outerRadius=self.radius_for_style, innerRadius=self.key_bearing.outer_d / 2 + self.wall_thick / 2, style=self.style,
+                               clockwise_from_pinion_side=self.clockwise, rim_thick=0)
+
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
         barrel = barrel.cut(self.key_bearing.get_cutter().rotate((0,0,0),(1,0,0),180).translate((0,0,self.base_thick)))
@@ -1013,16 +1011,23 @@ class SpringBarrel:
         #trying countersunk screw instead of pan head
         barrel = barrel.cut(self.spring_hook_screws.get_cutter(for_tap_die=True, sideways=True,length=self.barrel_diameter).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
 
+
+
         return barrel
 
 
 
 
     def get_lid(self, for_printing = True):
-        lid = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.lid_hole_d/2).extrude(self.lid_thick)
-        # lid = lid.cut(self.lid_bearing.get_cutter())
+        # lid = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.lid_hole_d/2).extrude(self.lid_thick)
+        lid = cq.Workplane("XY").circle(self.barrel_diameter / 2 + self.wall_thick).extrude(self.lid_thick)
+        lid = lid.cut(self.lid_bearing.get_cutter())
         # lid = lid.cut()
         lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
+
+        lid = Gear.cutStyle(lid, outerRadius=self.radius_for_style, innerRadius=self.key_bearing.outer_d/2 + self.wall_thick/2, style=self.style,
+                            clockwise_from_pinion_side=self.clockwise, rim_thick=0)
+
         if for_printing:
             lid = lid.rotate((0,0,0),(1,0,0),180).translate((0,0,self.lid_thick))
         return lid
@@ -1049,9 +1054,10 @@ class SpringBarrel:
 
         arbor = arbor.faces("<Z").workplane().circle(self.arbor_d/2).extrude(behind_spring_length)
 
-        ratchet_key_length = ratchet_key_extra_length + self.ratchet_collet_thick + self.ratchet.thick
 
-        arbor = arbor.faces("<Z").workplane().polygon(6, self.arbor_d).extrude(ratchet_key_length)
+        if self.ratchet_at_back:
+            ratchet_key_length = ratchet_key_extra_length + self.ratchet_collet_thick + self.ratchet.thick
+            arbor = arbor.faces("<Z").workplane().polygon(6, self.arbor_d).extrude(ratchet_key_length)
         arbor = arbor.faces(">Z").workplane().polygon(6, self.arbor_d).extrude(key_length)
 
 
@@ -1105,7 +1111,7 @@ class SpringBarrel:
     def get_model(self):
         model = self.get_barrel()
 
-        model = model.add(self.get_lid().translate((0,0,self.base_thick + self.barrel_height)))
+        model = model.add(self.get_lid(for_printing=False).translate((0,0,self.base_thick + self.barrel_height)))
         model = model.add(self.get_arbor(for_printing=False))
 
         return model
@@ -1683,7 +1689,7 @@ class CordWheel:
         return 21
 
     def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3, cord_thick=2, bearing=None, key_square_bit_height=30,
-                 gear_thick=5, front_plate_thick=8, style="HAC", cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False):
+                 gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS, cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False):
         '''
         loose_on_rod - if True then the cord/chain/rope section of the wheel (this bit) is loose on the arbour. If true, then that is fixed and the actual gear wheel is loose on the arbour
         for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings

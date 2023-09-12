@@ -657,7 +657,7 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style="HAC", prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
+    def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style=GearStyle.ARCS, prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
                         ratchet_diameter=-1, traditional_ratchet=False):
         '''
         If preferred diameter is provided, use that rather than the min diameter
@@ -698,8 +698,9 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2):
-        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0, pawl_angle = pawl_angle, click_angle = click_angle)
+    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2, ratchet_at_back=True, style=GearStyle.ARCS):
+        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0,
+                                          pawl_angle = pawl_angle, click_angle = click_angle, ratchet_at_back=ratchet_at_back, style=style)
         '''
         smiths: 66 teeth on barrel, 10 on next pinion
         76 teeth on next wheel, 13 on next pinion
@@ -921,7 +922,7 @@ class GoingTrain:
                 fits = True
 
         power_at_front = not self.chain_at_back
-        first_chainwheel_clockwise = self.powered_wheels % 2 == 1
+        first_chainwheel_clockwise = self.powered_wheels % 2 == 0
         for i in range(self.powered_wheels):
 
 
@@ -933,19 +934,21 @@ class GoingTrain:
                                                          distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchetScrews,
                                                          use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
             else:
-                #just a bog standard wheel and pinion
+                #just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
+                clockwise_from_pinion_side = first_chainwheel_clockwise == (i %2 == 0)
                 pinionThick = self.powered_wheel_arbours[i - 1].wheel_thick * chainWheelPinionThickMultiplier
                 self.powered_wheel_arbours.append(Arbour(wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=chainWheelThick * (thicknessReduction ** i), arbour_d=holeD, pinion=self.powered_wheel_pairs[i - 1].pinion,
                                                          pinion_thick=pinionThick, end_cap_thick=self.gear_pinion_end_cap_length,
-                                                         distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front
-                                                         ))
+                                                         distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
+                                                         clockwise_from_pinion_side=clockwise_from_pinion_side))
                 if i == 1:
                     #negate flipping the direction of the pinion
                     pinion_at_front = not pinion_at_front
             pinion_at_front = not pinion_at_front
 
         for i in range(self.wheels):
-
+            clockwise = i % 2 == 0
+            clockwise_from_pinion_side = clockwise == pinion_at_front
             if i == 0:
                 # == minute wheel ==
                 if self.powered_wheels == 0:
@@ -956,8 +959,7 @@ class GoingTrain:
                 else:
                     # just a normal gear
 
-                    clockwise = i % 2 == 0
-                    clockwise_from_pinion_side = clockwise and pinion_at_front
+
                     if self.powered_wheels > 0:
                         pinionThick = self.powered_wheel_arbours[-1].wheel_thick * chainWheelPinionThickMultiplier
                     else:
@@ -991,7 +993,7 @@ class GoingTrain:
                 #no need to worry about front and back as they can just be turned around
                 arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbour_d=holeD, wheel_thick=thick * (thicknessReduction ** i),
                                       pinion_thick=pinionThick, end_cap_thick=self.gear_pinion_end_cap_length, pinion_extension=pinionExtension,
-                                      distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front))
+                                      distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
             else:
                 # == escape wheel ==
                 #Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
@@ -1280,6 +1282,8 @@ class SimpleClockPlates:
 
         # override default position of the motion works (for example if it would be in the way of a keywind and it can't go above because there's a moon complication)
         self.motion_works_angle = degToRad(motion_works_angle_deg)
+
+        self.little_arm_to_motion_works = True
 
         if self.motion_works_angle < 0:
             # is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable (deprecated - motion_works_angle is more flexible)
@@ -3080,7 +3084,7 @@ class SimpleClockPlates:
             if needs_plain_hole:
                 outer_d = self.direct_arbour_d + 3
 
-            if outer_d > self.plate_width - self.bearing_wall_thick*2 and make_plate_bigger:
+            if outer_d > self.plate_width - self.bearing_wall_thick*2 and make_plate_bigger and not needs_plain_hole:
                 #this is a chunkier bearing, make the plate bigger
                 try:
                     plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(outer_d / 2 + self.bearing_wall_thick).extrude(self.get_plate_thick(back=back)))
@@ -3176,7 +3180,7 @@ class SimpleClockPlates:
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = npToSet(np.add(self.motion_works_pos, pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(self.get_plate_thick(back=False)).translate(screw_pos))
-        else:
+        elif self.little_arm_to_motion_works:
             #extra material in case the motion works is at an angle off to one side
             plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
             #hole for screw to hold motion works arbour
@@ -3582,10 +3586,12 @@ class MantelClockPlates(SimpleClockPlates):
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1, compact_zigzag=True, screws_from_back=screws_from_back)
+                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back)
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
+
+        self.little_arm_to_motion_works = False
 
         if self.dial is not None:
             #hacky, cut away a bit from the top support so it won't crash into the anchor rod
@@ -3676,7 +3682,16 @@ class MantelClockPlates(SimpleClockPlates):
         for side in [0,1]:
             plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bottom_pillar_positions[side]], wide=main_arm_wide, thick = plate_thick))
             plate = plate.union(get_stroke_line([self.bottom_pillar_positions[side], self.bearing_positions[0][:2]], wide=main_arm_wide, thick=plate_thick))
-            plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
+
+        # plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
+        if not back:
+            #no point holding the bearing that isn't there for the anchor arbor!
+            plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[1], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
+
+        if back:
+            plate = plate.union(get_stroke_line([self.top_pillar_positions[1],self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
 
         for foot_pos in self.bottom_pillar_positions:
             #give it little feet
@@ -3698,9 +3713,12 @@ class MantelClockPlates(SimpleClockPlates):
             plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels + 2][:2], link_pos], wide=small_arm_wide, thick=plate_thick))
 
         for i, pos in enumerate(self.bearing_positions):
+
             bearing_info = self.arbors_for_plate[i].bearing
 
-            plate = plate.union(cq.Workplane("XY").circle(bearing_info.outer_d / 2 + self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
+            if not (i == len(self.bearing_positions)-1 and back):
+                #only if not the back plate and the hole for the anchor arbor
+                plate = plate.union(cq.Workplane("XY").circle(bearing_info.outer_d / 2 + self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
 
         plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outer_d / 2 + self.bearing_wall_thick * 1.5).extrude(plate_thick))
 
