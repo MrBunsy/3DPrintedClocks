@@ -284,13 +284,13 @@ class ChristmasPudding:
 
         for current in range(random.randrange(10,20)):
             pos = (random.uniform(-0.5,0.5)*self.diameter, random.uniform(-0.5,0)*self.diameter)
-            if distanceBetweenTwoPoints((0,0),pos) > self.diameter/2 - current_diameter:
+            if distance_between_two_points((0, 0), pos) > self.diameter/2 - current_diameter:
                 #outside the pud
                 continue
             current_angle = random.random()*math.pi*2
             current_end_pos = np.add(pos, polar(current_angle, current_length*random.uniform(0.8,1.2)))
 
-            current = cq.Workplane("XY").sketch().arc((pos[0], pos[1]), current_diameter*random.uniform(0.4,0.6), 0., 360.).arc(npToSet(current_end_pos), current_diameter*random.uniform(0.4,0.6), 0., 360.)\
+            current = cq.Workplane("XY").sketch().arc((pos[0], pos[1]), current_diameter*random.uniform(0.4,0.6), 0., 360.).arc(np_to_set(current_end_pos), current_diameter * random.uniform(0.4, 0.6), 0., 360.)\
                 .hull().finalize().extrude(self.thick)
             currents = currents.add(current)
 

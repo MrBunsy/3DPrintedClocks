@@ -3011,8 +3011,8 @@ class TraditionalRatchet:
         self.click_wide = 1.7#0.9
 
         self.click_fixings = [
-            npToSet(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance/2))),
-            npToSet(np.add(click_fixing_centre, polar(self.click_fixing_angle - math.pi / 2, self.click_fixings_distance/2)))
+            np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance / 2))),
+            np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle - math.pi / 2, self.click_fixings_distance / 2)))
         ]
 
     def get_inner_radius(self):
@@ -3082,9 +3082,9 @@ class TraditionalRatchet:
         tooth_inner = (self.gear_diameter/2-self.tooth_deep, 0)
         next_tooth_outer = polar(self.direction * self.tooth_angle, self.gear_diameter/2)
 
-        pawl_inner = npToSet(np.add(self.pawl_fixing, polar(pawl_angle + self.direction*math.pi/2, self.pawl_diameter/2)))
-        pawl_outer = npToSet(np.add(self.pawl_fixing, polar(pawl_angle - self.direction*math.pi/2, self.pawl_diameter/2)))
-        pawl_base = npToSet(np.add(self.pawl_fixing, polar(pawl_from_centre_angle + math.pi + -self.direction*self.tooth_angle, self.pawl_diameter/2)))
+        pawl_inner = np_to_set(np.add(self.pawl_fixing, polar(pawl_angle + self.direction * math.pi / 2, self.pawl_diameter / 2)))
+        pawl_outer = np_to_set(np.add(self.pawl_fixing, polar(pawl_angle - self.direction * math.pi / 2, self.pawl_diameter / 2)))
+        pawl_base = np_to_set(np.add(self.pawl_fixing, polar(pawl_from_centre_angle + math.pi + -self.direction * self.tooth_angle, self.pawl_diameter / 2)))
 
         #contact with the tooth
         pawl = cq.Workplane("XY").moveTo(tooth_inner[0], tooth_inner[1]).lineTo(self.gear_diameter/2, 0)
@@ -3104,8 +3104,8 @@ class TraditionalRatchet:
         #bit for the spring to rest against
         # pawl = pawl.union(cq.Workplane("XY").rect(self.pawl_diameter/2, self.spring_rest_length).extrude(self.thick).translate(self.pawl_fixing).translate((self.pawl_diameter/4,-self.spring_rest_length/2)))
         spring_rest_top_start = polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter/2)
-        spring_rest_top_end = npToSet(np.add(spring_rest_top_start, polar(self.pawl_fixing_angle + self.direction*math.pi/2, self.spring_rest_length)))
-        spring_rest_bottom_end = npToSet(np.add(spring_rest_top_end, polar(self.pawl_fixing_angle + math.pi, self.pawl_diameter/2)))
+        spring_rest_top_end = np_to_set(np.add(spring_rest_top_start, polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length)))
+        spring_rest_bottom_end = np_to_set(np.add(spring_rest_top_end, polar(self.pawl_fixing_angle + math.pi, self.pawl_diameter / 2)))
 
         #
         pawl = pawl.union(cq.Workplane("XY").moveTo(spring_rest_top_start[0], spring_rest_top_start[1])
@@ -3121,7 +3121,7 @@ class TraditionalRatchet:
     def get_click(self):
 
 
-        click_end_pos = npToSet(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter/3), polar(self.pawl_fixing_angle + self.direction*math.pi/2, self.spring_rest_length*3/4) ))
+        click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 3 / 4)))
 
         click_end_pos = rotate_vector(click_end_pos, (0,0,1), degToRad(self.rotate_by_deg))
 
@@ -3133,8 +3133,8 @@ class TraditionalRatchet:
 
         line_to_click_end = Line((0,0), anotherPoint=click_end_pos)
 
-        click_end_inner_pos = npToSet(np.subtract(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide/2)))
-        click_end_outer_pos = npToSet(np.add(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
+        click_end_inner_pos = np_to_set(np.subtract(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
+        click_end_outer_pos = np_to_set(np.add(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
 
         click_spring_r = self.click_fixings_r + self.pawl_diameter/2
         click_start_outer = polar(self.click_fixing_angle, self.click_fixings_r + self.click_wide / 2)

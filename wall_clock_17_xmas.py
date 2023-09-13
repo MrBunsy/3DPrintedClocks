@@ -113,8 +113,8 @@ pretty_hand_avoider = clock.ItemWithCosmetics(shape = pendulum.get_hand_avoider(
 
 frame = plates.arbors_for_plate[-1].get_anchor_shapes()["anchor"]
 escapement = plates.arbors_for_plate[-1].arbor.escapement
-entry_pos = clock.npToSet(np.multiply(escapement.entry_side_end_relative,(0.65,-0.65)))
-exit_pos = clock.npToSet(np.multiply(escapement.exit_side_end_relative,(1,-1)))
+entry_pos = clock.np_to_set(np.multiply(escapement.entry_side_end_relative, (0.65, -0.65)))
+exit_pos = clock.np_to_set(np.multiply(escapement.exit_side_end_relative, (1, -1)))
 random.random()
 mistletoes = [clock.MistletoeSprig(thick=leaf_thick, leaf_length=30, branch_length=30) for i in range(2)]
 

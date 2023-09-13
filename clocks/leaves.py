@@ -596,7 +596,7 @@ class HollyLeaf:
             #RHS
             angle = top_angle - i * self.spike_angle
             next_angle = top_angle - (i+1) * self.spike_angle
-            spike_pos = npToSet(np.add(circle_centre, polar(next_angle, self.edge_circle_r)))
+            spike_pos = np_to_set(np.add(circle_centre, polar(next_angle, self.edge_circle_r)))
             spike_points = spike_points_RHS.append(spike_pos)
 
 

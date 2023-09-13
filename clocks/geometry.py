@@ -100,4 +100,4 @@ def rotate_vector(vector, axis, angle_rad):
     rotate_vector = list(vector)
     if len(rotate_vector) < 3:
         rotate_vector += [0]
-    return npToSet(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
+    return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))

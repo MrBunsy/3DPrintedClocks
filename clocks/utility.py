@@ -23,6 +23,7 @@ from math import sin, cos, pi, floor
 import cadquery as cq
 
 
+
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
 IMAGEMAGICK_CONVERT_PATH="C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
 
@@ -293,10 +294,10 @@ class MachineScrew:
     def get_head_diameter(self):
         return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
 
-def npToSet(npVector):
+def np_to_set(npVector):
     return (npVector[0], npVector[1])
 
-def averageOfTwoPoints(a,b):
+def average_of_two_points(a, b):
     if len(a) != len(b):
         raise ValueError("Points not same number of dimensions")
 
@@ -312,15 +313,15 @@ def averageOfTwoPoints(a,b):
 #     '''
 #     return
 
-def distanceBetweenTwoPoints(a,b):
+def distance_between_two_points(a, b):
     return math.sqrt(math.pow(a[0] - b[0],2) + math.pow(a[1] - b[1], 2))
 
 
-def getPreferredTangentThroughPoint(circle_centre, circle_r, point, clockwise=True):
+def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwise=True):
     '''
     Get the tangent which is in the clockwise of anticlockwise direction from the point (relative to the circle)
     '''
-    tangents = getTangentsThroughPoint(circle_centre, circle_r, point)
+    tangents = get_tangents_through_point(circle_centre, circle_r, point)
 
     direct_line = Line(circle_centre, anotherPoint=point)
 
@@ -390,7 +391,7 @@ def get_circle_intersections(circle0_centre, r0, circle1_centre, r1):
         return [(x3, y3), (x4, y4)]
 
 
-def getTangentsThroughPoint(circle_centre, circle_r, point):
+def get_tangents_through_point(circle_centre, circle_r, point):
     '''
     Given a circle centred at circle_centre, radius_r and a point outside the circle, return a Line which passes through the point and is a tangent to thecircle
 
@@ -475,6 +476,7 @@ class Line:
 
         self.start = start
 
+        self.anotherPoint = None
         if direction is not None:
             self.dir = direction
 
@@ -524,196 +526,182 @@ class Line:
 
 
 
+    def intersection_with_circle(self, circle_centre, circle_r):
+        '''
+
+        ported from my old javascript physics engine
+
+        //does a circle intersect a line?
+        //returns points where circle intersects.
+        '''
+        x1,y1 = self.start
+
+        if self.anotherPoint is None:
+            x2 = self.start[0] + self.dir[0]*100
+            y2 = self.start[1] + self.dir[1]*100
+        else:
+            x2,y2 = self.anotherPoint
+        a=circle_centre[0]
+        b=circle_centre[1]
+        r=circle_r
+        '''//r=radius
+		//a=circle centre x
+		//b=circle centre y
+		//(x1,y1), (x2,y2) points line travels between
+		'''
+
+        if x1 < x2:
+            testx1 = x1
+            testx2 = x2
+        else:
+            testx1 = x2
+            testx2 = x1
+
+        if y1 < y2:
+            testy1 = y1
+            testy2 = y2
+        else:
+            testy1 = y2
+            testy2 = y1
+
+        #treat both as squares first, if they collide, look in more detail
+        # if not (testx2 > (a-r) and testx1 < (a+r) and testy1 < (b+r) and testy2 > (b-r)):
+        #     #nowhere near,
+        #     return []
+
+        distance = self.get_shortest_distance_to_point(circle_centre)
+        if distance > circle_r:
+            return []
+
+        dy = y2 - y1
+        dx = x2 - x1
+
+        #//gradient of line
+        m = dy / dx
+        #//fixes odd problem with not detecting collision point correctly on a nearly vertical line - needs looking into?
+        if m > 1000000:
+            m = float('inf')
+
+        if m == float('inf') or m == float('-inf'):
+            #//vertical line - we know x, but have potentially two possible Ys
+            x = x1
+            #//b^2 - 4ac
+            discrim = math.pow((-2 * b), 2) - 4 * (b * b + (x - a) * (x - a) - r * r)
+            if discrim >= 0:
+                overlap=False
+                thisY=False
+                #//minus
+                y = (-(-2 * b) - math.sqrt(discrim)) / 2
+                if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
+                    overlap=True
+                    thisY=y
+                #//plus
+                y = (-(-2 * b) + math.sqrt(discrim)) / 2
+                if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
+                    if overlap:
+                        #//take average of two colliding coords
+                        thisY+=y
+                        thisY/=2
+                    else:
+                        overlap=True
+                        thisY=y
+                if overlap:
+                    return [(x, thisY)]
+
+        elif m ==  0:
+            #//horizontal line, two potential Xs
+            y = y1
+            discrim = math.pow((-2 * a), 2) - 4 * (a * a + (y - b) * (y - b) - r * r)
+            if discrim >= 0:
+                overlap=False
+                thisX=False
+                #//minus
+                x = (-(-2 * a) - math.sqrt(discrim)) / 2
+                if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
+                    overlap=True
+                    thisX=x
+                #//plus
+                x = (-(-2 * a) + math.sqrt(discrim)) / 2
+                if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
+                    if overlap:
+                        #//take average of two colliding coords
+                        thisX+=x
+                        thisX/=2
+                    else:
+                        overlap=True
+                        thisX=x
+                if overlap:
+                    return [(thisX, y)]
+        else:
+            #//re-arrangement of the equation of a circle and the equation of a straight line to find the x co-ordinate of an intersection
+            discrim = math.pow((-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m), 2) - 4 * (1 + m * m) * (-2 * m * x1 * y1 + 2 * m * x1 * b + m * m * x1 * x1 - r * r + a * a + (y1 - b) * (y1 - b))
+            #//if discriminant is less than zero then there are no real roots and :. no interesction
+            if discrim >= 0:
+                # overlap=False
+                points=[]
+                #//circle intersects line, but where?
+                #//minus first
+                x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) - math.sqrt(discrim)) / (2 * (1 + m * m))
+                y = m * (x - x1) + y1
+                if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
+                    overlap=True
+                    points.append((x,y))
+                #//then plus
+                x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) + math.sqrt(discrim)) / (2 * (1 + m * m))
+                y = m * (x - x1) + y1
+
+                if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
+                    # if overlap:
+                    #     point=((point[0]+x)/2,(point[1]+y)/2)
+                    # else:
+                    #     overlap=True
+                    points.append((x,y))
+
+                return points
+            #//end of discrim if
+
+        #//end of m switch
+        return []
+
+
     # def intersection_with_circle(self, circle_centre, circle_r):
-    #     '''
-    #
-    #     ported from my old javascript physics engine
-    #
-    #     //does a circle intersect a line?
-    #     //returns points where circle intersects.
-    #     '''
-    #     x1 = self.start[0]
-    #     y1 = self.start[1]
-    #
-    #     x2 = self.start[0] + self.dir[0]*100
-    #     y2 = self.start[1] + self.dir[1]*100
-    #     a=circle_centre[0]
-    #     b=circle_centre[1]
-    #     r=circle_r
-    #     '''//r=radius
-	# 	//a=circle centre x
-	# 	//b=circle centre y
-	# 	//(x1,y1), (x2,y2) points line travels between
-	# 	'''
-    #
-    #     if x1 < x2:
-    #         testx1 = x1
-    #         testx2 = x2
-    #     else:
-    #         testx1 = x2
-    #         testx2 = x1
-    #
-    #     if y1 < y2:
-    #         testy1 = y1
-    #         testy2 = y2
-    #     else:
-    #         testy1 = y2
-    #         testy2 = y1
-    #
-    #     #treat both as squares first, if they collide, look in more detail
-    #     if not (testx2 > (a-r) and testx1 < (a+r) and testy1 < (b+r) and testy2 > (b-r)):
-    #         #nowhere near,
+    #     distance = self.get_shortest_distance_to_point(circle_centre)
+    # 
+    #     if distance > circle_r:
     #         return []
-    #     '''
-    #     var dy = y2 - y1;
-    #     var dx = x2 - x1;
-    #     //gradient of line
-    #     var m = dy / dx
-    #     //fixes odd problem with not detecting collision point correctly on a nearly vertical line - needs looking into?
-    #     if (m > 1000000)
-    #     {
-    #         m = Infinity;
-    #     }
-    #     switch (m)
-    #     {
-    #         case Infinity:
-    #         case -Infinity:
-    #             //vertical line - we know x, but have potentially two possible Ys
-    #             var x = x1
-    #             //b^2 - 4ac
-    #             var discrim = Math.pow((-2 * b), 2) - 4 * (b * b + (x - a) * (x - a) - r * r)
-    #             if (discrim >= 0)
-    #             {
-    #                 var overlap=false;
-    #                 var thisY=false;
-    #                 //minus
-    #                 var y = (-(-2 * b) - Math.sqrt(discrim)) / 2
-    #                 if (testx1 <= x && x <= testx2 && testy1 <= y && y <= testy2)
-    #                 {
-    #                     overlap=true;
-    #                     thisY=y;
-    #                 }
-    #                 //plus
-    #                 var y = (-(-2 * b) + Math.sqrt(discrim)) / 2
-    #                 if (testx1 <= x && x <= testx2 && testy1 <= y && y <= testy2)
-    #                 {
-    #                     if(overlap)
-    #                     {
-    #                         //take average of two colliding coords
-    #                         thisY+=y;
-    #                         thisY/=2;
-    #                     }
-    #                     else
-    #                     {
-    #                         overlap=true;
-    #                         thisY=y;
-    #                     }
-    #                 }
-    #                 if (overlap)
-    #                 {
-    #                     return {
-    #                         "overlap": true,
-    #                         "point": [x, thisY]
-    #                     };
-    #                 }
-    #             }
-    #             break;
-    #         case 0:
-    #             //horizontal line, two potential Xs
-    #             var y = y1
-    #             var discrim = Math.pow((-2 * a), 2) - 4 * (a * a + (y - b) * (y - b) - r * r)
-    #             if (discrim >= 0)
-    #             {
-    #                 var overlap=false;
-    #                 var thisX=false;
-    #                 //minus
-    #                 var x = (-(-2 * a) - Math.sqrt(discrim)) / 2
-    #                 if (testx1 <= x && x <= testx2 && testy1 <= y && y <= testy2)
-    #                 {
-    #                     overlap=true;
-    #                     thisX=x;
-    #                 }
-    #                 //plus
-    #                 var x = (-(-2 * a) + Math.sqrt(discrim)) / 2
-    #                 if (testx1 <= x && x <= testx2 && testy1 <= y && y <= testy2)
-    #                 {
-    #                     if(overlap)
-    #                     {
-    #                         //take average of two colliding coords
-    #                         thisX+=x;
-    #                         thisX/=2;
-    #                     }
-    #                     else
-    #                     {
-    #                         overlap=true;
-    #                         thisX=x;
-    #                     }
-    #                 }
-    #                 if (overlap)
-    #                 {
-    #                     return {
-    #                         "overlap": true,
-    #                         "point": [thisX, y]
-    #                     };
-    #                 }
-    #             }
-    #             break;
-    #         default:
-    #             //re-arrangement of the equation of a circle and the equation of a straight line to find the x co-ordinate of an intersection
-    #             var discrim = Math.pow((-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m), 2) - 4 * (1 + m * m) * (-2 * m * x1 * y1 + 2 * m * x1 * b + m * m * x1 * x1 - r * r + a * a + (y1 - b) * (y1 - b))
-    #             //if discriminant is less than zero then there are no real roots and :. no interesction
-    #             if (discrim >= 0)
-    #             {
-    #                 var overlap=false;
-    #                 var point=false;
-    #                 //circle intersects line, but where?
-    #                 //minus first
-    #                 var x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) - Math.sqrt(discrim)) / (2 * (1 + m * m))
-    #                 var y = m * (x - x1) + y1
-    #                 if (testx1 <= x && x <= testx2 && testy1 <= y && y <= testy2)
-    #                 {
-    #                     overlap=true;
-    #                     point=[x,y];
-    #                 }
-    #                 //then plus
-    #                 x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) + Math.sqrt(discrim)) / (2 * (1 + m * m))
-    #                 y = m * (x - x1) + y1
-    #
-    #                 if (testx1 <= x && x <= testx2 && testy1 <= y && y <= testy2)
-    #                 {
-    #                     if(overlap)
-    #                     {
-    #                         point=[(point[0]+x)/2,(point[1]+y)/2];
-    #                     }
-    #                     else
-    #                     {
-    #                         overlap=true;
-    #                         point=[x,y];
-    #                     }
-    #                 }
-    #
-    #                 if (overlap)
-    #                 {
-    #                     return {
-    #                         "overlap": true,
-    #                         "point": point
-    #                     };
-    #                 }
-    #             //end of discrim if
-    #             }
-    #             break;
-    #         //end of m switch
-    #     }
-    #     return {
-    #         "overlap": false
-    #     };
-    # }
-    #     '''
-    #
+
+
+
+        # '''
+        # not perfect, I haven't bothered to understand Shapely properly
+        # '''
+        # circle_centre_point = Point(circle_centre[0], circle_centre[1])
+        #
+        # if self.anotherPoint is None:
+        #     #could easily fix this to make properly generic
+        #     raise ValueError("Need anotherPoint to test intersection with circle (for now)")
+        #
+        # line = LineString([self.start, self.anotherPoint])
+        # circle = circle_centre_point.buffer(circle_r)
+        #
+        # intersections = circle.intersection(line)
+        #
+        # points = []
+        #
+        # for end in range(floor(len(intersections.bounds)/2)):
+        #     point = (intersections.bounds[end*2], intersections.bounds[end*2+1])
+        #     if distance_between_two_points(point, circle_centre) >= circle_r*0.99:
+        #         #point on the edge of the circle
+        #         points.append(point)
+        #
+        #
+        #
+        # return points
+
     def getAngle(self):
         return math.atan2(self.dir[1], self.dir[0])
 
-    def getAngleBetweenLines(self, b, acute=True):
+    def get_angle_between_lines(self, b, acute=True):
         aAngle=self.getAngle()
         bAngle=b.getAngle()
         angle = abs(aAngle - bAngle)
@@ -727,7 +715,7 @@ class Line:
         else:
             return math.pi - angle
 
-    def getShortestDistanceToPoint(self, point):
+    def get_shortest_distance_to_point(self, point):
         '''
         https://stackoverflow.com/a/39840218
         '''

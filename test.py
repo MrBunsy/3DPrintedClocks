@@ -734,11 +734,11 @@ if False:
 # print("Outputting ", out)
 # exporters.export(test_screwhole, out)
 # show_object(test_screwhole)
-spring = SpringBarrel(key_bearing=BEARING_12MM_FLANGED, style=GearStyle.CURVES)
-# # #
-# # show_object(spring.get_barrel())
-# # show_object(spring.get_lid())
-show_object(spring.get_model())
+# spring = SpringBarrel(key_bearing=BEARING_12MM_FLANGED, style=GearStyle.CURVES)
+# # # #
+# # # show_object(spring.get_barrel())
+# # # show_object(spring.get_lid())
+# show_object(spring.get_model())
 # show_object(spring.get_arbor(for_printing=True))
 
 # key = WindingKey(square_side_length=10,cylinder_length=50,key_hole_deep=20,handle_length=40, crank=False)
@@ -751,4 +751,13 @@ show_object(spring.get_model())
 # show_object(pendulum.get_bob(hollow=True))
 #
 # show_object(pendulum.get_bob_lid().translate((0,0,pendulum.bob_thick)))
+
+line = Line((-10,-10), anotherPoint=(100,100))
+
+intersections = line.intersection_with_circle((0,0), 5)
+
+# for point in intersections:
+#     print(point[0], point[1])
+
+print(intersections)
 

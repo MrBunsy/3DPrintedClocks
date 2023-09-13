@@ -1470,7 +1470,7 @@ class SimpleClockPlates:
             minute_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
 
             #adjust motion works size
-            minute_wheel_to_hands = npToSet(np.subtract(minute_wheel_pos, self.hands_position))
+            minute_wheel_to_hands = np_to_set(np.subtract(minute_wheel_pos, self.hands_position))
 
             minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
             minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
@@ -1481,7 +1481,7 @@ class SimpleClockPlates:
                 #motion works angle will offset the centre arbor
 
                 line_from_hands = Line(self.hands_position, angle=self.motion_works_angle)
-                mid_line = Line(averageOfTwoPoints(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi/2)
+                mid_line = Line(average_of_two_points(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi / 2)
 
                 mid_arbor_pos = line_from_hands.intersection(mid_line)
                 arbor_distance = np.linalg.norm(np.subtract(mid_arbor_pos, minute_wheel_pos))
@@ -1516,12 +1516,12 @@ class SimpleClockPlates:
             #make unit vector
             direction = np.multiply(direction, 1/np.linalg.norm(direction))
 
-            self.motion_works_relative_pos = npToSet(np.multiply(direction, motionWorksDistance))
+            self.motion_works_relative_pos = np_to_set(np.multiply(direction, motionWorksDistance))
         else:
             # motion works is directly below the minute rod by default, or whatever angle has been set
             self.motion_works_relative_pos = polar(self.motion_works_angle, motionWorksDistance)
 
-        self.motion_works_pos = npToSet(np.add(self.hands_position, self.motion_works_relative_pos))
+        self.motion_works_pos = np_to_set(np.add(self.hands_position, self.motion_works_relative_pos))
 
         #even if it's not used:
 
@@ -1564,7 +1564,7 @@ class SimpleClockPlates:
                     #     relative_pos = npToSet(np.subtract(fixing, tuple(dial_centre)))
                     #     dial_fixings_relative_to_dial.append(relative_pos)
                     #array of arrays because we only want one screw per pillar here
-                    dial_fixings_relative_to_dial = [[npToSet(np.subtract(pos, dial_centre))] for pos in dial_fixings]
+                    dial_fixings_relative_to_dial = [[np_to_set(np.subtract(pos, dial_centre))] for pos in dial_fixings]
 
                     for dial_fixing in dial_fixings_relative_to_dial:
                         if np.linalg.norm(dial_fixing) > self.dial.outside_d*0.9:
@@ -1576,7 +1576,7 @@ class SimpleClockPlates:
 
 
             if self.has_seconds_hand():
-                second_hand_relative_pos = npToSet(np.subtract(self.get_seconds_hand_position(), self.hands_position))
+                second_hand_relative_pos = np_to_set(np.subtract(self.get_seconds_hand_position(), self.hands_position))
 
                 if self.centred_second_hand:
                     # second_hand_mini_dial_d = -1
@@ -1804,7 +1804,7 @@ class SimpleClockPlates:
                 self.angles_from_chain[0] = math.pi / 2 + on_side * angle
                 minute_wheel_relative_pos = (0,first_powered_wheel_to_minute_wheel)
                 second_powered_wheel_pos =  polar(self.angles_from_chain[0], first_powered_wheel_to_second_powered_wheel)
-                minute_wheel_from_second_powered_wheel = npToSet(np.subtract(minute_wheel_relative_pos, second_powered_wheel_pos))
+                minute_wheel_from_second_powered_wheel = np_to_set(np.subtract(minute_wheel_relative_pos, second_powered_wheel_pos))
                 self.angles_from_chain[1] = math.atan2(minute_wheel_from_second_powered_wheel[1], minute_wheel_from_second_powered_wheel[0])
                 if self.compact_zigzag:
                     on_side *= -1
@@ -1839,7 +1839,7 @@ class SimpleClockPlates:
             #         # chain_wheel_to_second_wheel
 
 
-            third_wheel_from_second_wheel = npToSet(np.subtract(third_wheel_pos, second_wheel_pos))
+            third_wheel_from_second_wheel = np_to_set(np.subtract(third_wheel_pos, second_wheel_pos))
             self.angles_from_minute[1] = math.atan2(third_wheel_from_second_wheel[1], third_wheel_from_second_wheel[0])
             #TODO if the second wheel would clash with the powered wheel, push the third wheel up higher
             #
@@ -1871,7 +1871,7 @@ class SimpleClockPlates:
             #aim: have pendulum directly above hands
             positions = [(0,0)]
             for i in range(1, self.going_train.wheels):
-                positions.append(npToSet(np.add(positions[i-1], polar(self.angles_from_minute[i - 1], self.going_train.get_arbour(i - 1).distance_to_next_arbour))))
+                positions.append(np_to_set(np.add(positions[i - 1], polar(self.angles_from_minute[i - 1], self.going_train.get_arbour(i - 1).distance_to_next_arbour))))
 
             escape_wheel_to_anchor = self.going_train.get_arbour(-2).distance_to_next_arbour
             if escape_wheel_to_anchor < abs(positions[-1][0]):
@@ -2143,7 +2143,7 @@ class SimpleClockPlates:
         if for_printing:
             #rotate back
             holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
-            holder = holder.translate(npToSet(np.multiply(self.top_pillar_positions[0], -1)))
+            holder = holder.translate(np_to_set(np.multiply(self.top_pillar_positions[0], -1)))
         else:
             holder = holder.translate((0,0, self.front_z))
 
@@ -3182,7 +3182,7 @@ class SimpleClockPlates:
         if self.need_motion_works_holder:
             #screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
-                screw_pos = npToSet(np.add(self.motion_works_pos, pos))
+                screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(self.get_plate_thick(back=False)).translate(screw_pos))
         elif self.little_arm_to_motion_works:
             #extra material in case the motion works is at an angle off to one side
@@ -3204,7 +3204,7 @@ class SimpleClockPlates:
             dial_fixing_positions = []#[npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
             for pos_list in self.dial.get_fixing_positions():
                 for pos in pos_list:
-                    dial_fixing_positions.append(npToSet(np.add(pos, self.hands_position)))
+                    dial_fixing_positions.append(np_to_set(np.add(pos, self.hands_position)))
 
             top_dial_fixing_y = max([pos[1] for pos in dial_fixing_positions])
 
@@ -3231,7 +3231,7 @@ class SimpleClockPlates:
 
             #screw holes for the moon complication arbors
             for i, relative_pos in enumerate(self.moon_complication.get_arbor_positions_relative_to_motion_works()):
-                pos = npToSet(np.add(self.hands_position, relative_pos[:2]))
+                pos = np_to_set(np.add(self.hands_position, relative_pos[:2]))
                 # extra bits of plate to hold the screw holes for extra arbors
 
                 #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates
@@ -3601,10 +3601,21 @@ class MantelClockPlates(SimpleClockPlates):
 
         if self.dial is not None:
             #hacky, cut away a bit from the top support so it won't crash into the anchor rod
-            bearing_relative_to_dial = npToSet(np.subtract(self.bearing_positions[-1][:2], self.hands_position))
+            bearing_relative_to_dial = np_to_set(np.subtract(self.bearing_positions[-1][:2], self.hands_position))
             tall = 5
             self.dial.subtract_from_supports = cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
                 .circle(self.arbors_for_plate[-1].bearing.outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall))
+
+            if self.centred_second_hand:
+                pillar_positions = []
+                for side in [0,1]:
+                    #relocate the pillars holding the dial
+                    line = Line(self.bottom_pillar_positions[side], anotherPoint=self.top_pillar_positions[side])
+                    intersections = line.intersection_with_circle(self.hands_position, self.dial.outside_d/2 - self.dial.dial_width/2)
+                    pillar_positions += intersections
+                #single screw in each pillar ought to be enoguh, hence putting each element in its own list
+                self.dial.override_fixing_positions([[np_to_set(np.subtract(pos, self.hands_position))] for pos in pillar_positions])
+                self.dial.support_d=10
 
     def calc_pillar_info(self):
         '''
@@ -3649,8 +3660,8 @@ class MantelClockPlates(SimpleClockPlates):
         right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
         # left_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[self.going_train.powered_wheels+1][:2])
         self.top_pillar_positions = [
-            npToSet(np.add(self.bearing_positions[self.going_train.powered_wheels+1][:2], np.multiply(polar(math.pi*0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
-            npToSet(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+            np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+            np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
         ]
         print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
 
@@ -3750,7 +3761,7 @@ class MantelClockPlates(SimpleClockPlates):
             cutter = cq.Workplane("XY")
 
             for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
-                pos = npToSet(np.add(self.bearing_positions[0][:2],relative_pos))
+                pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
                 cutter = cutter.add(screw.get_cutter(for_tap_die=True, with_bridging=True).translate(pos))
 
             if back:
@@ -3774,13 +3785,13 @@ class MantelClockPlates(SimpleClockPlates):
         long_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[0], self.bottom_pillar_positions[0]))
         long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
         text_height = self.plate_width * 0.9
-        long_centre = npToSet(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
+        long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
         long_angle = long_line.getAngle()
 
         short_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.top_pillar_positions[1])
         short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
         short_line_length = short_space_length - 10
-        short_centre = npToSet(np.add(short_line.start, np.multiply(short_line.dir, short_space_length / 2)))
+        short_centre = np_to_set(np.add(short_line.start, np.multiply(short_line.dir, short_space_length / 2)))
         short_angle = short_line.getAngle() + math.pi
 
 

@@ -278,7 +278,7 @@ class MoonPhaseComplication3D:
         on_side = 1
         arbor0_to_arbor1 = self.get_arbor_distances(1)
         arbor1_to_bevel0 = self.get_arbor_distances(2)
-        arbor0_to_bevel0_vector = npToSet(np.subtract(bevel0_pos, arbor0_pos))
+        arbor0_to_bevel0_vector = np_to_set(np.subtract(bevel0_pos, arbor0_pos))
 
         arbor0_to_bevel0 = np.linalg.norm(arbor0_to_bevel0_vector)
         arbor0_to_bevel0_angle = math.atan2(arbor0_to_bevel0_vector[1], arbor0_to_bevel0_vector[0])
@@ -292,7 +292,7 @@ class MoonPhaseComplication3D:
 
 
 
-        arbor1_pos = npToSet( np.add(arbor0_pos, polar(angle+arbor0_to_bevel0_angle, arbor0_to_arbor1)))
+        arbor1_pos = np_to_set(np.add(arbor0_pos, polar(angle + arbor0_to_bevel0_angle, arbor0_to_arbor1)))
         arbor1_to_bevel0_check = np.linalg.norm(np.subtract(bevel0_pos, arbor1_pos))
 
         print("arbor1_to_bevel0: {}, arbor1_to_bevel0_check:{}".format(arbor1_to_bevel0, arbor1_to_bevel0_check))
@@ -375,7 +375,7 @@ class DialPillar:
             self.screws = MachineScrew(3, countersunk=True)
 
     def get_screws_relative_positions(self):
-        return [npToSet(np.subtract(screwpos, self.position)) for screwpos in self.screws_absolute_positions]
+        return [np_to_set(np.subtract(screwpos, self.position)) for screwpos in self.screws_absolute_positions]
 
     def get_pillar(self):
         relative_screws = self.get_screws_relative_positions()

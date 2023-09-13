@@ -251,7 +251,7 @@ class Gear:
 
 
 
-        branchlength = distanceBetweenTwoPoints(midBranch0, midBranch1)/2
+        branchlength = distance_between_two_points(midBranch0, midBranch1) / 2
 
         branchLengths = [branchlength for branch in branchYs]
         branchAngle = math.pi/3
@@ -267,7 +267,7 @@ class Gear:
             for i in [-1, 1]:
                 thisBranchAbsAngle=armAngle + i * branchAngle
                 branchEnd = np.add(branchStart, polar(thisBranchAbsAngle, branchLength))
-                branchCentre = averageOfTwoPoints(branchStart, branchEnd)
+                branchCentre = average_of_two_points(branchStart, branchEnd)
                 branchShape = cq.Workplane("XY").rect(branchLength, branchThick).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), radToDeg(thisBranchAbsAngle)).translate(branchCentre)
                 shape = shape.add(branchShape)
                 if depth < branchDepth-1:
@@ -1550,7 +1550,7 @@ class ArbourForPlate:
 
     def get_anchor_shapes(self):
         shapes = {}
-        previous_bearing_to_here = npToSet(np.subtract(self.bearing_position, self.previous_bearing_position))
+        previous_bearing_to_here = np_to_set(np.subtract(self.bearing_position, self.previous_bearing_position))
         anchor_angle = math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2
         #the Arbor will flip the anchor to the correct clockwiseness
         anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), radToDeg(anchor_angle))
@@ -2639,7 +2639,7 @@ class MotionWorks:
         if self.centred_second_hand:
             # relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
             #is this general purpose?
-            relative_pos = npToSet(np.add(motionWorksRelativePos, (-motionWorksRelativePos[0], motionWorksRelativePos[1])))
+            relative_pos = np_to_set(np.add(motionWorksRelativePos, (-motionWorksRelativePos[0], motionWorksRelativePos[1])))
             parts["time_setter_pinion"] = self.getCannonPinionPinion(standalone=True).translate(relative_pos)
 
         return parts
