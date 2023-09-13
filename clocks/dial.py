@@ -246,7 +246,7 @@ class MoonPhaseComplication3D:
             #hole to thread onto rod
             bevel = bevel.cut(cq.Workplane("XY").circle(self.arbor_d / 2).extrude(1000))
             #nyloc nut space
-            bevel = bevel.cut(self.screws.getNutCutter(nyloc=True).translate((0,0,self.lone_bevel_min_height - self.screws.getNutHeight(nyloc=True))))
+            bevel = bevel.cut(self.screws.get_nut_cutter(nyloc=True).translate((0, 0, self.lone_bevel_min_height - self.screws.get_nut_height(nyloc=True))))
             return bevel
 
         else:
@@ -383,7 +383,7 @@ class DialPillar:
 
         if self.embedded_nuts:
             for screwpos in relative_screws:
-                pillar = pillar.cut(self.screws.getNutCutter(height=self.screws.getNutHeight()+1, withBridging=True).translate(screwpos))
+                pillar = pillar.cut(self.screws.get_nut_cutter(height=self.screws.get_nut_height() + 1, with_bridging=True).translate(screwpos))
 
         return pillar
 
@@ -1015,7 +1015,7 @@ class Dial:
         separate so it can be used in teh rod length calculations
         '''
         screw = MachineScrew(rod_d)
-        return screw.getNutHeight(nyloc=True) * 2
+        return screw.get_nut_height(nyloc=True) * 2
 
 
     def get_wire_to_arbor_fixer(self, rod_d=3, for_printing=True):
@@ -1027,7 +1027,7 @@ class Dial:
 
         screw = MachineScrew(rod_d)
 
-        width = screw.getNutContainingDiameter()+4
+        width = screw.get_nut_containing_diameter() + 4
         length = rod_d*5
         thick = self.get_wire_to_arbor_fixer_thick(rod_d)
 
@@ -1038,7 +1038,7 @@ class Dial:
         holder = holder.faces(">Z").moveTo(0,length-width).circle(self.eye_bendy_wire_d/2).cutThruAll()
         holder = holder.faces(">Z").moveTo(0,0).circle(rod_d/2).cutThruAll()
 
-        holder= holder.cut(screw.getNutCutter(nyloc=True).translate((0,0,thick - screw.getNutHeight(nyloc=True))))
+        holder= holder.cut(screw.get_nut_cutter(nyloc=True).translate((0, 0, thick - screw.get_nut_height(nyloc=True))))
 
         if not for_printing:
             holder = holder.rotate((0,0,0),(1,0,0),180).translate((0,0,thick))

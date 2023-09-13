@@ -100,7 +100,7 @@ assembly.get_arbour_rod_lengths()
 
 assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK],
                     motion_works_colours=[clock.Colour.ORANGE,clock.Colour.ORANGE,clock.Colour.YELLOW,clock.Colour.GREEN],
-                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED])
+                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True)
 
 # show_object(plates.getDrillTemplate(6))
 

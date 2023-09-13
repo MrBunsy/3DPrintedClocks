@@ -1213,10 +1213,10 @@ class FrictionFitPendulumBits:
         #(0,0,0) is the rod from the anchor, the rod is along the z axis
 
         #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
-        holeStartY=-getNutContainingDiameter(self.arbour_d)*0.5-0.4#-5#-8#-height*0.2
+        holeStartY=-get_nut_containing_diameter(self.arbour_d)*0.5-0.4#-5#-8#-height*0.2
         holeHeight = getNutHeight(self.arbour_d,nyloc=True) + getNutHeight(self.arbour_d) + 1
 
-        nutD = getNutContainingDiameter(holeD)
+        nutD = get_nut_containing_diameter(holeD)
 
         wall_thick = (width - (nutD + 1))/2
 
@@ -1289,7 +1289,7 @@ class SuspensionSpringPendulumBits:
         # means to hold screw that will hold this in place
         crutch = crutch.cut(self.collet_screws.get_cutter(length=self.radius, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.radius, self.crutch_thick / 2)))
         #rotating so bridging shouldn't be needed to print
-        crutch = crutch.cut(self.collet_screws.getNutCutter(half=True).rotate((0,0,0),(0,0,1),360/12).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.square_side_length / 2, self.crutch_thick / 2)))
+        crutch = crutch.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.square_side_length / 2, self.crutch_thick / 2)))
 
         #arm down to the screw that will link with the pendulum
         crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length/2).rect(self.crutch_wide, self.crutch_length).extrude(self.crutch_thick))
@@ -1426,7 +1426,7 @@ class ArbourForPlate:
         collet = collet.faces(">Z").workplane().circle(self.bearing.inner_safe_d / 2).rect(square_size, square_size).extrude(self.collet_thick - height)
 
         collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.collet_thick / 2)))
-        collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.collet_thick / 2)))
+        collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.collet_thick / 2)))
 
         return collet
 
@@ -1449,7 +1449,7 @@ class ArbourForPlate:
 
         extra_distance_from_bearing = + 5
         #plus extra so it's easier to slot the pendulum out when it's near the bearing holder on the top wall standoff
-        gap_between_square_and_pendulum_hole = self.collet_screws.getNutHeight(half=True) + 1 + self.collet_screws.getHeadHeight() + extra_distance_from_bearing
+        gap_between_square_and_pendulum_hole = self.collet_screws.get_nut_height(half=True) + 1 + self.collet_screws.get_head_height() + extra_distance_from_bearing
 
         height = outer_d*2.5 + extra_distance_from_bearing
         print("gap_between_square_and_pendulum_hole (and m2 screw) = ",gap_between_square_and_pendulum_hole)
@@ -1467,7 +1467,7 @@ class ArbourForPlate:
 
         #means to hold screw that will hold this in place
         collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
-        collet = collet.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.pendulum_holder_thick / 2)))
+        collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.pendulum_holder_thick / 2)))
 
 
         return collet
@@ -1500,7 +1500,7 @@ class ArbourForPlate:
             arbourThreadedRod = MachineScrew(metric_thread=self.arbor_d)
 
             #using a half height nut so we get more rigidity on the rod, and we're clamping this in with a nut on the front anyway
-            nut_height = arbourThreadedRod.getNutHeight(half=True)
+            nut_height = arbourThreadedRod.get_nut_height(half=True)
 
             #if there's a bearing support out the front, extend out the front of the escape wheel, otherwise extend behind
             if extend_out_front:
@@ -1516,7 +1516,7 @@ class ArbourForPlate:
 
 
             #Clamping this both sides - plannign to use a dome nut on the front
-            wheel = wheel.cut(arbourThreadedRod.getNutCutter(half=True).translate((0, 0, nut_base_z)))
+            wheel = wheel.cut(arbourThreadedRod.get_nut_cutter(half=True).translate((0, 0, nut_base_z)))
 
             if for_printing and not extend_out_front:
                 wheel = wheel.rotate((0,0,0),(1,0,0),180).translate((0,0,self.arbor.wheel_thick))
@@ -1710,7 +1710,7 @@ class ArbourForPlate:
             if self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
                 spring_barrel = self.arbor.powered_wheel
                 #deliberately not including back bearing standoff as that's taken out of the distance_from_back
-                arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.arbor_d/2 - spring_barrel.cutoff_height, 0, spring_barrel.base_thick)).rotate((0, 0, 0), (0, 0, 1), -90)
+                arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.arbor_d/2 - spring_barrel.cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), -90)
                 assembly = assembly.add(arbor)
                 assembly = assembly.add(spring_barrel.get_lid(for_printing=False).translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
 
@@ -2258,8 +2258,8 @@ class Arbour:
         if self.get_extra_ratchet() is not None:
             length = self.wheel_thick + self.ratchet.thick
             if not self.ratchet_screws.countersunk:
-                length -= self.ratchet_screws.getHeadHeight()
-            print("Ratchet needs {} screws of length {}mm".format(self.ratchet_screws.getString(), length))
+                length -= self.ratchet_screws.get_head_height()
+            print("Ratchet needs {} screws of length {}mm".format(self.ratchet_screws.get_string(), length))
 
     def get_powered_wheel(self, for_printing=True, rear_side_extension=0, arbour_extension_max_radius=0):
         '''
@@ -2303,8 +2303,8 @@ class Arbour:
             if len(self.bolt_positions) > 0:
                 boltR = np.linalg.norm(self.bolt_positions[0])
                 #make sure it's possible to screw the ratchet or wheel on
-                if extension_r > boltR - self.ratchet_screws.getNutContainingDiameter()/2:
-                    extension_r = boltR - self.ratchet_screws.getNutContainingDiameter() / 2
+                if extension_r > boltR - self.ratchet_screws.get_nut_containing_diameter()/2:
+                    extension_r = boltR - self.ratchet_screws.get_nut_containing_diameter() / 2
 
             bearing_standoff_height = LAYER_THICK * 2
             bearing_standoff_r = get_bearing_info(self.arbour_d).inner_safe_d / 2
@@ -2326,8 +2326,8 @@ class Arbour:
             for hole_pos in self.bolt_positions:
                 cutter = cq.Workplane("XY").moveTo(hole_pos[0], hole_pos[1]).circle(self.ratchet_screws.metric_thread / 2).extrude(self.wheel_thick)
                 gear_wheel = gear_wheel.cut(cutter)
-                if self.wheel_thick - self.ratchet_screws.getNutHeight(half=True) > 1:
-                    cutter = self.ratchet_screws.getNutCutter(withBridging=False, half=True).translate(hole_pos)
+                if self.wheel_thick - self.ratchet_screws.get_nut_height(half=True) > 1:
+                    cutter = self.ratchet_screws.get_nut_cutter(with_bridging=False, half=True).translate(hole_pos)
                 # else screwing straight into the wheel seemed surprisingly secure, and if the wheel is that thin it probably isn't holding much weight anyway
                 gear_wheel = gear_wheel.cut(cutter)
         if self.use_ratchet and self.powered_wheel.traditional_ratchet:

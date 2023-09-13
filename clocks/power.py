@@ -134,11 +134,11 @@ class Weight:
 
 
 
-        screwHeight = r - self.bolt.getHeadDiameter()
+        screwHeight = r - self.bolt.get_head_diameter()
 
-        screwSpace = self.bolt.get_cutter().rotate((0, 0, 0), (0, 1, 0), 90).translate((-r + self.bolt.getHeadHeight() / 2, 0, screwHeight + self.height))
+        screwSpace = self.bolt.get_cutter().rotate((0, 0, 0), (0, 1, 0), 90).translate((-r + self.bolt.get_head_height() / 2, 0, screwHeight + self.height))
 
-        screwSpace = screwSpace.add(self.bolt.getNutCutter(height=1000).rotate((0,0,0),(0,1,0),90).translate((r*0.6,0,screwHeight + self.height)))
+        screwSpace = screwSpace.add(self.bolt.get_nut_cutter(height=1000).rotate((0, 0, 0), (0, 1, 0), 90).translate((r * 0.6, 0, screwHeight + self.height)))
 
         weight = weight.cut(screwSpace)
 
@@ -432,7 +432,7 @@ class LightweightPulley:
             screw_cutter = self.screws.get_cutter(with_bridging=True)
             if upright:
                 screw_cutter = screw_cutter.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, self.get_total_thickness()))
-                screw_cutter = screw_cutter.add(self.screws.getNutCutter(nyloc=True, withBridging=True))
+                screw_cutter = screw_cutter.add(self.screws.get_nut_cutter(nyloc=True, with_bridging=True))
 
             holder = holder.cut(screw_cutter.translate(pos))
 
@@ -520,10 +520,10 @@ class BearingPulley:
             else :
                 print("Can't fit bearing neatly inside pulley")
         totalThick = self.getTotalThick()
-        if totalThick < self.screws.getTotalLength():
-            print("Not thick ({}) enough to fit screw of length {}".format(totalThick, self.screws.getTotalLength()))
+        if totalThick < self.screws.get_total_length():
+            print("Not thick ({}) enough to fit screw of length {}".format(totalThick, self.screws.get_total_length()))
             #make it thick enough to fit the screw in, with a little bit of spare
-            extra_thick_needed = (self.screws.getTotalLength() - totalThick) + 0.5
+            extra_thick_needed = (self.screws.get_total_length() - totalThick) + 0.5
             self.edgeThick += extra_thick_needed/2
             self.bearingHolderThick += extra_thick_needed/2
 
@@ -598,7 +598,7 @@ class BearingPulley:
             if top:
                screwHoles = screwHoles.add(self.screws.get_cutter(with_bridging=True).translate(screwPos))
             else:
-                screwHoles = screwHoles.add(self.screws.getNutCutter(withBridging=True, withScrewLength=1000).translate(screwPos))
+                screwHoles = screwHoles.add(self.screws.get_nut_cutter(with_bridging=True, with_screw_length=1000).translate(screwPos))
 
         pulley = pulley.cut(screwHoles)
 
@@ -966,7 +966,7 @@ class SpringBarrel:
 
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
-        self.ratchet_collet_thick = self.lid_fixing_screws.getNutContainingDiameter() + 2
+        self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1
 
         self.radius_for_style = self.barrel_diameter/2-1
 
@@ -1067,6 +1067,7 @@ class SpringBarrel:
 
         arbor = arbor.rotate((0,0,0),(0,1,0),90).translate((0,0,self.arbor_d/2 - self.cutoff_height))#.intersect(cq.Workplane("XY").rect(1000,1000).extrude(100))
 
+        #chop off the bottom so this is printable horizontally
         arbor = arbor.cut(cq.Workplane("XY").rect(1000,1000).extrude(100).translate((0,0,-100)))
 
 
@@ -1077,10 +1078,17 @@ class SpringBarrel:
         arbor = arbor.cut(screwhole)
 
         #screwhole for ratchet collet TODO
-        # collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((-self.back_bearing.height - ratchet_key_length + self.ratchet.thick/2,0,0 ))
-        # arbor = arbor.cut(collet_screwhole)
+        top_z = self.key_containing_diameter - self.cutoff_height*2
+        if self.ratchet_at_back:
+            screwhole_x = -behind_spring_length -self.ratchet.thick - self.ratchet_collet_thick/2
+        else:
+            screwhole_x = self.barrel_height + self.internal_endshake + self.lid_thick + self.front_bearing_standoff + extra_in_front + self.ratchet.thick + self.ratchet_collet_thick/2
+        collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((screwhole_x,0,top_z/2 ))
+        collet_screwhole = collet_screwhole.add(self.lid_fixing_screws.get_nut_cutter().translate((screwhole_x, 0, top_z-self.lid_fixing_screws.get_nut_height())))
+        arbor = arbor.cut(collet_screwhole)
 
-
+        #so it should line up better with the barrel
+        arbor = arbor.translate((self.base_thick + self.internal_endshake/2,0,0))
 
         if not for_printing:
             arbor = arbor.rotate((0, 0, 0), (0, 1, 0), -90).translate((self.arbor_d/2, 0, 0))
@@ -1121,11 +1129,11 @@ class SpringBarrel:
         get the ratchet gear with a hole to slot over the key, and a space for a grub screw to fix it to the key
         '''
         gear = self.ratchet.get_gear()
-        if self.ratchet_at_back:
-            outer_d = self.arbor_d+6
-            gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
-            # means to hold screw that will hold this in place
-            gear = gear.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 360/12).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
+        # if self.ratchet_at_back:
+        outer_d = self.arbor_d+6
+        gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
+        # means to hold screw that will hold this in place
+        gear = gear.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
             # gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.arbor_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
         gear = gear.faces(">Z").workplane().polygon(6, self.arbor_d).cutThruAll()
 
@@ -1346,9 +1354,9 @@ class RopeWheel:
         if self.screw.countersunk:
             screwLength = self.get_height() - WASHER_THICK_M3
         else:
-            screwLength = self.get_height() - WASHER_THICK_M3 - self.screw.getHeadHeight()
+            screwLength = self.get_height() - WASHER_THICK_M3 - self.screw.get_head_height()
         #nut hole is extra deep by thickness of the ratchet
-        print("RopeWheel needs: {} screw length {}-{}".format(self.screw.getString(), screwLength, screwLength-self.ratchet_thick))
+        print("RopeWheel needs: {} screw length {}-{}".format(self.screw.get_string(), screwLength, screwLength - self.ratchet_thick))
 
     def get_turns(self, cord_usage=0):
         return cord_usage/self.circumference
@@ -1636,9 +1644,9 @@ class WindingKey:
         knob = cq.Workplane("XY").circle(self.body_wide/2).extrude(self.knob_length)
 
 
-        nut_height_space = self.knob_fixing_screw.getNutHeight(nyloc=True)
+        nut_height_space = self.knob_fixing_screw.get_nut_height(nyloc=True)
         screw_hole = cq.Workplane("XY").circle(self.knob_fixing_screw.metric_thread/2).extrude(self.knob_length*1.5)
-        screw_hole = screw_hole.add(self.knob_fixing_screw.getNutCutter(nyloc=True).translate((0,0,self.knob_length-nut_height_space)))
+        screw_hole = screw_hole.add(self.knob_fixing_screw.get_nut_cutter(nyloc=True).translate((0, 0, self.knob_length - nut_height_space)))
 
         knob = knob.cut(screw_hole)
 
@@ -1780,7 +1788,7 @@ class CordWheel:
 
         if self.use_key:
             # self.fixing_distance= self.diameter / 2 - self.screw_thread_metric / 2 - 1.5
-            self.fixing_distance = self.key_square_side_length/2 + self.fixing_screw.getHeadDiameter()/2+0.5
+            self.fixing_distance = self.key_square_side_length / 2 + self.fixing_screw.get_head_diameter() / 2 + 0.5
 
         self.fixing_points = [polar(a * math.pi * 2 / self.fixing_screws, self.fixing_distance) for a in range(self.fixing_screws)]#[(self.fixingDistance,0), (-self.fixingDistance,0)]
         self.cord_thick=cord_thick
@@ -1879,8 +1887,8 @@ class CordWheel:
     def getNutHoles(self):
 
         #rotate by 1/12th so there's a tiny bit more space near the main hole
-        cutter = cq.Workplane("XY").add(get_hole_with_hole(self.screw_thread_metric, getNutContainingDiameter(self.screw_thread_metric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(self.fixing_points[0]))
-        cutter = cutter.union(get_hole_with_hole(self.screw_thread_metric, getNutContainingDiameter(self.screw_thread_metric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(self.fixing_points[1]))
+        cutter = cq.Workplane("XY").add(get_hole_with_hole(self.screw_thread_metric, get_nut_containing_diameter(self.screw_thread_metric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(self.fixing_points[0]))
+        cutter = cutter.union(get_hole_with_hole(self.screw_thread_metric, get_nut_containing_diameter(self.screw_thread_metric, NUT_WIGGLE_ROOM), self.thick / 2, sides=6).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(self.fixing_points[1]))
         return cutter
 
     def getSegment(self, front=True):
@@ -1960,15 +1968,15 @@ class CordWheel:
 
         countersink = cq.Workplane("XY")
         for fixingPoint in self.fixing_points:
-            # coneHeight = getScrewHeadHeight(self.screw_thread_metric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-            # topR = getScrewHeadDiameter(self.screw_thread_metric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-            # countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screw_thread_metric / 2,
-            #                                                 height=coneHeight).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead - coneHeight)))
-            # # punch thorugh the top circle so the screw can get in
-            # #self.beforeBearingExtraHeight
-            # top = cq.Workplane("XY").circle(topR).extrude(100).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
-
-            top = self.fixing_screw.get_cutter().rotate((0,0,0),(1,0,0),180).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
+            coneHeight = getScrewHeadHeight(self.screw_thread_metric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+            topR = getScrewHeadDiameter(self.screw_thread_metric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+            countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screw_thread_metric / 2,
+                                                            height=coneHeight).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead - coneHeight)))
+            # punch thorugh the top circle so the screw can get in
+            #self.beforeBearingExtraHeight
+            top = cq.Workplane("XY").circle(topR).extrude(100).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
+            #this shuold be the same, but osmething is breaking the key section so leaving it alone for now
+            # top = self.fixing_screw.get_cutter().rotate((0,0,0),(1,0,0),180).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
 
             countersink = countersink.add(top)
         return countersink
@@ -2022,7 +2030,7 @@ class CordWheel:
         if self.use_key:
             #space for a nut
             for fixingPoint in self.fixing_points:
-                cutter = cutter.add(self.fixing_screw.getNutCutter(height=self.ratchet.thick / 2, withBridging=bridging, withScrewLength=1000).translate(fixingPoint))
+                cutter = cutter.add(self.fixing_screw.get_nut_cutter(height=self.ratchet.thick / 2, with_bridging=bridging, with_screw_length=1000).translate(fixingPoint))
         else:
             #cut out space for screwheads
             for fixingPoint in self.fixing_points:
@@ -2330,7 +2338,7 @@ class PocketChainWheel2:
 
             for pos in self.fixing_positions:
                 bottom = bottom.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.get_height()).translate(pos))
-                bottom = bottom.cut(self.fixing_screws.getNutCutter(height=self.ratchet.thick, withBridging=True).rotate((0,0,0),(0,0,1), 360/12).translate(pos))
+                bottom = bottom.cut(self.fixing_screws.get_nut_cutter(height=self.ratchet.thick, with_bridging=True).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
             bottom = bottom.faces(">Z").workplane().circle(self.hole_d / 2).cutThruAll()
 
         return bottom
@@ -2444,8 +2452,8 @@ class PocketChainWheel2:
         if self.ratchet is None:
             print("No ratchet, can't estimate screw lenght")
             return
-        minScrewLength = self.ratchet.thick + self.wheel_thick*0.75 + self.fixing_screws.getNutHeight()
-        print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.fixing_screws.getString(), self.get_height(), minScrewLength))
+        minScrewLength = self.ratchet.thick + self.wheel_thick*0.75 + self.fixing_screws.get_nut_height()
+        print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.fixing_screws.get_string(), self.get_height(), minScrewLength))
 
 class PocketChainWheel:
     '''
@@ -2697,7 +2705,7 @@ class PocketChainWheel:
 
 
             # half the height for a nut so the screw length can vary
-            combined = combined.cut(self.screw.getNutCutter(withBridging=True, height=(self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2).translate(holePos))
+            combined = combined.cut(self.screw.get_nut_cutter(with_bridging=True, height=(self.ratchet.thick + self.inner_width / 2 + self.wall_thick) / 2).translate(holePos))
 
         combined = combined.faces(">Z").workplane().circle(self.holeD / 2).cutThruAll()
 
@@ -2727,8 +2735,8 @@ class PocketChainWheel:
         if self.ratchet is None:
             print("No ratchet, can't estimate screw lenght")
             return
-        minScrewLength = self.get_height() - (self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2 - self.screw.getNutHeight()
-        print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.screw.getString(), self.get_height(), minScrewLength))
+        minScrewLength = self.get_height() - (self.ratchet.thick + self.inner_width/2 + self.wall_thick)/2 - self.screw.get_nut_height()
+        print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.screw.get_string(), self.get_height(), minScrewLength))
 
 
     def get_assembled(self):

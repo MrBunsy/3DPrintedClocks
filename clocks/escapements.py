@@ -1956,7 +1956,7 @@ class Pendulum:
         if self.hand_avoider_height < 0:
             self.hand_avoider_height = hand_avoider_inner_d
 
-        self.hand_avoider_thick = getNutContainingDiameter(threaded_rod_m) + 2
+        self.hand_avoider_thick = get_nut_containing_diameter(threaded_rod_m) + 2
         self.threaded_rod_m=threaded_rod_m
 
         self.hand_avoider_inner_d=hand_avoider_inner_d
@@ -1998,7 +1998,7 @@ class Pendulum:
 
 
 
-        nutD = getNutContainingDiameter(self.threaded_rod_m)
+        nutD = get_nut_containing_diameter(self.threaded_rod_m)
         nutThick = METRIC_NUT_DEPTH_MULT * self.threaded_rod_m
 
         nutSpace = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nutD).extrude(nutThick).translate((0, -self.hand_avoider_height / 2 + 0.5, 0))
@@ -2121,7 +2121,7 @@ class Pendulum:
         nut = nut.close().extrude(self.bob_nut_thick).faces(">Z").workplane().circle(self.threaded_rod_m / 2 + 0.25).cutThruAll()
 
         # currently assuming M3
-        nutD=getNutContainingDiameter(3, 0.1)
+        nutD=get_nut_containing_diameter(3, 0.1)
         #and going to try a nyloc nut to see if that stops it untightening itself
         nutHeight=getNutHeight(3,nyloc=True)
 
@@ -2340,7 +2340,7 @@ class HandTurnableNut:
         nut = nut.close().extrude(self.thick).faces(">Z").workplane().circle(self.screw.metric_thread/2 + 0.25).cutThruAll()
 
 
-        nut_space=self.screw.getNutCutter(nyloc=True).translate((0,0,self.thick-self.screw.getNutHeight()))
+        nut_space=self.screw.get_nut_cutter(nyloc=True).translate((0, 0, self.thick - self.screw.get_nut_height()))
 
         nut = nut.cut(nut_space)
         return nut

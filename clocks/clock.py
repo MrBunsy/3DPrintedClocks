@@ -1120,7 +1120,7 @@ class MoonHolder:
             raise ValueError("TODO moon phase holder for round plates")
 
         # max_y = self.bearingPositions[-1][1] - self.arboursForPlate[-1].bearing.outerD/2 - 3
-        # max_y = self.plates.plate_top_fixings[0][1] - self.plates.fixingScrews.getNutContainingDiameter()/2
+        # max_y = self.plates.plate_top_fixings[0][1] - self.plates.fixingScrews.get_nut_containing_diameter()/2
         max_y = self.plates.top_pillar_positions[1] + self.plates.top_pillar_r
 
         #top of the last wheel in the complication
@@ -1186,9 +1186,9 @@ class MoonHolder:
         # space for the two nuts, spring washer and normal washer at the bottom of the moon and nut at the top of the moon
         nut_space = cq.Workplane("XY").circle(space_d/2).extrude(moon_r)
         #space for nuts at the top of the moon (like on the front of the hands)
-        nut_space = nut_space.union(cq.Workplane("XY").circle(self.fixing_screws.getNutContainingDiameter()/2+0.5).extrude(self.moon_complication.moon_radius*2).translate((0,0,moon_r)))
+        nut_space = nut_space.union(cq.Workplane("XY").circle(self.fixing_screws.get_nut_containing_diameter() / 2 + 0.5).extrude(self.moon_complication.moon_radius * 2).translate((0, 0, moon_r)))
 
-        #.faces(">Z").workplane().circle(self.fixing_screws.getNutContainingDiameter()/2+0.5)).extrude(self.moon_complication.moon_radius*2)
+        #.faces(">Z").workplane().circle(self.fixing_screws.get_nut_containing_diameter()/2+0.5)).extrude(self.moon_complication.moon_radius*2)
 
         cutter = cutter.add(nut_space.rotate((0,0,0),(1,0,0),-90).translate(moon_centre_pos).translate((0,-moon_r-TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT, 0)))
 
@@ -1694,7 +1694,7 @@ class SimpleClockPlates:
             # I hadn't measured an m4 nut, and now I've printed half the clock!
             #TODO fix this later!
             self.bottom_pillar_width = 14.46854441470986
-            # self.bottom_pillar_width = self.fixingScrews.getNutContainingDiameter() + 5
+            # self.bottom_pillar_width = self.fixingScrews.get_nut_containing_diameter() + 5
             print("bottom_pillar_width", self.bottom_pillar_width)
 
         self.top_pillar_r = self.plate_width / 2
@@ -2167,7 +2167,7 @@ class SimpleClockPlates:
                 bearing_pos_y = bearing_pos[1]
                 bearing = get_bearing_info(self.going_train.get_arbour_with_conventional_naming(i).arbour_d)
                 screw = MachineScrew(3, countersunk=True)
-                if abs(bearing_pos_y - motion_works_arbour_y) < bearing.outer_d/2 + screw.getHeadDiameter()/2:
+                if abs(bearing_pos_y - motion_works_arbour_y) < bearing.outer_d/2 + screw.get_head_diameter()/2:
                     print("motion works holder would clash with bearing holder for arbour", i)
                     return True
 
@@ -2705,14 +2705,14 @@ class SimpleClockPlates:
             top_screw_length = top_total_length - (top_total_length%10)
         else:
             #nut will stick out the front or back
-            top_screw_length = top_total_length + self.fixing_screws.getNutHeight() - (top_total_length + self.fixing_screws.getNutHeight()) % 10
+            top_screw_length = top_total_length + self.fixing_screws.get_nut_height() - (top_total_length + self.fixing_screws.get_nut_height()) % 10
 
         if not self.screws_from_back[1][0] and self.back_plate_from_wall > 0:
             #space to embed the nut in the standoff
             bottom_screw_length = bottom_total_length - (bottom_total_length % 10)
         else:
             #nut will stick out the front or back
-            bottom_screw_length = bottom_total_length + self.fixing_screws.getNutHeight() - (bottom_total_length + self.fixing_screws.getNutHeight()) % 10
+            bottom_screw_length = bottom_total_length + self.fixing_screws.get_nut_height() - (bottom_total_length + self.fixing_screws.get_nut_height()) % 10
 
         #top and bottom screws are different lengths if there is a front-mounted escapement
 
@@ -2726,14 +2726,14 @@ class SimpleClockPlates:
 
         top_nut_base_z = -self.back_plate_from_wall
         bottom_nut_base_z = -self.back_plate_from_wall
-        top_nut_hole_height = self.fixing_screws.getNutHeight()
+        top_nut_hole_height = self.fixing_screws.get_nut_height()
         bottom_nut_hole_height = top_nut_hole_height
 
         if self.back_plate_from_wall > 0:
             #depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
             #extra nut height just in case
-            top_nut_hole_height = (top_total_length%10) + self.fixing_screws.getNutHeight()
-            bottom_nut_hole_height = (bottom_total_length%10) + self.fixing_screws.getNutHeight()
+            top_nut_hole_height = (top_total_length%10) + self.fixing_screws.get_nut_height()
+            bottom_nut_hole_height = (bottom_total_length%10) + self.fixing_screws.get_nut_height()
         # elif self.embed_nuts_in_plate:
         #     # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
         #     print("you may have to cut the fixing screws to length in the case of no back standoff")
@@ -2761,16 +2761,16 @@ class SimpleClockPlates:
                     # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
                     print("you may have to cut the fixing screws to length in the case of no back standoff")
                     if screws_from_back:
-                        nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.getNutHeight()
+                        nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.get_nut_height()
 
                 z = self.front_z
                 if self.embed_nuts_in_plate or (self.back_plate_from_wall > 0 and not screws_from_back):
                     #make a hole for the nut
                     if fixingPos in self.plate_top_fixings and self.need_front_anchor_bearing_holder():
                         z += self.get_front_anchor_bearing_holder_total_length()
-                        cutter = cutter.union(self.fixing_screws.getNutCutter(height=top_nut_hole_height, withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
                     else:
-                        cutter = cutter.union(self.fixing_screws.getNutCutter(height=bottom_nut_hole_height, withBridging=True, layerThick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=bottom_nut_hole_height, with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
                 # holes for the screws
                 if screws_from_back:
                     if pillar == 0:
@@ -2792,9 +2792,9 @@ class SimpleClockPlates:
             nyloc = True
             bridging = False
             base_z = 0
-            nutZ = self.get_plate_thick(back=True) + self.plate_distance - self.fixing_screws.getNutHeight(nyloc=True)
+            nutZ = self.get_plate_thick(back=True) + self.plate_distance - self.fixing_screws.get_nut_height(nyloc=True)
 
-            if self.huygens_wheel_y_offset > self.bottom_pillar_r - self.fixing_screws.getNutContainingDiameter()/2:
+            if self.huygens_wheel_y_offset > self.bottom_pillar_r - self.fixing_screws.get_nut_containing_diameter()/2:
                 #nut is in the back of the front plate rather than the top of the bottom pillar, but don't make it as deep as we need the strength
                 #making it normal nut deep but will probably still use nyloc
                 # nutZ = self.getPlateThick(back=True) + self.plateDistance - (self.fixingScrews.getNutHeight(nyloc=True) - self.fixingScrews.getNutHeight(nyloc=False))
@@ -2803,10 +2803,10 @@ class SimpleClockPlates:
                     #just the front plate
                     bridging = True
                     base_z = self.get_plate_thick(back=True) + self.plate_distance
-                    nutZ = self.get_plate_thick(back=True) + self.plate_distance - (self.fixing_screws.getNutHeight(nyloc=True) - self.fixing_screws.getNutHeight(nyloc=False))
+                    nutZ = self.get_plate_thick(back=True) + self.plate_distance - (self.fixing_screws.get_nut_height(nyloc=True) - self.fixing_screws.get_nut_height(nyloc=False))
 
             cutter = cutter.add(cq.Workplane("XY").moveTo(self.huygens_wheel_pos[0], self.huygens_wheel_pos[1] + self.huygens_wheel_y_offset).circle(self.fixing_screws.metric_thread / 2).extrude(1000).translate((0, 0, base_z)))
-            cutter = cutter.add(self.fixing_screws.getNutCutter(nyloc=nyloc, withBridging=bridging, layerThick=LAYER_THICK_EXTRATHICK).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
+            cutter = cutter.add(self.fixing_screws.get_nut_cutter(nyloc=nyloc, with_bridging=bridging, layer_thick=LAYER_THICK_EXTRATHICK).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
 
         if self.moon_complication is not None:
             moon_screws = self.moon_holder.get_fixing_positions()
@@ -2815,7 +2815,7 @@ class SimpleClockPlates:
                 pos = (pos[0], pos[1], self.get_plate_thick(back=True) + self.plate_distance)
                 # cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate(pos))
                 # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
-                cutter = cutter.add(self.motion_works_screws.getNutCutter().rotate((0,0,0),(0,0,1),360/12).translate(pos))
+                cutter = cutter.add(self.motion_works_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
                 cutter = cutter.add(cq.Workplane("XY").circle(self.motion_works_screws.metric_thread / 2).extrude(1000).translate(pos))
 
 
@@ -3177,7 +3177,7 @@ class SimpleClockPlates:
         #     plate = plate.add(extraBearingHolder)
 
 
-        mini_arm_width = self.motion_works_screws.getNutContainingDiameter() * 2
+        mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
 
         if self.need_motion_works_holder:
             #screw would be on top of a bearing, so there's a separate peice to hold it
@@ -3425,10 +3425,14 @@ class SimpleClockPlates:
         #the slightly less hacky way... (although now I think about it, is it actually? we're still reaching into an object to set something)
         self.arbors_for_plate[0].key_length = key_length
 
-        self.key_square_bit_height = key_length
+        #how much of the key sticks out the front of the front plate
+        self.key_length = key_length - key_within_front_plate
 
         square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
         key_hole_deep = key_length - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
+
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
+            key_hole_deep -= self.going_train.powered_wheel.ratchet.thick + self.going_train.powered_wheel.ratchet_collet_thick
 
         if self.dial is not None and not self.key_is_inside_dial() and self.weight_driven:
             # just so the crank (only for weights) doesn't clip the dial (the key is outside the dial)
@@ -3937,7 +3941,7 @@ class Assembly:
             if self.goingTrain.powered_wheel.ratchet_at_back:
                 self.ratchet_on_plates = self.ratchet_on_plates.rotate((0,0,0),(0,1,0),180).translate((0,0,-self.plates.endshake/2))
             else:
-                self.ratchet_on_plates = self.ratchet_on_plates.translate((0, 0, self.front_of_clock_z))
+                self.ratchet_on_plates = self.ratchet_on_plates.translate((0, 0, self.front_of_clock_z + self.plates.endshake/2))
 
         if self.plates.pendulum_at_front:
             # if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
@@ -3999,6 +4003,19 @@ class Assembly:
             else:
 
                 self.pulley_model = self.pulley.get_assembled().rotate((0, 0, 0), (0, 0, 1), 90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick() / 2))
+
+
+        key = self.plates.get_winding_key()
+        self.key_model = None
+        if key is not None:
+            key_model = key.get_assembled()
+            #put the winding key on the end of the key shape, should be most simple way of getting it in the right place!
+            self.key_model = key_model.translate(
+                (self.plates.bearing_positions[0][0],
+                 self.plates.bearing_positions[0][1],
+                 self.front_of_clock_z + self.plates.key_length + self.plates.endshake / 2 - key.key_hole_deep)
+            )
+
 
     def printInfo(self):
 
@@ -4191,10 +4208,8 @@ class Assembly:
             clock = clock.add(secondHand.translate(self.secondHandPos))
 
         if with_key:
-            key = self.plates.get_winding_key()
-            if key is not None:
-                key_model = key.get_assembled()
-                clock = clock.add(key_model.translate((self.plates.bearing_positions[0][0], self.plates.bearing_positions[0][1], self.front_of_clock_z + self.plates.key_offset_from_front_plate + self.plates.endshake / 2)))
+            if self.key_model is not None:
+                clock = clock.add(self.key_model)
 
 
 
@@ -4424,7 +4439,7 @@ class Assembly:
 
                 weightShape = self.weights[i].getWeight().rotate((0,0,0), (1,0,0),-90)
 
-                show_object(weightShape.translate(weight_pos), options={"color": weight_colour})
+                show_object(weightShape.translate(weight_pos), options={"color": weight_colour}, name="Weight_{}".format(i))
 
         if with_rods:
             rod_colour = Colour.SILVER
@@ -4433,16 +4448,14 @@ class Assembly:
                 if rod_lengths[i] <= 0:
                     continue
                 rod = cq.Workplane("XY").circle(self.goingTrain.get_arbour_with_conventional_naming(i).arbour_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
-                show_object(rod, options={"color": rod_colour, "name":"Rod_{}".format(i)})
+                show_object(rod, options={"color": rod_colour}, name="Rod_{}".format(i))
 
         if with_key:
-            key = self.plates.get_winding_key().get_assembled()
-            if key is not None:
-                show_object(key.translate((self.plates.bearing_positions[0][0], self.plates.bearing_positions[0][1], self.front_of_clock_z + self.plates.key_offset_from_front_plate + self.plates.endshake / 2)),
-                            options={"color": key_colour, "name":"Key"})
+            if self.key_model is not None:
+                show_object(self.key_model, options={"color": key_colour}, name="Key")
 
         if self.pulley is not None:
-            show_object(self.pulley_model, options={"color": pulley_colour, "name":"Pulley"})
+            show_object(self.pulley_model, options={"color": pulley_colour}, name="Pulley")
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}.stl".format(name))

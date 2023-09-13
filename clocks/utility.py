@@ -91,7 +91,7 @@ def get_washer_diameter(metric_thread):
         return 6.8
     raise ValueError("TODO measure more washers")
 
-def getNutContainingDiameter(metric_thread, wiggleRoom=0):
+def get_nut_containing_diameter(metric_thread, wiggleRoom=0):
     '''
     Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
     but the poly() in cq requires:
@@ -187,7 +187,7 @@ class MachineScrew:
         '''
         Not sure I ever really need this, just curious
         '''
-        return cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).circle(self.get_diameter_for_die_cutting() / 2).extrude(self.getNutHeight())
+        return cq.Workplane("XY").polygon(nSides=6, diameter=self.get_nut_containing_diameter()).circle(self.get_diameter_for_die_cutting() / 2).extrude(self.get_nut_height())
 
     def get_screw_for_thread_cutting(self):
         '''
@@ -196,7 +196,7 @@ class MachineScrew:
         length = self.length
         if length < 0:
             length = 30
-        screw = cq.Workplane("XY").polygon(nSides=6, diameter=self.getNutContainingDiameter()).extrude(self.getHeadHeight()).circle(self.metric_thread/2).extrude(length)
+        screw = cq.Workplane("XY").polygon(nSides=6, diameter=self.get_nut_containing_diameter()).extrude(self.get_head_height()).circle(self.metric_thread / 2).extrude(length)
         return screw
 
     def get_diameter_for_die_cutting(self, sideways=False):
@@ -230,54 +230,52 @@ class MachineScrew:
         screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
 
         if self.countersunk:
-            screw.add(cq.Solid.makeCone(radius1=self.getHeadDiameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=r,
-                                        height=self.getHeadHeight() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
+            screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=r,
+                                        height=self.get_head_height() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
             #countersunk screw lengths seem to include the head
             screw= screw.add(cq.Workplane("XY").circle(r).extrude(length))
         else:
             # pan head screw lengths do not include the head
             if not with_bridging:
-                screw = screw.circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(self.getHeadHeight())
+                screw = screw.circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
             else:
-                screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.getHeadDiameter() + NUT_WIGGLE_ROOM, deep=self.getHeadHeight(), layerThick=layer_thick))
+                screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layerThick=layer_thick))
             screw = screw.faces(">Z").workplane().circle(r).extrude(length)
 
         #extend out from the headbackwards too
         if head_space_length > 0:
-            screw = screw.faces("<Z").workplane().circle(self.getHeadDiameter() / 2 + NUT_WIGGLE_ROOM/2).extrude(head_space_length)
+            screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
 
         return screw
 
-    def getNutHeight(self, nyloc=False, half=False):
+    def get_nut_height(self, nyloc=False, half=False):
         return getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
 
-    def getNutContainingDiameter(self, wiggle=NUT_WIGGLE_ROOM):
-        return getNutContainingDiameter(self.metric_thread, wiggle)
 
-    def getNutCutter(self,height=-1, nyloc=False, half=False, withScrewLength=0, withBridging=False, layerThick=LAYER_THICK, wiggle=0):
+    def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=0):
         '''
         if height is provided, use that, otherwise use the default height of a nut
         '''
         nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
         if height < 0:
             height = nutHeight
-        nutD = self.getNutContainingDiameter() + wiggle
-        if withBridging:
-            nut = get_hole_with_hole(innerD=self.metric_thread, outerD=nutD, deep = height, sides=6, layerThick=layerThick)
+        nutD = self.get_nut_containing_diameter() + wiggle
+        if with_bridging:
+            nut = get_hole_with_hole(innerD=self.metric_thread, outerD=nutD, deep = height, sides=6, layerThick=layer_thick)
         else:
             nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(height)
-        if withScrewLength > 0:
-            nut = nut.faces(">Z").workplane().circle(self.metric_thread/2).extrude(withScrewLength-height)
+        if with_screw_length > 0:
+            nut = nut.faces(">Z").workplane().circle(self.metric_thread/2).extrude(with_screw_length - height)
         return nut
 
-    def getString(self):
+    def get_string(self):
         return "M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
     def __str__(self):
-        return self.getString()
-    def getHeadHeight(self,):
+        return self.get_string()
+    def get_head_height(self, ):
         return getScrewHeadHeight(self.metric_thread, countersunk=self.countersunk)
 
-    def getTotalLength(self):
+    def get_total_length(self):
         '''
         get the total length from tip to end
         '''
@@ -287,12 +285,12 @@ class MachineScrew:
         if self.countersunk:
             return self.length
         else:
-            return self.length + self.getHeadHeight()
+            return self.length + self.get_head_height()
 
-    def getNutContainingDiameter(self):
-        return getNutContainingDiameter(self.metric_thread, NUT_WIGGLE_ROOM)
+    def get_nut_containing_diameter(self, wiggle=NUT_WIGGLE_ROOM):
+        return get_nut_containing_diameter(self.metric_thread, wiggle)
 
-    def getHeadDiameter(self):
+    def get_head_diameter(self):
         return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
 
 def npToSet(npVector):
@@ -1039,7 +1037,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
     holeStartY = 0
     holeHeight = getNutHeight(pendulum_rod_d, nyloc=True) + getNutHeight(pendulum_rod_d) + 1
 
-    nutD = getNutContainingDiameter(pendulum_rod_d)
+    nutD = get_nut_containing_diameter(pendulum_rod_d)
 
     width = nutD*1.5
 
