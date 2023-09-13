@@ -1800,22 +1800,6 @@ class CordWheel:
         self.power_clockwise = power_clockwise
 
 
-
-
-        if self.use_key:
-            #TODO switch over to getting the plates to generate the WindingKey
-            self.key_wall_thick = 2.5
-            # enough to cut out the key itself
-            self.key_width = self.key_wall_thick * 2 + self.key_bearing.inner_d
-            #this is the length of the handle of the key if it's knob-type (needs to be short enough that it won't bump into the motion works, or else windingKeyHeightFromPlate needs to be
-            #long enough that we're above the motion works)
-            self.default_winding_key_handle_length = 30,
-            #this is how far from the front of the clock the winding handle of the key will be
-            self.default_winding_key_height_from_plate = 70,
-            #thickness of the handle
-            self.winding_key_handle_thick = 5
-            self.key_hole_deep = self.key_square_bit_height - 5
-
     def is_clockwise(self):
         '''
         return true if this wheel is powered to rotate clockwise
@@ -1930,7 +1914,7 @@ class CordWheel:
                 overlap = cq.Workplane("XY").circle(self.diameter / 2).circle(self.diameter / 2 - self.overlap_slot_wide).extrude(self.top_cap_overlap)
                 segment = segment.union(overlap.translate((0, 0, self.cap_thick + self.thick)))
 
-            countersink = self.getScrewCountersinkCutter(self.thick + self.cap_thick + self.top_cap_thick)
+            countersink = self.get_fixing_screws_cutter(self.thick + self.cap_thick + self.top_cap_thick)
             segment = segment.cut(countersink)
 
 
@@ -1969,20 +1953,22 @@ class CordWheel:
 
         return segment
 
-    def getScrewCountersinkCutter(self, topOfScrewhead):
+    def get_fixing_screws_cutter(self, topOfScrewhead):
         '''
         countersink from top down
         '''
 
         countersink = cq.Workplane("XY")
         for fixingPoint in self.fixing_points:
-            coneHeight = getScrewHeadHeight(self.screw_thread_metric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-            topR = getScrewHeadDiameter(self.screw_thread_metric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
-            countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screw_thread_metric / 2,
-                                                            height=coneHeight).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead - coneHeight)))
-            # punch thorugh the top circle so the screw can get in
-            #self.beforeBearingExtraHeight
-            top = cq.Workplane("XY").circle(topR).extrude(100).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
+            # coneHeight = getScrewHeadHeight(self.screw_thread_metric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+            # topR = getScrewHeadDiameter(self.screw_thread_metric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+            # countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screw_thread_metric / 2,
+            #                                                 height=coneHeight).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead - coneHeight)))
+            # # punch thorugh the top circle so the screw can get in
+            # #self.beforeBearingExtraHeight
+            # top = cq.Workplane("XY").circle(topR).extrude(100).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
+
+            top = self.fixing_screw.get_cutter().rotate((0,0,0),(1,0,0),180).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead))
 
             countersink = countersink.add(top)
         return countersink
@@ -1998,7 +1984,7 @@ class CordWheel:
             #add small ring to keep this further away from the bearing
             cap = cap.faces(">Z").workplane().circle(holeR).circle(self.key_bearing.inner_safe_d / 2).extrude(self.before_bearing_extra_height)
             #add space for countersunk screw heads
-            countersink = self.getScrewCountersinkCutter(capThick + extraThick)
+            countersink = self.get_fixing_screws_cutter(capThick + extraThick)
             cap = cap.cut(countersink)
 
         if top and self.top_cap_overlap > 0:
@@ -2048,67 +2034,6 @@ class CordWheel:
 
         return clickwheel
 
-    def getWindingKey(self, withKnob=True, cylinder_length=-1, handle_length=-1, for_printing=True, key_hole_deep=-1):
-        '''
-        winding key! this is one with a little arm and handle
-
-        handle_length is to the end of the handle, not the middle of the knob (makes calculating the size of the key easier)
-
-        Exact size of the key is based on the bearing and tolerance:
-        key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
-
-        if withKnob, it's like an old longcase key with handle. If not, it's like a mantle key
-
-        TODO - make Key a separate class and then it can have the cordwheel fed into it, controlled by something else
-        '''
-
-        if cylinder_length < 0:
-            cylinder_length = self.default_winding_key_height_from_plate
-
-        if handle_length < 0:
-            handle_length = self.default_winding_key_handle_length
-        if key_hole_deep < 0:
-            key_hole_deep = self.key_hole_deep
-
-        if withKnob:
-            #base for handle
-            key = cq.Workplane("XY").radiusArc((self.key_width, 0), -self.key_width / 2).lineTo(self.key_width, handle_length - self.key_width / 2).radiusArc((0, handle_length - self.key_width / 2), -self.key_width / 2).close().extrude(self.winding_key_handle_thick)
-            # hole to screw in the knob (loose)
-            key = key.faces(">Z").workplane().tag("top").moveTo(self.key_width / 2, handle_length - self.key_width / 2).circle(self.screw_thread_metric / 2 + 0.2).cutThruAll()
-        else:
-            key = cq.Workplane("XY").tag("top")
-
-            keyGripTall = min(cylinder_length * 0.3, 15)
-            keyGripWide = self.key_width * 2.5
-
-            # grippyBit = cq.Workplane("XZ").rect(keyGripWide,keyGripTall).extrude(self.keyWallThick)
-            r=keyGripWide*0.1
-
-            grippyBit = cq.Workplane("XZ").lineTo(keyGripWide/2,0).lineTo(keyGripWide/2,keyGripTall).tangentArcPoint((-r,r*1.25))\
-                .tangentArcPoint((0,keyGripTall),relative=False).mirrorY().extrude(self.winding_key_handle_thick)
-            # return grippyBit
-            key = key.union(grippyBit.translate((self.key_width / 2, self.winding_key_handle_thick / 2, 0)))
-
-
-
-        #key bit
-        key = key.workplaneFromTagged("top").moveTo(self.key_width / 2, 0).circle(0.999 * self.key_width / 2).extrude(cylinder_length)
-
-        if key_hole_deep > cylinder_length:
-            key_hole_deep = cylinder_length
-
-        #5mm shorter than the key as a bodge to stand off from the front plate
-        keyHole = cq.Workplane("XY").moveTo(self.key_width / 2, 0).polygon(4, self.key_bearing.inner_d - self.bearing_wiggle_room * 2 + self.keyWiggleRoom).extrude(key_hole_deep).translate((0, 0, self.winding_key_handle_thick + cylinder_length - key_hole_deep))
-
-        key = key.cut(keyHole)
-
-        if not for_printing:
-            # for the model
-            key = key.translate((-self.key_width / 2, 0))
-            key = key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0,0,0), (0,0,1),180).translate((0, 0, cylinder_length + self.winding_key_handle_thick))
-            key = key.add(self.getWindingKnob().translate((0, handle_length - self.key_width / 2, cylinder_length + self.winding_key_handle_thick)))
-
-        return key
 
     def get_key_size(self):
         # return self.key_square_side_length
@@ -2116,24 +2041,6 @@ class CordWheel:
 
     def get_key_sides(self):
         return 4
-
-    def getWindingKnob(self):
-        r = self.key_bearing.inner_d / 2
-
-        screwLength = 30 - self.winding_key_handle_thick
-
-        # circle = cq.Workplane("XY").circle(r)
-        # knob = cq.Workplane("XZ").lineTo(r, 0).radiusArc((r*2,r),r).radiusArc((r*2,r*3),-r).lineTo(0,r*3).close().sweep(circle)
-        knob = cq.Workplane("XY").circle(self.key_width / 2).extrude(screwLength)
-
-
-        nutHeightSpace = getNutHeight(self.screw_thread_metric, True) * 2
-        screwHole = cq.Workplane("XY").circle(self.screw_thread_metric / 2).extrude(screwLength * 1.5)
-        screwHole = screwHole.add(cq.Workplane("XY").polygon(6, getNutContainingDiameter(self.screw_thread_metric, 0.2)).extrude(nutHeightSpace).translate((0, 0, screwLength - nutHeightSpace)))
-
-        knob = knob.cut(screwHole)
-
-        return knob
 
     def getRunTime(self, minuteRatio=1, cordLength=2000):
         '''
@@ -2235,19 +2142,6 @@ class CordWheel:
             out = os.path.join(path, "{}_cordwheel_top_cap.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.getCap(top=True), out)
-
-            #exported by plates once it knows what size the key should be
-            # out = os.path.join(path, "{}_cordwheel_winder.stl".format(name))
-            # print("Outputting ", out)
-            # exporters.export(self.getWindingKey(), out)
-            #
-            # out = os.path.join(path, "{}_cordwheel_key.stl".format(name))
-            # print("Outputting ", out)
-            # exporters.export(self.getWindingKey(withKnob=False), out)
-            #
-            # out = os.path.join(path, "{}_cordwheel_winder_knob.stl".format(name))
-            # print("Outputting ", out)
-            # exporters.export(self.getWindingKnob(), out)
         else:
             # extra bits where the other cord coils up
             out = os.path.join(path, "{}_cordwheel_cap.stl".format(name))

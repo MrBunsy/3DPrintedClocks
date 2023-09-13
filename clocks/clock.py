@@ -17,6 +17,8 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
+import numpy.linalg.linalg
+
 from .utility import *
 from .power import *
 from .gearing import *
@@ -1384,6 +1386,8 @@ class SimpleClockPlates:
         # if self.style == ClockPlateStyle.COMPACT:
         #     self.gearGap = 2
         self.small_gear_gap = 2
+
+        self.ideal_key_length = 35
 
         #if the bottom pillar radius is increased to allow space for the chains to fit through, do we permit the gear wheel to cut into that pillar?
         self.allow_bottom_pillar_height_reduction = allow_bottom_pillar_height_reduction
@@ -3360,6 +3364,21 @@ class SimpleClockPlates:
         else:
             return abs(holePositions[0][0] - holePositions[1][0])
 
+    def key_is_inside_dial(self):
+        '''
+        Very crude, assumes user has ensured the key doesn't intersect with the dial
+        '''
+        if self.dial is None:
+            return False
+
+        key_pos = self.bearing_positions[0][:2]
+        dial_centre = self.hands_position
+
+        distance = np.linalg.norm(np.subtract(dial_centre, key_pos))
+
+        return distance < self.dial.outside_d/2
+
+
 
     def calc_winding_key_info(self):
         '''
@@ -3377,6 +3396,7 @@ class SimpleClockPlates:
 
         self.key_hole_d = key_bearing.outer_safe_d
 
+        #on the old cord wheel, which didn't know the plate thickness, account for how much of the square bit is within the plate
         key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
 
         # self.key_hole_d = self.going_train.powered_wheel.keyWidth + 1.5
@@ -3389,22 +3409,29 @@ class SimpleClockPlates:
         else:
             self.key_offset_from_front_plate = 1
 
+        #HACK remove this once cord wheel works like the spring barrel (where ArborForPlate provides all the info about how long the key is)
+        if not self.weight_driven:
+            key_within_front_plate = 0
+
+        if self.key_is_inside_dial():
+            key_length = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
+        else:
+            key_length = key_within_front_plate + self.ideal_key_length
         #hack - set key size here
         #note - do this relative to the hour hand, not the dial, because there may be more space for the hour hand to avoid the second hand
         #TODO remove this for cord wheel
-        key_length = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
+
         self.going_train.powered_wheel.key_square_bit_height = key_length
         #the slightly less hacky way... (although now I think about it, is it actually? we're still reaching into an object to set something)
         self.arbors_for_plate[0].key_length = key_length
 
-        #this needs to be provided to ArborsForPlate
-        self.key_square_bit_height = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
+        self.key_square_bit_height = key_length
 
         square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
-        key_hole_deep = self.key_square_bit_height - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
+        key_hole_deep = key_length - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
 
-        if self.dial is not None and self.centred_second_hand:
-            # just so it doesn't clip the dial (the key is outside the dial)
+        if self.dial is not None and not self.key_is_inside_dial() and self.weight_driven:
+            # just so the crank (only for weights) doesn't clip the dial (the key is outside the dial)
             cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
             # reach to the centre of the dial (just miss the hands)
             handle_length = self.hands_position[1] - (self.dial.outside_d / 2 - self.dial.dial_width / 2) - self.bearing_positions[0][1] - 5
@@ -3423,36 +3450,11 @@ class SimpleClockPlates:
         if self.key_offset_from_front_plate < 0:
             self.key_hole_d = self.winding_key.body_wide+1.5
 
-        print("winding key length {:.1f}mm".format(self.going_train.powered_wheel.key_square_bit_height))
+        print("winding key length {:.1f}mm".format(key_length))
 
     def get_winding_key(self):
         return self.winding_key
-        #TODO new WindingKey class to tidy this up
-        key_body = None
 
-        if self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key:
-            #height of square bit above front plate, minus one so we're not scrapign the front plate
-            square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - self.going_train.powered_wheel.key_bearing.height
-
-            #key can only reach the front of the front plate if not front_plate_has_key_hole
-            key_hole_deep = self.going_train.powered_wheel.key_square_bit_height - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
-            if self.dial is not None and self.centred_second_hand:
-                # just so it doesn't clip the dial (the key is outside the dial)
-                cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
-                # reach to the centre of the dial (just miss the hands)
-                handle_length = self.hands_position[1] - (self.dial.outside_d / 2 - self.dial.dial_width / 2) - self.bearing_positions[0][1] - 5
-            else:
-                # above the hands (the key is inside the dial)
-                cylinder_length = self.top_of_hands_z + 6 - self.key_offset_from_front_plate
-                # avoid the centre of the hands (but make as long as possible to ease winding)
-                handle_length = self.hands_position[1] - self.bearing_positions[0][1] - 6#10
-
-            # print the key, with the right dimensions
-            key_body = self.going_train.powered_wheel.getWindingKey(cylinder_length=cylinder_length, handle_length=handle_length, key_hole_deep = key_hole_deep, for_printing=for_printing)
-
-
-
-        return key_body
 
     def get_assembled(self):
         '''
