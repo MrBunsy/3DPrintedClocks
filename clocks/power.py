@@ -872,7 +872,7 @@ class SpringBarrel:
 
     '''
 
-    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2, base_thick=5, ratchet_at_back=True,
+    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2, base_thick=5, ratchet_at_back=True,
                  style=GearStyle.SOLID):
         self.type = PowerType.SPRING_BARREL
 
@@ -893,12 +893,17 @@ class SpringBarrel:
         self.key_bearing = key_bearing
 
         if self.key_bearing is None:
-            self.key_bearing = THIN_12MM_BEARING
+            self.key_bearing = BEARING_12MM
 
         self.lid_bearing = lid_bearing
 
         if self.lid_bearing is None:
-            self.lid_bearing = FLANGED_12MM_BEARING
+            self.lid_bearing = BEARING_12MM_FLANGED
+
+        self.barrel_bearing = barrel_bearing
+
+        if self.barrel_bearing is None:
+            self.barrel_bearing = BEARING_12MM_THIN
 
         self.rod_d = rod_d
         self.arbour_d = rod_d
@@ -994,7 +999,7 @@ class SpringBarrel:
         return cutter
 
     def get_barrel_hole_d(self):
-        return self.key_bearing.outer_d
+        return self.barrel_bearing.outer_d
 
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
@@ -1004,7 +1009,7 @@ class SpringBarrel:
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
-        barrel = barrel.cut(self.key_bearing.get_cutter().rotate((0,0,0),(1,0,0),180).translate((0,0,self.base_thick)))
+        barrel = barrel.cut(self.barrel_bearing.get_cutter().rotate((0,0,0),(1,0,0),180).translate((0,0,self.base_thick)))
 
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
         #self.spring_hook_screws.getHeadHeight()

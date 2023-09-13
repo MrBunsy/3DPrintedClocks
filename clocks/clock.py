@@ -3935,7 +3935,8 @@ class Assembly:
         self.ratchet_on_plates = None
 
         if self.goingTrain.powered_wheel.type == PowerType.SPRING_BARREL:
-            self.ratchet_on_plates = self.goingTrain.powered_wheel.get_ratchet_gear_for_arbor()\
+            #rotated so the screwhole lines up - can't decide where that should be done
+            self.ratchet_on_plates = self.goingTrain.powered_wheel.get_ratchet_gear_for_arbor().rotate((0,0,0),(0,0,1),180)\
                 .add(self.goingTrain.powered_wheel.ratchet.get_pawl()).add(self.goingTrain.powered_wheel.ratchet.get_click())\
                 .translate(self.plates.bearing_positions[0][:2])
             if self.goingTrain.powered_wheel.ratchet_at_back:

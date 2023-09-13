@@ -734,7 +734,7 @@ if False:
 # print("Outputting ", out)
 # exporters.export(test_screwhole, out)
 # show_object(test_screwhole)
-spring = SpringBarrel(key_bearing=FLANGED_12MM_BEARING, style=GearStyle.CURVES)
+spring = SpringBarrel(key_bearing=BEARING_12MM_FLANGED, style=GearStyle.CURVES)
 # # #
 # # show_object(spring.get_barrel())
 # # show_object(spring.get_lid())

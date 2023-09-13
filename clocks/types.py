@@ -104,6 +104,7 @@ class GearStyle(Enum):
     FLOWER = "flower"
     HONEYCOMB = "honeycomb"
     HONEYCOMB_SMALL = "honeycomb_small"
+    HONEYCOMB_CHUNKY = "honeycomb_chunky"
     #psuedorandom with global seed
     SNOWFLAKE = "snowflake"
     CURVES = "curves"

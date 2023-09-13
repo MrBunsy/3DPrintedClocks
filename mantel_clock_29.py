@@ -37,7 +37,7 @@ if 'show_object' not in globals():
 
 clockName="mantel_clock_29"
 clockOutDir="out"
-gearStyle=clock.GearStyle.CURVES
+gearStyle=clock.GearStyle.HONEYCOMB_CHUNKY
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #for period 1.5

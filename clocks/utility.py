@@ -965,9 +965,9 @@ class BearingInfo:
     def __str__(self):
         return self.get_string()
 
-#safe dimensions are guesses for now
-FLANGED_12MM_BEARING = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=18-2, inner_safe_d=12+2)
-THIN_12MM_BEARING = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=18-2, inner_safe_d=12+2)
+BEARING_12MM_FLANGED = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
+BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
+BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
 
 def get_bearing_info(innerD):
     '''
@@ -986,8 +986,8 @@ def get_bearing_info(innerD):
         #these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
         return BearingInfo(outer_d=19.2, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8)
     if innerD == 12:
-        #TODO 12x21x5 (haven't seen in person yet)
-        return BearingInfo(outer_d=21.2, height=5, inner_d=12, outer_safe_d=20, inner_safe_d=14)
+        #12x21x5
+        return BEARING_12MM
     if innerD == 10:
         #not used much since direct-arbor with small bearings (this had too much friction)
         #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too

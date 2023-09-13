@@ -84,6 +84,8 @@ class Gear:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2, big=False)
+        if style == GearStyle.HONEYCOMB_CHUNKY:
+            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
             return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius, innerRadius = innerRadius + 2)
 
@@ -316,7 +318,7 @@ class Gear:
         return gear.cut(cutter)
 
     @staticmethod
-    def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True):
+    def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True, chunky=False):
         hexagonDiameter = 10
         if big:
             hexagonDiameter = outerRadius / 3
@@ -342,7 +344,7 @@ class Gear:
         #1.8 seems better
         padding=1.8#2
 
-        if big:
+        if big or chunky:
             #experimental, not printed yet
             padding=2.7
 
@@ -1727,7 +1729,7 @@ class ArbourForPlate:
 
         if self.need_separate_arbor_extension(front=True):
             assembly = assembly.add(self.get_arbour_extension(front = True).translate(self.bearing_position).translate((0,0, self.endshake/2 + self.total_thickness + self.back_plate_thick)))
-        if self.need_arbor_extension(front = False):
+        if self.need_separate_arbor_extension(front = False):
             assembly = assembly.add(self.get_arbour_extension(front = False).rotate((0,0,0),(1,0,0),180).translate(self.bearing_position).translate((0,0,self.endshake/2 + self.back_plate_thick)))
 
         return assembly
@@ -1761,7 +1763,8 @@ class ArbourForPlate:
             #TODO support chain at front?
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
             shapes["wheel"] = wheel
-            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back + self.endshake/2 + self.back_plate_thick,
+            #rear side extended full endshake so we could go plain bushing if needed
+            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back + self.endshake + self.back_plate_thick,
                                            front_side_extension=self.endshake/2 + self.front_plate_thick, key_length = self.key_length,
                                            ratchet_key_extra_length=0)
             for extraName in extras:
@@ -2287,7 +2290,7 @@ class Arbour:
                 z_offset = 0
 
             #cut a hole in teh gear wheel so the style in the back of the barrel works
-            gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.radius_for_style).cutThruAll().union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))
+            gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.radius_for_style+1).cutThruAll().union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))
             # gear_wheel = Gear.cutStyle(gear_wheel, outerRadius=self.powered_wheel.radius_for_style, innerRadius=)
 
         if rear_side_extension > 0 and not self.combine_with_powered_wheel:
