@@ -3615,7 +3615,7 @@ class MantelClockPlates(SimpleClockPlates):
                     pillar_positions += intersections
                 #single screw in each pillar ought to be enoguh, hence putting each element in its own list
                 self.dial.override_fixing_positions([[np_to_set(np.subtract(pos, self.hands_position))] for pos in pillar_positions])
-                self.dial.support_d=10
+                self.dial.support_d=15
 
     def calc_pillar_info(self):
         '''
