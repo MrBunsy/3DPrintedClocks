@@ -908,15 +908,13 @@ class SpringBarrel:
         self.rod_d = rod_d
         self.arbour_d = rod_d
 
-        #larger because of larger arbor, TODO calculate properly (The Modern clock has some rules of thumb)
-        # self.barrel_diameter=self.spring.barrel_diameter + self.key_bearing.outerD-6
-        #flange from lid will sit inside the barrel, flange in teh base of the barrel will be flush with teh base of the barrel
-        self.barrel_height = self.spring.height + 2 + self.lid_bearing.flange_thick
+        self.barrel_height = self.spring.height + 2
 
         #10 from first experiment seemd like more than needed
         self.wall_thick = 8
         #6 seemed enough, can probably get away with less
         self.base_thick = base_thick
+        #flanged bearing sitting entirely within the lid
         self.lid_thick= self.lid_bearing.height# - self.lid_bearing.flange_thick
 
         self.internal_endshake=0.5
@@ -941,7 +939,7 @@ class SpringBarrel:
         print("arbor d inside spring: {}mm".format(self.arbor_d_spring))
 
         self.back_bearing_standoff = 0.5
-        self.front_bearing_standoff = 0.5
+        self.front_bearing_standoff = 1
 
         #trying a hex key instead of square
         self.key_containing_diameter = self.arbor_d
@@ -1000,6 +998,11 @@ class SpringBarrel:
 
     def get_barrel_hole_d(self):
         return self.barrel_bearing.outer_d
+
+    def get_front_bearing_standoff_washer(self):
+        washer = cq.Workplane("XY").circle(self.lid_bearing.inner_safe_d_at_a_push/2).circle(self.arbor_d/2+0.2).extrude(self.front_bearing_standoff)
+
+        return washer
 
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)

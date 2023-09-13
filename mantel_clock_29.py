@@ -24,8 +24,10 @@ from clocks import clock
 '''
 Copy of clock 27, but with new spring barrel
 
-TODO put ratchet on front and lengthen key because it's not within the dial, then the pendulum doesn't need to stick out the back as far
-also put dial pillars lower down so it doesn't have to stick over the top
+TODO put ratchet on front and lengthen key because it's not within the dial, then the pendulum doesn't need to stick out the back as far DONE but key needs improving
+also put dial pillars lower down so it doesn't have to stick over the top DONE
+
+TODO screwhole for the middle arbor of the motion works
 '''
 outputSTL = False
 

@@ -1715,6 +1715,7 @@ class ArbourForPlate:
                 arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.arbor_d/2 - spring_barrel.cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), -90)
                 assembly = assembly.add(arbor)
                 assembly = assembly.add(spring_barrel.get_lid(for_printing=False).translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
+                assembly = assembly.add(spring_barrel.get_front_bearing_standoff_washer().translate((0,0,spring_barrel.get_height() - spring_barrel.front_bearing_standoff)))
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
@@ -2221,6 +2222,7 @@ class Arbour:
                                                                 key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length)
             extras['lid'] = self.powered_wheel.get_lid()
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_for_arbor()
+            extras['front_washer'] = self.powered_wheel.get_front_bearing_standoff_washer()
             traditional_ratchet = True
 
         if traditional_ratchet:
