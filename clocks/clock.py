@@ -3184,9 +3184,10 @@ class SimpleClockPlates:
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(self.get_plate_thick(back=False)).translate(screw_pos))
-        elif self.little_arm_to_motion_works:
-            #extra material in case the motion works is at an angle off to one side
-            plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
+        else:
+            if self.little_arm_to_motion_works:
+                #extra material in case the motion works is at an angle off to one side
+                plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
             #hole for screw to hold motion works arbour
             plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
 
