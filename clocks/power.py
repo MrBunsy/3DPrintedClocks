@@ -1837,7 +1837,7 @@ class CordWheel:
             print("cord wheel screw (m{}) length between".format(self.screw_thread_metric), minScrewLength, minScrewLength + self.ratchet.thick / 2)
         else:
             # two sections, one for winding up while the other winds down
-            minScrewLength = self.ratchet.thick - (getScrewHeadHeight(self.screw_thread_metric) + LAYER_THICK) + self.click_wheel_standoff_height + self.cap_thick + self.top_cap_thick + self.thick * 1.5
+            minScrewLength = self.ratchet.thick - (get_screw_head_height(self.screw_thread_metric) + LAYER_THICK) + self.click_wheel_standoff_height + self.cap_thick + self.top_cap_thick + self.thick * 1.5
             if self.use_key:
                 minScrewLength -= self.thick
             #I think this might assume caps all the same thickness? which is true when not using a key
@@ -1976,8 +1976,8 @@ class CordWheel:
 
         countersink = cq.Workplane("XY")
         for fixingPoint in self.fixing_points:
-            coneHeight = getScrewHeadHeight(self.screw_thread_metric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
-            topR = getScrewHeadDiameter(self.screw_thread_metric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
+            coneHeight = get_screw_head_height(self.screw_thread_metric, countersunk=True) + COUNTERSUNK_HEAD_WIGGLE
+            topR = get_screw_head_diameter(self.screw_thread_metric, countersunk=True) / 2 + COUNTERSUNK_HEAD_WIGGLE
             countersink = countersink.add(cq.Solid.makeCone(radius2=topR, radius1=self.screw_thread_metric / 2,
                                                             height=coneHeight).translate((fixingPoint[0], fixingPoint[1], topOfScrewhead - coneHeight)))
             # punch thorugh the top circle so the screw can get in

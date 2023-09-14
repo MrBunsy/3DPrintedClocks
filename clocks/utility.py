@@ -22,75 +22,74 @@ import numpy as np
 from math import sin, cos, pi, floor
 import cadquery as cq
 
-
-
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
-IMAGEMAGICK_CONVERT_PATH="C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
+IMAGEMAGICK_CONVERT_PATH = "C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
 
+# aprox 1.13kg per 200ml for number 9 steel shot (2.25mm diameter)
+# this must be a bit low, my height=100, diameter=38 wallThick=2.7 could fit nearly 350g of shot (and weighed 50g itself)
+# STEEL_SHOT_DENSITY=1.13/0.2
+STEEL_SHOT_DENSITY = 0.35 / 0.055
+# "Steel shot has a density of 7.8 g/cc" "For equal spheres in three dimensions, the densest packing uses approximately 74% of the volume. A random packing of equal spheres generally has a density around 64%."
+# and 70% of 7.8 is 5.46, which is lower than my lowest measured :/
 
-#aprox 1.13kg per 200ml for number 9 steel shot (2.25mm diameter)
-#this must be a bit low, my height=100, diameter=38 wallThick=2.7 could fit nearly 350g of shot (and weighed 50g itself)
-#STEEL_SHOT_DENSITY=1.13/0.2
-STEEL_SHOT_DENSITY=0.35/0.055
-#"Steel shot has a density of 7.8 g/cc" "For equal spheres in three dimensions, the densest packing uses approximately 74% of the volume. A random packing of equal spheres generally has a density around 64%."
-#and 70% of 7.8 is 5.46, which is lower than my lowest measured :/
-
-#TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
-LAYER_THICK=0.2
-LINE_WIDTH=0.45
-LAYER_THICK_EXTRATHICK=0.3
-#default extrusion width, for the odd thing where it matters
+# TODO - pass around metric thread size rather than diameter and have a set of helper methods spit these values out for certain thread sizes
+LAYER_THICK = 0.2
+LINE_WIDTH = 0.45
+LAYER_THICK_EXTRATHICK = 0.3
+# default extrusion width, for the odd thing where it matters
 EXTRUSION_WIDTH = 0.45
 GRAVITY = 9.81
 
-#extra diameter to add to something that should be free to rotate over a rod
+# extra diameter to add to something that should be free to rotate over a rod
 LOOSE_FIT_ON_ROD = 0.3
-#where not wobbling is more important
+# where not wobbling is more important
 LOOSE_FIT_ON_ROD_MOTION_WORKS = 0.25
 
 LOOSE_SCREW = 0.2
 
 WASHER_THICK_M3 = 0.5
-#the spring washer flattened - useful because it can butt up against a bearing without rubbing on anything.
+# the spring washer flattened - useful because it can butt up against a bearing without rubbing on anything.
 SMALL_WASHER_THICK_M3 = 1.1
 
-#external diameter for 3 and 4mm internal diameter
+# external diameter for 3 and 4mm internal diameter
 STEEL_TUBE_DIAMETER = 6.2
 
-#extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
+# extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
 NUT_WIGGLE_ROOM = 0.2
-#extra diameter to add to the arbour extension to make them easier to screw onto the threaded rod
+# extra diameter to add to the arbour extension to make them easier to screw onto the threaded rod
 ARBOUR_WIGGLE_ROOM = 0.1
 
-#six actually prints pretty well, but feels a bit small! contemplating bumping up to 7.5
-DIRECT_ARBOUR_D = 7#7.5
+# six actually prints pretty well, but feels a bit small! contemplating bumping up to 7.5
+DIRECT_ARBOUR_D = 7  # 7.5
 
-#for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
-#includes a bit of slack
+# for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
+# includes a bit of slack
 TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT = 6
 
-#actually nearer 3.6, but this leaves wiggle room
-M3_DOMED_NUT_THREAD_DEPTH=3.5
+# actually nearer 3.6, but this leaves wiggle room
+M3_DOMED_NUT_THREAD_DEPTH = 3.5
 
-#assuming m2 screw has a head 2*m2, etc
-#note, pretty sure this is often wrong.
-METRIC_HEAD_D_MULT=1.9
-#assuming an m2 screw has a head of depth 1.5
-METRIC_HEAD_DEPTH_MULT=0.75
-#metric nut width is double the thread size
-METRIC_NUT_WIDTH_MULT=2
+# assuming m2 screw has a head 2*m2, etc
+# note, pretty sure this is often wrong.
+METRIC_HEAD_D_MULT = 1.9
+# assuming an m2 screw has a head of depth 1.5
+METRIC_HEAD_DEPTH_MULT = 0.75
+# metric nut width is double the thread size
+METRIC_NUT_WIDTH_MULT = 2
 
-#depth of a nut, right for m3, might be right for others
-METRIC_NUT_DEPTH_MULT=0.77
-METRIC_HALF_NUT_DEPTH_MULT=0.57
+# depth of a nut, right for m3, might be right for others
+METRIC_NUT_DEPTH_MULT = 0.77
+METRIC_HALF_NUT_DEPTH_MULT = 0.57
 
 COUNTERSUNK_HEAD_WIGGLE = 0.2
 COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.1
+
 
 def get_washer_diameter(metric_thread):
     if metric_thread == 3:
         return 6.8
     raise ValueError("TODO measure more washers")
+
 
 def get_nut_containing_diameter(metric_thread, wiggleRoom=0):
     '''
@@ -113,6 +112,7 @@ def get_nut_containing_diameter(metric_thread, wiggleRoom=0):
 
     return nutWidth / math.cos(math.pi / 6)
 
+
 def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
     if metric_thread > 2 and halfHeight:
         return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
@@ -130,21 +130,23 @@ def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
 
     return metric_thread * METRIC_NUT_DEPTH_MULT
 
-def getScrewHeadHeight(metric_thread, countersunk=False):
+
+def get_screw_head_height(metric_thread, countersunk=False):
     if metric_thread == 3:
         if countersunk:
             return 1.86
         return 2.6
     if metric_thread == 2:
-        #TODO countersunk (1.2?)
+        # TODO countersunk (1.2?)
         return 1.7
     if metric_thread == 4:
         if countersunk:
             return 2.1
 
-    return metric_thread*0.85
+    return metric_thread * 0.85
 
-def getScrewHeadDiameter(metric_thread, countersunk=False):
+
+def get_screw_head_diameter(metric_thread, countersunk=False):
     if metric_thread == 3:
         if countersunk:
             return 5.6
@@ -154,6 +156,7 @@ def getScrewHeadDiameter(metric_thread, countersunk=False):
     if metric_thread == 4:
         return 7.2
     return METRIC_HEAD_D_MULT * metric_thread
+
 
 SCREW_LENGTH_EXTRA = 2
 
@@ -172,16 +175,17 @@ def get_diameter_for_die_cutting(M, sideways=False):
         return 3.3
     raise ValueError("Hole size not known for M{}".format(M))
 
+
 class MachineScrew:
     '''
     Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
     for screwholes
     '''
 
-    def __init__(self, metric_thread=3, countersunk=False, length = -1):
-        self.metric_thread=metric_thread
-        self.countersunk=countersunk
-        #if length is provided, this represents a specific screw
+    def __init__(self, metric_thread=3, countersunk=False, length=-1):
+        self.metric_thread = metric_thread
+        self.countersunk = countersunk
+        # if length is provided, this represents a specific screw
         self.length = length
 
     def get_nut_for_die_cutting(self):
@@ -215,26 +219,26 @@ class MachineScrew:
 
         if length < 0:
             if self.length < 0:
-                #default to something really long
+                # default to something really long
                 length = 1000
             else:
-                #use the length that this screw represents, plus some wiggle
+                # use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
 
-        r = self.metric_thread/2
+        r = self.metric_thread / 2
 
         if loose:
-            r+= LOOSE_SCREW/2
+            r += LOOSE_SCREW / 2
         if for_tap_die:
-            r=self.get_diameter_for_die_cutting(sideways=sideways)/2
+            r = self.get_diameter_for_die_cutting(sideways=sideways) / 2
 
-        screw = cq.Workplane("XY")#.circle(self.metric_thread/2).extrude(length)
+        screw = cq.Workplane("XY")  # .circle(self.metric_thread/2).extrude(length)
 
         if self.countersunk:
             screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=r,
                                         height=self.get_head_height() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
-            #countersunk screw lengths seem to include the head
-            screw= screw.add(cq.Workplane("XY").circle(r).extrude(length))
+            # countersunk screw lengths seem to include the head
+            screw = screw.add(cq.Workplane("XY").circle(r).extrude(length))
         else:
             # pan head screw lengths do not include the head
             if not with_bridging:
@@ -243,7 +247,7 @@ class MachineScrew:
                 screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layerThick=layer_thick))
             screw = screw.faces(">Z").workplane().circle(r).extrude(length)
 
-        #extend out from the headbackwards too
+        # extend out from the headbackwards too
         if head_space_length > 0:
             screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
 
@@ -251,7 +255,6 @@ class MachineScrew:
 
     def get_nut_height(self, nyloc=False, half=False):
         return getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
-
 
     def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=0):
         '''
@@ -262,19 +265,21 @@ class MachineScrew:
             height = nutHeight
         nutD = self.get_nut_containing_diameter() + wiggle
         if with_bridging:
-            nut = get_hole_with_hole(innerD=self.metric_thread, outerD=nutD, deep = height, sides=6, layerThick=layer_thick)
+            nut = get_hole_with_hole(innerD=self.metric_thread, outerD=nutD, deep=height, sides=6, layerThick=layer_thick)
         else:
-            nut = cq.Workplane("XY").polygon(nSides=6,diameter=nutD).extrude(height)
+            nut = cq.Workplane("XY").polygon(nSides=6, diameter=nutD).extrude(height)
         if with_screw_length > 0:
-            nut = nut.faces(">Z").workplane().circle(self.metric_thread/2).extrude(with_screw_length - height)
+            nut = nut.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(with_screw_length - height)
         return nut
 
     def get_string(self):
         return "M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
+
     def __str__(self):
         return self.get_string()
+
     def get_head_height(self, ):
-        return getScrewHeadHeight(self.metric_thread, countersunk=self.countersunk)
+        return get_screw_head_height(self.metric_thread, countersunk=self.countersunk)
 
     def get_total_length(self):
         '''
@@ -292,10 +297,12 @@ class MachineScrew:
         return get_nut_containing_diameter(self.metric_thread, wiggle)
 
     def get_head_diameter(self):
-        return getScrewHeadDiameter(self.metric_thread, countersunk=self.countersunk)
+        return get_screw_head_diameter(self.metric_thread, countersunk=self.countersunk)
+
 
 def np_to_set(npVector):
     return (npVector[0], npVector[1])
+
 
 def average_of_two_points(a, b):
     if len(a) != len(b):
@@ -304,8 +311,9 @@ def average_of_two_points(a, b):
     avg = []
     points = len(a)
     for i in range(points):
-        avg.append((a[i] + b[i])/2)
+        avg.append((a[i] + b[i]) / 2)
     return avg
+
 
 # def differenceOfTwoPoints(a,b):
 #     '''
@@ -314,7 +322,7 @@ def average_of_two_points(a, b):
 #     return
 
 def distance_between_two_points(a, b):
-    return math.sqrt(math.pow(a[0] - b[0],2) + math.pow(a[1] - b[1], 2))
+    return math.sqrt(math.pow(a[0] - b[0], 2) + math.pow(a[1] - b[1], 2))
 
 
 def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwise=True):
@@ -334,7 +342,6 @@ def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwis
     else:
         return tangents[1]
 
-
     # for tangent in tangents:
     #     matches = True
     #     if positiveX is not None:
@@ -345,6 +352,7 @@ def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwis
     #             matches = False
     #     if matches:
     #         return tangent
+
 
 # def getCircleIntersectionPoints(a_centre, a_r, b_centre, b_r):
 #     '''
@@ -427,12 +435,13 @@ def get_tangents_through_point(circle_centre, circle_r, point):
     Point P≡(%g,%g) is inside the circle with centre C≡(%g,%g) and radius r=%g.
     No tangent is possible...''' % (Px, Py, Cx, Cy, r))
 
+
 class Colour:
     '''
     for use in show_object(...,options:{"color": colour})
     '''
     WHITE = "white"
-    PINK = (255,182,193)
+    PINK = (255, 182, 193)
     GOLD = (153, 102, 0)
     BRASS = (71, 65, 26)
     RED = "red"
@@ -441,13 +450,13 @@ class Colour:
     GREEN = "green"
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
-    PURPLE = (138,43,226)#(148,0,211)
-    LILAC = (210,175,255)
-    LIGHTGREY = (211,211,211)
-    SILVER = (192,192,192)
-    DARKGREY = (50,50,50)
+    PURPLE = (138, 43, 226)  # (148,0,211)
+    LILAC = (210, 175, 255)
+    LIGHTGREY = (211, 211, 211)
+    SILVER = (192, 192, 192)
+    DARKGREY = (50, 50, 50)
     BLACK = "black"
-    BROWN = (66,40,14)#(139,69,19)
+    BROWN = (66, 40, 14)  # (139,69,19)
 
     RAINBOW = [RED,
                ORANGE,
@@ -463,6 +472,7 @@ class Colour:
         given a colour name (from, for example, cosmetics or hands) return something that cq_editor will display
         '''
         return string
+
 
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):
@@ -484,22 +494,25 @@ class Line:
             self.dir = (math.cos(angle), math.sin(angle))
         elif anotherPoint is not None:
             self.dir = (anotherPoint[0] - start[0], anotherPoint[1] - start[1])
-            #store for hackery
+            # store for hackery
             self.anotherPoint = anotherPoint
         else:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector
         self.dir = np.divide(self.dir, np.linalg.norm(self.dir))
+
     def get2D(self, length=100, both_directions=False):
-        line = cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0]*length, self.dir[1]*length)
+        line = cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0] * length, self.dir[1] * length)
         if both_directions:
-            line = line.add(cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(-self.dir[0]*length, -self.dir[1]*length))
+            line = line.add(cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(-self.dir[0] * length, -self.dir[1] * length))
         return line
+
     def get_direction(self, negative=False):
         if negative:
             return (-self.dir[0], -self.dir[1])
         else:
             return self.dir
+
     def get_direction_towards(self, b):
         '''
         get direction, positive towards the point
@@ -519,12 +532,10 @@ class Line:
 
         z = 1 if clockwise else -1
 
-        return  np.cross(self.dir, [0,0,z])[:-1]
+        return np.cross(self.dir, [0, 0, z])[:-1]
 
     def dot_product(self, b):
         return np.dot(self.dir, b.dir)
-
-
 
     def intersection_with_circle(self, circle_centre, circle_r):
         '''
@@ -534,16 +545,16 @@ class Line:
         //does a circle intersect a line?
         //returns points where circle intersects.
         '''
-        x1,y1 = self.start
+        x1, y1 = self.start
 
         if self.anotherPoint is None:
-            x2 = self.start[0] + self.dir[0]*100
-            y2 = self.start[1] + self.dir[1]*100
+            x2 = self.start[0] + self.dir[0] * 100
+            y2 = self.start[1] + self.dir[1] * 100
         else:
-            x2,y2 = self.anotherPoint
-        a=circle_centre[0]
-        b=circle_centre[1]
-        r=circle_r
+            x2, y2 = self.anotherPoint
+        a = circle_centre[0]
+        b = circle_centre[1]
+        r = circle_r
         '''//r=radius
 		//a=circle centre x
 		//b=circle centre y
@@ -564,7 +575,7 @@ class Line:
             testy1 = y2
             testy2 = y1
 
-        #treat both as squares first, if they collide, look in more detail
+        # treat both as squares first, if they collide, look in more detail
         # if not (testx2 > (a-r) and testx1 < (a+r) and testy1 < (b+r) and testy2 > (b-r)):
         #     #nowhere near,
         #     return []
@@ -576,77 +587,77 @@ class Line:
         dy = y2 - y1
         dx = x2 - x1
 
-        #//gradient of line
+        # //gradient of line
         m = dy / dx
-        #//fixes odd problem with not detecting collision point correctly on a nearly vertical line - needs looking into?
+        # //fixes odd problem with not detecting collision point correctly on a nearly vertical line - needs looking into?
         if m > 1000000:
             m = float('inf')
 
         if m == float('inf') or m == float('-inf'):
-            #//vertical line - we know x, but have potentially two possible Ys
+            # //vertical line - we know x, but have potentially two possible Ys
             x = x1
-            #//b^2 - 4ac
+            # //b^2 - 4ac
             discrim = math.pow((-2 * b), 2) - 4 * (b * b + (x - a) * (x - a) - r * r)
             if discrim >= 0:
-                overlap=False
-                thisY=False
-                #//minus
+                overlap = False
+                thisY = False
+                # //minus
                 y = (-(-2 * b) - math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    overlap=True
-                    thisY=y
-                #//plus
+                    overlap = True
+                    thisY = y
+                # //plus
                 y = (-(-2 * b) + math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
                     if overlap:
-                        #//take average of two colliding coords
-                        thisY+=y
-                        thisY/=2
+                        # //take average of two colliding coords
+                        thisY += y
+                        thisY /= 2
                     else:
-                        overlap=True
-                        thisY=y
+                        overlap = True
+                        thisY = y
                 if overlap:
                     return [(x, thisY)]
 
-        elif m ==  0:
-            #//horizontal line, two potential Xs
+        elif m == 0:
+            # //horizontal line, two potential Xs
             y = y1
             discrim = math.pow((-2 * a), 2) - 4 * (a * a + (y - b) * (y - b) - r * r)
             if discrim >= 0:
-                overlap=False
-                thisX=False
-                #//minus
+                overlap = False
+                thisX = False
+                # //minus
                 x = (-(-2 * a) - math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    overlap=True
-                    thisX=x
-                #//plus
+                    overlap = True
+                    thisX = x
+                # //plus
                 x = (-(-2 * a) + math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
                     if overlap:
-                        #//take average of two colliding coords
-                        thisX+=x
-                        thisX/=2
+                        # //take average of two colliding coords
+                        thisX += x
+                        thisX /= 2
                     else:
-                        overlap=True
-                        thisX=x
+                        overlap = True
+                        thisX = x
                 if overlap:
                     return [(thisX, y)]
         else:
-            #//re-arrangement of the equation of a circle and the equation of a straight line to find the x co-ordinate of an intersection
+            # //re-arrangement of the equation of a circle and the equation of a straight line to find the x co-ordinate of an intersection
             discrim = math.pow((-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m), 2) - 4 * (1 + m * m) * (-2 * m * x1 * y1 + 2 * m * x1 * b + m * m * x1 * x1 - r * r + a * a + (y1 - b) * (y1 - b))
-            #//if discriminant is less than zero then there are no real roots and :. no interesction
+            # //if discriminant is less than zero then there are no real roots and :. no interesction
             if discrim >= 0:
                 # overlap=False
-                points=[]
-                #//circle intersects line, but where?
-                #//minus first
+                points = []
+                # //circle intersects line, but where?
+                # //minus first
                 x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) - math.sqrt(discrim)) / (2 * (1 + m * m))
                 y = m * (x - x1) + y1
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    overlap=True
-                    points.append((x,y))
-                #//then plus
+                    overlap = True
+                    points.append((x, y))
+                # //then plus
                 x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) + math.sqrt(discrim)) / (2 * (1 + m * m))
                 y = m * (x - x1) + y1
 
@@ -655,14 +666,13 @@ class Line:
                     #     point=((point[0]+x)/2,(point[1]+y)/2)
                     # else:
                     #     overlap=True
-                    points.append((x,y))
+                    points.append((x, y))
 
                 return points
-            #//end of discrim if
+            # //end of discrim if
 
-        #//end of m switch
+        # //end of m switch
         return []
-
 
     # def intersection_with_circle(self, circle_centre, circle_r):
     #     distance = self.get_shortest_distance_to_point(circle_centre)
@@ -670,44 +680,42 @@ class Line:
     #     if distance > circle_r:
     #         return []
 
-
-
-        # '''
-        # not perfect, I haven't bothered to understand Shapely properly
-        # '''
-        # circle_centre_point = Point(circle_centre[0], circle_centre[1])
-        #
-        # if self.anotherPoint is None:
-        #     #could easily fix this to make properly generic
-        #     raise ValueError("Need anotherPoint to test intersection with circle (for now)")
-        #
-        # line = LineString([self.start, self.anotherPoint])
-        # circle = circle_centre_point.buffer(circle_r)
-        #
-        # intersections = circle.intersection(line)
-        #
-        # points = []
-        #
-        # for end in range(floor(len(intersections.bounds)/2)):
-        #     point = (intersections.bounds[end*2], intersections.bounds[end*2+1])
-        #     if distance_between_two_points(point, circle_centre) >= circle_r*0.99:
-        #         #point on the edge of the circle
-        #         points.append(point)
-        #
-        #
-        #
-        # return points
+    # '''
+    # not perfect, I haven't bothered to understand Shapely properly
+    # '''
+    # circle_centre_point = Point(circle_centre[0], circle_centre[1])
+    #
+    # if self.anotherPoint is None:
+    #     #could easily fix this to make properly generic
+    #     raise ValueError("Need anotherPoint to test intersection with circle (for now)")
+    #
+    # line = LineString([self.start, self.anotherPoint])
+    # circle = circle_centre_point.buffer(circle_r)
+    #
+    # intersections = circle.intersection(line)
+    #
+    # points = []
+    #
+    # for end in range(floor(len(intersections.bounds)/2)):
+    #     point = (intersections.bounds[end*2], intersections.bounds[end*2+1])
+    #     if distance_between_two_points(point, circle_centre) >= circle_r*0.99:
+    #         #point on the edge of the circle
+    #         points.append(point)
+    #
+    #
+    #
+    # return points
 
     def getAngle(self):
         return math.atan2(self.dir[1], self.dir[0])
 
     def get_angle_between_lines(self, b, acute=True):
-        aAngle=self.getAngle()
-        bAngle=b.getAngle()
+        aAngle = self.getAngle()
+        bAngle = b.getAngle()
         angle = abs(aAngle - bAngle)
         while angle > math.pi:
             angle -= math.pi
-        if angle > math.pi/2:
+        if angle > math.pi / 2:
             angle = math.pi - angle
 
         if acute:
@@ -720,7 +728,7 @@ class Line:
         https://stackoverflow.com/a/39840218
         '''
         p1 = np.asarray(self.start)
-        p2 = np.asarray((self.start[0] + self.dir[0], self.start[1]+ self.dir[1]))
+        p2 = np.asarray((self.start[0] + self.dir[0], self.start[1] + self.dir[1]))
         p3 = np.asarray(point)
         d = np.linalg.norm(np.cross(p2 - p1, p1 - p3)) / np.linalg.norm(p2 - p1)
 
@@ -745,28 +753,32 @@ class Line:
         y3 = b.start[1]
         y4 = b.start[1] + b.dir[1]
 
-        D = (x1 - x2)*(y3 - y4) - (y1 - y2)*(x3 - x4)
+        D = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
         if D == 0:
             raise ValueError("Lines do not intersect")
 
-        Px = ((x1*y2 - y1*x2) * (x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / D
-        Py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4))/D
+        Px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / D
+        Py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / D
 
         return (Px, Py)
 
+
 def degToRad(deg):
-    return math.pi*deg/180
+    return math.pi * deg / 180
+
 
 def radToDeg(rad):
-    return rad*180/math.pi
+    return rad * 180 / math.pi
+
 
 def polar(angle, radius=1):
     return (math.cos(angle) * radius, math.sin(angle) * radius)
 
-def toPolar(x,y):
-    r= math.sqrt(x*x + y*y)
-    angle = math.atan2(y,x)
+
+def toPolar(x, y):
+    r = math.sqrt(x * x + y * y)
+    angle = math.atan2(y, x)
     return (angle, r)
 
 
@@ -789,36 +801,37 @@ def get_hole_with_hole(innerD, outerD, deep, sides=1, layerThick=LAYER_THICK):
 
     hole = cq.Workplane("XY")
     if sides == 1:
-        hole = hole.circle(outerD/2)
+        hole = hole.circle(outerD / 2)
     else:
-        hole = hole.polygon(sides,outerD)
-    hole = hole.extrude(deep+layerThick*2)
+        hole = hole.polygon(sides, outerD)
+    hole = hole.extrude(deep + layerThick * 2)
 
-    #the shape we want the bridging to end up
-    bridgeCutterCutter= cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD,innerD).extrude(layerThick)#
+    # the shape we want the bridging to end up
+    bridgeCutterCutter = cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD, innerD).extrude(layerThick)  #
 
     bridgeCutter = cq.Workplane("XY")
     if sides == 1:
-        bridgeCutter = bridgeCutter.circle(outerD/2)
+        bridgeCutter = bridgeCutter.circle(outerD / 2)
     else:
-        bridgeCutter = bridgeCutter.polygon(sides,outerD)
+        bridgeCutter = bridgeCutter.polygon(sides, outerD)
 
-    bridgeCutter = bridgeCutter.extrude(layerThick*2).cut(bridgeCutterCutter).translate((0,0,deep))
+    bridgeCutter = bridgeCutter.extrude(layerThick * 2).cut(bridgeCutterCutter).translate((0, 0, deep))
 
     hole = hole.cut(bridgeCutter)
 
     return hole
 
 
-def getAngleCovered(distances,r):
+def getAngleCovered(distances, r):
     totalAngle = 0
 
     for dist in distances:
-        totalAngle += math.asin(dist/(2*r))
+        totalAngle += math.asin(dist / (2 * r))
 
-    totalAngle*=2
+    totalAngle *= 2
 
     return totalAngle
+
 
 def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
     '''
@@ -827,13 +840,11 @@ def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
     circleAngle is in radians
     '''
 
-
-
-    #treat as circumference
+    # treat as circumference
     aproxR = sum(distances) / arcAngle
 
     minR = aproxR
-    maxR = aproxR*1.2
+    maxR = aproxR * 1.2
     lastTestR = 0
     # errorMin = circleAngle - getAngleCovered(distances, minR)
     # errorMax = circleAngle - getAngleCovered(distances, maxR)
@@ -843,26 +854,25 @@ def getRadiusForPointsOnAnArc(distances, arcAngle=math.pi, iterations=100):
     for i in range(iterations):
         # print("Iteration {}, testR: {}, errorTest: {}".format(i,testR, errorTest))
         if errorTest < 0:
-            #r is too small
+            # r is too small
             minR = testR
 
         if errorTest > 0:
             maxR = testR
 
         if errorTest == 0 or testR == lastTestR:
-            #turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testR anymore
+            # turns out errorTest == 0 can happen. hurrah for floating point! Sometimes however we don't get to zero, but we can't refine testR anymore
             print("Iteration {}, testR: {}, errorTest: {}".format(i, testR, errorTest))
             # print("found after {} iterations".format(i))
             break
         lastTestR = testR
-        testR = (minR + maxR)/2
+        testR = (minR + maxR) / 2
         errorTest = arcAngle - getAngleCovered(distances, testR)
 
     return testR
 
 
 class ChainInfo:
-
     '''
     Hold info to describe a chain
     regula 30 hour chain:
@@ -870,45 +880,48 @@ class ChainInfo:
 
     Undecided on if to include tolerance with the chain or with the wheel, going to try with the wheel for now as I hope the improved pocket wheel won't need it as much
     '''
+
     def __init__(self, wire_thick=0.85, width=3.6, outside_length=6.65, inside_length=-1):
         self.wire_thick = wire_thick
         self.width = width
         self.outside_length = outside_length
         self.inside_length = inside_length
         if self.inside_length < 0:
-            self.inside_length = self.outside_length - self.wire_thick*2
+            self.inside_length = self.outside_length - self.wire_thick * 2
         if self.outside_length < 0:
-            self.outside_length = self.inside_length + self.wire_thick*2
+            self.outside_length = self.inside_length + self.wire_thick * 2
 
-#consistently reliable results have been obtained by laying out and pulling tight) a stretch of chain against a ruler to calculate inside_length (half chain pitch)
+
+# consistently reliable results have been obtained by laying out and pulling tight) a stretch of chain against a ruler to calculate inside_length (half chain pitch)
 
 REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65)
-#claims a max load of 5kg, looks promising for an eight day
-#129 links in 1m = 7.75 inside length
-#38.5 in 30cm = 7.79 inside length
-#re-measuring 7.75 inside seems more accurate and wire I think is 1.45 not 1.4 thick
-#some lengths of this stuff are completely different, triple checked this and got one with much shorter links:
-#82 links over 597mm
-#looks like that one chain is just different! I might not use this one after all...
-#74 links 593mm
-#different again!!! That's three different sizes from one purchase. I think I need to stick to ones that come on a reel
-CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.45, width=5.5, inside_length=1000/129)#, outside_length=10.8)
+# claims a max load of 5kg, looks promising for an eight day
+# 129 links in 1m = 7.75 inside length
+# 38.5 in 30cm = 7.79 inside length
+# re-measuring 7.75 inside seems more accurate and wire I think is 1.45 not 1.4 thick
+# some lengths of this stuff are completely different, triple checked this and got one with much shorter links:
+# 82 links over 597mm
+# looks like that one chain is just different! I might not use this one after all...
+# 74 links 593mm
+# different again!!! That's three different sizes from one purchase. I think I need to stick to ones that come on a reel
+CHAIN_PRODUCTS_1_4MM_CHAIN = ChainInfo(wire_thick=1.45, width=5.5, inside_length=1000 / 129)  # , outside_length=10.8)
 
-#https://www.cousinsuk.com/product/chains-steel?code=C34656
-#looks to be as good value as the reels of chain I got, but smaller
-#the values on the website don't match up to the stated chain pitch, I'll have to wait until it arrives
-#597.5/83
-COUSINS_1_5MM_CHAIN = ChainInfo(wire_thick=1.5, width=6.5,inside_length=597.5/83.0)# outside_length=12)
+# https://www.cousinsuk.com/product/chains-steel?code=C34656
+# looks to be as good value as the reels of chain I got, but smaller
+# the values on the website don't match up to the stated chain pitch, I'll have to wait until it arrives
+# 597.5/83
+COUSINS_1_5MM_CHAIN = ChainInfo(wire_thick=1.5, width=6.5, inside_length=597.5 / 83.0)  # outside_length=12)
 
-#bought one, probably not going to buy any more but might use it for a prototype
-#undecided - on further inspection it's not a great chain, many wonky links
-COUSINS_1_2_BRASS_CHAIN = ChainInfo(wire_thick=1.2, width=5.5, inside_length=597/76)
+# bought one, probably not going to buy any more but might use it for a prototype
+# undecided - on further inspection it's not a great chain, many wonky links
+COUSINS_1_2_BRASS_CHAIN = ChainInfo(wire_thick=1.2, width=5.5, inside_length=597 / 76)
 
-#TODO measure a long stretch, 10.15 is just a rough estimate
+# TODO measure a long stretch, 10.15 is just a rough estimate
 FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.15)
 
-#595.5/94
-REGULA_8_DAY_1_05MM_CHAIN = ChainInfo(wire_thick=1.05, width=4.4, inside_length=595.5/94)#, outside_length=8.4)
+# 595.5/94
+REGULA_8_DAY_1_05MM_CHAIN = ChainInfo(wire_thick=1.05, width=4.4, inside_length=595.5 / 94)  # , outside_length=8.4)
+
 
 class BearingInfo:
     '''
@@ -916,20 +929,21 @@ class BearingInfo:
 
     TODO - remove holder lip and use entirely safe outer and safe inner diameters
     '''
-    def __init__(self, outer_d=10,  height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d = -1, inner_safe_d_at_a_push=-1,
+
+    def __init__(self, outer_d=10, height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d=-1, inner_safe_d_at_a_push=-1,
                  flange_thick=0, flange_diameter=0):
         self.outer_d = outer_d
         self.height = height
-        self.inner_d=inner_d
-        #how large can something that comes into contact with the bearing (from the rod) be
+        self.inner_d = inner_d
+        # how large can something that comes into contact with the bearing (from the rod) be
         self.inner_safe_d = inner_safe_d
-        #for times when I really need to push the limits rather than play it safe
+        # for times when I really need to push the limits rather than play it safe
         self.inner_safe_d_at_a_push = inner_safe_d_at_a_push
         if self.inner_safe_d_at_a_push < 0:
             self.inner_safe_d_at_a_push = self.inner_safe_d
-        #something that can touch the outside of the bearing can also touch the front/back of the bearing up to this diameter without fouling on anything that moves when it rotates
+        # something that can touch the outside of the bearing can also touch the front/back of the bearing up to this diameter without fouling on anything that moves when it rotates
         self.outer_safe_d = outer_safe_d
-        #subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
+        # subtract this from innerD for something taht can easily slot inside (0.05 tested only for 15 and 10mm inner diameter plastic bearings)
         self.inner_d_wiggle_room = inner_d_wiggle_room
 
         self.flange_thick = flange_thick
@@ -940,53 +954,55 @@ class BearingInfo:
         flange side down
         '''
         if self.flange_diameter > 0:
-            return cq.Workplane("XY").circle(self.flange_diameter/2).extrude(self.flange_thick).faces(">Z").workplane().circle(self.outer_d/2).extrude(self.height - self.flange_thick)
+            return cq.Workplane("XY").circle(self.flange_diameter / 2).extrude(self.flange_thick).faces(">Z").workplane().circle(self.outer_d / 2).extrude(self.height - self.flange_thick)
 
-        return cq.Workplane("XY").circle(self.outer_d/2).extrude(self.height)
+        return cq.Workplane("XY").circle(self.outer_d / 2).extrude(self.height)
 
     def get_string(self):
-        flange_string=""
+        flange_string = ""
         if self.flange_diameter > 0:
             flange_string = " (flange {}x{})".format(self.flange_diameter, self.flange_thick)
-        return "{inner}x{outer}x{thick}{flange_string}".format(inner = self.inner_d, outer = self.outer_d, thick=self.height, flange_string=flange_string)
+        return "{inner}x{outer}x{thick}{flange_string}".format(inner=self.inner_d, outer=self.outer_d, thick=self.height, flange_string=flange_string)
 
     def __str__(self):
         return self.get_string()
 
+
 BEARING_12MM_FLANGED = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
 BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
 BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
+
 
 def get_bearing_info(innerD):
     '''
     Get some stock bearings
     '''
     if innerD == 3:
-        #3x10x4
-        #most arbors
-        return BearingInfo(outer_d=10.1, outer_safe_d = 10 - 3, height=4, inner_d=3, inner_safe_d=4.25, inner_safe_d_at_a_push=5.2)
+        # 3x10x4
+        # most arbors
+        return BearingInfo(outer_d=10.1, outer_safe_d=10 - 3, height=4, inner_d=3, inner_safe_d=4.25, inner_safe_d_at_a_push=5.2)
     if innerD == 4:
-        #4x13x5
-        #used for power arbor on eight day clocks
-        #was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
-        return BearingInfo(outer_d=13.1, outer_safe_d=13-4, height=5, inner_d=innerD, inner_safe_d=5.4)
+        # 4x13x5
+        # used for power arbor on eight day clocks
+        # was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
+        return BearingInfo(outer_d=13.1, outer_safe_d=13 - 4, height=5, inner_d=innerD, inner_safe_d=5.4)
     if innerD == 6:
-        #these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
+        # these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
         return BearingInfo(outer_d=19.2, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8)
     if innerD == 12:
-        #12x21x5
+        # 12x21x5
         return BEARING_12MM
     if innerD == 10:
-        #not used much since direct-arbor with small bearings (this had too much friction)
-        #19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
+        # not used much since direct-arbor with small bearings (this had too much friction)
+        # 19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
         return BearingInfo(outer_d=19.2, outer_safe_d=19.4, height=5, inner_d=innerD, inner_safe_d=12.5)
     if innerD == 15:
-        #15x24x5
-        #(used for the winding key)
-        #nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
-        #printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
+        # 15x24x5
+        # (used for the winding key)
+        # nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
+        # printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
         # with 24.15 light grey again latest print fell out again, wondering if tolerences are better since the new nozzle?
-        return BearingInfo(outer_d=24.1, outer_safe_d=24-5, height=5, inner_d=innerD, inner_safe_d=17.5)
+        return BearingInfo(outer_d=24.1, outer_safe_d=24 - 5, height=5, inner_d=innerD, inner_safe_d=17.5)
     return None
 
 
@@ -994,10 +1010,11 @@ def get_o_ring_thick(total_diameter):
     # #hack
     # return 2.2
     return 2
-    #TODO when I build up a selection of o-rings tinker with this
+    # TODO when I build up a selection of o-rings tinker with this
     if total_diameter > 20:
         return 3
     return 2
+
 
 def getPendulumLength(pendulum_period):
     '''
@@ -1006,14 +1023,13 @@ def getPendulumLength(pendulum_period):
     pendulum_length = GRAVITY * pendulum_period * pendulum_period / (4 * math.pi * math.pi)
     return pendulum_length
 
+
 def getPendulumPeriod(pendulum_length):
     pendulum_period = 2 * math.pi * math.sqrt(pendulum_length / GRAVITY)
     return pendulum_period
 
 
-
 def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
-
     '''
     a square hole with rod space below it that can hold the top of a pendulum, top of holder is at 0,0
     z is height above xy plane for the rod centre
@@ -1021,13 +1037,13 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
     shape = cq.Workplane("XY")
 
-    #a square hole that can fit the end of the pendulum rod with two nuts on it
+    # a square hole that can fit the end of the pendulum rod with two nuts on it
     holeStartY = 0
     holeHeight = getNutHeight(pendulum_rod_d, nyloc=True) + getNutHeight(pendulum_rod_d) + 1
 
     nutD = get_nut_containing_diameter(pendulum_rod_d)
 
-    width = nutD*1.5
+    width = nutD * 1.5
 
     space = cq.Workplane("XY").moveTo(0, holeStartY - holeHeight / 2).rect(width, holeHeight).extrude(1000).translate((0, 0, z - nutD))
     shape = shape.add(space)
@@ -1038,9 +1054,9 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
     extraSpaceForRod = 0.1
     extraSpaceForNut = 0.2
     #
-    rod = cq.Workplane("XZ").tag("base").moveTo(0,z - extraRodSpace).circle(pendulum_rod_d / 2 + extraSpaceForRod / 2).extrude(100)
+    rod = cq.Workplane("XZ").tag("base").moveTo(0, z - extraRodSpace).circle(pendulum_rod_d / 2 + extraSpaceForRod / 2).extrude(100)
     # add slot for rod to come in and out
-    rod = rod.workplaneFromTagged("base").moveTo(0, z - extraRodSpace+500).rect(pendulum_rod_d + extraSpaceForRod, 1000).extrude(100)
+    rod = rod.workplaneFromTagged("base").moveTo(0, z - extraRodSpace + 500).rect(pendulum_rod_d + extraSpaceForRod, 1000).extrude(100)
 
     rod = rod.translate((0, holeStartY, 0))
 
@@ -1060,7 +1076,7 @@ class TextSpace:
         self.y = y
         self.width = width
         self.height = height
-        #deprecated, use angle_rad for more control. If this is a boolean it will override angle_rad to math.pi/2 or 0
+        # deprecated, use angle_rad for more control. If this is a boolean it will override angle_rad to math.pi/2 or 0
         self.horizontal = horizontal
         self.text = text
         self.text_size = 10
@@ -1071,7 +1087,7 @@ class TextSpace:
 
         if self.horizontal is not None:
             if self.horizontal == False:
-                self.angle_rad = math.pi/2
+                self.angle_rad = math.pi / 2
             else:
                 self.angle_rad = 0
 
@@ -1085,7 +1101,7 @@ class TextSpace:
         '''
         get the text centred properly
         '''
-        shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind="bold", font= self.font)#, font="Comic Sans MS")
+        shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind="bold", font=self.font)  # , font="Comic Sans MS")
         bb = shape.val().BoundingBox()
 
         # actually centre it, the align feature of text does...something else
@@ -1095,7 +1111,6 @@ class TextSpace:
             shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.thick))
 
         shape = shape.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.angle_rad))
-
 
         shape = shape.translate((self.x, self.y))
 
@@ -1108,5 +1123,3 @@ class TextSpace:
         height_ratio = self.height / bb.ylen
 
         return self.text_size * min(width_ratio, height_ratio)
-
-
