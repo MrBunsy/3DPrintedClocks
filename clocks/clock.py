@@ -746,7 +746,7 @@ class GoingTrain:
         power_uW = power * math.pow(10, 6)
         #for reference, the hubert hurr eight day cuckoo is aproximately 34uW
         print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.get_cord_usage() / 1000, self.max_weight_drop, chainRatio, chainRatios))
-        print("With a weight of {}kg, this results in an average power usage of {:.1f}μW".format(weight_kg, power_uW))
+        print("With a weight of {}kg, this results in an average power usage of {:.1f}uW".format(weight_kg, power_uW))
 
         if len(self.arbours) > 0:
             self.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -765,7 +765,7 @@ class GoingTrain:
             min_power = effective_weight * GRAVITY * min_weight_speed* math.pow(10, 6)
             max_weight_speed = (cordPerRotationPerLayer[-1] / chainRatio) / (60 * 60 * 1000)
             max_power = effective_weight * GRAVITY * max_weight_speed* math.pow(10, 6)
-            print("Cordwheel power varies from {:.1f}μW to {:.1f}μW".format(min_power, max_power))
+            print("Cordwheel power varies from {:.1f}uW to {:.1f}uW".format(min_power, max_power))
 
     def gen_gears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
                   powered_wheel_module_increase=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, thicknessReduction=1,
