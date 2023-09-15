@@ -3432,8 +3432,7 @@ class SimpleClockPlates:
         square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
         key_hole_deep = key_length - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
 
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
-            key_hole_deep -= self.going_train.powered_wheel.ratchet.thick + self.going_train.powered_wheel.ratchet_collet_thick
+
 
         if self.dial is not None and not self.key_is_inside_dial() and self.weight_driven:
             # just so the crank (only for weights) doesn't clip the dial (the key is outside the dial)
@@ -3448,6 +3447,11 @@ class SimpleClockPlates:
 
         crank = self.weight_driven
 
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
+            #take into accuont the ratchet on the front
+            ratchet_thickness = self.going_train.powered_wheel.ratchet.thick + self.going_train.powered_wheel.ratchet_collet_thick
+            key_hole_deep -= ratchet_thickness
+            cylinder_length -= ratchet_thickness
 
         self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
                                       handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides())
@@ -3602,10 +3606,17 @@ class MantelClockPlates(SimpleClockPlates):
 
         if self.dial is not None:
             #hacky, cut away a bit from the top support so it won't crash into the anchor rod
-            bearing_relative_to_dial = np_to_set(np.subtract(self.bearing_positions[-1][:2], self.hands_position))
-            tall = 5
-            self.dial.subtract_from_supports = cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
-                .circle(self.arbors_for_plate[-1].bearing.outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall))
+
+
+            self.dial.subtract_from_supports = cq.Workplane("XY")
+            #cut out bits from the pillars so they don't clash with any of the rods
+            for arbor in self.arbors_for_plate:
+                bearing_relative_to_dial = np_to_set(np.subtract(arbor.bearing_position[:2], self.hands_position))
+                tall = 5
+                #mirror because the dial is printed upside down
+                bearing_relative_to_dial = (-bearing_relative_to_dial[0], bearing_relative_to_dial[1])
+                self.dial.subtract_from_supports = self.dial.subtract_from_supports.add(cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
+                    .circle(arbor.bearing.outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall)))
 
             if self.centred_second_hand:
                 pillar_positions = []
