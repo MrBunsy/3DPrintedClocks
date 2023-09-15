@@ -141,20 +141,21 @@ def get_screw_head_height(metric_thread, countersunk=False):
         return 1.7
     if metric_thread == 4:
         if countersunk:
-            return 2.1
+            return 2.1 + 0.4
 
     return metric_thread * 0.85
 
 
 def get_screw_head_diameter(metric_thread, countersunk=False):
     if metric_thread == 3:
-        if countersunk:
-            return 5.6
+        # if countersunk:
+        #want a bit more slack for the countersink holes
+        #     return 5.6
         return 6
     if metric_thread == 2:
         return 3.9
     if metric_thread == 4:
-        return 7.2
+        return 7.2 + 0.3
     return METRIC_HEAD_D_MULT * metric_thread
 
 
