@@ -2282,9 +2282,10 @@ class Arbour:
             inner_radius_for_style = self.powered_wheel.get_outer_diameter()
             #TODO
             style = None
-        #invert clockwise from pinion side as the "pinion" is used for the side of the powered wheel, which is wrong
+        #the "pinion" is used for the side of the powered wheel
         #TODO review logic if I ever get chain at back working again
-        gear_wheel = self.wheel.get3D(holeD=self.hole_d, thick=self.wheel_thick, style=style, innerRadiusForStyle=inner_radius_for_style, clockwise_from_pinion_side=not self.clockwise_from_pinion_side)
+        gear_wheel = self.wheel.get3D(holeD=self.hole_d, thick=self.wheel_thick, style=style, innerRadiusForStyle=inner_radius_for_style,
+                                      clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
         if self.combine_with_powered_wheel:
             z_offset = self.wheel_thick
