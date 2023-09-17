@@ -1121,7 +1121,8 @@ class MoonHolder:
 
         # max_y = self.bearingPositions[-1][1] - self.arboursForPlate[-1].bearing.outerD/2 - 3
         # max_y = self.plates.plate_top_fixings[0][1] - self.plates.fixingScrews.get_nut_containing_diameter()/2
-        max_y = self.plates.top_pillar_positions[1] + self.plates.top_pillar_r
+        #assuming only one top pillar, or at least that htey're both at the same y
+        max_y = self.plates.top_pillar_positions[0][1] + self.plates.top_pillar_r
 
         #top of the last wheel in the complication
         min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
@@ -1136,7 +1137,7 @@ class MoonHolder:
 
     def get_fixing_positions(self):
         #between pillar screws and anchor arbor
-        top_fixing_y = (self.plates.top_pillar_positions[1] + self.plates.bearing_positions[-1][1]) / 2 - 1
+        top_fixing_y = (self.plates.top_pillar_positions[0][1] + self.plates.bearing_positions[-1][1]) / 2 - 1
         #just inside the dial, by fluke
         bottom_fixing_y = self.centre_y - self.height / 2 + 8
         return [(-self.plates.plate_width / 3, top_fixing_y), (self.plates.plate_width / 3, bottom_fixing_y)]
@@ -3446,15 +3447,17 @@ class SimpleClockPlates:
             handle_length = self.hands_position[1] - self.bearing_positions[0][1] - 6  # 10
 
         crank = self.weight_driven
-
+        key_wiggle_room = 0.75 # the default
         if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
             #take into accuont the ratchet on the front
             ratchet_thickness = self.going_train.powered_wheel.ratchet.thick + self.going_train.powered_wheel.ratchet_collet_thick
             key_hole_deep -= ratchet_thickness
             cylinder_length -= ratchet_thickness
+            #trying a bit less for the hex key
+            key_wiggle_room = 0.5
 
         self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
-                                      handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides())
+                                      handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides(), key_wiggle_room=key_wiggle_room)
 
         if self.key_offset_from_front_plate < 0:
             self.key_hole_d = self.winding_key.body_wide+1.5
@@ -3919,12 +3922,12 @@ class Assembly:
         self.motionWorksZ = self.front_of_clock_z + self.motionWorksZOffset
 
         self.motion_works_pos = self.plates.hands_position.copy()
-
+        self.second_hand_pos = None
         # total, not relative, height because that's been taken into accounr with motionworksZOffset
         self.minute_hand_z = self.front_of_clock_z + self.motionWorksZOffset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick
         if self.plates.has_seconds_hand():
-            self.secondHandPos = self.plates.get_seconds_hand_position()
-            self.secondHandPos.append(self.front_of_clock_z + self.hands.secondFixing_thick)
+            self.second_hand_pos = self.plates.get_seconds_hand_position()
+            self.second_hand_pos.append(self.front_of_clock_z + self.hands.secondFixing_thick)
 
         self.minuteAngle = - 360 * (self.time_mins / 60)
         self.hourAngle = - 360 * (self.time_hours + self.time_mins / 60) / 12
@@ -3932,16 +3935,15 @@ class Assembly:
 
         if self.plates.dial is not None:
             if self.plates.has_seconds_hand():
-                self.secondHandPos[2] = self.front_of_clock_z + self.plates.dial.support_length + self.plates.dial.thick + self.plates.endshake / 2 + 0.5
+                self.second_hand_pos[2] = self.front_of_clock_z + self.plates.dial.support_length + self.plates.dial.thick + self.plates.endshake / 2 + 0.5
 
             #position of the front centre of the dial
             self.dial_pos = (self.plates.hands_position[0], self.plates.hands_position[1], self.plates.dial_z + self.dial.thick + self.front_of_clock_z)
             #for eyes
             self.wire_to_arbor_fixer_pos = (self.plates.bearing_positions[-1][0], self.plates.bearing_positions[-1][1], self.front_of_clock_z + self.plates.endshake + 1)
-
         if self.plates.centred_second_hand:
-            self.secondHandPos = self.plates.hands_position.copy()
-            self.secondHandPos.append(self.minute_hand_z - self.motion_works.hour_hand_slot_height)# + self.hands.thick + self.hands.secondFixing_thick)
+            self.second_hand_pos = self.plates.hands_position.copy()
+            self.second_hand_pos.append(self.minute_hand_z - self.motion_works.hour_hand_slot_height)# + self.hands.thick + self.hands.secondFixing_thick)
         if self.plates.pendulum_at_front:
 
             pendulumRodCentreZ = self.plates.get_plate_thick(back=True) + self.plates.get_plate_thick(back=False) + self.plates.plate_distance + self.plates.pendulum_sticks_out
@@ -4119,7 +4121,7 @@ class Assembly:
                         if self.hands.seconds_hand_through_hole:
                             hand_thick_accounting = self.hands.secondThick
                         #rod_length = length_up_to_inside_front_plate + front_plate_thick + self.dial.support_length + self.dial.thick + self.hands.secondFixing_thick + hand_thick_accounting
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + (self.secondHandPos[2] - total_plate_thick )+ hand_thick_accounting
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + (self.second_hand_pos[2] - total_plate_thick )+ hand_thick_accounting
                     else:
                         #little seconds hand just in front of the plate
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
@@ -4229,7 +4231,7 @@ class Assembly:
             #second hand!! yay
             secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), self.secondAngle)
 
-            clock = clock.add(secondHand.translate(self.secondHandPos))
+            clock = clock.add(secondHand.translate(self.second_hand_pos))
 
         if with_key:
             if self.key_model is not None:
@@ -4326,7 +4328,8 @@ class Assembly:
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
-                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None):
+                   text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
+                   moon_complication_colour=Colour.BRASS):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -4372,7 +4375,7 @@ class Assembly:
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors
-            show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name="Moon Complication")
+            show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name="Moon Complication", options={"color":moon_complication_colour})
             moon = self.moon_complication.get_moon_half()
             # moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
             show_object(moon.translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)),
@@ -4407,7 +4410,7 @@ class Assembly:
         #hands on the motion work, showing the time
         #mirror them so the outline is visible (consistent with second hand)
         hands_position = (self.plates.hands_position[0], self.plates.hands_position[1], self.minute_hand_z - self.motion_works.hour_hand_slot_height)
-        self.hands.show_hands(show_object, hand_colours=hand_colours, position=hands_position, second_hand_pos=self.secondHandPos, hour_hand_slot_height=self.motion_works.hour_hand_slot_height,
+        self.hands.show_hands(show_object, hand_colours=hand_colours, position=hands_position, second_hand_pos=self.second_hand_pos, hour_hand_slot_height=self.motion_works.hour_hand_slot_height,
                               time_hours=self.time_hours, time_minutes=self.time_mins, time_seconds=self.time_seconds, show_second_hand=self.plates.has_seconds_hand())
         # hands = self.hands.get_in_situ(time_minute=self.timeMins, time_hour=self.timeHours, time_seconds=self.timeSeconds, gap_size=self.motion_works.hourHandSlotHeight - self.hands.thick)
         #
@@ -4429,7 +4432,7 @@ class Assembly:
         #                                           self.minuteHandZ - self.motion_works.hourHandSlotHeight)), options={"color": show_colour}, name=description)
         #         elif self.plates.has_seconds_hand():
         #             #second hand!! yay
-        #             secondHand = hands[type][colour].translate(self.secondHandPos)
+        #             secondHand = hands[type][colour].translate(self.second_hand_pos)
         #             show_object(secondHand, options={"color": show_colour}, name=description)
 
         if self.has_ring:

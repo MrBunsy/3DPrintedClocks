@@ -87,7 +87,7 @@ motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compen
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
 dial = clock.Dial(outside_d=155, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
                   inner_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)

@@ -925,15 +925,9 @@ class SpringBarrel:
         #assuming a flanged bearing in the lid
         self.lid_hole_d = self.lid_bearing.outer_d
 
-        self.arbor_d = self.key_bearing.inner_d
+        self.arbor_d = self.key_bearing.inner_d - self.bearing_wiggle_room
 
-        # https://en.wikipedia.org/wiki/Sagitta_(geometry)
-        r = self.arbor_d / 2
-        l = r
-        sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
 
-        # print on its side and flat against the base of the key
-        self.cutoff_height = sagitta
 
         self.arbor_d_spring = self.arbor_d + 1
         print("arbor d inside spring: {}mm".format(self.arbor_d_spring))
@@ -944,6 +938,14 @@ class SpringBarrel:
         #trying a hex key instead of square
         self.key_containing_diameter = self.arbor_d
 
+        # https://en.wikipedia.org/wiki/Sagitta_(geometry)
+        #assuming hexagon, find how far the flat edge is from the containing diameter
+        r = self.key_containing_diameter / 2
+        l = r
+        sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
+
+        # print on its side and flat against the base of the key (get containing diameter is the full inside diameter of the bearing, but the arbor_d has bearing_wiggle_room subtracted)
+        self.cutoff_height = sagitta
         # self.key_square_side_length = self.arbor_d_bearing*0.5*math.sqrt(2)
         # if self.arbor_d_bearing < 14:
         #     #make the key larger than would fit through the bearing, but we'll round the edges off later
@@ -1523,7 +1525,8 @@ class RopeWheel:
         return minuteRatio*chainLength/self.circumference
 
 class WindingKey:
-    def __init__(self, key_containing_diameter, cylinder_length, key_hole_deep, key_sides=4, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75, wall_thick=2.5, handle_thick = 5):
+    def __init__(self, key_containing_diameter, cylinder_length, key_hole_deep, key_sides=4, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75,
+                 wall_thick=2.5, handle_thick = 5):
         #the square bit the key slots over - what size is it?
         # self.square_side_length = square_side_length
         self.key_containing_diameter = key_containing_diameter
