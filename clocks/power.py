@@ -1143,7 +1143,9 @@ class SpringBarrel:
         outer_d = self.arbor_d+6
         gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
         # means to hold screw that will hold this in place
-        gear = gear.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
+        screwshape = self.collet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2))
+        # return screwshape
+        gear = gear.cut(screwshape)
             # gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.arbor_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
         gear = gear.faces(">Z").workplane().polygon(6, self.arbor_d).cutThruAll()
 
