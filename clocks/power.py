@@ -955,7 +955,7 @@ class SpringBarrel:
         #slightly less of a bodge, if our arbor is bigger than the spring was intended for, make our barrel slightly bigger too
         self.barrel_diameter = self.spring.barrel_diameter + (self.arbor_d_spring - self.spring.arbor_d)
 
-        self.ratchet_wiggle_room = 0.5
+        self.ratchet_wiggle_room = 0.7 #0.5 only fitted with some filing
 
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
@@ -1140,14 +1140,14 @@ class SpringBarrel:
         '''
         gear = self.ratchet.get_gear()
         # if self.ratchet_at_back:
-        outer_d = self.arbor_d+6
+        outer_d = self.arbor_d+8
         gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
         # means to hold screw that will hold this in place
         screwshape = self.collet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2))
         # return screwshape
         gear = gear.cut(screwshape)
             # gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.arbor_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
-        gear = gear.faces(">Z").workplane().polygon(6, self.arbor_d).cutThruAll()
+        gear = gear.faces(">Z").workplane().polygon(6, self.key_containing_diameter + self.ratchet_wiggle_room).cutThruAll()
 
         return gear
 
@@ -1528,7 +1528,7 @@ class RopeWheel:
 
 class WindingKey:
     def __init__(self, key_containing_diameter, cylinder_length, key_hole_deep, key_sides=4, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75,
-                 wall_thick=2.5, handle_thick = 5):
+                 wall_thick=2.5, handle_thick = 5, print_sideways=False):
         #the square bit the key slots over - what size is it?
         # self.square_side_length = square_side_length
         self.key_containing_diameter = key_containing_diameter
@@ -1542,6 +1542,9 @@ class WindingKey:
         #use a crank handle?
         self.crank = crank
 
+        #print on the side for more strength? (hopefully, might just split lengthways instead, would screws alongside the barrel work better?)
+        self.print_sideways = print_sideways
+
         self.wall_thick = wall_thick
 
         self.handle_thick = handle_thick
@@ -1551,6 +1554,9 @@ class WindingKey:
 
         # self.body_wide = 2*self.square_side_length / math.sqrt(2) + self.wall_thick * 2
         self.body_wide = self.key_containing_diameter + self.wall_thick*2
+
+        # if self.print_sideways:
+        #     self.body_wide+=5
 
         #screw for fixing the knob to the crank arm if this is a crank key, not needed otherwise
         self.knob_fixing_screw = knob_fixing_screw
@@ -1605,12 +1611,19 @@ class WindingKey:
                     .lineTo(0, self.key_grip_tall).mirrorY().extrude(self.handle_thick)
 
             # return grippyBit
-            key = cq.Workplane("XY").circle(self.body_wide/2).extrude(self.key_grip_tall)
+            if self.print_sideways:
+                key = cq.Workplane("XY").polygon(6, self.body_wide).extrude(self.key_grip_tall)
+            else:
+                key = cq.Workplane("XY").circle(self.body_wide/2).extrude(self.key_grip_tall)
             key = key.union(grippyBit.translate((0, self.handle_thick / 2, 0)))
 
 
         #key bit
-        key = key.union(cq.Workplane("XY").circle(self.body_wide / 2+0.0001).extrude(self.cylinder_length).translate((0,0,handle_tall)))
+        if self.print_sideways:
+            key = key.union(cq.Workplane("XY").polygon(6, self.body_wide).extrude(self.cylinder_length).translate((0, 0, handle_tall)))
+        else:
+            #just a cylinder
+            key = key.union(cq.Workplane("XY").circle(self.body_wide / 2+0.0001).extrude(self.cylinder_length).translate((0,0,handle_tall)))
 
 
 
@@ -1640,8 +1653,10 @@ class WindingKey:
 
     def get_let_down_adapter(self):
 
-
-        adapter = cq.Workplane("XY").circle(self.body_wide / 2).extrude(self.key_hole_deep + 10)
+        if self.print_sideways:
+            adapter = cq.Workplane("XY").polygon(6, self.body_wide).extrude(self.key_hole_deep + 10)
+        else:
+            adapter = cq.Workplane("XY").circle(self.body_wide / 2).extrude(self.key_hole_deep + 10)
 
         adapter = adapter.cut(cq.Workplane("XY").polygon(self.key_sides, self.key_containing_diameter + self.wiggle_room).extrude(self.key_hole_deep))
 

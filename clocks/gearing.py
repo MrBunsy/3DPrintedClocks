@@ -1622,7 +1622,7 @@ class ArbourForPlate:
                 #bearing standoff
                 anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).circle(self.arbor.arbour_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
                 #cut hole through the middle
-                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbor.arbour_d / 2 + ARBOUR_WIGGLE_ROOM).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
+                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbor.arbour_d / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
 
             else:
                 '''
@@ -2364,7 +2364,7 @@ class MotionWorks:
     STANDARD_INSET_DEPTH = 4.5
 
     def __init__(self, arbour_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
-                 style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=-1,
+                 style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
                  moon_complication=None):
         '''
 

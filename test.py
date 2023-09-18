@@ -734,19 +734,19 @@ if False:
 # print("Outputting ", out)
 # exporters.export(test_screwhole, out)
 # show_object(test_screwhole)
-spring = SpringBarrel(key_bearing=BEARING_12MM_FLANGED, style=GearStyle.CURVES)
-# # # #
-# # # show_object(spring.get_barrel())
-# # # show_object(spring.get_lid())
-# show_object(spring.get_model())
-# show_object(spring.get_arbor(for_printing=True))
+# spring = SpringBarrel(key_bearing=BEARING_12MM_FLANGED, style=GearStyle.CURVES)
+# # # # #
+# # # # show_object(spring.get_barrel())
+# # # # show_object(spring.get_lid())
+# # show_object(spring.get_model())
+# # show_object(spring.get_arbor(for_printing=True))
+#
+# show_object(spring.get_ratchet_gear_for_arbor())
 
-show_object(spring.get_ratchet_gear_for_arbor())
-
-# key = WindingKey(square_side_length=10,cylinder_length=50,key_hole_deep=20,handle_length=40, crank=False)
+key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
 # #
 # show_object(key.get_let_down_adapter())
-# show_object(key.get_assembled())
+show_object(key.get_assembled())
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #

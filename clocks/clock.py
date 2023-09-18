@@ -3448,16 +3448,22 @@ class SimpleClockPlates:
 
         crank = self.weight_driven
         key_wiggle_room = 0.75 # the default
+        wall_thick = 2.5 # the default
+        sideways = False
         if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
             #take into accuont the ratchet on the front
             ratchet_thickness = self.going_train.powered_wheel.ratchet.thick + self.going_train.powered_wheel.ratchet_collet_thick
             key_hole_deep -= ratchet_thickness
             cylinder_length -= ratchet_thickness
-            #trying a bit less for the hex key
-            key_wiggle_room = 0.5
+            #trying a bit less for the hex key (now trying more again since I'm printing it sideways
+            # key_wiggle_room = 0.5
+            key_wiggle_room = 1
+            wall_thick=5
+            sideways = True
 
         self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
-                                      handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides(), key_wiggle_room=key_wiggle_room)
+                                      handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides(), key_wiggle_room=key_wiggle_room, wall_thick=wall_thick,
+                                      print_sideways=sideways)
 
         if self.key_offset_from_front_plate < 0:
             self.key_hole_d = self.winding_key.body_wide+1.5
@@ -3918,13 +3924,13 @@ class Assembly:
         self.front_of_clock_z = self.plates.get_plate_thick(True) + self.plates.get_plate_thick(False) + self.plates.plate_distance
 
         # where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
-        self.motionWorksZOffset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.plates.endshake / 2
-        self.motionWorksZ = self.front_of_clock_z + self.motionWorksZOffset
+        self.motion_works_z_offset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.plates.endshake / 2
+        self.motion_works_z = self.front_of_clock_z + self.motion_works_z_offset
 
         self.motion_works_pos = self.plates.hands_position.copy()
         self.second_hand_pos = None
         # total, not relative, height because that's been taken into accounr with motionworksZOffset
-        self.minute_hand_z = self.front_of_clock_z + self.motionWorksZOffset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick
+        self.minute_hand_z = self.front_of_clock_z + self.motion_works_z_offset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick
         if self.plates.has_seconds_hand():
             self.second_hand_pos = self.plates.get_seconds_hand_position()
             self.second_hand_pos.append(self.front_of_clock_z + self.hands.secondFixing_thick)
@@ -4060,6 +4066,8 @@ class Assembly:
         front_plate_thick = self.plates.get_plate_thick(back=False)
         back_plate_thick = self.plates.get_plate_thick(back=True)
 
+
+
         #how much extra to extend out the bearing
         #used to be 3mm, but when using thinner plates this isn't ideal.
         spare_rod_length_beyond_bearing=self.plates.endshake*2
@@ -4081,6 +4089,8 @@ class Assembly:
             bearing = arbour_for_plate.bearing
             bearing_thick = bearing.height
 
+            rod_in_front_of_hands = WASHER_THICK_M3 + getNutHeight(arbour.arbour_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
+
             length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
 
             beyond_back_of_arbour = spare_rod_length_beyond_bearing + bearing_thick + self.plates.endshake
@@ -4090,7 +4100,7 @@ class Assembly:
             #"normal" arbour that does not extend out the front or back
             simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
             # hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
-            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + getNutHeight(arbour.arbour_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
+            hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + rod_in_front_of_hands
 
             #trying to arrange all the additions from back to front to make it easy to check
             if arbour.type == ArbourType.POWERED_WHEEL:
@@ -4130,12 +4140,15 @@ class Assembly:
                     #minute wheel
                     if self.plates.centred_second_hand:
                         #only goes up to the canon pinion with hand turner
-                        minimum_rod_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motion_works.getCannonPinionPinionThick() + WASHER_THICK_M3 + getNutHeight(arbour.arbour_d, halfHeight=True) * 2
-                        if self.plates.dial is not None:
-                            #small as possible as it might need to fit behind the dial (...not sure what I was talking about here??)
-                            rod_length = minimum_rod_length + 1.5
-                        else:
-                            rod_length = minimum_rod_length + spare_rod_length_in_front
+                        minimum_rod_length = (length_up_to_inside_front_plate + front_plate_thick + self.plates.endshake/2 + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT +
+                                              self.plates.motion_works.getCannonPinionPinionThick() + rod_in_front_of_hands)
+                                              # + WASHER_THICK_M3 + getNutHeight(arbour.arbour_d, halfHeight=True) * 2)
+                        # if self.plates.dial is not None:
+                        #     #small as possible as it might need to fit behind the dial (...not sure what I was talking about here??)
+                        #     rod_length = minimum_rod_length + 1.5
+                        # else:
+                        #     rod_length = minimum_rod_length + spare_rod_length_in_front
+                        rod_length = minimum_rod_length
                     else:
                         rod_length = hand_arbor_length
                 else:
@@ -4195,7 +4208,7 @@ class Assembly:
 
         motionWorksModel = self.motion_works.get_assembled(motionWorksRelativePos=self.plates.motion_works_relative_pos, minuteAngle=self.minuteAngle)
 
-        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)))
+        clock = clock.add(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)))
 
         if self.moon_complication is not None:
             clock = clock.add(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)))
@@ -4205,7 +4218,7 @@ class Assembly:
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time
-            clock = clock.add(self.motion_works.getCannonPinionPinion(standalone=True).translate((self.plates.bearing_positions[self.goingTrain.powered_wheels][0], self.plates.bearing_positions[self.goingTrain.powered_wheels][1], self.motionWorksZ)))
+            clock = clock.add(self.motion_works.getCannonPinionPinion(standalone=True).translate((self.plates.bearing_positions[self.goingTrain.powered_wheels][0], self.plates.bearing_positions[self.goingTrain.powered_wheels][1], self.motion_works_z)))
 
 
         if self.dial is not None:
@@ -4370,7 +4383,7 @@ class Assembly:
         motion_works_parts = self.motion_works.get_parts_in_situ(motionWorksRelativePos=self.plates.motion_works_relative_pos, minuteAngle=self.minuteAngle)
         for i,part in enumerate(motion_works_parts):
             colour = motion_works_colours[i % len(motion_works_colours)]
-            show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":colour}, name="Motion Works {}".format(i))
+            show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
 
 
         if self.moon_complication is not None:
