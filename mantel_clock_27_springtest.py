@@ -57,7 +57,7 @@ train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, m
 
 moduleReduction=0.9#0.85
 #train.gen_spring_barrel(click_angle=-math.pi*0.25)
-train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4)
+train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4, chain_wheel_ratios=[[66, 10], [76,13]])
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s

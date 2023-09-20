@@ -893,7 +893,7 @@ class Gear:
         '''
         return self.pitch_diameter/2 + self.addendum_factor*self.module
 
-    def getMinRadius(self):
+    def get_min_radius(self):
         '''
         you could cut a hole through the gear of this radius without touchign the teeth
         '''
@@ -939,7 +939,7 @@ class Gear:
         #     inner_r = min_inner_r
 
         #two 0.45 traces extra
-        inner_r = self.getMinRadius() - 0.9
+        inner_r = self.get_min_radius() - 0.9
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
@@ -1195,9 +1195,9 @@ class FrictionFitPendulumBits:
     Do not use for new designs - was a pain to set the beat and easy to knock out of beat
     '''
 
-    def __init__(self, arbour_d=3):
+    def __init__(self, arbor_d=3):
         self.pendulumTopThick = 15
-        self.arbour_d = arbour_d
+        self.arbor_d = arbor_d
 
     def get_pendulum_holder(self, holeD=3, forPrinting=True):
         '''
@@ -1215,8 +1215,8 @@ class FrictionFitPendulumBits:
         #(0,0,0) is the rod from the anchor, the rod is along the z axis
 
         #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
-        holeStartY=-get_nut_containing_diameter(self.arbour_d)*0.5-0.4#-5#-8#-height*0.2
-        holeHeight = getNutHeight(self.arbour_d,nyloc=True) + getNutHeight(self.arbour_d) + 1
+        holeStartY=-get_nut_containing_diameter(self.arbor_d)*0.5-0.4#-5#-8#-height*0.2
+        holeHeight = getNutHeight(self.arbor_d,nyloc=True) + getNutHeight(self.arbor_d) + 1
 
         nutD = get_nut_containing_diameter(holeD)
 
@@ -1239,9 +1239,9 @@ class FrictionFitPendulumBits:
         extraSpaceForRod = 0.1
         extraSpaceForNut = 0.2
         #
-        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2 - extraRodSpace).circle(self.arbour_d/2 + extraSpaceForRod/2).extrude(100)
+        rod = cq.Workplane("XZ").tag("base").moveTo(0, self.pendulumTopThick / 2 - extraRodSpace).circle(self.arbor_d/2 + extraSpaceForRod/2).extrude(100)
         # add slot for rod to come in and out
-        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick - extraRodSpace).rect(self.arbour_d + extraSpaceForRod, self.pendulumTopThick).extrude(100)
+        rod = rod.workplaneFromTagged("base").moveTo(0,self.pendulumTopThick - extraRodSpace).rect(self.arbor_d + extraSpaceForRod, self.pendulumTopThick).extrude(100)
 
         rod = rod.translate((0,holeStartY,0))
 
@@ -1312,7 +1312,7 @@ class SuspensionSpringPendulumBits:
 class ArbourForPlate:
 
     def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
-                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbour_d = DIRECT_ARBOUR_D, crutch_space=10,
+                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbor_d = DIRECT_ARBOUR_D, crutch_space=10,
                  previous_bearing_position=None):
         '''
         Given a basic Arbour and a specific plate class do the following:
@@ -1331,7 +1331,7 @@ class ArbourForPlate:
         self.arbor = arbour
         self.plates = plates
 
-        self.arbor_d = self.arbor.arbour_d
+        self.arbor_d = self.arbor.arbor_d
 
         self.plate_distance = self.plates.get_plate_distance()
         self.front_plate_thick = self.plates.get_plate_thick(back=False)
@@ -1373,11 +1373,11 @@ class ArbourForPlate:
         self.collet_screws = MachineScrew(2,countersunk=True)
         self.pendulum_holder_thick = 15
         self.pendulum_fixing_extra_space = 0.2
-        self.direct_arbour_d = direct_arbour_d
+        self.direct_arbor_d = direct_arbor_d
         #for the collet
         self.outer_d = (self.bearing.inner_safe_d + self.bearing.outer_d) / 2
 
-        self.cylinder_r = self.direct_arbour_d / 2
+        self.cylinder_r = self.direct_arbor_d / 2
         self.square_side_length = math.sqrt(2) * self.cylinder_r
 
         if self.cylinder_r < 5:
@@ -1387,7 +1387,7 @@ class ArbourForPlate:
         self.crutch_thick = crutch_space - self.crutch_holder_slack_space
 
         self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
-        self.friction_fit_bits = FrictionFitPendulumBits(arbour_d=self.arbor.arbour_d)
+        self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1612,7 +1612,7 @@ class ArbourForPlate:
 
 
 
-                wall_bearing = get_bearing_info(self.arbor.arbour_d)
+                wall_bearing = get_bearing_info(self.arbor.arbor_d)
 
 
                 #circular bit
@@ -1620,9 +1620,9 @@ class ArbourForPlate:
                 #square bit
                 anchor = anchor.union(cq.Workplane("XY").rect(self.square_side_length, self.square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(self.cylinder_r).extrude(square_rod_length)).translate((0,0, anchor_thick + cylinder_length)))
                 #bearing standoff
-                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).circle(self.arbor.arbour_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
+                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).circle(self.arbor.arbor_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
                 #cut hole through the middle
-                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbor.arbour_d / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
+                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbor.arbor_d / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
 
             else:
                 '''
@@ -1880,7 +1880,7 @@ class ArbourForPlate:
 
 
 class Arbour:
-    def __init__(self, arbour_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
+    def __init__(self, arbor_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
                  distance_to_next_arbour=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
@@ -1896,7 +1896,7 @@ class Arbour:
         NOTE currently assumes chain/cord is at the front - needs to be controlled by something like pinionAtFront
         '''
         #diameter of the threaded rod. Usually assumed to also be the size of the hole
-        self.arbour_d=arbour_d
+        self.arbor_d=arbor_d
         self.wheel=wheel
         self.wheel_thick=wheel_thick
         self.pinion=pinion
@@ -1927,14 +1927,14 @@ class Arbour:
             # currently this can only be used with the cord wheel
             self.loose_on_rod = (not self.powered_wheel.loose_on_rod) and use_ratchet
 
-        self.hole_d = arbour_d
+        self.hole_d = arbor_d
         if self.loose_on_rod:
-            if self.arbour_d == 4:
+            if self.arbor_d == 4:
                 # assume steel pipe (currently only have pipe with a 4mm internal diameter)
                 #6.2 squeezes on and holds tight!
                 self.hole_d = STEEL_TUBE_DIAMETER
             else:
-                self.hole_d = self.arbour_d + LOOSE_FIT_ON_ROD
+                self.hole_d = self.arbor_d + LOOSE_FIT_ON_ROD
 
         if self.get_type() == ArbourType.UNKNOWN:
             raise ValueError("Not a valid arbour")
@@ -1984,8 +1984,8 @@ class Arbour:
 
         if self.get_type() == ArbourType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
-            self.arbour_d = self.escapement.getAnchorArbourD()
-            self.hole_d = self.arbour_d
+            self.arbor_d = self.escapement.getAnchorArbourD()
+            self.hole_d = self.arbor_d
             self.wheel_thick = self.escapement.getAnchorThick()
         if self.get_type() == ArbourType.ESCAPE_WHEEL:
             self.wheel_thick = self.escapement.getWheelThick()
@@ -2003,7 +2003,7 @@ class Arbour:
         return ArbourType.UNKNOWN
 
     def get_rod_d(self):
-        return self.arbour_d
+        return self.arbor_d
 
 
     def get_total_thickness(self, just_pinion=False):
@@ -2067,7 +2067,7 @@ class Arbour:
         '''
         arbour_or_pivot_r = self.pinion.get_max_radius()
         if standalone:
-            arbour_or_pivot_r = self.arbour_d * 2
+            arbour_or_pivot_r = self.arbor_d * 2
         wheel = self.escapement.getWheel2D()
 
         clockwise = True if standalone else self.clockwise_from_pinion_side
@@ -2106,7 +2106,7 @@ class Arbour:
         '''
 
         if self.get_type() == ArbourType.WHEEL_AND_PINION:
-            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbour_d / 2)
+            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2)
 
         return None
 
@@ -2116,7 +2116,7 @@ class Arbour:
         '''
 
         if self.get_type() == ArbourType.WHEEL_AND_PINION:
-            return self.wheel.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbour_d / 2)
+            return self.wheel.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2)
 
         return None
 
@@ -2289,12 +2289,21 @@ class Arbour:
 
         if self.combine_with_powered_wheel:
             z_offset = self.wheel_thick
-            if self.powered_wheel.type == PowerType.SPRING_BARREL:
-                z_offset = 0
 
-            #cut a hole in teh gear wheel so the style in the back of the barrel works
-            gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.radius_for_style+1).cutThruAll().union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))
-            # gear_wheel = Gear.cutStyle(gear_wheel, outerRadius=self.powered_wheel.radius_for_style, innerRadius=)
+            if self.powered_wheel.type == PowerType.SPRING_BARREL:
+
+                # cut a hole in teh gear wheel so the style in the back of the barrel works
+                gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.radius_for_style + 1).cutThruAll()
+
+                z_offset = 0
+                barrel_r = self.powered_wheel.get_outer_diameter()/2
+                wheel_r = self.wheel.get_min_radius()
+
+                if barrel_r < wheel_r - 10:
+                    gear_wheel = Gear.cutStyle(gear_wheel, wheel_r, barrel_r, self.style)
+                
+                
+            gear_wheel = gear_wheel.union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))
 
         if rear_side_extension > 0 and not self.combine_with_powered_wheel:
             #rear side extension - chunky bit out the back to help provide stability on the threaded rod
@@ -2313,16 +2322,16 @@ class Arbour:
                     extension_r = boltR - self.ratchet_screws.get_nut_containing_diameter() / 2
 
             bearing_standoff_height = LAYER_THICK * 2
-            bearing_standoff_r = get_bearing_info(self.arbour_d).inner_safe_d / 2
+            bearing_standoff_r = get_bearing_info(self.arbor_d).inner_safe_d / 2
             if bearing_standoff_r > extension_r:
                 bearing_standoff_r = extension_r
 
-            if extension_r < self.arbour_d:
+            if extension_r < self.arbor_d:
                 #this *shouldn't* be possible anymore as the module size of teh chain wheel is recalcualted to ensure there is space
                 raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation")
             extended_arbour = cq.Workplane("XY").circle(extension_r).extrude(rear_side_extension - bearing_standoff_height).faces(">Z").workplane().circle(bearing_standoff_r).extrude(bearing_standoff_height)
             #add hole for rod!
-            extended_arbour = extended_arbour.faces(">Z").circle(self.arbour_d / 2).cutThruAll()
+            extended_arbour = extended_arbour.faces(">Z").circle(self.arbor_d / 2).cutThruAll()
 
             gear_wheel = gear_wheel.add(extended_arbour.rotate((0,0,0),(1,0,0),180))
 
@@ -2363,7 +2372,7 @@ class MotionWorks:
     #enough for two half height nuts, a washer and a slightly compressed spring washer to be contained in the base of the cannon pinion
     STANDARD_INSET_DEPTH = 4.5
 
-    def __init__(self, arbour_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
+    def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
                  moon_complication=None):
         '''
@@ -2397,8 +2406,8 @@ class MotionWorks:
 
 
         '''
-        self.arbour_d = arbour_d
-        self.hole_d= arbour_d + 0.4
+        self.arbor_d = arbor_d
+        self.hole_d= arbor_d + 0.4
         #thickness of gears
         self.thick = thick
         self.pinion_thick = pinion_thick
@@ -2425,7 +2434,7 @@ class MotionWorks:
 
         self.bearing = bearing
 
-        self.inset_at_base_r = (get_washer_diameter(self.arbour_d) + 1) / 2
+        self.inset_at_base_r = (get_washer_diameter(self.arbor_d) + 1) / 2
 
         self.cannon_pinion_pinion_thick = self.pinion_thick
         self.calculate_size()
@@ -2443,7 +2452,7 @@ class MotionWorks:
         #minuteHandHolderSize=5,
         #length of the edge of the square that holds the minute hand
         #(if minuteHandHolderIsSquare is false, then it's round and this is a diameter)
-        self.minute_hand_holder_size= self.arbour_d + 2
+        self.minute_hand_holder_size= self.arbor_d + 2
 
         #if no bearing this has no second hand in the centre, so is a "normal" motion works
 
@@ -2516,7 +2525,7 @@ class MotionWorks:
     def calc_bearing_holder_thick(self):
 
         if self.bearing is not None:
-            if self.bearing.outer_d > self.pairs[0].pinion.getMinRadius()*2 - 1:
+            if self.bearing.outer_d > self.pairs[0].pinion.get_min_radius()*2 - 1:
                 #this bearing won't fit inside the cannon pinion
                 self.bearing_holder_thick = self.bearing.height
                 if self.compact:
@@ -2529,7 +2538,7 @@ class MotionWorks:
             self.bearing_holder_thick = 0
         self.cannon_pinion_base_height = self.cannon_pinion_pinion_thick + self.pinion_cap_thick * 2 + self.bearing_holder_thick
 
-    def calculate_size(self, arbour_distance=-1):
+    def calculate_size(self, arbor_distance=-1):
         '''
         If no arbour distance, use module size to calculate arbour distance, and set it.
         If arbour distance provided, use it to calculate module size and set that
@@ -2546,8 +2555,8 @@ class MotionWorks:
 
         # pinching ratios from The Modern Clock
         # adjust the module so the diameters work properly
-        if arbour_distance < 0:
-            self.arbour_distance = self.module * (wheel0_teeth + pinion0_teeth) / 2
+        if arbor_distance < 0:
+            self.arbor_distance = self.module * (wheel0_teeth + pinion0_teeth) / 2
         else:
             if aim_for_module_size:
                 pinion_min = 10
@@ -2573,8 +2582,8 @@ class MotionWorks:
 
 
 
-                                module0 = arbour_distance / ((w0 + p0) / 2)
-                                module1 = arbour_distance / ((w1 + p1) / 2)
+                                module0 = arbor_distance / ((w0 + p0) / 2)
+                                module1 = arbor_distance / ((w1 + p1) / 2)
 
                                 min_cannon_pinion_r = 0
 
@@ -2585,7 +2594,7 @@ class MotionWorks:
 
                                 #v.slow
                                 potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensate_loose_arbour)
-                                if min_cannon_pinion_r > potential_pair.pinion.getMinRadius() - 0.9:
+                                if min_cannon_pinion_r > potential_pair.pinion.get_min_radius() - 0.9:
                                     #not enough space to slot in the bearing
                                     # print("pinion_min_r",pinion_min_r)
                                     continue
@@ -2600,7 +2609,7 @@ class MotionWorks:
                 if len(options) == 0:
                     raise ValueError("Unable to calculate gears for motion works")
                 self.module = options[0]["module0"]
-                self.arbour_distance = arbour_distance
+                self.arbor_distance = arbor_distance
                 wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth = options[0]["teeth"]
 
                 # if self.bearing is not None and pinion0_teeth < pinion1_teeth:
@@ -2611,9 +2620,9 @@ class MotionWorks:
 
 
             else:
-                self.module = arbour_distance / ((wheel0_teeth + pinion0_teeth) / 2)
-                self.arbour_distance = arbour_distance
-        secondModule = 2 * self.arbour_distance / (wheel1_teeth + pinion1_teeth)
+                self.module = arbor_distance / ((wheel0_teeth + pinion0_teeth) / 2)
+                self.arbor_distance = arbor_distance
+        secondModule = 2 * self.arbor_distance / (wheel1_teeth + pinion1_teeth)
         print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, secondModule,wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
         self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensate_loose_arbour), WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensate_loose_arbour)]
 
@@ -2633,7 +2642,7 @@ class MotionWorks:
 
     def get_parts_in_situ(self, motionWorksRelativePos=None,minuteAngle=10):
         if motionWorksRelativePos is None:
-            motionWorksRelativePos = [0, -self.get_arbour_distance()]
+            motionWorksRelativePos = [0, -self.get_arbor_distance()]
         parts = {}
         parts["cannon_pinion"] = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         parts["hour_holder"] = self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick()))
@@ -2659,8 +2668,8 @@ class MotionWorks:
         '''
         return self.minute_hand_holder_size + 0.2
 
-    def get_arbour_distance(self):
-        return self.arbour_distance
+    def get_arbor_distance(self):
+        return self.arbor_distance
 
     def get_hour_holder_max_radius(self):
         return self.pairs[1].wheel.get_max_radius()
@@ -2722,7 +2731,7 @@ class MotionWorks:
             pinion = pinion.union(knob.translate((0, 0, self.pinion_cap_thick + self.cannon_pinion_pinion_thick)))
 
             # cut hole to slot onto arbour
-            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbour_d + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
+            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbor_d + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
 
 
 
@@ -2808,7 +2817,7 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbour_d=self.arbour_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
+        return Arbour(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
 
     def getMotionArboutPinionSTLModifier(self):
         return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinion_thick + self.pinion_cap_thick, offset_z=self.thick)

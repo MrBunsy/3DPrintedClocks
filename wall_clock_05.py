@@ -54,7 +54,7 @@ train.set_chain_wheel_ratio([74, 11])
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
-#new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, loose_on_rod=True, arbour_d=3, fixings=2, wall_thick=1.5)
+#new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, loose_on_rod=True, arbor_d=3, fixings=2, wall_thick=1.5)
 train.gen_chain_wheels2(clock.REGULA_8_DAY_1_05MM_CHAIN, ratchetThick=5, preferedDiameter=25, prefer_small=True)
 
 train.print_info()

@@ -90,8 +90,8 @@ train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1, cord_c
 # train.calculatePoweredWheelRatios(wheel_max=100)
 
 #for pulley
-# train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=40,o_ring_diameter=2)
-# train.genRopeWheels(ratchetThick = 4, arbour_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=35,o_ring_diameter=2, prefer_small=True)
+# train.genRopeWheels(ratchetThick = 4, arbor_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=40,o_ring_diameter=2)
+# train.genRopeWheels(ratchetThick = 4, arbor_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=35,o_ring_diameter=2, prefer_small=True)
 
 train.set_chain_wheel_ratio([67, 11])
 

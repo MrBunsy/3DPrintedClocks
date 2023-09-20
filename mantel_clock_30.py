@@ -22,12 +22,9 @@ import math
 from clocks import clock
 
 '''
-Copy of clock 27, but with new spring barrel
+Copy of clock 29, but with much stronger first wheels as the clock 29 failed with a broken tooth on the first wheel and pinion! (not sure which broke first)
+so plan is to make the wheels larger diameter and thicker, and try printing at 0.2mm layer height as I've read a bit more and that may be stronger than 0.3
 
-TODO put ratchet on front and lengthen key because it's not within the dial, then the pendulum doesn't need to stick out the back as far DONE but key needs improving
-also put dial pillars lower down so it doesn't have to stick over the top DONE
-
-TODO screwhole for the middle arbor of the motion works
 '''
 outputSTL = False
 
@@ -37,7 +34,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="mantel_clock_29"
+clockName="mantel_clock_30"
 clockOutDir="out"
 gearStyle=clock.GearStyle.HONEYCOMB_CHUNKY
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -57,11 +54,13 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, a
                                     toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 #escape wheel this way around allows for a slightly larger diameter
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=7.5 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False)
+                         runtime_hours=7 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False)
 
 moduleReduction=0.9#0.85
 #train.gen_spring_barrel(click_angle=-math.pi*0.25)
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, chain_wheel_ratios=[[66, 10], [76,13]])
+#smiths ratios but with more teeth on the first pinion (so I can print it with two perimeters, with external perimeter at 0.435 and perimeter at 0.43)
+#could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
+train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle)#, chain_wheel_ratios=[[66, 13], [76,10]])
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s
@@ -75,10 +74,12 @@ train.set_ratios([[75, 9], [72, 10], [55, 22]])
 pendulumSticksOut=10
 backPlateFromWall=30
 
-pinion_extensions = {1:10}#, 2:5}
+pinion_extensions = {1:15}#, 2:5}
 
-train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=5, pinionThickMultiplier=3, style=gearStyle,
-                powered_wheel_module_sizes=[1.2, 0.95], chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
+#[1.6, 1.25]
+
+train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=8, pinionThickMultiplier=3, style=gearStyle,
+                powered_wheel_module_sizes=[1.4, 1], chainWheelPinionThickMultiplier=1.5, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 

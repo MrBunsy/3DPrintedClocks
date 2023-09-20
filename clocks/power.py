@@ -703,7 +703,7 @@ class MainSpring:
 
 
 
-    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50, arbor_d=9):
+    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50, arbor_d=9, turns=4.35):
         self.height=height
         if hook_height < 0:
             hook_height = height / 3
@@ -712,6 +712,8 @@ class MainSpring:
         self.loop_end=loop_end
         self.barrel_diameter = barrel_diameter
         self.arbor_d = arbor_d
+        #rotation of barrel for expected duration (bit woolly, will define properly if and when needed)
+        self.turns = turns
 # 18 40 45
 SMITHS_EIGHT_DAY_MAINSPRING = MainSpring(height=18, thick=0.4, barrel_diameter=45, arbor_d=9)
 
@@ -906,12 +908,13 @@ class SpringBarrel:
             self.barrel_bearing = BEARING_12MM_THIN
 
         self.rod_d = rod_d
-        self.arbour_d = rod_d
+        self.arbor_d = rod_d
 
         self.barrel_height = self.spring.height + 2
 
         #10 from first experiment seemd like more than needed
-        self.wall_thick = 8
+        #8 did crack after the tooth failed - *probably* just because of the tooth failing, but let's go back up anyway
+        self.wall_thick = 12
         #6 seemed enough, can probably get away with less
         self.base_thick = base_thick
         #flanged bearing sitting entirely within the lid
@@ -1111,9 +1114,8 @@ class SpringBarrel:
     def get_turns(self, cord_usage=0):
         '''
         we can ignore chain drop, this is just a fixed number of turns for the runtime
-        TODO
         '''
-        return 5
+        return self.spring.turns
 
     def get_height(self):
         #thought: should I be including the back standoff here? it's overriden when the plate distance is calculated
@@ -1196,7 +1198,7 @@ class WeightPoweredWheel:
         self.type = PowerType.NOT_CONFIGURED
         #if false, the powered wheel is fixed to the rod and the gear wheel is loose.
         self.loose_on_rod = False
-        self.arbour_d = 3
+        self.arbor_d = 3
 
     def getChainHoleD(self):
         '''
@@ -1278,7 +1280,7 @@ class RopeWheel:
         return 20
 
     def __init__(self, diameter, ratchet_thick, hole_d=STEEL_TUBE_DIAMETER, screw=None, rope_diameter=2.2, wall_thick=1, power_clockwise=True,
-                 o_ring_diameter=3, arbour_d=3, use_o_rings=1, ratchet_outer_d=-1, ratchet_outer_thick=5, need_bearing_standoff=False):
+                 o_ring_diameter=3, arbor_d=3, use_o_rings=1, ratchet_outer_d=-1, ratchet_outer_thick=5, need_bearing_standoff=False):
 
         #diameter for the rope
         self.diameter=diameter
@@ -1298,7 +1300,7 @@ class RopeWheel:
         self.centre_wide = self.o_ring_diameter*self.use_o_rings
 
         self.wall_thick = wall_thick
-        self.arbour_d = arbour_d
+        self.arbor_d = arbor_d
 
         '''
         |\
@@ -1469,7 +1471,7 @@ class RopeWheel:
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.wheel_thick))
 
-        bearing_inner_safe_d = get_bearing_info(self.arbour_d).inner_safe_d
+        bearing_inner_safe_d = get_bearing_info(self.arbor_d).inner_safe_d
 
         if self.bearing_standoff_thick > 0 and bearing_inner_safe_d > self.hole_d:
             wheel = wheel.add(cq.Workplane("XY").circle(bearing_inner_safe_d/2).circle(self.hole_d/2).extrude(self.bearing_standoff_thick).translate((0,0,self.wheel_thick)))
@@ -1773,7 +1775,7 @@ class CordWheel:
         else:
             self.cap_diameter = cap_diameter
         self.rod_metric_size = rod_metric_size
-        self.arbour_d = rod_metric_size
+        self.arbor_d = rod_metric_size
         self.holeD = rod_metric_size
         self.loose_on_rod = loose_on_rod
 
@@ -2216,18 +2218,18 @@ class PocketChainWheel2:
     Worth trying on a 30 hour clock if I ever make one again?
     '''
 
-    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbour_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):
 
         self.type = PowerType.CHAIN2
         # if false, the powered wheel is fixed to the rod and the gear wheel is loose.
         self.loose_on_rod = loose_on_rod
-        self.arbour_d = arbour_d
+        self.arbor_d = arbor_d
 
 
 
         self.chain = chain
         self.max_diameter = max_diameter
-        self.hole_d  = arbour_d
+        self.hole_d  = arbor_d
         if self.loose_on_rod:
             self.hole_d += LOOSE_FIT_ON_ROD
         self.fixing_screws = fixing_screws
@@ -2531,7 +2533,7 @@ class PocketChainWheel:
         self.holeD=holeD
         #complete absolute bodge!
         self.rodMetricSize=math.floor(holeD)
-        self.arbour_d = self.rodMetricSize
+        self.arbor_d = self.rodMetricSize
         self.screw = screw
         if self.screw is None:
             self.screw = MachineScrew(metric_thread=2, countersunk=True)

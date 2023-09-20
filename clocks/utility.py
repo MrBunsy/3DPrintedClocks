@@ -1004,6 +1004,7 @@ def get_bearing_info(innerD):
         # printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
         # with 24.15 light grey again latest print fell out again, wondering if tolerences are better since the new nozzle?
         return BearingInfo(outer_d=24.1, outer_safe_d=24 - 5, height=5, inner_d=innerD, inner_safe_d=17.5)
+    raise ValueError("Bearing not found")
     return None
 
 
