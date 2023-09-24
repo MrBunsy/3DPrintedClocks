@@ -59,7 +59,7 @@ train.gen_chain_wheels(ratchetThick=5, wire_thick=0.85, width=3.6, inside_length
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, moduleReduction=0.85, thick=3, escapeWheelMaxD=0.75)
+train.gen_gears(module_size=1, module_reduction=0.85, thick=3, escape_wheel_max_d=0.75)
 train.output_STLs(clockName, clockOutDir)
 
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 20, )

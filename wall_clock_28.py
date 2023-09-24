@@ -20,7 +20,7 @@ source.
 from clocks import clock
 
 '''
-Clock 12 but with some tweaks
+Clock 12 (seconds pendulum, cord, centred second hand and dial) but with some tweaks
 
 TODO ensure key is right length and isn't recessed into front plate - I think current logic assumes it's inside the dial
 also optimise placement of pawl on the ratchet so I can increase the diameter of the ratchet gear wheel and keep lots of the gear style cut
@@ -63,8 +63,8 @@ train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=5, pinionThickMultiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=5, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=2)
 
 train.get_arbour_with_conventional_naming(0).print_screw_length()

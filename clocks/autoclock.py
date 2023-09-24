@@ -56,7 +56,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 
-    train.gen_gears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2)
+    train.gen_gears(module_size=module, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, useNyloc=False, pinion_thick_multiplier=3, style=None, powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2)
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
 
@@ -353,8 +353,8 @@ class AutoWallClock:
 
 
 
-        self.train.gen_gears(module_size=self.module_size, moduleReduction=self.moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=self.gear_style,
-                             powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=self.pendulumFixing)
+        self.train.gen_gears(module_size=self.module_size, module_reduction=self.moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, pinion_thick_multiplier=3, style=self.gear_style,
+                             powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=self.pendulumFixing)
 
         bearing = None
         if self.centred_second_hand:

@@ -486,7 +486,7 @@ class GoingTrain:
 
             max_error = 0.1
             if inaccurate:
-                max_error=1/0.5
+                max_error=1
 
             turns = self.powered_wheel.get_turns(cord_usage=self.get_cord_usage())
 
@@ -564,12 +564,12 @@ class GoingTrain:
                     # weighting+=abs(allTrains[c][0][0] - allTrains[c][1][0])*0.5
 
                     #prefer second wheel more teeth (but not so much that it makes it huge)
-                    weighting += (allTrains[c][0][0] - allTrains[c][1][0])*0.2
+                    weighting += (allTrains[c][0][0] - allTrains[c][1][0])*0.5
                     '''
                     Want large first pinion (for strength) and a smaller second wheel (so it will fit)
                     '''
-                    first_pinion_teeth = allTrains[c][0][1]
-                    weighting -= (first_pinion_teeth*8)# + allTrains[c][0][0] - allTrains[c][1][0]
+                    # first_pinion_teeth = allTrains[c][0][1]
+                    # weighting -= (first_pinion_teeth*8)# + allTrains[c][0][0] - allTrains[c][1][0]
 
                 train = {"ratio": totalRatio, "train": allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting}
                 if fits and abs(error) < max_error and not intRatio:
@@ -718,9 +718,10 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2, ratchet_at_back=True, style=GearStyle.ARCS, chain_wheel_ratios=None):
+    def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2, ratchet_at_back=True,
+                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8):
         self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0,
-                                          pawl_angle = pawl_angle, click_angle = click_angle, ratchet_at_back=ratchet_at_back, style=style)
+                                          pawl_angle = pawl_angle, click_angle = click_angle, ratchet_at_back=ratchet_at_back, style=style, base_thick=base_thick)
         '''
         smiths: 66 teeth on barrel, 10 on next pinion
         76 teeth on next wheel, 13 on next pinion
@@ -787,10 +788,10 @@ class GoingTrain:
             max_power = effective_weight * GRAVITY * max_weight_speed* math.pow(10, 6)
             print("Cordwheel power varies from {:.1f}uW to {:.1f}uW".format(min_power, max_power))
 
-    def gen_gears(self, module_size=1.5, holeD=3, moduleReduction=0.5, thick=6, chainWheelThick=-1, escapeWheelThick=-1, escapeWheelMaxD=-1, useNyloc=False,
-                  powered_wheel_module_increase=None, pinionThickMultiplier = 2.5, style="HAC", chainWheelPinionThickMultiplier=2, thicknessReduction=1,
-                  ratchetScrews=None, pendulumFixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None,
-                  powered_wheel_module_sizes = None):
+    def gen_gears(self, module_size=1.5, hole_d=3, module_reduction=0.5, thick=6, chain_wheel_thick=-1, escape_wheel_max_d=-1,
+                  powered_wheel_module_increase=None, pinion_thick_multiplier = 2.5, style="HAC", chain_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
+                  ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None,
+                  powered_wheel_module_sizes = None, lanterns=None):
         '''
         What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up.
         Also this assumes a *lot* about the layout, which really should be in the control of the plates
@@ -809,13 +810,16 @@ class GoingTrain:
         alernatively can specify chain wheel modules directly:
         powered_wheel_module_sizes = [powered_wheel_0_module, powered_wheel_1_module...]
         
-        
+        lanterns, array of WHEEL-pinion pair indexes, anything in this list is a lantern pinion (eg if [0] the first pinion is a lantern pinion)
         '''
         
-        
-        
+        if lanterns is None:
+            lanterns = []
+
+        # lantern_indexed = [l in lanterns for l in range(self.powered_wheels + self.wheels)]
+
         if powered_wheel_module_increase is None:
-            powered_wheel_module_increase = (1 / moduleReduction)
+            powered_wheel_module_increase = (1 / module_reduction)
             
         if powered_wheel_module_sizes is None:
             powered_wheel_module_sizes = []
@@ -827,7 +831,7 @@ class GoingTrain:
         if pinion_extensions is None:
             pinion_extensions = {}
 
-        self.pendulum_fixing = pendulumFixing
+        self.pendulum_fixing = pendulum_fixing
         arbours = []
         # ratchetThick = holeD*2
         #thickness of just the wheel
@@ -835,27 +839,28 @@ class GoingTrain:
         #thickness of arbour assembly
         #wheel + pinion (3*wheel) + pinion top (0.5*wheel)
 
-        if chainWheelThick < 0:
-            chainWheelThick = thick
-
-        if escapeWheelThick < 0:
-            escapeWheelThick = thick * (thicknessReduction**(self.wheels-1))
+        if chain_wheel_thick < 0:
+            chain_wheel_thick = thick
 
         # self.gearPinionLength=thick*3
         # self.chainGearPinionLength = chainWheelThick*2.5
 
 
-        self.gear_pinion_end_cap_length=max(thick * 0.25, 0.8)
+        #thought - should all this be part of the Gear or WheelAndPinion class?
+        gear_pinion_end_cap_thick=max(thick * 0.25, 0.8)
+        #on the assumption that we're using lantern pinions for strenght, make them chunky
+        lantern_pinion_end_cap_thick = thick
         # self.gearTotalThick = self.gearWheelThick + self.gearPinionLength + self.gearPinionEndCapLength
         # self.chainGearTotalThick
 
 
         if module_sizes is None:
-            module_sizes = [module_size * math.pow(moduleReduction, i) for i in range(self.wheels)]
+            module_sizes = [module_size * math.pow(module_reduction, i) for i in range(self.wheels)]
+
 
         #the module of each wheel is slightly smaller than the preceeding wheel
         # pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i]) for i,wheel in enumerate(self.trains[0]["train"])]
-        pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i]) for i,wheel in enumerate(self.trains[0]["train"])]
+        pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i], lantern=(i+self.powered_wheels) in lanterns) for i,wheel in enumerate(self.trains[0]["train"])]
 
 
 
@@ -864,17 +869,17 @@ class GoingTrain:
         #make the escape wheel as large as possible, by default
         if (stack_away_from_powered_wheel or self.wheels == 3) and self.escape_wheel_pinion_at_front == self.chain_at_back:
             #avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
-            escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - holeD - 2) * 2
+            escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - hole_d - 2) * 2
         else:
             #avoid previous pinion
             escape_wheel_diameter = (pairs[len(pairs)-1].centre_distance - pairs[len(pairs)-2].pinion.get_max_radius() - 2) * 2
 
         #we might choose to override this
-        if escapeWheelMaxD > 1 and escape_wheel_diameter > escapeWheelMaxD:
-            escape_wheel_diameter = escapeWheelMaxD
-        elif escapeWheelMaxD >0 and escapeWheelMaxD < 1:
+        if escape_wheel_max_d > 1 and escape_wheel_diameter > escape_wheel_max_d:
+            escape_wheel_diameter = escape_wheel_max_d
+        elif escape_wheel_max_d >0 and escape_wheel_max_d < 1:
             #treat as fraction of previous wheel
-            escape_wheel_diameter = pairs[len(pairs) - 1].wheel.get_max_radius() * 2 * escapeWheelMaxD
+            escape_wheel_diameter = pairs[len(pairs) - 1].wheel.get_max_radius() * 2 * escape_wheel_max_d
 
         #little bit of a bodge
         self.escapement.setDiameter(escape_wheel_diameter)
@@ -926,10 +931,10 @@ class GoingTrain:
                 #     print("Chain wheel module increased to {} in order to fit next to minute wheel".format(chainModule))
                 # self.chainWheelPair = WheelPinionPair(self.chainWheelRatios[0], self.chainWheelRatios[1], chainModule)
                 #only supporting one at the moment, but open to more in the future if needed
-                pair = WheelPinionPair(self.chain_wheel_ratios[i][0], self.chain_wheel_ratios[i][1], chain_module)
+                pair = WheelPinionPair(self.chain_wheel_ratios[i][0], self.chain_wheel_ratios[i][1], chain_module, lantern=i in lanterns)
                 self.powered_wheel_pairs.append(pair)
 
-            minuteWheelSpace = pairs[0].wheel.get_max_radius() + holeD
+            minuteWheelSpace = pairs[0].wheel.get_max_radius() + hole_d
             last_chain_wheel_space = self.powered_wheel_pairs[-1].wheel.get_max_radius()
             if not self.powered_wheel.loose_on_rod:
                 #TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel
@@ -952,15 +957,19 @@ class GoingTrain:
             if i == 0:
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 #the powered wheel
-                self.powered_wheel_arbours.append(Arbour(powered_wheel=self.powered_wheel, wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=chainWheelThick, arbor_d=self.powered_wheel.arbor_d,
-                                                         distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchetScrews,
+                self.powered_wheel_arbours.append(Arbour(powered_wheel=self.powered_wheel, wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=chain_wheel_thick, arbor_d=self.powered_wheel.arbor_d,
+                                                         distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
                                                          use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
             else:
                 #just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
                 clockwise_from_pinion_side = first_chainwheel_clockwise == (i %2 == 0)
-                pinionThick = self.powered_wheel_arbours[i - 1].wheel_thick * chainWheelPinionThickMultiplier
-                self.powered_wheel_arbours.append(Arbour(wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=chainWheelThick * (thicknessReduction ** i), arbor_d=holeD, pinion=self.powered_wheel_pairs[i - 1].pinion,
-                                                         pinion_thick=pinionThick, end_cap_thick=self.gear_pinion_end_cap_length,
+                pinion_thick = self.powered_wheel_arbours[i - 1].wheel_thick * chain_wheel_pinion_thick_multiplier
+                cap_thick = gear_pinion_end_cap_thick
+                wheel_thick = chain_wheel_thick * (thickness_reduction ** i)
+                if self.powered_wheel_pairs[i-1].pinion.lantern:
+                    cap_thick = wheel_thick
+                self.powered_wheel_arbours.append(Arbour(wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=hole_d, pinion=self.powered_wheel_pairs[i - 1].pinion,
+                                                         pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                                          distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
                                                          clockwise_from_pinion_side=clockwise_from_pinion_side))
                 if i == 1:
@@ -975,23 +984,20 @@ class GoingTrain:
                 # == minute wheel ==
                 if self.powered_wheels == 0:
                     #the minute wheel also has the chain with ratchet
-                    arbour = Arbour(powered_wheel=self.powered_wheel, wheel = pairs[i].wheel, wheel_thick=chainWheelThick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbour=pairs[i].centre_distance,
-                                    style=style, pinion_at_front=not self.chain_at_back, ratchet_screws=ratchetScrews, use_ratchet=not self.huygens_maintaining_power,
+                    arbour = Arbour(powered_wheel=self.powered_wheel, wheel = pairs[i].wheel, wheel_thick=chain_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbour=pairs[i].centre_distance,
+                                    style=style, pinion_at_front=not self.chain_at_back, ratchet_screws=ratchet_screws, use_ratchet=not self.huygens_maintaining_power,
                                     clockwise_from_pinion_side=not self.chain_at_back)
                 else:
                     # just a normal gear
 
 
                     if self.powered_wheels > 0:
-                        pinionThick = self.powered_wheel_arbours[-1].wheel_thick * chainWheelPinionThickMultiplier
+                        pinion_thick = self.powered_wheel_arbours[-1].wheel_thick * chain_wheel_pinion_thick_multiplier
                     else:
-                        pinionThick = self.powered_wheel_arbours[-1].wheel_thick * pinionThickMultiplier
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=holeD, wheel_thick=thick, pinion_thick=pinionThick, end_cap_thick=self.gear_pinion_end_cap_length,
+                        pinion_thick = self.powered_wheel_arbours[-1].wheel_thick * pinion_thick_multiplier
+                    cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=hole_d, wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                     distance_to_next_arbour= pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side)
-
-                if useNyloc:
-                    #regardless of chains, we need a nyloc nut to fix the wheel to the rod
-                    arbour.setNutSpace(holeD)
 
                 arbours.append(arbour)
                 if stack_away_from_powered_wheel:
@@ -1000,21 +1006,21 @@ class GoingTrain:
 
             elif i < self.wheels-1:
                 ## == wheel-pinion pair ==
-                pinionThick = arbours[-1].wheel_thick * pinionThickMultiplier
+                pinion_thick = arbours[-1].wheel_thick * pinion_thick_multiplier
                 pinionExtension = 0
                 if self.powered_wheels == 0 and i == 1:
                     #this pinion is for the chain wheel
-                    pinionThick = arbours[-1].wheel_thick * chainWheelPinionThickMultiplier
+                    pinion_thick = arbours[-1].wheel_thick * chain_wheel_pinion_thick_multiplier
                 # if i == self.wheels-2 and self.has_second_hand_on_last_wheel() and stack_away_from_powered_wheel:
                 #     #extend this pinion a bit to keep the giant pinion on the escape wheel from clashing
                 #     #old bodge logic, use pinion_extensions instead now
-                #     pinionExtension = pinionThick*0.6
+                #     pinionExtension = pinion_thick*0.6
                 if i in pinion_extensions:
                     pinionExtension = pinion_extensions[i]
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbor_d=holeD, wheel_thick=thick * (thicknessReduction ** i),
-                                      pinion_thick=pinionThick, end_cap_thick=self.gear_pinion_end_cap_length, pinion_extension=pinionExtension,
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbor_d=hole_d, wheel_thick=thick * (thickness_reduction ** i),
+                                      pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinionExtension,
                                       distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
             else:
                 # == escape wheel ==
@@ -1024,7 +1030,7 @@ class GoingTrain:
 
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=holeD, pinion_thick=arbours[-1].wheel_thick * pinionThickMultiplier, end_cap_thick=self.gear_pinion_end_cap_length,
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=hole_d, pinion_thick=arbours[-1].wheel_thick * pinion_thick_multiplier, end_cap_thick=gear_pinion_end_cap_thick,
                                       distance_to_next_arbour=self.escapement.getDistanceBeteenArbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
@@ -4400,8 +4406,8 @@ class Assembly:
         show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
 
 
-        for a, arbour in enumerate(self.plates.arbors_for_plate):
-            show_object(arbour.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
+        for a, arbor in enumerate(self.plates.arbors_for_plate):
+            show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
 
         # # motionWorksModel = self.motionWorks.get_assembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
         # #
@@ -4644,7 +4650,7 @@ def getGearDemo(module=1, justStyle=None, oneGear=False):
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 
-    train.gen_gears(module_size=module, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, useNyloc=False, pinionThickMultiplier=3, style=None, powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2)
+    train.gen_gears(module_size=module, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, useNyloc=False, pinion_thick_multiplier=3, style=None, powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2)
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
 

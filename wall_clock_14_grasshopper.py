@@ -67,7 +67,7 @@ train.gen_chain_wheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length
 pendulumSticksOut=20
 
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.gen_gears(module_size=1.6, moduleReduction=0.875, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2, chainWheelPinionThickMultiplier=2)
+train.gen_gears(module_size=1.6, module_reduction=0.875, thick=3, chain_wheel_thick=4, useNyloc=False, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2)
 train.print_info(weight_kg=1)
 
 motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle)

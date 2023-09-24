@@ -64,8 +64,8 @@ train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_c
 pendulumSticksOut=10
 backPlateFromWall=40
 
-train.gen_gears(module_size=1.1, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=2 / 2.4, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing)
+train.gen_gears(module_size=1.1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=2 / 2.4, chain_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=3)
 train.print_info(weight_kg=2.5)
 train.print_info(weight_kg=1)

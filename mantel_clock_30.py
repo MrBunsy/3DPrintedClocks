@@ -56,11 +56,14 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, a
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=7 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False)
 
+barrel_gear_thick = 8
+
 moduleReduction=0.9#0.85
 #train.gen_spring_barrel(click_angle=-math.pi*0.25)
 #smiths ratios but with more teeth on the first pinion (so I can print it with two perimeters, with external perimeter at 0.435 and perimeter at 0.43)
 #could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle)#, chain_wheel_ratios=[[66, 13], [76,10]])
+#[[61, 10], [62, 10]] auto generated but putting here to save time
+train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick, chain_wheel_ratios=[[61, 10], [62, 10]])#, chain_wheel_ratios=[[66, 10], [76,13]])
 # train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
 # train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s
@@ -78,8 +81,9 @@ pinion_extensions = {1:15}#, 2:5}
 
 #[1.6, 1.25]
 
-train.gen_gears(module_size=0.9, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=8, pinionThickMultiplier=3, style=gearStyle,
-                powered_wheel_module_sizes=[1.4, 1], chainWheelPinionThickMultiplier=1.5, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
+train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_sizes=[1.4312, 1.2], chain_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+                pinion_extensions=pinion_extensions, lanterns=[0])
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -117,7 +121,7 @@ assembly.get_arbour_rod_lengths()
 # show_object(plates.get_plate())
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
-if not outputSTL:
+if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
 

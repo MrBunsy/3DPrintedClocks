@@ -76,8 +76,8 @@ pendulumSticksOut=25
 # module_sizes = [first_module_size, first_module_size * ratio_of_teeth]
 module_sizes = None
 
-train.gen_gears(module_size=1.25, moduleReduction=moduleReduction, thick=2, chainWheelThick=3, useNyloc=False, style=gearStyle, pinionThickMultiplier=3, chainWheelPinionThickMultiplier=3,
-                pendulumFixing=pendulumFixing, module_sizes=module_sizes)
+train.gen_gears(module_size=1.25, module_reduction=moduleReduction, thick=2, chain_wheel_thick=3, useNyloc=False, style=gearStyle, pinion_thick_multiplier=3, chain_wheel_pinion_thick_multiplier=3,
+                pendulum_fixing=pendulumFixing, module_sizes=module_sizes)
 # train.printInfo(weight_kg=0.75-0.15)
 train.print_info(weight_kg=0.32)
 

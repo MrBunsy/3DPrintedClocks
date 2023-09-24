@@ -858,7 +858,7 @@ class Gear:
 
 
 
-    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, is_crown=False):
+    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, is_crown=False, lantern=False):
         self.iswheel = isWheel
         self.teeth = teeth
         self.module=module
@@ -870,7 +870,18 @@ class Gear:
 
         self.toothFactor = toothFactor
 
+        self.tooth_angle = self.toothFactor / (self.teeth / 2)
+        self.gap_angle = (math.pi - self.toothFactor) / (self.teeth / 2)
+
         self.pitch_diameter = self.module * self.teeth
+
+        self.lantern = lantern
+        if self.lantern:
+            tooth_angle = self.tooth_angle
+            self.trundle_r = math.sin(tooth_angle/2)* self.pitch_diameter/2
+            print("need trundles of diameter {}mm".format(self.trundle_r*2))
+            self.outer_r = self.get_max_radius() + self.trundle_r*3
+            self.inner_r = self.get_min_radius()
 
         '''
         is this a crown gear (may be called a face gear) - a special case of bevel gear that can mesh with a normal spur gear at 90deg
@@ -943,30 +954,64 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def addToWheel(self,wheel, holeD=0, thick=4, style=GearStyle.ARCS, pinionThick=8, capThick=2, clockwise_from_pinion_side=True, pinion_extension=0):
+    def get_lantern_cutter(self, offset = 1, trundle_length=100):
+        '''
+        get a cutter that will provide slots for the lantern trundles to rest in
+
+        just provides a series of rods offset in z by height provided
+        '''
+
+
+
+        cutter = cq.Workplane("XY")
+
+        angle_change = math.pi*2 / self.teeth
+
+        for angle in [angle_change*i for i in range(self.teeth)]:
+            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)))
+
+        return cutter.translate((0,0, offset))
+
+
+    def get_lantern_cap(self, offset = 1, cap_thick=5):
+        cap = cq.Workplane("XY").circle(self.outer_r).polygon(4, self.inner_r*2-0.2).extrude(cap_thick)
+
+        cap = cap.cut(self.get_lantern_cutter(0, cap_thick-offset))
+
+
+
+        return cap
+
+    def add_to_wheel(self, wheel, hole_d=0, thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True, pinion_extension=0):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
         pinionthicker is a multiplier to thickness of the week for thickness of the pinion
         clockwise_from_pinion_side is purely for cutting a style
         '''
+        base = wheel.get3D(thick=thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
+
+        if self.lantern:
+            base = base.cut(self.get_lantern_cutter())
+            base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(4, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
+            return base
 
         # pinionThick = thick * pinionthicker
 
-        base = wheel.get3D(thick=thick, holeD=holeD, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side = clockwise_from_pinion_side)
+
 
         if pinion_extension > 0:
             base = base.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(pinion_extension).translate((0, 0, thick)))
 
-        top = self.get3D(thick=pinionThick, holeD=holeD, style=style).translate((0, 0, thick + pinion_extension))
+        top = self.get3D(thick=pinion_thick, holeD=hole_d, style=style).translate((0, 0, thick + pinion_extension))
 
         arbour = base.union(top)
 
-        if capThick > 0:
-            arbour = arbour.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(capThick).translate((0, 0, thick + pinionThick + pinion_extension)))
+        if cap_thick > 0:
+            arbour = arbour.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(cap_thick).translate((0, 0, thick + pinion_thick + pinion_extension)))
 
         # arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
-        arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(holeD / 2).extrude(1000).translate((0,0,-500)))
+        arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(hole_d / 2).extrude(1000).translate((0, 0, -500)))
 
         return arbour
 
@@ -977,6 +1022,9 @@ class Gear:
         note - might need somethign different for pinions?
         '''
 
+
+        if self.lantern:
+            raise ValueError("This is a lantern pinion, the 2D shape will not work for this")
 
         pitch_radius = self.pitch_diameter / 2
         addendum_radius = self.module * self.addendum_radius_factor
@@ -991,8 +1039,8 @@ class Gear:
         # if not self.iswheel:
         #     print("inner radius", inner_radius)
 
-        tooth_angle = self.toothFactor / (self.teeth/2)
-        gap_angle = (math.pi - self.toothFactor) / (self.teeth/2)
+        tooth_angle = self.tooth_angle
+        gap_angle = self.gap_angle
 
         gear = cq.Workplane("XY")
 
@@ -1042,7 +1090,7 @@ class WheelPinionPair:
     '''
 
     errorLimit=0.000001
-    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, ):
+    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, lantern=False):
         '''
 
         :param teeth:
@@ -1101,17 +1149,26 @@ class WheelPinionPair:
             pinion_tooth_factor = 1.05
         #https://www.csparks.com/watchmaking/CycloidalGears/index.jxl
         if pinionTeeth == 6 or pinionTeeth == 7 or looseArbours:
+            # High ogival
             pinion_addendum_factor=0.855
             pinion_addendum_radius_factor = 1.05
         elif pinionTeeth == 8 or pinionTeeth == 9:
+            # Medium ogival
             pinion_addendum_factor = 0.67
             pinion_addendum_radius_factor = 0.7
+        elif pinionTeeth == 10:
+            #round top
+            #this was missing until clock 30, not sure what difference, if any, it will make?
+            pinion_addendum_factor=0.525
+            pinion_addendum_radius_factor=0.525
         else:
+            # round top (11+ leaves)
             pinion_addendum_factor = 0.625
             pinion_addendum_radius_factor = 0.625
 
         # print("pinion_addendum_factor: {}, pinion_addendum_radius_factor: {}, pinion_dedendum_factor:{}".format(pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor))
-        self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor)
+        self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor, lantern=lantern)
+
 
     def calcWheelAddendumFactor(self,pinionTeeth):
         #this function ported from http://hessmer.org/gears/CycloidalGearBuilder.html MIT licence
@@ -1721,6 +1778,8 @@ class ArbourForPlate:
         else:
             #"normal" wheel-pinion pair (or escape wheel if not on the front)
             arbor = shapes["wheel"]
+            if "lantern_pinion_cap" in shapes:
+                arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick)))
 
             if not self.arbor.pinion_at_front:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.total_thickness))
@@ -1742,6 +1801,12 @@ class ArbourForPlate:
         always for printing, they will be arranged for the model in get_assembled()
         '''
         shapes = {}
+
+        extras = self.arbor.get_extras(rear_side_extension=self.distance_from_back + self.endshake + self.back_plate_thick,
+                                       front_side_extension=self.endshake / 2 + self.front_plate_thick, key_length=self.key_length,
+                                       ratchet_key_extra_length=0)
+        for extraName in extras:
+            shapes[extraName] = extras[extraName]
 
         if self.arbor.get_type() == ArbourType.ANCHOR:
             shapes = self.get_anchor_shapes()
@@ -1765,11 +1830,8 @@ class ArbourForPlate:
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
             shapes["wheel"] = wheel
             #rear side extended full endshake so we could go plain bushing if needed
-            extras = self.arbor.get_extras(rear_side_extension = self.distance_from_back + self.endshake + self.back_plate_thick,
-                                           front_side_extension=self.endshake/2 + self.front_plate_thick, key_length = self.key_length,
-                                           ratchet_key_extra_length=0)
-            for extraName in extras:
-                shapes[extraName] = extras[extraName]
+
+
 
 
         if self.need_separate_arbor_extension(front=False):
@@ -2127,8 +2189,8 @@ class Arbour:
         '''
         if self.get_type() == ArbourType.WHEEL_AND_PINION:
 
-            shape = self.pinion.addToWheel(self.wheel, holeD=self.hole_d, thick=self.wheel_thick, style=self.style, pinionThick=self.pinion_thick,
-                                           pinion_extension=self.pinion_extension, capThick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+            shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
+                                             pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
             # shape = self.pinion.get3D
 
@@ -2185,6 +2247,9 @@ class Arbour:
             if not self.combine_with_powered_wheel:
                 shape = shape.add(self.powered_wheel.get_assembled().translate((0, 0, self.wheel_thick)))
 
+        if self.pinion.lantern:
+            shape = shape.add(self.pinion.get_lantern_cap(self.end_cap_thick).translate((0,0, self.wheel_thick + self.pinion_thick)))
+
         return shape
 
 
@@ -2212,6 +2277,8 @@ class Arbour:
         if self.get_type() == ArbourType.POWERED_WHEEL and self.get_extra_ratchet() is not None:
             extras['ratchet']= self.get_extra_ratchet()
 
+        if self.get_type() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL] and self.pinion.lantern:
+            extras["lantern_pinion_cap"] = self.pinion.get_lantern_cap(cap_thick=self.end_cap_thick)
 
         if self.get_type() == ArbourType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
             traditional_ratchet = True

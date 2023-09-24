@@ -86,8 +86,8 @@ pendulumSticksOut=15
 
 #0.9 with no module reduction produces gears that slice perfectly
 #0.8 looks printable, but with only one perimeter in the teeth - will they be strong enough? Will the escapement work?
-train.gen_gears(module_size=0.8, moduleReduction=moduleReduction, thick=2.4, thicknessReduction=0.9, chainWheelThick=4, pinionThickMultiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chainWheelPinionThickMultiplier=2, pendulumFixing=pendulumFixing, stack_away_from_powered_wheel=True)
+train.gen_gears(module_size=0.8, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.print_info(weight_kg=3)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 

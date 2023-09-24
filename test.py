@@ -742,11 +742,11 @@ if False:
 # # show_object(spring.get_arbor(for_printing=True))
 #
 # show_object(spring.get_ratchet_gear_for_arbor())
-
-key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
-# #
-# show_object(key.get_let_down_adapter())
-show_object(key.get_assembled())
+#
+# key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
+# # #
+# # show_object(key.get_let_down_adapter())
+# show_object(key.get_assembled())
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #
@@ -762,4 +762,17 @@ show_object(key.get_assembled())
 # #     print(point[0], point[1])
 #
 # print(intersections)
+
+
+pair = WheelPinionPair(wheelTeeth=100, pinionTeeth=10, module=1.4312, lantern=True)
+
+
+# show_object(pair.pinion.get2D())
+cap_thick = 5
+pinion_thick = 8
+wheel_thick = 5
+show_object(pair.pinion.add_to_wheel(pair.wheel, thick=wheel_thick, hole_d=3, cap_thick=cap_thick, pinion_thick=pinion_thick))
+show_object(pair.pinion.get_lantern_cap(cap_thick=cap_thick).translate((0,0,5+pinion_thick)))
+# print(pair.pinion.addendum_radius_factor*pair.module*2)
+
 

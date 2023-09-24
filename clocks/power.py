@@ -874,8 +874,8 @@ class SpringBarrel:
 
     '''
 
-    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2, base_thick=5, ratchet_at_back=True,
-                 style=GearStyle.SOLID):
+    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID):
         self.type = PowerType.SPRING_BARREL
 
         self.style = style
