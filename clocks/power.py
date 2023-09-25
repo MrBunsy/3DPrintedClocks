@@ -1567,7 +1567,7 @@ class WindingKey:
 
         self.knob_length = self.knob_fixing_screw.length - self.handle_thick
 
-        self.key_grip_tall = min(self.cylinder_length * 0.4, 20)
+        self.key_grip_tall = max(self.cylinder_length * 0.4, 20)
 
         #how deep the hole that slots onto the square bit should be - keep shallow to ensure you can push the key all the way without crashing inot hte front plate or pushing the bearing out
         self.key_hole_deep = key_hole_deep

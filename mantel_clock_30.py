@@ -18,6 +18,9 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import math
+import cadquery as cq
+from cadquery import exporters
+import os
 
 from clocks import clock
 
@@ -80,10 +83,10 @@ backPlateFromWall=30
 pinion_extensions = {1:15}#, 2:5}
 
 #[1.6, 1.25]
-
-train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_sizes=[1.4312, 1.2], chain_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0])
+#endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
+train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
+                powered_wheel_module_sizes=[1.4312, 1.2], pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -94,11 +97,11 @@ motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compen
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
-dial = clock.Dial(outside_d=155, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
+dial = clock.Dial(outside_d=153, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
                   inner_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 
-plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 29", dial=dial, plate_thick=6,
+plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
                                  motion_works_angle_deg=180+50, centred_second_hand=True)
 
 
@@ -123,11 +126,18 @@ assembly.get_arbour_rod_lengths()
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
+                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
 
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
+
+    lantern_test = plates.arbors_for_plate[1].get_shapes()["wheel"].intersect(cq.Workplane("XY").circle(plates.arbors_for_plate[1].arbor.pinion.outer_r).extrude(100))
+
+    out = os.path.join(clockOutDir, "{}_lantern_test.stl".format(clockName))
+    print("Outputting ", out)
+    exporters.export(lantern_test, out)
+
     motionWorks.output_STLs(clockName,clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)

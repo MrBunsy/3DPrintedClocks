@@ -882,6 +882,7 @@ class Gear:
             print("need trundles of diameter {}mm".format(self.trundle_r*2))
             self.outer_r = self.get_max_radius() + self.trundle_r*3
             self.inner_r = self.get_min_radius()
+            self.slot_sides = 6
 
         '''
         is this a crown gear (may be called a face gear) - a special case of bevel gear that can mesh with a normal spur gear at 90deg
@@ -968,13 +969,13 @@ class Gear:
         angle_change = math.pi*2 / self.teeth
 
         for angle in [angle_change*i for i in range(self.teeth)]:
-            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)))
+            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r+0.2).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)))
 
         return cutter.translate((0,0, offset))
 
 
     def get_lantern_cap(self, offset = 1, cap_thick=5):
-        cap = cq.Workplane("XY").circle(self.outer_r).polygon(4, self.inner_r*2-0.2).extrude(cap_thick)
+        cap = cq.Workplane("XY").circle(self.outer_r).polygon(self.slot_sides, self.inner_r*2+0.2).extrude(cap_thick)
 
         cap = cap.cut(self.get_lantern_cutter(0, cap_thick-offset))
 
@@ -993,7 +994,7 @@ class Gear:
 
         if self.lantern:
             base = base.cut(self.get_lantern_cutter())
-            base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(4, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
+            base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
             return base
 
         # pinionThick = thick * pinionthicker

@@ -791,7 +791,7 @@ class GoingTrain:
     def gen_gears(self, module_size=1.5, hole_d=3, module_reduction=0.5, thick=6, chain_wheel_thick=-1, escape_wheel_max_d=-1,
                   powered_wheel_module_increase=None, pinion_thick_multiplier = 2.5, style="HAC", chain_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None,
-                  powered_wheel_module_sizes = None, lanterns=None):
+                  powered_wheel_module_sizes = None, lanterns=None, pinion_thick_extra=-1):
         '''
         What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up.
         Also this assumes a *lot* about the layout, which really should be in the control of the plates
@@ -811,6 +811,9 @@ class GoingTrain:
         powered_wheel_module_sizes = [powered_wheel_0_module, powered_wheel_1_module...]
         
         lanterns, array of WHEEL-pinion pair indexes, anything in this list is a lantern pinion (eg if [0] the first pinion is a lantern pinion)
+
+        pinion_thick_extra: newer idea, override pinion_thick_multiplier and chain_wheel_pinion_thick_multiplier.
+         Just add this value to the thickness of the previous wheel for each pinion thickness
         '''
         
         if lanterns is None:
@@ -964,6 +967,8 @@ class GoingTrain:
                 #just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
                 clockwise_from_pinion_side = first_chainwheel_clockwise == (i %2 == 0)
                 pinion_thick = self.powered_wheel_arbours[i - 1].wheel_thick * chain_wheel_pinion_thick_multiplier
+                if pinion_thick_extra > 0:
+                    pinion_thick = self.powered_wheel_arbours[i - 1].wheel_thick + pinion_thick_extra
                 cap_thick = gear_pinion_end_cap_thick
                 wheel_thick = chain_wheel_thick * (thickness_reduction ** i)
                 if self.powered_wheel_pairs[i-1].pinion.lantern:
@@ -995,6 +1000,8 @@ class GoingTrain:
                         pinion_thick = self.powered_wheel_arbours[-1].wheel_thick * chain_wheel_pinion_thick_multiplier
                     else:
                         pinion_thick = self.powered_wheel_arbours[-1].wheel_thick * pinion_thick_multiplier
+                    if pinion_thick_extra > 0:
+                        pinion_thick = self.powered_wheel_arbours[-1].wheel_thick + pinion_thick_extra
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
                     arbour = Arbour(wheel = pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=hole_d, wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                     distance_to_next_arbour= pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side)
@@ -1015,6 +1022,9 @@ class GoingTrain:
                 #     #extend this pinion a bit to keep the giant pinion on the escape wheel from clashing
                 #     #old bodge logic, use pinion_extensions instead now
                 #     pinionExtension = pinion_thick*0.6
+
+                if pinion_thick_extra > 0:
+                    pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 if i in pinion_extensions:
                     pinionExtension = pinion_extensions[i]
                 #intermediate wheels
@@ -1027,10 +1037,12 @@ class GoingTrain:
                 #Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
                 #automating would require knowing how far apart the plates are, which we don't at this point, so just do it manually
                 pinion_at_front = self.escape_wheel_pinion_at_front
-
+                pinion_thick = arbours[-1].wheel_thick * pinion_thick_multiplier
+                if pinion_thick_extra > 0:
+                    pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=hole_d, pinion_thick=arbours[-1].wheel_thick * pinion_thick_multiplier, end_cap_thick=gear_pinion_end_cap_thick,
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=hole_d, pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
                                       distance_to_next_arbour=self.escapement.getDistanceBeteenArbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
