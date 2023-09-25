@@ -82,11 +82,12 @@ backPlateFromWall=30
 
 pinion_extensions = {1:15}#, 2:5}
 
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.6), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.4)]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
-                powered_wheel_module_sizes=[1.4312, 1.2], pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
+                powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=3 + 2)
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -97,7 +98,7 @@ motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compen
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
-dial = clock.Dial(outside_d=153, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
+dial = clock.Dial(outside_d=160, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
                   inner_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 

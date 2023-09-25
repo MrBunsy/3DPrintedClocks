@@ -875,13 +875,18 @@ class Gear:
 
         self.pitch_diameter = self.module * self.teeth
 
+        self.outer_r = self.pitch_diameter/2 + self.addendum_factor*self.module
+
+        dedendum_height = self.dedendum_factor * self.module
+        self.inner_r = self.pitch_diameter / 2 - dedendum_height
+
+
         self.lantern = lantern
         if self.lantern:
             tooth_angle = self.tooth_angle
             self.trundle_r = math.sin(tooth_angle/2)* self.pitch_diameter/2
             print("need trundles of diameter {}mm".format(self.trundle_r*2))
-            self.outer_r = self.get_max_radius() + self.trundle_r*3
-            self.inner_r = self.get_min_radius()
+            self.outer_r = self.outer_r + self.trundle_r*3
             self.slot_sides = 6
 
         '''
@@ -903,15 +908,16 @@ class Gear:
         '''
         radius that encompasses the outermost parts of the teeth
         '''
-        return self.pitch_diameter/2 + self.addendum_factor*self.module
+        return self.outer_r
+        # return self.pitch_diameter/2 + self.addendum_factor*self.module
 
     def get_min_radius(self):
         '''
         you could cut a hole through the gear of this radius without touchign the teeth
         '''
-        dedendum_height = self.dedendum_factor * self.module
-
-        return self.pitch_diameter/2 - dedendum_height
+        return self.inner_r
+        # dedendum_height = self.dedendum_factor * self.module
+        # return self.pitch_diameter/2 - dedendum_height
 
     def get3D(self, holeD=0, thick=0, style=GearStyle.ARCS, innerRadiusForStyle=-1, clockwise_from_pinion_side=True):
         gear = self.get2D()
@@ -969,7 +975,7 @@ class Gear:
         angle_change = math.pi*2 / self.teeth
 
         for angle in [angle_change*i for i in range(self.teeth)]:
-            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r+0.2).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)))
+            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r+0.1).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)))
 
         return cutter.translate((0,0, offset))
 
@@ -1090,6 +1096,26 @@ class WheelPinionPair:
     The Arbour class combines the wheels and pinions that are on the same rod
     '''
 
+    #MODULE_FOR_LANTERN_PINION_DIAMETER[lantern_pinion_trundle_d] = module_size
+    #assumes ten leaves
+    MODULE_FOR_LANTERN_PINION_DIAMETER={
+        1.5: 1.4312,
+        # 1.6:
+    }
+
+    @staticmethod
+    def module_size_for_lantern_pinion_trundle_diameter(desired_trundle_d, leaves=10):
+        tooth_factor = 1.25
+        if leaves == 10:
+            tooth_factor = 1.05
+
+        module = desired_trundle_d / (math.sin(tooth_factor/leaves) * leaves)
+
+        return module
+
+        # trundle_r = math.sin((self.toothFactor / (self.teeth / 2)) / 2) * (self.module * self.teeth) / 2
+
+
     errorLimit=0.000001
     def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, lantern=False):
         '''
@@ -1168,7 +1194,7 @@ class WheelPinionPair:
             pinion_addendum_radius_factor = 0.625
 
         # print("pinion_addendum_factor: {}, pinion_addendum_radius_factor: {}, pinion_dedendum_factor:{}".format(pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor))
-        self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, pinion_tooth_factor, lantern=lantern)
+        self.pinion=Gear(False, pinionTeeth, module, pinion_addendum_factor, pinion_addendum_radius_factor, pinion_dedendum_factor, toothFactor=pinion_tooth_factor, lantern=lantern)
 
 
     def calcWheelAddendumFactor(self,pinionTeeth):

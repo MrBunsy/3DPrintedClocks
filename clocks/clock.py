@@ -4128,12 +4128,12 @@ class Assembly:
 
             rod_length = -1
 
-            arbour_for_plate = self.plates.arbors_for_plate[i]
-            arbour = arbour_for_plate.arbor
-            bearing = arbour_for_plate.bearing
+            arbor_for_plate = self.plates.arbors_for_plate[i]
+            arbor = arbor_for_plate.arbor
+            bearing = arbor_for_plate.bearing
             bearing_thick = bearing.height
 
-            rod_in_front_of_hands = WASHER_THICK_M3 + getNutHeight(arbour.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
+            rod_in_front_of_hands = WASHER_THICK_M3 + getNutHeight(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
 
             length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
 
@@ -4147,8 +4147,8 @@ class Assembly:
             hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + rod_in_front_of_hands
 
             #trying to arrange all the additions from back to front to make it easy to check
-            if arbour.type == ArbourType.POWERED_WHEEL:
-                powered_wheel = arbour.powered_wheel
+            if arbor.type == ArbourType.POWERED_WHEEL:
+                powered_wheel = arbor.powered_wheel
                 if powered_wheel.type == PowerType.CORD:
                     if powered_wheel.use_key:
                         square_bit_out_front = powered_wheel.key_square_bit_height - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
@@ -4160,7 +4160,7 @@ class Assembly:
                     rod_length = simple_arbour_length
 
 
-            elif self.plates.second_hand and ((arbour.type == ArbourType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (
+            elif self.plates.second_hand and ((arbor.type == ArbourType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (
                     i == self.goingTrain.wheels + self.goingTrain.powered_wheels - 2 and self.plates.going_train.has_second_hand_on_last_wheel())):
                 #this has a second hand on it
                 if self.plates.escapement_on_front:
@@ -4179,7 +4179,7 @@ class Assembly:
                     else:
                         #little seconds hand just in front of the plate
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
-            elif arbour.type == ArbourType.WHEEL_AND_PINION:
+            elif arbor.type == ArbourType.WHEEL_AND_PINION:
                 if i == self.goingTrain.powered_wheels:
                     #minute wheel
                     if self.plates.centred_second_hand:
@@ -4199,10 +4199,10 @@ class Assembly:
                     # "normal" arbour
                     rod_length = simple_arbour_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
 
-            elif arbour.type == ArbourType.ESCAPE_WHEEL:
+            elif arbor.type == ArbourType.ESCAPE_WHEEL:
                 #"normal" arbour
                 rod_length = simple_arbour_length
-            elif arbour.type == ArbourType.ANCHOR:
+            elif arbor.type == ArbourType.ANCHOR:
                 if self.plates.escapement_on_front:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
@@ -4219,8 +4219,9 @@ class Assembly:
             rod_zs.append(rod_z)
             beyond_back_of_arbours.append(beyond_back_of_arbour)
             if rod_length > 0:
-                print("Arbour {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, round(rod_length), beyond_back_of_arbour))
-
+                print("Arbor {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, round(rod_length), beyond_back_of_arbour))
+            if arbor.pinion is not None and arbor.pinion.lantern:
+                print("Arbor {} needs steel rod of diameter {:.2f}mm for the lantern pinion".format(i, arbor.pinion.trundle_r*2))
 
 
         return rod_lengths, rod_zs

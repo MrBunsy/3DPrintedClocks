@@ -766,6 +766,10 @@ if False:
 
 pair = WheelPinionPair(wheelTeeth=100, pinionTeeth=10, module=1.4312, lantern=True)
 
+for trundle_d in [1.5, 1.6, 1.25]:
+
+    print("module for {} trundle: ".format(trundle_d), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(trundle_d))
+
 
 # show_object(pair.pinion.get2D())
 cap_thick = 5
