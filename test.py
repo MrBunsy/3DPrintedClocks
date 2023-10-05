@@ -763,20 +763,35 @@ if False:
 #
 # print(intersections)
 
+#
+# pair = WheelPinionPair(wheelTeeth=100, pinionTeeth=10, module=1.4312, lantern=True)
+#
+# for trundle_d in [1.5, 1.6, 1.25]:
+#
+#     print("module for {} trundle: ".format(trundle_d), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(trundle_d))
+#
+#
+# # show_object(pair.pinion.get2D())
+# cap_thick = 5
+# pinion_thick = 8
+# wheel_thick = 5
+# show_object(pair.pinion.add_to_wheel(pair.wheel, thick=wheel_thick, hole_d=3, cap_thick=cap_thick, pinion_thick=pinion_thick))
+# show_object(pair.pinion.get_lantern_cap(cap_thick=cap_thick).translate((0,0,5+pinion_thick)))
+#
+# # show_object(pair.pinion.get_lantern_inner_fixing(base_thick=wheel_thick, pinion_height=pinion_thick, top_thick=cap_thick).rotate((0,0,0),(0,1,0),-90)
+# #             .translate((pair.pinion.inner_r - pair.pinion.cutoff_height,0,0)).rotate((0,0,0),(0,0,1),360/12))
+#
+# show_object(pair.pinion.get_lantern_inner_fixing(base_thick=wheel_thick, pinion_height=pinion_thick, top_thick=cap_thick, for_printing=False))
 
-pair = WheelPinionPair(wheelTeeth=100, pinionTeeth=10, module=1.4312, lantern=True)
-
-for trundle_d in [1.5, 1.6, 1.25]:
-
-    print("module for {} trundle: ".format(trundle_d), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(trundle_d))
-
-
-# show_object(pair.pinion.get2D())
-cap_thick = 5
-pinion_thick = 8
-wheel_thick = 5
-show_object(pair.pinion.add_to_wheel(pair.wheel, thick=wheel_thick, hole_d=3, cap_thick=cap_thick, pinion_thick=pinion_thick))
-show_object(pair.pinion.get_lantern_cap(cap_thick=cap_thick).translate((0,0,5+pinion_thick)))
 # print(pair.pinion.addendum_radius_factor*pair.module*2)
 
 
+lift=2
+drop=2.5
+lock=2
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
+                                    toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+
+
+show_object(escapement.getWheel2D())
+show_object(escapement.getAnchor2D())

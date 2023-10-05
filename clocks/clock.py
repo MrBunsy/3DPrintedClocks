@@ -339,7 +339,7 @@ class GoingTrain:
                 weighting+=100
 
             train = {"time": total_time, "train": all_trains[c], "error": abs(error), "ratio": total_ratio, "teeth": total_wheel_teeth, "weighting": weighting}
-            if fits and abs(error) < max_error and not int_ratio:
+            if fits and abs(error) < max_error:# and not int_ratio:
                 all_times.append(train)
 
         if loud:
@@ -352,7 +352,7 @@ class GoingTrain:
 
         if len(all_times) == 0:
             raise RuntimeError("Unable to calculate valid going train")
-
+        print(all_times[0])
         return all_times
 
     # def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):

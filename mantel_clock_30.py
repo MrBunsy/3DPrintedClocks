@@ -47,14 +47,14 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 # lift =3
 # lock=1.5
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
-# lift=4
-# drop=2
-# lock=2
-lift=3.5
-drop=1.75
-lock=1.75
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5,
-                                    toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+lift=4
+drop=2.5
+lock=2
+# lift=3.5
+# drop=1.75
+# lock=1.75
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
+                                    toothBaseAngle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 #escape wheel this way around allows for a slightly larger diameter
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=7 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False)
@@ -67,12 +67,14 @@ moduleReduction=0.9#0.85
 #could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
 #[[61, 10], [62, 10]] auto generated but putting here to save time
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick, chain_wheel_ratios=[[61, 10], [62, 10]])#, chain_wheel_ratios=[[66, 10], [76,13]])
-# train.calculateRatios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True,penultimate_wheel_min_ratio=0.75)
-# train.calculateRatios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True, allow_integer_ratio=False)
+train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True,
+                       penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
+# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=20, max_error=0.1, module_reduction=moduleReduction, loud=True, allow_integer_ratio=False)
 #1s
 # train.setRatios( [[75, 9], [72, 10], [55, 33]])
 #2/3s
-train.set_ratios([[75, 9], [72, 10], [55, 22]])
+# train.set_ratios([[75, 9], [72, 10], [55, 22]])
+# train.set_ratios([[75, 9], [72, 10], [54, 24]])
 
 
 
@@ -125,7 +127,7 @@ assembly.get_arbour_rod_lengths()
 # show_object(plates.get_plate())
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
-if not outputSTL or True:
+if not outputSTL:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
 
