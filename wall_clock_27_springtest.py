@@ -33,7 +33,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_27"
+clockName="mantel_clock_27c"
 clockOutDir="out"
 gearStyle=clock.GearStyle.FLOWER
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -46,9 +46,12 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 # lift=4
 # drop=2
 # lock=2
-lift=3.5
-drop=1.75
-lock=1.75
+# lift=3.5
+# drop=1.75
+# lock=1.75
+lift=2
+drop=3
+lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5,
                                     toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 
