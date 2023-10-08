@@ -20,7 +20,7 @@ source.
 from clocks import clock
 
 '''
-Clock 12 but without the dial
+Experiment to see if I have enough power to get a month runtime on a clock
 
 '''
 outputSTL = False
@@ -31,7 +31,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_24"
+clockName="wall_clock_25"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS

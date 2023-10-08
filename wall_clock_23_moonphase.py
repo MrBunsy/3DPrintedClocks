@@ -20,7 +20,7 @@ source.
 from clocks import clock
 
 '''
-Clock 12 but without the dial, to see how it looks
+Clock with a phase complication, which mounts a 3D moon on the top of the clock. 
 
 '''
 outputSTL = False

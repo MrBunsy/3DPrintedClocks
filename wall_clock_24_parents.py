@@ -20,7 +20,8 @@ source.
 from clocks import clock
 
 '''
-Clock 12 but without the dial
+Eight day cord wheel clock with "big cogs" that mum might like. 
+Original plan was escapement on the front, but mum has since suggested she'd like one with a centred second hand
 
 '''
 outputSTL = False

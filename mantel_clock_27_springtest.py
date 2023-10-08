@@ -49,6 +49,7 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 # lift=3.5
 # drop=2
 # lock=1.75
+#this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
 lift=2
 drop=3
 lock=2

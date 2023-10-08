@@ -20,8 +20,8 @@ source.
 from clocks import clock
 
 '''
-Copy of clock 20, but with a larger module size (might fix reliability issues) and 1/3s pendulum
-
+Copy of clock 20 (eight day cord, dial with seconds hand on inner dial), but with a larger module size (might fix reliability issues) and 1/3s pendulum
+I thought I was going to need this when clock 20 was unreliable, but the tweaks to pinion sizes and reprinting the escape wheel arbor fixed clock 20
 '''
 outputSTL = False
 

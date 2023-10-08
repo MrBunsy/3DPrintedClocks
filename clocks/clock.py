@@ -3699,8 +3699,8 @@ class MantelClockPlates(SimpleClockPlates):
 
         self.bottom_pillar_positions = []
         self.top_pillar_positions = []
-        self.top_pillar_r = self.bottom_pillar_r = self.plate_width/2
-
+        self.bottom_pillar_r = self.plate_width/2
+        self.top_pillar_r = self.min_plate_width/2
 
 
         bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.gear_gap + self.bottom_pillar_r
@@ -3767,6 +3767,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         # plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
         if not back:
+            #arch over the top
             #no point holding the bearing that isn't there for the anchor arbor!
             plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
             plate = plate.union(get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
@@ -3896,12 +3897,14 @@ class MantelClockPlates(SimpleClockPlates):
         if not top:
             return cq.Workplane("XY")
 
+        width = self.min_plate_width
+
         plate_thick = self.get_plate_thick(standoff=True)
         #to match the plate
-        standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=self.plate_width, thick=plate_thick)
+        standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=width, thick=plate_thick)
 
         for pillar_pos in self.top_pillar_positions:
-            standoff = standoff.union(cq.Workplane("XY").circle(self.plate_width/2-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
+            standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))

@@ -47,12 +47,16 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 # lift =3
 # lock=1.5
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
-lift=4
-drop=2.5
-lock=2
+# lift=4
+# drop=2.5
+# lock=2
 # lift=3.5
 # drop=1.75
 # lock=1.75
+#this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
+lift=2
+drop=3
+lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
                                     toothBaseAngle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 #escape wheel this way around allows for a slightly larger diameter

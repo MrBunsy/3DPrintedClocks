@@ -1513,6 +1513,7 @@ class ArbourForPlate:
 
         # so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
         self.arbour_bearing_standoff_length = LAYER_THICK * 2
+        self.lantern_pinion_wheel_holder_thick = 2
 
         if self.type == ArbourType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
             self.bearing = self.arbor.powered_wheel.key_bearing
@@ -1999,6 +2000,11 @@ class ArbourForPlate:
             else:
                 extendo_arbour=cq.Workplane("XY")
             extendo_arbour = extendo_arbour.circle(tip_r).circle(inner_r).extrude(self.arbour_bearing_standoff_length)
+
+            if (length-self.arbour_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick and self.arbor.pinion is not None
+                    and self.arbor.pinion.lantern and front is not self.arbor.pinion_at_front):
+                #extra wide flange to help the wheel remain perpendicular
+                extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.pinion.get_max_radius()).circle(inner_r).extrude(self.lantern_pinion_wheel_holder_thick))
 
             return extendo_arbour
         return None
