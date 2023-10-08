@@ -591,7 +591,25 @@ class Hands:
 
             hand = hand.workplaneFromTagged("base").moveTo(0, length / 2).rect(width, length).extrude(thick)
 
+        if style == HandStyle.INDUSTRIAL:
 
+            behind_centre = self.length*0.3
+
+            #square but with a point on the end
+            width = self.length * 0.1
+            if second:
+                width = self.length * 0.075
+            if hour:
+                width*=1.5
+
+
+            # base_r = width/2
+            need_base_r = False
+            tip_length = width/2
+            body_length = length - tip_length
+
+            hand = (hand.workplaneFromTagged("base").moveTo(-width/2, -behind_centre).lineTo(-width/2, body_length).lineTo(0, length).lineTo(width/2, body_length).lineTo(width/2, -behind_centre)
+                    .close().extrude(thick))
 
         elif style == HandStyle.SIMPLE_ROUND:
             width = self.length * 0.1

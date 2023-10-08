@@ -289,9 +289,9 @@ if False:
 #
 # show_object(holder)
 #
-# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2, compensateLooseArbour=False)
-# hands = Hands(style=HandStyle.SIMPLE_ROUND, chunky=True, secondLength=68.18131703845526*0.45, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=200*0.45, thick=motionWorks.minuteHandSlotHeight, outline=0.5, outlineSameAsBody=False)
+# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2)
+# hands = Hands(style=HandStyle.INDUSTRIAL, chunky=True, secondLength=68.18131703845526*0.45, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
+#               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=200*0.45, thick=motionWorks.minute_hand_slot_height, outline=0.5, outlineSameAsBody=False)
 #
 # # show_object(hands.get_assembled())
 # hands.show_hands(show_object)
@@ -786,12 +786,12 @@ if False:
 # print(pair.pinion.addendum_radius_factor*pair.module*2)
 
 
-lift=2
-drop=2.5
-lock=2
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
-                                    toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
-
-
-show_object(escapement.getWheel2D())
-show_object(escapement.getAnchor2D())
+# lift=2
+# drop=2.5
+# lock=2
+# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
+#                                     toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+#
+#
+# show_object(escapement.getWheel2D())
+# show_object(escapement.getAnchor2D())
