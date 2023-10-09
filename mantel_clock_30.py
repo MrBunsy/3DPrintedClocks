@@ -71,15 +71,9 @@ moduleReduction=0.9#0.85
 #could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
 #[[61, 10], [62, 10]] auto generated but putting here to save time
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick, chain_wheel_ratios=[[61, 10], [62, 10]])#, chain_wheel_ratios=[[66, 10], [76,13]])
-train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True,
-                       penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
-# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=20, max_error=0.1, module_reduction=moduleReduction, loud=True, allow_integer_ratio=False)
-#1s
-# train.setRatios( [[75, 9], [72, 10], [55, 33]])
-#2/3s
-# train.set_ratios([[75, 9], [72, 10], [55, 22]])
-# train.set_ratios([[75, 9], [72, 10], [54, 24]])
-
+# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True,
+#                       penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
+train.set_ratios([[75, 9], [72, 10], [60, 24]])
 
 
 
@@ -109,7 +103,7 @@ dial = clock.Dial(outside_d=160, bottom_fixing=False, top_fixing=True, style=clo
 # dial=None
 
 plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
-                                 motion_works_angle_deg=180+50, centred_second_hand=True)
+                                 motion_works_angle_deg=180+50, centred_second_hand=True, layer_thick=0.4   )
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

@@ -700,14 +700,14 @@ if False:
 # viewer.save_screenshot("out/screenshottest.png")
 
 
-# rolling_ball = RollingBallEscapement()
-#
-# tray = rolling_ball.get_track_assembled()
-#
-# show_object(tray)
-# out = "tray.stl"
-# print("Outputting ", out)
-# exporters.export(rolling_ball.get_track(), out)
+rolling_ball = RollingBallEscapement()
+
+tray = rolling_ball.get_track_assembled()
+
+show_object(tray)
+out = "tray.stl"
+print("Outputting ", out)
+exporters.export(rolling_ball.get_track(), out)
 
 # pair = WheelPinionPair(wheelTeeth=55,pinionTeeth= 22, module=0.891)
 #

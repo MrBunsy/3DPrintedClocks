@@ -181,6 +181,8 @@ class MachineScrew:
     '''
     Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
     for screwholes
+
+    TODO include layer thickness as part of screw or keep it as input to the cutters?
     '''
 
     def __init__(self, metric_thread=3, countersunk=False, length=-1):
@@ -211,6 +213,16 @@ class MachineScrew:
     def get_washer_diameter(self):
         return get_washer_diameter(self.metric_thread)
 
+    def get_rod_cutter_r(self, layer_thick=LAYER_THICK, loose=False, for_tap_die=False, sideways=False):
+        r = self.metric_thread / 2
+
+        if loose:
+            r += LOOSE_SCREW / 2 + max(layer_thick - LAYER_THICK_EXTRATHICK, 0)
+        if for_tap_die:
+            r = self.get_diameter_for_die_cutting(sideways=sideways) / 2
+
+        return r
+
     def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
@@ -226,12 +238,7 @@ class MachineScrew:
                 # use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
 
-        r = self.metric_thread / 2
-
-        if loose:
-            r += LOOSE_SCREW / 2
-        if for_tap_die:
-            r = self.get_diameter_for_die_cutting(sideways=sideways) / 2
+        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose, for_tap_die=for_tap_die, sideways=sideways)
 
         screw = cq.Workplane("XY")  # .circle(self.metric_thread/2).extrude(length)
 
@@ -257,20 +264,26 @@ class MachineScrew:
     def get_nut_height(self, nyloc=False, half=False):
         return getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
 
-    def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=0):
+    def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=-1, rod_loose=False):
         '''
         if height is provided, use that, otherwise use the default height of a nut
         '''
+
+        inner_r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=rod_loose)
+
+        if wiggle < 0:
+            wiggle = layer_thick-0.2
+
         nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
         if height < 0:
             height = nutHeight
         nutD = self.get_nut_containing_diameter() + wiggle
         if with_bridging:
-            nut = get_hole_with_hole(innerD=self.metric_thread, outerD=nutD, deep=height, sides=6, layerThick=layer_thick)
+            nut = get_hole_with_hole(innerD=inner_r*2, outerD=nutD, deep=height, sides=6, layerThick=layer_thick)
         else:
             nut = cq.Workplane("XY").polygon(nSides=6, diameter=nutD).extrude(height)
         if with_screw_length > 0:
-            nut = nut.faces(">Z").workplane().circle(self.metric_thread / 2).extrude(with_screw_length - height)
+            nut = nut.faces(">Z").workplane().circle(inner_r).extrude(with_screw_length - height)
         return nut
 
     def get_string(self):

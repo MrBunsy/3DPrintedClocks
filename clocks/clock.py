@@ -1215,7 +1215,7 @@ class MoonHolder:
         cutter = cq.Workplane("XY").sphere(self.moon_complication.moon_radius + self.moon_extra_space).translate(moon_centre_pos)
 
         for screw_pos in self.get_fixing_positions():
-            cutter = cutter.add(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).rotate((0, 0, 0), (1, 0, 0), 180).translate((screw_pos[0], screw_pos[1], moon_z + lid_thick)))
+            cutter = cutter.add(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.plates.layer_thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((screw_pos[0], screw_pos[1], moon_z + lid_thick)))
 
         #the steel tube
         cutter = cutter.add(cq.Workplane("XY").circle(STEEL_TUBE_DIAMETER/2).extrude(1000).translate((0,0,-500)).rotate((0,0,0),(1,0,0), 90).translate((0,0,moon_z)))
@@ -1268,7 +1268,7 @@ class SimpleClockPlates:
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
-                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False):
+                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1280,6 +1280,8 @@ class SimpleClockPlates:
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulum_fixing = pendulum_fixing
         self.pendulum_at_front = pendulum_at_front
+
+        self.layer_thick = layer_thick
 
         #diameter of the cylinder that forms the arbour that physically links pendulum holder (or crutch in future) and anchor
         self.direct_arbor_d = direct_arbor_d
@@ -2234,7 +2236,7 @@ class SimpleClockPlates:
         #small standoff for motion works arbour
         holder = holder.faces(">Z").workplane().circle(self.fixing_screws.metric_thread).extrude(standoff_thick)
 
-        holder = holder.cut(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK, for_tap_die=True))
+        holder = holder.cut(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True))
 
         for pos in self.motion_works_fixings_relative_pos:
             holder = holder.cut(self.fixing_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
@@ -2813,9 +2815,9 @@ class SimpleClockPlates:
                     #make a hole for the nut
                     if fixingPos in self.plate_top_fixings and self.need_front_anchor_bearing_holder():
                         z += self.get_front_anchor_bearing_holder_total_length()
-                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True, layer_thick=self.layer_thick, rod_loose=True).translate(fixingPos).translate((0, 0, nut_base_z)))
                     else:
-                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=bottom_nut_hole_height, with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=bottom_nut_hole_height, with_bridging=True, layer_thick=self.layer_thick, rod_loose=True).translate(fixingPos).translate((0, 0, nut_base_z)))
                 # holes for the screws
                 if screws_from_back:
                     if pillar == 0:
@@ -2823,9 +2825,9 @@ class SimpleClockPlates:
                     else:
                         screw_start_z = bottom_nut_hole_height
 
-                    cutter = cutter.add(self.fixing_screws.get_cutter(loose=True).translate(fixingPos).translate((0, 0, -self.back_plate_from_wall + screw_start_z)))
+                    cutter = cutter.add(self.fixing_screws.get_cutter(loose=True, layer_thick=self.layer_thick).translate(fixingPos).translate((0, 0, -self.back_plate_from_wall + screw_start_z)))
                 else:
-                    cutter = cutter.add(self.fixing_screws.get_cutter(loose=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
+                    cutter = cutter.add(self.fixing_screws.get_cutter(loose=True, layer_thick=self.layer_thick).rotate((0, 0, 0), (1, 0, 0), 180).translate(fixingPos).translate((0, 0, z)))
 
 
 
@@ -2851,7 +2853,7 @@ class SimpleClockPlates:
                     nutZ = self.get_plate_thick(back=True) + self.plate_distance - (self.fixing_screws.get_nut_height(nyloc=True) - self.fixing_screws.get_nut_height(nyloc=False))
 
             cutter = cutter.add(cq.Workplane("XY").moveTo(self.huygens_wheel_pos[0], self.huygens_wheel_pos[1] + self.huygens_wheel_y_offset).circle(self.fixing_screws.metric_thread / 2).extrude(1000).translate((0, 0, base_z)))
-            cutter = cutter.add(self.fixing_screws.get_nut_cutter(nyloc=nyloc, with_bridging=bridging, layer_thick=LAYER_THICK_EXTRATHICK).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
+            cutter = cutter.add(self.fixing_screws.get_nut_cutter(nyloc=nyloc, with_bridging=bridging, layer_thick=self.layer_thick).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
 
         if self.moon_complication is not None:
             moon_screws = self.moon_holder.get_fixing_positions()
@@ -3023,7 +3025,7 @@ class SimpleClockPlates:
             #make the space open to the top of the pillar
             extra_space = extra_space.union(cq.Workplane("XY").rect(max_extra_space*2, 1000).extrude(self.chain_hole_d).translate((pulleyX, pulleyY + 500, pulleyZ - self.chain_hole_d / 2)))
             #and keep it printable
-            extra_space = extra_space.union(get_hole_with_hole(innerD=self.fixing_screws.metric_thread, outerD=max_extra_space * 2, deep=self.chain_hole_d, layerThick=LAYER_THICK_EXTRATHICK)
+            extra_space = extra_space.union(get_hole_with_hole(innerD=self.fixing_screws.metric_thread, outerD=max_extra_space * 2, deep=self.chain_hole_d, layerThick=self.layer_thick)
                                             .rotate((0,0,0),(0,0,1),90).translate((pulleyX, pulleyY, pulleyZ - self.chain_hole_d / 2)))
 
             #I'm worried about the threads cutting the thinner cord, but there's not quite enough space to add a printed bit around the screw
@@ -3068,7 +3070,7 @@ class SimpleClockPlates:
             punch = punch.faces(">Z").workplane().circle(bearing.outer_d / 2).extrude(bearing.height)
         else:
             if with_support:
-                punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
+                punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
                     plate_thick - bearing.height)
             else:
                 #no need for hole-in-hole!
@@ -3271,7 +3273,7 @@ class SimpleClockPlates:
 
 
             for pos in dial_fixing_positions:
-                plate = plate.cut(self.dial.fixing_screws.get_cutter(loose=True, with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(pos))
+                plate = plate.cut(self.dial.fixing_screws.get_cutter(loose=True, with_bridging=True, layer_thick=self.layer_thick).translate(pos))
 
         if self.moon_complication is not None:
 
@@ -3286,7 +3288,7 @@ class SimpleClockPlates:
                     plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
 
 
-                plate = plate.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=LAYER_THICK_EXTRATHICK).translate(pos))
+                plate = plate.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
 
 
         # need an extra chunky hole for the big bearing that the key slots through
@@ -3297,7 +3299,7 @@ class SimpleClockPlates:
                 #can print front-side on the build plate, so the bearing holes are printed on top
                 cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outer_d / 2).extrude(powered_wheel.key_bearing.height)
             else:
-                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layerThick=LAYER_THICK_EXTRATHICK)
+                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layerThick=self.layer_thick)
 
             cord_bearing_hole = cord_bearing_hole.faces(">Z").workplane().circle(self.key_hole_d / 2).extrude(plate_thick)
 
@@ -3643,14 +3645,15 @@ class MantelClockPlates(SimpleClockPlates):
     Skeleton mantel clock
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None):
+                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back)
+                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
+                     layer_thick=layer_thick)
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
