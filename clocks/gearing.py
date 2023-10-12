@@ -2368,6 +2368,7 @@ class Arbour:
         if traditional_ratchet:
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
             extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
+            extras['ratchet_pawl_supporter'] = self.powered_wheel.ratchet.get_little_plate_for_pawl()
 
         return extras
     def get_extra_ratchet(self, forPrinting=True):

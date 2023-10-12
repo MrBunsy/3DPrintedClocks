@@ -3252,7 +3252,8 @@ class SimpleClockPlates:
             dial_fixing_positions = []#[npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
             for pos_list in self.dial.get_fixing_positions():
                 for pos in pos_list:
-                    dial_fixing_positions.append(np_to_set(np.add(pos, self.hands_position)))
+                    #inverting x because dial is "backwards"
+                    dial_fixing_positions.append(np_to_set(np.add((-pos[0], pos[1]), self.hands_position)))
 
             top_dial_fixing_y = max([pos[1] for pos in dial_fixing_positions])
 
@@ -3503,7 +3504,8 @@ class SimpleClockPlates:
             cylinder_length -= ratchet_thickness
             #trying a bit less for the hex key (now trying more again since I'm printing it sideways
             # key_wiggle_room = 0.5
-            key_wiggle_room = 1
+            #this was a bit too much, going back to default
+            # key_wiggle_room = 1
             wall_thick=5
             sideways = True
 
@@ -3682,7 +3684,15 @@ class MantelClockPlates(SimpleClockPlates):
                     intersections = line.intersection_with_circle(self.hands_position, self.dial.outside_d/2 - self.dial.dial_width/2)
                     pillar_positions += intersections
                 #single screw in each pillar ought to be enoguh, hence putting each element in its own list
-                self.dial.override_fixing_positions([[np_to_set(np.subtract(pos, self.hands_position))] for pos in pillar_positions])
+                #NOTE dial is "upside down" so invert x
+
+                dial_fixing_positions = []
+
+                for pos in pillar_positions:
+                    pos_relative_to_hands = np_to_set(np.subtract(pos, self.hands_position))
+                    dial_fixing_positions.append([(-pos_relative_to_hands[0], pos_relative_to_hands[1])])
+
+                self.dial.override_fixing_positions(dial_fixing_positions)
                 self.dial.support_d=15
 
     def calc_pillar_info(self):
@@ -3829,9 +3839,10 @@ class MantelClockPlates(SimpleClockPlates):
 
             cutter = cq.Workplane("XY")
 
-            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
+            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions() + self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions():
                 pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
-                cutter = cutter.add(screw.get_cutter(for_tap_die=True, with_bridging=True).translate(pos))
+                #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
+                cutter = cutter.add(screw.get_cutter(with_bridging=True).translate(pos)) # for_tap_die=True,
 
             if back:
                 cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
@@ -4019,7 +4030,7 @@ class Assembly:
             #rotated so the screwhole lines up - can't decide where that should be done
             self.ratchet_on_plates = self.goingTrain.powered_wheel.get_ratchet_gear_for_arbor().rotate((0,0,0),(0,0,1),180)\
                 .add(self.goingTrain.powered_wheel.ratchet.get_pawl()).add(self.goingTrain.powered_wheel.ratchet.get_click())\
-                .translate(self.plates.bearing_positions[0][:2])
+                .add(self.goingTrain.powered_wheel.ratchet.get_little_plate_for_pawl()).translate(self.plates.bearing_positions[0][:2])
             if self.goingTrain.powered_wheel.ratchet_at_back:
                 self.ratchet_on_plates = self.ratchet_on_plates.rotate((0,0,0),(0,1,0),180).translate((0,0,-self.plates.endshake/2))
             else:

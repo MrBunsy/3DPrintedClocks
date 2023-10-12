@@ -700,14 +700,14 @@ if False:
 # viewer.save_screenshot("out/screenshottest.png")
 
 
-rolling_ball = RollingBallEscapement()
-
-tray = rolling_ball.get_track_assembled()
-
-show_object(tray)
-out = "tray.stl"
-print("Outputting ", out)
-exporters.export(rolling_ball.get_track(), out)
+# rolling_ball = RollingBallEscapement()
+#
+# tray = rolling_ball.get_track_assembled()
+#
+# show_object(tray)
+# out = "tray.stl"
+# print("Outputting ", out)
+# exporters.export(rolling_ball.get_track(), out)
 
 # pair = WheelPinionPair(wheelTeeth=55,pinionTeeth= 22, module=0.891)
 #
@@ -720,11 +720,12 @@ exporters.export(rolling_ball.get_track(), out)
 # show_object(escapement.getWheel2D())
 
 #
-# ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
+ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
 #
-# show_object(ratchet.get_gear())
-# show_object(ratchet.get_pawl())
-# show_object(ratchet.get_click())
+show_object(ratchet.get_gear())
+show_object(ratchet.get_pawl())
+show_object(ratchet.get_click())
+show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)

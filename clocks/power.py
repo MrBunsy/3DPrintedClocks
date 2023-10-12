@@ -958,7 +958,7 @@ class SpringBarrel:
         #slightly less of a bodge, if our arbor is bigger than the spring was intended for, make our barrel slightly bigger too
         self.barrel_diameter = self.spring.barrel_diameter + (self.arbor_d_spring - self.spring.arbor_d)
 
-        self.ratchet_wiggle_room = 0.7 #0.5 only fitted with some filing
+        self.ratchet_wiggle_room = 0.5 #0.5 only fitted with some filing, but when the arbor was pritned with a 0.6 nozzle 0.7 was a tiny bit loose
 
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
@@ -3049,8 +3049,11 @@ class TraditionalRatchet:
     def is_clockwise(self):
         return self.blocks_clockwise
 
+    def get_pawl_screw_position(self):
+        return rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
+
     def get_screw_positions(self):
-        return [rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))] + self.click_fixings
+        return [self.get_pawl_screw_position()] + self.click_fixings
 
     def get_max_diameter(self):
         return np.linalg.norm(self.pawl_fixing) + self.pawl_diameter/2
@@ -3142,6 +3145,49 @@ class TraditionalRatchet:
         # return pawl
 
         return pawl.rotate((0,0,0),(0,0,1), self.rotate_by_deg)
+
+    def get_little_plate_for_pawl_screw_positions(self):
+
+
+        pawl_position = rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
+        pawl_distance = np.linalg.norm(pawl_position)
+
+        distance_1 = pawl_distance + self.pawl_diameter + self.fixing_screws.metric_thread
+        distance_2 = distance_1 + self.fixing_screws.metric_thread*2 + self.thick
+
+
+        screw_positions= [polar(self.pawl_angle, distance_1), polar(self.pawl_angle, distance_2)]
+
+
+        return screw_positions
+
+    def get_little_plate_for_pawl(self):
+        '''
+        If the pawl is attached to a front/back plate I fear that a screw through the plate will need some support to prevent bending part of the plate
+        this is a little part designed to screw onto that plate and hold the pawl screw from both ends
+
+        This may be better placed in the Plates class? not sure yet
+        '''
+
+        plate_width = self.fixing_screws.metric_thread*4
+        #extra for washers
+        body_thick = self.thick + WASHER_THICK_M3*2 + 0.5
+
+        total_thick = body_thick + 5# max(self.thick, 5)
+
+        plate_screw_positions = self.get_little_plate_for_pawl_screw_positions()
+        pawl_screw_position = self.get_pawl_screw_position()
+
+        plate = get_stroke_line([plate_screw_positions[1], pawl_screw_position], wide = plate_width, thick=total_thick)
+
+        plate = plate.faces(">Z").workplane().pushPoints(plate_screw_positions + [pawl_screw_position]).circle(self.fixing_screws.metric_thread/2).cutThruAll()
+
+        plate = plate.cut(cq.Workplane("XY").moveTo(pawl_screw_position[0], pawl_screw_position[1]).circle(self.pawl_diameter).extrude(body_thick))
+
+        return plate
+
+
+
 
     def get_click(self):
 
