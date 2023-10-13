@@ -2528,6 +2528,7 @@ class PocketChainWheel:
 
         default chain is for the spare hubert hurr chain I've got and probably don't need (wire_thick=1.25, inside_length=6.8, width=5)
         '''
+        self.traditional_ratchet = False
         self.type = PowerType.CHAIN
         self.loose_on_rod = False
         self.holeD=holeD
@@ -3182,7 +3183,7 @@ class TraditionalRatchet:
 
         plate = plate.faces(">Z").workplane().pushPoints(plate_screw_positions + [pawl_screw_position]).circle(self.fixing_screws.metric_thread/2).cutThruAll()
 
-        plate = plate.cut(cq.Workplane("XY").moveTo(pawl_screw_position[0], pawl_screw_position[1]).circle(self.pawl_diameter).extrude(body_thick))
+        plate = plate.cut(cq.Workplane("XY").moveTo(pawl_screw_position[0], pawl_screw_position[1]).circle(self.pawl_diameter*0.75).extrude(body_thick))
 
         return plate
 

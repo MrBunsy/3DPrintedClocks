@@ -39,7 +39,7 @@ if 'show_object' not in globals():
 # random.seed(6)
 random.seed(7)
 
-clockName="wall_clock_17_xmas_retrofit2"
+clockName="wall_clock_17_xmas_retrofit3"
 clockOutDir="out"
 gearStyle = clock.GearStyle.SNOWFLAKE
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -72,12 +72,12 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.gen_gears(module_size=1.1, module_reduction=1.1, thick=3, chain_wheel_thick=4, useNyloc=False, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
+train.gen_gears(module_size=1.1, module_reduction=1.1, thick=3, chain_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=0.5)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
-pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
+pendulum = clock.Pendulum(bob_d=100, bob_thick=10)
 
 #need thicker plates to holder the bigger bearings for the direct arbour pendulum fixing
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="clk 17", style=clock.ClockPlateStyle.VERTICAL, pendulum_at_front=False,
@@ -89,14 +89,13 @@ pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley
 
 hands = clock.Hands(style=clock.HandStyle.XMAS_TREE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=True)
-assembly = clock.Assembly(plates, hands=hands, pulley=pulley, pendulum=pendulum)
 
-assembly.printInfo()
 
 
 weight_shell = clock.WeightShell(diameter=38, height=120, twoParts=False, solidBottom=True)
 
-show_object(assembly.get_clock())
+# show_object(assembly.get_clock())
+
 
 leaf_thick=1
 pud = clock.ChristmasPudding(thick=leaf_thick, diameter=pendulum.bob_r * 2, cut_rect_width=pendulum.gap_width + 0.1, cut_rect_height=pendulum.gap_height + 0.1)
@@ -136,17 +135,22 @@ mistletoe_berries = right_mistletoe_transform(mistletoes[0].get_berries()).add(l
 mistletoe_cosmetics = {"lightgreen": mistletoe_leaves, "white": mistletoe_berries}
 pretty_anchor = clock.ItemWithCosmetics(shape = frame, name="frame", background_colour="green", cosmetics=mistletoe_cosmetics)#,colour_thick_overrides={"lightgreen":leaf_thick}
 
+#, pretty_hand_avoider=pretty_hand_avoider
+assembly = clock.Assembly(plates, hands=hands, pulley=pulley, pendulum=pendulum, pretty_bob=pretty_bob)
+
+assembly.printInfo()
+assembly.show_clock(show_object=show_object)
+
 if outputSTL:
 
-    train.output_STLs(clockName, clockOutDir)
-    motionWorks.output_STLs(clockName,clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    weight_shell.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
-    pulley.output_STLs(clockName, clockOutDir)
-    pulley_no_pipe.output_STLs(clockName+"_no_pipe", clockOutDir)
+    # motionWorks.output_STLs(clockName,clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # weight_shell.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
+    # pulley.output_STLs(clockName, clockOutDir)
+    # pulley_no_pipe.output_STLs(clockName+"_no_pipe", clockOutDir)
 
     pretty_bob.output_STLs(clockName, clockOutDir)
     pretty_hand_avoider.output_STLs(clockName, clockOutDir)

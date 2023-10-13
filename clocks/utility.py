@@ -81,8 +81,10 @@ METRIC_NUT_WIDTH_MULT = 2
 METRIC_NUT_DEPTH_MULT = 0.77
 METRIC_HALF_NUT_DEPTH_MULT = 0.57
 
+#TODO remove all usages of this - still lurking in places which don't use the MachineScrew class
 COUNTERSUNK_HEAD_WIGGLE = 0.2
-COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.1
+#then once that's done, rename this
+COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.5
 
 
 def get_washer_diameter(metric_thread):
@@ -147,6 +149,17 @@ def get_screw_head_height(metric_thread, countersunk=False):
 
 
 def get_screw_head_diameter(metric_thread, countersunk=False):
+
+    #from https://engineersbible.com/countersunk-machine-ansi-metric/
+    # #this looks far too big...
+    # if countersunk:
+    #     if metric_thread == 2:
+    #         return 4.4
+    #     if metric_thread == 3:
+    #         return 6.3
+    #     if metric_thread == 4:
+    #         return 9.4
+
     if metric_thread == 3:
         # if countersunk:
         #want a bit more slack for the countersink holes
@@ -155,7 +168,7 @@ def get_screw_head_diameter(metric_thread, countersunk=False):
     if metric_thread == 2:
         return 3.9
     if metric_thread == 4:
-        return 7.2 + 0.3
+        return 7.5 + 0.5
     return METRIC_HEAD_D_MULT * metric_thread
 
 
@@ -243,10 +256,11 @@ class MachineScrew:
         screw = cq.Workplane("XY")  # .circle(self.metric_thread/2).extrude(length)
 
         if self.countersunk:
-            screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=r,
-                                        height=self.get_head_height() + COUNTERSUNK_HEAD_WIGGLE_SMALL))
+            #countersink angle for ANSI metric machine screws is 90deg, so this means edges sloping at 45deg. Therefore cut a code of height same as radius
+            screw = screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=0,
+                                        height=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL))
             # countersunk screw lengths seem to include the head
-            screw = screw.add(cq.Workplane("XY").circle(r).extrude(length))
+            screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
         else:
             # pan head screw lengths do not include the head
             if not with_bridging:

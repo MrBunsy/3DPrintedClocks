@@ -885,7 +885,7 @@ class GoingTrain:
             escape_wheel_diameter = pairs[len(pairs) - 1].wheel.get_max_radius() * 2 * escape_wheel_max_d
 
         #little bit of a bodge
-        self.escapement.setDiameter(escape_wheel_diameter)
+        self.escapement.set_diameter(escape_wheel_diameter)
 
         # chain wheel imaginary pinion (in relation to deciding which way the next wheel faces) is opposite to where teh chain is
         chain_wheel_imaginary_pinion_at_front = self.chain_at_back
@@ -4291,9 +4291,6 @@ class Assembly:
 
 
         #hands on the motion work, showing the time
-        #mirror them so the outline is visible (consistent with second hand)
-        # minuteHand = self.hands.getHand(minute=True).mirror().translate((0,0,self.hands.thick)).rotate((0,0,0),(0,0,1), minuteAngle)
-        # hourHand = self.hands.getHand(hour=True).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
         hands = self.hands.get_assembled(time_minute = time_min, time_hour=time_hour, include_seconds=False, gap_size =self.motion_works.hour_hand_slot_height - self.hands.thick)
 
 

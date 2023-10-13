@@ -720,12 +720,12 @@ if False:
 # show_object(escapement.getWheel2D())
 
 #
-ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
-#
-show_object(ratchet.get_gear())
-show_object(ratchet.get_pawl())
-show_object(ratchet.get_click())
-show_object(ratchet.get_little_plate_for_pawl())
+# ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
+# #
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())
+# show_object(ratchet.get_click())
+# show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
@@ -796,3 +796,21 @@ show_object(ratchet.get_little_plate_for_pawl())
 #
 # show_object(escapement.getWheel2D())
 # show_object(escapement.getAnchor2D())
+
+screw_test_block = cq.Workplane("XY").rect(30,15).extrude(6)
+
+m3_screw = MachineScrew(3, countersunk=True)
+m4_screw = MachineScrew(4, countersunk=True)
+
+screw_test_block = screw_test_block.cut(m3_screw.get_cutter().translate((7.5,0)))
+screw_test_block = screw_test_block.cut(m4_screw.get_cutter(loose=True, layer_thick=0.4).translate((-7.5,0)))
+
+path = "out"
+name="screw_test_block"
+out = os.path.join(path, "{}.stl".format(name))
+print("Outputting ", out)
+exporters.export(screw_test_block, out)
+
+show_object(screw_test_block)
+
+# show_object(m3_screw.get_cutter())

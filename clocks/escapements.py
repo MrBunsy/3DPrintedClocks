@@ -154,11 +154,11 @@ class AnchorEscapement:
 
         self.centre_r = self.arbourD*2
 
-        #calculated in calcGeometry() which is called from setDiameter
+        #calculated in calcGeometry() which is called from set_diameter
         self.largest_anchor_r = -1
 
         # calculates things like tooth height from diameter, also recalculates the maths
-        self.setDiameter(diameter)
+        self.set_diameter(diameter)
 
     def calcGeometry(self):
         '''
@@ -270,7 +270,7 @@ class AnchorEscapement:
     def getDistanceBeteenArbours(self):
         return self.anchor_centre_distance
 
-    def setDiameter(self, diameter):
+    def set_diameter(self, diameter):
         self.diameter = diameter
         # self.anchourDiameter=anchourDiameter
 
@@ -816,6 +816,11 @@ class GrasshopperEscapement:
 
         self.checkGeometry(loud=loud_checks)
         self.clockwise = True
+
+    def set_diameter(self, diameter):
+        '''
+        do nothing, we can't readjust the diameter of this escape wheel from teh gear train generation like we can with an anchor
+        '''
 
     def getDistanceBeteenArbours(self):
         return distance_between_two_points(self.geometry["Z"], self.geometry["O"])
@@ -1871,6 +1876,9 @@ class GrasshopperEscapement:
 
         return wheel
 
+    def getWheel(self):
+        return self.getWheel2D().extrude(self.wheel_thick)
+
     def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
@@ -1884,7 +1892,7 @@ class GrasshopperEscapement:
             return anchor_part
 
         if not leave_out_wheel_and_frame:
-            grasshopper = grasshopper.add(self.getWheel().extrude(self.wheel_thick).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
+            grasshopper = grasshopper.add(self.getWheel().translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
             grasshopper = grasshopper.add(rotate_anchor(self.rotateToUpright(self.getFrame(leave_in_situ=True))))
 
         pivot_extenders = self.getFramePivotArmExtenders()
