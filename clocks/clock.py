@@ -4630,25 +4630,22 @@ def getHandDemo(just_style=None, length = 120, per_row=3, assembled=False, time_
 
     return demo
 
-def show_hand_demo(show_object, length = 120, per_row=3, assembled=True, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25):
+def show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25,
+                   just_style = None):
     motion_works = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
     print("motion works r", motion_works.get_widest_radius())
 
-    space = length
+    space = length * 2
+    i = 0
+    for style in HandStyle:
+        if just_style is None or style == just_style:
+            hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                          length=length, thick=motion_works.minute_hand_slot_height, outline=outline, outlineSameAsBody=False, secondLength=second_length)
 
-    if assembled:
-        space = length * 2
+            x = space * (i % per_row)
+            y = (space) * math.floor(i / per_row)
 
-    for i, style in enumerate(HandStyle):
-
-        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                      length=length, thick=motion_works.minute_hand_slot_height, outline=outline, outlineSameAsBody=False, secondLength=second_length)
-
-        x = space * (i % per_row)
-        y = (space) * math.floor(i / per_row)
-
-
-        if assembled:
+            i+=1
 
             hands.show_hands(show_object, time_hours=time_hour, time_minutes=time_min, time_seconds=time_sec, position=(x,y))
 

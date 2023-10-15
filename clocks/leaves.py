@@ -673,15 +673,17 @@ class Wreath:
     Randomly generated at object creation time, getting leaves and berries after that will always result in the same shapes
     '''
 
-    def __init__(self, diameter=120, thick=5, berry_diameter=8):
+    def __init__(self, diameter=120, thick=5, berry_diameter=8, leaf_offset_from_centre=0.5):
         self.diameter = diameter
         self.thick = thick
+        self.leaf_offset_from_centre = leaf_offset_from_centre
         self.leaf_length = diameter*0.2
         self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(30)]
         self.berry_diameter = berry_diameter
         self.leaves_shape = self.gen_leaves()
         self.berries_shape = self.gen_berries()
         self.leaves_shape = self.leaves_shape.cut(self.berries_shape)
+
 
     def get_leaves(self):
         return self.leaves_shape
@@ -697,7 +699,7 @@ class Wreath:
         for leaf in self.leaves:
             angle += math.pi*2 / len(self.leaves)
             leaf_angle = angle + random.uniform(-math.pi*0.05, math.pi*0.05)
-            pos = polar(angle, self.diameter/2)
+            pos = polar(angle, self.diameter/2 + self.leaf_offset_from_centre)
             wreath = wreath.add(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), radToDeg(-math.pi/2 + leaf_angle)).translate((pos[0], pos[1])))
 
         return wreath

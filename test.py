@@ -118,14 +118,6 @@ if 'show_object' not in globals():
 # show_object(hands.getHand(hour=False))
 
 
-# motionWorks = MotionWorks(minuteHandHolderHeight=30+30,style=GearStyle.ARCS, thick=2, compensateLooseArbour=True)
-# hands = Hands(style=HandStyle.CIRCLES, chunky=True, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=140, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=25)
-#
-# show_object(hands.getHand(hour=True).translate((40,0)))
-# show_object(hands.getHand(minute=True))
-# show_object(hands.getHand(second=True).translate((-40,0)))
-
-
 # show_object(getHandDemo(assembled=True, chunky=True, justStyle=HandStyle.MOON, outline=1, length=85))
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
@@ -797,20 +789,27 @@ if False:
 # show_object(escapement.getWheel2D())
 # show_object(escapement.getAnchor2D())
 
-screw_test_block = cq.Workplane("XY").rect(30,15).extrude(6)
-
-m3_screw = MachineScrew(3, countersunk=True)
-m4_screw = MachineScrew(4, countersunk=True)
-
-screw_test_block = screw_test_block.cut(m3_screw.get_cutter().translate((7.5,0)))
-screw_test_block = screw_test_block.cut(m4_screw.get_cutter(loose=True, layer_thick=0.4).translate((-7.5,0)))
-
-path = "out"
-name="screw_test_block"
-out = os.path.join(path, "{}.stl".format(name))
-print("Outputting ", out)
-exporters.export(screw_test_block, out)
-
-show_object(screw_test_block)
+# screw_test_block = cq.Workplane("XY").rect(30,15).extrude(6)
+#
+# m3_screw = MachineScrew(3, countersunk=True)
+# m4_screw = MachineScrew(4, countersunk=True)
+#
+# screw_test_block = screw_test_block.cut(m3_screw.get_cutter().translate((7.5,0)))
+# screw_test_block = screw_test_block.cut(m4_screw.get_cutter(loose=True, layer_thick=0.4).translate((-7.5,0)))
+#
+# path = "out"
+# name="screw_test_block"
+# out = os.path.join(path, "{}.stl".format(name))
+# print("Outputting ", out)
+# exporters.export(screw_test_block, out)
+#
+# show_object(screw_test_block)
 
 # show_object(m3_screw.get_cutter())
+
+motion_works = MotionWorks()
+hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                          length=120, thick=motion_works.minute_hand_slot_height, outline=1, outlineSameAsBody=False, secondLength=60)
+# show_object(hands.getBasicHandShape(hour=True, colour=None))
+show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
+# show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25, just_style=HandStyle.XMAS_TREE)

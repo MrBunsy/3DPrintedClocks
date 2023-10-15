@@ -717,10 +717,10 @@ class Hands:
             leaves = leaves.cut(baubles)
 
             if colour is None:
-                hand = hand.add(leaves)
-                hand = hand.add(baubles)
+                hand = hand.union(leaves)
+                hand = hand.union(baubles)
                 if useTinsel:
-                    hand = hand.add(tinsel)
+                    hand = hand.union(tinsel)
             elif colour == "brown":
                 hand = hand.cut(leaves)
                 if useTinsel:

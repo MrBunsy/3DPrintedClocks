@@ -3153,7 +3153,7 @@ class TraditionalRatchet:
         pawl_position = rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
         pawl_distance = np.linalg.norm(pawl_position)
 
-        distance_1 = pawl_distance + self.pawl_diameter + self.fixing_screws.metric_thread
+        distance_1 = pawl_distance + self.pawl_diameter*1.25 + self.fixing_screws.metric_thread
         distance_2 = distance_1 + self.fixing_screws.metric_thread*2 + self.thick
 
 
@@ -3183,7 +3183,7 @@ class TraditionalRatchet:
 
         plate = plate.faces(">Z").workplane().pushPoints(plate_screw_positions + [pawl_screw_position]).circle(self.fixing_screws.metric_thread/2).cutThruAll()
 
-        plate = plate.cut(cq.Workplane("XY").moveTo(pawl_screw_position[0], pawl_screw_position[1]).circle(self.pawl_diameter*0.75).extrude(body_thick))
+        plate = plate.cut(cq.Workplane("XY").moveTo(pawl_screw_position[0], pawl_screw_position[1]).circle(self.pawl_diameter).extrude(body_thick))
 
         return plate
 
