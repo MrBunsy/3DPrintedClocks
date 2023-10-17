@@ -27,6 +27,9 @@ UNPRINTED
 
 Experimental eight day grasshopper
 
+latest idea: spring powered, but put the escape wheel BEHIND the back plate so it can be centred on the hands, resulting in a fairly compact shape
+could put bearings on the escape wheel itself so it can use the same rod as the minute wheel
+
 '''
 outputSTL=False
 

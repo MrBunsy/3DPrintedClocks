@@ -2002,8 +2002,10 @@ class ArbourForPlate:
             extendo_arbour = extendo_arbour.circle(tip_r).circle(inner_r).extrude(self.arbour_bearing_standoff_length)
 
             if (length-self.arbour_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick and self.arbor.pinion is not None
-                    and self.arbor.pinion.lantern and front is not self.arbor.pinion_at_front):
+                    and self.arbor.pinion.lantern):# and front is not self.arbor.pinion_at_front):
                 #extra wide flange to help the wheel remain perpendicular
+                #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
+                #will work out if it ends up clashing with other wheels if it becomes a problem in the future
                 extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.pinion.get_max_radius()).circle(inner_r).extrude(self.lantern_pinion_wheel_holder_thick))
 
             return extendo_arbour

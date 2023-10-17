@@ -225,9 +225,11 @@ if 'show_object' not in globals():
 # show_object(getGearDemo(justStyle=GearStyle.FLOWER))
 # show_object(getGearDemo(justStyle=GearStyle.ARCS))
 
-#
-# # grasshopper = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.423922627615948, ax_deg=90.28)
-# grasshopper = GrasshopperEscapement.get_harrison_compliant_grasshopper()
+# seemingly viable 60 tooth grasshopper - needs more escaping arc (pendulum swing) to have sensible looking geometry. Wondering what I need to do to keep pendulum arc not too excessive
+# grasshopper = GrasshopperEscapement(teeth=60, tooth_span=9.5, escaping_arc_deg=14)#skip_failed_checks=True,
+
+# grasshopper = GrasshopperEscapement(teeth=60, tooth_span=9.5, diameter=130*3/4, skip_failed_checks=True, loud_checks=True, escaping_arc_deg=11)#, escaping_arc_deg=14)#skip_failed_checks=True,
+grasshopper = GrasshopperEscapement.get_harrison_compliant_grasshopper()
 # '''
 # Balanced escaping arc of 9.7500deg with d of 12.40705997 and ax of 90.26021004
 # Diameter of 130.34328818 results in mean torque arm of 9.9396
@@ -242,7 +244,7 @@ if 'show_object' not in globals():
 # # # # #
 # show_object(grasshopper.getAnchor())
 # # # # show_object(grasshopper.getEscapementWheel())
-# show_object(grasshopper.get_assembled(style=GearStyle.CURVES))
+show_object(grasshopper.get_assembled(style=GearStyle.CURVES))
 #
 # if outputSTL:
 #     grasshopper.output_STLs("grasshopper", "out")
@@ -807,9 +809,9 @@ if False:
 
 # show_object(m3_screw.get_cutter())
 
-motion_works = MotionWorks()
-hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                          length=120, thick=motion_works.minute_hand_slot_height, outline=1, outlineSameAsBody=False, secondLength=60)
-# show_object(hands.getBasicHandShape(hour=True, colour=None))
-show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
+# motion_works = MotionWorks()
+# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+#                           length=120, thick=motion_works.minute_hand_slot_height, outline=1, outlineSameAsBody=False, secondLength=60)
+# # show_object(hands.getBasicHandShape(hour=True, colour=None))
+# show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
 # show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25, just_style=HandStyle.XMAS_TREE)

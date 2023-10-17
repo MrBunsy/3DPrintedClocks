@@ -1457,7 +1457,7 @@ class GrasshopperEscapement:
             print("Escaping angles, NZP: {}deg, FZG:{}deg design:{}deg".format(radToDeg(NZP), radToDeg(FZG), radToDeg(self.escaping_arc)))
         if not self.skip_failed_checks:
             assert abs(FZG - NZP) < acceptableError, "Escaping angles aren't balanced"
-            assert abs(FZG - self.escaping_arc) < degToRad(0.1), "Escaping arc isn't close to designed escaping arc"
+            assert abs(FZG - self.escaping_arc) < degToRad(0.1), "Escaping arc isn't close to designed escaping arc. FZG: {}, escaping arc:{}".format(FZG, self.escaping_arc)
 
     def get_anchor(self):
         #comply with expected interface
@@ -1876,8 +1876,9 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getWheel(self):
-        return self.getWheel2D().extrude(self.wheel_thick)
+    def getWheel(self, style=GearStyle.HONEYCOMB):
+        #I think this is just for models, so fudge the inner radius
+        return Gear.cutStyle(self.getWheel2D().extrude(self.wheel_thick),self.getWheelInnerR(), innerRadius=10, style=style)
 
     def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")
@@ -1887,13 +1888,14 @@ class GrasshopperEscapement:
         def rotate_anchor(anchor_part):
             # centre = (0, 0)
             # if not centre_on_anchor:
+            # return anchor_part
             centre = self.geometry["Z"]
             anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), radToDeg(-self.escaping_arc / 2))
             return anchor_part
 
         if not leave_out_wheel_and_frame:
-            grasshopper = grasshopper.add(self.getWheel().translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
-            grasshopper = grasshopper.add(rotate_anchor(self.rotateToUpright(self.getFrame(leave_in_situ=True))))
+            grasshopper = grasshopper.add(self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
+            grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(self.getFrame(leave_in_situ=True))))
 
         pivot_extenders = self.getFramePivotArmExtenders()
         if pivot_extenders is not None:
@@ -2354,6 +2356,17 @@ class HandTurnableNut:
         return nut
 
 class RollingBallEscapement:
+    '''
+    Congreve rolling ball knock-off
+
+    Idea: new "loose minute wheel" option where the hands are fixed to the minute rod and the wheel has a clutch like a smiths clock or cuckoo
+    could try an actual spring or stick with the split washer
+
+    then I could have two dials, one for minutes and one for hours without having to mess about with motino works on the front of the clock, the dials could even be printed as part
+    of the front plate!
+    '''
+
+
     def __init__(self, ball_diameter=20, tray_wide=250, tray_deep=150, spacing=8.75):
         self.ball_diameter = ball_diameter
         self.tray_wide = tray_wide

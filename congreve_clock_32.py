@@ -25,7 +25,7 @@ import os
 from clocks import clock
 
 '''
-Clock 30, but tinkering with sizes of lantern pinions for steel I can buy more easily. Potential base for an orrery.
+
 
 '''
 outputSTL = False
@@ -36,7 +36,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="mantel_clock_31"
+clockName="congreve_clock_32"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -93,7 +93,7 @@ dial = clock.Dial(outside_d=160, bottom_fixing=False, top_fixing=True, style=clo
                   inner_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 
-plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
+plates = clock.MantelClockPlates(train, motionWorks, name="Congreve 32", dial=dial, plate_thick=6,
                                  motion_works_angle_deg=180+50, centred_second_hand=True, layer_thick=0.4   )
 
 

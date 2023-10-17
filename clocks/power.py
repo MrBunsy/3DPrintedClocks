@@ -875,12 +875,15 @@ class SpringBarrel:
     '''
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
-                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID):
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, override_barrel_turns=-1):
         self.type = PowerType.SPRING_BARREL
 
         self.style = style
         #comply with PoweredWheel interface
         self.loose_on_rod=True
+
+        #if >0 then don't use the default number of barrel rotations (as configured in the spring)
+        self.override_barrel_turns = override_barrel_turns
 
         #ratchet is out the back plate, rather than on the front plate?
         self.ratchet_at_back = ratchet_at_back
@@ -1115,6 +1118,8 @@ class SpringBarrel:
         '''
         we can ignore chain drop, this is just a fixed number of turns for the runtime
         '''
+        if self.override_barrel_turns > 0:
+            return self.override_barrel_turns
         return self.spring.turns
 
     def get_height(self):
