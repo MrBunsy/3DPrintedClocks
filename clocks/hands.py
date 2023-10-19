@@ -332,10 +332,15 @@ class Hands:
         if hand_colours is None:
             #main hand, outline, second hand if different
             hand_colours = ["white", "black"]
+            if self.second_hand_centred:
+                hand_colours += ["red"]
         if position is None:
             position = (0,0,0)
         if second_hand_pos is None:
-            second_hand_pos = (position[0], position[1] + self.length * 0.75, 0)
+            if self.second_hand_centred:
+                second_hand_pos = (0,0, self.thick)
+            else:
+                second_hand_pos = (position[0], position[1] + self.length * 0.75, 0)
 
         hands = self.get_in_situ(time_minute=time_minutes, time_hour=time_hours, time_seconds=time_seconds, gap_size=hour_hand_slot_height - self.thick)
 
@@ -512,7 +517,7 @@ class Hands:
         #sword is a bit too pointy, so trying to soften it
         #xmas tree just looks bettery
         #spade and cuckoo only work this way
-        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE, HandStyle.XMAS_TREE, HandStyle.SWORD]:
+        if self.style in [HandStyle.CUCKOO, HandStyle.SPADE, HandStyle.XMAS_TREE, HandStyle.SWORD]:#, HandStyle.BREGUET
             return False
 
         return True
@@ -866,7 +871,7 @@ class Hands:
             circle_r = self.length * 0.08
             circle_y = length * 0.75
             # #point where teh arm starts to bend towards the tip
-            bend_point_y = circle_y
+            bend_point_y = circle_y + circle_r - hand_width/2
 
             if self.chunky:
                 hand_width = self.length * 0.06
@@ -880,10 +885,10 @@ class Hands:
                 hand_width *= 1.16
                 circle_r = self.length * 0.125
                 circle_y = length * 0.65
-                bend_point_y = circle_y
+                bend_point_y = circle_y + circle_r - hand_width/2
             if second:
                 if self.second_hand_centred:
-                    base_r = self.length * 0.04
+                    base_r = self.length * 0.05 # 0.04
                     hand_width = self.length * 0.055
                     # tipWidth = self.length * 0.015
                     circle_y = - self.length * 0.3

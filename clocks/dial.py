@@ -567,10 +567,12 @@ class Dial:
 
         max_dot_r = centre_radius * math.sin(dA/2)
         if max_dot_r > dial_width/2:
-            max_dot_r = dial_width/2
+            max_dot_r = dial_width/2 - 0.6
 
         big_dot_r = max_dot_r
         small_dot_r = max_dot_r/2
+        if big_dot_r < 10:
+            small_dot_r = max_dot_r*0.66
 
         detail = cq.Workplane("XY")
 
@@ -715,7 +717,7 @@ class Dial:
         if style == DialStyle.LINES_ARC:
             return self.get_lines_detail(outer_r, width, detail_from_edges)
         elif style == DialStyle.CONCENTRIC_CIRCLES:
-            return self.get_concentric_circles_detail(outer_r, width, detail_from_edges)
+            return self.get_concentric_circles_detail(outer_r, width, detail_from_edges, thick_fives=True)
         elif style == DialStyle.ROMAN:
             return self.get_roman_numerals_detail(outer_r, width, detail_from_edges)
         elif style == DialStyle.DOTS:

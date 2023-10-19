@@ -49,8 +49,8 @@ lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
                                     toothBaseAngle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 #escape wheel this way around allows for a slightly larger diameter
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=7 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False)
+train = clock.GoingTrain(pendulum_period=2/3, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=1,
+                         runtime_hours=24, support_second_hand=True, escape_wheel_pinion_at_front=False)
 
 barrel_gear_thick = 8
 
@@ -59,8 +59,7 @@ moduleReduction=0.9#0.85
 #smiths ratios but with more teeth on the first pinion (so I can print it with two perimeters, with external perimeter at 0.435 and perimeter at 0.43)
 #could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
 #[[61, 10], [62, 10]] auto generated but putting here to save time
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick,
-                        chain_wheel_ratios=[[61, 10], [62, 10]])#[[66, 10], [76,13]])#, [[61, 10], [62, 10]]
+train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick, wheel_min_teeth=40)
 # train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True,
 #                       penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
 train.set_ratios([[75, 9], [72, 10], [60, 24]])
@@ -73,7 +72,7 @@ backPlateFromWall=30
 pinion_extensions = {1:15}#, 2:5}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.25]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(2)]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,

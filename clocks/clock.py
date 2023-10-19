@@ -719,7 +719,7 @@ class GoingTrain:
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2, ratchet_at_back=True,
-                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, override_barrel_turns=-1):
+                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, override_barrel_turns=-1, wheel_min_teeth=60):
         self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0,
                                           pawl_angle = pawl_angle, click_angle = click_angle, ratchet_at_back=ratchet_at_back, style=style, base_thick=base_thick,
                                           override_barrel_turns=override_barrel_turns)
@@ -730,7 +730,7 @@ class GoingTrain:
         barrel rotates 4.35 times a week (168hours)
         '''
         if chain_wheel_ratios is None:
-            self.calculate_powered_wheel_ratios(wheel_min=60, inaccurate = True)
+            self.calculate_powered_wheel_ratios(wheel_min=wheel_min_teeth, inaccurate = True)
         else:
             self.chain_wheel_ratios=chain_wheel_ratios
 

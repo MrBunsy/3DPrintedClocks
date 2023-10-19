@@ -28,6 +28,10 @@ TODO put ratchet on front and lengthen key because it's not within the dial, the
 also put dial pillars lower down so it doesn't have to stick over the top DONE
 
 TODO screwhole for the middle arbor of the motion works
+
+this failed with broken teeth on the first wheel and pinion after about 5 hours.
+Trying reprinting broken parts with (new) 0.6mm nozzle for thicker pinion leaf walls and using an old set mainspring for less power, just because it feels like a waste to have
+most of a clock not being used!
 '''
 outputSTL = False
 
@@ -37,7 +41,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="mantel_clock_29"
+clockName="mantel_clock_29b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.HONEYCOMB_CHUNKY
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -89,8 +93,8 @@ motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compen
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
-dial = clock.Dial(outside_d=155, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
-                  inner_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=155, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=clock.DialStyle.DOTS,
+                  outer_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 
 plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 29", dial=dial, plate_thick=6,
@@ -100,9 +104,9 @@ plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 29", dial=dial
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
 #would like sword, need to fix second hand outline for it
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, chunky=True,
-                    outline_on_seconds=1, second_hand_centred=True)
+                    outline_on_seconds=1, second_hand_centred=True)#,  secondFixing_d=clock.get_diameter_for_die_cutting(3))
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 
