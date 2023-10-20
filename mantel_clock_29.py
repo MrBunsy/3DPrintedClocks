@@ -93,8 +93,8 @@ motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compen
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
-dial = clock.Dial(outside_d=155, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=clock.DialStyle.DOTS,
-                  outer_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=155, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None,
+                  outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 # dial=None
 
 plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 29", dial=dial, plate_thick=6,
@@ -121,8 +121,8 @@ assembly.get_arbour_rod_lengths()
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.WHITE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
+                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS])
 
 # show_object(plates.getDrillTemplate(6))
 

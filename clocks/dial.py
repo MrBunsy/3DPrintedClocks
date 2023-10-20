@@ -567,7 +567,7 @@ class Dial:
 
         max_dot_r = centre_radius * math.sin(dA/2)
         if max_dot_r > dial_width/2:
-            max_dot_r = dial_width/2 - 0.6
+            max_dot_r = dial_width/2 - 0.7
 
         big_dot_r = max_dot_r
         small_dot_r = max_dot_r/2
