@@ -394,7 +394,7 @@ class Dial:
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True, bottom_fixing=False, hand_hole_d=18,
-                 detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None):
+                 detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -432,6 +432,10 @@ class Dial:
 
         #for any styles which use a font
         self.font = font
+        #manual adjustment for size of font if my automatic attempt doesn't work
+        self.font_scale = font_scale
+        #manual location of font file for when cadquery can't seem to find it on the system
+        self.font_path = font_path
 
         # a shape to be subtracted from the supports to avoid crashing into things, bit hacky, will be set by plates
         self.subtract_from_supports = None
@@ -625,7 +629,7 @@ class Dial:
 
         if self.font is not None:
             #if font, use that, otherwise use the old hand-written cuckoo numerals
-            number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font) for number in numbers]
+            number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font, font_path=self.font_path) for number in numbers]
 
             max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 
@@ -774,8 +778,8 @@ class Dial:
             font = "Arial"
 
         centre_r = outer_r - dial_width/2
-        number_height = dial_width - dial_detail_from_edges*2
-        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i), thick=self.detail_thick, font=font) for i in range(1,13)]
+        number_height = (dial_width - dial_detail_from_edges*2)*self.font_scale
+        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i), thick=self.detail_thick, font=font, font_path=self.font_path) for i in range(1,13)]
 
         max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 

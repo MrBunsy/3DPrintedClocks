@@ -493,7 +493,7 @@ if True:
     #these three look good:
     #Arial looks neat, mono looks typewritten! Miriam CLM possibly better than Arial
     # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None, outer_edge_style=DialStyle.DOTS)
-    dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Wingdings", inner_edge_style=None, outer_edge_style=DialStyle.DOTS)
+    dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
     dial.configure_dimensions(support_length=10, support_d=21.7)
     # dial = Dial(200, DialStyle.ARABIC_NUMBERS, font="Miriam CLM", outer_edge_style=DialStyle.RING, inner_edge_style=DialStyle.DOTS)
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Times New Roman", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None)
