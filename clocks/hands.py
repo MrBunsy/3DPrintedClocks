@@ -634,6 +634,82 @@ class Hands:
 
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance / 2).rect(width, counterweight_distance).extrude(thick)
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance).circle(counterweight_r).extrude(thick)
+
+        elif style == HandStyle.SIMPLE_POINTED:
+            #copypasted and tweaked from SIMPLE_ROUNDED
+            width = self.length * 0.1
+            point_length = width*2/3
+            body_length = length - point_length
+            if second:
+                centre_width = self.length * 0.12
+                tip_width = self.length*0.04
+                # don't let it be smaller than the end!
+                base_r = max(base_r, self.length * 0.1 / 2)
+
+            if minute or hour:
+                #overriding this is getting super hacky... oh well
+                min_base_r = max(self.minuteFixing_d1, self.minuteFixing_d2, self.hourFixing_d) * 0.5 + 2.5
+
+            hand = hand.workplaneFromTagged("base").moveTo(width / 2, 0).line(0, body_length).lineTo(0, length).lineTo(-width/2, body_length).line(0, -body_length).close().extrude(thick)
+
+            def moment_of_trapezium(length, centre_width, tip_width, chunks=10):
+                moment = 0
+                chunk_length = length/chunks
+                width_per_length = (tip_width - centre_width) / length
+                for i in range(chunks):
+                    distance = chunk_length * i + chunk_length/2
+                    start_width = centre_width + width_per_length * i * chunk_length
+                    end_width = centre_width + width_per_length * (i + 1) * chunk_length
+                    area = chunk_length * (start_width + end_width)/2
+                    moment += distance * area
+                return moment
+
+            if second and self.second_hand_balanced:
+                # approx
+                moment = moment_of_trapezium(length, centre_width, tip_width)
+                # TODO we have end width as a function of length, by keeping this triangularish, we know what moment we need to get
+                # so we should be able to just calculate the length of the thicker side easily enough
+                width_per_length = (centre_width - tip_width) / length
+
+                def counterweight_moment(back_length):
+                    back_width = centre_width + back_length * width_per_length
+                    moment = moment_of_trapezium(back_length, centre_width, tip_width=back_width)
+                    return moment
+
+                min_length = 0.1
+                max_length = length
+                test_length = min_length
+                counterweight_moment_test = counterweight_moment(test_length)
+                error = counterweight_moment_test - moment
+                last_error = 1000
+                # TODO write a generic binary search solver, this is just copied from BREGUET
+                for i in range(100):
+                    # print("counterweight difference: {}, test_r:{}".format(error, test_r))
+
+                    if error < 0:
+                        # r too small
+                        min_length = test_length
+                    if error > 0:
+                        # too big
+                        max_length = test_length
+                    if error == 0 or abs(error - last_error) < 0.001:
+                        print("best counterweight difference: {}, test_r:{} i {}".format(error, test_length, i))
+                        back_length = test_length
+                        break
+
+                    last_error = error
+                    test_length = (min_length + max_length) / 2
+                    counterweight_moment_test = counterweight_moment(test_length)
+                    error = counterweight_moment_test - moment
+
+
+                # back_length_a = (-0.5 * centre_width + math.sqrt(0.25 * centre_width ** 2 + width_per_length * moment)) / (width_per_length / 2)
+                # back_length_b = (-0.5 * centre_width - math.sqrt(0.25 * centre_width ** 2 + width_per_length * moment)) / (width_per_length / 2)
+                # back_length = max(back_length_a, back_length_b)
+
+                back_width = centre_width + back_length * width_per_length
+
+                hand = cq.Workplane("XY").tag("base").moveTo(-back_width/2, -back_length).lineTo(back_width/2, -back_length).lineTo(tip_width/2, body_length).lineTo(0, length).lineTo(-tip_width/2, body_length).close().extrude(thick)
         elif style == HandStyle.ARROWS:
             '''
             Deliberately styled to look like the hands for Tony the Clock

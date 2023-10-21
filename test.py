@@ -499,12 +499,12 @@ if True:
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Times New Roman", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None)
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font=None, outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
 
-    show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180), options={"color":"white"} )
-    show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180), options={"color": Colour.BRASS} )
+    # show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180), options={"color":"white"} )
+    # show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180), options={"color": Colour.BRASS} )
 
     motionWorks=MotionWorks(compensate_loose_arbour=True, compact= True, bearing=get_bearing_info(3))
 
-    hands = Hands(style=HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
+    hands = Hands(style=HandStyle.SIMPLE_POINTED, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
                         hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False,
                         second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
 

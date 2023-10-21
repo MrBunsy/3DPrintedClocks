@@ -31,6 +31,7 @@ class HandStyle(Enum):
     SQUARE = "square"
     SIMPLE = "simple"
     SIMPLE_ROUND = "simple_rounded"
+    SIMPLE_POINTED = "simple_pointed"
     CUCKOO = "cuckoo"
     SPADE = "spade"
     BREGUET = "breguet" # has a single circle on each hand
