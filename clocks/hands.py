@@ -640,11 +640,15 @@ class Hands:
             width = self.length * 0.1
             point_length = width*2/3
             body_length = length - point_length
+
+            rounded_second_hand = True
             if second:
                 centre_width = self.length * 0.12
                 tip_width = self.length*0.04
                 # don't let it be smaller than the end!
                 base_r = max(base_r, self.length * 0.1 / 2)
+                if rounded_second_hand:
+                    body_length = length - tip_width/2
 
             if minute or hour:
                 #overriding this is getting super hacky... oh well
@@ -666,6 +670,7 @@ class Hands:
 
             if second and self.second_hand_balanced:
                 # approx
+                need_base_r = False
                 moment = moment_of_trapezium(length, centre_width, tip_width)
                 # TODO we have end width as a function of length, by keeping this triangularish, we know what moment we need to get
                 # so we should be able to just calculate the length of the thicker side easily enough
@@ -674,6 +679,9 @@ class Hands:
                 def counterweight_moment(back_length):
                     back_width = centre_width + back_length * width_per_length
                     moment = moment_of_trapezium(back_length, centre_width, tip_width=back_width)
+                    if rounded_second_hand:
+                        r = back_width/2
+                        moment += (back_length + r/2) * math.pi * (r**2) / 2
                     return moment
 
                 min_length = 0.1
@@ -708,8 +716,26 @@ class Hands:
                 # back_length = max(back_length_a, back_length_b)
 
                 back_width = centre_width + back_length * width_per_length
-
-                hand = cq.Workplane("XY").tag("base").moveTo(-back_width/2, -back_length).lineTo(back_width/2, -back_length).lineTo(tip_width/2, body_length).lineTo(0, length).lineTo(-tip_width/2, body_length).close().extrude(thick)
+                if rounded_second_hand:
+                    #shell seems to struggle with an inward tapered not-quite-rectangle with a semicircle on the end
+                    #so make the rounded bit attach to a rectangle, even a tiny length of one
+                    '''
+                    fails:
+                      /\
+                     /  \
+                     (___)
+                    succeeds:
+                        /\
+                       /  \
+                       |   |
+                       (___)
+                    '''
+                    shell_bodge = 0.01
+                    hand = (cq.Workplane("XY").tag("base").moveTo(-back_width / 2, shell_bodge-back_length).line(0,-shell_bodge)
+                    .radiusArc((back_width / 2, shell_bodge-back_length-shell_bodge), -back_width/2).line(0,shell_bodge).lineTo(tip_width / 2, body_length-shell_bodge).line(0,shell_bodge)
+                    .radiusArc((-tip_width/2, body_length), -tip_width/2).line(0, -shell_bodge).close().extrude(thick))
+                else:
+                    hand = cq.Workplane("XY").tag("base").moveTo(-back_width/2, -back_length).lineTo(back_width/2, -back_length).lineTo(tip_width/2, body_length).lineTo(0, length).lineTo(-tip_width/2, body_length).close().extrude(thick)
         elif style == HandStyle.ARROWS:
             '''
             Deliberately styled to look like the hands for Tony the Clock
