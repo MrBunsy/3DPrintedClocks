@@ -644,7 +644,7 @@ class Hands:
             rounded_second_hand = True
             if second:
                 centre_width = self.length * 0.12
-                tip_width = self.length*0.04
+                tip_width = self.length*0.01 + self.outline*2.5
                 # don't let it be smaller than the end!
                 base_r = max(base_r, self.length * 0.1 / 2)
                 if rounded_second_hand:
@@ -1420,9 +1420,10 @@ class Hands:
             print("Outputting ", out)
             exporters.export(self.getHand(hand_type=HandType.SECOND, colour=colour), out)
 
-        out = os.path.join(path, "{}_hand_nut.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.getHandNut(), out)
+        # this does exist, but I've never used it in anger and have since been using domed nuts on the end instead
+        # out = os.path.join(path, "{}_hand_nut.stl".format(name))
+        # print("Outputting ", out)
+        # exporters.export(self.getHandNut(), out)
 
         if self.outline > 0:
             out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))

@@ -494,6 +494,7 @@ if True:
     #Arial looks neat, mono looks typewritten! Miriam CLM possibly better than Arial
     # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None, outer_edge_style=DialStyle.DOTS)
     dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
+    # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Wingding", font_scale=0.8, font_path="C:\\WINDOWS\\FONTS\\WINGDING.TFF", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
     dial.configure_dimensions(support_length=10, support_d=21.7)
     # dial = Dial(200, DialStyle.ARABIC_NUMBERS, font="Miriam CLM", outer_edge_style=DialStyle.RING, inner_edge_style=DialStyle.DOTS)
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Times New Roman", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None)
@@ -505,10 +506,10 @@ if True:
     motionWorks=MotionWorks(compensate_loose_arbour=True, compact= True, bearing=get_bearing_info(3))
 
     hands = Hands(style=HandStyle.SIMPLE_POINTED, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
-                        hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outlineSameAsBody=False,
+                        hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False,
                         second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
 
-    hands.show_hands(show_object=show_object, hand_colours=["black", "black", "red"])
+    hands.show_hands(show_object=show_object, hand_colours=["white", "black", "red"])
 # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None, outer_edge_style=DialStyle.DOTS)
 # motionWorks = MotionWorks(compensate_loose_arbour=True, compact=True, bearing=get_bearing_info(3))
 #

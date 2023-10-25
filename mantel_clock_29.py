@@ -105,8 +105,8 @@ plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 29", dial=dial
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
 #would like sword, need to fix second hand outline for it
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_POINTED, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, chunky=True,
-                    outline_on_seconds=1, second_hand_centred=True)#,  secondFixing_d=clock.get_diameter_for_die_cutting(3))
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outlineSameAsBody=False, chunky=True,
+                    seconds_hand_thick=motionWorks.minute_hand_slot_height/2, second_hand_centred=True)#,  secondFixing_d=clock.get_diameter_for_die_cutting(3))
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 
@@ -121,7 +121,7 @@ assembly.get_arbour_rod_lengths()
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.WHITE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.BLACK, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.WHITE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS])
 
 # show_object(plates.getDrillTemplate(6))

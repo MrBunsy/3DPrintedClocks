@@ -46,11 +46,11 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 lift=2
 drop=3
 lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
                                     toothBaseAngle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
 #escape wheel this way around allows for a slightly larger diameter
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=7 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False)
+train = clock.GoingTrain(pendulum_length_m=0.15, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+                         runtime_hours=7 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
 
 barrel_gear_thick = 8
 
@@ -61,9 +61,11 @@ moduleReduction=0.9#0.85
 #[[61, 10], [62, 10]] auto generated but putting here to save time
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick,
                         chain_wheel_ratios=[[61, 10], [62, 10]])#[[66, 10], [76,13]])#, [[61, 10], [62, 10]]
-# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True,
-#                       penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
-train.set_ratios([[75, 9], [72, 10], [60, 24]])
+#TODO new option to favour large escape wheel?
+# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True,
+#                        penultimate_wheel_min_ratio = 0.8)
+                      # penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
+train.set_ratios([[58, 9], [58, 11], [50, 11]])
 
 
 
@@ -83,18 +85,17 @@ train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thic
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, bearing=clock.get_bearing_info(3))#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
-dial = clock.Dial(outside_d=160, bottom_fixing=False, top_fixing=True, style=clock.DialStyle.ARABIC_NUMBERS, font="Comic Sans MS", outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES,
-                  inner_edge_style=clock.DialStyle.RING, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=190, bottom_fixing=False, top_fixing=True, font="Gill Sans Medium", style=clock.DialStyle.ARABIC_NUMBERS, font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.LINES_ARC, outer_edge_style=None)
 # dial=None
 
 plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
-                                 motion_works_angle_deg=180+50, centred_second_hand=True, layer_thick=0.4   )
+                                 motion_works_angle_deg=180+50, layer_thick=0.4)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

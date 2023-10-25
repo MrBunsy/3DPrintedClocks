@@ -2885,7 +2885,7 @@ class MotionWorks:
         return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannon_pinion_pinion_thick, offset_z=self.pinion_cap_thick)
 
 
-    def getCannonPinion(self):
+    def getCannonPinion(self, hand_holder_radius_adjustment=1.0):
 
         pinion_max_r = self.pairs[0].pinion.get_max_radius()
 
@@ -2927,8 +2927,8 @@ class MotionWorks:
             # -0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
             # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
             #INFO - HANDS ADD 0.2 TO THIS for the hole in the hand
-            holderR_base = self.minute_hand_holder_size / 2 + 0.05
-            holderR_top = self.minute_hand_holder_size / 2 - 0.15
+            holderR_base = (self.minute_hand_holder_size / 2 + 0.05) * hand_holder_radius_adjustment
+            holderR_top = (self.minute_hand_holder_size / 2 - 0.15) * hand_holder_radius_adjustment
 
             circle = cq.Workplane("XY").circle(holder_r)
             holder = cq.Workplane("XZ").lineTo(holderR_base, 0).lineTo(holderR_top, self.minute_hand_slot_height).lineTo(0, self.minute_hand_slot_height).close().sweep(circle)#.translate((0, 0, self.thick))
@@ -3043,6 +3043,10 @@ class MotionWorks:
         out = os.path.join(path, "{}_motion_cannon_pinion.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.getCannonPinion(), out)
+
+        out = os.path.join(path, "{}_motion_cannon_pinion_x1.015.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.getCannonPinion(hand_holder_radius_adjustment=1.015), out)
 
         out = os.path.join(path, "{}_motion_arbour.stl".format(name))
         print("Outputting ", out)

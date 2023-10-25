@@ -86,7 +86,7 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 
 class GoingTrain:
 
-    def __init__(self, pendulum_period=-1, pendulum_length=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
+    def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
                  escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio = 1, support_second_hand=False):
         '''
 
@@ -130,7 +130,7 @@ class GoingTrain:
         #in seconds
         self.pendulum_period = pendulum_period
         #in metres
-        self.pendulum_length = pendulum_length
+        self.pendulum_length = pendulum_length_m
 
         #was experimenting with having the minute wheel outside the powered wheel to escapement train - but I think it's a dead
         #end as it will end up with some slop if it's not in the train
@@ -141,11 +141,11 @@ class GoingTrain:
         self.huygens_maintaining_power = huygens_maintaining_power
         self.arbours = []
 
-        if pendulum_length < 0 and pendulum_period > 0:
+        if pendulum_length_m < 0 and pendulum_period > 0:
             #calulate length from period
             self.pendulum_length = getPendulumLength(pendulum_period)
-        elif pendulum_period < 0 and pendulum_length > 0:
-            self.pendulum_period = getPendulumPeriod(pendulum_length)
+        elif pendulum_period < 0 and pendulum_length_m > 0:
+            self.pendulum_period = getPendulumPeriod(pendulum_length_m)
         else:
             raise ValueError("Must provide either pendulum length or perioud, not neither or both")
 
@@ -1257,12 +1257,11 @@ class MoonHolder:
 
 class SimpleClockPlates:
     '''
-    This took a while to settle - clocks before v4 will be unlikely to work anymore.
+    This took a while to settle - clocks before wall_clock_4 will be unlikely to work anymore.
 
-    Given that the simple plate is the only working implementation, would it make more sense to turn this class into the SimpleClockPlates?
+    This produces viable simple wall clocks and also supports being extended for other types of clock plate
 
-    Any future plates are likely to be be very different in terms out laying out gears, and anything that is needed can always be spun out
-    endshake of 1.5 worthwhile for larger clocks
+    TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
     '''
     def __init__(self, going_train, motion_works, pendulum, style=ClockPlateStyle.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
@@ -3651,6 +3650,7 @@ class MantelClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
+        #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
@@ -3950,6 +3950,20 @@ class MantelClockPlates(SimpleClockPlates):
 
 
         return pillar
+
+class StrikingClockPlates(SimpleClockPlates):
+    '''
+    Striking clock plates, undecided yet if they'll be shelf mounted or wall mounted. I'll see how large they end up being first
+    '''
+
+    def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
+                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK):
+        super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
+                         pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
+                         centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
+                         layer_thick=layer_thick)
 
 class Assembly:
     '''
