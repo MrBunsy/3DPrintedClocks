@@ -393,8 +393,9 @@ class Dial:
 
     using filament switching to change colours so the supports can be printed to the back of the dial
     '''
-    def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True, bottom_fixing=False, hand_hole_d=18,
-                 detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None):
+    def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
+                 bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
+                 minutes_only=False, seconds_only=False, dial_width=-1):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -422,6 +423,12 @@ class Dial:
         #bit of a bodge, for tony the detail is in yellow so I need it thicker (my yellow is really translucent)
         self.extras_thick = extras_thick
 
+        #for clocks without all hands on the same dial, or without sub-seconds dial?
+        #the default assumption is this dial has a minute and hour hand and a sub-seconds hand.
+        #these settings override that
+        self.hours_only = hours_only
+        self.seconds_only = seconds_only
+        self.minutes_only = minutes_only
 
         #something for debugging
         self.configure_dimensions(support_length=30, support_d=15, outside_d=outside_d)
@@ -625,7 +632,7 @@ class Dial:
         numeral_r = centre_r - outer_ring_width/2
         numbers = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
         detail = cq.Workplane("XY")
-        numeral_height = dial_width - 2*from_edge - outer_ring_width
+        numeral_height = (dial_width - 2*from_edge - outer_ring_width)*self.font_scale
 
         if self.font is not None:
             #if font, use that, otherwise use the old hand-written cuckoo numerals
@@ -653,9 +660,58 @@ class Dial:
 
         return detail
 
-    def get_lines_detail(self, outer_r, dial_width, from_edge, thick_fives=True):
+    def get_lines_detail(self, outer_r, dial_width, from_edge, thick_indicators=False, long_indicators=False, total_lines=60, inner_ring=False, outer_ring=False):
+        '''
+        Intended to be used on the congrieve rolling ball clock, where there are separate dials for the hours and seconds
+        so if total lines is 48 the long indicator is for the half hours
+        '''
+        r = outer_r
+        line_inner_r = outer_r - dial_width + from_edge
+        line_outer_r = r - from_edge
+
+        total_lines
+
+        dA = math.pi * 2 / total_lines
+
+        big_line_thick = 2
+        small_line_thick = 1
+
+        short_line_length = line_outer_r - line_inner_r
+        long_line_length = short_line_length * 2
+
+        detail = cq.Workplane("XY").tag("base")
+
+        #every fifth line usually, but if we're an hours dial (48 marks for each quarter hour) highlight the half hours
+        indicators_on = 4 if total_lines == 48 else 5
+        indicators_offset = 2 if total_lines == 48 else 0
+
+        for i in range(total_lines):
+            line_thick = small_line_thick
+            if i % indicators_on == indicators_offset and thick_indicators:
+                line_thick = big_line_thick
+
+            centre_r = (line_inner_r + line_outer_r) / 2
+            line_length = short_line_length
+            if i % indicators_on == indicators_offset and long_indicators:
+                line_length = long_line_length
+                if inner_ring:
+                    centre_r = line_inner_r + line_length/2
+                elif outer_ring:
+                    centre_r = line_outer_r - line_length/2
+                #else leave in centre
+
+            angle = math.pi / 2 - i * dA
+
+            line = cq.Workplane("XY").moveTo(centre_r, 0).rect(line_length,line_thick).extrude(self.detail_thick)
+
+            detail = detail.add(line.rotate((0,0,0),(0,0,1),radToDeg(angle)))
+
+        return detail
+
+    def get_arcs_detail(self, outer_r, dial_width, from_edge, thick_fives=True):
         '''
         In the style of standalone lines for each minute, with the five minutes thicker
+        "arcs" because they're wider on the outside, for just straight lines use get_lines_detail
 
         get the bits to be printed in a different colour
         '''
@@ -717,9 +773,18 @@ class Dial:
                 return 0.8
             return self.dial_width*0.2
     
-    def get_style_for_dial(self, style, outer_r, width, detail_from_edges):
+    def get_style_for_dial(self, style, outer_r, width, detail_from_edges, inner_ring = False, outer_ring = False):
+
+        total_markers = 60
+        if self.hours_only:
+            total_markers = 48
+
         if style == DialStyle.LINES_ARC:
-            return self.get_lines_detail(outer_r, width, detail_from_edges)
+            return self.get_arcs_detail(outer_r, width, detail_from_edges)
+        elif style == DialStyle.LINES_RECT:
+            return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, thick_indicators=True, inner_ring=inner_ring, outer_ring = outer_ring)
+        elif style == DialStyle.LINES_RECT_LONG_INDICATORS:
+            return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, long_indicators=True, inner_ring=inner_ring, outer_ring = outer_ring)
         elif style == DialStyle.CONCENTRIC_CIRCLES:
             return self.get_concentric_circles_detail(outer_r, width, detail_from_edges, thick_fives=True)
         elif style == DialStyle.ROMAN:
@@ -727,7 +792,7 @@ class Dial:
         elif style == DialStyle.DOTS:
             return self.get_dots_detail(outer_r, width)
         elif style == DialStyle.ARABIC_NUMBERS:
-            return self.get_numbers_detail(outer_r, width, detail_from_edges)
+            return self.get_numbers_detail(outer_r, width, detail_from_edges, minutes=self.minutes_only, seconds= self.seconds_only)
         elif style == DialStyle.ROMAN_NUMERALS:
             return self.get_roman_numerals_detail(outer_r, width, detail_from_edges, with_lines=False)
         elif style == DialStyle.RING:
@@ -760,26 +825,33 @@ class Dial:
 
         main_style_dial_width -= inner_width
 
-        main_style = self.get_style_for_dial(self.style, main_style_outer_r, main_style_dial_width, main_style_detail_from_edges)
+        if self.style is not None:
+            main_style = self.get_style_for_dial(self.style, main_style_outer_r, main_style_dial_width, main_style_detail_from_edges)
+        else:
+            main_style = cq.Workplane("XY")
 
         dial = main_style
 
         if self.outer_edge_style is not None:
-            dial = dial.union(self.get_style_for_dial(self.outer_edge_style, self.outside_d/2, outer_width, 0))
+            dial = dial.union(self.get_style_for_dial(self.outer_edge_style, self.outside_d/2, outer_width, 0, outer_ring=True))
         if self.inner_edge_style is not None:
-            dial = dial.union(self.get_style_for_dial(self.inner_edge_style, main_style_outer_r - main_style_dial_width, inner_width, 0))
+            dial = dial.union(self.get_style_for_dial(self.inner_edge_style, main_style_outer_r - main_style_dial_width, inner_width, 0, inner_ring=True))
 
         return dial
 
-    def get_numbers_detail(self, outer_r, dial_width, dial_detail_from_edges):
+    def get_numbers_detail(self, outer_r, dial_width, dial_detail_from_edges, minutes=False, seconds=False):
 
         font = self.font
         if self.font is None:
             font = "Arial"
 
+        numbers = [str(i) for i in range(1, 13)]
+        if minutes or seconds:
+            numbers = [str(i) for i in range(5, 65, 5)]
+
         centre_r = outer_r - dial_width/2
         number_height = (dial_width - dial_detail_from_edges*2)*self.font_scale
-        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=str(i), thick=self.detail_thick, font=font, font_path=self.font_path) for i in range(1,13)]
+        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=numbers[i], thick=self.detail_thick, font=font, font_path=self.font_path) for i in range(12)]
 
         max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 
@@ -788,6 +860,8 @@ class Dial:
 
         dial = cq.Workplane("XY")
         for i in range(12):
+            if seconds and i not in [5,11]:
+                continue
             angle = math.pi/2 + (i+1)*math.pi*2/12
             number_spaces[i].x, number_spaces[i].y = polar(angle, centre_r)
             # dial = dial.add(number_spaces[i].get_text_shape().rotate((0,0,0),(0,0,1), radToDeg(angle+math.pi/2)).translate(polar(angle, centre_r)))
@@ -800,7 +874,7 @@ class Dial:
     def get_seconds_dial_detail(self):
         dial = None
         if self.seconds_style == DialStyle.LINES_ARC:
-            dial = self.get_lines_detail(outer_r=self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
+            dial = self.get_arcs_detail(outer_r=self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
         elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
             dial = self.get_concentric_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
 

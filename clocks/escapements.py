@@ -2385,6 +2385,10 @@ class RollingBallEscapement:
 
         self.gen_track_parts()
 
+    def get_period(self):
+        #TODO
+        return 5
+
     def get_track(self):
         return self.track
 

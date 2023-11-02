@@ -486,7 +486,7 @@ if False:
     show_object(pretty_bob.get_models())
 
 
-if True:
+if False:
     #Tahoma might be a good font for arabic numbers?
     #this one is fun:
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
@@ -510,6 +510,28 @@ if True:
                         second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
 
     hands.show_hands(show_object=show_object, hand_colours=["white", "black", "red"])
+
+
+if True:
+    #experiments for rolling ball
+    #not the right font, but might still use it for the minutes
+    dial_minutes = Dial(150, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=DialStyle.LINES_RECT, minutes_only=True)
+    #looks good for the hours
+    dial_hours = Dial(100, DialStyle.ROMAN_NUMERALS, font="Times New Roman", font_scale=0.8, inner_edge_style=DialStyle.LINES_RECT_LONG_INDICATORS, hours_only=True)
+
+    dial_seconds = Dial(100, inner_edge_style=DialStyle.LINES_RECT_LONG_INDICATORS, style=DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8,
+                        font_path="../fonts/GillSans/Gill Sans Medium.otf", seconds_only=True)
+
+    # dial.configure_dimensions(support_length=10, support_d=21.7)
+
+    def show_dial(dial, position):
+        show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(position), options={"color":"white"} )
+        show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180).translate(position), options={"color": Colour.BRASS} )
+
+    show_dial(dial_hours, (-130,0,0))
+    show_dial(dial_minutes, (0, 0, 0))
+    show_dial(dial_seconds, (130, 0, 0))
+
 # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None, outer_edge_style=DialStyle.DOTS)
 # motionWorks = MotionWorks(compensate_loose_arbour=True, compact=True, bearing=get_bearing_info(3))
 #

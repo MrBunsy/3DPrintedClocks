@@ -162,10 +162,20 @@ class PowerType(Enum):
         return not PowerType.is_weight(type)
 
 class DialStyle(Enum):
+    '''
+    Thoughts, there's lots here that could be abstracted out into options for the dial as a whole, rather than separate styles
+    for example, shoudl hours_only, seconds_only, minutes_only be options to the dial, rather than styles?
+    '''
     #simple lines that are actually slightly wedge shaped
     LINES_ARC = "lines_arc"
     #simple lines that are just rectangles
-    # LINES_RECT = "lines_rect"
+    LINES_RECT = "lines_rect"
+    #same but long indicators rather than thick indicators
+    LINES_RECT_LONG_INDICATORS = "lines_rect_long"
+    #same but for an hours-only dial
+    # LINES_RECT_HOURS = "lines_rect_hours"
+    # #same but for a seconds-only dial
+    # LINES_RECT_SECONDS = "lines_rect_seconds"
     #deprecated, replaced with ROMAN_NUMERALS as main style and CONCENTRIC_CIRCLES as outer edge style
     ROMAN = "roman"
     #flat cuckoo style (not the fully 3D cuckoo style in cuckoo bits)
@@ -177,6 +187,8 @@ class DialStyle(Enum):
     TONY_THE_CLOCK="tony_the_clock"
     #just numbers
     ARABIC_NUMBERS= "simple_arabic"
+    # ARABIC_NUMBERS_MINUTES = "simple_arabic_minutes"
+    # ARABIC_NUMBERS_SECONDS = "simple_arabic_seconds"
     #just roman numerals
     ROMAN_NUMERALS = "roman_numerals"
     #just a solid ring
