@@ -33,7 +33,9 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="mantel_clock_27b"
+#b was reprinting the escapement
+#c is reprinting the dial (note, hard coded +1 to the dial support length as this has changed)
+clockName="mantel_clock_27c"
 clockOutDir="out"
 gearStyle=clock.GearStyle.FLOWER
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -92,7 +94,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #as printed
 # dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 #if I were to print again
-dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.9, font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 
 # dial=None
 

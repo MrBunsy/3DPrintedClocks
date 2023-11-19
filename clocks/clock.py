@@ -3951,20 +3951,62 @@ class MantelClockPlates(SimpleClockPlates):
 
         return pillar
 
-class RollingBallClockPlates(SimpleClockPlates):
-    def __init__(self, going_train, motion_works, plate_thick=6, back_plate_thick=None, pendulum_sticks_out=0, name="",dial=None, second_hand=True,
-                 layer_thick=0.4):
 
-        super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
-                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
-                         pendulum_at_front=False, back_plate_from_wall=0, fixing_screws=MachineScrew(4, countersunk=True),
-                         centred_second_hand=False, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2,
-                         second_hand=second_hand, motion_works_angle_deg=math.pi, endshake=1.5, compact_zigzag=True, screws_from_back=None,
-                         layer_thick=layer_thick)
+class RollingBallClock(SimpleClockPlates):
+    '''
+    Doing more than just the plates, this will create dials and hands and trains too
+    '''
 
-        self.narrow_bottom_pillar=False
-        self.little_arm_to_motion_works=False
-        self.pillar_screwhole_r = self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)
+
+    def __init__(self, name="",layer_thick=0.4):
+        '''
+        plan:
+
+        new type of motion works where the hands are fixed to the rod and we use a "clutch" to enable adjusting the hands
+        then can use "real" arbors within the plates to hold the hour hand
+        This will mean the motion works isn't visible on the front plate and the hands can be close to the front plate (so the dial can be printed as part of teh front plate)
+
+        Assuming a user-provided going train we can then calculate the size required for the motion works so the seconds and hour dials are equally spaced
+
+        Plan is to support two spring barrels, both at an angle underneath the minute wheel. I'll see if one spring is enough to power the clock, and if it isn't
+        I can then easily double the power by adding in the second barrel
+
+        I'm not worried about the exact timing of the ball on teh tray - since this clock has a second hand I can just adjust the ratio of the final wheel-pinion pair
+        just like I would on a short pendulum clock.
+        It would be ideal if the "escape wheel" rotated at 1rpm, then the plates could be more symetric. Maybe worth thinking about that a bit more.
+        Or maybe have the esacpe wheel at 90deg below the seconds dial? or does it matter if the arbors aren't symetric so long as the plates are?
+
+
+        TODO new fixing for hands with a nut embedded in teh back of the hands? one nut behind and a dome nut in front should be enough to fix them rigidly to the rod
+
+        '''
+
+        # super().__init__(self.gen_going_train(), motion_works=None, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+        #                  pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
+        #                  pendulum_at_front=False, back_plate_from_wall=0, fixing_screws=MachineScrew(4, countersunk=True),
+        #                  centred_second_hand=False, pillars_separate=True, dial=None, bottom_pillars=2, top_pillars=2,
+        #                  second_hand=second_hand, motion_works_angle_deg=math.pi, endshake=1.5, compact_zigzag=True, screws_from_back=None,
+        #                  layer_thick=layer_thick)
+        #
+        # self.narrow_bottom_pillar=False
+        # self.little_arm_to_motion_works=False
+        # self.pillar_screwhole_r = self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)
+
+
+    def gen_going_train(self):
+        return None
+
+    def gen_dials(self):
+        #TODO work with generating the train to
+
+        self.dial_minutes = Dial(150, DialStyle.ARABIC_NUMBERS, dial_width=20, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf",
+                                 inner_edge_style=DialStyle.LINES_RECT, minutes_only=True, top_fixing=False, bottom_fixing=False)
+        # looks good for the hours
+        self.dial_hours = Dial(100, DialStyle.ROMAN_NUMERALS, dial_width=15, font="Times New Roman", font_scale=0.6, inner_edge_style=DialStyle.LINES_RECT_LONG_INDICATORS, hours_only=True,
+                               top_fixing=False, bottom_fixing=False)
+
+        self.dial_seconds = Dial(100, dial_width=15, inner_edge_style=DialStyle.LINES_RECT_LONG_INDICATORS, style=DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.9,
+                                 font_path="../fonts/GillSans/Gill Sans Medium.otf", seconds_only=True, top_fixing=False, bottom_fixing=False)
 
     def calc_pillar_info(self):
         '''

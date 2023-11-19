@@ -430,8 +430,14 @@ class Dial:
         self.seconds_only = seconds_only
         self.minutes_only = minutes_only
 
-        #something for debugging
-        self.configure_dimensions(support_length=30, support_d=15, outside_d=outside_d)
+        #if -1 this will be overriden in configure_dimensions
+        self.dial_width = dial_width
+        #backwards compatibiltiy with things that relied on teh minimum dial width being 15mm:
+        hacky_default_support_d = 5
+        if self.dial_width < 0:
+            hacky_default_support_d = 15
+        #usually called by Plates class, but do it here so something exists without plates
+        self.configure_dimensions(support_length=30, support_d=hacky_default_support_d, outside_d=outside_d)
 
         #overrides for the default fixing screw and pillar positions DEPRECATED, switching to configuring whole pillars instead
         self.fixing_positions = []
@@ -468,13 +474,14 @@ class Dial:
         since the dimensions aren't known until the plates have been calculated, the main constructor is for storing the style and this actually sets the size
         Bit of a bodge, but the obvious alternative is to pass all the dial settings into clocks plates (or a new class for dial config?)
         '''
-        self.support_length = support_length
+        self.support_length = support_length + 1
 
         self.support_d = support_d
         if outside_d > 0:
             self.outside_d = outside_d
-            # else leave the default
-            self.dial_width = self.outside_d * 0.1
+            if self.dial_width < 0:
+                # else leave the default
+                self.dial_width = self.outside_d * 0.1
 
         # when the second hand is here relative to the centre of the main hands
         self.second_hand_relative_pos = second_hand_relative_pos

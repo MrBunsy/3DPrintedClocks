@@ -232,3 +232,209 @@ class StrikeTrigger:
 #
 #
 #         return rack
+
+
+class Whistle:
+    '''
+
+    Taken from CuckooWhistle and improved here - the old class was one of the first caquery bits I'd written and I'd like to overhaul it
+
+    The whistle and chamber are one part, then teh bellows is in two parts which must have the tyvek attached and then glued to the top of the whistle
+    I could include the base of the bellows in the whistle, but I think that would make the bellows hard to glue the tyvek
+
+    Very much based on teh whistle built in this thread https://mb.nawcc.org/threads/how-to-diy-a-wooden-whistle.97498/
+
+    '''
+    def __init__(self, chamber_length=45, harmonics=1, text=None):
+        self.whistle_top_length = 20
+        self.total_length=chamber_length + self.whistle_top_length
+
+        #how many chambers to add? Plan is for two for a train whistle
+        self.harmonics = harmonics
+
+        self.chamber_length = chamber_length
+
+        self.whistle_wall_thick=3
+        self.wall_thick = 3
+        self.chamber_outside_width=22
+        #taken by generating a trend line from all the commercial sizes of bellows I could find.
+        #completely over the top I expect
+        self.bellow_length=0.25*self.total_length + 25
+        self.bellow_width = 0.1*self.total_length + 25
+        self.hole_d = 8
+
+        #bellow offset from the side so that this whistle can be attached to the wall of a clock case without getting caught
+        self.bellow_offset=5
+        self.bellow_top_thick = 9.5
+        self.bellow_bottom_thick = 3.5
+        self.bellow_fabric_extra=7
+
+        self.top_chamber_height = 3
+
+        self.divider_thick=1
+
+        #old £1 coin for the weight on the top of the bellows
+        self.weight_d = 23
+        self.weight_thick = 3.2
+        self.text = text
+
+        print("bellow width: {} length: {}".format(self.bellow_width,self.bellow_length))
+
+        #TODO measure how much shorter the main chamber needs to be for the second whistle and then both can be printed
+
+    def get_bellow_bottom(self):
+        '''
+        bellow top and bottom is in the +ve quadrant with the bottom left corner at 0,0
+        '''
+        thick = self.bellow_bottom_thick
+
+        base = cq.Workplane("XY").line(self.bellow_width,0).line(0,self.bellow_length).line(-self.bellow_width,0).close().extrude(thick)
+        #hole for the whistle
+        base = base.faces(">Z").workplane().moveTo(self.chamber_outside_width / 2 - self.bellow_offset, self.chamber_outside_width / 2).circle(self.hole_d / 2).cutThruAll()
+        return base
+
+    def get_bellow_top(self):
+        thick = self.bellow_top_thick
+
+
+        top = cq.Workplane("XY").tag("base").line(self.bellow_width, 0).line(0, self.bellow_length).line(-self.bellow_width, 0).close().extrude(thick)
+
+        gap = (self.bellow_width-self.weight_d)/2
+
+        top = top.faces(">Z").workplane().moveTo(self.bellow_width/2, gap+self.weight_d/2).circle(self.weight_d/2).cutThruAll()
+
+        top = top.workplaneFromTagged("base").line(self.bellow_width, 0).line(0, self.bellow_length).line(-self.bellow_width, 0).close().extrude(thick-self.weight_thick)
+
+        return top
+
+    def get_whole_whistle(self, with_base=True):
+        '''
+
+        :param with_base: if False the base of the whistle is oen-ended
+        :param high_pitched: If True, the whistle chamber is smaller
+        :return:
+        '''
+        whistle = self.get_whistle_top()
+        # body
+        whistle = whistle.faces(">X").workplane().moveTo(0, -self.chamber_outside_width / 2 + self.whistle_wall_thick).rect(self.chamber_outside_width, self.chamber_outside_width).rect(self.chamber_outside_width - self.wall_thick * 2, self.chamber_outside_width - self.wall_thick * 2).extrude(self.chamber_length)
+
+        if with_base:
+            whistle = whistle.faces(">X").workplane()
+
+            whistle = whistle.moveTo(0, -self.chamber_outside_width / 2 + self.whistle_wall_thick).rect(self.chamber_outside_width, self.chamber_outside_width).extrude(self.whistle_wall_thick)
+
+        if self.text is not None:
+            textspace = TextSpace(x=self.total_length/2 - self.whistle_top_length/2, y=0, width = self.chamber_outside_width, height=self.total_length, text=self.text,
+                                  horizontal=True, inverted=False)
+
+            #.moveTo(self.highPitchedShorter, self.wall_thick/2).move(-self.total_length/2,-self.pipe_width/2)
+            whistle = whistle.union(textspace.get_text_shape().rotate((0,-self.chamber_outside_width/2,0),(-1,-self.chamber_outside_width/2,0),-90))
+            # whistle = cq.Workplane("XY").text(txt=text, fontsize=self.pipe_width*0.6,distance=0.2)
+
+
+        if self.harmonics == 2:
+            #TODO worth making generic for any number of harmonics? am I ever going to want more than 2?
+
+            whistle_top_thick = (self.wall_thick*2 + self.top_chamber_height)
+
+            inner_chamber_length = self.total_length - whistle_top_thick
+            inner_chamber_width = self.chamber_outside_width - self.wall_thick * 2
+
+            divider = cq.Workplane("XY").rect(inner_chamber_length, inner_chamber_width).extrude(self.divider_thick).translate(
+                (self.total_length / 2 - self.whistle_top_length / 2 + whistle_top_thick / 2, 0, self.chamber_outside_width / 2 - self.divider_thick / 2))
+
+            filler = cq.Workplane("XY").rect(inner_chamber_length/2, inner_chamber_width).extrude(inner_chamber_width/2).translate(
+                (self.total_length - self.whistle_top_length/2 - inner_chamber_length/4, 0, self.wall_thick))
+
+            divider = divider.union(filler)
+
+            whistle = whistle.union(divider)
+
+        return whistle
+
+    def get_body(self):
+        chamber = cq.Workplane("XY").rect(self.chamber_outside_width, self.chamber_outside_width).rect(self.chamber_outside_width - self.wall_thick * 2, self.chamber_outside_width - self.wall_thick * 2).extrude(self.total_length - self.whistle_top_length)
+        # chamber = chamber.faces(">Z").workplane().cutThruAll()
+
+        #in a pair of old wooden whistles, the differnce in sizes appears to be: 16x21 inner size, height of 4mm
+
+        return chamber
+
+    def get_whistle_top(self):
+        wedge_depth=3
+        hole_d=self.hole_d
+        #0.025" (aprox 0.6mm)
+        #later comments suggest thinner is louder, so although 0.6 worked fine I'm going to try smaller
+        wedge_end_thick = 0.25
+        #~0.03" the bit that focuses the air onto the wedge
+        #0.8 was too big - needs lots of airflow to whistle
+        #0.2 is too small - needs a lot of weight to make a noise
+        #0.6 works but I think the whistle is too short
+        #0.4 sounds promising but needs testing in a clock
+        airgap = 0.4#0.4
+        #first internal chamber - before the wedge
+        top_chamber_height=self.top_chamber_height
+        #I think I measured this from a real whistle, it seems to work, so leaving it be
+        exit_gap = 2.3
+        #building the whistle on its side, hoping the wedge shape can be printed side-on
+        #I drew this side-on so x is the height of the whistle and y is the width of the whistle.
+
+        airgap_wedge_tip_width=0.25
+        airgap_wedge_end_width=self.whistle_wall_thick*0.3
+
+        #just to make the following bit less verbose
+        w = self.whistle_top_length
+        h=self.chamber_outside_width
+        wall = self.whistle_wall_thick
+
+        top=cq.Workplane("XY").rect(w, h).extrude(wall)
+        #the wedge
+        top = top.faces(">Z").workplane().tag("whistle").moveTo(w/2,h/2).lineTo(-w/2+wall*2+top_chamber_height+exit_gap,h/2-wedge_depth+wedge_end_thick).\
+            line(0,-wedge_end_thick).lineTo(w/2,h/2-wedge_depth).close().extrude(h-wall*2)
+        #top cap
+        top = top.workplaneFromTagged("whistle").moveTo(-w/2+wall/2,0).rect(wall,h).extrude(h-wall*2)
+        #hole in top cap
+        #this seems to place us at wall height
+        top = top.faces("<X").workplane().moveTo(0, (self.chamber_outside_width - wall * 2) / 2).circle(hole_d / 2).cutThruAll()
+        #bit that forces the air over the wedge
+        top = top.workplaneFromTagged("whistle").moveTo(-w / 2 + wall, h/2).line(wall+top_chamber_height,0).line(0,-wedge_depth).line(-(wall+top_chamber_height),0).close().extrude(h-wall*2)
+        #top chamber and other wall
+        top = (top.workplaneFromTagged("whistle").moveTo(w/2,-h/2).line(-w+wall,0).line(0,wall).line(top_chamber_height,0).lineTo(-w/2+wall+top_chamber_height,h/2-wedge_depth-airgap - airgap_wedge_end_width)
+               .line(wall - airgap_wedge_tip_width,airgap_wedge_end_width).line(airgap_wedge_tip_width,0).lineTo(-w/2+wall*2+top_chamber_height,-h/2+wall).lineTo(w/2,-h/2+wall).close().extrude(h-wall*2))
+
+        # and the final wall (comment this out to see inside the whistle)
+        top = top.faces(">Z").workplane().tag("pretweak").rect(w, h).extrude(wall)
+        fudge = 0.5
+
+        #add a ledge so it's easier to line up the bellows
+        top = top.faces("<X").workplane().move(0, self.wall_thick - self.chamber_outside_width / 2).move(-self.chamber_outside_width / 2 + self.bellow_offset / 2 - fudge / 2, 0).rect(self.bellow_offset - 0.5, self.chamber_outside_width).extrude(0.2)
+
+        # top = top.workplaneFromTagged("pretweak")
+
+
+        return top
+
+    def get_bellows_template(self):
+
+        #to improve - make height tiny bit shorter than width of the square in the middle
+        #make top and bottom overlap exactly same size as the bellow thickenss to make lining up for gluing easier
+        #consider how much extra to allow for overlap on the hinge - do I want rounded?
+
+        #tip of the triangle
+        # angle = math.asin((self.bellow_width/2)/self.bellow_length)
+        # extra_y = self.bellow_fabric_extra*math.cos(angle)
+        # extra_top_x = self.bellow_fabric_extra*math.sin(angle)
+        tip_x = math.sqrt(math.pow(self.bellow_length,2) - math.pow(self.bellow_width/2,2)) + self.bellow_width/2
+        print("x :{}".format(tip_x))
+        # #could work this out properly...
+        # extra_x = self.bellow_fabric_extra*3
+
+        # template = cq.Workplane("XY").moveTo(-self.bellow_width/2-extra_top_x,self.bellow_width/2 + extra_y).line(self.bellow_width+extra_top_x*2,0).lineTo(tip_x)
+
+        template = cq.Workplane("XY").moveTo(-self.bellow_width / 2, self.bellow_width / 2 + self.bellow_fabric_extra).line(self.bellow_width, 0).lineTo(tip_x + self.bellow_width * 0.33, 0).\
+            lineTo(self.bellow_width / 2, -self.bellow_width / 2 - self.bellow_fabric_extra).line(-self.bellow_width, 0).lineTo(-tip_x - self.bellow_width * 0.4, 0).close().moveTo(0, 0).rect(self.bellow_width, self.bellow_width).extrude(1)
+
+        # template = cq.Workplane("XY").moveTo(-self.bellow_width / 2, self.bellow_width / 2 + self.bellow_fabric_extra).line(self.bellow_width,0).lineTo(tip_x+self.bellow_width*0.33,self.bellow_fabric_extra*0.75).tangentArcPoint([tip_x+self.bellow_width*0.33,-self.bellow_fabric_extra*0.75],relative=False).\
+        #     lineTo(self.bellow_width/2,-self.bellow_width/2-self.bellow_fabric_extra).line(-self.bellow_width,0).lineTo(-tip_x-self.bellow_width*0.4,0).close().moveTo(0,0).rect(self.bellow_width,self.bellow_width).extrude(1)
+
+        return template
