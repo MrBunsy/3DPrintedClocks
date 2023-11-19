@@ -337,8 +337,9 @@ class Whistle:
 
             whistle_top_thick = (self.wall_thick*2 + self.top_chamber_height)
 
-            inner_chamber_length = self.total_length - whistle_top_thick
-            inner_chamber_width = self.chamber_outside_width - self.wall_thick * 2
+            #plus some extra for fudge factor so the slicer connects the divider with the whistle bits
+            inner_chamber_length = self.total_length - whistle_top_thick + 1
+            inner_chamber_width = self.chamber_outside_width - self.wall_thick * 2 + 1
 
             divider = cq.Workplane("XY").rect(inner_chamber_length, inner_chamber_width).extrude(self.divider_thick).translate(
                 (self.total_length / 2 - self.whistle_top_length / 2 + whistle_top_thick / 2, 0, self.chamber_outside_width / 2 - self.divider_thick / 2))
@@ -365,7 +366,7 @@ class Whistle:
         hole_d=self.hole_d
         #0.025" (aprox 0.6mm)
         #later comments suggest thinner is louder, so although 0.6 worked fine I'm going to try smaller
-        wedge_end_thick = 0.25
+        wedge_end_thick = 0.4
         #~0.03" the bit that focuses the air onto the wedge
         #0.8 was too big - needs lots of airflow to whistle
         #0.2 is too small - needs a lot of weight to make a noise
@@ -379,7 +380,7 @@ class Whistle:
         #building the whistle on its side, hoping the wedge shape can be printed side-on
         #I drew this side-on so x is the height of the whistle and y is the width of the whistle.
 
-        airgap_wedge_tip_width=0.25
+        airgap_wedge_tip_width=0.4
         airgap_wedge_end_width=self.whistle_wall_thick*0.3
 
         #just to make the following bit less verbose
