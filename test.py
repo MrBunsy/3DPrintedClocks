@@ -486,14 +486,14 @@ if False:
     show_object(pretty_bob.get_models())
 
 
-if False:
+if True:
     #Tahoma might be a good font for arabic numbers?
     #this one is fun:
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
     #these three look good:
     #Arial looks neat, mono looks typewritten! Miriam CLM possibly better than Arial
     # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None, outer_edge_style=DialStyle.DOTS)
-    dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
+    dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=None)
     # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Wingding", font_scale=0.8, font_path="C:\\WINDOWS\\FONTS\\WINGDING.TFF", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
     dial.configure_dimensions(support_length=10, support_d=21.7)
     # dial = Dial(200, DialStyle.ARABIC_NUMBERS, font="Miriam CLM", outer_edge_style=DialStyle.RING, inner_edge_style=DialStyle.DOTS)
@@ -505,14 +505,14 @@ if False:
 
     motionWorks=MotionWorks(compensate_loose_arbour=True, compact= True, bearing=get_bearing_info(3))
 
-    hands = Hands(style=HandStyle.SIMPLE_POINTED, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
-                        hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False,
-                        second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
+    # hands = Hands(style=HandStyle.SIMPLE_POINTED, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
+    #                     hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False,
+    #                     second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True)
+    #
+    # hands.show_hands(show_object=show_object, hand_colours=["white", "black", "red"])
 
-    hands.show_hands(show_object=show_object, hand_colours=["white", "black", "red"])
 
-
-if True:
+if False:
     #experiments for rolling ball
     #not the right font, but might still use it for the minutes
     dial_minutes = Dial(150, DialStyle.ARABIC_NUMBERS, dial_width=20, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf",

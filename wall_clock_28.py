@@ -32,11 +32,14 @@ if 'show_object' not in globals():
     #don't output STL when we're in cadquery editor
     outputSTL = True
     def show_object(*args, **kwargs):
+        # print(args)
+        # if args[0] is None:
+        #     raise ValueError("invalid object to show")
         pass
 
 clockName="wall_clock_28"
 clockOutDir="out"
-gearStyle=clock.GearStyle.CURVES
+gearStyle=clock.GearStyle.DIAMONDS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #for period 1.5
@@ -56,7 +59,7 @@ moduleReduction=0.85
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
-train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=25,
+train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=25,
                       loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
 train.set_chain_wheel_ratio([67, 11])
@@ -72,21 +75,26 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2)
+motionWorks.calculate_size(35)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
 
-dial = clock.Dial(120)
+dial = clock.Dial(200,  clock.DialStyle.ARABIC_NUMBERS,outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES,
+                  bottom_fixing=True, top_fixing=True)
+                  # font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf",
+                  # outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=clock.DialStyle.RING, bottom_fixing=True, top_fixing=True)
 
-dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28", style=clock.ClockPlateStyle.VERTICAL,
+# dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28", style=clock.ClockPlateStyle.COMPACT,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True)
+                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=False, pillars_separate=True, motion_works_angle_deg=30)
 
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.outside_d*0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True)
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=False, chunky=True, outline_on_seconds=0.4,
+                    secondLength=dial.get_hand_length(clock.HandType.SECOND))
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 
@@ -98,8 +106,9 @@ assembly.get_arbour_rod_lengths()
 # show_object(assembly.getClock(with_rods=True, with_key=True))
 # show_object(plates.get_winding_key(for_printing=False))
 
-assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK],
-                    motion_works_colours=[clock.Colour.ORANGE,clock.Colour.ORANGE,clock.Colour.YELLOW,clock.Colour.GREEN],
+# motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW],
+assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
+                   motion_works_colours=[clock.Colour.BRASS],
                     hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True)
 
 # show_object(plates.getDrillTemplate(6))

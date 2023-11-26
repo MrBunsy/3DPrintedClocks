@@ -244,10 +244,18 @@ class Whistle:
 
     Very much based on teh whistle built in this thread https://mb.nawcc.org/threads/how-to-diy-a-wooden-whistle.97498/
 
+    NOTE: massively benefits from being printed in PLA. I think the slight lack of sharpness in PETG is enough for it to sound significantly worse
+
     '''
-    def __init__(self, chamber_length=45, harmonics=1, text=None):
+    def __init__(self, chamber_length=45, harmonics=1, text=None, extra_body_length=0):
+        '''
+        chamber_length - length of internal chamber
+        harmonics - 1 or 2 for how many internal chambers (2 for train whistle, 1 for cuckoo)
+        extra_body_length - add extra length to the body so a pair of whistles matches in size
+        '''
         self.whistle_top_length = 20
-        self.total_length=chamber_length + self.whistle_top_length
+        self.extra_body_length = 0
+        self.total_length=chamber_length + self.whistle_top_length + extra_body_length
 
         #how many chambers to add? Plan is for two for a train whistle
         self.harmonics = harmonics
@@ -354,7 +362,8 @@ class Whistle:
         return whistle
 
     def get_body(self):
-        chamber = cq.Workplane("XY").rect(self.chamber_outside_width, self.chamber_outside_width).rect(self.chamber_outside_width - self.wall_thick * 2, self.chamber_outside_width - self.wall_thick * 2).extrude(self.total_length - self.whistle_top_length)
+        chamber = (cq.Workplane("XY").rect(self.chamber_outside_width, self.chamber_outside_width)
+                   .rect(self.chamber_outside_width - self.wall_thick * 2, self.chamber_outside_width - self.wall_thick * 2).extrude(self.total_length - self.whistle_top_length))
         # chamber = chamber.faces(">Z").workplane().cutThruAll()
 
         #in a pair of old wooden whistles, the differnce in sizes appears to be: 16x21 inner size, height of 4mm

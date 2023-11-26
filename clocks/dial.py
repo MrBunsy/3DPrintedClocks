@@ -460,10 +460,13 @@ class Dial:
 
         return 3
 
-    def get_hand_length(self):
+    def get_hand_length(self, hand=HandType.MINUTE):
         '''
         what length hands should go on this dial?
         '''
+        if hand == HandType.SECOND:
+            return self.second_hand_mini_dial_d*0.5 - self.seconds_dial_width/2
+
         if self.style == DialStyle.TONY_THE_CLOCK:
             return self.get_tony_dimension("minute_hand_length")
         else:
