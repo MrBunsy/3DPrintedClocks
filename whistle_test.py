@@ -17,9 +17,10 @@ if 'show_object' not in globals():
         pass
 
 
-whistle = Whistle(text="Train Whistle", harmonics=2)
+whistle = Whistle(text="Evie's Train", harmonics=2, mouthpiece=True)
 
 # show_object(whistle.get_whistle_top())
+# show_object(whistle.get_body())
 show_object(whistle.get_whole_whistle())
 
 path = "out"
