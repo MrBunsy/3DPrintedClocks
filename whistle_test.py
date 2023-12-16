@@ -24,7 +24,7 @@ whistle = Whistle(text="Evie's Train", harmonics=2, mouthpiece=True)
 show_object(whistle.get_whole_whistle())
 
 path = "out"
-name="test_train_whistle"
+name="evies_train_whistle"
 out = os.path.join(path, "{}.stl".format(name))
 print("Outputting ", out)
-exporters.export(whistle.get_whole_whistle(), out)
+exporters.export(whistle.get_whole_whistle(), out, angularTolerance=0.01)

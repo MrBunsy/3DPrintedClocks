@@ -4957,17 +4957,17 @@ def get_ratchet_demo():
 
 
 
-def getGearDemo(module=1, justStyle=None, oneGear=False):
+def get_gear_demo(module=1, just_style=None, one_gear=False):
     demo = cq.Workplane("XY")
 
-    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)
+    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)
 
     moduleReduction = 0.9
 
     train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
     # train.setChainWheelRatio([93, 10])
 
-    train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1.5, cord_coil_thick=14, style=None, use_key=True, prefered_diameter=25)
+    train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1.5, cord_coil_thick=14, style=None, use_key=True, prefered_diameter=30)
     # override default until it calculates an ideally sized wheel
     train.calculate_powered_wheel_ratios(wheel_max=100)
 
@@ -4984,14 +4984,14 @@ def getGearDemo(module=1, justStyle=None, oneGear=False):
     gap = 5
     space = max([arbour.get_max_radius() * 2 for arbour in demoArbours]) + gap
 
-    if oneGear and justStyle is not None:
-        demoArbours[1].style = justStyle
+    if one_gear and just_style is not None:
+        demoArbours[1].style = just_style
         return demoArbours[1].get_shape()
 
     x=0
 
     for i,style in enumerate(GearStyle):
-        if justStyle is not None and style != justStyle:
+        if just_style is not None and style != just_style:
             continue
         print(style.value)
         # try:

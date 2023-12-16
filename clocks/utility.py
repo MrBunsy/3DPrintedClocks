@@ -84,7 +84,8 @@ METRIC_HALF_NUT_DEPTH_MULT = 0.57
 #TODO remove all usages of this - still lurking in places which don't use the MachineScrew class
 COUNTERSUNK_HEAD_WIGGLE = 0.2
 #then once that's done, rename this
-COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.5
+#0.5 was excessive for M3
+COUNTERSUNK_HEAD_WIGGLE_SMALL = 0.3
 
 
 def get_washer_diameter(metric_thread):

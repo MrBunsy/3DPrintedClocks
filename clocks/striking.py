@@ -363,14 +363,14 @@ class Whistle:
 
         if self.text is not None:
             textspace = TextSpace(x=self.total_length/2 - self.whistle_top_length, y=0, width = self.chamber_outside_width, height=self.total_length, text=self.text,
-                                  horizontal=True, inverted=False)
+                                  horizontal=True, inverted=False, font="Gill Sans Medium", font_path="../fonts/GillSans/Gill Sans Medium.otf" )
 
             #.moveTo(self.highPitchedShorter, self.wall_thick/2).move(-self.total_length/2,-self.pipe_width/2)
             whistle = whistle.union(textspace.get_text_shape().rotate((0,-self.chamber_outside_width/2,0),(-1,-self.chamber_outside_width/2,0),-90))
             # whistle = cq.Workplane("XY").text(txt=text, fontsize=self.pipe_width*0.6,distance=0.2)
 
 
-
+        # whistle = whistle.chamfer()
 
         return whistle
 
@@ -481,13 +481,36 @@ class Whistle:
                 #add a ledge so it's easier to line up the bellows
                 top = top.faces("<X").workplane().move(0, self.top_wall_thick - self.chamber_outside_width / 2).move(-self.chamber_outside_width / 2 + self.bellow_offset / 2 - fudge / 2, 0).rect(self.bellow_offset - 0.5, self.chamber_outside_width).extrude(0.2)
 
-        # if self.mouthpiece:
-        #     bigger_hole = (cq.Workplane("YZ").rect(self.chamber_outside_width - self.top_wall_thick, self.chamber_outside_width - self.top_wall_thick).extrude(self.top_wall_thick*2)
-        #                    .translate((-self.whistle_top_length/2 + self.top_wall_thick, - self.chamber_outside_width/2, self.top_wall_thick)))
-        #     return bigger_hole
-        #     top = top.cut(bigger_hole)
+        if self.mouthpiece:
+            bigger_hole = (cq.Workplane("XY").rect(self.top_wall_thick*2, self.chamber_outside_width - self.top_wall_thick*2).extrude(self.chamber_outside_width - self.top_wall_thick*2)
+                           .translate((-self.whistle_top_length/2, 0, self.top_wall_thick)))
+            top = top.cut(bigger_hole)
 
-        # top = top.workplaneFromTagged("pretweak")
+            mouthpiece_length = self.chamber_outside_width*1.5
+            mouthpiece_wall_thick = 2
+            #
+            area = math.pi * (hole_d / 2) ** 2
+            hole_width = self.chamber_outside_width - mouthpiece_wall_thick* 2
+            mouthpiece_hole_wide = area / hole_width
+            mouthpiece_thick = mouthpiece_hole_wide + mouthpiece_wall_thick*2
+
+
+            # mouthpiece = (cq.Workplane("XY").moveTo(-self.whistle_top_length/2,-self.chamber_outside_width/2).line(-mouthpiece_length,0).radiusArc((-self.whistle_top_length/2 - mouthpiece_length,mouthpiece_thick-self.chamber_outside_width/2),mouthpiece_thick/2)
+            #               .radiusArc((-self.whistle_top_length/2,self.chamber_outside_width/2), -mouthpiece_length*1.5).close().extrude(self.chamber_outside_width))
+
+            mouthpiece = (cq.Workplane("XY").moveTo(-self.whistle_top_length / 2, -self.chamber_outside_width / 2).line(-mouthpiece_length, 0).radiusArc(
+                (-self.whistle_top_length / 2 - mouthpiece_length, mouthpiece_thick - self.chamber_outside_width / 2), mouthpiece_thick / 2)
+                          .spline([(-self.whistle_top_length / 2, self.chamber_outside_width / 2)], includeCurrent=True, tangents=[(1,0),(1,0)]).close().extrude(self.chamber_outside_width))
+
+            # mouthpiece_hole = (cq.Workplane("XY").moveTo(-self.whistle_top_length/2,-self.chamber_outside_width/2 + mouthpiece_wall_thick).line(-mouthpiece_length - mouthpiece_thick,0).line(0,mouthpiece_hole_wide)
+            #               .line(mouthpiece_thick,0).radiusArc((-self.whistle_top_length/2,self.chamber_outside_width/2 - mouthpiece_wall_thick-0.5), -mouthpiece_length*1.5 - mouthpiece_wall_thick).close().extrude(self.chamber_outside_width - mouthpiece_wall_thick*2).
+            #                    translate((0,0,mouthpiece_wall_thick)))
+            mouthpiece_hole = (cq.Workplane("XY").moveTo(-self.whistle_top_length / 2, -self.chamber_outside_width / 2 + self.top_wall_thick).lineTo(-mouthpiece_length-self.whistle_top_length / 2 - mouthpiece_thick, mouthpiece_wall_thick-self.chamber_outside_width/2).line(0, mouthpiece_hole_wide)
+                               .line(mouthpiece_thick, 0)
+                               .spline([(-self.whistle_top_length / 2, self.chamber_outside_width / 2 - self.top_wall_thick)], includeCurrent=True, tangents=[(1,0),(1,0)]).close()
+                               .extrude(self.chamber_outside_width - mouthpiece_wall_thick * 2).translate((0, 0, mouthpiece_wall_thick)))
+
+            top = top.union(mouthpiece.cut(mouthpiece_hole))
 
         top = top.translate((-self.whistle_top_length/2,0,0))
         return top

@@ -97,12 +97,12 @@ class Gear:
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
-            return Gear.cutDiamondsStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1))
+            return Gear.cut_diamonds_style(gear, outerRadius=outerRadius, innerRadius=max(innerRadius * 1.05, innerRadius + 1))
         return gear
 
     @staticmethod
-    def getThinArmThickness(outerRadius, innerRadius):
-        arm_thick = max(outerRadius * 0.1, 1.8)  # 1.8 is the size of the honeycomb walls
+    def get_thin_arm_thickness(outer_radius, inner_radius):
+        arm_thick = max(outer_radius * 0.1, 1.8)  # 1.8 is the size of the honeycomb walls
         # print("arm_thick", arm_thick)
         if arm_thick < 2.7:
             # arms that were slightly bigger ended up with a gap. probably need to ensure we're a multiple of 0.45?
@@ -112,44 +112,82 @@ class Gear:
 
         return arm_thick
 
+    @staticmethod
+    def get_thick_arm_thickness(outer_radius, inner_radius):
+        arm_thick = max(outer_radius * 0.1, 1.8)  # 1.8 is the size of the honeycomb walls
+        # print("arm_thick", arm_thick)
+        if arm_thick < 3:
+            return 2.7
+
+        return arm_thick
 
     @staticmethod
-    def cutDiamondsStyle(gear, outerRadius, innerRadius):
-        arm_thick = Gear.getThinArmThickness(outerRadius, innerRadius)
-
+    def cut_diamonds_style(gear, outerRadius, innerRadius):
+        arm_thick = Gear.get_thick_arm_thickness(outerRadius, innerRadius)
+        # arm_thick=2.7
         diamonds = 7
 
         centre_r = (outerRadius + innerRadius)/2
 
         centre_gap = outerRadius - innerRadius
+        ratio = innerRadius/outerRadius
 
-        if innerRadius/outerRadius > 0.5:
-            #better idea - instead of cutting fewer diamonds, why don't I leave in arms that are solid diamond shaped? with space between?
-            diamonds = 5
+        narrow_gap = False
 
-        diamond_width = math.pi*centre_r*2 / diamonds
+        if ratio > 0.6:
+            narrow_gap = True
+            #if the gap is narrow just cut out shapes of diamonds and increase the number of diamonds to reduce their width
+            diamonds = floor(ratio*12)
+            # arm_thick*=0.5
+            # if arm_thick < 3:
+            #     arm_thick = 1.9
+            # diamond_width*=0.5
+        # if innerRadius/outerRadius < 0.
+
+        diamond_width = math.pi * centre_r * 2 / diamonds
 
         cutter_thick = 100
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+        if narrow_gap:
+            cutter = cq.Workplane("XY")
+        else:
+            cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+
+
 
         for d in range(diamonds):
-            diamond_angle = d*math.pi*2/diamonds
 
-            other_shapes_angle = (d+0.5)*math.pi*2/diamonds
+            other_shapes_angle = (d + 0.5) * math.pi * 2 / diamonds
 
-            next_diamond_angle = (d+1)*math.pi*2/diamonds
+            next_diamond_angle = (d + 1) * math.pi * 2 / diamonds
+            diamond_angle = d * math.pi * 2 / diamonds
+            diamond_wide_angle = diamond_width / centre_r
 
-            diamond_wide_angle = diamond_width/centre_r
-
-            left_point = polar(diamond_angle - diamond_wide_angle/2, centre_r)
-            right_point = polar(diamond_angle + diamond_wide_angle/2, centre_r)
+            left_point = polar(diamond_angle - diamond_wide_angle / 2, centre_r)
+            right_point = polar(diamond_angle + diamond_wide_angle / 2, centre_r)
             top_point = polar(diamond_angle, outerRadius)
             bottom_point = polar(diamond_angle, innerRadius)
 
-            diamond = get_stroke_line([top_point, right_point, bottom_point, left_point], wide=arm_thick, thick=cutter_thick, loop=True)
 
-            cutter = cutter.cut(diamond)
+            if narrow_gap:
+                arm_angle = arm_thick / ((outerRadius + innerRadius)/2)
+                # top_point = polar(diamond_angle, outerRadius + arm_thick)
+                # bottom_point = polar(diamond_angle, innerRadius - arm_thick)
+                left_point = polar(diamond_angle - diamond_wide_angle / 2 + arm_angle/2, centre_r)
+                right_point = polar(diamond_angle + diamond_wide_angle / 2 - arm_angle/2, centre_r)
+
+
+                diamond = cq.Workplane("XY").moveTo(left_point[0], left_point[1]).lineTo(top_point[0], top_point[1]).lineTo(right_point[0], right_point[1]).lineTo(bottom_point[0],bottom_point[1]).close().extrude(cutter_thick)
+                cutter = cutter.add(diamond)
+                # cutter = cutter.cut(get_stroke_line([top_point, right_point, bottom_point, left_point], wide=arm_thick, thick=cutter_thick, loop=True))
+            else:
+
+
+
+
+                diamond = get_stroke_line([top_point, right_point, bottom_point, left_point], wide=arm_thick, thick=cutter_thick, loop=True)
+
+                cutter = cutter.cut(diamond)
 
             # diamond = cq.Workplane("XY").moveTo(left_point[0], left_point[1]).lineTo(top_point[0], top_point[1]).lineTo(right_point[0], right_point[1]).lineTo(bottom_point[0],bottom_point[1]).close().extrude(cutter_thick)
             #

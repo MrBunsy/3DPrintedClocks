@@ -20,7 +20,7 @@ source.
 from clocks import clock
 
 '''
-Clock 12 (seconds pendulum, cord, centred second hand and dial) but with some tweaks
+Loosely styled on a rolex
 
 TODO ensure key is right length and isn't recessed into front plate - I think current logic assumes it's inside the dial
 also optimise placement of pawl on the ratchet so I can increase the diameter of the ratchet gear wheel and keep lots of the gear style cut
@@ -59,14 +59,14 @@ moduleReduction=0.85
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
-train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=25,
+train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
                       loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
 train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=5, pinion_thick_multiplier=3, style=gearStyle,
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=2)
 
