@@ -4864,7 +4864,7 @@ class Assembly:
         exportSVG(self.get_clock(), out, opts={"width":720, "height":1280})
 
 
-def getHandDemo(just_style=None, length = 120, per_row=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
+def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
     demo = cq.Workplane("XY")
 
     motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)

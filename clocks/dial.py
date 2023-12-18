@@ -670,7 +670,8 @@ class Dial:
 
         return detail
 
-    def get_lines_detail(self, outer_r, dial_width, from_edge, thick_indicators=False, long_indicators=False, total_lines=60, inner_ring=False, outer_ring=False):
+    def get_lines_detail(self, outer_r, dial_width, from_edge, thick_indicators=False, long_indicators=False, total_lines=60, inner_ring=False, outer_ring=False, only=None,
+                         big_thick=2, small_thick=1):
         '''
         Intended to be used on the congrieve rolling ball clock, where there are separate dials for the hours and seconds
         so if total lines is 48 the long indicator is for the half hours
@@ -683,8 +684,11 @@ class Dial:
 
         dA = math.pi * 2 / total_lines
 
-        big_line_thick = 2
-        small_line_thick = 1
+        if only is None:
+            only = [i for i in range(total_lines)]
+
+        big_line_thick = big_thick
+        small_line_thick = small_thick
 
         short_line_length = line_outer_r - line_inner_r
         long_line_length = short_line_length * 2
@@ -696,6 +700,10 @@ class Dial:
         indicators_offset = 2 if total_lines == 48 else 0
 
         for i in range(total_lines):
+
+            if i not in only:
+                continue
+
             line_thick = small_line_thick
             if i % indicators_on == indicators_offset and thick_indicators:
                 line_thick = big_line_thick
@@ -782,7 +790,21 @@ class Dial:
             if edge_style is DialStyle.RING:
                 return 0.8
             return self.dial_width*0.2
-    
+    def get_fancy_watch_numbers_detail(self, outer_r, width, detail_from_edges):
+        numbers = self.get_numbers_detail(outer_r, width, detail_from_edges, only=["3", "6", "9"])
+
+        arc = width*0.5
+        angle = math.pi*2/30#arc / outer_r
+
+        top_left = polar(math.pi/2 + angle/2, outer_r - detail_from_edges)
+        top_right = polar( math.pi/2 - angle/2, outer_r - detail_from_edges)
+        bottom = polar(math.pi/2, outer_r - width + detail_from_edges)
+
+        top_triangle = cq.Workplane("XY").moveTo(bottom[0], bottom[1]).lineTo(top_left[0], top_left[1]).lineTo(top_right[0], top_right[1]).close().extrude(self.detail_thick)
+
+        lines = self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=12, only=[1,2,4,5,7,8,10,11], small_thick=width*0.2)
+
+        return numbers.add(top_triangle).add(lines)
     def get_style_for_dial(self, style, outer_r, width, detail_from_edges, inner_ring = False, outer_ring = False):
 
         total_markers = 60
@@ -803,6 +825,8 @@ class Dial:
             return self.get_dots_detail(outer_r, width)
         elif style == DialStyle.ARABIC_NUMBERS:
             return self.get_numbers_detail(outer_r, width, detail_from_edges, minutes=self.minutes_only, seconds= self.seconds_only)
+        elif style == DialStyle.FANCY_WATCH_NUMBERS:
+            return self.get_fancy_watch_numbers_detail(outer_r, width, detail_from_edges)
         elif style == DialStyle.ROMAN_NUMERALS:
             return self.get_roman_numerals_detail(outer_r, width, detail_from_edges, with_lines=False)
         elif style == DialStyle.RING:
@@ -849,16 +873,20 @@ class Dial:
 
         return dial
 
-    def get_numbers_detail(self, outer_r, dial_width, dial_detail_from_edges, minutes=False, seconds=False):
+    def get_numbers_detail(self, outer_r, dial_width, dial_detail_from_edges, minutes=False, seconds=False, only = None):
 
         font = self.font
         if self.font is None:
             font = "Arial"
 
+
+
         numbers = [str(i) for i in range(1, 13)]
         if minutes or seconds:
             numbers = [str(i) for i in range(5, 65, 5)]
 
+        if only is None:
+            only = numbers
         centre_r = outer_r - dial_width/2
         number_height = (dial_width - dial_detail_from_edges*2)*self.font_scale
         number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=numbers[i], thick=self.detail_thick, font=font, font_path=self.font_path) for i in range(12)]
@@ -872,6 +900,10 @@ class Dial:
         for i in range(12):
             if seconds and i not in [5,11]:
                 continue
+
+            if number_spaces[i].text not in only:
+                continue
+
             angle = math.pi/2 + (i+1)*math.pi*2/12
             number_spaces[i].x, number_spaces[i].y = polar(angle, centre_r)
             # dial = dial.add(number_spaces[i].get_text_shape().rotate((0,0,0),(0,0,1), radToDeg(angle+math.pi/2)).translate(polar(angle, centre_r)))

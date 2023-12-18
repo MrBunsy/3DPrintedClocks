@@ -367,7 +367,7 @@ class Hands:
 
     def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
                  hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset_deg=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
-                 chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1):
+                 chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1, second_style_override=None, hour_style_override=None):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
 
@@ -390,6 +390,8 @@ class Hands:
         self.fixing_offset_deg=fixing_offset_deg
         self.length = length
         self.style=style
+        self.second_style_override = second_style_override
+        self.hour_style_override = hour_style_override
 
         #some hands have a class that generates the hand - TODO: should all hands extend from this class and do that? This is getting very messy
         self.generator = None
@@ -535,6 +537,10 @@ class Hands:
         Get the hand shape without fixing or outline
         '''
         style = self.style
+        if self.hour_style_override is not None and hour:
+            style = self.hour_style_override
+        if self.second_style_override is not None and second:
+            style = self.second_style_override
         min_base_r=0
         if minute or hour:
             min_base_r = max(self.minuteFixing_d1, self.minuteFixing_d2, self.hourFixing_d)* 0.75
@@ -1054,9 +1060,11 @@ class Hands:
                     bend_point_y = abs(circle_y)
                 # ignoreOutline=True
 
+            fudge=0.0001
             hand = hand.workplaneFromTagged("base").moveTo(0, bend_point_y / 2).rect(hand_width, bend_point_y).extrude(thick)
             # some sizes are complaining the radius isn't long enough to complete the arc, so bodge it a bit
-            hand = hand.workplaneFromTagged("base").moveTo(-hand_width / 2, bend_point_y).lineTo(-tip_width / 2, length).radiusArc((tip_width / 2, length), tip_width / 2 + 0.01).lineTo(hand_width / 2, bend_point_y).close().extrude(thick)
+            #the little tiny straight bit before the rounded end fixes the shell so we can add outlines. *shrug*
+            hand = hand.workplaneFromTagged("base").moveTo(-hand_width / 2, bend_point_y).lineTo(-tip_width / 2, length).line(0,fudge).radiusArc((tip_width / 2, length+fudge), tip_width / 2 + 0.01).line(0,-fudge).lineTo(hand_width / 2, bend_point_y).close().extrude(thick)
             if second:
                 # this is out the back, extend the main body of the arm
                 hand = hand.workplaneFromTagged("base").moveTo(0, circle_y / 2).rect(hand_width, abs(circle_y)).extrude(thick)
