@@ -43,7 +43,7 @@ class HandStyle(Enum):
     ARROWS="arrows"#specicially for Tony the Clock
     MOON = "moon"#Brequet but with crescents instead of circles
     INDUSTRIAL = "industrial"#based on a Siemens slave clock
-    # FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
+    FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
 
 class HandType(Enum):
     HOUR = "hour"

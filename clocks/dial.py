@@ -477,7 +477,7 @@ class Dial:
         since the dimensions aren't known until the plates have been calculated, the main constructor is for storing the style and this actually sets the size
         Bit of a bodge, but the obvious alternative is to pass all the dial settings into clocks plates (or a new class for dial config?)
         '''
-        self.support_length = support_length + 1
+        self.support_length = support_length# + 1 #why was the +1 here? was this left over from a retrofit?
 
         self.support_d = support_d
         if outside_d > 0:

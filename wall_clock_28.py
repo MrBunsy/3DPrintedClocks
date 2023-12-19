@@ -75,13 +75,15 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3))
 motionWorks.calculate_size(35)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
 
-dial = clock.Dial(200,  clock.DialStyle.ARABIC_NUMBERS,outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES,
-                  bottom_fixing=True, top_fixing=True)
+dial_diameter=130
+dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
+                  outer_edge_style=clock.DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES,
+                  bottom_fixing=False, top_fixing=True)
                   # font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf",
                   # outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=clock.DialStyle.RING, bottom_fixing=True, top_fixing=True)
 
@@ -89,11 +91,11 @@ dial = clock.Dial(200,  clock.DialStyle.ARABIC_NUMBERS,outer_edge_style=clock.Di
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28", style=clock.ClockPlateStyle.COMPACT,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=False, pillars_separate=True, motion_works_angle_deg=30)
+                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=315)
 
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=False, chunky=True, outline_on_seconds=0.4,
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True, outline_on_seconds=0.4,
                     secondLength=dial.get_hand_length(clock.HandType.SECOND))
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
