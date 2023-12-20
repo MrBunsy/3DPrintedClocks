@@ -1268,7 +1268,7 @@ class SimpleClockPlates:
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
-                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK):
+                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1280,6 +1280,10 @@ class SimpleClockPlates:
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulum_fixing = pendulum_fixing
         self.pendulum_at_front = pendulum_at_front
+
+        #if the dial would stick off the top of the front plate the default is to extend the front plate
+        #however this can result in plates taht are too large, so instead have a little arm that sticks out the top pillar and extend the length of the dial pillar
+        self.top_pillar_holds_dial = top_pillar_holds_dial
 
         self.layer_thick = layer_thick
 
@@ -1463,6 +1467,7 @@ class SimpleClockPlates:
         #calcualte the positions of the bolts that hold the plates together
         self.calc_fixing_info()
 
+
         self.huygens_wheel = None
         #offset in y? This enables the plate to stay smaller (and fit on the print bed) while still offering a large huygens wheel
         self.huygens_wheel_y_offset = 0
@@ -1574,6 +1579,10 @@ class SimpleClockPlates:
 
         self.top_of_hands_z = self.motion_works.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
 
+        self.dial_top_above_front_plate = False
+        self.dial_fixing_positions = []
+        self.top_dial_fixing_y = -1
+
         if self.dial is not None:
             #calculate dial height after motion works gears have been generated, in case the height changed with the bearing
             # height of dial from top of front plate
@@ -1631,6 +1640,36 @@ class SimpleClockPlates:
                 self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d,second_hand_relative_pos=second_hand_relative_pos )
             else:
                 self.dial.configure_dimensions(support_length=self.dial_z, support_d=dial_support_d)
+
+
+              # [npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
+            for pos_list in self.dial.get_fixing_positions():
+                for pos in pos_list:
+                    # inverting x because dial is "backwards"
+                    self.dial_fixing_positions.append(np_to_set(np.add((-pos[0], pos[1]), self.hands_position)))
+
+            self.top_dial_fixing_y = max([pos[1] for pos in self.dial_fixing_positions])
+
+            self.dial_top_above_front_plate = self.top_dial_fixing_y > self.top_pillar_positions[0][1] and self.top_dial_fixing_y > self.bearing_positions[-1][1]
+
+
+            '''
+            getting messy - if dial_top_above_front_plate then we need to lengthen the supports, but we couldn't do this when we called configure_dimensions because we
+            didn't know where those supports were. could probably refactor, for now just hack it
+            '''
+
+            if self.dial_top_above_front_plate and self.top_pillar_holds_dial:
+                front_plate_thick = self.get_plate_thick(back=False)
+                self.dial.support_length += front_plate_thick
+                #cut out for the front plate
+                self.dial.subtract_from_supports = (cq.Workplane("XY").circle(self.top_pillar_r+0.5).extrude(front_plate_thick+0.5)
+                                                    .translate(np_to_set(np.subtract(self.top_pillar_positions[0], self.hands_position)))
+                                                    .translate((0,0, self.dial.thick + self.dial.support_length - front_plate_thick - 0.5)))
+
+
+
+
+
 
         # if this has a key (do after we've calculated the dial z)
         if (self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key) or not self.weight_driven:
@@ -2942,24 +2981,40 @@ class SimpleClockPlates:
 
         TODO support two pillars?
         '''
-        topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide = (self.top_pillar_positions[0], self.top_pillar_r, self.bottom_pillar_positions, self.bottom_pillar_r, self.plate_width)
+        top_pillar_pos, top_pillar_r, bottom_pillar_pos, bottom_pillar_r, holder_wide = (self.top_pillar_positions[0], self.top_pillar_r, self.bottom_pillar_positions, self.bottom_pillar_r, self.plate_width)
         if self.extra_heavy:
             #sagitta looks nice, otherwise arbitrary at the moment, should really check it leaves enough space for the anchor
-            sagitta = topPillarR * 0.25
-            top_pillar = cq.Workplane("XY").moveTo(0 - topPillarR, 0).radiusArc((0 + topPillarR, 0), topPillarR)\
-                .lineTo(0 + topPillarR, 0 - topPillarR - sagitta). \
-                sagittaArc((0 - topPillarR, 0 - topPillarR - sagitta), -sagitta).close()#.extrude(self.plateDistance)
+            sagitta = top_pillar_r * 0.25
+            top_pillar = cq.Workplane("XY").moveTo(0 - top_pillar_r, 0).radiusArc((0 + top_pillar_r, 0), top_pillar_r)\
+                .lineTo(0 + top_pillar_r, 0 - top_pillar_r - sagitta). \
+                sagittaArc((0 - top_pillar_r, 0 - top_pillar_r - sagitta), -sagitta).close()#.extrude(self.plateDistance)
             if flat:
                 return top_pillar
 
             top_pillar = top_pillar.extrude(self.plate_distance)
         else:
-            top_pillar = cq.Workplane("XY").moveTo(0, 0).circle(topPillarR)
+            top_pillar = cq.Workplane("XY").moveTo(0, 0).circle(top_pillar_r)
             if flat:
                 return top_pillar
             top_pillar = top_pillar.extrude(self.plate_distance)
 
-        top_pillar = top_pillar.cut(self.get_fixing_screws_cutter().translate((-topPillarPos[0], -topPillarPos[1], -self.get_plate_thick(back=True))))
+        top_pillar = top_pillar.cut(self.get_fixing_screws_cutter().translate((-top_pillar_pos[0], -top_pillar_pos[1], -self.get_plate_thick(back=True))))
+
+
+        if not flat and self.dial and self.dial_top_above_front_plate and self.top_pillar_holds_dial:
+            #this pillar also supports the dial!
+
+            screws_apart = self.top_dial_fixing_y - top_pillar_pos[1]
+            thick = self.get_plate_thick(back=False)
+
+            dial_holder = cq.Workplane("XY").rect(top_pillar_r*2,screws_apart).extrude(thick).translate((0,screws_apart/2))
+            dial_holder = dial_holder.union(cq.Workplane("XY").circle(top_pillar_r).extrude(thick).translate((0,screws_apart)))
+
+            for pos in self.dial_fixing_positions:
+                dial_holder = dial_holder.cut(self.dial.fixing_screws.get_cutter(loose=True, with_bridging=True, layer_thick=self.layer_thick).translate(np_to_set(np.subtract(pos, top_pillar_pos))))
+
+            top_pillar = top_pillar.union(dial_holder.translate((0,0,self.plate_distance - thick)))
+
 
         return top_pillar
 
@@ -3248,22 +3303,9 @@ class SimpleClockPlates:
 
         if self.dial is not None:
 
-
-            dial_fixing_positions = []#[npToSet(np.add(pos, self.hands_position)) for pos in self.dial.get_fixing_positions()]
-            for pos_list in self.dial.get_fixing_positions():
-                for pos in pos_list:
-                    #inverting x because dial is "backwards"
-                    dial_fixing_positions.append(np_to_set(np.add((-pos[0], pos[1]), self.hands_position)))
-
-            top_dial_fixing_y = max([pos[1] for pos in dial_fixing_positions])
-
-            need_top_extension = top_dial_fixing_y > self.top_pillar_positions[0][1] and top_dial_fixing_y > self.bearing_positions[-1][1]
-            # need_bottom_extension = min([pos[1] for pos in dial_fixing_positions]) < self.bottomPillarPositions[1]
-
-
-            if need_top_extension:
-                # off the top of teh clock
-                # TODO make this more robust
+            if self.dial_top_above_front_plate and not self.top_pillar_holds_dial:
+                # need to extend the front plate off the top of teh clock to hold the dial
+                # TODO make this more robust (assumes vertical or compact plates with one top pillar)
 
                 dial_support_pos = (self.hands_position[0], self.hands_position[1] + self.dial.outside_d/2- self.dial.dial_width/2)
                 # plate = plate.union(cq.Workplane("XY").circle(self.plate_width / 2).extrude(plate_thick).translate(dial_support_pos))
@@ -3273,7 +3315,7 @@ class SimpleClockPlates:
             #TODO bottom extension (am I ever going to want it?)
 
 
-            for pos in dial_fixing_positions:
+            for pos in self.dial_fixing_positions:
                 plate = plate.cut(self.dial.fixing_screws.get_cutter(loose=True, with_bridging=True, layer_thick=self.layer_thick).translate(pos))
 
         if self.moon_complication is not None:

@@ -80,7 +80,7 @@ motionWorks.calculate_size(35)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
 
-dial_diameter=130
+dial_diameter=200
 dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
                   outer_edge_style=clock.DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES,
                   bottom_fixing=False, top_fixing=True)
@@ -88,13 +88,13 @@ dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Euro
                   # outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=clock.DialStyle.RING, bottom_fixing=True, top_fixing=True)
 
 # dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28", style=clock.ClockPlateStyle.COMPACT,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28", style=clock.ClockPlateStyle.VERTICAL,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=315)
+                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False, second_hand_centred=True, chunky=True, outline_on_seconds=0.4,
                     secondLength=dial.get_hand_length(clock.HandType.SECOND))
 
@@ -118,7 +118,7 @@ assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.
 if outputSTL:
     #
     #
-    train.output_STLs(clockName, clockOutDir)
+    # train.output_STLs(clockName, clockOutDir)
     motionWorks.output_STLs(clockName,clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     dial.output_STLs(clockName, clockOutDir)
