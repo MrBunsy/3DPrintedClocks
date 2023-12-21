@@ -469,6 +469,8 @@ class Dial:
 
         if self.style == DialStyle.TONY_THE_CLOCK:
             return self.get_tony_dimension("minute_hand_length")
+        elif self.style == DialStyle.FANCY_WATCH_NUMBERS:
+            return self.outside_d/2 - self.get_edge_style_width(self.outer_edge_style, outer=True) - self.dial_detail_from_edges
         else:
             return self.outside_d/2 - self.dial_width/2
 

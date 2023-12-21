@@ -57,7 +57,7 @@ class HandGenerator:
     def minute_hand(self, colour = None, thick_override=-1):
         raise NotImplemented()
 
-    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None):
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False):
         raise NotImplemented()
 
 
@@ -82,7 +82,10 @@ class FancyWatchHands(HandGenerator):
         super().__init__(base_r, total_length, thick)
 
         self.base_r = self.length * 0.15
+        #originally was thinking of using the outline provided to the hands, but now we'll override it with whatever is best and expect these hands to have been provided
+        #with an outline of 0
         self.outline = outline
+        self.outline = self.length*0.02
         self.detail_thick = detail_thick
 
     def hour_hand(self, colour=None, thick_override=-1):
@@ -91,7 +94,7 @@ class FancyWatchHands(HandGenerator):
         '''
         copied and tweaked from brequet hands
         '''
-        length = self.length*0.8
+        length = self.length*0.6
 
         thick = self.thick
         if thick_override > 0:
@@ -99,7 +102,7 @@ class FancyWatchHands(HandGenerator):
 
         hand_width = self.length * 0.09
         tip_width = self.length * 0.02  # *0.0125
-        circle_r = self.length * 0.15
+        circle_r = self.length * 0.125
 
         circle_y = length * 0.65
         # #point where teh arm starts to bend towards the tip
@@ -112,6 +115,13 @@ class FancyWatchHands(HandGenerator):
         hand = (hand.workplaneFromTagged("base").moveTo(-hand_width / 2, bend_point_y).lineTo(-tip_width / 2, length).line(0, fudge)
         .radiusArc((tip_width / 2, length + fudge), tip_width / 2 + 0.01).line(0, -fudge).lineTo(hand_width / 2, bend_point_y).close()
         .extrude(thick))
+
+        # brequet hand without hole in the circle - when colour is None this is used to calcualte the outline
+        hand = hand.workplaneFromTagged("base").moveTo(0, circle_y).circle(circle_r).extrude(thick)
+        hand = hand.workplaneFromTagged("base").circle(radius=self.base_r).extrude(thick)
+
+        if colour == None:
+            return hand
 
         prong_thick = self.outline
 
@@ -129,14 +139,20 @@ class FancyWatchHands(HandGenerator):
 
         three_prongs = three_prongs.translate((0, circle_y))
 
-        #brequet hand without hole in the circle - when colour is None this is used to calcualte the outline
-        hand = hand.workplaneFromTagged("base").moveTo(0, circle_y).circle(circle_r).extrude(thick)
-        hand = hand.workplaneFromTagged("base").circle(radius=self.base_r).extrude(thick)
+
+
+
+
+        # doing outline manually here as this is the only hand of the three that needs it and it's neater and esasier than bodging the combinations of outline and black detail on all the other hands
+        black_outline = self.hour_hand(colour=None, thick_override=self.outline * 4).shell(-self.outline).translate((0,0,-self.outline)).intersect(cq.Workplane("XY").rect(self.length * 4, self.length * 4).extrude(self.detail_thick))
+        black_detail = three_prongs.union(black_outline)
+        # black_detail = three_prongs
+
         if colour == "white":
-            return hand.cut(three_prongs)
+            return hand.cut(black_detail)
 
         if colour == "black":
-            return three_prongs
+            return black_detail
 
 
         # hand = hand.faces(">Z").moveTo(0, circle_y).circle(circle_r - hand_width).cutThruAll()
@@ -148,7 +164,7 @@ class FancyWatchHands(HandGenerator):
 
     def minute_hand(self, colour=None, thick_override=-1):
 
-
+        base_r = self.base_r*0.8
 
         thick = self.thick
         if thick_override > 0:
@@ -174,9 +190,13 @@ class FancyWatchHands(HandGenerator):
 
         white_rectangle = cq.Workplane("XY").rect(syringe_width - self.outline*3, syringe_length).extrude(self.detail_thick).translate((0,syringe_startY + syringe_length/2))
 
-        detail_without_rectangle = (hand.intersect(cq.Workplane("XY").rect(self.length * 4, self.length * 4).extrude(self.detail_thick)).cut(white_rectangle)
-                                  .cut(cq.Workplane("XY").circle(self.base_r - self.outline).extrude(self.thick)))
-        hand = hand.workplaneFromTagged("base").circle(radius=self.base_r).extrude(thick)
+        hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
+
+        detail_without_rectangle = hand.intersect(cq.Workplane("XY").rect(self.length * 4, self.length * 4).extrude(self.detail_thick)).cut(white_rectangle)
+        #.cut(cq.Workplane("XY").circle(base_r - self.outline).extrude(self.thick))
+
+
+
         if colour == "black":
 
             return detail_without_rectangle
@@ -185,8 +205,56 @@ class FancyWatchHands(HandGenerator):
 
         return hand
 
-    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None):
-        hand = cq.Workplane("XY").tag("base").rect(total_length,10).extrude(thick)
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, base_circle_thick=-1):
+
+
+
+        if balanced:
+            #centred second hand
+            total_length = self.length*1.05
+            base_r = self.base_r*0.7
+
+        if base_circle_thick < 0:
+            base_circle_thick = thick * 3
+
+        width = 1.5
+        back_width = 2
+
+        hand = cq.Workplane("XY").tag("base").moveTo(0,total_length/2).rect(width, total_length).extrude(thick)
+        hand = hand.workplaneFromTagged("base").circle(base_r).extrude(base_circle_thick)
+
+        #these look fairly accurate to the hands I'm modelling, but can't easily be balanced
+        # front_circle_y = total_length*0.6
+        # back_circle_y = -total_length*0.3
+        # front_circle_r = self.length*0.075
+        # back_circle_r = self.length*0.05
+
+        front_circle_y = total_length * 0.6
+        back_circle_y = -total_length * 0.4
+        front_circle_r = self.length * 0.06
+        back_circle_r = self.length * 0.06
+
+        #volume x centre distance
+        front_moment = total_length * width * thick * total_length*0.5 + math.pi*(front_circle_r**2)*thick * front_circle_y
+
+        back_arm_moment = -back_circle_y*0.5 * -back_circle_y*back_width*thick
+        back_circle_area_times_distance = math.pi*(back_circle_r**2) * -back_circle_y
+
+        back_circle_thick = (front_moment - back_arm_moment) / back_circle_area_times_distance
+
+
+        hand = hand.workplaneFromTagged("base").moveTo(0, front_circle_y).circle(front_circle_r).extrude(thick)
+
+        hand = hand.workplaneFromTagged("base").moveTo(0, back_circle_y/2).rect(back_width, -back_circle_y).extrude(thick)
+        hand = hand.workplaneFromTagged("base").moveTo(0, back_circle_y).circle(back_circle_r).extrude(back_circle_thick)
+
+
+        white_circle = cq.Workplane("XY").moveTo(0,front_circle_y).circle(front_circle_r - self.outline).extrude(self.detail_thick)
+
+        if colour == "white":
+            return white_circle
+        if colour == "black":
+            hand = hand.cut(white_circle)#.intersect(cq.Workplane("XY").rect(self.length * 4, self.length * 4).extrude(self.detail_thick)).cut(white_rectangle)
 
         return hand
 
@@ -363,7 +431,7 @@ class BaroqueHands(HandGenerator):
         self.minute_hand_cache = hand
         return hand
 
-    def second_hand(self, total_length=30, base_r=6, thick=3, colour=None):
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False):
         if self.second_hand_cache is not None:
             return self.second_hand_cache
         line_width=1.2
@@ -488,8 +556,8 @@ class Hands:
                     show_object(secondHand, options={"color": show_colour}, name=description)
 
 
-    def __init__(self, style=HandStyle.SIMPLE, minuteFixing="rectangle", hourFixing="circle", secondFixing="rod", minuteFixing_d1=1.5, minuteFixing_d2=2.5,
-                 hourfixing_d=3, secondFixing_d=3, length=25, secondLength=30, thick=1.6, fixing_offset_deg=0, outline=0, outlineSameAsBody=True, handNutMetricSize=3,
+    def __init__(self, style=HandStyle.SIMPLE, minute_fixing="rectangle", hourFixing="circle", second_fixing="rod", minute_fixing_d1=1.5, minute_fixing_d2=2.5,
+                 hourfixing_d=3, second_fixing_d=3, length=25, second_length=30, thick=1.6, fixing_offset_deg=0, outline=0, outline_same_as_body=True,
                  chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1, second_style_override=None, hour_style_override=None, outline_colour=None):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
@@ -543,15 +611,15 @@ class Hands:
                 if self.style == handStyle.value:
                     self.style = handStyle
 
-        self.minuteFixing=minuteFixing
-        self.minuteFixing_d1 = minuteFixing_d1
-        self.minuteFixing_d2 = minuteFixing_d2
+        self.minute_fixing=minute_fixing
+        self.minute_fixing_d1 = minute_fixing_d1
+        self.minute_fixing_d2 = minute_fixing_d2
         #"rod"
-        self.secondFixing=secondFixing
-        self.secondFixing_d = secondFixing_d
-        self.secondFixing_thick = self.thick
-        self.secondLength= secondLength
-        if self.secondLength == 0:
+        self.second_fixing=second_fixing
+        self.second_fixing_d = second_fixing_d
+        self.second_fixing_thick = self.thick
+        self.second_length= second_length
+        if self.second_length == 0:
             raise ValueError("Cannot have second hand of length zero")
         #Add a different coloured outline that is this many mm ratchetThick
         self.outline = outline
@@ -560,20 +628,19 @@ class Hands:
             #default to same as the other hands, but can be override. Note that if the outline fails to generate (can struggle on some complicated shapes when small) outline will be ignored
             self.outline_on_seconds = self.outline
         #if true the outline will be part of the same STL as the main body, if false, it'll just be a small sliver
-        self.outlineSameAsBody = outlineSameAsBody
-        self.handNutMetricSize=handNutMetricSize
+        self.outline_same_as_body = outline_same_as_body
 
-        if self.minuteFixing == "square":
-            self.minuteFixing_d2 = self.minuteFixing_d1
-            self.minuteFixing="rectangle"
+        if self.minute_fixing == "square":
+            self.minute_fixing_d2 = self.minute_fixing_d1
+            self.minute_fixing= "rectangle"
 
-        self.hourFixing=hourFixing
-        self.hourFixing_d = hourfixing_d
+        self.hour_fixing=hourFixing
+        self.hour_fixing_d = hourfixing_d
 
         if self.style == HandStyle.BAROQUE:
             line_width = max(self.length * 0.03, 2.4)
             #TODO tidy up the base_r calculations do this here again (commented out below)
-            self.generator = BaroqueHands(base_r=self.hourFixing_d *0.75, total_length=self.length, thick=self.thick, line_width=line_width)
+            self.generator = BaroqueHands(base_r=self.hour_fixing_d * 0.75, total_length=self.length, thick=self.thick, line_width=line_width)
 
         if self.style == HandStyle.FANCY_WATCH:
             #TODO base_r properly?
@@ -586,23 +653,8 @@ class Hands:
             self.hand_shapes[hand_type] = None
             self.outline_shapes[hand_type] = None
 
-    def getHandNut(self):
-        #fancy bit to hide the actual nut (still not used, should try and revive this!)
-        r = self.handNutMetricSize*2.5
-        height = r*0.75
-
-
-        circle = cq.Workplane("XY").circle(r)
-        nut = cq.Workplane("XZ").moveTo(self.handNutMetricSize/2,0).lineTo(r,0).line(0,height*0.25).lineTo(self.handNutMetricSize/2,height).close().sweep(circle)
-
-        nutSpace = get_hole_with_hole(innerD=self.handNutMetricSize, outerD=get_nut_containing_diameter(self.handNutMetricSize), sides=6, deep=getNutHeight(self.handNutMetricSize))
-
-        nut = nut.cut(nutSpace)
-
-        return nut
-
-    def cutFixing(self, hand, hand_type):
-        if hand_type == HandType.SECOND and self.secondFixing == "rod":
+    def cut_fixing(self, hand, hand_type):
+        if hand_type == HandType.SECOND and self.second_fixing == "rod":
             #second hand, assuming threaded onto a threaded rod, hole doesn't extend all the way through unless centred seconds hand
             # hand = hand.moveTo(0, 0).circle(self.secondFixing_d / 2).cutThruAll()
 
@@ -610,32 +662,39 @@ class Hands:
             if self.seconds_hand_through_hole:
                 z_offset = 0
 
-            bearing_standoff_thick = 0
-            #mega hacky, review if I ever want to try a 2mm arbour for the escape wheel
-            bearing = get_bearing_info(3)
+            '''
+            note - the original idea was I cut a thread in the hole on the second hand and it was fixed firmly to the rod, with a standoff from the bearing
+            (so it only touched the centre part which rotated with the hand)
+            however, over time the second hand became loose and so I ended up clamping it between two nuts. Therefore I'm now going to design it around being
+            clamped between two nuts and abandon the standoff
+            '''
+            # bearing_standoff_thick = 0
+            # #mega hacky, review if I ever want to try a 2mm arbour for the escape wheel
+            # # bearing = get_bearing_info(3)
+            # bearing = None
+            #
+            # if bearing is not None:
+            #     bearing_standoff_thick =  LAYER_THICK*2
 
-            if bearing is not None:
-                bearing_standoff_thick =  LAYER_THICK*2
-
-            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d / 2).extrude(self.secondThick - z_offset).translate((0,0,z_offset)))
+            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2).extrude(self.secondThick - z_offset).translate((0, 0, z_offset)))
             # try:
-            hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick - bearing_standoff_thick).translate((0,0,self.secondThick)))
-            if bearing is not None:
-                hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.inner_safe_d / 2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
-            # except:
+            # hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick - bearing_standoff_thick).translate((0,0,self.secondThick)))
+            # if bearing is not None:
+            #     hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.inner_safe_d / 2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
+            # # except:
             #     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.secondFixing_d * 0.99).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick + self.thick)
             return hand
 
 
-        if hand_type == HandType.MINUTE and self.minuteFixing == "rectangle":
+        if hand_type == HandType.MINUTE and self.minute_fixing == "rectangle":
             # TODO fixing_offset
-            cutter = cq.Workplane("XY").rect(self.minuteFixing_d1, self.minuteFixing_d2).extrude(self.thick).rotate((0,0,0), (0,0,1), self.fixing_offset_deg)
+            cutter = cq.Workplane("XY").rect(self.minute_fixing_d1, self.minute_fixing_d2).extrude(self.thick).rotate((0, 0, 0), (0, 0, 1), self.fixing_offset_deg)
             hand = hand.cut(cutter)
-        elif hand_type == HandType.MINUTE and self.minuteFixing == "circle":
-            hand = hand.moveTo(0, 0).circle(self.minuteFixing_d1 / 2).cutThruAll()
-        elif hand_type == HandType.HOUR and self.hourFixing == "circle":
+        elif hand_type == HandType.MINUTE and self.minute_fixing == "circle":
+            hand = hand.moveTo(0, 0).circle(self.minute_fixing_d1 / 2).cutThruAll()
+        elif hand_type == HandType.HOUR and self.hour_fixing == "circle":
             #hour hand, assuming circular friction fit
-            hand = hand.moveTo(0, 0).circle(self.hourFixing_d / 2).cutThruAll()
+            hand = hand.moveTo(0, 0).circle(self.hour_fixing_d / 2).cutThruAll()
         else:
             #major TODO would be a collet for the minute hand
             raise ValueError("Combination not supported yet")
@@ -677,10 +736,10 @@ class Hands:
             style = self.second_style_override
         min_base_r=0
         if minute or hour:
-            min_base_r = max(self.minuteFixing_d1, self.minuteFixing_d2, self.hourFixing_d)* 0.75
+            min_base_r = max(self.minute_fixing_d1, self.minute_fixing_d2, self.hour_fixing_d) * 0.75
 
         if second:
-            min_base_r = self.secondFixing_d* 0.7
+            min_base_r = self.second_fixing_d * 0.7
 
         need_base_r = True
         base_r = self.length * 0.12
@@ -699,12 +758,12 @@ class Hands:
             thick = self.secondThick
             if self.second_hand_centred:
                 # length = self.length
-                base_r = self.secondFixing_d * 2
+                base_r = self.second_fixing_d * 2
                 # hack until I design better seconds hands
                 # style = HandStyle.SIMPLE_ROUND
             else:
-                length = self.secondLength
-                base_r = self.secondLength * 0.15
+                length = self.second_length
+                base_r = self.second_length * 0.15
 
 
 
@@ -720,7 +779,7 @@ class Hands:
 
         if self.generator is not None:
             if second:
-                hand = self.generator.second_hand(total_length=self.secondLength, base_r=base_r, thick=self.secondThick, colour=colour)
+                hand = self.generator.second_hand(total_length=self.second_length, base_r=base_r, thick=self.secondThick, colour=colour, balanced=self.second_hand_balanced, base_circle_thick=self.second_fixing_thick)
             elif hour:
                 base_r = self.generator.base_r
                 hand = self.generator.hour_hand(colour=colour, thick_override=thick)
@@ -796,7 +855,7 @@ class Hands:
 
             if minute or hour:
                 #overriding this is getting super hacky... oh well
-                min_base_r = max(self.minuteFixing_d1, self.minuteFixing_d2, self.hourFixing_d) * 0.5 + 2.5
+                min_base_r = max(self.minute_fixing_d1, self.minute_fixing_d2, self.hour_fixing_d) * 0.5 + 2.5
 
             hand = hand.workplaneFromTagged("base").moveTo(width / 2, 0).line(0, body_length).lineTo(0, length).lineTo(-width/2, body_length).line(0, -body_length).close().extrude(thick)
 
@@ -1046,8 +1105,8 @@ class Hands:
                 y += r - overlap / 2
             if not second:
                 # is this too much? # TODO line up cutter with hand!
-                hand = Gear.cutStyle(hand, base_r * 0.9, self.hourFixing_d * 0.7, style=GearStyle.CIRCLES)
-            base_r = self.hourFixing_d * 0.6
+                hand = Gear.cutStyle(hand, base_r * 0.9, self.hour_fixing_d * 0.7, style=GearStyle.CIRCLES)
+            base_r = self.hour_fixing_d * 0.6
 
             # circle on the other side (I'm sure there's a way to set up initial y to do this properly)
             # actually makes it quite hard to read the time!
@@ -1258,7 +1317,7 @@ class Hands:
                 width = length * 0.3
                 end_d = length * 0.3 * 0.1
                 ignoreOutline = True
-                base_r = self.secondLength * 0.12
+                base_r = self.second_length * 0.12
             centrehole_r = width * 0.15
 
             # hand = hand.workplaneFromTagged("base").moveTo(width * 0.4, 0).threePointArc((end_d *0.75, length/2),(end_d / 2, length)).radiusArc(
@@ -1328,6 +1387,13 @@ class Hands:
 
         if need_base_r:
             hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
+
+            if second and self.second_fixing == "rod":
+                try:
+                    hand = hand.union(cq.Workplane("XY").moveTo(0, 0).circle(self.second_fixing_d).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick).translate((0, 0, self.secondThick)))
+                except:
+                    hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.second_fixing_d * 0.99).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick + self.thick)
+
 
         return hand
 
@@ -1409,11 +1475,11 @@ class Hands:
 
                     outline = shell.intersect(bigSlab)
 
-                    if self.outlineSameAsBody:
+                    if self.outline_same_as_body:
                         thin_not_outline = hand.intersect(bigSlab).cut(outline)
                         outline_with_back_of_hand = hand.cut(thin_not_outline)
                         try:
-                            outline_with_back_of_hand = self.cutFixing(outline_with_back_of_hand, hand_type)
+                            outline_with_back_of_hand = self.cut_fixing(outline_with_back_of_hand, hand_type)
                         except:
                             pass
                         self.outline_shapes[hand_type] = outline_with_back_of_hand
@@ -1431,23 +1497,23 @@ class Hands:
                 if generate_outline:
                     shell = hand.shell(outline_wide)
                     slabThick = self.outlineThick
-                    if self.outlineSameAsBody:
+                    if self.outline_same_as_body:
                         slabThick = thick
                     bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(slabThick)
 
                     outline = shell.intersect(bigSlab)
 
-                    if self.outlineSameAsBody:
+                    if self.outline_same_as_body:
                         #add the hand, minus a thin layer on the front
                         outline = outline.union(hand.cut(cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(self.outlineThick)))
-                        outline = self.cutFixing(outline, hand_type)
+                        outline = self.cut_fixing(outline, hand_type)
                         self.outline_shapes[hand_type] = outline
                         return outline
                     self.outline_shapes[hand_type] = outline
                     return outline
                 else:
                     #this is the hand, minus the outline
-                    if self.outlineSameAsBody:
+                    if self.outline_same_as_body:
                         bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick)
                         hand = hand.intersect(bigSlab)
                     else:
@@ -1467,12 +1533,12 @@ class Hands:
 
                         except:
                             print("Unable to add external outline to hand: {} {}".format(hand_type.value, self.style.value))
-                        hand = self.cutFixing(hand, hand_type)
+                        hand = self.cut_fixing(hand, hand_type)
                         return hand
 
         if not generate_outline:
             try:
-                hand = self.cutFixing(hand, hand_type)
+                hand = self.cut_fixing(hand, hand_type)
             except:
                 pass
 
@@ -1519,7 +1585,7 @@ class Hands:
             hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
             if self.second_hand_centred:
-                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 2 + gap_size + self.secondFixing_thick))
+                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 2 + gap_size + self.second_fixing_thick))
             # else:
             #     hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, self.length * 0.5, 0))
 
@@ -1585,11 +1651,6 @@ class Hands:
             out = os.path.join(path, "{}_second_hand{}.stl".format(name, colour_string))
             print("Outputting ", out)
             exporters.export(self.getHand(hand_type=HandType.SECOND, colour=colour), out)
-
-        # this does exist, but I've never used it in anger and have since been using domed nuts on the end instead
-        # out = os.path.join(path, "{}_hand_nut.stl".format(name))
-        # print("Outputting ", out)
-        # exporters.export(self.getHandNut(), out)
 
         if self.outline > 0:
             out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))

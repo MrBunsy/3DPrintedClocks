@@ -4333,7 +4333,7 @@ class Assembly:
         self.minute_hand_z = self.front_of_clock_z + self.motion_works_z_offset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick
         if self.plates.has_seconds_hand():
             self.second_hand_pos = self.plates.get_seconds_hand_position()
-            self.second_hand_pos.append(self.front_of_clock_z + self.hands.secondFixing_thick)
+            self.second_hand_pos.append(self.front_of_clock_z + self.hands.second_fixing_thick)
 
         self.minuteAngle = - 360 * (self.time_mins / 60)
         self.hourAngle = - 360 * (self.time_hours + self.time_mins / 60) / 12
@@ -4523,7 +4523,7 @@ class Assembly:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
-                    rod_length = hand_arbor_length + self.hands.secondFixing_thick + self.hands.secondThick
+                    rod_length = hand_arbor_length + self.hands.second_fixing_thick + self.hands.secondThick
                 else:
                     if self.dial is not None and self.dial.has_seconds_sub_dial():
                         #if the rod doesn't go all the way through the second hand
@@ -4534,7 +4534,7 @@ class Assembly:
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + (self.second_hand_pos[2] - total_plate_thick )+ hand_thick_accounting
                     else:
                         #little seconds hand just in front of the plate
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.secondFixing_thick + self.hands.secondThick
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.second_fixing_thick + self.hands.secondThick
             elif arbor.type == ArbourType.WHEEL_AND_PINION:
                 if i == self.goingTrain.powered_wheels:
                     #minute wheel
@@ -4922,8 +4922,8 @@ def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, tim
         if just_style is not None and style != just_style:
             continue
 
-        hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=length, thick=motionWorks.minute_hand_slot_height, outline=outline,
-                      outlineSameAsBody=False, secondLength=25)
+        hands = Hands(style=style, chunky=chunky, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=length, thick=motionWorks.minute_hand_slot_height, outline=outline,
+                      outline_same_as_body=False, second_length=25)
 
         x = 0
         y = 0
@@ -4978,8 +4978,8 @@ def show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=
     i = 0
     for style in HandStyle:
         if just_style is None or style == just_style:
-            hands = Hands(style=style, chunky=chunky, minuteFixing="square", minuteFixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                          length=length, thick=motion_works.minute_hand_slot_height, outline=outline, outlineSameAsBody=False, secondLength=second_length)
+            hands = Hands(style=style, chunky=chunky, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                          length=length, thick=motion_works.minute_hand_slot_height, outline=outline, outline_same_as_body=False, second_length=second_length)
 
             x = space * (i % per_row)
             y = (space) * math.floor(i / per_row)

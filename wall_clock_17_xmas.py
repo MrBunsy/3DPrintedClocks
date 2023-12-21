@@ -87,8 +87,8 @@ print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
 pulley_no_pipe = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)
 
-hands = clock.Hands(style=clock.HandStyle.XMAS_TREE, chunky=True, secondLength=25, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=True)
+hands = clock.Hands(style=clock.HandStyle.XMAS_TREE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=True)
 
 
 

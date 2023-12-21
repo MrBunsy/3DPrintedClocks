@@ -85,8 +85,8 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pe
                                  back_plate_from_wall=40, escapement_on_front=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.CUCKOO, secondLength=40, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outlineSameAsBody=False)
+hands = clock.Hands(style=clock.HandStyle.CUCKOO, second_length=40, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False)
 assembly = clock.Assembly(plates, hands=hands, pendulum=pendulum)
 
 assembly.printInfo()

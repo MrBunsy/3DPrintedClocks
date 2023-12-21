@@ -25,24 +25,25 @@ motionWorks = MotionWorks(compensate_loose_arbour=True, compact=True, bearing=ge
 # hands = Hands(style=HandStyle.SYRINGE, minuteFixing="rectangle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),minuteFixing_d2=motionWorks.get_minute_hand_square_size(),
 #               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=90, thick=3, outline=1, outlineSameAsBody=False,
 #               second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True, hour_style_override=HandStyle.BREGUET, second_style_override=HandStyle.SIMPLE_ROUND)
-
-hands = Hands(style=HandStyle.FANCY_WATCH, minuteFixing="circle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),minuteFixing_d2=motionWorks.get_minute_hand_square_size(),
-              hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=68, thick=2, outline=1.5, outlineSameAsBody=False,
-              second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True, outline_colour="black")
+dial_d = 205
+dial = Dial(205, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
+            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_d/6)
+hands = Hands(style=HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), minute_fixing_d2=motionWorks.get_minute_hand_square_size(),
+              hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=2, outline=0, outline_same_as_body=False,
+              second_hand_centred=True, second_fixing_d=get_diameter_for_die_cutting(3), chunky=True, outline_colour="black", seconds_hand_thick=1)
 
 
 # hands.show_hands(show_object=show_object)
 
-dial = Dial(150, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
-            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=150/6)
+
 
 show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180), options={"color":"white"} )
 show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180), options={"color": Colour.BRASS} )#
 
-# show_object(hands.getHand(hand_type=HandType.MINUTE, colour="white"))
+# show_object(hands.getHand(hand_type=HandType.SECOND, colour="white"))
 
 hands.show_hands(show_object=show_object, show_second_hand=True)
 
-hands.output_STLs("test_hands", "out")
+# hands.output_STLs("test_hands", "out")
 
 

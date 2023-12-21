@@ -138,7 +138,7 @@ def gen_hand_previews(out_path="autoclock", length=120, size=600, only_these=Non
                     print("Generating preview for {}{}{}".format(style.value, outline_string.replace("_"," "), seconds_string.replace("_", " ")))
 
                     hands = Hands(style=style, length=length, outline=outline, second_hand_centred=centred_seconds,
-                                  thick=3, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
+                                  thick=3, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(),
                                   hourfixing_d=motionWorks.get_hour_hand_hole_d())
                     demo = hands.get_assembled()#include_seconds=centred_seconds
 
@@ -247,9 +247,9 @@ class DialWithHands:
         if self.hand_style == HandStyle.XMAS_TREE:
             outlineSameAsBody = True
 
-        self.hands = Hands(style=self.hand_style, minuteFixing=minute_fixing, minuteFixing_d1=5.2, hourfixing_d=11.5,
-                           length=self.diameter*0.45, thick=3, outline=outline, outlineSameAsBody=outlineSameAsBody,
-                           second_hand_centred=self.centred_second_hand, chunky=True, secondLength=30)
+        self.hands = Hands(style=self.hand_style, minute_fixing=minute_fixing, minute_fixing_d1=5.2, hourfixing_d=11.5,
+                           length=self.diameter*0.45, thick=3, outline=outline, outline_same_as_body=outlineSameAsBody,
+                           second_hand_centred=self.centred_second_hand, chunky=True, second_length=30)
         #on second thoughts, generating it ourselves is easier, don't have to worry about seconds hands or taking lots of time to generate motion works
         # self.autoclock = AutoWallClock(centred_second_hand=self.centred_second_hand, has_dial=True, dial_style=self.style,hand_style=self.hand_style,hand_has_outline=self.hand_has_outline)
         # self.autoclock.gen_clock()
@@ -412,9 +412,9 @@ class AutoWallClock:
         outlineSameAsBody = False
         if self.hand_style == HandStyle.XMAS_TREE:
             outlineSameAsBody = True
-        self.hands = Hands(style=self.hand_style, minuteFixing=minute_fixing, minuteFixing_d1=self.motionWorks.get_minute_hand_square_size(), hourfixing_d=self.motionWorks.get_hour_hand_hole_d(),
-                           length=self.hand_length, thick=self.motionWorks.minute_hand_slot_height, outline=outline, outlineSameAsBody=outlineSameAsBody,
-                           second_hand_centred=self.centred_second_hand, chunky=True, secondLength=self.second_hand_length)
+        self.hands = Hands(style=self.hand_style, minute_fixing=minute_fixing, minute_fixing_d1=self.motionWorks.get_minute_hand_square_size(), hourfixing_d=self.motionWorks.get_hour_hand_hole_d(),
+                           length=self.hand_length, thick=self.motionWorks.minute_hand_slot_height, outline=outline, outline_same_as_body=outlineSameAsBody,
+                           second_hand_centred=self.centred_second_hand, chunky=True, second_length=self.second_hand_length)
 
         self.pulley = BearingPulley(diameter=self.train.powered_wheel.diameter, bearing=get_bearing_info(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))
 
