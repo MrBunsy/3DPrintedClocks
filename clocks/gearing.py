@@ -2555,7 +2555,7 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 moon_complication=None):
+                 moon_complication=None, cannon_pinion_friction_ring=False):
         '''
 
         inset_at_base - if >0 (usually going to want just less than TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT) then inset the bearing or create a space large enoguh
@@ -2597,6 +2597,12 @@ class MotionWorks:
         self.style=style
         self.compact = compact
 
+        #experimental, have an extra round bit at the bottom that can have a small amount of friction applied to remove the slack on centred-seconds-hands clocks
+        self.cannon_pinion_friction_ring = cannon_pinion_friction_ring
+        self.friction_ring_thick = self.thick * 2
+        self.friction_ring_wall_thick=2
+
+        #hole in the bottom so the bearing or double nut + split washer can be inside the cannon pinion
         self.inset_at_base = inset_at_base
 
         self.moon_complication = moon_complication
@@ -2810,6 +2816,9 @@ class MotionWorks:
 
         self.calc_bearing_holder_thick()
 
+        self.friction_ring_r = self.pairs[0].pinion.get_min_radius()
+
+
     def get_assembled(self, motionWorksRelativePos=None,minuteAngle=10):
 
         parts = self.get_parts_in_situ(motionWorksRelativePos, minuteAngle)
@@ -2951,6 +2960,14 @@ class MotionWorks:
             # extend out the bottom for space for a slot on the bottom
             pinion = pinion.translate((0, 0, self.bearing_holder_thick))
             pinion = pinion.union(cq.Workplane("XY").circle(pinion_max_r).extrude(self.bearing_holder_thick))
+            if self.cannon_pinion_friction_ring:
+                raise ValueError("TODO calculate friction_ring_r for this case")
+        elif self.cannon_pinion_friction_ring and self.bearing is not None:
+            #need a round bit at the base, but there isn't one from the bearing
+            #note this isn't taken into account for geometry deliberately - it should slot over any nuts on the rod
+            pinion = pinion.faces("<Z").workplane().circle(self.friction_ring_r).circle(self.bearing.outer_d/2).extrude(self.friction_ring_thick)
+            #cut a cone in the bottom to make it easier to slot in the bearing
+            pinion = pinion.cut(cq.Solid.makeCone(radius2=self.bearing.outer_d/2, radius1=self.friction_ring_r - self.friction_ring_wall_thick, height=self.friction_ring_thick).translate((0,0,-self.friction_ring_thick)))
 
         # has an arm to hold the minute hand
         pinion = pinion.union(cq.Workplane("XY").circle(self.minute_hand_holder_d / 2).extrude(self.cannon_pinion_total_height_above_base - self.minute_hand_slot_height).translate((0, 0, self.cannon_pinion_base_height)))

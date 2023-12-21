@@ -1569,6 +1569,15 @@ class SimpleClockPlates:
 
         self.motion_works_pos = np_to_set(np.add(self.hands_position, self.motion_works_relative_pos))
 
+        #calculate position even if it's not applicable to this clock
+        friction_clip_dir = np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
+        friction_clip_distance = self.motion_works.friction_ring_r*3
+        self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
+        self.cannon_pinion_friction_clip_fixings_pos = [
+            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 3, 0))),
+            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (self.plate_width / 3, 0)))
+        ]
+
         #even if it's not used:
 
         #TODO calculate so it's always just big enough?
@@ -2259,6 +2268,24 @@ class SimpleClockPlates:
 
         return False
 
+    def get_cannon_pinion_friction_clip(self):
+        '''
+        not sure waht to call this - experimental sprung peice that can add a small amount of friction to the cannon pinion so the minute hand
+        doesn't have too much slack when the second hand is centred. Without it the minute hand is about 30s fast on the half past and 30s slow on the half to.
+        '''
+        centre_z = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.endshake / 2 - self.motion_works.friction_ring_thick/2
+
+        clip_thick = self.motion_works.friction_ring_thick/2
+        total_thick = centre_z + clip_thick/2
+
+        clip = cq.Workplane("XY").circle(self.plate_width/2).extrude(total_thick)
+
+        for pos in self.cannon_pinion_friction_clip_fixings_pos:
+            relative_pos = np_to_set(np.subtract(pos, self.cannon_pinion_friction_clip_pos))
+            clip = clip.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((relative_pos[0], relative_pos[1], total_thick)))
+
+        return clip
+
     def get_motion_works_holder(self):
         if not self.need_motion_works_holder:
             return None
@@ -2273,12 +2300,12 @@ class SimpleClockPlates:
         holder = cq.Workplane("XY").moveTo(w/2, l/2).radiusArc((-w/2,l/2), -w/2).line(0,-l).radiusArc((w/2, -l/2), -w/2).close().extrude(holder_thick)
 
         #small standoff for motion works arbour
-        holder = holder.faces(">Z").workplane().circle(self.fixing_screws.metric_thread).extrude(standoff_thick)
+        holder = holder.faces(">Z").workplane().circle(self.motion_works_screws.metric_thread).extrude(standoff_thick)
 
-        holder = holder.cut(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True))
+        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True))
 
         for pos in self.motion_works_fixings_relative_pos:
-            holder = holder.cut(self.fixing_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
+            holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
 
         return holder
 
@@ -3292,6 +3319,10 @@ class SimpleClockPlates:
                 plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
             #hole for screw to hold motion works arbour
             plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
+
+        if self.motion_works.cannon_pinion_friction_ring:
+            for pos in self.cannon_pinion_friction_clip_fixings_pos:
+                plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(plate_thick).translate(pos))
 
         #embedded nut on the front so we can tighten this screw in
         #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.
@@ -4783,6 +4814,8 @@ class Assembly:
             colour = motion_works_colours[i % len(motion_works_colours)]
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
 
+        if self.motion_works.cannon_pinion_friction_ring:
+            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z)), options={"color":plate_colour}, name="Friction Clip")
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors

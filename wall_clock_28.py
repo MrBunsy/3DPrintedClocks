@@ -75,7 +75,8 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3), minute_hand_thick=2)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
+                                minute_hand_thick=2, cannon_pinion_friction_ring=True)
 motionWorks.calculate_size(35)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
@@ -95,7 +96,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
 
 
 hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1.5, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0.4,
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,
                     second_length=dial.get_hand_length(clock.HandType.SECOND))
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
