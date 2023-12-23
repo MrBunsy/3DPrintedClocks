@@ -1571,11 +1571,11 @@ class SimpleClockPlates:
 
         #calculate position even if it's not applicable to this clock
         friction_clip_dir = np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
-        friction_clip_distance = self.motion_works.friction_ring_r*3
+        friction_clip_distance = self.motion_works.friction_ring_r*2.5
         self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
         self.cannon_pinion_friction_clip_fixings_pos = [
-            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 3, 0))),
-            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (self.plate_width / 3, 0)))
+            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 5, -self.plate_width /  5))),
+            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (self.plate_width / 5, self.plate_width / 5)))
         ]
 
         #even if it's not used:
@@ -2270,7 +2270,7 @@ class SimpleClockPlates:
 
     def get_cannon_pinion_friction_clip(self):
         '''
-        not sure waht to call this - experimental sprung peice that can add a small amount of friction to the cannon pinion so the minute hand
+        holds two "brake pads" - experimental sprung peice that can add a small amount of friction to the cannon pinion so the minute hand
         doesn't have too much slack when the second hand is centred. Without it the minute hand is about 30s fast on the half past and 30s slow on the half to.
         '''
         centre_z = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.endshake / 2 - self.motion_works.friction_ring_thick/2
@@ -2278,8 +2278,62 @@ class SimpleClockPlates:
         clip_thick = self.motion_works.friction_ring_thick/2
         total_thick = centre_z + clip_thick/2
 
-        clip = cq.Workplane("XY").circle(self.plate_width/2).extrude(total_thick)
+        clip_holder_r = self.plate_width/2
 
+        clip = cq.Workplane("XY").circle(clip_holder_r).extrude(total_thick)
+
+
+
+        cannon_pinion_relative_pos = np_to_set(np.subtract(self.hands_position, self.cannon_pinion_friction_clip_pos))
+        from_holder_to_cannon_pinion = Line(self.cannon_pinion_friction_clip_pos, anotherPoint=self.hands_position)
+        angle_to_cannon_pinion = from_holder_to_cannon_pinion.getAngle()
+
+        arc = math.pi/4
+        angle_pairs = [[angle - arc/2, angle + arc/2, angle] for angle in [angle_to_cannon_pinion+math.pi/2, angle_to_cannon_pinion - math.pi/2]]
+        brake_pads = cq.Workplane("XY")
+
+        brake_pad_thick = 2
+        #not sure what to name this - this is how far "inside" the cannon pinion the brake pads want to be
+        brake_pad_offset = 1
+        arm_thick = 0.8
+
+        inner_r = self.motion_works.friction_ring_r - brake_pad_offset
+        outer_r = inner_r + brake_pad_thick
+
+        for angles in angle_pairs:
+            start_inner = polar(angles[0], inner_r)
+            start_outer = polar(angles[0], outer_r)
+            end_inner = polar(angles[1], inner_r)
+            end_outer = polar(angles[1], outer_r)
+
+            outer_radius_arc = (self.motion_works.friction_ring_r + brake_pad_thick)
+            #sagitta - the outside arc isn't the outside radius as the brake pads are built, only once bent into place
+            l = distance_between_two_points(start_outer, end_outer)
+            r = (self.motion_works.friction_ring_r + brake_pad_thick)
+            sagitta_1 = r - math.sqrt(r**2 - 0.25*l**2)
+            sagitta_2 = outer_r - math.sqrt(outer_r**2 - 0.25*l**2)
+
+            #the arm is at an angle, so taking this isn't account doesn't make it perfectly line up with the tangent of the outside the brake pad anyway, but it looks
+            #better than not doing it.
+            arm_start = polar(angles[2], outer_r - arm_thick/2 - abs(sagitta_2 - sagitta_1))
+            arm_finish = np_to_set(np.add(np.multiply(cannon_pinion_relative_pos, -1), polar(angles[2], clip_holder_r - arm_thick/2)))
+
+            brake_pad = (cq.Workplane("XY").moveTo(start_inner[0], start_inner[1]).radiusArc(end_inner, -self.motion_works.friction_ring_r).lineTo(end_outer[0], end_outer[1])
+                     .radiusArc(start_outer, outer_radius_arc).close().extrude(clip_thick))
+
+            arm = get_stroke_line([arm_start, arm_finish], wide=arm_thick, thick=clip_thick)
+            brake_pad = brake_pad.union(arm)
+
+            brake_pads = brake_pads.union(brake_pad.translate(cannon_pinion_relative_pos).translate((0,0,total_thick-clip_thick)))
+
+        # arms = cq.Workplane("XY")
+        # for x in [-1,1]:
+        #     arms = arms.union(get_stroke_line([(x*(outer_r -arm_thick/2), ),]))
+
+
+        clip = clip.union(brake_pads)
+
+        #cutting out screws afterwards so they don't overlap with the arms
         for pos in self.cannon_pinion_friction_clip_fixings_pos:
             relative_pos = np_to_set(np.subtract(pos, self.cannon_pinion_friction_clip_pos))
             clip = clip.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((relative_pos[0], relative_pos[1], total_thick)))
@@ -3650,6 +3704,10 @@ class SimpleClockPlates:
             print("Outputting ", out)
             exporters.export(self.get_top_pillar(), out)
 
+        if self.motion_works.cannon_pinion_friction_ring:
+            out = os.path.join(path, "{}_friction_clip.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_cannon_pinion_friction_clip(), out)
 
         if len(self.get_screwhole_positions()) > 1:
             #need a template to help drill the screwholes!
@@ -4554,18 +4612,18 @@ class Assembly:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
-                    rod_length = hand_arbor_length + self.hands.second_fixing_thick + self.hands.secondThick
+                    rod_length = hand_arbor_length + self.hands.second_fixing_thick + CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT
                 else:
                     if self.dial is not None and self.dial.has_seconds_sub_dial():
                         #if the rod doesn't go all the way through the second hand
-                        hand_thick_accounting = self.hands.secondThick - self.hands.second_rod_end_thick
+                        hand_thick_accounting = self.hands.second_thick - self.hands.second_rod_end_thick
                         if self.hands.seconds_hand_through_hole:
-                            hand_thick_accounting = self.hands.secondThick
+                            hand_thick_accounting = self.hands.second_thick
                         #rod_length = length_up_to_inside_front_plate + front_plate_thick + self.dial.support_length + self.dial.thick + self.hands.secondFixing_thick + hand_thick_accounting
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + (self.second_hand_pos[2] - total_plate_thick )+ hand_thick_accounting
                     else:
                         #little seconds hand just in front of the plate
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.second_fixing_thick + self.hands.secondThick
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.second_fixing_thick + self.hands.second_thick
             elif arbor.type == ArbourType.WHEEL_AND_PINION:
                 if i == self.goingTrain.powered_wheels:
                     #minute wheel

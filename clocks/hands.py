@@ -205,7 +205,7 @@ class FancyWatchHands(HandGenerator):
 
         return hand
 
-    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, base_circle_thick=-1):
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, fixing_thick=-1):
 
 
 
@@ -214,14 +214,14 @@ class FancyWatchHands(HandGenerator):
             total_length = self.length*1.05
             base_r = self.base_r*0.7
 
-        if base_circle_thick < 0:
-            base_circle_thick = thick * 3
+        if fixing_thick < 0:
+            fixing_thick = thick * 3
 
         width = 1.5
         back_width = 2
 
         hand = cq.Workplane("XY").tag("base").moveTo(0,total_length/2).rect(width, total_length).extrude(thick)
-        hand = hand.workplaneFromTagged("base").circle(base_r).extrude(base_circle_thick)
+        hand = hand.workplaneFromTagged("base").circle(base_r).extrude(fixing_thick)
 
         #these look fairly accurate to the hands I'm modelling, but can't easily be balanced
         # front_circle_y = total_length*0.6
@@ -529,11 +529,11 @@ class Hands:
             position = (0,0,0)
         if second_hand_pos is None:
             if self.second_hand_centred:
-                second_hand_pos = (0,0, self.thick)
+                second_hand_pos = (0,0,0)
             else:
                 second_hand_pos = (position[0], position[1] + self.length * 0.75, 0)
 
-        hands = self.get_in_situ(time_minute=time_minutes, time_hour=time_hours, time_seconds=time_seconds, gap_size=hour_hand_slot_height - self.thick)
+        hands = self.get_in_situ(time_minute=time_minutes, time_hour=time_hours, time_seconds=time_seconds, gap_size=hour_hand_slot_height - self.thick, second_gap_size=CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT)
 
         for type in HandType:
             for colour in hands[type]:
@@ -558,7 +558,8 @@ class Hands:
 
     def __init__(self, style=HandStyle.SIMPLE, minute_fixing="rectangle", hourFixing="circle", second_fixing="rod", minute_fixing_d1=1.5, minute_fixing_d2=2.5,
                  hourfixing_d=3, second_fixing_d=3, length=25, second_length=30, thick=1.6, fixing_offset_deg=0, outline=0, outline_same_as_body=True,
-                 chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1, second_style_override=None, hour_style_override=None, outline_colour=None):
+                 chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1, second_style_override=None, hour_style_override=None, outline_colour=None,
+                 second_fixing_thick=-1):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
 
@@ -571,9 +572,9 @@ class Hands:
         self.thick=thick
         #something with shells or outline doesn't behave how I'd expect with thin and narrow hands, ends up with a layer inside the hand for the outline
         #recommend using thicker seconds hands if using an outline
-        self.secondThick= seconds_hand_thick
-        if self.secondThick < 0:
-            self.secondThick = self.thick
+        self.second_thick= seconds_hand_thick
+        if self.second_thick < 0:
+            self.second_thick = self.thick
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
         #one layer does work pretty well, but the elephant's foot is sometimes obvious and it's hard to keep the first layer of white perfect. So switching back to two
         self.outlineThick=LAYER_THICK*2
@@ -598,7 +599,7 @@ class Hands:
         self.seconds_hand_through_hole = second_hand_centred
 
         #the second hand doesn't have the rod go all the way through - how thick should the bit that stops on the end of the rod be?
-        self.second_rod_end_thick = self.secondThick/2
+        self.second_rod_end_thick = self.second_thick / 2
 
         #try to make the second hand counterbalanced
         self.second_hand_balanced = second_hand_centred
@@ -617,7 +618,10 @@ class Hands:
         #"rod"
         self.second_fixing=second_fixing
         self.second_fixing_d = second_fixing_d
-        self.second_fixing_thick = self.thick
+        #NOTE - total thickness of centre of second hand (assumes second_fixing_thick > second_thick )
+        self.second_fixing_thick = second_fixing_thick
+        if self.second_fixing_thick < 0:
+            self.second_fixing_thick = self.thick
         self.second_length= second_length
         if self.second_length == 0:
             raise ValueError("Cannot have second hand of length zero")
@@ -676,7 +680,7 @@ class Hands:
             # if bearing is not None:
             #     bearing_standoff_thick =  LAYER_THICK*2
 
-            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2).extrude(self.secondThick - z_offset).translate((0, 0, z_offset)))
+            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - z_offset).translate((0, 0, z_offset)))
             # try:
             # hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick - bearing_standoff_thick).translate((0,0,self.secondThick)))
             # if bearing is not None:
@@ -755,7 +759,7 @@ class Hands:
             # if self.style == "square":
             #     width = width * 1.75
         if second:
-            thick = self.secondThick
+            thick = self.second_thick
             if self.second_hand_centred:
                 # length = self.length
                 base_r = self.second_fixing_d * 2
@@ -779,7 +783,7 @@ class Hands:
 
         if self.generator is not None:
             if second:
-                hand = self.generator.second_hand(total_length=self.second_length, base_r=base_r, thick=self.secondThick, colour=colour, balanced=self.second_hand_balanced, base_circle_thick=self.second_fixing_thick)
+                hand = self.generator.second_hand(total_length=self.second_length, base_r=base_r, thick=self.second_thick, colour=colour, balanced=self.second_hand_balanced, fixing_thick=self.second_fixing_thick)
             elif hour:
                 base_r = self.generator.base_r
                 hand = self.generator.hour_hand(colour=colour, thick_override=thick)
@@ -1390,7 +1394,7 @@ class Hands:
 
             if second and self.second_fixing == "rod":
                 try:
-                    hand = hand.union(cq.Workplane("XY").moveTo(0, 0).circle(self.second_fixing_d).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick).translate((0, 0, self.secondThick)))
+                    hand = hand.union(cq.Workplane("XY").moveTo(0, 0).circle(self.second_fixing_d).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick).translate((0, 0, self.second_thick)))
                 except:
                     hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.second_fixing_d * 0.99).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick + self.thick)
 
@@ -1449,7 +1453,7 @@ class Hands:
         outline_wide = self.outline
         if hand_type == HandType.SECOND:
             outline_wide = self.outline_on_seconds
-            thick = self.secondThick
+            thick = self.second_thick
 
         if outline_wide > 0:# and not ignoreOutline:
             if self.outLineIsSubtractive():
@@ -1544,7 +1548,7 @@ class Hands:
 
         return hand
 
-    def get_in_situ(self,time_minute=10, time_hour=10, time_seconds=0, gap_size=0):
+    def get_in_situ(self,time_minute=10, time_hour=10, time_seconds=0, gap_size=0, second_gap_size=CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT):
         '''
         get individual hands in the right position for assembling a model
         '''
@@ -1577,15 +1581,16 @@ class Hands:
 
         #rotate and translate into position
         for colour in hands[HandType.MINUTE]:
-            hands[HandType.MINUTE][colour] = hands[HandType.MINUTE][colour].mirror().translate((0, 0, self.thick * 2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+            hands[HandType.MINUTE][colour] = hands[HandType.MINUTE][colour].rotate((0,0,0),(0,1,0),180).translate((0, 0, self.thick * 2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         for colour in hands[HandType.HOUR]:
-            hands[HandType.HOUR][colour] = hands[HandType.HOUR][colour].mirror().translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
+            hands[HandType.HOUR][colour] = hands[HandType.HOUR][colour].rotate((0,0,0),(0,1,0),180).translate((0, 0, self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
         for colour in hands[HandType.SECOND]:
             #relative position of second hand is irrelevant because Hands object doesn't know where to put it, so it's only valid for centred second hand
-            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].mirror().translate((0, 0, self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+            #self.second_thick
+            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].rotate((0,0,0),(0,1,0),180).translate((0, 0, self.second_fixing_thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
             if self.second_hand_centred:
-                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 2 + gap_size + self.second_fixing_thick))
+                hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 2 + gap_size + second_gap_size))
             # else:
             #     hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, self.length * 0.5, 0))
 
@@ -1620,7 +1625,7 @@ class Hands:
 
         minuteHand = minuteHand.mirror().translate((0, 0, 0 if flatten else self.thick*2 + gap_size)).rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         hourHand = hourHand.mirror().translate((0, 0, 0 if flatten else self.thick)).rotate((0, 0, 0), (0, 0, 1), hourAngle)
-        secondHand = secondHand.mirror().translate((0, 0, 0 if flatten else self.secondThick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+        secondHand = secondHand.mirror().translate((0, 0, 0 if flatten else self.second_thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
         if self.second_hand_centred:
             secondHand = secondHand.translate((0,0,self.thick*3))

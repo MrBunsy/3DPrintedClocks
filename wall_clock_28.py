@@ -97,7 +97,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
 
 hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,
-                    second_length=dial.get_hand_length(clock.HandType.SECOND))
+                    second_length=dial.get_hand_length(clock.HandType.SECOND), second_fixing_thick=3)
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 
@@ -112,7 +112,7 @@ assembly.get_arbour_rod_lengths()
 # motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW],
 assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
                    motion_works_colours=[clock.Colour.BRASS],
-                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True)
+                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)
 
 # show_object(plates.getDrillTemplate(6))
 

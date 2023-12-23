@@ -65,6 +65,8 @@ DIRECT_ARBOUR_D = 7  # 7.5
 # for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
 # includes a bit of slack
 TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT = 6
+#M3 half nut + flattened spring washer + wiggle room
+CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT = 1.75+1.1 + 1
 
 # actually nearer 3.6, but this leaves wiggle room
 M3_DOMED_NUT_THREAD_DEPTH = 3.5

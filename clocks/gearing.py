@@ -2816,7 +2816,7 @@ class MotionWorks:
 
         self.calc_bearing_holder_thick()
 
-        self.friction_ring_r = self.pairs[0].pinion.get_min_radius()
+        self.friction_ring_r = self.pairs[0].pinion.get_max_radius()
 
 
     def get_assembled(self, motionWorksRelativePos=None,minuteAngle=10):
@@ -2967,7 +2967,8 @@ class MotionWorks:
             #note this isn't taken into account for geometry deliberately - it should slot over any nuts on the rod
             pinion = pinion.faces("<Z").workplane().circle(self.friction_ring_r).circle(self.bearing.outer_d/2).extrude(self.friction_ring_thick)
             #cut a cone in the bottom to make it easier to slot in the bearing
-            pinion = pinion.cut(cq.Solid.makeCone(radius2=self.bearing.outer_d/2, radius1=self.friction_ring_r - self.friction_ring_wall_thick, height=self.friction_ring_thick).translate((0,0,-self.friction_ring_thick)))
+            #not using wall thick as intended because I want this to be easier to print with more in contact with the plate
+            pinion = pinion.cut(cq.Solid.makeCone(radius2=self.bearing.outer_d/2, radius1=self.bearing.outer_d/2 + self.friction_ring_wall_thick, height=self.friction_ring_thick).translate((0,0,-self.friction_ring_thick)))
 
         # has an arm to hold the minute hand
         pinion = pinion.union(cq.Workplane("XY").circle(self.minute_hand_holder_d / 2).extrude(self.cannon_pinion_total_height_above_base - self.minute_hand_slot_height).translate((0, 0, self.cannon_pinion_base_height)))
