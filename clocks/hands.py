@@ -88,6 +88,8 @@ class FancyWatchHands(HandGenerator):
         self.outline = self.length*0.02
         self.detail_thick = detail_thick
 
+        self.main_hand_black = True
+
     def hour_hand(self, colour=None, thick_override=-1):
         hand = cq.Workplane("XY").tag("base")
 
@@ -148,10 +150,16 @@ class FancyWatchHands(HandGenerator):
         black_detail = three_prongs.union(black_outline)
         # black_detail = three_prongs
 
+        white_detail = hand.intersect(cq.Workplane("XY").rect(self.length * 4, self.length * 4).extrude(self.detail_thick)).cut(black_detail)
+
         if colour == "white":
+            if self.main_hand_black:
+                return white_detail
             return hand.cut(black_detail)
 
         if colour == "black":
+            if self.main_hand_black:
+                return hand.cut(white_detail)
             return black_detail
 
 
@@ -198,9 +206,12 @@ class FancyWatchHands(HandGenerator):
 
 
         if colour == "black":
-
+            if self.main_hand_black:
+                return hand.cut(white_rectangle)
             return detail_without_rectangle
         if colour == "white":
+            if self.main_hand_black:
+                return white_rectangle
             return hand.cut(detail_without_rectangle)
 
         return hand
@@ -559,7 +570,7 @@ class Hands:
     def __init__(self, style=HandStyle.SIMPLE, minute_fixing="rectangle", hourFixing="circle", second_fixing="rod", minute_fixing_d1=1.5, minute_fixing_d2=2.5,
                  hourfixing_d=3, second_fixing_d=3, length=25, second_length=30, thick=1.6, fixing_offset_deg=0, outline=0, outline_same_as_body=True,
                  chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1, second_style_override=None, hour_style_override=None, outline_colour=None,
-                 second_fixing_thick=-1):
+                 second_fixing_thick=-1, outline_thick=LAYER_THICK * 2):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
 
@@ -577,7 +588,7 @@ class Hands:
             self.second_thick = self.thick
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
         #one layer does work pretty well, but the elephant's foot is sometimes obvious and it's hard to keep the first layer of white perfect. So switching back to two
-        self.outlineThick=LAYER_THICK*2
+        self.outline_thick = outline_thick
         #how much to rotate the minute fixing by
         self.fixing_offset_deg=fixing_offset_deg
         self.length = length
@@ -648,7 +659,7 @@ class Hands:
 
         if self.style == HandStyle.FANCY_WATCH:
             #TODO base_r properly?
-            self.generator = FancyWatchHands(base_r=self.length*0.1, thick = self.thick, total_length= self.length, outline= self.outline, detail_thick=self.outlineThick)
+            self.generator = FancyWatchHands(base_r=self.length*0.1, thick = self.thick, total_length= self.length, outline= self.outline, detail_thick=self.outline_thick)
 
         #was attempting to use a cache, but so many edge cases that I've given up
         self.hand_shapes = {}
@@ -1473,7 +1484,7 @@ class Hands:
                         return None
                     # hand_minus_shell = hand.cut(shell)
                     # return shell
-                    slab_thick = self.outlineThick
+                    slab_thick = self.outline_thick
 
                     bigSlab = cq.Workplane("XY").rect(self.length*3, self.length*3).extrude(slab_thick)
 
@@ -1500,7 +1511,7 @@ class Hands:
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
                 if generate_outline:
                     shell = hand.shell(outline_wide)
-                    slabThick = self.outlineThick
+                    slabThick = self.outline_thick
                     if self.outline_same_as_body:
                         slabThick = thick
                     bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(slabThick)
@@ -1509,7 +1520,7 @@ class Hands:
 
                     if self.outline_same_as_body:
                         #add the hand, minus a thin layer on the front
-                        outline = outline.union(hand.cut(cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(self.outlineThick)))
+                        outline = outline.union(hand.cut(cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(self.outline_thick)))
                         outline = self.cut_fixing(outline, hand_type)
                         self.outline_shapes[hand_type] = outline
                         return outline
