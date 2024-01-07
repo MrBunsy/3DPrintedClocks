@@ -158,6 +158,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
 
     log.write("Assuming centre of dial is: {}\n".format(centre))
 
+    #we want to start the dial shapes with as little travel as possible, find the angle of the last known position of the nozzle
     start_angle = math.atan2(start_pos[1] - centre[1], start_pos[0] - centre[0])
     log.write("assuming attempting to start at angle {}deg\n".format(360*start_angle/(math.pi*2)))
     for shape_gcode in shapes:
@@ -165,6 +166,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
         shape_centre = get_average_position(shape_gcode)
         diff = (shape_centre[0] - centre[0], shape_centre[1] - centre[1])
         angle = math.atan2(diff[1], diff[0])
+        #want the most -ve angle to be the one nearest the start angle so the sort will put that first
         if angle < start_angle:
             angle += math.pi*2
 
