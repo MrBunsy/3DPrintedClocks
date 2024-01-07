@@ -100,6 +100,18 @@ def get_average_position(gcode):
             found +=1
     return (x/found, y/found)
 
+def get_shape_type(gcode):
+    '''
+    get the type of part being printed - should only see Perimeter, External perimeter and Solid infill
+    '''
+    current_shape_type = None
+    for line in gcode:
+        if line.startswith(";TYPE:"):
+            # last_shape_type = current_shape_type
+            current_shape_type = line.strip().split(":")[1]
+
+    return current_shape_type
+
 def re_arrange_shapes(shapes, log):
     '''
     give a list of lists of gcode, re-order the first list to reduce travelling
@@ -125,7 +137,12 @@ def re_arrange_shapes(shapes, log):
         diff = (shape_centre[0] - centre[0], shape_centre[1] - centre[1])
         angle = math.atan2(diff[1], diff[0])
 
-        shape_info = {"gcode":shape_gcode, "angle":angle}
+        type = get_shape_type(shape_gcode)
+        if type == "External perimeter":
+            #ever so slightly prioritise so we don't do the infil of numbers with inner circles before the outline
+            angle-=1*2*math.pi/360
+
+        shape_info = {"gcode":shape_gcode, "angle":angle, "type": type}
         shapes_processed.append(shape_info)
 
 
