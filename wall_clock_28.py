@@ -18,7 +18,7 @@ on the external case of the clock or other products you make using this
 source.
 '''
 from clocks import clock
-
+import cadquery as cq
 '''
 Loosely styled on a rolex
 
@@ -59,14 +59,15 @@ moduleReduction=0.85
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
-train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
+#total ratchet + cord wheel thick = 12.5 so a 12mm countersunk m3 screw will work to hold the pawl
+train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=1, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
                       loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
 train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=2)
 
@@ -79,7 +80,7 @@ motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compe
                                 minute_hand_thick=2, cannon_pinion_friction_ring=True)
 motionWorks.calculate_size(35)
 
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=15)
 
 dial_diameter=205
 dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
@@ -89,15 +90,17 @@ dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Euro
                   # outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=clock.DialStyle.RING, bottom_fixing=True, top_fixing=True)
 
 # dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28", style=clock.ClockPlateStyle.VERTICAL,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28: For Paul", style=clock.ClockPlateStyle.VERTICAL,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True)
 
+plates.winding_key.crank=False
 
+#note - want with outline_thick=0.6, but this breaks the preview and I haven't investigated why yet.
 hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,
-                    second_length=dial.get_hand_length(clock.HandType.SECOND), second_fixing_thick=3, outline_thick=0.6)
+                    second_length=dial.get_hand_length(clock.HandType.SECOND), second_fixing_thick=3)#, outline_thick=0.6)
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 
@@ -108,6 +111,14 @@ assembly.get_arbour_rod_lengths()
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_rods=True, with_key=True))
 # show_object(plates.get_winding_key(for_printing=False))
+
+
+# wreath = clock.Wreath(diameter=pendulum.hand_avoider_inner_d, thick=leaf_thick)
+# bob_text = cq.Workplane("XY").
+# cosmetics={"black": wreath.get_leaves()}
+#
+# pretty_bob = clock.ItemWithCosmetics(shape = pendulum.get_bob(hollow=True), name="bob", background_colour="purple", cosmetics=cosmetics)
+
 
 # motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW],
 assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],

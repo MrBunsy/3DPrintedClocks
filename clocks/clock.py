@@ -3079,7 +3079,7 @@ class SimpleClockPlates:
                 return top_pillar
             top_pillar = top_pillar.extrude(self.plate_distance)
 
-        top_pillar = top_pillar.cut(self.get_fixing_screws_cutter().translate((-top_pillar_pos[0], -top_pillar_pos[1], -self.get_plate_thick(back=True))))
+
 
 
         if not flat and self.dial and self.dial_top_above_front_plate and self.top_pillar_holds_dial:
@@ -3096,6 +3096,7 @@ class SimpleClockPlates:
 
             top_pillar = top_pillar.union(dial_holder.translate((0,0,self.plate_distance - thick)))
 
+        top_pillar = top_pillar.cut(self.get_fixing_screws_cutter().translate((-top_pillar_pos[0], -top_pillar_pos[1], -self.get_plate_thick(back=True))))
 
         return top_pillar
 
@@ -3157,6 +3158,8 @@ class SimpleClockPlates:
 
             #but it's fiddly so give it a hole and protect the screw
             max_extra_space = self.bottom_pillar_r - pulleyX - 1
+            if max_extra_space > cord_holding_screw.metric_thread*2.25:
+                max_extra_space = cord_holding_screw.metric_thread*2.25
             extra_space = cq.Workplane("XY").circle(max_extra_space).extrude(self.chain_hole_d).translate((pulleyX, pulleyY, pulleyZ - self.chain_hole_d / 2))
             #make the space open to the top of the pillar
             extra_space = extra_space.union(cq.Workplane("XY").rect(max_extra_space*2, 1000).extrude(self.chain_hole_d).translate((pulleyX, pulleyY + 500, pulleyZ - self.chain_hole_d / 2)))
@@ -4852,7 +4855,9 @@ class Assembly:
             offset = 2
             if self.goingTrain.huygens_maintaining_power:
                 offset = 3
-            bob_colours = [gear_colours[(self.goingTrain.wheels + self.goingTrain.powered_wheels + offset) % len(gear_colours)]]
+            default_bob_colour = gear_colours[(self.goingTrain.wheels + self.goingTrain.powered_wheels + offset) % len(gear_colours)]
+            #default to bob and nut are same colour and any text is black
+            bob_colours = [default_bob_colour,default_bob_colour, Colour.BLACK]
 
         if ratchet_colour is None:
             ratchet_colour = plate_colour
@@ -4953,10 +4958,15 @@ class Assembly:
             # bob_colour = gear_colours[len(self.plates.bearingPositions) % len(gear_colours)]
             bob_colour = bob_colours[0]
             nut_colour = bob_colours[ 1 % len(bob_colours)]
+            text_colour = bob_colours[ 2 % len(bob_colours)]
             bob = self.pendulum.get_bob(hollow=False)
 
             if self.pretty_bob is not None:
                 bob = self.pretty_bob.get_model()
+
+            bob_text = self.pendulum.get_bob_text()
+            if bob_text is not None:
+                show_object(bob_text.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos), options={"color": text_colour}, name="Pendulum Bob Text")
 
             show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour}, name="Pendulum Bob")
 

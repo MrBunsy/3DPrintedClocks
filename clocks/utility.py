@@ -1101,6 +1101,23 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
     return shape
 
+class Font:
+    '''
+    found myself starting to pass more and more info about rather than just the name of the font - so wrap it all up in a single object.
+    TODO move everything over to this
+    '''
+    def __init__(self, name="Arial", kind="bold", filepath=None, dial_scale=1.0):
+        self.name = name
+        self.kind = kind
+        self.filepath = filepath
+        self.dial_scale = dial_scale
+
+#I don't think I have the rights to distribute these, so anyone checking out the repo will have to source them themselves.
+FANCY_WATCH_FONT = Font(name="Eurostile Extended #2", dial_scale=1.5, filepath="../fonts/Eurostile_Extended_2_Bold.otf")
+FANCY_WATCH_TEXT_FONT = Font(name = "EB Garamond", filepath = "../fonts/EBGaramond-Bold.ttf")
+SANS_GILL_FONT = Font(name="Gill Sans Medium", dial_scale=0.9, filepath="../fonts/GillSans/Gill Sans Medium.otf")
+ARIAL_FONT = Font(name="Arial")
+DEFAULT_FONT = SANS_GILL_FONT
 
 class TextSpace:
     def __init__(self, x, y, width, height, horizontal=None, inverted=True, text=None, thick=LAYER_THICK, font="Arial", angle_rad=0, font_path = None):
@@ -1114,8 +1131,14 @@ class TextSpace:
         self.text_size = 10
         self.inverted = inverted
         self.thick = thick
+        #backwards compatibility
+        if isinstance(font, str):
+            font = Font(name=font, filepath=font_path)
+        if font is None:
+            font = DEFAULT_FONT
         self.font = font
-        self.font_path = font_path
+        #deprecated, use the Font object instead
+        # self.font_path = font_path
         self.angle_rad = angle_rad
 
         if self.horizontal is not None:
@@ -1134,7 +1157,7 @@ class TextSpace:
         '''
         get the text centred properly
         '''
-        shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind="bold", font=self.font, fontPath=self.font_path)  # , font="Comic Sans MS")
+        shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind=self.font.kind, font=self.font.name, fontPath=self.font.filepath)  # , font="Comic Sans MS")
         bb = shape.val().BoundingBox()
 
         # actually centre it, the align feature of text does...something else

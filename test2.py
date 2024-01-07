@@ -45,8 +45,13 @@ hands = Hands(style=HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing
 
 # show_object(hands.getHand(hand_type=HandType.SECOND, colour="black"))
 
-hands.show_hands(show_object=show_object, show_second_hand=True)
+# hands.show_hands(show_object=show_object, show_second_hand=True)
 
 # hands.output_STLs("test_hands", "out")
+
+
+pendulum = Pendulum(bob_d=120, bob_text=["Paul","34"], font=[SANS_GILL_FONT, FANCY_WATCH_FONT])
+
+show_object(pendulum.get_bob())
 
 

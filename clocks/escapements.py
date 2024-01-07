@@ -1960,7 +1960,7 @@ class Pendulum:
 
     now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
-    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=100, bob_d=100, bob_thick=15, hand_avoider_height=-1):
+    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=100, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None, detail_thick=LAYER_THICK, font=None):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
         self.hand_avoider_height=hand_avoider_height
         if self.hand_avoider_height < 0:
@@ -1972,9 +1972,19 @@ class Pendulum:
         self.hand_avoider_inner_d=hand_avoider_inner_d
 
         self.bob_nut_d = bob_d * 0.3
+        if self.bob_nut_d > 25:
+            self.bob_nut_d = 25
         self.bob_nut_thick= bob_thick * 2 / 3
         self.bob_r= bob_d / 2
         self.bob_thick = bob_thick
+
+        #list of strings that can optionally be appled to the front of the bob
+        self.bob_text = bob_text
+        self.detail_thick = detail_thick
+        #font is array of fonts to support multiple different fonts (for one very specific use case!)
+        self.font = font
+        if self.font is None:
+            self.font = [DEFAULT_FONT]
 
         #hole for the bob nut
         self.gap_height = self.bob_nut_thick + 0.5
@@ -2022,7 +2032,35 @@ class Pendulum:
 
         return avoider
 
+    def get_bob_text(self):
+        '''
+        returns None if there is no text on this bob
+        this text is face-down, ready in position for the rest of the bob (which is printed front face down)
+        '''
+
+        if self.bob_text is None:
+            return None
+
+        text_height = self.bob_r * 0.6
+        text_width = self.bob_r * 1.2
+        text_spaces = [TextSpace(0, self.gap_height * 3 / 4 + text_height / 2, width=text_width, height=text_height, text=self.bob_text[0], font=self.font[0])]
+        if len(self.bob_text) > 1:
+            text_spaces.append(TextSpace(0, -(self.gap_height * 3 / 4 + text_height / 2), width=text_width, height=text_height, text=self.bob_text[1], font=self.font[1 % len(self.font)]))
+
+        max_text_size = min([text_space.get_text_max_size() for text_space in text_spaces])
+
+        for space in text_spaces:
+            space.set_size(max_text_size)
+
+        text = cq.Workplane("XY")
+
+        for text_space in text_spaces:
+            text = text.add(text_space.get_text_shape())
+
+        return text
+
     def get_bob(self, hollow=True):
+
 
 
         circle = cq.Workplane("XY").circle(self.bob_r)
@@ -2065,6 +2103,11 @@ class Pendulum:
         textSize = self.gap_height
         bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gap_width / 2 - textSize * 0.75, 0, self.bob_thick)))
         bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gap_width / 2 + textSize * 0.75, 0, self.bob_thick)))
+
+        text = self.get_bob_text()
+
+        if text is not None:
+            bob = bob.cut(text)
 
         return bob
 
