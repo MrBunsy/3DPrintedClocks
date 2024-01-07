@@ -80,6 +80,18 @@ latest idea - copy the first G1 line to before M600
 
     return gcode_out
 
+def re_arrange_shapes(shapes):
+    '''
+    give a list of lists of gcode, re-order the first list to reduce travelling
+    '''
+
+
+    gcode_out = []
+    for shape_gcode in shapes:
+        gcode_out.extend(shape_gcode)
+
+    return gcode_out
+
 def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
     '''
     for small objects on the dial, attempt to re-order to reduce total distance travelled (and thus stringing)
@@ -105,7 +117,9 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
             current_z_10 = int(current_z*10)
             log.write("Processing layer {}\n".format(current_z))
             layer+=1
-            log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
+            # log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
+            # log.write("extending gcode out starting at line {}\n".format(len(gcode_out)))
+            # gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer))
             relevant_shapes_in_layer = []
             current_shape_type = None
             last_shape_type = None
@@ -134,9 +148,13 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
                     inside_a_shape = True
                     #keep the previous line which was to move to the start position
                     current_shape = [gcode_in[i-1]]
+                    #scratch previous line from gcode
+                    gcode_out = gcode_out[:-1]
                 if inside_a_shape and not starting_shape:
                     #finished a shape
                     actually_same_shape = False
+                    inside_a_shape = False
+                    current_shape.append(line)
                     if ((current_shape_type == "Solid infill" and last_shape_type == "External perimeter") or
                             (current_shape_type == "External perimeter" and last_shape_type == "Perimeter") or
                             (current_shape_type == "Solid infill" and last_shape_type == "Solid infill")):
@@ -145,12 +163,11 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
                         # log.write("current {}, last {}, assuming same shape line: {}\n".format(current_shape_type, last_shape_type, i))
 
                     if current_shape_type not in ["External perimeter", "Perimeter", "Solid infill"]:
-                        #"Skirt/Brim" or something else entirely, ignore
+                        #"Skirt/Brim" or something else entirely, sent directly to gcode_out without re-arranging
+                        gcode_out.extend(current_shape)
+                        log.write("current shape not being processed: {} line in {} line out {} \n{}\n\n".format(current_shape_type, i,len(gcode_out), current_shape))
                         continue
 
-                    # if not actually_same_shape:
-                    inside_a_shape = False
-                    current_shape.append(line)
                     if actually_same_shape:
                         if len(relevant_shapes_in_layer) == 0:
                             log.write("somehow actually_same_shape but there is no previous shape. current_shape_type= {} last_shape_type = {}\n".format(current_shape_type,last_shape_type))
@@ -160,18 +177,37 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
                         relevant_shapes_in_layer.append(current_shape)
                     # log.write("finished processing shape type {} line: {}\n".format(current_shape_type, i))
                     last_shape_type = current_shape_type
+                    #don't add this line to gcode out
+                    continue
 
             if line.startswith("; stop printing object"):
                 current_shape.append(line)
                 relevant_shapes_in_layer.append(current_shape)
+                inside_a_shape = False
                 log.write("finished processing shape LAST IN LAYER type {} line: {}\n".format(current_shape_type, i))
+
+                log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
+                log.write("extending gcode out starting at line {}\n".format(len(gcode_out)))
+                gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer))
+                relevant_shapes_in_layer = []
+                current_shape_type = None
+                last_shape_type = None
+
+
+
+
             if inside_a_shape:
                 current_shape.append(line)
                 if line.startswith(";TYPE:"):
                     # last_shape_type = current_shape_type
                     current_shape_type = line.strip().split(":")[1]
+            else:
+                gcode_out.append(line)
 
-    return gcode_in
+        else:
+            gcode_out.append(line)
+
+    return gcode_out
 
 if __name__ == "__main__":
 
