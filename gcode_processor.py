@@ -1,3 +1,5 @@
+import math
+
 import sys
 import os
 import datetime
@@ -80,15 +82,59 @@ latest idea - copy the first G1 line to before M600
 
     return gcode_out
 
-def re_arrange_shapes(shapes):
+def get_average_position(gcode):
+
+    x=0
+    y=0
+    found=0
+
+    for line in gcode:
+        if line.startswith("G1") and "X" in line and "Y" in line and "E" in line:
+            #do we need to care if we're extruding?
+            parts = line.strip().split(" ")
+            for part in parts:
+                if part.startswith("X"):
+                    x += float(part[1:])
+                if part.startswith("Y"):
+                    y += float(part[1:])
+            found +=1
+    return (x/found, y/found)
+
+def re_arrange_shapes(shapes, log):
     '''
     give a list of lists of gcode, re-order the first list to reduce travelling
+
+    could do this with a general purpose proper minimum-distance-travelled algorithm
+    or i could cheat and use the fact I know it's a dial to simply use polar coordinates to ensure we print everything anticlockwise
+
     '''
 
+    shapes_processed = []
+
+    all_shape_gcode = []
+    for shape_gcode in shapes:
+        all_shape_gcode.extend(shape_gcode)
+    #assume this is the centre of the dial
+    centre = get_average_position(all_shape_gcode)
+
+    log.write("Assuming centre of dial is: {}\n".format(centre))
+
+    for shape_gcode in shapes:
+
+        shape_centre = get_average_position(shape_gcode)
+        diff = (shape_centre[0] - centre[0], shape_centre[1] - centre[1])
+        angle = math.atan2(diff[1], diff[0])
+
+        shape_info = {"gcode":shape_gcode, "angle":angle}
+        shapes_processed.append(shape_info)
+
+
+    shapes_processed.sort(key=lambda x: x["angle"])
 
     gcode_out = []
-    for shape_gcode in shapes:
-        gcode_out.extend(shape_gcode)
+    for shape_info in shapes_processed:
+        gcode_out.extend(shape_info["gcode"])
+        log.write("adding shape with angle: {}\n".format(shape_info["angle"]))
 
     return gcode_out
 
@@ -188,7 +234,7 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
 
                 log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
                 log.write("extending gcode out starting at line {}\n".format(len(gcode_out)))
-                gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer))
+                gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer, log))
                 relevant_shapes_in_layer = []
                 current_shape_type = None
                 last_shape_type = None
