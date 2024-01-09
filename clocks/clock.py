@@ -1784,6 +1784,8 @@ class SimpleClockPlates:
                 self.reduce_bottom_pillar_height = min_distance_for_chain_holes - self.bottom_pillar_r
             self.bottom_pillar_r = min_distance_for_chain_holes
 
+        print("bottom pillar r: {}".format(self.bottom_pillar_r))
+
         if self.narrow_bottom_pillar:
             self.bottom_pillar_height = self.bottom_pillar_r * 2
             # I hadn't measured an m4 nut, and now I've printed half the clock!
@@ -2275,6 +2277,7 @@ class SimpleClockPlates:
         '''
         centre_z = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.endshake / 2 - self.motion_works.friction_ring_thick/2
 
+        #thick here being height as printed
         clip_thick = self.motion_works.friction_ring_thick/2
         total_thick = centre_z + clip_thick/2
 
@@ -2295,7 +2298,8 @@ class SimpleClockPlates:
         brake_pad_thick = 2
         #not sure what to name this - this is how far "inside" the cannon pinion the brake pads want to be
         brake_pad_offset = 1
-        arm_thick = 0.8
+        #thick here being width of arm (strength of spring)
+        arm_thick = 1.5 #0.8 seemed a bit weedy
 
         inner_r = self.motion_works.friction_ring_r - brake_pad_offset
         outer_r = inner_r + brake_pad_thick
@@ -3154,7 +3158,7 @@ class SimpleClockPlates:
                 #bring it nearer the top, making it easier to tie the cord around it
                 pulleyY = self.bottom_pillar_positions[0][1] + self.bottom_pillar_r - cord_holding_screw.metric_thread
             # this screw will provide something for the cord to be tied round
-            pulleyScrewHole = cord_holding_screw.get_cutter().rotate((0, 0, 0), (1, 0, 0), 180).translate((pulleyX, pulleyY, self.plate_distance))
+            pulleyScrewHole = cord_holding_screw.get_cutter(length=self.plate_distance-5).rotate((0, 0, 0), (1, 0, 0), 180).translate((pulleyX, pulleyY, self.plate_distance))
 
             #but it's fiddly so give it a hole and protect the screw
             max_extra_space = self.bottom_pillar_r - pulleyX - 1

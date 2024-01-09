@@ -90,10 +90,11 @@ dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Euro
                   # outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=clock.DialStyle.RING, bottom_fixing=True, top_fixing=True)
 
 # dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
+#accidentally printed everything with endshake at 1, which I know isn't good for long thin plates (it's already jamming with a lighter weight). Planning to reprint the pillars at 1.75
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28: For Paul", style=clock.ClockPlateStyle.VERTICAL,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True)
+                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True, endshake=1)
 
 plates.winding_key.crank=False
 
@@ -120,7 +121,7 @@ assembly.get_arbour_rod_lengths()
 # pretty_bob = clock.ItemWithCosmetics(shape = pendulum.get_bob(hollow=True), name="bob", background_colour="purple", cosmetics=cosmetics)
 
 
-# motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW],
+# dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS]
 assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
                    motion_works_colours=[clock.Colour.BRASS],
                     hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)

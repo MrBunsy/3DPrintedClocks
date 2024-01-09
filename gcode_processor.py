@@ -167,13 +167,15 @@ def re_arrange_shapes(shapes, log, start_pos = None):
         diff = (shape_centre[0] - centre[0], shape_centre[1] - centre[1])
         angle = math.atan2(diff[1], diff[0])
         #want the most -ve angle to be the one nearest the start angle so the sort will put that first
-        if angle < start_angle:
-            angle += math.pi*2
+
 
         type = get_shape_type(shape_gcode)
         if type == "External perimeter":
             #ever so slightly prioritise so we don't do the infil of numbers with inner circles before the outline
             angle-=1*2*math.pi/360
+
+        if angle < start_angle:
+            angle += math.pi*2
 
         shape_info = {"gcode":shape_gcode, "angle":angle, "type": type}
         shapes_processed.append(shape_info)
@@ -196,7 +198,7 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
     gcode_out = []
 
     current_z = 0
-    current_z_10 = 0
+    # current_z_100 = 0
     layer = -1
     current_tool = -1
     inside_a_shape = False
@@ -212,7 +214,7 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
     for i,line in enumerate(gcode_in):
         if line.strip() == ";LAYER_CHANGE":
             current_z = float(gcode_in[i+1].strip().split(":")[1])
-            current_z_10 = int(current_z*10)
+            # current_z_100 = int(current_z*100)
             # log.write("Processing layer {}\n".format(current_z))
             layer+=1
             # log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
@@ -223,9 +225,11 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
             last_shape_type = None
 
         if line.strip() == "M600":
-            current_tool = int(gcode_in[i + 1].strip()[1:])
-            log.write("Current tool: T{}\n".format(current_tool))
-            changing_tool = True
+            if gcode_in[i+1].startswith("T"):
+                current_tool = int(gcode_in[i + 1].strip()[1:])
+                log.write("Current tool: T{}\n".format(current_tool))
+                changing_tool = True
+            #if it doesn't say T[int] then it's probably a manual layer filament change
 
         if line.startswith("; printing object"):
             #assume this means we've dealt with all the toolchange and wipe tower and are back to printing proper
@@ -240,8 +244,10 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
                 #TODO last shape in layer doesn't end with raising the nozzle - check for ";stop printing object" ?
                 #also TODO seeing 73 unique shapes on a layer - since we've missed the last shape we've seen two too many. how?
                 #I think the two bonus shapes are the inside circles in the 9 and 6, so if we fix the last shape everything's accounted for!
-                z10 = int(line.strip().split(" ")[1].split(".")[1])
-                starting_shape = z10 == current_z_10
+                #eg G1 Z.45 F720
+                #want the "0.45" bit
+                z = float(line.strip().split(" ")[1][1:])
+                starting_shape = abs(z - current_z) < 0.01
                 if starting_shape and not inside_a_shape:
                     inside_a_shape = True
                     #keep the previous line which was to move to the start position
