@@ -1268,7 +1268,7 @@ class SimpleClockPlates:
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
-                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False):
+                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False, override_bottom_pillar_r=-1):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1461,7 +1461,7 @@ class SimpleClockPlates:
         self.powered_wheel_r = self.going_train.get_arbour(-self.going_train.powered_wheels).get_max_radius() + self.gear_gap
 
         self.reduce_bottom_pillar_height = 0
-        self.calc_pillar_info()
+        self.calc_pillar_info(override_bottom_pillar_r)
 
 
         #calcualte the positions of the bolts that hold the plates together
@@ -1746,7 +1746,7 @@ class SimpleClockPlates:
             self.arbors_for_plate.append(arbourForPlate)
 
 
-    def calc_pillar_info(self):
+    def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
         Calculate (and set) topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide, reduce_bottom_pillar_height
         '''
@@ -1783,6 +1783,10 @@ class SimpleClockPlates:
             if self.allow_bottom_pillar_height_reduction:
                 self.reduce_bottom_pillar_height = min_distance_for_chain_holes - self.bottom_pillar_r
             self.bottom_pillar_r = min_distance_for_chain_holes
+
+        #I've needed to reprint pillars more than I would like, this helps when changing endshake
+        if override_bottom_pillar_r > 0:
+            self.bottom_pillar_r = override_bottom_pillar_r
 
         print("bottom pillar r: {}".format(self.bottom_pillar_r))
 
@@ -2445,7 +2449,7 @@ class SimpleClockPlates:
 
                     return [(weightX, screwHoleY, extraSupport)]
 
-    def getDrillTemplate(self,drillHoleD=7):
+    def get_drill_template(self, drillHoleD=7, layer_thick=LAYER_THICK_EXTRATHICK):
 
         screwHoles = self.get_screwhole_positions()
 
@@ -2474,7 +2478,7 @@ class SimpleClockPlates:
         for hole in screwHoles:
             template = template.faces(">Z").workplane().moveTo(hole[0], hole[1]).circle(drillHoleD/2).cutThruAll()
         # text = cq.Workplane("XY").text(txt=self.name, fontsize=int(minWidth*0.5), distance=LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0), (0,0,1),90).translate((0,0,thick))
-        text = cq.Workplane("XY").text(self.name, fontsize=width*0.5, distance=LAYER_THICK, cut=False, halign='center', valign='center', kind="bold").rotate((0, 0, 0), (0, 0, 1), 90).translate(((minX + maxX)/2, (minY + maxY)/2, thick))
+        text = cq.Workplane("XY").text(self.name, fontsize=width*0.5, distance=layer_thick, cut=False, halign='center', valign='center', kind="bold").rotate((0, 0, 0), (0, 0, 1), 90).translate(((minX + maxX)/2, (minY + maxY)/2, thick))
         template = template.add(text)
 
         return template
@@ -2903,8 +2907,8 @@ class SimpleClockPlates:
         if self.back_plate_from_wall > 0:
             #depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
             #extra nut height just in case
-            top_nut_hole_height = (top_total_length%10) + self.fixing_screws.get_nut_height()
-            bottom_nut_hole_height = (bottom_total_length%10) + self.fixing_screws.get_nut_height()
+            top_nut_hole_height = (top_total_length%10) + self.fixing_screws.get_nut_height() + 5
+            bottom_nut_hole_height = (bottom_total_length%10) + self.fixing_screws.get_nut_height() + 5
         # elif self.embed_nuts_in_plate:
         #     # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
         #     print("you may have to cut the fixing screws to length in the case of no back standoff")
@@ -3135,6 +3139,7 @@ class SimpleClockPlates:
         if self.using_pulley and self.going_train.powered_wheel.type == PowerType.CORD:
             #hole for cord to be tied in
 
+            #not using a screw anymore, using a bit of steel rod so it won't cut the cord
             cord_holding_screw = MachineScrew(3, countersunk=True)
 
             chainX = holePositions[0][0][0]
@@ -3158,12 +3163,13 @@ class SimpleClockPlates:
                 #bring it nearer the top, making it easier to tie the cord around it
                 pulleyY = self.bottom_pillar_positions[0][1] + self.bottom_pillar_r - cord_holding_screw.metric_thread
             # this screw will provide something for the cord to be tied round
+            #TODO there is a bug where the countersink isn't right - cannot fathmon how, but since I'm now using steel rod instead of a screw I'll leave it
             pulleyScrewHole = cord_holding_screw.get_cutter(length=self.plate_distance-5).rotate((0, 0, 0), (1, 0, 0), 180).translate((pulleyX, pulleyY, self.plate_distance))
 
             #but it's fiddly so give it a hole and protect the screw
             max_extra_space = self.bottom_pillar_r - pulleyX - 1
-            if max_extra_space > cord_holding_screw.metric_thread*2.25:
-                max_extra_space = cord_holding_screw.metric_thread*2.25
+            if max_extra_space > cord_holding_screw.metric_thread*2:
+                max_extra_space = cord_holding_screw.metric_thread*2
             extra_space = cq.Workplane("XY").circle(max_extra_space).extrude(self.chain_hole_d).translate((pulleyX, pulleyY, pulleyZ - self.chain_hole_d / 2))
             #make the space open to the top of the pillar
             extra_space = extra_space.union(cq.Workplane("XY").rect(max_extra_space*2, 1000).extrude(self.chain_hole_d).translate((pulleyX, pulleyY + 500, pulleyZ - self.chain_hole_d / 2)))
@@ -3720,7 +3726,7 @@ class SimpleClockPlates:
             #need a template to help drill the screwholes!
             out = os.path.join(path, "{}_drill_template_6mm.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getDrillTemplate(6), out)
+            exporters.export(self.get_drill_template(6, layer_thick=0.4), out)
 
         if self.back_plate_from_wall > 0:
             # out = os.path.join(path, "{}_wall_standoff.stl".format(name))
@@ -3834,7 +3840,7 @@ class MantelClockPlates(SimpleClockPlates):
                 self.dial.override_fixing_positions(dial_fixing_positions)
                 self.dial.support_d=15
 
-    def calc_pillar_info(self):
+    def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
         current plan: asymetric to be compact, with anchor arbor sticking out the top above the topmost pillar
 
@@ -4146,7 +4152,7 @@ class RollingBallClock(SimpleClockPlates):
         self.dial_seconds = Dial(100, dial_width=15, inner_edge_style=DialStyle.LINES_RECT_LONG_INDICATORS, style=DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.9,
                                  font_path="../fonts/GillSans/Gill Sans Medium.otf", seconds_only=True, top_fixing=False, bottom_fixing=False)
 
-    def calc_pillar_info(self):
+    def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
         current plan: asymetric to be compact, with anchor arbor sticking out the top above the topmost pillar
 

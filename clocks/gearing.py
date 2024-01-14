@@ -2555,11 +2555,14 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 moon_complication=None, cannon_pinion_friction_ring=False):
+                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0):
         '''
 
         inset_at_base - if >0 (usually going to want just less than TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT) then inset the bearing or create a space large enoguh
         for the two locked nuts, washer and spring washer. this way the motion works can be closer to the clock plate
+
+        lone_pinion_inset_at_base - for centred second hands there's an extra pinion used as a time setting knob, do the inset at base thing for this instead of the main cannon pinion
+        primarily because it can struggle to fit behind the dial
 
         thick is thickness of the wheels
         pinionthick is double thick by default, can be overriden
@@ -2604,6 +2607,7 @@ class MotionWorks:
 
         #hole in the bottom so the bearing or double nut + split washer can be inside the cannon pinion
         self.inset_at_base = inset_at_base
+        self.lone_pinion_inset_at_base = lone_pinion_inset_at_base
 
         self.moon_complication = moon_complication
 
@@ -2922,6 +2926,11 @@ class MotionWorks:
 
             # cut hole to slot onto arbour
             pinion = pinion.cut(cq.Workplane("XY").circle((self.arbor_d + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
+
+            if self.lone_pinion_inset_at_base > 0:
+                #hack, copy-pasted from initial setting of inset_at_base_r before that was hijacked for the bearing slot
+                inner_r = (get_washer_diameter(self.arbor_d) + 1) / 2
+                pinion = pinion.cut(cq.Workplane("XY").circle(inner_r).extrude(self.lone_pinion_inset_at_base))
 
 
 

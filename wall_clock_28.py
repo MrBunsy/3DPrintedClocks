@@ -77,7 +77,7 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
 motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
-                                minute_hand_thick=2, cannon_pinion_friction_ring=True)
+                                minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1)
 motionWorks.calculate_size(35)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=15)
@@ -91,10 +91,13 @@ dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Euro
 
 # dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
 #accidentally printed everything with endshake at 1, which I know isn't good for long thin plates (it's already jamming with a lighter weight). Planning to reprint the pillars at 1.75
+#endshake of 1 resulted in pillars printed (when rounded to nearest 0.4 I assume) at 44.6 tall, 1.75 endshake only gets 45.0 tall, so I'm putting it up to 2.
+#overriding pillar r to reprint pillars with new endshake
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28: For Paul", style=clock.ClockPlateStyle.VERTICAL,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True, endshake=1)
+                                 chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True, endshake=2.25,
+                                 override_bottom_pillar_r=22.2125)
 
 plates.winding_key.crank=False
 

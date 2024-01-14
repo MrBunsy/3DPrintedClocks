@@ -1002,7 +1002,7 @@ class BearingInfo:
 BEARING_12MM_FLANGED = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
 BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
 BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
-
+BEARING_SMALL_M3 = BearingInfo(outer_d=8, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
 
 def get_bearing_info(innerD):
     '''
