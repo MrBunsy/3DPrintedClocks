@@ -792,7 +792,7 @@ class GoingTrain:
     def gen_gears(self, module_size=1.5, hole_d=3, module_reduction=0.5, thick=6, chain_wheel_thick=-1, escape_wheel_max_d=-1,
                   powered_wheel_module_increase=None, pinion_thick_multiplier = 2.5, style="HAC", chain_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None,
-                  powered_wheel_module_sizes = None, lanterns=None, pinion_thick_extra=-1):
+                  powered_wheel_module_sizes = None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1):
         '''
         What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up.
         Also this assumes a *lot* about the layout, which really should be in the control of the plates
@@ -917,6 +917,17 @@ class GoingTrain:
         chain_module_multiplier = 1
         #fits if we don't have any chain wheels, otherwise run the loop
         fits = self.powered_wheels == 0
+
+        if override_powered_wheel_distance > 0 and self.powered_wheels == 1:
+            #probably retrofitting a part
+            print("overriding distance between powered wheel and second wheel")
+            # fits=True
+            #TODO this doesn't work, but I'm not sure what I've missed.
+            chain_module = override_powered_wheel_distance / ((self.chain_wheel_ratios[0][0] + self.chain_wheel_ratios[0][1]) / 2)
+
+            self.powered_wheel_pairs = [WheelPinionPair(self.chain_wheel_ratios[0][0], self.chain_wheel_ratios[0][1], chain_module, lantern=0 in lanterns)]
+            print("chain module: ", chain_module)
+
         loop = 0
         while not fits and loop < 100:
             self.powered_wheel_pairs = []

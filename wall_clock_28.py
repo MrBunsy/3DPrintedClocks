@@ -37,7 +37,7 @@ if 'show_object' not in globals():
         #     raise ValueError("invalid object to show")
         pass
 
-clockName="wall_clock_28"
+clockName="wall_clock_28b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.DIAMONDS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -63,14 +63,14 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=1, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
                       loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
-train.set_chain_wheel_ratio([67, 11])
+# train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
 train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
-train.print_info(weight_kg=2)
-
+                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, override_powered_wheel_distance=44.5)
+train.print_info(weight_kg=3)
+print("powered wheel distance: {}".format(train.arbours[0].distance_to_next_arbour))
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 

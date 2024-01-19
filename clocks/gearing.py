@@ -2509,7 +2509,7 @@ class Arbour:
 
             if extension_r < self.arbor_d:
                 #this *shouldn't* be possible anymore as the module size of teh chain wheel is recalcualted to ensure there is space
-                raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation")
+                raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation. extension_r:{}".format(extension_r))
             extended_arbour = cq.Workplane("XY").circle(extension_r).extrude(rear_side_extension - bearing_standoff_height).faces(">Z").workplane().circle(bearing_standoff_r).extrude(bearing_standoff_height)
             #add hole for rod!
             extended_arbour = extended_arbour.faces(">Z").circle(self.arbor_d / 2).cutThruAll()
