@@ -80,6 +80,32 @@ def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=
 
     return line
 
+def rationalise_angle(angle_radians):
+    '''
+    there's probably a proper term for this - ensure 0 <= angle < math.pi*2
+    '''
+    angle = angle_radians % math.pi * 2
+
+    while angle < 0:
+        angle += math.pi * 2
+    return angle
+
+
+def get_quadrant(angle_radians):
+    '''
+    return which quadrant an angle is in in the form of (x,y)
+    '''
+    angle = rationalise_angle(angle_radians)
+
+
+    if angle <= math.pi/2:
+        return (1, 1)
+    if angle <= math.pi:
+        return (-1, 1)
+    if angle <= math.pi*1.5:
+        return (-1, -1)
+    return (1, -1)
+
 #https://stackoverflow.com/a/6802723
 def rotation_matrix(axis, theta):
     """

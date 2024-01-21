@@ -125,9 +125,11 @@ assembly.get_arbour_rod_lengths()
 
 
 # dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS]
-assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
-                   motion_works_colours=[clock.Colour.BRASS],
-                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)
+# assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
+#                    motion_works_colours=[clock.Colour.BRASS],
+#                     hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)
+
+show_object(plates.get_cannon_pinion_friction_clip())
 
 # show_object(plates.getDrillTemplate(6))
 
