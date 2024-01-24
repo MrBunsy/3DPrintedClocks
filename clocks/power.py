@@ -703,7 +703,12 @@ class MainSpring:
 
 
 
-    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50, arbor_d=9, turns=4.35):
+    def __init__(self, height=7.5, hook_height = -1, thick = 0.32, loop_end=True, barrel_diameter=50, arbor_d=9, turns=4.35, length=1100):
+        '''
+        height, thickness, barrel diameter (if not loop end) and length are all attributes of the actual spring itself
+
+        arbor_d and turns have been measured by reverse engineering real clocks and may be best ignored once I can calculate how much energy we store in a spring
+        '''
         self.height=height
         if hook_height < 0:
             hook_height = height / 3
@@ -714,12 +719,15 @@ class MainSpring:
         self.arbor_d = arbor_d
         #rotation of barrel for expected duration (bit woolly, will define properly if and when needed)
         self.turns = turns
+        self.length = length
 # 18 40 45
-SMITHS_EIGHT_DAY_MAINSPRING = MainSpring(height=18, thick=0.4, barrel_diameter=45, arbor_d=9)
+SMITHS_EIGHT_DAY_MAINSPRING = MainSpring(height=18, thick=0.4, barrel_diameter=45, arbor_d=9, length=1650)
 
 class SpringArbour:
     '''
+    This was intended to work with a loop end mainspring like an alarm clock.
     not taking this design further, attempting springs with SpringBarrel
+    and since the spring barrel has proven sucessful, I'm not sure this will ever be revisted
     '''
 
     def __init__(self, metric_rod_size=3, spring=None, bearing=None, min_inner_diameter=4.5, power_clockwise=True, ratchet_thick=4):
@@ -832,13 +840,6 @@ class SpringArbour:
 
         return arbour
 
-# class LoopEndSpringArbour:
-#
-#     def __init__(self, spring=None):
-#         if spring is None:
-#             #default, which is a smiths alarm clock loop end
-#             spring = MainSpring()
-#         self.spring = spring
 
 class SpringBarrel:
     '''
@@ -863,19 +864,24 @@ class SpringBarrel:
      - The chunky arbor was very hard to fit inside the spring, ended up mangling the spring a bit with pliers. Will want to reduce diameter to use a decent spring
 
      Ideas:
-     Use bearings on the lid and base of barrel, since the barrel rotates in normal usage
+     Use bearings on the lid and base of barrel, since the barrel rotates in normal usage DONE
      Try 15mm bearings on lid and barrel, and 12mm in plates.
      Can round the edges of the key like on the anchor arbor to get as chunky a key as possible through a smaller diameter
      Since the barrel seems strong enough - try cutting a gear style?
 
      more ideas:
-     12mm bearings on lid barrel and plates, and use collets to keep distances
-     maybe a hexagonal key instead of square? Could be stronger for the same diameter than the rounded square?
+     12mm bearings on lid barrel and plates, and use collets to keep distances DONE
+     maybe a hexagonal key instead of square? Could be stronger for the same diameter than the rounded square? DONE
 
     '''
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
-                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, override_barrel_turns=-1):
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, override_barrel_turns=-1, key_winds=4):
+        '''
+
+        key_winds - how many times the key should be turned (360deg) to wind the spring back up after the expected duration
+
+        '''
         self.type = PowerType.SPRING_BARREL
 
         self.style = style
@@ -989,6 +995,13 @@ class SpringBarrel:
 
     def is_clockwise(self):
         return self.clockwise
+
+    def get_inner_diameter(self):
+        '''
+        Known: spring thickness, designed spring barrel internal diameter
+        measured: "real" arbor diameter and barrel turns (for designed runtime)
+        calculatable: key turns to wind up (for designed runtime)
+        '''
 
     def get_outer_diameter(self):
         return self.barrel_diameter + self.wall_thick*2

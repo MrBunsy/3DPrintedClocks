@@ -468,7 +468,8 @@ class GoingTrain:
 
         self.trains = [time]
 
-    def calculate_powered_wheel_ratios(self, pinion_min = 10, pinion_max = 20, wheel_min = 20, wheel_max = 160, prefer_small=False, inaccurate=False, big_pinion=False):
+    def calculate_powered_wheel_ratios(self, pinion_min = 10, pinion_max = 20, wheel_min = 20, wheel_max = 160, prefer_small=False, inaccurate=False, big_pinion=False,
+                                       prefer_large_second_wheel=True):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
         used to prefer largest wheel, now is hard coded to prefer smallest.
@@ -476,6 +477,9 @@ class GoingTrain:
         experiment for springs, if inaccurate then allow a large variation of the final ratio if it helps keep the size down
 
         big_pinion if true prefer a larger first pinion (easier to print with multiple perimeters)
+
+
+        prefer_large_second_wheel is usually true because this helps with spring barrels
         '''
         if self.powered_wheels == 0:
             '''
@@ -563,8 +567,12 @@ class GoingTrain:
                     #prefer similar sizes
                     # weighting+=abs(allTrains[c][0][0] - allTrains[c][1][0])*0.5
 
-                    #prefer second wheel more teeth (but not so much that it makes it huge)
-                    weighting += (allTrains[c][0][0] - allTrains[c][1][0])*0.5
+                    if prefer_large_second_wheel:
+                        #prefer second wheel more teeth (but not so much that it makes it huge)
+                        weighting += (allTrains[c][0][0] - allTrains[c][1][0])*0.5
+                    else:
+                        #similar sized if possible
+                        weighting += abs(allTrains[c][0][0] - allTrains[c][1][0])
                     '''
                     Want large first pinion (for strength) and a smaller second wheel (so it will fit)
                     '''
@@ -576,7 +584,7 @@ class GoingTrain:
                     all_ratios.append(train)
 
             all_ratios.sort(key=lambda x: x["weighting"])
-            # print(all_ratios)
+            print(all_ratios)
             # if not prefer_small:
             #     all_ratios.sort(key=lambda x: x["error"] - x["teeth"] / 1000)
             # else:
@@ -678,7 +686,7 @@ class GoingTrain:
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style=GearStyle.ARCS, prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
-                        ratchet_diameter=-1, traditional_ratchet=False):
+                        ratchet_diameter=-1, traditional_ratchet=False, min_wheel_teeth=20):
         '''
         If preferred diameter is provided, use that rather than the min diameter
         '''
@@ -693,7 +701,7 @@ class GoingTrain:
         self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchet_thick, power_clockwise=self.powered_wheel_clockwise,
                                        rod_metric_size=rod_metric_thread, thick=cord_coil_thick, use_key=use_key, cord_thick=cord_thick, style=style, loose_on_rod=loose_on_rod,
                                        cap_diameter=ratchet_diameter, traditional_ratchet=traditional_ratchet)
-        self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
+        self.calculate_powered_wheel_ratios(prefer_small=prefer_small, wheel_min=min_wheel_teeth)#prefer_large_second_wheel=False,
 
     def gen_rope_wheels(self, ratchetThick = 3, arbor_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):
 
@@ -2771,16 +2779,16 @@ class SimpleClockPlates:
                 if sticky_out_ness > 30:
                     #a-frame arms
                     #reducing to thin arms and chunky circle around bearings
-                    if self.going_train.wheels == 4:
-                        points = [
-                            self.bearing_positions[bearing_index - 1][:2],
-                            self.bearing_positions[bearing_index][:2],
-                            self.bearing_positions[bearing_index + 1][:2]
-                        ]
-                        plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[bearing_index][:2]))
-                    else:
-                        points = [self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[self.going_train.powered_wheels + 1][:2], self.bearing_positions[self.going_train.powered_wheels + 2][:2]]
-                        plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[self.going_train.powered_wheels + 1][:2]))
+                    # if self.going_train.wheels == 4:
+                    points = [
+                        self.bearing_positions[bearing_index - 1][:2],
+                        self.bearing_positions[bearing_index][:2],
+                        self.bearing_positions[bearing_index + 1][:2]
+                    ]
+                    plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[bearing_index][:2]))
+                    # else:
+                    #     points = [self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[self.going_train.powered_wheels + 1][:2], self.bearing_positions[self.going_train.powered_wheels + 2][:2]]
+                    #     plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[self.going_train.powered_wheels + 1][:2]))
                     # points = [(x, y) for x, y, z in points]
                     plate = plate.union(get_stroke_line(points, self.min_plate_width / 2, thick))
 
