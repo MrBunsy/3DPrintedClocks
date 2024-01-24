@@ -2311,11 +2311,14 @@ class SimpleClockPlates:
         angle_pairs = [[angle - arc/2, angle + arc/2, angle] for angle in brake_angles]
         brake_pads = cq.Workplane("XY")
 
-        brake_pad_thick = 2
+        #needs to be thicker than arm
+        brake_pad_thick = 3
         #not sure what to name this - this is how far "inside" the cannon pinion the brake pads want to be
-        brake_pad_offset = 1.5
-        #thick here being width of arm (strength of spring)
-        arm_thick = 1.5 #0.8 seemed a bit weedy
+        # brake_pad_offset = 1.5
+        # #thick here being width of arm (strength of spring)
+        # arm_thick = 1.5 #0.8 seemed a bit weedy
+        brake_pad_offset = 1
+        arm_thick = 2.4
 
         inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
         outer_r = inner_r + brake_pad_thick
