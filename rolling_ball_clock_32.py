@@ -67,8 +67,8 @@ pendulumFixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 lift=2
 drop=3
 lock=2
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=2, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
-                                    toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=2, lock=lock, tooth_tip_angle=3,
+                              tooth_base_angle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 #escape wheel this way around allows for a slightly larger diameter
 train = GoingTrain(pendulum_period=10, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=1,
                          runtime_hours=24, support_second_hand=True, escape_wheel_pinion_at_front=False)

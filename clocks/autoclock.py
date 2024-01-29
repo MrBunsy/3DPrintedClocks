@@ -333,7 +333,7 @@ class AutoWallClock:
             lift = 4
             drop = 2
             lock = 2
-            self.escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, toothBaseAngle=4, style=self.escapement_style)
+            self.escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_base_angle=4, style=self.escapement_style)
         else:
             # for period 1.5 with second hand, but viable for all short pendulums
             drop = 1.5

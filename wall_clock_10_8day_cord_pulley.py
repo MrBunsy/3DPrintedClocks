@@ -43,7 +43,7 @@ gearStyle=clock.GearStyle.SIMPLE5
 lift=4
 drop=2
 lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
 
 train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, chain_wheels=1, runtime_hours=180, use_pulley=True)
 

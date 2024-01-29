@@ -157,7 +157,7 @@ if outputSTL:
     pretty_anchor.output_STLs(clockName, clockOutDir)
     # out = os.path.join(clockOutDir, "anchor_white.stl")
     # print("Outputting ", out)
-    # # exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.getAnchorThick())), out)
+    # # exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.get_anchor_thick())), out)
     #
     # for i in ["_a", "_b", "_c"]:
     #     train.output_STLs(clockName+i, clockOutDir)

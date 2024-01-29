@@ -1655,7 +1655,7 @@ class ArbourForPlate:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
-            extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ() - self.endshake - 1
+            extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake - 1
             extend_out_front = self.plates.extra_support_for_escape_wheel
             arbourThreadedRod = MachineScrew(metric_thread=self.arbor_d)
 
@@ -1712,7 +1712,7 @@ class ArbourForPlate:
         anchor_angle = math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2
         #the Arbor will flip the anchor to the correct clockwiseness
         anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), radToDeg(anchor_angle))
-        anchor_thick = self.arbor.escapement.getAnchorThick()
+        anchor_thick = self.arbor.escapement.get_anchor_thick()
         # flip over so the front is on the print bed
         anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, anchor_thick))
         if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
@@ -1823,9 +1823,9 @@ class ArbourForPlate:
 
             if self.escapement_on_front:
                 #minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
-                anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.getAnchorThick() - self.endshake / 2
+                anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.get_anchor_thick() - self.endshake / 2
             else:
-                anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbor.escapement.getAnchorThick()
+                anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbor.escapement.get_anchor_thick()
                 if "arbour_extension" in shapes and shapes["arbour_extension"] is not None:
                     #can be none if the anchor is pressed up against a plate
                     assembly = assembly.add(shapes["arbour_extension"])
@@ -1850,7 +1850,7 @@ class ArbourForPlate:
 
             wheel = self.get_escape_wheel(for_printing=False)
             #same as anchor, pulling back by half the endshake
-            wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.getWheelBaseToAnchorBaseZ() - self.endshake/2))
+            wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2))
             assembly = assembly.add(wheel)
         elif self.type == ArbourType.POWERED_WHEEL:
 
@@ -2157,11 +2157,11 @@ class Arbour:
 
         if self.get_type() == ArbourType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
-            self.arbor_d = self.escapement.getAnchorArbourD()
+            self.arbor_d = self.escapement.get_anchor_arbour_d()
             self.hole_d = self.arbor_d
-            self.wheel_thick = self.escapement.getAnchorThick()
+            self.wheel_thick = self.escapement.get_anchor_thick()
         if self.get_type() == ArbourType.ESCAPE_WHEEL:
-            self.wheel_thick = self.escapement.getWheelThick()
+            self.wheel_thick = self.escapement.get_wheel_thick()
 
 
     def get_type(self):
@@ -2228,9 +2228,9 @@ class Arbour:
             #chain wheel, WheelAndPinion
             return self.wheel.get_max_radius()
         if self.get_type() == ArbourType.ESCAPE_WHEEL:
-            return self.escapement.getWheelMaxR()
+            return self.escapement.get_wheel_max_r()
         if self.get_type() == ArbourType.ANCHOR:
-            return self.escapement.getAnchorMaxR()
+            return self.escapement.get_anchor_max_r()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.get_type()))
 
     def get_escape_wheel(self, standalone=False):
@@ -2241,13 +2241,13 @@ class Arbour:
         arbour_or_pivot_r = self.pinion.get_max_radius()
         if standalone:
             arbour_or_pivot_r = self.arbor_d * 2
-        wheel = self.escapement.getWheel2D()
+        wheel = self.escapement.get_wheel_2d()
 
         clockwise = True if standalone else self.clockwise_from_pinion_side
 
 
         wheel = wheel.extrude(self.wheel_thick)
-        wheel = Gear.cutStyle(wheel, outerRadius=self.escapement.getWheelInnerR(), innerRadius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise)
+        wheel = Gear.cutStyle(wheel, outerRadius=self.escapement.get_wheel_inner_r(), innerRadius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise)
 
         if standalone:
             return wheel

@@ -46,7 +46,7 @@ lock=1.5
 teeth = 48
 toothTipAngle = 4
 toothBaseAngle = 3
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=48, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=toothTipAngle, toothBaseAngle=toothBaseAngle)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=48, lock=lock, tooth_tip_angle=toothTipAngle, tooth_base_angle=toothBaseAngle)
 
 train=clock.GoingTrain(pendulum_period=1.25, fourth_wheel=False, escapement=escapement, max_weight_drop=1700, chain_at_back=False, chain_wheels=0, runtime_hours=30)
 

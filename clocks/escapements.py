@@ -35,6 +35,8 @@ class AnchorEscapement:
     @staticmethod
     def get_with_45deg_pallets(teeth=30, type=EscapementType.DEADBEAT, lift_deg=3):
         '''
+        Work in progress!
+
         Generate an anchor with pallets at 45 degrees, based only on the number of teeth
 
         lift is the angle of pendulum swing, in degrees
@@ -53,14 +55,14 @@ class AnchorEscapement:
 
         test_drop = 3
         test_anchor = AnchorEscapement(teeth=teeth, type=EscapementType.DEADBEAT, lift=lift_deg, drop=test_drop)
-        test_anchor.getAnchor2D()
+        test_anchor.get_anchor_2d()
         print(test_anchor.pallet_angles)
         print(radToDeg(test_anchor.pallet_angles[0]), radToDeg(test_anchor.pallet_angles[1]))
         diff = radToDeg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
         print(diff, "degrees")
 
-    def __init__(self, teeth=30, diameter=100, anchorTeeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
-                 escapeWheelClockwise=True, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, wheelThick=3, forceDiameter=False, anchorThick=12,
+    def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
+                 tooth_height_fraction=0.2, tooth_tip_angle=5, tooth_base_angle=4, wheel_thick=3, force_diameter=False, anchor_thick=12,
                  style=AnchorStyle.STRAIGHT):
         '''
         originally: toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4
@@ -99,13 +101,13 @@ class AnchorEscapement:
         '''
 
         #if true, do not allow the gear train to override the diameter. The default is that the escape wheel size is adjusted to fit best.
-        self.forceDiameter = forceDiameter
+        self.force_diameter = force_diameter
 
         #change the appearance of the anchor, doesn't affect function
         self.style = style
 
         self.lift_deg = lift
-        self.halfLift = 0.5*degToRad(lift)
+        self.half_lift = 0.5 * degToRad(lift)
         self.lift = degToRad(lift)
         #meet the Escapement interface
         self.escaping_arc = self.lift
@@ -117,42 +119,42 @@ class AnchorEscapement:
         self.lock=degToRad(lock)
 
         #to fine tune the teeth, the defaults work well with 30 teeth
-        self.toothTipAngle=degToRad(toothTipAngle)
-        self.toothBaseAngle=degToRad(toothBaseAngle)
+        self.tooth_tip_angle=degToRad(tooth_tip_angle)
+        self.tooth_base_angle=degToRad(tooth_base_angle)
 
         self.run_deg = run
         self.run = degToRad(run)
 
         self.teeth = teeth
-        self.toothHeightFraction = toothHeightFraction
+        self.tooth_height_fraction = tooth_height_fraction
 
 
         #it can't print a sharp tip, instead of the previous bodge with a different height for printing and letting the slicer do it, do it ourselves
-        self.toothTipWidth=1
+        self.tooth_tip_width=1
 
         self.type = type
 
-        if anchorTeeth is None:
+        if anchor_teeth is None:
             # if type == "recoil":
             #     self.anchorTeeth = floor(self.teeth/4)+0.5
             # else:
             #     #very much TODO
-            self.anchorTeeth = floor(self.teeth/4)+0.5
+            self.anchor_teeth = floor(self.teeth / 4) + 0.5
         else:
-            self.anchorTeeth = anchorTeeth
+            self.anchor_teeth = anchor_teeth
 
         # angle that encompases the teeth the anchor encompases
-        self.wheelAngle = math.pi * 2 * self.anchorTeeth / self.teeth
+        self.wheel_angle = math.pi * 2 * self.anchor_teeth / self.teeth
 
 
 
-        self.arbourD = 3
-        self.anchorThick = anchorThick
-        self.wheelThick = wheelThick
+        self.arbour_d = 3
+        self.anchor_thick = anchor_thick
+        self.wheel_thick = wheel_thick
 
         self.pallet_angles = []
 
-        self.centre_r = self.arbourD*2
+        self.centre_r = self.arbour_d * 2
 
         #calculated in calcGeometry() which is called from set_diameter
         self.largest_anchor_r = -1
@@ -160,17 +162,17 @@ class AnchorEscapement:
         # calculates things like tooth height from diameter, also recalculates the maths
         self.set_diameter(diameter)
 
-    def calcGeometry(self):
+    def calc_geometry(self):
         '''
         calculate all the relevant maths for dimensions
         '''
-        self.anchorCentre = (0, self.anchor_centre_distance)
-        self.wheelCentre = (0, 0)
+        self.anchor_centre = (0, self.anchor_centre_distance)
+        self.wheel_centre = (0, 0)
 
         armThick = self.diameter * 0.05
         # aprox
-        midEntryPalet = polar(math.pi + self.wheelAngle / 2, self.radius)
-        armLength = np.linalg.norm(np.subtract(midEntryPalet, self.anchorCentre))
+        midEntryPalet = polar(math.pi + self.wheel_angle / 2, self.radius)
+        armLength = np.linalg.norm(np.subtract(midEntryPalet, self.anchor_centre))
         armThickAngle = armThick / armLength
 
         # angle of the arms holding the pallets - doesn't affect performance of escapement unless arc is really large (and then the arms crash into the teeth)
@@ -178,111 +180,109 @@ class AnchorEscapement:
 
         # for calculating the positions of the straight arms - this isn't quite right, but works
         if self.style == AnchorStyle.STRAIGHT:
-            self.anchorCentreBottom = (0, self.anchor_centre_distance - (armThick / 2) / sin(self.anchorAngle / 2))
-            self.anchorCentreTop = (0, self.anchor_centre_distance + (armThick / 2) / sin(self.anchorAngle / 2))
+            self.anchor_centre_bottom = (0, self.anchor_centre_distance - (armThick / 2) / sin(self.anchor_angle / 2))
+            self.anchor_centre_top = (0, self.anchor_centre_distance + (armThick / 2) / sin(self.anchor_angle / 2))
         else:
-            self.anchorCentreBottom = (0, self.anchor_centre_distance - self.centre_r)
-            self.anchorCentreTop = (0, self.anchor_centre_distance + self.centre_r)
+            self.anchor_centre_bottom = (0, self.anchor_centre_distance - self.centre_r)
+            self.anchor_centre_top = (0, self.anchor_centre_distance + self.centre_r)
 
         # from the anchor centre, the length of the pallets determines how wide the pendulum will swing (the lift)
         palletLengthAngle = self.lift
         # from the scape wheel, this is the angle of the pallet thickness. For a perfect clock it's half the tooth angle,
         # but we must subtract drop (the angle the escape wheel spins before coming back into contact with the anchor)
-        palletThickAngle = self.toothAngle / 2 - self.drop
+        palletThickAngle = self.tooth_angle / 2 - self.drop
 
-        anchorToEntryPalletCentreAngle = math.pi * 1.5 - self.anchorAngle / 2 + self.lock / 2
-        anchorToExitPalletCentreAngle = math.pi * 1.5 + self.anchorAngle / 2 - self.lock / 2
-        wheelToEntryPalletCentreAngle = math.pi / 2 + self.wheelAngle / 2
-        wheelToExitPalletCentreAngle = math.pi / 2 - self.wheelAngle / 2
+        anchorToEntryPalletCentreAngle = math.pi * 1.5 - self.anchor_angle / 2 + self.lock / 2
+        anchorToExitPalletCentreAngle = math.pi * 1.5 + self.anchor_angle / 2 - self.lock / 2
+        wheelToEntryPalletCentreAngle = math.pi / 2 + self.wheel_angle / 2
+        wheelToExitPalletCentreAngle = math.pi / 2 - self.wheel_angle / 2
 
         # =========== entry pallet ============
-        entryPalletStartLineFromAnchor = Line(self.anchorCentre, anchorToEntryPalletCentreAngle - palletLengthAngle / 2)
-        entryPalletEndLineFromAnchor = Line(self.anchorCentre, anchorToEntryPalletCentreAngle + palletLengthAngle / 2)
+        entryPalletStartLineFromAnchor = Line(self.anchor_centre, anchorToEntryPalletCentreAngle - palletLengthAngle / 2)
+        entryPalletEndLineFromAnchor = Line(self.anchor_centre, anchorToEntryPalletCentreAngle + palletLengthAngle / 2)
 
-        entryPalletStartLineFromWheel = Line(self.wheelCentre, wheelToEntryPalletCentreAngle + palletThickAngle / 2)
-        entryPalletEndLineFromWheel = Line(self.wheelCentre, wheelToEntryPalletCentreAngle - palletThickAngle / 2)
+        entryPalletStartLineFromWheel = Line(self.wheel_centre, wheelToEntryPalletCentreAngle + palletThickAngle / 2)
+        entryPalletEndLineFromWheel = Line(self.wheel_centre, wheelToEntryPalletCentreAngle - palletThickAngle / 2)
 
-        self.entryPalletStartPos = entryPalletStartLineFromAnchor.intersection(entryPalletStartLineFromWheel)
-        self.entryPalletEndPos = entryPalletEndLineFromAnchor.intersection(entryPalletEndLineFromWheel)
+        self.entry_pallet_start_pos = entryPalletStartLineFromAnchor.intersection(entryPalletStartLineFromWheel)
+        self.entry_pallet_end_pos = entryPalletEndLineFromAnchor.intersection(entryPalletEndLineFromWheel)
 
         # =========== exit pallet ============
-        exitPalletStartLineFromAnchor = Line(self.anchorCentre, anchorToExitPalletCentreAngle + palletLengthAngle / 2)
-        exitPalletEndLineFromAnchor = Line(self.anchorCentre, anchorToExitPalletCentreAngle - palletLengthAngle / 2)
+        exitPalletStartLineFromAnchor = Line(self.anchor_centre, anchorToExitPalletCentreAngle + palletLengthAngle / 2)
+        exitPalletEndLineFromAnchor = Line(self.anchor_centre, anchorToExitPalletCentreAngle - palletLengthAngle / 2)
 
-        exitPalletStartLineFromWheel = Line(self.wheelCentre, wheelToExitPalletCentreAngle + palletThickAngle / 2)
-        exitPalletEndLineFromWheel = Line(self.wheelCentre, wheelToExitPalletCentreAngle - palletThickAngle / 2)
+        exitPalletStartLineFromWheel = Line(self.wheel_centre, wheelToExitPalletCentreAngle + palletThickAngle / 2)
+        exitPalletEndLineFromWheel = Line(self.wheel_centre, wheelToExitPalletCentreAngle - palletThickAngle / 2)
 
-        self.exitPalletStartPos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
-        self.exitPalletEndPos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
+        self.exit_pallet_start_pos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
+        self.exit_pallet_end_pos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
 
         # ========== pallet angles ==========
 
-        entryPalletDifference = np.subtract(self.entryPalletEndPos, self.entryPalletStartPos)
-        exitPalletDifference = np.subtract(self.exitPalletEndPos, self.exitPalletStartPos)
+        entryPalletDifference = np.subtract(self.entry_pallet_end_pos, self.entry_pallet_start_pos)
+        exitPalletDifference = np.subtract(self.exit_pallet_end_pos, self.exit_pallet_start_pos)
 
         self.pallet_angles = [math.atan2(entryPalletDifference[1], entryPalletDifference[0]), math.atan2(exitPalletDifference[1], exitPalletDifference[0])]
 
         # ========== points on the anchor =========
 
         # distance of the end of the entry pallet from the anchor centre
-        self.entryPalletEndR = np.linalg.norm(np.subtract(self.entryPalletEndPos, self.anchorCentre))
-        self.entryPalletStartR = np.linalg.norm(np.subtract(self.entryPalletStartPos, self.anchorCentre))
-        self.innerLeftPoint = tuple(np.add(polar(math.pi * 1.5 - self.anchorAngle / 2 - palletLengthAngle / 2 - deadbeatAngle, self.entryPalletEndR), self.anchorCentre))
-        self.armThickAngleEntry = armThick / self.entryPalletEndR
-        self.outerLeftPoint = tuple(np.add(polar(math.pi * 1.5 - self.anchorAngle / 2 - palletLengthAngle / 2 - self.armThickAngleEntry - deadbeatAngle, self.entryPalletStartR), self.anchorCentre))
+        self.entry_pallet_end_r = np.linalg.norm(np.subtract(self.entry_pallet_end_pos, self.anchor_centre))
+        self.entry_pallet_start_r = np.linalg.norm(np.subtract(self.entry_pallet_start_pos, self.anchor_centre))
+        self.inner_left_point = tuple(np.add(polar(math.pi * 1.5 - self.anchor_angle / 2 - palletLengthAngle / 2 - deadbeatAngle, self.entry_pallet_end_r), self.anchor_centre))
+        self.arm_thick_angle_entry = armThick / self.entry_pallet_end_r
+        self.outer_left_point = tuple(np.add(polar(math.pi * 1.5 - self.anchor_angle / 2 - palletLengthAngle / 2 - self.arm_thick_angle_entry - deadbeatAngle, self.entry_pallet_start_r), self.anchor_centre))
 
-        self.exitPalletEndR = np.linalg.norm(np.subtract(self.exitPalletEndPos, self.anchorCentre))
-        self.exitPalletStartR = np.linalg.norm(np.subtract(self.exitPalletStartPos, self.anchorCentre))
-        self.innerRightPoint = tuple(np.add(polar(math.pi * 1.5 + self.anchorAngle / 2 + palletLengthAngle / 2 + deadbeatAngle, self.exitPalletStartR), self.anchorCentre))
-        self.armThickAngleExit = armThick / self.exitPalletEndR
-        self.outerRightPoint = tuple(np.add(polar(math.pi * 1.5 + self.anchorAngle / 2 + palletLengthAngle / 2 + deadbeatAngle + self.armThickAngleExit, self.exitPalletEndR), self.anchorCentre))
+        self.exit_pallet_end_r = np.linalg.norm(np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
+        self.exit_pallet_start_r = np.linalg.norm(np.subtract(self.exit_pallet_start_pos, self.anchor_centre))
+        self.inner_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeatAngle, self.exit_pallet_start_r), self.anchor_centre))
+        self.arm_thick_angle_exit = armThick / self.exit_pallet_end_r
+        self.outer_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeatAngle + self.arm_thick_angle_exit, self.exit_pallet_end_r), self.anchor_centre))
 
-        self.largest_anchor_r = max(self.entryPalletStartR, self.exitPalletEndR)
+        self.largest_anchor_r = max(self.entry_pallet_start_r, self.exit_pallet_end_r)
 
         if self.style == AnchorStyle.CURVED:
             # calculate the radii of the curved bits
             # sagitta (from wikipedia)
             # innerLeft and innerRight aren't quite parallel - inner right is slightly lower. I think this is expected as I don't attempt to keep inner radii the same
-            s = self.anchorCentreBottom[1] - self.innerRightPoint[1]
-            l = self.innerRightPoint[0] - self.innerLeftPoint[0]
+            s = self.anchor_centre_bottom[1] - self.inner_right_point[1]
+            l = self.inner_right_point[0] - self.inner_left_point[0]
             self.bottom_arm_r = s / 2 + l ** 2 / (8 * s)
             self.top_arm_r = self.bottom_arm_r + armThick
         elif self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
-            self.bottom_arm_r = np.linalg.norm(self.innerRightPoint)
+            self.bottom_arm_r = np.linalg.norm(self.inner_right_point)
             # check to see if the arm will intersect the centre circle enough and make it thicker if not
             self.top_arm_r = self.bottom_arm_r + armThick
 
-    def getAnchorArbourD(self):
-        return self.arbourD
+    def get_anchor_arbour_d(self):
+        return self.arbour_d
 
-    def getAnchorThick(self):
-        return self.anchorThick
+    def get_anchor_thick(self):
+        return self.anchor_thick
 
-    def getWheelThick(self):
-        return self.wheelThick
+    def get_wheel_thick(self):
+        return self.wheel_thick
 
-    def getWheelBaseToAnchorBaseZ(self):
+    def get_wheel_base_to_anchor_base_z(self):
         '''
         REturn Z change between the bottom of the wheel and the bottom of the anchor
         '''
-        return -(self.anchorThick - self.wheelThick)/2
+        return -(self.anchor_thick - self.wheel_thick)/2
 
-    def getDistanceBeteenArbours(self):
+    def get_distance_beteen_arbours(self):
         return self.anchor_centre_distance
 
     def set_diameter(self, diameter):
         self.diameter = diameter
         # self.anchourDiameter=anchourDiameter
 
-        self.innerDiameter = diameter * (1 - self.toothHeightFraction)
+        self.inner_diameter = diameter * (1 - self.tooth_height_fraction)
 
         self.radius = self.diameter / 2
 
-        self.innerRadius = self.innerDiameter / 2
+        self.inner_radius = self.inner_diameter / 2
 
-        self.toothHeight = self.diameter / 2 - self.innerRadius
-
-        self.printedToothHeight = self.toothHeight
+        self.tooth_height = self.diameter / 2 - self.inner_radius
         # *8.36/7 worked for a diameter of about 82mm, it's not enough at about 60mm
         # self.printedToothHeight = self.toothHeight+1.4#*8.36/7
         # print("tooth height", self.toothHeight)
@@ -290,23 +290,23 @@ class AnchorEscapement:
         # a tooth height of 8.36 gets printed to about 7mm
 
         # angle on teh wheel between teeth, not angle the tooth leans at
-        self.toothAngle = math.pi * 2 / self.teeth
+        self.tooth_angle = math.pi * 2 / self.teeth
 
         # height from centre of escape wheel to anchor pinion - assuming this is at the point the tangents (from the wheelangle on the escape wheel teeth) meet
-        anchor_centre_distance = self.radius / math.cos(self.wheelAngle / 2)
+        anchor_centre_distance = self.radius / math.cos(self.wheel_angle / 2)
 
         self.anchor_centre_distance = anchor_centre_distance
 
-        self.anchorAngle = math.pi - self.wheelAngle
+        self.anchor_angle = math.pi - self.wheel_angle
 
-        self.anchorTopThickBase = (self.anchor_centre_distance - self.radius) * 0.6
-        self.anchorTopThickMid = (self.anchor_centre_distance - self.radius) * 0.1
-        self.anchorTopThickTop = (self.anchor_centre_distance - self.radius) * 0.75
+        self.anchor_top_thick_base = (self.anchor_centre_distance - self.radius) * 0.6
+        self.anchor_top_thick_mid = (self.anchor_centre_distance - self.radius) * 0.1
+        self.anchor_top_thick_top = (self.anchor_centre_distance - self.radius) * 0.75
 
         #recalculate the maths
-        self.calcGeometry()
+        self.calc_geometry()
     
-    def getAnchor2D(self):
+    def get_anchor_2d(self):
         '''
         Old design works, but is a bit lopsided and I'm not sure it's that efficient.
         I'm also convinced I have a neater idea:
@@ -324,7 +324,7 @@ class AnchorEscapement:
 
         if self.type == EscapementType.RECOIL:
             #just in case I ever want this again?
-            return self.getAnchor2DOld()
+            return self.get_anchor_2d_old()
 
         anchor = cq.Workplane("XY").tag("anchorbase")
 
@@ -357,39 +357,39 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         '''
 
         # entry pallet
-        anchor = anchor.moveTo(self.entryPalletEndPos[0], self.entryPalletEndPos[1]).lineTo(self.entryPalletStartPos[0],self.entryPalletStartPos[1])
+        anchor = anchor.moveTo(self.entry_pallet_end_pos[0], self.entry_pallet_end_pos[1]).lineTo(self.entry_pallet_start_pos[0], self.entry_pallet_start_pos[1])
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(self.outerLeftPoint, self.entryPalletEndR+0.01)
+            anchor = anchor.radiusArc(self.outer_left_point, self.entry_pallet_end_r + 0.01)
 
         if self.style == AnchorStyle.STRAIGHT:
             #just temp - need proper arm and centre
-            anchor = anchor.lineTo(self.anchorCentreTop[0], self.anchorCentreTop[1]).lineTo(self.outerRightPoint[0], self.outerRightPoint[1])
+            anchor = anchor.lineTo(self.anchor_centre_top[0], self.anchor_centre_top[1]).lineTo(self.outer_right_point[0], self.outer_right_point[1])
         elif self.style in [AnchorStyle.CURVED, AnchorStyle.CURVED_MATCHING_WHEEL]:
-            anchor = anchor.radiusArc(self.outerRightPoint, self.top_arm_r)
+            anchor = anchor.radiusArc(self.outer_right_point, self.top_arm_r)
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(self.exitPalletEndPos, self.exitPalletEndR)
+            anchor = anchor.radiusArc(self.exit_pallet_end_pos, self.exit_pallet_end_r)
 
-        anchor = anchor.lineTo(self.exitPalletStartPos[0], self.exitPalletStartPos[1])
+        anchor = anchor.lineTo(self.exit_pallet_start_pos[0], self.exit_pallet_start_pos[1])
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(self.innerRightPoint, -self.exitPalletStartR)
+            anchor = anchor.radiusArc(self.inner_right_point, -self.exit_pallet_start_r)
 
         if self.style == AnchorStyle.STRAIGHT:
-            anchor = anchor.lineTo(self.anchorCentreBottom[0], self.anchorCentreBottom[1]).lineTo(self.innerLeftPoint[0], self.innerLeftPoint[1])
+            anchor = anchor.lineTo(self.anchor_centre_bottom[0], self.anchor_centre_bottom[1]).lineTo(self.inner_left_point[0], self.inner_left_point[1])
         elif self.style in [AnchorStyle.CURVED, AnchorStyle.CURVED_MATCHING_WHEEL]:
-            anchor = anchor.radiusArc(self.innerLeftPoint, -self.bottom_arm_r)
+            anchor = anchor.radiusArc(self.inner_left_point, -self.bottom_arm_r)
 
         if self.type == EscapementType.DEADBEAT:
-            anchor = anchor.radiusArc(self.entryPalletEndPos, -self.entryPalletEndR)
+            anchor = anchor.radiusArc(self.entry_pallet_end_pos, -self.entry_pallet_end_r)
 
 
         anchor = anchor.close()
 
         return anchor
 
-    def getAnchor2DOld(self):
+    def get_anchor_2d_old(self):
         '''
         Worked, but more by fluke than design, didn't properly take into account lift, drop and run
         '''
@@ -411,12 +411,12 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         x = math.sqrt(math.pow(self.anchor_centre_distance,2) - math.pow(self.radius,2))
 
         #the point on the anchor swing that intersects the escape wheel tooth tip circle
-        entryPoint = (math.cos(math.pi/2+self.wheelAngle/2)*self.radius, math.sin(+math.pi/2+self.wheelAngle/2)*self.radius)
+        entryPoint = (math.cos(math.pi / 2 + self.wheel_angle / 2) * self.radius, math.sin(+math.pi / 2 + self.wheel_angle / 2) * self.radius)
 
         # entrySideDiameter = anchor_centre_distance - entryPoint[1]
 
         #how far the entry pallet extends into the escape wheel (along the angle of entryPalletAngle)
-        liftExtension = x * math.sin(self.halfLift)/math.sin(math.pi - self.halfLift - entryPalletAngle - self.wheelAngle/2)
+        liftExtension = x * math.sin(self.half_lift) / math.sin(math.pi - self.half_lift - entryPalletAngle - self.wheel_angle / 2)
 
         # arbitary, just needs to be long enough to contain recoil and lift
         entryPalletLength = liftExtension*3
@@ -452,19 +452,19 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         endOfEntryPalletAngle = degToRad(35) # math.pi + wheelAngle/2 +
         endOfExitPalletAngle = degToRad(45)
 
-        h = self.anchor_centre_distance - self.anchorTopThickBase - entryPalletTip[1]
+        h = self.anchor_centre_distance - self.anchor_top_thick_base - entryPalletTip[1]
 
         innerLeft = (entryPalletTip[0] - h*math.tan(endOfEntryPalletAngle), entryPoint[1] + h)
         innerRight = (exitPalletTip[0], innerLeft[1])
 
 
-        h2 = self.anchor_centre_distance - self.anchorTopThickMid - exitPalletTip[1]
+        h2 = self.anchor_centre_distance - self.anchor_top_thick_mid - exitPalletTip[1]
         farRight = (exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle), exitPalletTip[1] + h2)
         farLeft = (-(exitPalletTip[0] + h2*math.tan(endOfExitPalletAngle)), exitPalletTip[1] + h2)
 
 
 
-        top = (0, self.anchor_centre_distance + self.anchorTopThickTop)
+        top = (0, self.anchor_centre_distance + self.anchor_top_thick_top)
         topRight = (centreRadius, self.anchor_centre_distance )
         topLeft =  (-centreRadius, self.anchor_centre_distance )
 
@@ -491,9 +491,9 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         return anchor
 
-    def getAnchor3D(self, thick=15, holeD=2, clockwise=True):
+    def get_anchor_3d(self, thick=15, holeD=2, clockwise=True):
 
-        anchor = self.getAnchor2D()
+        anchor = self.get_anchor_2d()
 
         # cylinder around the rod
         anchor = anchor.union(cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(thick))
@@ -521,53 +521,53 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         '''
         compliant with the new escapement interface (now the grasshopper also exists)
         '''
-        return self.getAnchor3D(thick = self.anchorThick, holeD=self.arbourD,clockwise=True).translate((0,-self.anchor_centre_distance,0))
+        return self.get_anchor_3d(thick = self.anchor_thick, holeD=self.arbour_d, clockwise=True).translate((0, -self.anchor_centre_distance, 0))
 
-    def getAnchorMaxR(self):
+    def get_anchor_max_r(self):
         '''
         #for anything that needs to avoid the sides/bottom of the anchor - anythign that needs to avoid the top just needs to avoid the self.centre_r
         '''
         return self.largest_anchor_r
         # return self.arbourD*2
 
-    def getWheelInnerR(self):
-        return self.innerRadius
+    def get_wheel_inner_r(self):
+        return self.inner_radius
 
-    def getWheel2D(self):
+    def get_wheel_2d(self):
         '''
         Return a 2D version of the wheel, assuming clockwise rotation.
         '''
 
-        diameterForPrinting = self.diameter + (self.printedToothHeight - self.toothHeight)*2
+        diameterForPrinting = self.diameter# + (self.printed_tooth_height - self.tooth_height) * 2
 
         dA = -math.pi*2/self.teeth
-        toothTipArcAngle = self.toothTipWidth/diameterForPrinting
+        toothTipArcAngle = self.tooth_tip_width / diameterForPrinting
 
         if self.type == EscapementType.RECOIL:
             #based on the angle of the tooth being 20deg, but I want to calculate everyting in angles from the cetnre of the wheel
             #lazily assume arc along edge of inner wheel is a straight line
             toothAngle = math.pi*20/180
             toothTipAngle = 0
-            toothBaseAngle = -math.atan(math.tan(toothAngle)*self.toothHeight/self.innerRadius)
+            toothBaseAngle = -math.atan(math.tan(toothAngle) * self.tooth_height / self.inner_radius)
         elif self.type == EscapementType.DEADBEAT:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
-            toothTipAngle = -self.toothTipAngle#-math.pi*0.05
-            toothBaseAngle = -self.toothBaseAngle#-math.pi*0.03
+            toothTipAngle = -self.tooth_tip_angle#-math.pi*0.05
+            toothBaseAngle = -self.tooth_base_angle#-math.pi*0.03
             toothTipArcAngle*=-1
 
         # print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
 
-        wheel = cq.Workplane("XY").moveTo(self.innerRadius, 0)
+        wheel = cq.Workplane("XY").moveTo(self.inner_radius, 0)
 
         for i in range(self.teeth):
             angle = dA*i
             tipPosStart = (math.cos(angle+toothTipAngle)*diameterForPrinting/2, math.sin(angle+toothTipAngle)*diameterForPrinting/2)
             tipPosEnd = (math.cos(angle + toothTipAngle + toothTipArcAngle) * diameterForPrinting / 2, math.sin(angle + toothTipAngle + toothTipArcAngle) * diameterForPrinting / 2)
-            nextbasePos = (math.cos(angle+dA) * self.innerRadius, math.sin(angle + dA) * self.innerRadius)
-            endPos = (math.cos(angle+toothBaseAngle) * self.innerRadius, math.sin(angle + toothBaseAngle) * self.innerRadius)
+            nextbasePos = (math.cos(angle+dA) * self.inner_radius, math.sin(angle + dA) * self.inner_radius)
+            endPos = (math.cos(angle+toothBaseAngle) * self.inner_radius, math.sin(angle + toothBaseAngle) * self.inner_radius)
             # print(tipPos)
             # wheel = wheel.lineTo(0,tipPos[1])
-            wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos,self.innerDiameter)
+            wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos, self.inner_diameter)
             # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
 
         wheel = wheel.close()
@@ -576,10 +576,10 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         wheel = wheel.rotate((0,0,0),(0,0,1),radToDeg(-toothTipAngle-toothTipArcAngle))
 
         return wheel
-    def getWheelMaxR(self):
+    def get_wheel_max_r(self):
         return self.diameter/2
 
-    def getTestRig(self, holeD=3, tall=4):
+    def get_test_rig(self, holeD=3, tall=4):
         #simple rig to place both parts on and check they actually work
         holeD=holeD*0.85
 
@@ -592,6 +592,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
 def getSpanner(size=4, thick=4, handle_length=150):
     '''
+    DEPRECATED - was an attempt to allow setting the beat, but wasn't good enough and now beat setting is done by bending hte pendulum
     Get a spanner for adjusting the anchor or pendulum fixing
     spannerBitThick is 4 by default
     centred on teh bit that turns
@@ -606,6 +607,62 @@ def getSpanner(size=4, thick=4, handle_length=150):
         .line(handle_length,0).line(0,armSize).lineTo(sizeWithWiggle/2,sizeWithWiggle/2).line(0,-sizeWithWiggle).line(-sizeWithWiggle,0).close().extrude(thick)
 
     return spanner
+
+class BrocotEscapment(AnchorEscapement):
+    '''
+    A special case of an anchor using semi-circular rubies for pallets
+    '''
+    def __init__(self, teeth=30, diameter=-1, wheel_thick=3, lift=4, drop=2,lock=2):
+        super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=None, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
+                         tooth_height_fraction=0.2, tooth_tip_angle=0, tooth_base_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=12,
+                         style=AnchorStyle.CURVED_MATCHING_WHEEL)
+
+
+    def calc_geometry(self):
+        super().calc_geometry()
+
+        #calculate what radius the brocot pallet stones need to be. My plan is to support 3D printed or real stones (cousins sell them)
+
+        entry_pallet_dir = Line(self.anchor_centre, anotherPoint=self.entry_pallet_start_pos)
+        entry_pallet_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_start_pos)
+        entry_pallet_end_distance_along_line = np.dot(entry_pallet_dir.dir, np.subtract(self.entry_pallet_end_pos,self.anchor_centre))
+        self.entry_pallet_r = abs(entry_pallet_distance - entry_pallet_end_distance_along_line)
+
+        exit_pallet_dir = Line(self.anchor_centre, anotherPoint=self.exit_pallet_start_pos)
+        exit_pallet_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_start_pos)
+        exit_pallet_distance_along_line = np.dot(exit_pallet_dir.dir, np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
+        self.exit_pallet_r = abs(exit_pallet_distance - exit_pallet_distance_along_line)
+
+        print("entry_pallet_r: {}, exit_pallet_r:{}".format(self.entry_pallet_r, self.exit_pallet_r))
+
+    def get_wheel_2d(self):
+
+
+        radius = self.diameter/2
+
+        dA = -math.pi * 2 / self.teeth
+        tooth_tip_arc_angle = self.tooth_tip_width / radius
+
+
+        tooth_base_angle = -self.tooth_base_angle  # -math.pi*0.03
+        tooth_tip_arc_angle *= -1
+
+        # print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
+
+        wheel = cq.Workplane("XY").moveTo(self.inner_radius, 0)
+
+        for i in range(self.teeth):
+            angle = dA * i
+            tip_pos_start = polar(angle, radius)
+            tip_pos_end = polar(angle + tooth_tip_arc_angle, radius)
+            nextbase_pos = (math.cos(angle + dA) * self.inner_radius, math.sin(angle + dA) * self.inner_radius)
+            endPos = (math.cos(angle + tooth_base_angle) * self.inner_radius, math.sin(angle + tooth_base_angle) * self.inner_radius)
+            # print(tipPos)
+            # wheel = wheel.lineTo(0,tipPos[1])
+            wheel = wheel.lineTo(tip_pos_start[0], tip_pos_start[1]).lineTo(tip_pos_end[0], tip_pos_end[1]).lineTo(endPos[0], endPos[1]).radiusArc(nextbase_pos, self.inner_diameter)
+            # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
+
+        wheel = wheel.close()
 
 class EscapmentInterface:
     '''
@@ -626,40 +683,40 @@ class EscapmentInterface:
         '''
         raise NotImplementedError()
 
-    def getDistanceBeteenArbours(self):
+    def get_distance_beteen_arbours(self):
         '''
         return distance between centre of escape wheel and the centre of the anchor/frame pivot point
         '''
         raise NotImplementedError()
 
-    def getWheelThick(self):
+    def get_wheel_thick(self):
         raise NotImplementedError()
 
-    def getWheelMaxR(self):
+    def get_wheel_max_r(self):
         raise NotImplementedError()
 
-    def getWheelInnerR(self):
+    def get_wheel_inner_r(self):
         '''
         Get the radius of the solid bit of the wheel without the teeth
         '''
         raise NotImplementedError()
 
-    def getAnchorMaxR(self):
+    def get_anchor_max_r(self):
         raise NotImplementedError()
 
-    def getAnchorArbourD(self):
+    def get_anchor_arbour_d(self):
         return 3
 
     def get_anchor(self):
         return None
 
-    def getAnchorThick(self):
+    def get_anchor_thick(self):
         return None
 
-    def getWheel2D(self):
+    def get_wheel_2d(self):
         return None
 
-    def getWheelBaseToAnchorBaseZ(self):
+    def get_wheel_base_to_anchor_base_z(self):
         '''
         REturn Z change between the bottom of the wheel and the bottom of the anchor
         '''
@@ -822,17 +879,17 @@ class GrasshopperEscapement:
         do nothing, we can't readjust the diameter of this escape wheel from teh gear train generation like we can with an anchor
         '''
 
-    def getDistanceBeteenArbours(self):
+    def get_distance_beteen_arbours(self):
         return distance_between_two_points(self.geometry["Z"], self.geometry["O"])
 
-    def getWheelMaxR(self):
+    def get_wheel_max_r(self):
         return self.diameter/2
 
-    def getAnchorMaxR(self):
+    def get_anchor_max_r(self):
         #TODO
         return 10
 
-    def getAnchorArbourD(self):
+    def get_anchor_arbour_d(self):
         return self.arbourD
 
     def chooseDiameter(self, d_deg, ax_deg):
@@ -1827,20 +1884,20 @@ class GrasshopperEscapement:
         return self.getComposer(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting, extra_length_fudge=self.entry_composer_extra_fudge)
 
 
-    def getWheelThick(self):
+    def get_wheel_thick(self):
         return self.wheel_thick
 
-    def getAnchorThick(self):
+    def get_anchor_thick(self):
         '''
         Just the thickness of the bit which is on the arbour (in case I ever put the grasshopper between the plates)
         '''
         return self.frame_thick# + self.composer_z_distance_from_frame + self.composer_thick + self.pallet_thick + self.composer_thick + self.composer_pivot_space
 
-    def getWheelInnerR(self):
+    def get_wheel_inner_r(self):
         tooth_height = self.radius * 0.1
         return self.radius - tooth_height
 
-    def getWheel2D(self):
+    def get_wheel_2d(self):
 
 
         #angles from O
@@ -1848,7 +1905,7 @@ class GrasshopperEscapement:
         tooth_tip_angle=(math.pi*2/self.teeth)/2
         tooth_tip_width=1.2
         tooth_tip_width_angle = tooth_tip_width/self.diameter
-        inner_r = self.getWheelInnerR()
+        inner_r = self.get_wheel_inner_r()
         tooth_height = self.radius - inner_r
         tooth_angle = math.pi * 2 / self.teeth
 
@@ -1878,7 +1935,7 @@ class GrasshopperEscapement:
 
     def getWheel(self, style=GearStyle.HONEYCOMB):
         #I think this is just for models, so fudge the inner radius
-        return Gear.cutStyle(self.getWheel2D().extrude(self.wheel_thick),self.getWheelInnerR(), innerRadius=10, style=style)
+        return Gear.cutStyle(self.get_wheel_2d().extrude(self.wheel_thick),self.get_wheel_inner_r(), innerRadius=10, style=style)
 
     def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")
@@ -1916,7 +1973,7 @@ class GrasshopperEscapement:
     def getComposerZThick(self):
         return self.pallet_thick + self.composer_pivot_space + self.composer_thick*2
 
-    def getWheelBaseToAnchorBaseZ(self):
+    def get_wheel_base_to_anchor_base_z(self):
         '''
         REturn Z change between the bottom of the wheel and the bottom of the anchor
         '''
@@ -2225,7 +2282,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
 
     palletAngleFromWheel_deg = (toothAngle_deg / 2 - escapement.drop_deg)
 
-    wheelAngle_toothAtEndOfExitPallet_deg = radToDeg(math.pi / 2 + escapement.anchorAngle / 2) -  palletAngleFromWheel_deg/ 2
+    wheelAngle_toothAtEndOfExitPallet_deg = radToDeg(math.pi / 2 + escapement.anchor_angle / 2) - palletAngleFromWheel_deg / 2
     #increment (-ve for clockwise) by drop
     wheelAngle_toothAtStartOfEntryPallet_deg = wheelAngle_toothAtEndOfExitPallet_deg - escapement.drop_deg#(toothAngle_deg - escapement.drop_deg)
     wheelAngle_toothAtEndOfEntryPallet_deg = wheelAngle_toothAtStartOfEntryPallet_deg - palletAngleFromWheel_deg
@@ -2343,7 +2400,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
         #should be able to figure out how many frames are required across the lift angle with arcsine somehow?
 
         # #
-        wholeObject = escapement.getAnchor2D().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.getWheel2D().rotateAboutCenter((0, 0, 1), wheel_angle_deg))
+        wholeObject = escapement.get_anchor_2d().rotate((0, escapement.anchor_centre_distance, 0), (0, escapement.anchor_centre_distance, 1), anchor_angle).add(escapement.get_wheel_2d().rotateAboutCenter((0, 0, 1), wheel_angle_deg))
 
         wholeObject = wholeObject.add(boundingBox)
 

@@ -18,12 +18,12 @@ gearStyle=clock.GearStyle.FLOWER
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
 
 # lift=4
 # drop=2
 # lock=2
-# escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+# escapement = clock.Escapement(drop=drop, lift=lift, teeth=30, lock=lock, toothTipAngle=5, toothBaseAngle=4)
 
 train = clock.GoingTrain(pendulum_period=1, wheels=2, escapement=escapement, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.25 * 24)
 

@@ -51,7 +51,7 @@ pendulumFixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 drop =1.5
 lift =3
 lock=1.5
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, anchorThick=10)
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, anchor_thick=10)
 moduleReduction=0.875
 
 #minute wheel ratio so we can use a pinion of 10 teeth to turn the standard motion works arbour and keep the cannon pinion rotating once an hour

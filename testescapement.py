@@ -17,9 +17,9 @@ if 'show_object' not in globals():
 
 escapement = AnchorEscapement(run=10)
 
-show_object(escapement.getAnchor2D().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1),-(escapement.lift_deg/2+escapement.lock_deg/2)))
+show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1),-(escapement.lift_deg/2+escapement.lock_deg/2)))
 
-show_object(escapement.getWheel2D())
+show_object(escapement.get_wheel_2d())
 
 show_object(cq.Workplane("XY").circle(escapement.diameter/2))
 

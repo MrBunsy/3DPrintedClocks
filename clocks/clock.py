@@ -1063,7 +1063,7 @@ class GoingTrain:
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
                 arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=hole_d, pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
-                                      distance_to_next_arbour=self.escapement.getDistanceBeteenArbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side))
+                                      distance_to_next_arbour=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
 
@@ -2093,8 +2093,8 @@ class SimpleClockPlates:
                         # don't do anything else
                     else:
                         escapement = self.going_train.get_arbour(i).escapement
-                        baseZ = drivingZ - self.going_train.get_arbour(i - 1).wheel_thick / 2 + escapement.getWheelBaseToAnchorBaseZ()
-                        self.arbourThicknesses.append(escapement.getAnchorThick())
+                        baseZ = drivingZ - self.going_train.get_arbour(i - 1).wheel_thick / 2 + escapement.get_wheel_base_to_anchor_base_z()
+                        self.arbourThicknesses.append(escapement.get_anchor_thick())
                     # print("is anchor")
                 else:
                     # any of the other wheels
@@ -2226,7 +2226,7 @@ class SimpleClockPlates:
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
         if self.need_front_anchor_bearing_holder():
-            holder_long = self.arbors_for_plate[-1].front_anchor_from_plate + self.arbors_for_plate[-1].arbor.escapement.getAnchorThick() \
+            holder_long = self.arbors_for_plate[-1].front_anchor_from_plate + self.arbors_for_plate[-1].arbor.escapement.get_anchor_thick() \
                           + self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing) + SMALL_WASHER_THICK_M3
         else:
             holder_long = 0
@@ -2779,16 +2779,12 @@ class SimpleClockPlates:
                 if sticky_out_ness > 30:
                     #a-frame arms
                     #reducing to thin arms and chunky circle around bearings
-                    # if self.going_train.wheels == 4:
-                    points = [
+                    points = [ #bearing_pos[:2]for bearing_pos in self.bearing_positions[bearing_index - 1:bearing_index + 1 + 1 ]]
                         self.bearing_positions[bearing_index - 1][:2],
                         self.bearing_positions[bearing_index][:2],
                         self.bearing_positions[bearing_index + 1][:2]
                     ]
                     plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[bearing_index][:2]))
-                    # else:
-                    #     points = [self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[self.going_train.powered_wheels + 1][:2], self.bearing_positions[self.going_train.powered_wheels + 2][:2]]
-                    #     plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[self.going_train.powered_wheels + 1][:2]))
                     # points = [(x, y) for x, y, z in points]
                     plate = plate.union(get_stroke_line(points, self.min_plate_width / 2, thick))
 
@@ -3584,7 +3580,7 @@ class SimpleClockPlates:
 
         if self.escapement_on_front and self.extra_support_for_escape_wheel:
             #this is a bearing extended out the front, helps maintain the geometry for a grasshopper on plates with a narrow plateDistance
-            plate = plate.add(self.getBearingHolder(-self.going_train.escapement.getWheelBaseToAnchorBaseZ()).translate((self.bearing_positions[-2][0], self.bearing_positions[-2][1], self.get_plate_thick(back=False))))
+            plate = plate.add(self.getBearingHolder(-self.going_train.escapement.get_wheel_base_to_anchor_base_z()).translate((self.bearing_positions[-2][0], self.bearing_positions[-2][1], self.get_plate_thick(back=False))))
 
         return plate
 

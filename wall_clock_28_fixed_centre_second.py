@@ -46,13 +46,16 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 # drop =1.5
 # lift =3
 # lock=1.5
-# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock,  toothTipAngle=5, toothBaseAngle=4)
 # escapement = clock.GrasshopperEscapement(acceptableError=0.001, teeth=60, tooth_span=9.5, pendulum_length_m=clock.getPendulumLength(1.5), mean_torque_arm_length=10, loud_checks=True, skip_failed_checks=True, ax_deg=89)
-lift=4
-drop=2
-lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4,
-                                    style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+# lift=4
+# drop=2
+# lock=2
+drop =3
+lift =3
+lock=1.25
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=5, tooth_base_angle=4,
+                                    style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
@@ -124,12 +127,13 @@ assembly.get_arbour_rod_lengths()
 # pretty_bob = clock.ItemWithCosmetics(shape = pendulum.get_bob(hollow=True), name="bob", background_colour="purple", cosmetics=cosmetics)
 
 
-# dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS]
-# assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
-#                    motion_works_colours=[clock.Colour.BRASS],
-#                     hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)
+dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS]
+assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
+                   motion_works_colours=[clock.Colour.BRASS],
+                    hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)
 
-show_object(plates.get_cannon_pinion_friction_clip())
+# show_object(plates.arbors_for_plate[-2].get_escape_wheel())
+# show_object(plates.arbors_for_plate[-1].get_anchor_shapes()["anchor"].rotate((0,0,0),(0,0,1),180).translate((0,plates.arbors_for_plate[-2].arbor.distance_to_next_arbour)))
 
 # show_object(plates.getDrillTemplate(6))
 

@@ -45,11 +45,11 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 lift=4
 drop=2
 lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL)
 # lift=4
 # drop=2
 # lock=2
-# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4)
+# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,  toothTipAngle=5, toothBaseAngle=4)
 #pendulum_length=0.225
 train = clock.GoingTrain(pendulum_length_m=0.225, fourth_wheel=True, escapement=escapement, max_weight_drop=1400, use_pulley=False, chain_at_back=False, chain_wheels=1, runtime_hours=7.25 * 24)#, huygensMaintainingPower=True)
 

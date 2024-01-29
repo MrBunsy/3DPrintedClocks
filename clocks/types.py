@@ -51,10 +51,11 @@ class HandType(Enum):
     SECOND = "second"
 
 class EscapementType(Enum):
-    #only one fully implemented is deadbeat, recoil has been broken since deadbeat was introduced
     DEADBEAT = "deadbeat"
+    #recoil was broken when deadbeat introduced, in theory not hard to fix, I've just had no reason to do so
     RECOIL = "recoil"
     GRASSHOPPER = "grasshopper"
+    BROCOT = "brocot"
     NOT_IMPLEMENTED = None
 
 class ClockPlateStyle(Enum):

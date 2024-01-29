@@ -46,8 +46,8 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 lift=2
 drop=3
 lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
-                                    toothBaseAngle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=3,
+                                    tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 #escape wheel this way around allows for a slightly larger diameter
 train = clock.GoingTrain(pendulum_length_m=0.15, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=7 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)

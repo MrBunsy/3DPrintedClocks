@@ -37,7 +37,7 @@ if 'show_object' not in globals():
 #
 # escapement = Escapement()
 #
-# show_object(escapement.getAnchor2D())
+# show_object(escapement.get_anchor_2d())
 
 
 # chainWheel = ChainWheel()
@@ -198,7 +198,7 @@ if 'show_object' not in globals():
 # # # ratchet = Ratchet(power_clockwise=False,thick=4,innerRadius=13,totalD=52)
 # cordWheel = CordWheel(diameter=25, rodMetricSize=4, useKey=True, cordThick=1.5, thick=14)
 # # #
-# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheelThick=4, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
+# poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheel_thick=4, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
 # poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
 # # # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 # #
@@ -214,7 +214,7 @@ if 'show_object' not in globals():
 
 # pair = WheelPinionPair(80,10, module=1)
 # #
-# arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheelThick=2, pinionThick=6, style=GearStyle.HONEYCOMB, pinionExtension=5, endCapThick=1)
+# arbour = Arbour(arbourD=3, wheel=pair.wheel, pinion=pair.pinion, wheel_thick=2, pinionThick=6, style=GearStyle.HONEYCOMB, pinionExtension=5, endCapThick=1)
 # #
 # show_object(arbour.getShape())
 #
@@ -469,7 +469,7 @@ if False:
     lift=4
     drop=2
     lock=2
-    escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
+    escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,  toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
     pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
                               bobD=60, bobThick=10, useNylocForAnchor=False)
     bow_tie = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gap_width, bob_nut_height=pendulum.gap_height)
@@ -614,7 +614,7 @@ if False:
 #
 # y = 0
 # for style in AnchorStyle:
-#     escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4, style=style)
+#     escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,  toothTipAngle=5, toothBaseAngle=4, style=style)
 #     show_object(escapement.getAnchor().translate((0,y)))
 #     y+=50
 
@@ -765,9 +765,9 @@ if False:
 # lift=4
 # drop=2
 # lock=2
-# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=7,
+# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,  toothTipAngle=7,
 #                               toothBaseAngle=6, style=AnchorStyle.CURVED_MATCHING_WHEEL)
-# show_object(escapement.getWheel2D())
+# show_object(escapement.get_wheel_2d())
 
 #
 # ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
@@ -840,12 +840,12 @@ if False:
 # lift=2
 # drop=2.5
 # lock=2
-# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, anchorTeeth=None, toothHeightFraction=0.2, toothTipAngle=3,
-#                                     toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheelThick=2)
+# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock,  toothTipAngle=3,
+#                                     toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 #
 #
-# show_object(escapement.getWheel2D())
-# show_object(escapement.getAnchor2D())
+# show_object(escapement.get_wheel_2d())
+# show_object(escapement.get_anchor_2d())
 
 # screw_test_block = cq.Workplane("XY").rect(30,15).extrude(6)
 #
