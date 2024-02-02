@@ -5,7 +5,7 @@ from .hands import *
 from .escapements import *
 from .cosmetics import *
 from .leaves import *
-from .dial import *
+# from .dial import *
 import cadquery as cq
 from pathlib import Path
 from cadquery import exporters
