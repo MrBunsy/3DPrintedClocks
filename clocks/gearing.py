@@ -1511,7 +1511,7 @@ class ArbourForPlate:
         #from the top of the back plate to the bottom of the wheel/anchor
         self.distance_from_back = bearing_position[2]
 
-        self.total_thickness = self.arbor.get_total_thickness(just_pinion =escapement_on_front and self.arbor.get_type() == ArbourType.ESCAPE_WHEEL)
+        self.total_thickness = self.arbor.get_total_thickness(just_pinion =escapement_on_front and self.arbor.get_type() == ArborType.ESCAPE_WHEEL)
 
         self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
@@ -1553,7 +1553,7 @@ class ArbourForPlate:
         self.arbour_bearing_standoff_length = LAYER_THICK * 2
         self.lantern_pinion_wheel_holder_thick = 2
 
-        if self.type == ArbourType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
+        if self.type == ArborType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
             self.bearing = self.arbor.powered_wheel.key_bearing
 
         #for powered wheels with keys, the plates calculates this
@@ -1561,7 +1561,7 @@ class ArbourForPlate:
 
 
     def get_max_radius(self, above=False):
-        if self.arbor.type == ArbourType.ANCHOR:
+        if self.arbor.type == ArborType.ANCHOR:
             #too much of the anchor is dependant on the plate, even though a method exists to use the base arbor
             if above:
                 return self.outer_d / 2
@@ -1814,7 +1814,7 @@ class ArbourForPlate:
 
         assembly = cq.Workplane("XY")
         shapes = self.get_shapes()
-        if self.type == ArbourType.ANCHOR:
+        if self.type == ArborType.ANCHOR:
             assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180))
             if self.arbor.escapement.type == EscapementType.GRASSHOPPER:
                 # move 'down' by frame thick because we've just rotated the frame above
@@ -1843,7 +1843,7 @@ class ArbourForPlate:
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
                 assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
-        elif self.type == ArbourType.ESCAPE_WHEEL and self.escapement_on_front:
+        elif self.type == ArborType.ESCAPE_WHEEL and self.escapement_on_front:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
             pinion = pinion.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
             assembly = assembly.add(pinion)
@@ -1852,7 +1852,7 @@ class ArbourForPlate:
             #same as anchor, pulling back by half the endshake
             wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2))
             assembly = assembly.add(wheel)
-        elif self.type == ArbourType.POWERED_WHEEL:
+        elif self.type == ArborType.POWERED_WHEEL:
 
             if "ratchet" in shapes:
                 # already in the right place
@@ -1909,12 +1909,12 @@ class ArbourForPlate:
         for extraName in extras:
             shapes[extraName] = extras[extraName]
 
-        if self.arbor.get_type() == ArbourType.ANCHOR:
+        if self.arbor.get_type() == ArborType.ANCHOR:
             shapes = self.get_anchor_shapes()
-        elif self.arbor.get_type() == ArbourType.ESCAPE_WHEEL:
+        elif self.arbor.get_type() == ArborType.ESCAPE_WHEEL:
             shapes = self.get_escape_wheel_shapes()
-
-        elif self.arbor.get_type() == ArbourType.WHEEL_AND_PINION:
+            shapes["pinion_STL_modifier"] = self.arbor.get_STL_modifier_pinion_shape()
+        elif self.arbor.get_type() == ArborType.WHEEL_AND_PINION:
 
             wheel = self.arbor.get_shape()
 
@@ -1926,7 +1926,7 @@ class ArbourForPlate:
 
 
             shapes["pinion_STL_modifier"]=self.arbor.get_STL_modifier_pinion_shape()
-        elif self.arbor.get_type() == ArbourType.POWERED_WHEEL:
+        elif self.arbor.get_type() == ArborType.POWERED_WHEEL:
             #TODO support chain at front?
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
             shapes["wheel"] = wheel
@@ -1965,15 +1965,15 @@ class ArbourForPlate:
         Need a separate component for teh arbor extension on thsi side
         '''
 
-        if self.arbor.get_type() == ArbourType.POWERED_WHEEL:
+        if self.arbor.get_type() == ArborType.POWERED_WHEEL:
             return False
 
-        if self.arbor.get_type() == ArbourType.ANCHOR and self.pendulum_fixing != PendulumFixing.FRICTION_ROD:
+        if self.arbor.get_type() == ArborType.ANCHOR and self.pendulum_fixing != PendulumFixing.FRICTION_ROD:
             if self.escapement_on_front:
                 return False
             return self.pendulum_at_front != front
 
-        if self.arbor.get_type() == ArbourType.ESCAPE_WHEEL and self.escapement_on_front:
+        if self.arbor.get_type() == ArborType.ESCAPE_WHEEL and self.escapement_on_front:
             #the longest is the one separate
             if self.distance_from_back > self.distance_from_front:
                 #back one is longest
@@ -1982,7 +1982,7 @@ class ArbourForPlate:
                 #front one is longest
                 return front
 
-        if self.arbor.get_type() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL] and self.arbor.pinion.lantern:
+        if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion.lantern:
             return True
 
         if not front and self.arbor.pinion_at_front and self.need_arbor_extension(front=False):
@@ -2003,7 +2003,7 @@ class ArbourForPlate:
         if (not front) and self.distance_from_back < self.arbour_bearing_standoff_length:
             return False
 
-        if self.arbor.get_type() == ArbourType.POWERED_WHEEL:
+        if self.arbor.get_type() == ArborType.POWERED_WHEEL:
             #assuming chain is at front
             if front == self.arbor.pinion_at_front:
                 return False
@@ -2096,7 +2096,7 @@ class Arbour:
         if self.powered_wheel is not None:
             self.ratchet=self.powered_wheel.ratchet
 
-        if self.get_type() == ArbourType.POWERED_WHEEL:
+        if self.get_type() == ArborType.POWERED_WHEEL:
             # currently this can only be used with the cord wheel
             self.loose_on_rod = (not self.powered_wheel.loose_on_rod) and use_ratchet
 
@@ -2109,7 +2109,7 @@ class Arbour:
             else:
                 self.hole_d = self.arbor_d + LOOSE_FIT_ON_ROD
 
-        if self.get_type() == ArbourType.UNKNOWN:
+        if self.get_type() == ArborType.UNKNOWN:
             raise ValueError("Not a valid arbour")
 
         #just to help debugging
@@ -2117,7 +2117,7 @@ class Arbour:
 
         self.combine_with_powered_wheel = False
 
-        if self.get_type() == ArbourType.POWERED_WHEEL:
+        if self.get_type() == ArborType.POWERED_WHEEL:
             #chain/cord wheel specific bits:
             self.weight_driven = PowerType.is_weight(self.powered_wheel.type)
             #remove support for not bolt on ratchet and inset ratchet as they're never used anymore - the bolt on ratchet has proven to be a good design
@@ -2155,25 +2155,25 @@ class Arbour:
                     self.hole_d = self.powered_wheel.get_barrel_hole_d()
                     self.use_ratchet = False
 
-        if self.get_type() == ArbourType.ANCHOR:
+        if self.get_type() == ArborType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
             self.arbor_d = self.escapement.get_anchor_arbour_d()
             self.hole_d = self.arbor_d
             self.wheel_thick = self.escapement.get_anchor_thick()
-        if self.get_type() == ArbourType.ESCAPE_WHEEL:
+        if self.get_type() == ArborType.ESCAPE_WHEEL:
             self.wheel_thick = self.escapement.get_wheel_thick()
 
 
     def get_type(self):
         if self.wheel is not None and self.pinion is not None:
-            return ArbourType.WHEEL_AND_PINION
+            return ArborType.WHEEL_AND_PINION
         if self.wheel is not None and self.powered_wheel is not None:
-            return ArbourType.POWERED_WHEEL
+            return ArborType.POWERED_WHEEL
         if self.wheel is None and self.escapement is not None and self.pinion is not None:
-            return ArbourType.ESCAPE_WHEEL
+            return ArborType.ESCAPE_WHEEL
         if self.escapement is not None:
-            return ArbourType.ANCHOR
-        return ArbourType.UNKNOWN
+            return ArborType.ANCHOR
+        return ArborType.UNKNOWN
 
     def get_rod_d(self):
         return self.arbor_d
@@ -2183,20 +2183,20 @@ class Arbour:
         '''
         return total thickness of everything that will be on the rod (between the plates!)
         '''
-        if self.get_type() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
+        if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
 
             if just_pinion:
                 #just the pinion is within the plates
                 return self.pinion_thick + self.pinion_extension + self.end_cap_thick * 2
 
             return self.wheel_thick + self.pinion_thick + self.pinion_extension + self.end_cap_thick
-        if self.get_type() == ArbourType.POWERED_WHEEL:
+        if self.get_type() == ArborType.POWERED_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             if self.powered_wheel.type == PowerType.SPRING_BARREL:
                 #spring barrel is incorporated into the wheel rather than stuck on the front
                 return self.powered_wheel.get_height()
             return self.wheel_thick + self.powered_wheel.get_height()
-        if self.get_type() == ArbourType.ANCHOR:
+        if self.get_type() == ArborType.ANCHOR:
             # wheel thick being used for anchor thick
             return self.wheel_thick
 
@@ -2210,7 +2210,7 @@ class Arbour:
             return self.get_total_thickness() - self.wheel_thick / 2
 
     def get_pinion_centre_z(self):
-        if self.get_type() not in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL]:
+        if self.get_type() not in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
             raise ValueError("This arbour (type {}) does not have a pinion".format(self.get_type()))
         if self.pinion_at_front:
             return self.get_total_thickness() - self.end_cap_thick - self.pinion_thick / 2
@@ -2227,9 +2227,9 @@ class Arbour:
         if self.wheel is not None:
             #chain wheel, WheelAndPinion
             return self.wheel.get_max_radius()
-        if self.get_type() == ArbourType.ESCAPE_WHEEL:
+        if self.get_type() == ArborType.ESCAPE_WHEEL:
             return self.escapement.get_wheel_max_r()
-        if self.get_type() == ArbourType.ANCHOR:
+        if self.get_type() == ArborType.ANCHOR:
             return self.escapement.get_anchor_max_r()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.get_type()))
 
@@ -2278,7 +2278,7 @@ class Arbour:
         return a shape that covers the teeth of the pinions for apply tweaks to the slicing settings
         '''
 
-        if self.get_type() == ArbourType.WHEEL_AND_PINION:
+        if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
             return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2)
 
         return None
@@ -2288,7 +2288,7 @@ class Arbour:
         return a shape that covers the teeth of the pinions for apply tweaks to the slicing settings
         '''
 
-        if self.get_type() == ArbourType.WHEEL_AND_PINION:
+        if self.get_type() == ArborType.WHEEL_AND_PINION:
             return self.wheel.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2)
 
         return None
@@ -2298,25 +2298,25 @@ class Arbour:
         return a shape that can be exported to STL
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
         '''
-        if self.get_type() == ArbourType.WHEEL_AND_PINION:
+        if self.get_type() == ArborType.WHEEL_AND_PINION:
 
             shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
                                              pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
             # shape = self.pinion.get3D
 
-        elif self.get_type() == ArbourType.ESCAPE_WHEEL:
+        elif self.get_type() == ArborType.ESCAPE_WHEEL:
             #will be completely override by ArborForPlate
             shape = self.get_escape_wheel()
-        elif self.get_type() == ArbourType.POWERED_WHEEL:
+        elif self.get_type() == ArborType.POWERED_WHEEL:
             shape = self.get_powered_wheel(for_printing=for_printing)
-        elif self.get_type() == ArbourType.ANCHOR:
+        elif self.get_type() == ArborType.ANCHOR:
             # will be completely override by ArborForPlate
             shape = self.get_anchor(forPrinting=for_printing)
         else:
             raise ValueError("Cannot produce 3D model for type: {}".format(self.get_type().value))
 
-        if not for_printing and not self.pinion_at_front and (self.get_type() in [ArbourType.WHEEL_AND_PINION]):
+        if not for_printing and not self.pinion_at_front and (self.get_type() in [ArborType.WHEEL_AND_PINION]):
             #make it the right way around for placing in a model
             #rotate not mirror! otherwise the escape wheels end up backwards
             # shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.getTotalThickness()))
@@ -2347,7 +2347,7 @@ class Arbour:
         #get the main bit, the right way round
         shape = self.get_shape(for_printing=False)
 
-        if self.get_type() == ArbourType.POWERED_WHEEL:
+        if self.get_type() == ArborType.POWERED_WHEEL:
             # should work for both chain and cord
 
             bolt_on_ratchet = self.get_extra_ratchet(forPrinting=False)
@@ -2386,18 +2386,18 @@ class Arbour:
         extras = {}
         #messy logic needs tidying up with different powered wheels and ratchets more unified
         traditional_ratchet = False
-        if self.get_type() == ArbourType.POWERED_WHEEL and self.get_extra_ratchet() is not None:
+        if self.get_type() == ArborType.POWERED_WHEEL and self.get_extra_ratchet() is not None:
             extras['ratchet']= self.get_extra_ratchet()
 
-        if self.get_type() in [ArbourType.WHEEL_AND_PINION, ArbourType.ESCAPE_WHEEL] and self.pinion.lantern:
+        if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.pinion.lantern:
             extras["lantern_pinion_cap"] = self.pinion.get_lantern_cap(cap_thick=self.end_cap_thick)
             extras["lantern_pinion_fixing"] = self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick, top_thick=self.end_cap_thick, hole_d=self.hole_d)
 
-        if self.get_type() == ArbourType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
+        if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
             traditional_ratchet = True
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
 
-        if self.get_type() == ArbourType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
+        if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
             extras['spring_arbor']=self.powered_wheel.get_arbor(extra_at_back=rear_side_extension, extra_in_front=front_side_extension,
                                                                 key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length)
             extras['lid'] = self.powered_wheel.get_lid()

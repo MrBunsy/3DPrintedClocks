@@ -715,13 +715,18 @@ class MainSpring:
         self.hook_height = hook_height
         self.thick=thick
         self.loop_end=loop_end
+        #only the intended barrel diameter, we'll calculate our own later as we don't use the expected size of arbor
         self.barrel_diameter = barrel_diameter
+        self.length = length
+        #expected size of arbor, not actually used for any calculations
         self.arbor_d = arbor_d
         #rotation of barrel for expected duration (bit woolly, will define properly if and when needed)
+        #DEPRECATED - we now calculate this. Previously was reverse engineered from examined clocks
         self.turns = turns
-        self.length = length
+
 # 18 40 45
 SMITHS_EIGHT_DAY_MAINSPRING = MainSpring(height=18, thick=0.4, barrel_diameter=45, arbor_d=9, length=1650)
+MAINSPRING_183535 = MainSpring(height=18, thick=0.35, barrel_diameter=35, length=1400)
 
 class SpringArbour:
     '''
@@ -876,10 +881,8 @@ class SpringBarrel:
     '''
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
-                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, override_barrel_turns=-1, key_winds=4):
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12):
         '''
-
-        key_winds - how many times the key should be turned (360deg) to wind the spring back up after the expected duration
 
         '''
         self.type = PowerType.SPRING_BARREL
@@ -888,8 +891,9 @@ class SpringBarrel:
         #comply with PoweredWheel interface
         self.loose_on_rod=True
 
-        #if >0 then don't use the default number of barrel rotations (as configured in the spring)
-        self.override_barrel_turns = override_barrel_turns
+        # we can calcualte the theoretical maximum rotations of the barrel, what fraction of this should be used over the runtime of the clock?
+        # about half looks to match up with real smiths clocks I've analysed
+        self.fraction_of_max_turns = fraction_of_max_turns
 
         #ratchet is out the back plate, rather than on the front plate?
         self.ratchet_at_back = ratchet_at_back
@@ -917,13 +921,12 @@ class SpringBarrel:
             self.barrel_bearing = BEARING_12MM_THIN
 
         self.rod_d = rod_d
-        self.arbor_d = rod_d
 
         self.barrel_height = self.spring.height + 2
 
         #10 from first experiment seemd like more than needed
         #8 did crack after the tooth failed - *probably* just because of the tooth failing, but let's go back up anyway
-        self.wall_thick = 12
+        self.wall_thick = wall_thick#12
         #6 seemed enough, can probably get away with less
         self.base_thick = base_thick
         #flanged bearing sitting entirely within the lid
@@ -964,8 +967,8 @@ class SpringBarrel:
         #     self.key_square_side_length = self.arbor_d_bearing*0.6 * math.sqrt(2)
         # self.key_max_r =
 
-        #slightly less of a bodge, if our arbor is bigger than the spring was intended for, make our barrel slightly bigger too
-        self.barrel_diameter = self.spring.barrel_diameter + (self.arbor_d_spring - self.spring.arbor_d)
+        #calculate this given we know the spring length+thickness and arbor diameter
+        self.barrel_diameter = self.get_inner_diameter()
 
         self.ratchet_wiggle_room = 0.5 #0.5 only fitted with some filing, but when the arbor was pritned with a 0.6 nozzle 0.7 was a tiny bit loose
 
@@ -1001,7 +1004,154 @@ class SpringBarrel:
         Known: spring thickness, designed spring barrel internal diameter
         measured: "real" arbor diameter and barrel turns (for designed runtime)
         calculatable: key turns to wind up (for designed runtime)
+
+        The Modern Clock, page 281 goes into some useful detail here.
+
+        "This is conditioned by the fact that the volume which the spring occupies when it is down must
+         not be greater nor less than the volume of the empty space around the arbor into which it is to
+          be wound, so that the outermost coil of the spring when fully wound will occupy the same place
+           which the innermost occupies when it is down"
+
+        "A mainspring in the act of uncoiling in its barrel always gives a number of turns equal to the
+         difference between the number of coils in the up and the down positions. Thus, if 17 be the number
+          of coils when the spring is run down, and 25 the number when against the arbor, the number of
+           turns in uncoiling will be 8, or the difference between 17 and 25"
+
+
+        The inner diameter of the barrel is a function of the thickness of spring, length of spring and diameter of the centre arbor
+        The maximum number of turns the barrel can perform is therefor calculated from the above
+        I think it's then up to me to decide what the runtime should be over the maximum turns
+
+        Trying the modern clock's rule of thumb doesn't result in the expected barrel diameter the smiths mainspring is sold for.
+        I've read online about the 1/3 rule (but I think this was only for watches):
+        #https://www.watchrepairtalk.com/topic/24127-estimating-the-mainspring-size-from-barrel-diameter/
+        "Assuming that mainsprings are designed to follow the 1/3 area rule (that the unwound mainspring in the barrel
+         should occupy 1/3 of the barrel width), then thickness and length must scale with the barrel diameter."
+
+        #https://www.m-p.co.uk/formulae/sprlen.htm
+        #Meadows & Passmore's Clock Mainspring Length Calculator
+        Barrel diameter (D)
+        Arbor diameter (d)
+        Spring thickness (t)
+        Length = ((((PI x (D/2)**2)-(PI x (d/2)**2)))/2) /t
+        so I think this is: difference in the area of the barrel and area of the arbor, divided by twice teh thickness of the spring.
+         Is this not another way of expressing The Modern Clock idea?
+        then length should be between 80% and 100% of that calculated. The smiths spring is 86% of the length calcualted here, so this seems plausible
+
+        My method of the modern clock results in a value that is 95% of the diameter of the smiths spring barrel (assuming 9mm arbor).
+        So given I include partial coils, this sounds about the same?
+        If I ignore partial coils I get a value 89% of the smiths barrel.
+
+        Including partial coils and going the other way - mine calculates a barrel of 42.6, which results in the meadows and passmore saying the length should be 1702
+        I think this is basically the same idea, but using area avoids the mess with partial coils.
+
+        This agrees with the NAWCC:
+        https://theindex.nawcc.org/CalcMainspringLength.php
+        "A properly sized mainspring will fill half of the available area in the barrel."
+
+        elsewhere I've read "The spring should occupy 1/3 to 1/2 of the free space inside a barrel" https://www.m-p.co.uk/muk/ryoc/doc_page27.shtml
+        I think this is all variations on a theme, that the barrel needs to be slightly larger than calculated as from "half of the available area in the barrel"
+
+        Abbeyclock again says, about the maximum number of turns "This figure is theoretical: in practice, the net turns is one to two turns fewer,
+         depending on the thickness and the condition of the spring" so I should bare that in mind with how many turns I get out of the barrel
+
+        So, I'll use the area technique but scale up by 1/(90%) ~= 1.1
+        Adjusted this scaling so that with a 9mm arbor, the diameter for a smiths barrel results in the same as its known real value
+
         '''
+
+        #calculate total diameter of fully wound spring
+        # current_diameter = self.arbor_d_spring
+        # current_diameter = 9
+        # length_left = self.spring.length
+        # fully_wound_turns = 0
+        # while length_left >= 0:
+        #
+        #     coil_length = math.pi*(current_diameter + self.spring.thick/2)
+        #
+        #     #count half a coil as a full coil for the diameter, doesn't need to be perfect as I'm not taking into account lots of little details anyway
+        #     # if length_left > coil_length:
+        #     length_left -= coil_length
+        #
+        #
+        #     # if length_left < coil_length:
+        #     #     break
+        #     fully_wound_turns += 1
+        #     current_diameter += self.spring.thick * 2
+        #
+        # print("total coils when fully wound: {}, diameter of wound spring: {}".format(fully_wound_turns, current_diameter))
+        #
+        # #following The Modern Clock, the inner diameter of the spring when fully unwound should be at the same as the outer diameter when fully wound
+        #
+        # length_left = self.spring.length
+        # unwound_turns = 0
+        # while length_left >= 0:
+        #     coil_length = math.pi*(current_diameter + self.spring.thick/2)
+        #     length_left -= coil_length
+        #     # if length_left < coil_length:
+        #     #     break
+        #     current_diameter += self.spring.thick * 2
+        #     unwound_turns += 1
+        #
+        # print("total coils when unwound: {}, outer diameter of unwound spring: {}".format(unwound_turns, current_diameter))
+
+        arbor_d = self.arbor_d_spring
+        # arbor_d = 9
+        area_of_coiled_spring = self.spring.thick * self.spring.length
+        #free area inside barrel needs to be twice this, plus some fudge factor chosen so that the calculations line up with the "known" smiths spring
+        desired_free_area_of_inside_barrel = area_of_coiled_spring*2.325
+        area_of_spring_arbor = math.pi*(arbor_d/2)**2
+        total_area_of_inside_barrel = desired_free_area_of_inside_barrel + area_of_spring_arbor
+
+        #A = pi * r**2
+        #r**2 = A/pi
+        #r = sqrt(A/pi)
+
+        diameter_of_spring_barrel = 2*math.sqrt(total_area_of_inside_barrel/math.pi)
+
+        print("diameter of spring barrel: {}".format(diameter_of_spring_barrel))
+
+        #this also matches up with the rule of thumb that the mainspring thickness should be aproximately 1/100th of the barrel diameter
+
+
+        return diameter_of_spring_barrel
+
+    def get_max_barrel_turns(self):
+        '''
+        Given we know the arbor and barrel diameter, thickness and length of the spring - what's the theoretical maximum number of rotations we can get out of it?
+
+        uuh lots of copy paste from get_inner_diameter(), but that function really needs all its blurb about why it does the three lines of calculation, so I'm going to leave it for now
+        '''
+
+        arbor_radius = self.arbor_d_spring / 2
+        area_of_coiled_spring = self.spring.thick * self.spring.length
+        area_of_spring_arbor = math.pi * arbor_radius ** 2
+        total_inner_area = area_of_spring_arbor + area_of_coiled_spring
+
+        fully_wound_radius = math.sqrt(total_inner_area/math.pi)
+
+        spring_wound_thickness = fully_wound_radius - arbor_radius
+        spring_wound_coils = spring_wound_thickness / self.spring.thick
+
+        #this does agree with the crude method of counting coils commented out in get_inner_diameter!
+
+
+        area_of_barrel = math.pi*(self.barrel_diameter/2)**2
+        #assume the spring is entirely on the outside of the barrel
+        area_with_no_spring = area_of_barrel - area_of_coiled_spring
+
+        inner_radius = math.sqrt(area_with_no_spring/math.pi)
+
+        spring_unwound_thickness = self.barrel_diameter/2 - inner_radius
+        spring_unwound_coils = spring_unwound_thickness / self.spring.thick
+
+
+        total_barrel_turns = spring_wound_coils - spring_unwound_coils
+        print("spring_wound_coils: {} spring unwound coils: {}, max theoretical barrel turns: {}".format(spring_wound_coils, spring_unwound_coils, total_barrel_turns))
+        # given I calculated the smiths barrel to turn  4.3 turns during a week, maybe I should aim for half of this over the desired runtime?
+        # This would work out at 4.4 turns over 7 days, which fits with Smiths
+        return total_barrel_turns
+
 
     def get_outer_diameter(self):
         return self.barrel_diameter + self.wall_thick*2
@@ -1131,9 +1281,7 @@ class SpringBarrel:
         '''
         we can ignore chain drop, this is just a fixed number of turns for the runtime
         '''
-        if self.override_barrel_turns > 0:
-            return self.override_barrel_turns
-        return self.spring.turns
+        return self.get_max_barrel_turns() * self.fraction_of_max_turns
 
     def get_height(self):
         #thought: should I be including the back standoff here? it's overriden when the plate distance is calculated

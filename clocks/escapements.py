@@ -160,7 +160,7 @@ class AnchorEscapement:
         self.largest_anchor_r = -1
 
         # calculates things like tooth height from diameter, also recalculates the maths
-        self.set_diameter(diameter)
+        self.set_diameter(diameter, force=True)
 
     def calc_geometry(self):
         '''
@@ -272,7 +272,12 @@ class AnchorEscapement:
     def get_distance_beteen_arbours(self):
         return self.anchor_centre_distance
 
-    def set_diameter(self, diameter):
+    def set_diameter(self, diameter, force=False):
+
+        if self.force_diameter and not force:
+            #diameter has been set manually, so don't override it unless we're forcing it because this is being used internally by this object
+            return
+
         self.diameter = diameter
         # self.anchourDiameter=anchourDiameter
 
@@ -549,7 +554,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
             toothAngle = math.pi*20/180
             toothTipAngle = 0
             toothBaseAngle = -math.atan(math.tan(toothAngle) * self.tooth_height / self.inner_radius)
-        elif self.type == EscapementType.DEADBEAT:
+        elif self.type in [EscapementType.DEADBEAT, EscapementType.BROCOT]:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
             toothTipAngle = -self.tooth_tip_angle#-math.pi*0.05
             toothBaseAngle = -self.tooth_base_angle#-math.pi*0.03
@@ -635,34 +640,34 @@ class BrocotEscapment(AnchorEscapement):
 
         print("entry_pallet_r: {}, exit_pallet_r:{}".format(self.entry_pallet_r, self.exit_pallet_r))
 
-    def get_wheel_2d(self):
-
-
-        radius = self.diameter/2
-
-        dA = -math.pi * 2 / self.teeth
-        tooth_tip_arc_angle = self.tooth_tip_width / radius
-
-
-        tooth_base_angle = -self.tooth_base_angle  # -math.pi*0.03
-        tooth_tip_arc_angle *= -1
-
-        # print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
-
-        wheel = cq.Workplane("XY").moveTo(self.inner_radius, 0)
-
-        for i in range(self.teeth):
-            angle = dA * i
-            tip_pos_start = polar(angle, radius)
-            tip_pos_end = polar(angle + tooth_tip_arc_angle, radius)
-            nextbase_pos = (math.cos(angle + dA) * self.inner_radius, math.sin(angle + dA) * self.inner_radius)
-            endPos = (math.cos(angle + tooth_base_angle) * self.inner_radius, math.sin(angle + tooth_base_angle) * self.inner_radius)
-            # print(tipPos)
-            # wheel = wheel.lineTo(0,tipPos[1])
-            wheel = wheel.lineTo(tip_pos_start[0], tip_pos_start[1]).lineTo(tip_pos_end[0], tip_pos_end[1]).lineTo(endPos[0], endPos[1]).radiusArc(nextbase_pos, self.inner_diameter)
-            # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
-
-        wheel = wheel.close()
+    # def get_wheel_2d(self):
+    #
+    #
+    #     radius = self.diameter/2
+    #
+    #     dA = -math.pi * 2 / self.teeth
+    #     tooth_tip_arc_angle = self.tooth_tip_width / radius
+    #
+    #
+    #     tooth_base_angle = -self.tooth_base_angle  # -math.pi*0.03
+    #     tooth_tip_arc_angle *= -1
+    #
+    #     # print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
+    #
+    #     wheel = cq.Workplane("XY").moveTo(self.inner_radius, 0)
+    #
+    #     for i in range(self.teeth):
+    #         angle = dA * i
+    #         tip_pos_start = polar(angle, radius)
+    #         tip_pos_end = polar(angle + tooth_tip_arc_angle, radius)
+    #         nextbase_pos = (math.cos(angle + dA) * self.inner_radius, math.sin(angle + dA) * self.inner_radius)
+    #         endPos = (math.cos(angle + tooth_base_angle) * self.inner_radius, math.sin(angle + tooth_base_angle) * self.inner_radius)
+    #         # print(tipPos)
+    #         # wheel = wheel.lineTo(0,tipPos[1])
+    #         wheel = wheel.lineTo(tip_pos_start[0], tip_pos_start[1]).lineTo(tip_pos_end[0], tip_pos_end[1]).lineTo(endPos[0], endPos[1]).radiusArc(nextbase_pos, self.inner_diameter)
+    #         # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
+    #
+    #     wheel = wheel.close()
 
 class EscapmentInterface:
     '''
@@ -1778,9 +1783,10 @@ class GrasshopperEscapement:
 
         return composer
 
-    def getPalletArm(self, nib_pos, pivot_pos, forPrinting=False):
+    def get_pallet_arm(self, nib_pos, pivot_pos, for_printing=False, smaller_lower_nib=False):
         '''
         Assumes wheel rotates clockwise and both arms have their nibs left of the pivot point
+        smaller_lower_mouth - if True reduce the size of the "tooth" at the bottom of the arm as it will clash with the escape wheel
         '''
         arm = cq.Workplane("XY").tag("base").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
 
@@ -1795,8 +1801,9 @@ class GrasshopperEscapement:
         #0.8 looks awfully close on the preview, but I think when printed should be much better
         #basically want these to be as big as possible to help make up for wonkyness from having the escapement out the front
         nib_end_r = self.pallet_arm_wide*0.75#0.6
-
-
+        nib_base_end_r = nib_end_r
+        if smaller_lower_nib:
+            nib_base_end_r = self.pallet_arm_wide*0.5
 
 
         arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
@@ -1806,9 +1813,14 @@ class GrasshopperEscapement:
         line_along_arm = Line(pivot_pos, anotherPoint=arm_bend_start)
         arm_angle = line_along_arm.getAngle()
 
-        nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi / 2, nib_end_r))
+        nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi / 2, nib_base_end_r))
         nib_top = np.add(nib_pos, polar(nib_tangent_angle - math.pi / 6, nib_end_r))
-        nib_before_base = np.add(nib_pos, polar(arm_angle - math.pi, self.pallet_arm_wide/2))
+
+        bend_end_r = self.pallet_arm_wide/2
+        if smaller_lower_nib:
+            bend_end_r*=0.75
+
+        nib_before_base = np.add(nib_pos, polar(arm_angle - math.pi, bend_end_r))
 
         bottom_of_pivot = np.add(pivot_pos, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
         top_of_pivot = np.add(pivot_pos, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
@@ -1816,12 +1828,17 @@ class GrasshopperEscapement:
         #from pivot to the nib
         arm = arm.workplaneFromTagged("base").moveTo(bottom_of_pivot[0], bottom_of_pivot[1])
 
+
+
         bottom_of_bend_start = np.add(arm_bend_start, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
         top_of_bend_start = np.add(arm_bend_start, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
 
         arm = arm.lineTo(bottom_of_bend_start[0], bottom_of_bend_start[1])
         arm = arm.radiusArc((nib_before_base[0], nib_before_base[1]), -( nib_bend_r - self.pallet_arm_wide/2 ))
-        arm = arm.tangentArcPoint((nib_base[0], nib_base[1]), relative=False)
+        if smaller_lower_nib:
+            arm = arm.lineTo(nib_base[0], nib_base[1])
+        else:
+            arm = arm.tangentArcPoint((nib_base[0], nib_base[1]), relative=False)
         arm = arm.lineTo(nib_pos[0], nib_pos[1])
         arm = arm.lineTo(nib_top[0], nib_top[1])
 
@@ -1872,13 +1889,13 @@ class GrasshopperEscapement:
         return arm
 
     def getExitPalletArm(self, forPrinting=True):
-        return self.getPalletArm(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting)
+        return self.get_pallet_arm(self.geometry["Cstar"], self.geometry["G"], for_printing=forPrinting, smaller_lower_nib=True)
 
     def getExitComposer(self, forPrinting=True):
         return self.getComposer(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting, extra_length_fudge=self.exit_composer_extra_fudge)
 
     def getEntryPalletArm(self, forPrinting=True):
-        return self.getPalletArm(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting)
+        return self.get_pallet_arm(self.geometry["J"], self.geometry["P"], for_printing=forPrinting)
 
     def getEntryComposer(self, forPrinting=True):
         return self.getComposer(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting, extra_length_fudge=self.entry_composer_extra_fudge)

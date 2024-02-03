@@ -486,7 +486,7 @@ if False:
     show_object(pretty_bob.get_models())
 
 
-if True:
+if False:
     #Tahoma might be a good font for arabic numbers?
     #this one is fun:
     # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Comic Sans MS", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
@@ -871,3 +871,9 @@ if False:
 # # show_object(hands.getBasicHandShape(hour=True, colour=None))
 # show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
 # show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25, just_style=HandStyle.XMAS_TREE)
+
+spring_barrel = SpringBarrel(spring=MAINSPRING_183535)
+
+spring_barrel.get_max_barrel_turns()
+
+print(WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5))

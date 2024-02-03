@@ -569,7 +569,7 @@ class GoingTrain:
 
                     if prefer_large_second_wheel:
                         #prefer second wheel more teeth (but not so much that it makes it huge)
-                        weighting += (allTrains[c][0][0] - allTrains[c][1][0])*0.5
+                        weighting += (allTrains[c][0][0] - allTrains[c][1][0])*0.5#*0.5
                     else:
                         #similar sized if possible
                         weighting += abs(allTrains[c][0][0] - allTrains[c][1][0])
@@ -727,10 +727,11 @@ class GoingTrain:
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_spring_barrel(self, spring = None, key_bearing=None, rod_d=4, pawl_angle=math.pi/2, click_angle=-math.pi/2, ratchet_at_back=True,
-                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, override_barrel_turns=-1, wheel_min_teeth=60):
+                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, fraction_of_max_turns=0.5, wheel_min_teeth=60, wall_thick=12):
+
         self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0,
                                           pawl_angle = pawl_angle, click_angle = click_angle, ratchet_at_back=ratchet_at_back, style=style, base_thick=base_thick,
-                                          override_barrel_turns=override_barrel_turns)
+                                          fraction_of_max_turns=fraction_of_max_turns, wall_thick=wall_thick)
         '''
         smiths: 66 teeth on barrel, 10 on next pinion
         76 teeth on next wheel, 13 on next pinion
@@ -904,6 +905,7 @@ class GoingTrain:
         first_wheel_r = pairs[0].wheel.get_max_radius() + pairs[0].pinion.get_max_radius()
         powered_wheel_encasing_radius = self.powered_wheel.get_encasing_radius()#.ratchet.outsideDiameter/2
         space = first_wheel_r - powered_wheel_encasing_radius
+        #logic is flawed and doesn't work with multiple powered wheels (eg 8 day spring)
         if second_wheel_r < space - 3:
             #the second wheel can actually fit on the same side as the ratchet
             chain_wheel_imaginary_pinion_at_front = not chain_wheel_imaginary_pinion_at_front
@@ -2156,7 +2158,7 @@ class SimpleClockPlates:
             # check front plate
             canIgnoreFront = False
             canIgnoreBack = False
-            if self.going_train.get_arbour_with_conventional_naming(i).get_type() == ArbourType.POWERED_WHEEL:
+            if self.going_train.get_arbour_with_conventional_naming(i).get_type() == ArborType.POWERED_WHEEL:
                 if self.going_train.chain_at_back:
                     canIgnoreBack = True
                 else:
@@ -3794,7 +3796,7 @@ class SimpleClockPlates:
         for i,arbourForPlate in enumerate(self.arbors_for_plate):
             shapes = arbourForPlate.get_shapes()
             #TODO maybe include powered wheel in shapes? not sure if it's worth the effort
-            if arbourForPlate.type == ArbourType.POWERED_WHEEL:
+            if arbourForPlate.type == ArborType.POWERED_WHEEL:
                 arbourForPlate.arbor.powered_wheel.output_STLs(name + "_arbour_{}".format(i), path)
             for shapeName in shapes.keys():
                 out = os.path.join(path, "{}_arbour_{}_{}.stl".format(name, i, shapeName))
@@ -3838,7 +3840,7 @@ class MantelClockPlates(SimpleClockPlates):
     Skeleton mantel clock
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK):
+                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
@@ -3847,7 +3849,7 @@ class MantelClockPlates(SimpleClockPlates):
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                      second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
-                     layer_thick=layer_thick)
+                     layer_thick=layer_thick, escapement_on_front=escapement_on_front)
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
@@ -4652,7 +4654,7 @@ class Assembly:
             hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + rod_in_front_of_hands
 
             #trying to arrange all the additions from back to front to make it easy to check
-            if arbor.type == ArbourType.POWERED_WHEEL:
+            if arbor.type == ArborType.POWERED_WHEEL:
                 powered_wheel = arbor.powered_wheel
                 if powered_wheel.type == PowerType.CORD:
                     if powered_wheel.use_key:
@@ -4665,7 +4667,7 @@ class Assembly:
                     rod_length = simple_arbour_length
 
 
-            elif self.plates.second_hand and ((arbor.type == ArbourType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (
+            elif self.plates.second_hand and ((arbor.type == ArborType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (
                     i == self.goingTrain.wheels + self.goingTrain.powered_wheels - 2 and self.plates.going_train.has_second_hand_on_last_wheel())):
                 #this has a second hand on it
                 if self.plates.escapement_on_front:
@@ -4684,7 +4686,7 @@ class Assembly:
                     else:
                         #little seconds hand just in front of the plate
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.second_fixing_thick + self.hands.second_thick
-            elif arbor.type == ArbourType.WHEEL_AND_PINION:
+            elif arbor.type == ArborType.WHEEL_AND_PINION:
                 if i == self.goingTrain.powered_wheels:
                     #minute wheel
                     if self.plates.centred_second_hand:
@@ -4704,10 +4706,10 @@ class Assembly:
                     # "normal" arbour
                     rod_length = simple_arbour_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
 
-            elif arbor.type == ArbourType.ESCAPE_WHEEL:
+            elif arbor.type == ArborType.ESCAPE_WHEEL:
                 #"normal" arbour
                 rod_length = simple_arbour_length
-            elif arbor.type == ArbourType.ANCHOR:
+            elif arbor.type == ArborType.ANCHOR:
                 if self.plates.escapement_on_front:
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:

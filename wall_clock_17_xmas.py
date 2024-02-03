@@ -39,7 +39,7 @@ if 'show_object' not in globals():
 # random.seed(6)
 random.seed(7)
 
-clockName="wall_clock_17_xmas_retrofit3"
+clockName="wall_clock_17_xmas_retrofit4"
 clockOutDir="out"
 gearStyle = clock.GearStyle.SNOWFLAKE
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -54,7 +54,8 @@ escapement = clock.GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, 
 train=clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True,
                        chain_at_back=False, chain_wheels=0, runtime_hours=28, huygens_maintaining_power=True)
 
-train.calculate_ratios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
+# train.calculate_ratios(max_wheel_teeth=100, min_pinion_teeth=15, wheel_min_teeth=30, pinion_max_teeth=30, max_error=0.1)
+train.set_ratios([[72, 15], [50, 16]])
 
 # Trying the thinner 47 LPF regula chain
 # train.genChainWheels(ratchetThick=4,  wire_thick=1.05,width=4.4, inside_length=8.4-1.05*2, tolerance=0.075, screwThreadLength=8)
@@ -145,16 +146,17 @@ if outputSTL:
 
     # motionWorks.output_STLs(clockName,clockOutDir)
     # pendulum.output_STLs(clockName, clockOutDir)
-    # plates.output_STLs(clockName, clockOutDir)
+    escapement.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
     # hands.output_STLs(clockName, clockOutDir)
     # weight_shell.output_STLs(clockName, clockOutDir)
     # assembly.output_STLs(clockName, clockOutDir)
     # pulley.output_STLs(clockName, clockOutDir)
     # pulley_no_pipe.output_STLs(clockName+"_no_pipe", clockOutDir)
-
-    pretty_bob.output_STLs(clockName, clockOutDir)
-    pretty_hand_avoider.output_STLs(clockName, clockOutDir)
-    pretty_anchor.output_STLs(clockName, clockOutDir)
+    #
+    # pretty_bob.output_STLs(clockName, clockOutDir)
+    # pretty_hand_avoider.output_STLs(clockName, clockOutDir)
+    # pretty_anchor.output_STLs(clockName, clockOutDir)
     # out = os.path.join(clockOutDir, "anchor_white.stl")
     # print("Outputting ", out)
     # # exporters.export(escapement.star_inset.rotate((0, 0, 0), (1, 0, 0), 180).translate((0,0,escapement.get_anchor_thick())), out)

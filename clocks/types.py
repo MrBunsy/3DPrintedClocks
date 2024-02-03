@@ -135,7 +135,7 @@ ideas for new styles:
  - sine wave wraped around the circle?
 '''
 
-class ArbourType(Enum):
+class ArborType(Enum):
     WHEEL_AND_PINION = "WheelAndPinion"
     POWERED_WHEEL = "PoweredWheel"
     ESCAPE_WHEEL = "EscapeWheel"
