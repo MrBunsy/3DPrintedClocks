@@ -297,6 +297,12 @@ class AnchorEscapement:
         # angle on teh wheel between teeth, not angle the tooth leans at
         self.tooth_angle = math.pi * 2 / self.teeth
 
+        '''
+        The anchor will span anchor_teeth (which is where wheel_angle comes from)
+        draw a tangent at each end of the wheel_angle and where those tangents meet is the pivot point of the anchor. 
+        A greater number of anchor teeth therefore results in an anchor with a pivot point further away
+        '''
+
         # height from centre of escape wheel to anchor pinion - assuming this is at the point the tangents (from the wheelangle on the escape wheel teeth) meet
         anchor_centre_distance = self.radius / math.cos(self.wheel_angle / 2)
 
@@ -641,9 +647,10 @@ class BrocotEscapment(AnchorEscapement):
 
     def __init__(self, teeth=30, diameter=-1, wheel_thick=3, lift=4, drop=2, lock=2, use_rubies=True):
         self.use_rubies = use_rubies
-        super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=None, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
+        #increasing number of anchor teeth to increase distance between anchor pivot and escape wheel - entirely for cosmetic purposes given the brocot is usually on teh front of the clock
+        super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=math.floor(teeth / 3) + 0.5, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
                          tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=12,
-                         style=AnchorStyle.CURVED_MATCHING_WHEEL)
+                         style=AnchorStyle.CURVED_MATCHING_WHEEL, )
 
 
     def calc_geometry(self):
