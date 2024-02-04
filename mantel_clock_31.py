@@ -77,7 +77,7 @@ train.set_ratios([[58, 9], [58, 11], [50, 11]])
 pendulumSticksOut=10
 backPlateFromWall=30
 
-pinion_extensions = {1:15}#, 2:5}
+pinion_extensions = {1:25}#, 2:5}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1]

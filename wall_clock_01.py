@@ -44,7 +44,7 @@ train.print_info()
 train.gen_chain_wheels()
 train.gen_gears(module_size=1.2, module_reduction=0.85)
 
-show_object(train.arbours[0])
+show_object(train.arbors[0])
 print("anchor centre distnace", train.escapement.anchor_centre_distance)
 train.output_STLs(clockName, clockOutDir)
 

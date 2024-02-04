@@ -1102,6 +1102,7 @@ class Gear:
         note - might need somethign different for pinions?
         '''
 
+        # return cq.Workplane("XY").circle(self.pitch_diameter/2)
 
         if self.lantern:
             raise ValueError("This is a lantern pinion, the 2D shape will not work for this")
@@ -2024,8 +2025,8 @@ class ArbourForPlate:
         length = self.distance_from_front if front else self.distance_from_back
         bearing = get_bearing_info(self.arbor.get_rod_d())
 
-        outer_r = self.arbor.get_rod_d()
-        inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
+        outer_r = self.arbor.get_arbor_extension_r()
+        inner_r = self.arbor.get_arbor_extension_r() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
             tip_r = outer_r
@@ -2177,7 +2178,8 @@ class Arbour:
 
     def get_rod_d(self):
         return self.arbor_d
-
+    def get_arbor_extension_r(self):
+        return self.arbor_d
 
     def get_total_thickness(self, just_pinion=False):
         '''
