@@ -737,12 +737,12 @@ class Line:
     #
     # return points
 
-    def getAngle(self):
+    def get_angle(self):
         return math.atan2(self.dir[1], self.dir[0])
 
     def get_angle_between_lines(self, b, acute=True):
-        aAngle = self.getAngle()
-        bAngle = b.getAngle()
+        aAngle = self.get_angle()
+        bAngle = b.get_angle()
         angle = abs(aAngle - bAngle)
         while angle > math.pi:
             angle -= math.pi

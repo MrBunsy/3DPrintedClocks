@@ -1162,13 +1162,13 @@ class GrasshopperEscapement:
 
         circle_17_r = active_length_entry_pallet_arm
         circle_17_centre = J_start_of_entry_impulse
-        towardsS = polar(line_7_entry_start_of_impulse_action.getAngle(), circle_17_r)
+        towardsS = polar(line_7_entry_start_of_impulse_action.get_angle(), circle_17_r)
         S = (circle_17_centre[0] + towardsS[0], circle_17_centre[1] + towardsS[1])
 
 
         circle_18_r = active_length_entry_pallet_arm
         circle_18_centre = K_end_of_entry_impulse
-        towardsT = polar(line_15_end_of_entry_impulse.getAngle(), circle_18_r)
+        towardsT = polar(line_15_end_of_entry_impulse.get_angle(), circle_18_r)
         T = (circle_18_centre[0] + towardsT[0], circle_18_centre[1] + towardsT[1])
 
         circle_19_centre = D_start_of_exit_impulse
@@ -1176,10 +1176,10 @@ class GrasshopperEscapement:
         circle_20_centre = C_end_of_exit_impulse
         circle_20_r = active_length_exit_pallet_arm
 
-        towardsQ = polar(line_8_exit_pallet_start_line_of_action.getAngle() + math.pi, circle_19_r)
+        towardsQ = polar(line_8_exit_pallet_start_line_of_action.get_angle() + math.pi, circle_19_r)
         Q = (circle_19_centre[0] + towardsQ[0], circle_19_centre[1] + towardsQ[1])
 
-        towardsR = polar(line_16_end_of_exit_impulse.getAngle() + math.pi, circle_20_r)
+        towardsR = polar(line_16_end_of_exit_impulse.get_angle() + math.pi, circle_20_r)
         R = (circle_20_centre[0] + towardsR[0], circle_20_centre[1] + towardsR[1])
 
         step_four_figure_38 = step_three_figure_37
@@ -1286,14 +1286,14 @@ class GrasshopperEscapement:
         line_38_ZP = Line(Z, anotherPoint=P)
 
         #. This is the escaping arc of the entry geometry.
-        En = line_38_ZP.getAngle() - line_37_ZN.getAngle()
+        En = line_38_ZP.get_angle() - line_37_ZN.get_angle()
 
 
 
         line_39_ZF = Line(Z, anotherPoint=F)
         line_40_ZG = Line(Z, anotherPoint=G)
 
-        Ex = line_40_ZG.getAngle() - line_39_ZF.getAngle()
+        Ex = line_40_ZG.get_angle() - line_39_ZF.get_angle()
 
 
 
@@ -1739,7 +1739,7 @@ class GrasshopperEscapement:
         '''
         # rotate so that Z is at the top
         line_OZ = Line(self.geometry["O"], anotherPoint=self.geometry["Z"])
-        part = part.rotate((0, 0, 0), (0, 0, 1), radToDeg((math.pi / 2 - line_OZ.getAngle())))
+        part = part.rotate((0, 0, 0), (0, 0, 1), radToDeg((math.pi / 2 - line_OZ.get_angle())))
 
         return part
 
@@ -1758,8 +1758,8 @@ class GrasshopperEscapement:
 
 
         # angle that is along the tangent of the wheel
-        nib_tangent_angle = line_pivot_to_nib.getAngle()
-        arm_angle = line_pivot_to_nib.getAngle() - nib_offset_angle
+        nib_tangent_angle = line_pivot_to_nib.get_angle()
+        arm_angle = line_pivot_to_nib.get_angle() - nib_offset_angle
 
         line_along_arm = Line(pivot_pos, angle=arm_angle)
 
@@ -1780,7 +1780,7 @@ class GrasshopperEscapement:
 
         composer_length = distance_between_two_points(pivot_pos, pallet_arm_bend_start)
 
-        arm_angle = line_along_arm.getAngle()
+        arm_angle = line_along_arm.get_angle()
 
         rest_pos_base = np.add(pivot_pos, np.multiply(line_along_arm.dir, composer_length))
         rest_screw_pos = np.add(rest_pos_base, polar(arm_angle - math.pi/2, self.composer_height))
@@ -1828,7 +1828,7 @@ class GrasshopperEscapement:
 
         if not forPrinting:
             #rotate and translate into place
-            composer = composer.rotate((0,0,0), (0,0,1), radToDeg(line_along_arm.getAngle()) - 180)
+            composer = composer.rotate((0,0,0), (0,0,1), radToDeg(line_along_arm.get_angle()) - 180)
             composer = composer.translate(pivot_pos)
         else:
             #put flat on its back
@@ -1836,27 +1836,35 @@ class GrasshopperEscapement:
 
         return composer
 
-    def get_pallet_arm(self, nib_pos, pivot_pos, for_printing=False, smaller_lower_nib=False):
+    def get_pallet_arm(self, nib_pos, pivot_pos, for_printing=False, exit=False):
         '''
         Assumes wheel rotates clockwise and both arms have their nibs left of the pivot point
-        smaller_lower_mouth - if True reduce the size of the "tooth" at the bottom of the arm as it will clash with the escape wheel
+        exit - if True reduce the size of the "tooth" at the bottom of the arm as it will clash with the escape wheel
+        if false, extend size and angle of the bottom tooth
+
+        Originally both arms were basically the same, but now adjusting the shapes of the teeth significantly from each other
+
         '''
         arm = cq.Workplane("XY").tag("base").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
 
         line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
+        line_nib_to_escape_wheel = Line(nib_pos, anotherPoint=self.geometry["O"])
         distance_to_nib = distance_between_two_points(nib_pos, pivot_pos)
         #I want this to be longer so the counterweight works better, but any larger than this and the entry arm will clash with any extra rod that stick through the frame
         distance_to_counterweight = distance_to_nib * 0.4
 
         # #angle that is along the tangent of the wheel
-        nib_tangent_angle = line_pivot_to_nib.getAngle()
+        nib_tangent_angle = line_pivot_to_nib.get_angle()
+        nib_to_escape_wheel_angle = line_nib_to_escape_wheel.get_angle()
+
         # 0.6 works when there's no wonkyness in the frame and wheel
         #0.8 looks awfully close on the preview, but I think when printed should be much better
         #basically want these to be as big as possible to help make up for wonkyness from having the escapement out the front
         nib_end_r = self.pallet_arm_wide*0.75#0.6
         nib_base_end_r = nib_end_r
-        if smaller_lower_nib:
-            nib_base_end_r = self.pallet_arm_wide*0.6
+        if exit:
+            #make the nib slightly smaller so it doesn't hit the previous tooth on the way past
+            nib_base_end_r = self.pallet_arm_wide*0.65
 
 
         arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
@@ -1864,13 +1872,13 @@ class GrasshopperEscapement:
         nib_bend_r = (distance_to_nib - distance_between_two_points(pivot_pos, arm_bend_start))
 
         line_along_arm = Line(pivot_pos, anotherPoint=arm_bend_start)
-        arm_angle = line_along_arm.getAngle()
+        arm_angle = line_along_arm.get_angle()
 
         nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi / 2, nib_base_end_r))
         nib_top = np.add(nib_pos, polar(nib_tangent_angle - math.pi / 6, nib_end_r))
 
         bend_end_r = self.pallet_arm_wide/2
-        if smaller_lower_nib:
+        if exit:
             bend_end_r*=0.75
 
         nib_before_base = np.add(nib_pos, polar(arm_angle - math.pi, bend_end_r))
@@ -1888,7 +1896,7 @@ class GrasshopperEscapement:
 
         arm = arm.lineTo(bottom_of_bend_start[0], bottom_of_bend_start[1])
         arm = arm.radiusArc((nib_before_base[0], nib_before_base[1]), -( nib_bend_r - self.pallet_arm_wide/2 ))
-        if smaller_lower_nib:
+        if exit:
             arm = arm.lineTo(nib_base[0], nib_base[1])
         else:
             arm = arm.tangentArcPoint((nib_base[0], nib_base[1]), relative=False)
@@ -1942,7 +1950,7 @@ class GrasshopperEscapement:
         return arm
 
     def getExitPalletArm(self, forPrinting=True):
-        return self.get_pallet_arm(self.geometry["Cstar"], self.geometry["G"], for_printing=forPrinting, smaller_lower_nib=True)
+        return self.get_pallet_arm(self.geometry["Cstar"], self.geometry["G"], for_printing=forPrinting, exit=True)
 
     def getExitComposer(self, forPrinting=True):
         return self.getComposer(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting, extra_length_fudge=self.exit_composer_extra_fudge)

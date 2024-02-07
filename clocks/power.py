@@ -2466,14 +2466,14 @@ class PocketChainWheel2:
 
         filler_centre = start_cylinder_centre_line.intersection(end_cylinder_centre_line)
 
-        end_pos = np.add(end_cylinder_centre_line.start, polar(end_cylinder_centre_line.getAngle(), self.radius * 2))
-        start_pos = np.add(start_cylinder_centre_line.start, polar(start_cylinder_centre_line.getAngle(), self.radius * 2))
+        end_pos = np.add(end_cylinder_centre_line.start, polar(end_cylinder_centre_line.get_angle(), self.radius * 2))
+        start_pos = np.add(start_cylinder_centre_line.start, polar(start_cylinder_centre_line.get_angle(), self.radius * 2))
         #
         filler = cq.Workplane("XY").moveTo(filler_centre[0], filler_centre[1]).lineTo(start_pos[0], start_pos[1]).lineTo(end_pos[0], end_pos[1]).close().extrude(self.pocket_wide).translate((0,0,-self.pocket_wide/2))
         cutter = cutter.union(filler)
 
-        base_end = polar(end_cylinder_centre_line.getAngle(), self.radius - self.chain.wire_thick/2)
-        base_start = polar(start_cylinder_centre_line.getAngle(), self.radius - self.chain.wire_thick / 2)
+        base_end = polar(end_cylinder_centre_line.get_angle(), self.radius - self.chain.wire_thick / 2)
+        base_start = polar(start_cylinder_centre_line.get_angle(), self.radius - self.chain.wire_thick / 2)
         #chop the bottom off so we only cut a pocket with a flat base
         base_cutter = cq.Workplane("XY").rect(self.radius*2, base_end[1]*2).extrude(self.pocket_wide).translate((0,0,-self.pocket_wide/2))
         cutter = cutter.cut(base_cutter)

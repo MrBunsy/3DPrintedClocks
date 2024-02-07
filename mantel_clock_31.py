@@ -99,7 +99,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 dial = clock.Dial(outside_d=190, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ARABIC_NUMBERS, font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.LINES_ARC, outer_edge_style=None)
 # dial=None
 
-plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
+plates = clock.StandaloneClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
                                  motion_works_angle_deg=180+50, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=35)
 
 

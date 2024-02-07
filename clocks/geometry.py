@@ -57,7 +57,7 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
     line = Line(from_pos, anotherPoint=to_pos)
     midpoint = average_of_two_points(from_pos, to_pos)
     nighty_deg = math.pi/2 * (1 if radius > 0 else -1)
-    from_midpoint_to_centre_angle = line.getAngle() + nighty_deg
+    from_midpoint_to_centre_angle = line.get_angle() + nighty_deg
 
     wide_radius = wide / 2 * (1 if radius > 0 else -1)
 
@@ -70,10 +70,10 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
     from_line = Line(centre, anotherPoint=from_pos)
     to_line = Line(centre, anotherPoint=to_pos)
 
-    inner_from = polar(from_line.getAngle(), radius - wide/2)
-    outer_from = polar(from_line.getAngle(), radius + wide/2)
-    inner_to = polar(to_line.getAngle(), radius - wide / 2)
-    outer_to = polar(to_line.getAngle(), radius + wide / 2)
+    inner_from = polar(from_line.get_angle(), radius - wide / 2)
+    outer_from = polar(from_line.get_angle(), radius + wide / 2)
+    inner_to = polar(to_line.get_angle(), radius - wide / 2)
+    outer_to = polar(to_line.get_angle(), radius + wide / 2)
 
     arc = cq.Workplane("XY").moveTo(inner_from[0], inner_from[1]).radiusArc(inner_to, -(radius-wide/2))
 
