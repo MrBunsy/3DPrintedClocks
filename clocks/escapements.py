@@ -1864,7 +1864,10 @@ class GrasshopperEscapement:
         nib_base_end_r = nib_end_r
         if exit:
             #make the nib slightly smaller so it doesn't hit the previous tooth on the way past
-            nib_base_end_r = self.pallet_arm_wide*0.65
+            #0.7 still sliiightly grazes the previous tooth sometimes, but smaller was having problems with skipping teeth - sometimes the exit pallet would lift away by itself
+            #may or may not have been a specific printing problem, but not sure how many attempts to want to make, so leaving this at 0.7
+            #0.65 didn't graze the previous tooth. Revisit this in the future.
+            nib_base_end_r = self.pallet_arm_wide*0.7
 
 
         arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)

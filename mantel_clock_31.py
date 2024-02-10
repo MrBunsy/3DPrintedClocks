@@ -51,7 +51,7 @@ lift=2
 drop=3
 lock=2
 escapement = clock.BrocotEscapment(drop=drop, lift=lift, teeth=30, lock=lock, wheel_thick=2, diameter=40)
-train = clock.GoingTrain(pendulum_length_m=0.15, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+train = clock.GoingTrain(pendulum_length_m=0.20, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True)
 
 barrel_gear_thick = 8
@@ -64,13 +64,15 @@ moduleReduction=0.9#0.85
 # train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick,
 #                         chain_wheel_ratios=[[61, 10], [62, 10]])#[[66, 10], [76,13]])#, [[61, 10], [62, 10]]
 
-train.gen_spring_barrel(spring=clock.MAINSPRING_183535, pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+train.gen_spring_barrel(spring=clock.MAINSPRING_183535, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
                         wall_thick=9)#chain_wheel_ratios=[[67, 10], [61, 10]],
 
 #TODO new option to favour large escape wheel?
-# train.calculate_ratios(max_wheel_teeth=200, min_pinion_teeth=9, wheel_min_teeth=80, pinion_max_teeth=20, max_error=0.1, module_reduction=moduleReduction, loud=True)
+# train.calculate_ratios(max_wheel_teeth=70, min_pinion_teeth=9, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True)
                       # penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
-train.set_ratios([[58, 9], [58, 11], [50, 11]])
+#0.15m pendulum
+# train.set_ratios([[58, 9], [58, 11], [50, 11]])
+train.set_ratios([[66, 9], [65, 14], [55, 14]])
 
 
 
@@ -85,7 +87,7 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 train.gen_gears(module_size=0.75, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2, rod_diameters=[12,3,3,2,2,2,2])
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -96,17 +98,16 @@ motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compen
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #140 looks good, but might be easier to assemble if it didn't overlap the motion works?
-dial = clock.Dial(outside_d=190, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ARABIC_NUMBERS, font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.LINES_ARC, outer_edge_style=None)
+dial = clock.Dial(outside_d=170, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ARABIC_NUMBERS, font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.LINES_ARC, outer_edge_style=None)
 # dial=None
 
-plates = clock.StandaloneClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6,
-                                 motion_works_angle_deg=180+50, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=35)
+plates = clock.StandaloneClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
 #                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
 #would like sword, need to fix second hand outline for it
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                     outline_on_seconds=1, second_hand_centred=True)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
@@ -122,7 +123,7 @@ assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum
 # show_object(plates.get_plate())
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
-if not outputSTL:
+if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=False, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], key_colour=clock.Colour.GOLD)
 

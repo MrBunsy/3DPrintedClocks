@@ -770,12 +770,12 @@ if False:
 # show_object(escapement.get_wheel_2d())
 
 #
-# ratchet = TraditionalRatchet(50, blocks_clockwise=False)#, click_fixing_angle=-math.pi/4)
+ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=math.pi*0.9, click_fixing_angle=math.pi*0.1)#, click_fixing_angle=-math.pi/4)
 # #
-# show_object(ratchet.get_gear())
-# show_object(ratchet.get_pawl())
-# show_object(ratchet.get_click())
-# show_object(ratchet.get_little_plate_for_pawl())
+show_object(ratchet.get_gear())
+show_object(ratchet.get_pawl())
+show_object(ratchet.get_click())
+show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
@@ -872,8 +872,8 @@ if False:
 # show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
 # show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25, just_style=HandStyle.XMAS_TREE)
 
-spring_barrel = SpringBarrel(spring=MAINSPRING_183535)
-
-spring_barrel.get_max_barrel_turns()
-
-print(WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5))
+# spring_barrel = SpringBarrel(spring=MAINSPRING_183535)
+#
+# spring_barrel.get_max_barrel_turns()
+#
+# print(WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5))

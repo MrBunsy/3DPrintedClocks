@@ -85,6 +85,13 @@ Plan: spin out GoingTrain to gearing and a new file for the plates. keep this ju
 
 
 class GoingTrain:
+    '''
+    This sets which direction the gears are facing and does some work about setting the size of the escape wheel, which is getting increasingly messy
+    and makes some assumptions that are no longer true, now there's a variety of power sources and train layouts.
+
+    I propose instead moving this logic over to the plates and therefore out of Arbor and into ArborForPlate.
+    Maybe even going as far as this class not generating any actual geometry? just being ratios?
+    '''
 
     def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
                  escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio = 1, support_second_hand=False):
@@ -798,7 +805,7 @@ class GoingTrain:
             max_power = effective_weight * GRAVITY * max_weight_speed* math.pow(10, 6)
             print("Cordwheel power varies from {:.1f}uW to {:.1f}uW".format(min_power, max_power))
 
-    def gen_gears(self, module_size=1.5, hole_d=3, module_reduction=0.5, thick=6, chain_wheel_thick=-1, escape_wheel_max_d=-1,
+    def gen_gears(self, module_size=1.5, rod_diameters=None, module_reduction=0.5, thick=6, chain_wheel_thick=-1, escape_wheel_max_d=-1,
                   powered_wheel_module_increase=None, pinion_thick_multiplier = 2.5, style="HAC", chain_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes = None, stack_away_from_powered_wheel=False, pinion_extensions=None,
                   powered_wheel_module_sizes = None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1):
@@ -825,7 +832,10 @@ class GoingTrain:
         pinion_thick_extra: newer idea, override pinion_thick_multiplier and chain_wheel_pinion_thick_multiplier.
          Just add this value to the thickness of the previous wheel for each pinion thickness
         '''
-        
+
+        if rod_diameters is None:
+            rod_diameters = [3 for i in range(self.powered_wheels + self.wheels + 1)]
+
         if lanterns is None:
             lanterns = []
 
@@ -882,7 +892,7 @@ class GoingTrain:
         #make the escape wheel as large as possible, by default
         if (stack_away_from_powered_wheel or self.wheels == 3) and self.escape_wheel_pinion_at_front == self.chain_at_back:
             #avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
-            escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - hole_d - 2) * 2
+            escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - rod_diameters[-2] - 2) * 2
         else:
             #avoid previous pinion
             escape_wheel_diameter = (pairs[len(pairs)-1].centre_distance - pairs[len(pairs)-2].pinion.get_max_radius() - 2) * 2
@@ -959,7 +969,7 @@ class GoingTrain:
                 pair = WheelPinionPair(self.chain_wheel_ratios[i][0], self.chain_wheel_ratios[i][1], chain_module, lantern=i in lanterns)
                 self.powered_wheel_pairs.append(pair)
 
-            minuteWheelSpace = pairs[0].wheel.get_max_radius() + hole_d
+            minuteWheelSpace = pairs[0].wheel.get_max_radius() + rod_diameters[1]
             last_chain_wheel_space = self.powered_wheel_pairs[-1].wheel.get_max_radius()
             if not self.powered_wheel.loose_on_rod:
                 #TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel
@@ -995,7 +1005,7 @@ class GoingTrain:
                 wheel_thick = chain_wheel_thick * (thickness_reduction ** i)
                 if self.powered_wheel_pairs[i-1].pinion.lantern:
                     cap_thick = wheel_thick
-                self.powered_wheel_arbors.append(Arbour(wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=hole_d, pinion=self.powered_wheel_pairs[i - 1].pinion,
+                self.powered_wheel_arbors.append(Arbour(wheel = self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
                                                         pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                                         distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
                                                         clockwise_from_pinion_side=clockwise_from_pinion_side))
@@ -1025,7 +1035,7 @@ class GoingTrain:
                     if pinion_thick_extra > 0:
                         pinion_thick = self.powered_wheel_arbors[-1].wheel_thick + pinion_thick_extra
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
-                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=hole_d, wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
+                    arbour = Arbour(wheel = pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i+self.powered_wheels], wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                     distance_to_next_arbour= pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
                 arbours.append(arbour)
@@ -1051,7 +1061,7 @@ class GoingTrain:
                     pinionExtension = pinion_extensions[i]
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
-                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbor_d=hole_d, wheel_thick=thick * (thickness_reduction ** i),
+                arbours.append(Arbour(wheel=pairs[i].wheel, pinion=pairs[i-1].pinion, arbor_d=rod_diameters[i+self.powered_wheels], wheel_thick=thick * (thickness_reduction ** i),
                                       pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinionExtension,
                                       distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
             else:
@@ -1064,7 +1074,7 @@ class GoingTrain:
                     pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
-                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=hole_d, pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
+                arbours.append(Arbour(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i+self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
                                       distance_to_next_arbour=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
@@ -1333,6 +1343,10 @@ class SimpleClockPlates:
 
         #if escapementOnFront then extend out the front plate to hold the bearing - reduces wobble when platedistance is low
         self.extra_support_for_escape_wheel = extra_support_for_escape_wheel
+
+        # if this is powered by a spring barrel, do we want to support the pawl with a little extra sticky out bit?
+        #TODO apply to cord power too?
+        self.little_plate_for_pawl = True
 
         angles_from_minute = None
         anglesFromChain = None
@@ -3750,9 +3764,9 @@ class SimpleClockPlates:
 
         if self.pillars_separate:
             for bottomPillarPos in self.bottom_pillar_positions:
-                bottomPlate = bottomPlate.add(self.get_bottom_pillar().translate(bottomPillarPos).translate((0, 0, self.get_plate_thick(back=True))))
+                bottomPlate = bottomPlate.add(self.get_pillar(top=False).translate(bottomPillarPos).translate((0, 0, self.get_plate_thick(back=True))))
             for top_pillar_pos in self.top_pillar_positions:
-                bottomPlate = bottomPlate.add(self.get_top_pillar().translate(top_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
+                bottomPlate = bottomPlate.add(self.get_pillar(top=True).translate(top_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
 
         plates = bottomPlate.add(topPlate.translate((0, 0, self.plate_distance + self.get_plate_thick(back=True))))
 
@@ -3789,11 +3803,11 @@ class SimpleClockPlates:
         if self.pillars_separate:
             out = os.path.join(path, "{}_bottom_pillar.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.get_bottom_pillar(), out)
+            exporters.export(self.get_pillar(top=False), out)
 
             out = os.path.join(path, "{}_top_pillar.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.get_top_pillar(), out)
+            exporters.export(self.get_pillar(top=True), out)
 
         if self.motion_works.cannon_pinion_friction_ring:
             out = os.path.join(path, "{}_friction_clip.stl".format(name))
@@ -4182,7 +4196,7 @@ class StandaloneClockPlates(SimpleClockPlates):
     This was based on a copy of MantelClockPlates - I think it's going to be similar, but not similar enough to warrant extending or being a set of options
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False):
+                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
@@ -4190,17 +4204,16 @@ class StandaloneClockPlates(SimpleClockPlates):
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=None,
+                     second_hand=second_hand, motion_works_angle_deg=-1, endshake=1.5, compact_zigzag=True, screws_from_back=None,
                      layer_thick=layer_thick, escapement_on_front=escapement_on_front)
 
         self.narrow_bottom_pillar = False
 
-        self.little_arm_to_motion_works = True
+        self.little_arm_to_motion_works = False
+        self.little_plate_for_pawl = False
 
-        # can make it big enough to fully encompass everything, but we still barely have space for a bottom right pillar and then its' just lots of empty space
-        # so instead, make it big enough to hold the barrel and I'll poke a bit out the top for the anchor, and just skip the bottom right pillar entirely
-        # worth a shot, anyway
-        self.radius = distance_between_two_points(self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[0][:2])
+        #TODO auto motion works angle
+
         # centre = self.bearing_positions[self.going_train.powered_wheels][:2]
         # self.radius = 1
         # for bearing_pos in self.bearing_positions:
@@ -4215,53 +4228,91 @@ class StandaloneClockPlates(SimpleClockPlates):
         '''
 
 
+    def get_pillar(self, top=True, flat=False):
+        '''
+        they're all the same on this design!
+        '''
+
+        pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(self.plate_distance)
+
+        #TODO fancy pillars!
+
+
+        return pillar
+
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
-        current plan: asymetric to be compact, with anchor arbor sticking out the top above the topmost pillar
+        All pillars on this clock will be identical, with no real meanign behind top and bottom pillar, but to fit in with the other plate designs they'll still
+        be divided into top and bottom pillars
 
-        This is completely hard coded around a spring powered clock with 4 wheels and 2 powered wheels using the compact layout.
-        if the spring clock is a success, it'll be worth making it more flexible
+        currently assumes spring powered with two powered wheels, TODO make more robust
         '''
 
+        # can make it big enough to fully encompass everything, but we still barely have space for a bottom right pillar and then its' just lots of empty space
+        # so instead, make it big enough to hold the barrel and I'll poke a bit out the top for the anchor, and just skip the bottom right pillar entirely
+        # worth a shot, anyway
+        #
+
         bearingInfo = get_bearing_info(self.arbor_d)
-        # TODO review this from old logic width of thin bit
         self.plate_width = bearingInfo.outer_d + self.bearing_wall_thick * 2
-        self.min_plate_width = self.plate_width
-        if self.heavy or self.extra_heavy:
-            self.plate_width *= 1.2
 
-        self.bottom_pillar_positions = []
-        self.top_pillar_positions = []
-        self.bottom_pillar_r = self.plate_width/2
-        self.top_pillar_r = self.min_plate_width/2
+        barrel_distance = distance_between_two_points(self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[0][:2])
 
 
-        bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.gear_gap + self.bottom_pillar_r
-        #TODO check this doesn't collide with next wheel
-        bottom_angle = -math.pi/4
-        self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
+        self.radius = barrel_distance + self.arbors_for_plate[0].bearing.outer_d/2 + self.bearing_wall_thick - self.plate_width/2
 
-        # right_pillar_line = Line(self.bearing_positions[1][:2], anotherPoint=self.bearing_positions[-2][:2])
-        # #how far between the arbors 1 and -2
-        # right_distance = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[-2][:2]))
-        # #calculate how far along is "in the middle" of the empty space between them
-        # right_bottom_distance = self.arbours_for_plate[1].get_max_radius()
-        # along_distance = right_bottom_distance + (right_distance - self.arbours_for_plate[-2].get_max_radius() - right_bottom_distance)/2
-        # right_bottom_equidistance_point = npToSet(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, along_distance)))
-        # #now go outwards from teh minute wheel along the line that goes through the minutewheel and this point
-        # right_pillar_line2 = Line(self.bearing_positions[self.going_train.powered_wheels][:2], anotherPoint=right_bottom_equidistance_point)
-        #
-        # from_minute_wheel = self.arbours_for_plate[self.going_train.powered_wheels].get_max_radius() + self.gear_gap + self.top_pillar_r
-        # right_pillar_pos = npToSet(np.add(right_pillar_line2.start,np.multiply(right_pillar_line2.dir, from_minute_wheel)))
-        #
-        # self.top_pillar_positions = [right_pillar_pos]
-        right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
-        # left_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[self.going_train.powered_wheels+1][:2])
+
+
+        #used in base class
+        self.pillar_r = self.plate_width/2
+
+        centre = self.bearing_positions[self.going_train.powered_wheels][:2]
+        lines_to_bearings = [Line(centre, anotherPoint=bearing_pos[:2]) for bearing_pos in self.bearing_positions]
+
+        barrel_angle = self.arbors_for_plate[0].get_max_radius()/self.radius
+        pillar_angle = (self.pillar_r*2) / self.radius
+
+        #put the bottom pillar as close as we can (ish cba to calculate this exactly) to the barrel wheel
+        bottom_pillar_angle = math.pi*1.5 - barrel_angle - pillar_angle*0.75
+        second_pillar_angle = lines_to_bearings[1].get_angle() * 0.5 + lines_to_bearings[5].get_angle() * 0.5
+
+        #find where wheels 3 and 4 meet, then put the pillar in that direction
+        points = get_circle_intersections(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius(),
+                                          self.bearing_positions[4][:2], self.arbors_for_plate[4].get_max_radius())
+        #find furthest point
+        if distance_between_two_points(points[0], centre) > distance_between_two_points(points[1], centre):
+            point = points[0]
+        else:
+            point = points[1]
+        line_to_point = Line(centre, anotherPoint=point)
+
+        #just treating all pillars as top pillars so the base class logic works
         self.top_pillar_positions = [
-            np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
-            np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+            #top two first because the anchor arbor holder assumes two top pillars
+            #just above (ish) the second power wheel
+            np_to_set(np.add(centre, polar(second_pillar_angle, self.radius))),
+            np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius))),
+
+
+            np_to_set(np.add(centre, polar(bottom_pillar_angle, self.radius))),
         ]
-        print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
+        self.bottom_pillar_positions = []
+
+    def get_fixing_screws_cutter(self):
+        '''
+        much more simple on this clock
+        '''
+        cutter = cq.Workplane("XY")
+
+        bottom_total_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
+        top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
+
+        for pillar in self.top_pillar_positions:
+            pillar_cutter = cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(top_total_length).translate(pillar)
+            pillar_cutter = pillar_cutter.faces("<Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick)).extrude(bottom_total_length)
+            cutter = cutter.add(pillar_cutter)
+
+        return cutter
 
     def calc_fixing_info(self):
         # fixing positions to plates and pillars together
@@ -4285,7 +4336,7 @@ class StandaloneClockPlates(SimpleClockPlates):
 
         main_arm_wide = self.plate_width
         medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
-        small_arm_wide = 8
+        small_arm_wide = get_bearing_info(2).outer_d + self.bearing_wall_thick * 2
 
         plate = cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.radius+main_arm_wide/2).circle(self.radius-main_arm_wide/2).extrude(plate_thick)
 
@@ -4306,10 +4357,22 @@ class StandaloneClockPlates(SimpleClockPlates):
 
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
 
+        self.beefed_up_pawl_thickness = 0
 
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
             plate = plate.cut(self.get_text())
+
+            if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back:
+                #beef up the plate where the pawl screw goes through so we don't need to have an extra plate on the back to make it strong enough
+                #only possible at the back unless I change where the barrel is (TODO support power at back again...)
+                pawl_pos = np_to_set(np.add(self.bearing_positions[0][:2], self.going_train.powered_wheel.ratchet.get_pawl_screw_position()))
+                self.beefed_up_pawl_thickness = 5
+
+
+                plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width/2)
+                         .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width*0.4).loft(combine=True))
+
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
 
@@ -4326,8 +4389,13 @@ class StandaloneClockPlates(SimpleClockPlates):
 
             cutter = cq.Workplane("XY")
 
-            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions() + self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions():
+            #not using the little extra pawl plate on this plate, going to instead make the back plate thicker around the ratchet
+            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
+                extra_z = 0
+                if relative_pos == self.going_train.powered_wheel.ratchet.get_pawl_screw_position():
+                    extra_z = -self.beefed_up_pawl_thickness
                 pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
+                pos = (pos[0], pos[1], extra_z)
                 #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
                 cutter = cutter.add(screw.get_cutter(with_bridging=True).translate(pos)) # for_tap_die=True,
 
@@ -4340,48 +4408,8 @@ class StandaloneClockPlates(SimpleClockPlates):
 
     def get_text(self):
 
-        all_text = cq.Workplane("XY")
+        all_text = cq.Workplane("XY").circle(1).extrude(0.1)
 
-        # (x,y,width,height, horizontal)
-        spaces = []
-
-        texts = [" ".join(self.texts[1:]), self.texts[0]]
-
-
-        long_line = Line(self.bottom_pillar_positions[0], anotherPoint=self.top_pillar_positions[0])
-        long_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[0], self.bottom_pillar_positions[0]))
-        long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
-        text_height = self.plate_width * 0.9
-        long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
-        long_angle = long_line.get_angle()
-
-        short_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.top_pillar_positions[1])
-        short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
-        short_line_length = short_space_length - 10
-        short_centre = np_to_set(np.add(short_line.start, np.multiply(short_line.dir, short_space_length / 2)))
-        short_angle = short_line.get_angle() + math.pi
-
-
-        # three along the wide bit at the bottom and one above
-        spaces.append(TextSpace(long_centre[0], long_centre[1], text_height,long_line_length, angle_rad=long_angle))
-        spaces.append(TextSpace(short_centre[0], short_centre[1], text_height, short_line_length, angle_rad=short_angle))
-        # spaces.append(TextSpace(bottom_pos[0], (bottom_pos[1] + (chain_pos[1] - chain_space)) / 2, text_height, chain_pos[1] - chain_space - bottom_pos[1], horizontal=False))
-        # spaces.append(TextSpace(bottom_pos[0] + self.bottom_pillar_r - self.bottom_pillar_r / 3, (bottom_pos[1] + chain_pos[1]) / 2, text_height, chain_pos[1] - bottom_pos[1], horizontal=False))
-        #
-        # spaces.append(TextSpace(chain_pos[0], (first_arbour_pos[1] - arbour_space + chain_pos[1] + chain_space) / 2, self.plate_width * 0.9, first_arbour_pos[1] - arbour_space - (chain_pos[1] + chain_space), horizontal=False))
-
-        for i, text in enumerate(texts):
-            spaces[i].set_text(text)
-
-        max_text_size = min([textSpace.get_text_max_size() for textSpace in spaces])
-
-        for space in spaces:
-            space.set_size(max_text_size)
-
-        for space in spaces:
-            all_text = all_text.add(space.get_text_shape())
-
-        all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
 
         return all_text
 
@@ -4391,6 +4419,13 @@ class StandaloneClockPlates(SimpleClockPlates):
         '''
         return []
 
+    def get_front_anchor_bearing_holder(self, for_printing=True):
+        '''
+        TODO
+        '''
+        bearing_holder = cq.Workplane("XY")
+        return bearing_holder
+
     def get_wall_standoff(self, top=True, forPrinting=True):
         '''
         not really a wall standoff, but the bit that holds the pendulum at the top
@@ -4398,14 +4433,14 @@ class StandaloneClockPlates(SimpleClockPlates):
         if not top:
             return cq.Workplane("XY")
 
-        width = self.min_plate_width
+        width = self.pillar_r
 
         plate_thick = self.get_plate_thick(standoff=True)
         #to match the plate
         standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=width, thick=plate_thick)
 
         for pillar_pos in self.top_pillar_positions:
-            standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
+            standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))
@@ -4788,8 +4823,9 @@ class Assembly:
         if self.goingTrain.powered_wheel.type == PowerType.SPRING_BARREL:
             #rotated so the screwhole lines up - can't decide where that should be done
             self.ratchet_on_plates = self.goingTrain.powered_wheel.get_ratchet_gear_for_arbor().rotate((0,0,0),(0,0,1),180)\
-                .add(self.goingTrain.powered_wheel.ratchet.get_pawl()).add(self.goingTrain.powered_wheel.ratchet.get_click())\
-                .add(self.goingTrain.powered_wheel.ratchet.get_little_plate_for_pawl()).translate(self.plates.bearing_positions[0][:2])
+                .add(self.goingTrain.powered_wheel.ratchet.get_pawl()).add(self.goingTrain.powered_wheel.ratchet.get_click())
+            if self.plates.little_plate_for_pawl:
+                self.ratchet_on_plates = self.ratchet_on_plates.add(self.goingTrain.powered_wheel.ratchet.get_little_plate_for_pawl()).translate(self.plates.bearing_positions[0][:2])
             if self.goingTrain.powered_wheel.ratchet_at_back:
                 self.ratchet_on_plates = self.ratchet_on_plates.rotate((0,0,0),(0,1,0),180).translate((0,0,-self.plates.endshake/2))
             else:

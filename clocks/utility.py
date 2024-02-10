@@ -334,7 +334,7 @@ class MachineScrew:
 def np_to_set(npVector):
     return (npVector[0], npVector[1])
 
-
+#TODO all of this should be moved to geometry
 def average_of_two_points(a, b):
     if len(a) != len(b):
         raise ValueError("Points not same number of dimensions")
@@ -998,16 +998,20 @@ class BearingInfo:
     def __str__(self):
         return self.get_string()
 
-
+#TODO have outer_d has exact and add the extra via another means
 BEARING_12MM_FLANGED = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
 BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
 BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
-BEARING_SMALL_M3 = BearingInfo(outer_d=8, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
-
+BEARING_SMALL_M3 = BearingInfo(outer_d=8.1, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
+#2x6x3 safe diameters are guesses until they arrive
+BEARING_2MM = BearingInfo(outer_d=6.1, inner_d=2, height=3, inner_safe_d=2.2, outer_safe_d=5)
 def get_bearing_info(innerD):
     '''
     Get some stock bearings
     '''
+    if innerD == 2:
+        #2x6x3
+        return BEARING_2MM
     if innerD == 3:
         # 3x10x4
         # most arbors
