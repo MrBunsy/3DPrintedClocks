@@ -1787,12 +1787,16 @@ class SimpleClockPlates:
                 #for the spring barrel the arbor isn't a threaded rod, so isn't a nice number for a bearing.
                 #need to work out what to do properly here
                 bearing = get_bearing_info(round(arbour.arbor_d))
+            front_anchor_from_plate = -1
+
+            if self.escapement_on_front and self.has_vanity_plate:
+                front_anchor_from_plate = self.vanity_plate_base_z + self.vanity_plate_thick + self.endshake + 2
 
             #new way of doing it, new class for combining all this logic in once place
             arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, escapement_on_front=self.escapement_on_front, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
-                                           previous_bearing_position=self.bearing_positions[i - 1])
+                                           previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate)
             self.arbors_for_plate.append(arbourForPlate)
 
 
@@ -4523,10 +4527,17 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         # curve_ends = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
 
         plate_thick = self.get_plate_thick(standoff=True)
+        #
+        # standoff = get_stroke_line([anchor_holder_fixing_points[0], curve_ends[0]], wide=width, thick=plate_thick)
+        # standoff = standoff.union(get_stroke_line([anchor_holder_fixing_points[1], curve_ends[1]], wide=width, thick=plate_thick))
+        # standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
 
-        standoff = get_stroke_line([anchor_holder_fixing_points[0], curve_ends[0]], wide=width, thick=plate_thick)
-        standoff = standoff.union(get_stroke_line([anchor_holder_fixing_points[1], curve_ends[1]], wide=width, thick=plate_thick))
-        standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
+        #using sagitta to work out radius of curve that links all points
+        l = distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
+        s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
+        r = s/2 + (l**2)/(8*s)
+
+        standoff = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r, wide=width, thick=plate_thick)
 
         for pillar_pos in anchor_holder_fixing_points:
             standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
