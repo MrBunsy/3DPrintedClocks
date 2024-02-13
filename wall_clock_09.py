@@ -97,7 +97,7 @@ hands = clock.Hands(style="simple_rounded", minute_fixing="square", minute_fixin
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_mins=0, time_seconds=30, pendulum=pendulum)
 
 
 show_object(assembly.get_clock())

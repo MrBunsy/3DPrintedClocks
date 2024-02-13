@@ -108,7 +108,7 @@ plates = RollingBallClockPlates(train, name="Congreve 32")
 hands = plates.get_hands()
 
 
-assembly = Assembly(plates, hands=hands, timeSeconds=30)#weights=[Weight(height=245,diameter=55)]
+assembly = Assembly(plates, hands=hands, time_seconds=30)#weights=[Weight(height=245,diameter=55)]
 
 
 if not outputSTL or True:

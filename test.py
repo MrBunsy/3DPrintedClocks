@@ -200,7 +200,7 @@ if 'show_object' not in globals():
 # # #
 # poweredArbour = Arbour(wheel=wheelPinionPair.wheel, wheel_thick=4, arbourD=4, poweredWheel=cordWheel, style=GearStyle.SIMPLE5)
 # poweredArbour.setArbourExtensionInfo(rearSide=7,maxR=10,frontSide=123)
-# # # show_object(poweredArbour.getShape(forPrinting=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
+# # # show_object(poweredArbour.getShape(for_printing=True).add(poweredArbour.getExtraRatchet().rotate((0,0,0),(1,0,0),180)))
 # #
 # show_object(poweredArbour.get_assembled())
 

@@ -1357,7 +1357,7 @@ class FrictionFitPendulumBits:
         self.pendulumTopThick = 15
         self.arbor_d = arbor_d
 
-    def get_pendulum_holder(self, holeD=3, forPrinting=True):
+    def get_pendulum_holder(self, holeD=3, for_printing=True):
         '''
         Will allow a threaded rod for the pendulum to be attached to threaded rod for the arbour
         '''
@@ -1412,7 +1412,7 @@ class FrictionFitPendulumBits:
         pendulum = pendulum.cut(nutSpace2)
 
 
-        if not forPrinting:
+        if not for_printing:
             pendulum = pendulum.mirror().translate((0, 0, self.pendulumTopThick))
 
         return pendulum
@@ -1467,11 +1467,11 @@ class SuspensionSpringPendulumBits:
 
         return holder
 
-class ArbourForPlate:
+class ArborForPlate:
 
     def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
                 back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbor_d = DIRECT_ARBOUR_D, crutch_space=10,
-                 previous_bearing_position=None):
+                 previous_bearing_position=None, front_anchor_from_plate=-1):
         '''
         Given a basic Arbour and a specific plate class do the following:
 
@@ -1524,7 +1524,9 @@ class ArbourForPlate:
         #for an escapement on the front, how far from the front plate is the anchor?
         #want space for a washer to act as a standoff against the bearing and a bit of wobble to account for the top wall standoff to flex a bit
         # - I think I'm completely wrong including teh washer thick here, but I do want it extended anyway
-        self.front_anchor_from_plate =  self.endshake + 2
+        self.front_anchor_from_plate = front_anchor_from_plate
+        if self.front_anchor_from_plate < 0:
+            self.front_anchor_from_plate = self.endshake + 2
         # ============ anchor bits ===============
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
@@ -2053,7 +2055,7 @@ class ArbourForPlate:
 
 
 
-class Arbour:
+class Arbor:
     def __init__(self, arbor_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
                  distance_to_next_arbour=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True):
         '''
@@ -2314,7 +2316,7 @@ class Arbour:
             shape = self.get_powered_wheel(for_printing=for_printing)
         elif self.get_type() == ArborType.ANCHOR:
             # will be completely override by ArborForPlate
-            shape = self.get_anchor(forPrinting=for_printing)
+            shape = self.get_anchor(for_printing=for_printing)
         else:
             raise ValueError("Cannot produce 3D model for type: {}".format(self.get_type().value))
 
@@ -2328,7 +2330,7 @@ class Arbour:
         return shape
 
 
-    def get_anchor(self, forPrinting=True):
+    def get_anchor(self, for_printing=True):
 
         #just the anchor/frame shape, with nothing else that might be needed
         anchor = self.escapement.get_anchor()
@@ -2352,7 +2354,7 @@ class Arbour:
         if self.get_type() == ArborType.POWERED_WHEEL:
             # should work for both chain and cord
 
-            bolt_on_ratchet = self.get_extra_ratchet(forPrinting=False)
+            bolt_on_ratchet = self.get_extra_ratchet(for_printing=False)
             if bolt_on_ratchet is not None:
                 #already in the right place
                 shape = shape.add(bolt_on_ratchet)
@@ -2413,7 +2415,7 @@ class Arbour:
             extras['ratchet_pawl_supporter'] = self.powered_wheel.ratchet.get_little_plate_for_pawl()
 
         return extras
-    def get_extra_ratchet(self, forPrinting=True):
+    def get_extra_ratchet(self, for_printing=True):
         '''
         returns None if the ratchet is fully embedded in teh wheel
         otherwise returns a shape that can either be adapted to be bolted, or combined with the wheel
@@ -2437,7 +2439,7 @@ class Arbour:
 
         ratchet_wheel = ratchet_wheel.translate((0, 0, self.wheel_thick))
 
-        # if not forPrinting:
+        # if not for_printing:
         #     ratchetWheel = ratchetWheel.rotate((0,0,0),(1,0,0),180)
 
         return ratchet_wheel
@@ -2840,15 +2842,15 @@ class MotionWorks:
         if motionWorksRelativePos is None:
             motionWorksRelativePos = [0, -self.get_arbor_distance()]
         parts = {}
-        parts["cannon_pinion"] = self.getCannonPinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
-        parts["hour_holder"] = self.getHourHolder().translate((0, 0, self.getCannonPinionBaseThick()))
-        parts["arbor"] = self.getMotionArbourShape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.getCannonPinionBaseThick() - self.bearing_holder_thick) / 2 + self.bearing_holder_thick - self.thick / 2))
+        parts["cannon_pinion"] = self.get_cannon_pinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
+        parts["hour_holder"] = self.getHourHolder().translate((0, 0, self.get_cannon_pinion_base_thick()))
+        parts["arbor"] = self.get_motion_arbour_shape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.get_cannon_pinion_base_thick() - self.bearing_holder_thick) / 2 + self.bearing_holder_thick - self.thick / 2))
 
         if self.centred_second_hand:
             # relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
             #is this general purpose?
             relative_pos = np_to_set(np.add(motionWorksRelativePos, (-motionWorksRelativePos[0], motionWorksRelativePos[1])))
-            parts["time_setter_pinion"] = self.getCannonPinionPinion(standalone=True).translate(relative_pos)
+            parts["time_setter_pinion"] = self.get_cannon_pinion_pinion(standalone=True).translate(relative_pos)
 
         return parts
 
@@ -2879,7 +2881,14 @@ class MotionWorks:
         '''
         return self.get_cannon_pinion_total_height() - (self.minute_hand_slot_height + self.space + self.hour_hand_slot_height)
 
-    def getCannonPinionBaseThick(self):
+    def get_wheels_thick(self):
+        '''
+        get maximum thickness from bottom of cannon pinion to the front of the motion works arbor
+        '''
+
+        return self.cannon_pinion_pinion_thick + self.pinion_thick + self.pinion_cap_thick*2
+
+    def get_cannon_pinion_base_thick(self):
         '''
         get the thickness of the pinion + caps at the bottom of the cannon pinion ( and bearing holder)
 
@@ -2890,10 +2899,10 @@ class MotionWorks:
 
         return thick
 
-    def getCannonPinionPinionThick(self):
-        return self.getCannonPinionBaseThick() + self.knob_thick
+    def get_cannon_pinion_pinion_thick(self):
+        return self.get_cannon_pinion_base_thick() + self.knob_thick
 
-    def getCannonPinionPinion(self, with_snail=False, standalone=False, for_printing=True):
+    def get_cannon_pinion_pinion(self, with_snail=False, standalone=False, for_printing=True):
         '''
         For the centred seconds hands I'm driving the motion works arbour from the minute arbour. To keep the gearing correct, use the same pinion as the cannon pinion!
         if standalone, this is for the centred seconds hands where we're driving the motion works arbour from the minute wheel
@@ -2938,12 +2947,12 @@ class MotionWorks:
 
         return pinion
 
-    def getCannonPinionPinionSTLModifier(self):
+    def get_cannon_pinion_pinion_stl_modifier(self):
 
         return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannon_pinion_pinion_thick, offset_z=self.pinion_cap_thick)
 
 
-    def getCannonPinion(self, hand_holder_radius_adjustment=1.0):
+    def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
 
         pinion_max_r = self.pairs[0].pinion.get_max_radius()
 
@@ -2965,7 +2974,7 @@ class MotionWorks:
         # if self.pinionCapThick > 0:
         #     base = base.union(cq.Workplane("XY").circle(self.pairs[0].pinion.getMaxRadius()).extrude(self.pinionCapThick).translate((0,0,self.pinionCapThick+self.cannonPinionPinionThick)))
 
-        pinion = self.getCannonPinionPinion(with_snail=True)
+        pinion = self.get_cannon_pinion_pinion(with_snail=True)
 
         if self.bearing is not None and self.bearing_holder_thick > 0:
             # extend out the bottom for space for a slot on the bottom
@@ -3020,21 +3029,21 @@ class MotionWorks:
 
         return pinion
 
-    def getMotionArbour(self):
+    def get_motion_arbour(self):
         # mini arbour that sits between the cannon pinion and the hour wheel
         #this is an actual Arbour object
         wheel = self.pairs[0].wheel
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbour(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
+        return Arbor(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
 
-    def getMotionArboutPinionSTLModifier(self):
+    def get_motion_arbout_pinion_stl_modifier(self):
         return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinion_thick + self.pinion_cap_thick, offset_z=self.thick)
 
-    def getMotionArbourShape(self):
+    def get_motion_arbour_shape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
-        return self.getMotionArbour().get_shape()
+        return self.get_motion_arbour().get_shape()
 
     def get_widest_radius(self):
         '''
@@ -3109,32 +3118,32 @@ class MotionWorks:
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_motion_cannon_pinion.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getCannonPinion(), out)
+        exporters.export(self.get_cannon_pinion(), out)
 
         out = os.path.join(path, "{}_motion_cannon_pinion_x1.015.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getCannonPinion(hand_holder_radius_adjustment=1.015), out)
+        exporters.export(self.get_cannon_pinion(hand_holder_radius_adjustment=1.015), out)
 
         out = os.path.join(path, "{}_motion_arbour.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getMotionArbourShape(), out)
+        exporters.export(self.get_motion_arbour_shape(), out)
 
         out = os.path.join(path, "{}_motion_arbour_pinion_modifier.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getMotionArbour().get_STL_modifier_pinion_shape(), out)
+        exporters.export(self.get_motion_arbour().get_STL_modifier_pinion_shape(), out)
 
         #only needed for prototype with centred seconds hand
         out = os.path.join(path, "{}_motion_cannon_pinion_pinion_standalone.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getCannonPinionPinion(standalone=True), out)
+        exporters.export(self.get_cannon_pinion_pinion(standalone=True), out)
 
         out = os.path.join(path, "{}_motion_cannon_pinion_modifier.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getCannonPinionPinionSTLModifier(), out)
+        exporters.export(self.get_cannon_pinion_pinion_stl_modifier(), out)
 
         out = os.path.join(path, "{}_motion_arbour_pinion_modifier.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getMotionArboutPinionSTLModifier(), out)
+        exporters.export(self.get_motion_arbout_pinion_stl_modifier(), out)
 
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)

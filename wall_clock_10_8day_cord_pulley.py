@@ -121,7 +121,7 @@ hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_
 pulley = clock.BearingPulley(diameter=26, bearing=clock.get_bearing_info(4))
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands, timeMins=0, timeSeconds=30, pulley = pulley, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_mins=0, time_seconds=30, pulley = pulley, pendulum=pendulum)
 assembly.printInfo()
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock())

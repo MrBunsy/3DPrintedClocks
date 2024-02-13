@@ -92,33 +92,34 @@ train.gen_gears(module_size=0.75, module_reduction=moduleReduction, thick=3, thi
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-# motionWorks.calculateGears(arbourDistance=30)
+motionWorks.calculate_size(arbor_distance=30)
+
+print("motion works widest r: ", motionWorks.get_widest_radius())
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
-#140 looks good, but might be easier to assemble if it didn't overlap the motion works?
+
 dial = clock.Dial(outside_d=170, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ARABIC_NUMBERS, font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.LINES_ARC, outer_edge_style=None)
-# dial=None
-
-plates = clock.StandaloneClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20)
 
 
-# hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
-#                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
-#would like sword, need to fix second hand outline for it
+
+
+plates = clock.SkeletonCarriageClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20,
+                                           vanity_plate_radius=75, motion_works_angle_deg=180+45)
+
+
 hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                     outline_on_seconds=1, second_hand_centred=True)
-# hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
-
-assembly = clock.Assembly(plates, hands=hands, timeSeconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
 # assembly.get_arbour_rod_lengths()
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
+# show_object(plates.get_fixing_screws_cutter())
 
 # show_object(plates.get_plate())
 # show_object(plates.get_fixing_screws_cutter())

@@ -643,15 +643,20 @@ class BrocotEscapment(AnchorEscapement):
 
     #available to buy from cousins
     RUBY_DIAMETERS = [1.83, 1.9, 2.0, 2.15, 2.25, 2.35, 2.5, 3.0]
+    RUBY_LENGTH = 6
 
 
-    def __init__(self, teeth=30, diameter=-1, wheel_thick=3, lift=4, drop=2, lock=2, use_rubies=True):
+    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True):
         self.use_rubies = use_rubies
         #increasing number of anchor teeth to increase distance between anchor pivot and escape wheel - entirely for cosmetic purposes given the brocot is usually on teh front of the clock
         super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=math.floor(teeth / 3) + 0.5, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
-                         tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=12,
+                         tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=3,
                          style=AnchorStyle.CURVED_MATCHING_WHEEL, )
 
+
+    def get_wheel_base_to_anchor_base_z(self):
+        #TODO
+        return self.wheel_thick - self.RUBY_LENGTH
 
     def calc_geometry(self):
         super().calc_geometry()
@@ -1787,7 +1792,7 @@ class GrasshopperEscapement:
 
         return rest_screw_pos
 
-    def getComposer(self, nib_pos, pivot_pos, forPrinting=True, extra_length_fudge=0):
+    def getComposer(self, nib_pos, pivot_pos, for_printing=True, extra_length_fudge=0):
         '''
         like pallet arm, assumes wheel rotates clockwise and both arms have their nibs 'left' of the pivot point
         '''
@@ -1826,7 +1831,7 @@ class GrasshopperEscapement:
         composer = composer.union(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(around_screw_r).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
         composer = composer.cut(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(self.screws.metric_thread/2).extrude(1000))
 
-        if not forPrinting:
+        if not for_printing:
             #rotate and translate into place
             composer = composer.rotate((0,0,0), (0,0,1), radToDeg(line_along_arm.get_angle()) - 180)
             composer = composer.translate(pivot_pos)
@@ -1952,17 +1957,17 @@ class GrasshopperEscapement:
 
         return arm
 
-    def getExitPalletArm(self, forPrinting=True):
-        return self.get_pallet_arm(self.geometry["Cstar"], self.geometry["G"], for_printing=forPrinting, exit=True)
+    def getExitPalletArm(self, for_printing=True):
+        return self.get_pallet_arm(self.geometry["Cstar"], self.geometry["G"], for_printing=for_printing, exit=True)
 
-    def getExitComposer(self, forPrinting=True):
-        return self.getComposer(self.geometry["Cstar"], self.geometry["G"], forPrinting=forPrinting, extra_length_fudge=self.exit_composer_extra_fudge)
+    def getExitComposer(self, for_printing=True):
+        return self.getComposer(self.geometry["Cstar"], self.geometry["G"], for_printing=for_printing, extra_length_fudge=self.exit_composer_extra_fudge)
 
-    def getEntryPalletArm(self, forPrinting=True):
-        return self.get_pallet_arm(self.geometry["J"], self.geometry["P"], for_printing=forPrinting)
+    def getEntryPalletArm(self, for_printing=True):
+        return self.get_pallet_arm(self.geometry["J"], self.geometry["P"], for_printing=for_printing)
 
-    def getEntryComposer(self, forPrinting=True):
-        return self.getComposer(self.geometry["J"], self.geometry["P"], forPrinting=forPrinting, extra_length_fudge=self.entry_composer_extra_fudge)
+    def getEntryComposer(self, for_printing=True):
+        return self.getComposer(self.geometry["J"], self.geometry["P"], for_printing=for_printing, extra_length_fudge=self.entry_composer_extra_fudge)
 
 
     def get_wheel_thick(self):
@@ -2040,10 +2045,10 @@ class GrasshopperEscapement:
             grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick)))))
             grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick)))))
 
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z)))))
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(forPrinting=False)).translate((0, 0, pallet_arm_z)))))
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryComposer(forPrinting=False)).translate((0, 0, composer_z)))))
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitComposer(forPrinting=False)).translate((0, 0, composer_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryComposer(for_printing=False)).translate((0, 0, composer_z)))))
+        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitComposer(for_printing=False)).translate((0, 0, composer_z)))))
 
         if centre_on_anchor:
             grasshopper = grasshopper.translate((0,-np.linalg.norm(self.geometry["Z"]),0))

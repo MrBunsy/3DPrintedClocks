@@ -70,10 +70,10 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
     from_line = Line(centre, anotherPoint=from_pos)
     to_line = Line(centre, anotherPoint=to_pos)
 
-    inner_from = polar(from_line.get_angle(), radius - wide / 2)
-    outer_from = polar(from_line.get_angle(), radius + wide / 2)
-    inner_to = polar(to_line.get_angle(), radius - wide / 2)
-    outer_to = polar(to_line.get_angle(), radius + wide / 2)
+    inner_from = np_to_set(np.add(centre, polar(from_line.get_angle(), radius - wide / 2)))
+    outer_from = np_to_set(np.add(centre, polar(from_line.get_angle(), radius + wide / 2)))
+    inner_to = np_to_set(np.add(centre, polar(to_line.get_angle(), radius - wide / 2)))
+    outer_to = np_to_set(np.add(centre, polar(to_line.get_angle(), radius + wide / 2)))
 
     arc = cq.Workplane("XY").moveTo(inner_from[0], inner_from[1]).radiusArc(inner_to, -(radius-wide/2))
 

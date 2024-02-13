@@ -64,7 +64,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
 
     # get a chain wheel, a normal wheel, an escape wheel and part of the motion works for a good spread of sizes and inner radii
     demoArbours = [train.get_arbour_with_conventional_naming(i) for i in demoArboursNums]
-    demoArbours.append(motionWorks.getMotionArbour())
+    demoArbours.append(motionWorks.get_motion_arbour())
     gap = 5
 
     for gear_style in GearStyle:
@@ -418,7 +418,7 @@ class AutoWallClock:
 
         self.pulley = BearingPulley(diameter=self.train.powered_wheel.diameter, bearing=get_bearing_info(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))
 
-        self.model = Assembly(self.plates, hands=self.hands, timeSeconds=30, pulley=self.pulley, pendulum=self.pendulum)
+        self.model = Assembly(self.plates, hands=self.hands, time_seconds=30, pulley=self.pulley, pendulum=self.pendulum)
 
 
 

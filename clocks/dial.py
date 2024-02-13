@@ -202,7 +202,7 @@ class MoonPhaseComplication3D:
     def set_motion_works_sizes(self, motion_works):
 
         self.cannon_pinion_max_r = motion_works.get_cannon_pinion_max_r()
-        self.plate_to_top_of_hour_holder_wheel = motion_works.getCannonPinionBaseThick() + motion_works.thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motion_works.inset_at_base
+        self.plate_to_top_of_hour_holder_wheel = motion_works.get_cannon_pinion_base_thick() + motion_works.thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motion_works.inset_at_base
         self.first_pinion_thick = self.plate_to_top_of_hour_holder_wheel + self.hour_hand_pinion_thick/2 - self.gear_thick/2 - WASHER_THICK_M3
 
     def get_pinion_for_motion_works_shape(self):
@@ -226,8 +226,8 @@ class MoonPhaseComplication3D:
         if index < 2:
             pinion_length = self.first_pinion_thick if index == 0 else self.pinion_thick
             #TODO pinion should be long enough to reach all the way to the plate so the next arbor can be as close as possible and thus the moon not stick out too much
-            arbor = Arbour(arbor_d= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheel_thick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinion_thick=self.pinion_thick,
-                           pinion_extension=pinion_length - self.pinion_thick, pinion_at_front=False, clockwise_from_pinion_side=True, style=self.gear_style, end_cap_thick=0).get_shape()
+            arbor = Arbor(arbor_d= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheel_thick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinion_thick=self.pinion_thick,
+                          pinion_extension=pinion_length - self.pinion_thick, pinion_at_front=False, clockwise_from_pinion_side=True, style=self.gear_style, end_cap_thick=0).get_shape()
 
             if not for_printing and index == 0:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.gear_thick + pinion_length))
