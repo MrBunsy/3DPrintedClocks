@@ -1533,6 +1533,7 @@ class ArborForPlate:
         self.collet_screws = MachineScrew(2,countersunk=True)
         self.pendulum_holder_thick = 15
         self.pendulum_fixing_extra_space = 0.2
+        #diameter of the bit taht links anchor and pendulum holder
         self.direct_arbor_d = direct_arbor_d
         #for the collet
         self.outer_d = (self.bearing.inner_safe_d + self.bearing.outer_d) / 2
@@ -1659,6 +1660,8 @@ class ArborForPlate:
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
             extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake - 1
+            if extra_arbour_length > 15:
+                extra_arbour_length = 15
             extend_out_front = self.plates.extra_support_for_escape_wheel
             arbourThreadedRod = MachineScrew(metric_thread=self.arbor_d)
 
@@ -2160,7 +2163,7 @@ class Arbor:
 
         if self.get_type() == ArborType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
-            self.arbor_d = self.escapement.get_anchor_arbour_d()
+            self.arbor_d = self.escapement.get_anchor_arbor_d()
             self.hole_d = self.arbor_d
             self.wheel_thick = self.escapement.get_anchor_thick()
         if self.get_type() == ArborType.ESCAPE_WHEEL:

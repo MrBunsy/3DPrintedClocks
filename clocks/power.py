@@ -1741,6 +1741,9 @@ class WindingKey:
         if self.key_hole_deep > self.cylinder_length:
             self.key_hole_deep = self.cylinder_length
 
+    def get_key_outer_diameter(self):
+        return self.body_wide
+
     def get_key(self, for_printing=True):
         '''
         winding key! this is one with a little arm and handle

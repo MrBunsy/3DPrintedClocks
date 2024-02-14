@@ -63,7 +63,7 @@ class AnchorEscapement:
 
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
                  tooth_height_fraction=0.2, tooth_tip_angle=5, tooth_base_angle=4, wheel_thick=3, force_diameter=False, anchor_thick=12,
-                 style=AnchorStyle.STRAIGHT):
+                 style=AnchorStyle.STRAIGHT, arbor_d=3):
         '''
         originally: toothHeightFraction=0.2, toothTipAngle=9, toothBaseAngle=5.4
         This whole class needs a tidy up, there's a lot of dead code in here (recoil doesn't work anymore). The anchor STL is now primarily generated through the Arbour class
@@ -148,13 +148,13 @@ class AnchorEscapement:
 
 
 
-        self.arbour_d = 3
+        self.arbor_d = arbor_d
         self.anchor_thick = anchor_thick
         self.wheel_thick = wheel_thick
 
         self.pallet_angles = []
 
-        self.centre_r = self.arbour_d * 2
+        self.centre_r = self.arbor_d * 2
 
         #calculated in calcGeometry() which is called from set_diameter
         self.largest_anchor_r = -1
@@ -254,8 +254,8 @@ class AnchorEscapement:
             # check to see if the arm will intersect the centre circle enough and make it thicker if not
             self.top_arm_r = self.bottom_arm_r + armThick
 
-    def get_anchor_arbour_d(self):
-        return self.arbour_d
+    def get_anchor_arbor_d(self):
+        return self.arbor_d
 
     def get_anchor_thick(self):
         return self.anchor_thick
@@ -532,7 +532,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         '''
         compliant with the new escapement interface (now the grasshopper also exists)
         '''
-        return self.get_anchor_3d(thick = self.anchor_thick, holeD=self.arbour_d, clockwise=True).translate((0, -self.anchor_centre_distance, 0))
+        return self.get_anchor_3d(thick = self.anchor_thick, holeD=self.arbor_d, clockwise=True).translate((0, -self.anchor_centre_distance, 0))
 
     def get_anchor_max_r(self):
         '''
@@ -646,12 +646,12 @@ class BrocotEscapment(AnchorEscapement):
     RUBY_LENGTH = 6
 
 
-    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True):
+    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True, arbor_d=3):
         self.use_rubies = use_rubies
         #increasing number of anchor teeth to increase distance between anchor pivot and escape wheel - entirely for cosmetic purposes given the brocot is usually on teh front of the clock
         super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=math.floor(teeth / 3) + 0.5, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
                          tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=3,
-                         style=AnchorStyle.CURVED_MATCHING_WHEEL, )
+                         style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=arbor_d)
 
 
     def get_wheel_base_to_anchor_base_z(self):
@@ -718,7 +718,7 @@ class BrocotEscapment(AnchorEscapement):
         pillar = pillar.cut(cq.Workplane("XY").circle(arm_radius).extrude(self.anchor_thick))
 
         anchor = anchor.union(pillar)
-        anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbour_d / 2).cutThruAll()
+        anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
 
         return anchor.translate((0, -self.anchor_centre_distance, 0))
 
@@ -762,7 +762,7 @@ class EscapmentInterface:
     def get_anchor_max_r(self):
         raise NotImplementedError()
 
-    def get_anchor_arbour_d(self):
+    def get_anchor_arbor_d(self):
         return 3
 
     def get_anchor(self):
@@ -952,7 +952,7 @@ class GrasshopperEscapement:
         #TODO
         return 10
 
-    def get_anchor_arbour_d(self):
+    def get_anchor_arbor_d(self):
         return self.arbourD
 
     def chooseDiameter(self, d_deg, ax_deg):

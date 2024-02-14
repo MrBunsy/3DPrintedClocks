@@ -1082,7 +1082,7 @@ class GoingTrain:
         #anchor is the last arbour
         #"pinion" is the direction of the extended arbour for fixing to pendulum
         #this doesn't need arbourD or thickness as this is controlled by the escapement
-        arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise))
+        arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise, arbor_d=rod_diameters[self.powered_wheels + self.wheels]))
 
         self.wheelPinionPairs = pairs
         self.arbors = arbours
@@ -4247,7 +4247,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         self.little_plate_for_pawl = False
         fixings = 3
         # self.vanity_plate_fixing_positions = [polar(angle, self.vanity_plate_radius-self.vanity_plate_pillar_r) for angle in [math.pi/6 + i*(math.pi*2/fixings) for i in range(fixings)]]
-        self.vanity_plate_fixing_positions = [(-self.radius,self.hands_position[1]), (self.radius, self.hands_position[1])]
+        self.vanity_plate_fixing_positions = []#[(-self.radius,self.hands_position[1]), (self.radius, self.hands_position[1])]
         self.vanity_plate_pillar_r=self.pillar_r
 
 
@@ -4316,15 +4316,15 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
 
         centre = self.bearing_positions[self.going_train.powered_wheels][:2]
-        lines_to_bearings = [Line(centre, anotherPoint=bearing_pos[:2]) for bearing_pos in self.bearing_positions]
-
-        barrel_angle = self.arbors_for_plate[0].get_max_radius()/self.radius
-        pillar_angle = (self.pillar_r*2) / self.radius
-
-        # #put the bottom pillar as close as we can (ish cba to calculate this exactly) to the barrel wheel
-        # bottom_pillar_angle = math.pi*1.5 - barrel_angle - pillar_angle*0.75
-        #above the second powered wheel
-        second_pillar_angle = lines_to_bearings[1].get_angle() * 0.5 + lines_to_bearings[5].get_angle() * 0.5
+        # lines_to_bearings = [Line(centre, anotherPoint=bearing_pos[:2]) for bearing_pos in self.bearing_positions]
+        #
+        # barrel_angle = self.arbors_for_plate[0].get_max_radius()/self.radius
+        # pillar_angle = (self.pillar_r*2) / self.radius
+        #
+        # # #put the bottom pillar as close as we can (ish cba to calculate this exactly) to the barrel wheel
+        # # bottom_pillar_angle = math.pi*1.5 - barrel_angle - pillar_angle*0.75
+        # #above the second powered wheel
+        # second_pillar_angle = lines_to_bearings[1].get_angle() * 0.5 + lines_to_bearings[5].get_angle() * 0.5
 
         #find where wheels 3 and 4 meet, then put the pillar in that direction
         points = get_circle_intersections(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius(),
@@ -4337,7 +4337,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         line_to_point = Line(centre, anotherPoint=point)
 
         #just above second power wheel
-        right_pillar_pos = np_to_set(np.add(centre, polar(second_pillar_angle, self.radius)))
+        # right_pillar_pos = np_to_set(np.add(centre, polar(second_pillar_angle, self.radius)))
 
         left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
 
@@ -4399,10 +4399,40 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         plate = cq.Workplane("XY").circle(self.vanity_plate_radius).circle(centre_hole_r).extrude(self.vanity_plate_thick)
 
-        for pillar_pos in self.vanity_plate_fixing_positions:
-            #invert x because we're upside down
-            plate = plate.union(cq.Workplane("XY").moveTo(-pillar_pos[0] - self.hands_position[0], pillar_pos[1] - self.hands_position[1]).circle(self.vanity_plate_pillar_r).extrude(self.vanity_plate_base_z + self.vanity_plate_thick))
-            plate = plate.faces(">Z").workplane().moveTo(-pillar_pos[0] - self.hands_position[0], pillar_pos[1] - self.hands_position[1]).circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+        # for pillar_pos in self.vanity_plate_fixing_positions:
+        #     #invert x because we're upside down
+        #     plate = plate.union(cq.Workplane("XY").moveTo(-pillar_pos[0] - self.hands_position[0], pillar_pos[1] - self.hands_position[1]).circle(self.vanity_plate_pillar_r).extrude(self.vanity_plate_base_z + self.vanity_plate_thick))
+        #     plate = plate.faces(">Z").workplane().moveTo(-pillar_pos[0] - self.hands_position[0], pillar_pos[1] - self.hands_position[1]).circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+
+        hole_r = self.fixing_screws.get_rod_cutter_r(loose=True)
+        #removing the front legs
+        pillar_height = self.vanity_plate_base_z - self.plate_thick
+
+        for pillar_pos in self.bottom_pillar_positions:
+            pillar_pos = np_to_set(np.subtract(pillar_pos, self.hands_position))
+            plate = plate.union(get_stroke_line([self.hands_position, pillar_pos], wide=self.pillar_r*2, thick=self.vanity_plate_thick))
+            plate = plate.union(cq.Workplane("XY").circle(self.pillar_r).circle(hole_r).extrude(pillar_height + self.vanity_plate_thick).translate(pillar_pos))
+            plate = plate.faces(">Z").workplane().moveTo(pillar_pos[0], pillar_pos[1]).circle(hole_r).cutThruAll()
+
+
+        #key hole
+        key_hole_d = self.winding_key.get_key_outer_diameter() + 4
+        key_hole_pos = np_to_set(np.subtract(self.bearing_positions[0][:2], self.hands_position))
+        plate = plate.faces(">Z").workplane().moveTo(key_hole_pos[0], key_hole_pos[1]).circle(key_hole_d/2).cutThruAll()
+
+        #hole for escape wheel
+        if self.escapement_on_front:
+            escapement_hole_pos = np_to_set(np.subtract(self.bearing_positions[-2][:2], self.hands_position))
+            anchor_pos = np_to_set(np.subtract(self.bearing_positions[-1][:2], self.hands_position))
+
+            #bit hacky, just assuming we know the diameters
+            plate = plate.faces(">Z").workplane().moveTo(escapement_hole_pos[0], escapement_hole_pos[1]).circle(self.arbors_for_plate[-2].arbor_d*2 + 1).cutThruAll()
+
+            anchor_hole_d = self.arbors_for_plate[-1].direct_arbor_d + 2
+
+            #slot rather than hole so it should always be possible to assemble the clock
+            plate = plate.cut(get_stroke_line([anchor_pos, (anchor_pos[0], anchor_pos[1]+100)], wide=anchor_hole_d, thick=self.vanity_plate_thick))
+
         if not for_printing:
             # return cq.Workplane("XY").circle(100).extrude(10)
             plate = plate.rotate((0,0,0), (0,1,0), 180)

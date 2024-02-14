@@ -618,8 +618,11 @@ class Line:
         dy = y2 - y1
         dx = x2 - x1
 
-        # //gradient of line
-        m = dy / dx
+        if dx == 0:
+            m = float('inf')
+        else:
+            # //gradient of line
+            m = dy / dx
         # //fixes odd problem with not detecting collision point correctly on a nearly vertical line - needs looking into?
         if m > 1000000:
             m = float('inf')

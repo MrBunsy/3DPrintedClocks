@@ -172,7 +172,7 @@ motionWorks = clock.MotionWorks(extra_height=10, compact=False)
 
 # a motion works that could be used with a centred second hand
 motion_works = MotionWorks(compact=True, bearing=get_bearing_info(3), extra_height=20)
-motion_works.calculate_size(arbour_distance=30)
+motion_works.calculate_size(arbor_distance=30)
 ```
 
 ## Pendulum Bob
@@ -217,7 +217,7 @@ For vertical eight day clocks, the option `heavy` will increase the radius of th
 
 `pendulumFixing` sets the way the pendulum is attached to the anchor. Working options are `FRICTION_ROD` and `DIRECT_ARBOUR_SMALL_BEARINGS`. Friction rod has both the anchor and pendulum holder attached to the same rod with friction, and the beat can be set by adjusting the pendulum holder. "Direct Arbor" extends the arbor with the crutch and has the pendulum holder as part of a special collet which slots onto the arbor. The beat can only be set by bending the pendulum rod or adjusting the angle of the clock on the wall, but it should already be in beat if the pendulum and clock are perfectly vertical. See clocks 12 and 19 for the first working direct arbor implementation. 
 
-`direct_arbour_d` will set the radius of the arbor if the pendulum fixing is `DIRECT_ARBOUR_SMALL_BEARINGS`. The default has proven to be acceptable.
+`direct_arbor_d` will set the radius of the arbor if the pendulum fixing is `DIRECT_ARBOUR_SMALL_BEARINGS`. The default has proven to be acceptable.
 
 By default the pendulum is at the front and the back plate is directly against the wall. This is controlled with `pendulumAtFront` and `backPlateFromWall` will result in what is called the "wall standoff" which generates extra pillars which are attached to the back of the back plate. Clock 14 was the first use of `backPlateFromWall` for the grasshopper escapement.
 
