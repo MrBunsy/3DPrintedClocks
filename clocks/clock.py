@@ -4224,10 +4224,12 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
     This was based on a copy of MantelClockPlates - I think it's going to be similar, but not similar enough to warrant extending or being a set of options
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1):
+                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
+                 leg_height=150):
         '''
 
         '''
+        self.leg_height = leg_height
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
@@ -4236,6 +4238,8 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                      second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=None,
                      layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius)
+
+
 
         self.narrow_bottom_pillar = False
 
@@ -4263,12 +4267,16 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         '''
 
 
-    def get_pillar(self, top=True, flat=False):
+    def get_pillar(self, top=True, flat=False, legs = False):
         '''
         they're all the same on this design!
         '''
 
-        pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(self.plate_distance)
+        pillar_length = self.plate_distance
+        if legs:
+            pillar_length = self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance
+
+        pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
 
         #TODO fancy pillars!
 
@@ -4357,6 +4365,8 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         ]
 
         self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
+
+        self.leg_pillar_positions = [np_to_set(np.add((0, -self.leg_height), pillar)) for pillar in self.bottom_pillar_positions]
 
     def get_fixing_screws_cutter(self):
         '''
@@ -4481,6 +4491,28 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         return plate
 
+    def get_legs(self, back=True):
+        '''
+
+        '''
+        thick = self.plate_thick
+        width = self.pillar_r*2
+        legs = get_stroke_line([self.bottom_pillar_positions[0], self.leg_pillar_positions[0], self.leg_pillar_positions[1], self.bottom_pillar_positions[1]], wide=width, thick=thick)
+
+        legs = legs.cut(self.get_fixing_screws_cutter())
+
+        for pillar_pos in self.leg_pillar_positions:
+            if back:
+                legs = legs.faces(">Z").workplane().moveTo(pillar_pos[0], pillar_pos[1]).circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+            else:
+                legs = legs.cut(self.fixing_screws.get_cutter(loose=True).rotate((0,0,0),(0,1,0),180).translate((pillar_pos[0], pillar_pos[1],thick)))
+
+
+
+        return legs
+
+
+
     def get_text(self):
 
         all_text = cq.Workplane("XY").circle(1).extrude(0.1)
@@ -4548,6 +4580,32 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         return standoff
 
+    def get_assembled(self):
+        plates = super().get_assembled()
+
+        plates = plates.add(self.get_legs(back=True).translate((0,0,-self.plate_thick)))
+
+        plates = plates.add(self.get_legs(back=False).translate((0, 0, self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance)))
+
+        for pillar_pos in self.leg_pillar_positions:
+            plates = plates.add(self.get_pillar(legs=True).translate(pillar_pos))
+
+        return plates
+
+    def output_STLs(self, name="clock", path="../out"):
+        super().output_STLs(name, path)
+
+        out = os.path.join(path, "{}_legs_back.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_legs(back=True), out)
+
+        out = os.path.join(path, "{}_legs_front.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_legs(back=False), out)
+
+        out = os.path.join(path, "{}_legs_pillar.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_pillar(legs=True), out)
 
 class RollingBallClock(SimpleClockPlates):
     '''

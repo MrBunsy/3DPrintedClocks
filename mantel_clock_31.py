@@ -100,18 +100,20 @@ print("motion works widest r: ", motionWorks.get_widest_radius())
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
-dial = clock.Dial(outside_d=170, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ARABIC_NUMBERS, font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.LINES_ARC, outer_edge_style=None)
+dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ROMAN_NUMERALS,
+                  font_scale=0.75, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
+                  dial_width=20)
 
 
 
 
 plates = clock.SkeletonCarriageClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20,
-                                           vanity_plate_radius=75, motion_works_angle_deg=180+45)
+                                           vanity_plate_radius=75, motion_works_angle_deg=180+45, leg_height=120)
 
 
 hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-                    outline_on_seconds=1, second_hand_centred=True)
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=False,
+                    outline_on_seconds=0, second_hand_centred=True)
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
@@ -125,7 +127,7 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], motion_works_colours=[clock.Colour.BRASS],
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=False, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], key_colour=clock.Colour.GOLD)
 
 # show_object(plates.getDrillTemplate(6))
