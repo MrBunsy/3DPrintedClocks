@@ -106,7 +106,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
 
 
-dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, font="Times New Roman", style=clock.DialStyle.ROMAN_NUMERALS,
+dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
                    inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
                    dial_width=20)
 plates = clock.SkeletonCarriageClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20,

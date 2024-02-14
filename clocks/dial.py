@@ -358,7 +358,7 @@ class RomanNumerals:
     '''
     The old roman_numerals function in cuckoo_bits works, but I'd like something more flexible and that can follow the curve of a dial
     '''
-    def __init__(self, height, thick=LAYER_THICK*2, centre_radius=150 ,style=RomanNumeralStyle.SIMPLE_SQUARE, inverted=False):
+    def __init__(self, height, thick=LAYER_THICK*2, centre_radius=150 ,style=RomanNumeralStyle.SIMPLE_SQUARE):
         self.height = height
         self.thick = thick
         self.style = style
@@ -386,11 +386,16 @@ class RomanNumerals:
     def get_inclusion_ring(self):
         '''
         all the font should be inside this ring
+        make slightly smaller if we've got a line at the top and bottom because cadquery seems to get its pants in a twist otherwise
         '''
-        return cq.Workplane("XY").circle(self.centre_radius + self.height/2).circle(self.centre_radius - self.height/2).extrude(self.thick)
 
-    def get_lines(self, width):
-        angle = get_angle_of_chord(self.centre_radius, width)
+        line_width = self.width_line_thin/2
+
+        return cq.Workplane("XY").circle(self.centre_radius + self.height/2 - line_width).circle(self.centre_radius - self.height/2 + line_width).extrude(self.thick)
+
+    def get_lines(self, width = None, angle=None):
+        if angle is None:
+            angle = get_angle_of_chord(self.centre_radius, width)
 
         bottom_r = self.centre_radius - self.height/2 + self.width_line_thin / 2
         top_r = self.centre_radius + self.height/2 - self.width_line_thin/2
@@ -412,13 +417,13 @@ class RomanNumerals:
         i = cq.Workplane("XY").moveTo(0, self.centre_radius).rect(self.width_line_thick, self.height_extra).extrude(self.thick)
         i = i.intersect(self.get_inclusion_ring())
 
-        i = i.union(self.get_lines(self.width_I))
+        # i = i.union(self.get_lines(self.width_I))
 
         return i
 
     def get_V(self):
 
-        triangle_width = self.width_V*0.75
+        triangle_width = self.width_V*0.9
 
         #the outside containing triangle
         top_left = (-triangle_width/2, self.centre_radius + self.height/2)
@@ -444,7 +449,7 @@ class RomanNumerals:
         v = v.union(get_stroke_line([bottom_right, top_right_extended], wide=self.width_line_thin*2, thick=self.thick))
         v = v.intersect(inclusion_triangle).intersect(self.get_inclusion_ring())
 
-        v = v.union(self.get_lines(self.width_V))
+        # v = v.union(self.get_lines(self.width_V))
 
         return v
 
@@ -452,6 +457,30 @@ class RomanNumerals:
         '''
 
         '''
+
+        centre = (0, self.centre_radius)
+
+        lines_apart = self.width_X*0.5
+
+        top_left = (-lines_apart / 2, self.centre_radius + self.height / 2)
+        top_right = (lines_apart / 2, self.centre_radius + self.height / 2)
+        bottom_left = (-lines_apart / 2, self.centre_radius - self.height / 2)
+        bottom_right = (lines_apart / 2, self.centre_radius - self.height / 2)
+
+        thick_line = Line(centre, anotherPoint=top_left)
+        thin_line = Line(centre, anotherPoint=top_right)
+
+        angle_thick_line = thick_line.get_angle()
+        angle_thin_line = thin_line.get_angle()
+
+        x = cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(self.height_extra, self.width_line_thick).extrude(self.thick).rotate(centre, (centre[0], centre[1], 1), radToDeg(angle_thick_line))
+        x = x.union(cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(self.height_extra, self.width_line_thin).extrude(self.thick).rotate(centre, (centre[0], centre[1], 1), radToDeg(angle_thin_line)))
+
+        x = x.intersect(self.get_inclusion_ring())
+
+        # x = x.union(self.get_lines(self.width_X))
+
+        return x
 
     def get_character(self, char):
         if char == "I":
@@ -461,10 +490,14 @@ class RomanNumerals:
         elif char == "X":
             return self.get_X()
 
-    def get_number(self, number_string):
+    def get_number(self, number_string, invert=False):
         '''
         Assumes number is a string made up of only I,X,V
         '''
+
+        if self.style == RomanNumeralStyle.CUCKOO:
+            return roman_numerals(number_string, self.height, thick=self.thick, invert=invert)
+
         widths = []
         for char in number_string:
             if char == "I":
@@ -479,14 +512,20 @@ class RomanNumerals:
 
         number_shape = cq.Workplane("XY")
 
-        current_angle = - total_angle/2 + angles[0]/2
+        current_angle = total_angle/2 - angles[0]/2
         for i, char in enumerate(number_string):
             number_shape = number_shape.union(self.get_character(char).rotate((0,0,0), (0,0,1), radToDeg(current_angle)))
-            current_angle += angles[i]/2
+            current_angle -= angles[i]/2
             if i < len(number_string)-1:
-                current_angle += angles[i+1]/2
+                current_angle -= angles[i+1]/2
 
-        return number_shape.translate((0,-self.centre_radius))
+        number_shape = number_shape.union(self.get_lines(angle=total_angle))
+
+        number_shape = number_shape.translate((0,-self.centre_radius))
+        if invert:
+            number_shape = number_shape.rotate((0,0,0), (0,1,0),180).translate((0,0,self.thick))
+
+        return number_shape
 
 class DialPillar:
     def __init__(self, position, screws_absolute_positions, radius, length, embedded_nuts=False, screws=None):
@@ -522,7 +561,7 @@ class Dial:
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
-                 minutes_only=False, seconds_only=False, dial_width=-1):
+                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -569,7 +608,10 @@ class Dial:
         #overrides for the default fixing screw and pillar positions DEPRECATED, switching to configuring whole pillars instead
         self.fixing_positions = []
         self.pillars = []
+        self.romain_numerals_style = romain_numerals_style
 
+        #TODO switch over to new Font class (although we use font_scale for roman numerals, so take that into consideration)
+        #if this is a roman numeral we will first look for romain_numerals_style. If it is None, fall back on font
         #for any styles which use a font
         self.font = font
         #manual adjustment for size of font if my automatic attempt doesn't work
@@ -773,6 +815,10 @@ class Dial:
         detail = cq.Workplane("XY")
         numeral_height = (dial_width - 2*from_edge - outer_ring_width)*self.font_scale
 
+        roman_numerals_font = None
+        if self.romain_numerals_style is not None:
+            roman_numerals_font = RomanNumerals(height=numeral_height, thick = self.detail_thick, centre_radius=numeral_r, style=self.romain_numerals_style)
+
         if self.font is not None:
             #if font, use that, otherwise use the old hand-written cuckoo numerals
             number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font, font_path=self.font_path) for number in numbers]
@@ -787,8 +833,9 @@ class Dial:
             angle = math.pi/2 + i*math.pi*2/12
             pos = polar(angle, numeral_r)
 
-            if self.font is None:
-                numeral_shape = roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True)
+            if roman_numerals_font is not None:
+                # numeral_shape = roman_numerals(number, numeral_height, thick=self.detail_thick, invert=True)
+                numeral_shape = roman_numerals_font.get_number(number, invert=True)
             else:
                 numeral_shape = number_spaces[i].get_text_shape()
 

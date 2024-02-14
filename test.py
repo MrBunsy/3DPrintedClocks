@@ -897,4 +897,5 @@ if False:
 numerals = RomanNumerals(height=20, centre_radius=150, style=RomanNumeralStyle.SIMPLE_SQUARE)
 
 # show_object(numerals.get_V())
-show_object(numerals.get_number("IV"))
+show_object(numerals.get_number("XVIII"))
+# show_object(numerals.get_X())
