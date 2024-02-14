@@ -770,12 +770,12 @@ if False:
 # show_object(escapement.get_wheel_2d())
 
 #
-ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=math.pi*0.9, click_fixing_angle=math.pi*0.1)#, click_fixing_angle=-math.pi/4)
-# #
-show_object(ratchet.get_gear())
-show_object(ratchet.get_pawl())
-show_object(ratchet.get_click())
-show_object(ratchet.get_little_plate_for_pawl())
+# ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=math.pi*0.9, click_fixing_angle=math.pi*0.1)#, click_fixing_angle=-math.pi/4)
+# # #
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())
+# show_object(ratchet.get_click())
+# show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
@@ -877,3 +877,24 @@ show_object(ratchet.get_little_plate_for_pawl())
 # spring_barrel.get_max_barrel_turns()
 #
 # print(WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5))
+
+# r = 150
+# c = 10
+#
+# thick = 1
+#
+# shape = cq.Workplane("XY").circle(r).extrude(thick)
+# shape = shape.union(cq.Workplane("XY").rect(c, r*2).extrude(thick*2))
+#
+# angle = get_angle_of_chord(r,c)
+#
+# left = polar(math.pi/2 + angle/2, r)
+# right = polar(math.pi/2 - angle/2, r)
+# shape = shape.union(cq.Workplane("XY").moveTo(left[0], left[1]).radiusArc(right, r).lineTo(0,0).close().extrude(thick*3))
+#
+# show_object(shape)
+
+numerals = RomanNumerals(height=20, centre_radius=150, style=RomanNumeralStyle.SIMPLE_SQUARE)
+
+# show_object(numerals.get_V())
+show_object(numerals.get_number("IV"))

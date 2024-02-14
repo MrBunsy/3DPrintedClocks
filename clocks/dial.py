@@ -355,11 +355,138 @@ class MoonPhaseComplication3D:
         exporters.export(self.get_moon_half(), out, tolerance=0.01, angularTolerance=0.01)
 
 class RomanNumerals:
-
-    def __init__(self, height, thick=LAYER_THICK*2, style=RomanNumeralStyle.CUCKOO, inverted=False):
+    '''
+    The old roman_numerals function in cuckoo_bits works, but I'd like something more flexible and that can follow the curve of a dial
+    '''
+    def __init__(self, height, thick=LAYER_THICK*2, centre_radius=150 ,style=RomanNumeralStyle.SIMPLE_SQUARE, inverted=False):
         self.height = height
         self.thick = thick
         self.style = style
+        # radius of the centre of the font, so the numerals will fit neatly on a dial
+        # could consider making this optional, but it will make the logic a lot messier, so I'm giong to run with it always being there
+        self.centre_radius = centre_radius
+
+        #things based on the style
+        self.width_I = self.height*0.2
+        self.width_X = self.width_I*2
+        self.width_V = self.width_I*2
+        self.width_line_thick = self.width_I*0.6
+        self.width_line_thin = self.width_I*0.2
+
+        #avoiding the V being too pointy to print well, can be set to zero
+        self.width_v_base = 0.2
+
+        self.height_extra = height*1.5
+
+        self.stroke_style = StrokeStyle.ROUND
+
+        if self.style == RomanNumeralStyle.SIMPLE_SQUARE:
+            self.stroke_style = StrokeStyle.SQUARE
+
+    def get_inclusion_ring(self):
+        '''
+        all the font should be inside this ring
+        '''
+        return cq.Workplane("XY").circle(self.centre_radius + self.height/2).circle(self.centre_radius - self.height/2).extrude(self.thick)
+
+    def get_lines(self, width):
+        angle = get_angle_of_chord(self.centre_radius, width)
+
+        bottom_r = self.centre_radius - self.height/2 + self.width_line_thin / 2
+        top_r = self.centre_radius + self.height/2 - self.width_line_thin/2
+
+        bottom_left = polar(math.pi / 2 + angle / 2, bottom_r)
+        bottom_right = polar(math.pi / 2 - angle / 2, bottom_r)
+        top_left = polar(math.pi / 2 + angle / 2, top_r)
+        top_right = polar(math.pi / 2 - angle / 2, top_r)
+
+        lines = get_stroke_arc(bottom_right, bottom_left, bottom_r, wide=self.width_line_thin, thick=self.thick, style=self.stroke_style)
+        lines = lines.union(get_stroke_arc(top_right, top_left, top_r, wide=self.width_line_thin, thick=self.thick, style=self.stroke_style))
+
+        return lines
+
+    '''
+    internal individual characters are all drawn centred at (0, self.radius)
+    '''
+    def get_I(self):
+        i = cq.Workplane("XY").moveTo(0, self.centre_radius).rect(self.width_line_thick, self.height_extra).extrude(self.thick)
+        i = i.intersect(self.get_inclusion_ring())
+
+        i = i.union(self.get_lines(self.width_I))
+
+        return i
+
+    def get_V(self):
+
+        triangle_width = self.width_V*0.75
+
+        #the outside containing triangle
+        top_left = (-triangle_width/2, self.centre_radius + self.height/2)
+        top_right = (triangle_width/2, self.centre_radius + self.height/2)
+        #fudging slightly because this is purely to help it print as an exact point won't be printed
+        bottom_left = (-self.width_v_base/2, self.centre_radius - self.height/2)
+        bottom_right = (self.width_v_base / 2, self.centre_radius - self.height / 2)
+
+        left_line = Line(bottom_left, anotherPoint=top_left)
+        right_line = Line(bottom_right, anotherPoint=top_right)
+
+        top_left_extended = np_to_set(np.add(bottom_left, np.multiply(left_line.dir, self.height_extra)))
+        top_right_extended = np_to_set(np.add(bottom_right, np.multiply(right_line.dir, self.height_extra)))
+
+        inclusion_triangle = (cq.Workplane("XY").moveTo(top_left_extended[0], top_left_extended[1]).lineTo(top_right_extended[0], top_right_extended[1])
+                              .lineTo(bottom_right[0], bottom_right[1]))
+        if self.width_v_base > 0:
+            inclusion_triangle = inclusion_triangle.lineTo(bottom_left[0], bottom_left[1])
+
+        inclusion_triangle = inclusion_triangle.close().extrude(self.thick)
+
+        v = get_stroke_line([bottom_left, top_left_extended], wide=self.width_line_thick*2, thick=self.thick)
+        v = v.union(get_stroke_line([bottom_right, top_right_extended], wide=self.width_line_thin*2, thick=self.thick))
+        v = v.intersect(inclusion_triangle).intersect(self.get_inclusion_ring())
+
+        v = v.union(self.get_lines(self.width_V))
+
+        return v
+
+    def get_X(self):
+        '''
+
+        '''
+
+    def get_character(self, char):
+        if char == "I":
+            return self.get_I()
+        elif char == "V":
+            return self.get_V()
+        elif char == "X":
+            return self.get_X()
+
+    def get_number(self, number_string):
+        '''
+        Assumes number is a string made up of only I,X,V
+        '''
+        widths = []
+        for char in number_string:
+            if char == "I":
+                widths.append(self.width_I)
+            elif char == "V":
+                widths.append(self.width_V)
+            elif char == "X":
+                widths.append(self.width_X)
+
+        angles = [get_angle_of_chord(self.centre_radius, width) for width in widths]
+        total_angle = sum(angles)
+
+        number_shape = cq.Workplane("XY")
+
+        current_angle = - total_angle/2 + angles[0]/2
+        for i, char in enumerate(number_string):
+            number_shape = number_shape.union(self.get_character(char).rotate((0,0,0), (0,0,1), radToDeg(current_angle)))
+            current_angle += angles[i]/2
+            if i < len(number_string)-1:
+                current_angle += angles[i+1]/2
+
+        return number_shape.translate((0,-self.centre_radius))
 
 class DialPillar:
     def __init__(self, position, screws_absolute_positions, radius, length, embedded_nuts=False, screws=None):

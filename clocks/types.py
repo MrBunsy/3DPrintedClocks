@@ -25,7 +25,8 @@ This is in a separate file to avoid circular dependencies
 
 class RomanNumeralStyle(Enum):
     CUCKOO = "cuckoo"
-    SIMPLE = "simple"
+    SIMPLE_ROUNDED = "simple_rounded"
+    SIMPLE_SQUARE = "simple_square"
 
 class HandStyle(Enum):
     SQUARE = "square"

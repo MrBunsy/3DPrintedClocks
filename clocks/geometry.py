@@ -123,6 +123,31 @@ def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=
 
     return line
 
+def get_angle_of_chord(radius, chord_length):
+    '''
+    In many places I've assumed that the arc length ~= chord length and just run with it, but occasionally I need accuracy
+
+
+    the chord will form an isosceles triangle, but I don't know the length of the triangle yet.
+
+    I know the length of the chord (width of triangle) and the radius (hypotenuse of triangle) so I can find the height by finding the sagitta of the arc
+    '''
+
+    # #for sagitta
+    # l = chord_length
+    # r = radius
+    # sagitta = r - math.sqrt(r**2 - 0.25*l**2)
+    #
+    # triangle_height = radius - sagitta
+    #
+    # #split the isosceles triangle into two right angled triangles
+
+    #r*sin(theta) = half the chord
+
+    half_angle = math.asin((chord_length/2) / radius)
+
+    return half_angle*2
+
 def rationalise_angle(angle_radians):
     '''
     there's probably a proper term for this - ensure 0 <= angle < math.pi*2
