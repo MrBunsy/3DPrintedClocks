@@ -4242,7 +4242,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
 
         self.narrow_bottom_pillar = False
-
+        self.foot_fillet_r = 2
         self.little_arm_to_motion_works = True
         self.little_plate_for_pawl = False
         fixings = 3
@@ -4267,21 +4267,29 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         '''
 
 
-    def get_pillar(self, top=True, flat=False, legs = False):
+    def get_pillar(self, top=True, flat=False):
         '''
         they're all the same on this design!
         '''
 
         pillar_length = self.plate_distance
-        if legs:
-            pillar_length = self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance
-
         pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
 
-        #TODO fancy pillars!
-
+        #TODO fancy pillars?
 
         return pillar
+
+    def get_legs_pillar(self):
+
+        pillar_length = self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance
+
+        pillar = cq.Workplane("XY").circle(self.pillar_r).extrude(pillar_length)
+        pillar = pillar.union(cq.Workplane("XY").moveTo(0, -(self.pillar_r + self.foot_fillet_r)/2).rect(self.pillar_r*2, self.pillar_r + self.foot_fillet_r).extrude(pillar_length).edges("|Z and <Y").fillet(self.foot_fillet_r))
+
+        pillar = pillar.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).cutThruAll()
+
+        return pillar
+
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
@@ -4529,6 +4537,9 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         width = self.pillar_r*2
         legs = get_stroke_line([self.bottom_pillar_positions[0], self.leg_pillar_positions[0], self.leg_pillar_positions[1], self.bottom_pillar_positions[1]], wide=width, thick=thick)
 
+        for pos in self.leg_pillar_positions:
+            legs = legs.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).rect(width,width+self.foot_fillet_r*2).extrude(thick).edges("|Z and <Y").fillet(self.foot_fillet_r))
+
         legs = legs.cut(self.get_fixing_screws_cutter())
 
         for pillar_pos in self.leg_pillar_positions:
@@ -4618,7 +4629,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         plates = plates.add(self.get_legs(back=False).translate((0, 0, self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance)))
 
         for pillar_pos in self.leg_pillar_positions:
-            plates = plates.add(self.get_pillar(legs=True).translate(pillar_pos))
+            plates = plates.add(self.get_legs_pillar().translate(pillar_pos))
 
         return plates
 
@@ -4635,7 +4646,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         out = os.path.join(path, "{}_legs_pillar.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_pillar(legs=True), out)
+        exporters.export(self.get_legs_pillar(), out)
 
 class RollingBallClock(SimpleClockPlates):
     '''
