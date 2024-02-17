@@ -2716,10 +2716,27 @@ class SimpleClockPlates:
 
     def get_text(self):
 
-
-
-
         all_text = cq.Workplane("XY")
+
+        # (x,y,width,height, horizontal)
+        spaces = self.get_text_spaces()
+
+        max_text_size = min([textSpace.get_text_max_size() for textSpace in spaces])
+
+        for space in spaces:
+            space.set_size(max_text_size)
+
+        for space in spaces:
+            all_text = all_text.add(space.get_text_shape())
+
+        all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
+
+        return all_text
+
+    def get_text_spaces(self):
+        '''
+        get a list of TextSpace objects with text assigned
+        '''
 
         texts = self.texts
 
@@ -2776,21 +2793,7 @@ class SimpleClockPlates:
         for i,text in enumerate(texts):
             spaces[i].set_text(text)
 
-
-        max_text_size = min([textSpace.get_text_max_size() for textSpace in spaces])
-
-        for space in spaces:
-            space.set_size(max_text_size)
-
-
-
-        for space in spaces:
-            all_text = all_text.add(space.get_text_shape())
-
-
-        all_text = self.punch_bearing_holes(all_text, back=True)
-
-        return all_text
+        return spaces
 
 
     def get_plate(self, back=True, for_printing=True):
@@ -4115,9 +4118,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         return plate
 
-    def get_text(self):
-
-        all_text = cq.Workplane("XY")
+    def get_text_spaces(self):
 
         # (x,y,width,height, horizontal)
         spaces = []
@@ -4149,18 +4150,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         for i, text in enumerate(texts):
             spaces[i].set_text(text)
-
-        max_text_size = min([textSpace.get_text_max_size() for textSpace in spaces])
-
-        for space in spaces:
-            space.set_size(max_text_size)
-
-        for space in spaces:
-            all_text = all_text.add(space.get_text_shape())
-
-        all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
-
-        return all_text
+        return spaces
 
     def get_screwhole_positions(self):
         '''
@@ -4552,14 +4542,26 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         return legs
 
+    def get_text_spaces(self):
 
+        # (x,y,width,height, horizontal)
+        spaces = []
 
-    def get_text(self):
+        texts = ["{}\n{}".format(self.texts[0], self.texts[1]), "{}\n{}".format(self.texts[2], self.texts[3])]
 
-        all_text = cq.Workplane("XY").circle(1).extrude(0.1)
+        y_offset = 0
+        if self.leg_height > 0:
+            # shift up to avoid join with legs
+            y_offset = self.pillar_r - abs(self.bearing_positions[0][1] - self.bottom_pillar_positions[0][1])
 
+        text_centre_y = average_of_two_points(self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2])[1] + y_offset/2
+        text_length = distance_between_two_points(self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2]) - y_offset
 
-        return all_text
+        spaces.append(TextSpace(-self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
+        spaces.append(TextSpace(self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
+        for i, text in enumerate(texts):
+            spaces[i].set_text(text)
+        return spaces
 
     def get_screwhole_positions(self):
         '''
