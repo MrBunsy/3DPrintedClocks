@@ -4648,6 +4648,11 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         print("Outputting ", out)
         exporters.export(self.get_legs_pillar(), out)
 
+        if self.has_vanity_plate:
+            out = os.path.join(path, "{}_vanity_plate.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_vanity_plate(), out)
+
 class RollingBallClock(SimpleClockPlates):
     '''
     Doing more than just the plates, this will create dials and hands and trains too

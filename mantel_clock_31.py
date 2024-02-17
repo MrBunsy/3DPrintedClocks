@@ -31,6 +31,11 @@ and I'd like to test out the new brocot escapment on the front.
 
 Planning to make it styled on some fancy clocks I've seen, need to find out how large the movement is before I can decide on a style
 
+
+TODO collet on spring arbor to stop it being able to fall out the back (or make it wider at that point? I think I can still fit the barel on the front - don't thinh that will work with the screw in the arbor)
+TODO text on back
+
+
 '''
 outputSTL = False
 
@@ -50,7 +55,7 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 lift=2
 drop=3
 lock=2
-escapement = clock.BrocotEscapment(drop=drop, lift=lift, teeth=30, lock=lock, wheel_thick=2, diameter=40, arbor_d=2)
+escapement = clock.BrocotEscapment(drop=drop, lift=lift, teeth=30, lock=lock, wheel_thick=2, diameter=45, arbor_d=2)
 train = clock.GoingTrain(pendulum_length_m=0.20, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True)
 
@@ -106,14 +111,14 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
 
 
-dial = clock.Dial(outside_d=190, bottom_fixing=True, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
+dial = clock.Dial(outside_d=185, bottom_fixing=True, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
                    inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
                    dial_width=25)
 plates = clock.SkeletonCarriageClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20,
                                            vanity_plate_radius=75, motion_works_angle_deg=180+45, leg_height=120)
 
 
-hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=True)
 
@@ -130,7 +135,9 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.GOLD], with_rods=False, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], key_colour=clock.Colour.GOLD)
+                    bob_colours=[clock.Colour.SILVER], with_rods=False, with_key=True, ratchet_colour=clock.Colour.GOLD,
+                    dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], key_colour=clock.Colour.GOLD, plate_colour=clock.Colour.BRASS,
+                    gear_colours=[clock.Colour.GOLD])
 
 # show_object(plates.getDrillTemplate(6))
 

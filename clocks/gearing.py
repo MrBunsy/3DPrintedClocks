@@ -68,11 +68,11 @@ class Gear:
         if style == GearStyle.ARCS2:
             return Gear.cutArcsStyle(gear, outer_r=outerRadius, inner_r=innerRadius+2)
         if style == GearStyle.CIRCLES:
-            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius, hollow=False)
+            return Gear.cut_circles_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, hollow=False)
         if style == GearStyle.MOONS:
-            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius, moons=True)
+            return Gear.cut_circles_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, moons=True)
         if style == GearStyle.CIRCLES_HOLLOW:
-            return Gear.cutCirclesStyle(gear,outerRadius=outerRadius, innerRadius=innerRadius+2, hollow=True)
+            return Gear.cut_circles_style(gear, outer_radius=outerRadius, inner_radius=innerRadius + 2, hollow=True)
         if style == GearStyle.SIMPLE4:
             return Gear.cutSimpleStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, arms=4)
         if style == GearStyle.SIMPLE5:
@@ -798,12 +798,12 @@ class Gear:
         return moon
 
     @staticmethod
-    def cutCirclesStyle(gear, outerRadius, innerRadius = 3, minGap = 3, hollow=False, moons=False):
+    def cut_circles_style(gear, outer_radius, inner_radius = 3, min_gap = 3, hollow=False, moons=False):
         '''inspired (shamelessly stolen) by the clock on teh cover of the horological journal dated March 2022'''
         #TODO split out the hollow into its own method, I think it's going to be a little different, especially around calculating positions
 
-        if innerRadius < 0:
-            innerRadius = 3
+        if inner_radius < 0:
+            inner_radius = 3
 
 
 
@@ -813,58 +813,69 @@ class Gear:
 
         #sopme slight fudging occurs with minGap as using the diameter (gapSize) as a measure of how much circumference the circle takes up isn't accurate
 
-        ringSize = (outerRadius - innerRadius)
-        bigCircleR = ringSize*0.425
+        ring_size = (outer_radius - inner_radius)
+        big_circle_r = ring_size*0.425
         #want to ensure the "arm" thickness between the circles is enough for a rigid gear
-        bigCircleSpace = ringSize*1.15
+        big_circle_space = ring_size*1.15
         # smallCircleR = bigCircleR*0.3
+
+        circle_size_ratio = big_circle_space/((inner_radius + outer_radius)/2)
+
+        if circle_size_ratio < 0.5:
+            big_circle_space += min_gap
 
         cutter_thick = 1000
         cutter = cq.Workplane("XY")
 
         if hollow:
-            cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+            cutter = cq.Workplane("XY").circle(outer_radius).circle(inner_radius).extrude(cutter_thick)
 
-        bigCirclescircumference = 2 * math.pi * (innerRadius + ringSize/2)
+        big_circlescircumference = 2 * math.pi * (inner_radius + ring_size / 2)
 
         cutmoons = moons
 
         #this is only aproximate, but seems to work
-        bigCircleCount = math.floor(bigCirclescircumference / bigCircleSpace)
+        big_circle_count = math.floor(big_circlescircumference / big_circle_space)
 
-        if bigCircleCount <6:
+        # big_circle_angle_max = math.pi * 2 / big_circle_count
+        # big_circle_angle = get_angle_of_chord(inner_radius + ring_size/2, big_circle_r*2)
+        # print("big_circle_angle/big_circle_angle_max",big_circle_angle/big_circle_angle_max, " big_circle_count ", big_circle_count, " circle_size_ratio ",circle_size_ratio)
+        # if big_circle_angle/big_circle_angle_max > 0.8:
+        #     big_circle_count = math.floor(big_circle_count*0.8)
+
+        if big_circle_count <6:
             cutmoons = False
 
-        if bigCircleCount > 0 :
-            bigCircleAngle = math.pi*2/bigCircleCount
+        if big_circle_count > 0 :
+            big_circle_angle = math.pi*2/big_circle_count
 
-            smallCircleRingR = innerRadius + ringSize * 0.75
+            smallCircleRingR = inner_radius + ring_size * 0.75
 
-            bigCirclePos = polar(0, innerRadius + ringSize / 2)
-            smallCirclePos = polar(bigCircleAngle / 2, smallCircleRingR)
+            bigCirclePos = polar(0, inner_radius + ring_size / 2)
+            smallCirclePos = polar(big_circle_angle / 2, smallCircleRingR)
             distance = math.sqrt((bigCirclePos[0] - smallCirclePos[0])**2 + (bigCirclePos[1] - smallCirclePos[1])**2)
-            smallCircleR = distance - bigCircleR - minGap
+            smallCircleR = distance - big_circle_r - min_gap
             #don't want the small circles eating into the edges of the gear
-            if smallCircleR + smallCircleRingR > outerRadius:
-                smallCircleR = outerRadius - smallCircleRingR
+            if smallCircleR + smallCircleRingR > outer_radius:
+                smallCircleR = outer_radius - smallCircleRingR
 
             hasSmallCircles = smallCircleR > 2
 
-            for circle in range(bigCircleCount):
-                angle = bigCircleAngle*circle - bigCircleAngle/4
-                pos = polar(angle, innerRadius + ringSize/2)
+            for circle in range(big_circle_count):
+                angle = big_circle_angle*circle - big_circle_angle/4
+                pos = polar(angle, inner_radius + ring_size / 2)
 
                 if hollow:
-                    cutter = cutter.cut(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR+2).circle(bigCircleR).extrude(cutter_thick))
+                    cutter = cutter.cut(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(big_circle_r+2).circle(big_circle_r).extrude(cutter_thick))
                 elif cutmoons:
-                    moon = Gear.crescent_moon_2D(bigCircleR,((circle)/bigCircleCount))
+                    moon = Gear.crescent_moon_2D(big_circle_r,((circle)/big_circle_count))
                     if moon is not None:
                         cutter = cutter.add(moon.extrude(cutter_thick).rotate((0,0,0),(0,0,1),radToDeg(angle-math.pi/2)).translate(pos))
                 else:
-                    cutter = cutter.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(bigCircleR).extrude(cutter_thick))
+                    cutter = cutter.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(big_circle_r).extrude(cutter_thick))
 
                 if hasSmallCircles:
-                    smallCirclePos = polar(angle + bigCircleAngle / 2, innerRadius + ringSize * 0.75)
+                    smallCirclePos = polar(angle + big_circle_angle / 2, inner_radius + ring_size * 0.75)
                     cutter = cutter.add(cq.Workplane("XY").moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).extrude(cutter_thick))
 
 
@@ -1660,8 +1671,8 @@ class ArborForPlate:
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
             extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake - 1
-            if extra_arbour_length > 15:
-                extra_arbour_length = 15
+            if extra_arbour_length > 10:
+                extra_arbour_length = 10
             extend_out_front = self.plates.extra_support_for_escape_wheel
             arbourThreadedRod = MachineScrew(metric_thread=self.arbor_d)
 
@@ -2286,7 +2297,7 @@ class Arbor:
         '''
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
-            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2)
+            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick + self.pinion_extension, min_inner_r=self.arbor_d / 2)
 
         return None
 
