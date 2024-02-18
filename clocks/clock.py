@@ -3818,24 +3818,24 @@ class SimpleClockPlates:
         if self.dial is not None:
             self.dial.output_STLs(name, path)
 
-        out = os.path.join(path, "{}_front_plate.stl".format(name))
+        out = os.path.join(path, "{}_plate_front.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_plate(False), out)
 
-        out = os.path.join(path, "{}_back_plate_platecolour.stl".format(name))
+        out = os.path.join(path, "{}_plate_back.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_plate(True), out)
 
-        out = os.path.join(path, "{}_back_plate_textcolour.stl".format(name))
+        out = os.path.join(path, "{}_plate_back_text.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_text(), out)
 
         if self.pillars_separate:
-            out = os.path.join(path, "{}_bottom_pillar.stl".format(name))
+            out = os.path.join(path, "{}_pillar_bottom.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_pillar(top=False), out)
 
-            out = os.path.join(path, "{}_top_pillar.stl".format(name))
+            out = os.path.join(path, "{}_pillar_top.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_pillar(top=True), out)
 
@@ -3889,7 +3889,7 @@ class SimpleClockPlates:
             key.output_STLs(name, path)
 
         if self.need_front_anchor_bearing_holder():
-            out = os.path.join(path, "{}_front_anchor_bearing_holder.stl".format(name))
+            out = os.path.join(path, "{}_anchor_front_bearing_holder.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_front_anchor_bearing_holder(), out)
 
@@ -4580,7 +4580,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
             return cq.Workplane("XY")
         return self.get_anchor_holder(for_printing=for_printing)
 
-    def get_anchor_holder(self, back=True, for_printing=True):
+    def get_back_anchor_holder(self, for_printing=True):
         '''
         the bit that holds the pendulum at the top
         Will be symetric, so front and back are the same except for the height of the pillars
@@ -4649,6 +4649,10 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         out = os.path.join(path, "{}_legs_pillar.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_legs_pillar(), out)
+
+        out = os.path.join(path, "{}_anchor_holder_back.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_back_anchor_holder(), out)
 
         if self.has_vanity_plate:
             out = os.path.join(path, "{}_vanity_plate.stl".format(name))
