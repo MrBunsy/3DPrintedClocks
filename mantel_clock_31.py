@@ -97,7 +97,7 @@ train.gen_gears(module_size=0.75, module_reduction=moduleReduction, thick=3, thi
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 motionWorks.calculate_size(arbor_distance=30)
 
@@ -111,7 +111,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
 
 
-dial = clock.Dial(outside_d=185, bottom_fixing=True, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
+dial = clock.Dial(outside_d=185, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
                    inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
                    dial_width=25)
 plates = clock.SkeletonCarriageClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.3, escapement_on_front=True, pendulum_sticks_out=20,
@@ -134,7 +134,7 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.BLACK], motion_works_colours=[clock.Colour.BLACK],
                     bob_colours=[clock.Colour.SILVER], with_rods=False, with_key=True, ratchet_colour=clock.Colour.GOLD,
                     dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], key_colour=clock.Colour.GOLD, plate_colour=clock.Colour.BRASS,
                     gear_colours=[clock.Colour.GOLD])

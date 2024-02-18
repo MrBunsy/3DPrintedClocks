@@ -1707,9 +1707,12 @@ class SimpleClockPlates:
                     # inverting x because dial is "backwards"
                     self.dial_fixing_positions.append(np_to_set(np.add((-pos[0], pos[1]), self.hands_position)))
 
-            self.top_dial_fixing_y = max([pos[1] for pos in self.dial_fixing_positions])
+            if len(self.dial_fixing_positions) > 0:
+                self.top_dial_fixing_y = max([pos[1] for pos in self.dial_fixing_positions])
 
-            self.dial_top_above_front_plate = self.top_dial_fixing_y > self.top_pillar_positions[0][1] and self.top_dial_fixing_y > self.bearing_positions[-1][1]
+                self.dial_top_above_front_plate = self.top_dial_fixing_y > self.top_pillar_positions[0][1] and self.top_dial_fixing_y > self.bearing_positions[-1][1]
+            else:
+                self.dial_top_above_front_plate = False
 
 
             '''
@@ -2293,13 +2296,16 @@ class SimpleClockPlates:
         #no longer supporting anything that doesn't (with the escapement on the front) - the large bearings have way too much friction so we have to hold the anchor arbour from both ends
         return self.escapement_on_front# and self.pendulumFixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
-    def get_front_anchor_bearing_holder_total_length(self):
+    def get_front_anchor_bearing_holder_total_length(self, bearing_holder_thick=-1):
         '''
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
+        if bearing_holder_thick < 0:
+            bearing_holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing)
+
         if self.need_front_anchor_bearing_holder():
             holder_long = self.arbors_for_plate[-1].front_anchor_from_plate + self.arbors_for_plate[-1].arbor.escapement.get_anchor_thick() \
-                          + self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing) + SMALL_WASHER_THICK_M3
+                          + bearing_holder_thick + SMALL_WASHER_THICK_M3
         else:
             holder_long = 0
         return holder_long
@@ -4237,12 +4243,15 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         self.little_plate_for_pawl = False
         fixings = 3
         # self.vanity_plate_fixing_positions = [polar(angle, self.vanity_plate_radius-self.vanity_plate_pillar_r) for angle in [math.pi/6 + i*(math.pi*2/fixings) for i in range(fixings)]]
+        #ended up using pillar positions instead
         self.vanity_plate_fixing_positions = []#[(-self.radius,self.hands_position[1]), (self.radius, self.hands_position[1])]
         self.vanity_plate_pillar_r=self.pillar_r
 
-
+        #front anchor holder will have little arms extended from the front plate
+        anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
         self.anchor_holder_arc_angle = math.pi * 0.3
-        self.anchor_holder_fixing_points = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, self.radius))) for i in [-1, 1]]
+        self.anchor_holder_fixing_points = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
+
         # centre = self.bearing_positions[self.going_train.powered_wheels][:2]
         # self.radius = 1
         # for bearing_pos in self.bearing_positions:
@@ -4256,6 +4265,16 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         
         '''
 
+        if self.dial is not None and self.escapement_on_front:
+            self.dial.add_to_back = self.get_front_anchor_bearing_holder().translate((0,0, self.dial.thick))
+
+
+
+
+    # def need_front_anchor_bearing_holder(self):
+    #     if self.escapement_on_front:
+    #         #only need a separa
+    #         return self.dial is None
 
     def get_pillar(self, top=True, flat=False):
         '''
@@ -4412,6 +4431,11 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
             plate = plate.union(cq.Workplane("XY").circle(self.pillar_r).circle(hole_r).extrude(pillar_height + self.vanity_plate_thick).translate(pillar_pos))
             plate = plate.faces(">Z").workplane().moveTo(pillar_pos[0], pillar_pos[1]).circle(hole_r).cutThruAll()
 
+        if self.escapement_on_front:
+            #gaps for the front anchor holder
+            for pos in self.anchor_holder_fixing_points:
+                relative_pos = np_to_set(np.subtract(pos, self.hands_position))
+                plate = plate.cut(cq.Workplane("XY").moveTo(relative_pos[0], relative_pos[1]).circle(self.pillar_r + 1).extrude(self.vanity_plate_thick))
 
         #key hole
         key_hole_d = self.winding_key.get_key_outer_diameter() + 4
@@ -4492,7 +4516,13 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
                 plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width/2)
                          .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width*0.4).loft(combine=True))
         else:
+            for pos in self.anchor_holder_fixing_points:
+                line = Line(centre, anotherPoint=pos)
+                start = polar(line.get_angle(), self.radius)
+                plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
+
             plate = self.front_additions_to_plate(plate)
+
 
         plate = self.punch_bearing_holes(plate, back)
 
@@ -4571,19 +4601,57 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
     def get_front_anchor_bearing_holder(self, for_printing=True):
         '''
-        TODO
+        Sufficiently different fron back holder to be a different function.
+        This will be printed as part of the dial and it must be possible to attach after the rest of teh clock
+        has been assembled (including the vanity plate). Otherwise I think it will
+        be impossible to assemble the clock
+
+
+        note assumes that anchor_holder_fixing_points are symetric
         '''
-        return self.get_anchor_holder(back=False, for_printing=for_printing)
+        holder = cq.Workplane("XY")
+
+        anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
+        anchor_holder_fixing_points = self.anchor_holder_fixing_points
+
+        holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing)
+
+        top_z = self.get_front_anchor_bearing_holder_total_length()
+        if self.dial is not None:
+            #if a dial, butt up exactly to the bottom of the dial so the two peices can be combined
+            if self.dial_z > top_z:
+                need_extra = self.dial_z - top_z
+                top_z = self.dial_z
+                holder_thick += need_extra
+            else:
+                raise ValueError("Dial isn't far enough away to fit front anchor holder. Extend motion works extra_height by at least {}mm".format(top_z - self.dial_z))
+
+        
+
+        holder = get_stroke_arc(self.anchor_holder_fixing_points[0], self.anchor_holder_fixing_points[1], anchor_distance, self.pillar_r*2, holder_thick)
+
+        holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=get_bearing_info(self.arbors_for_plate[-1].arbor.arbor_d)).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1])))
+        
+        # TODO NUTS - embedded or try slot in from the side?
+        for pos in self.anchor_holder_fixing_points:
+            #don't need to take into account holder thick because wer're unioning with it
+            holder = holder.union(cq.Workplane("XY").circle(self.pillar_r).extrude(top_z).translate(pos))
+            holder = holder.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+
+        if not for_printing:
+
+            holder = holder.rotate((0,0,0), (0,1,0),180).translate((0,0,self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance + top_z))
+
+        return holder
 
     def get_wall_standoff(self, top=True, for_printing=True):
         if not top:
             return cq.Workplane("XY")
-        return self.get_anchor_holder(for_printing=for_printing)
+        return self.get_back_anchor_holder(for_printing=for_printing)
 
     def get_back_anchor_holder(self, for_printing=True):
         '''
         the bit that holds the pendulum at the top
-        Will be symetric, so front and back are the same except for the height of the pillars
         '''
 
 
@@ -4591,7 +4659,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
 
-        anchor_holder_fixing_points = self.anchor_holder_fixing_points
+
         anchor_holder_fixing_points = self.top_pillar_positions
 
         curve_ends = []

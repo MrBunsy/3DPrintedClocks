@@ -1537,7 +1537,7 @@ class ArborForPlate:
         # - I think I'm completely wrong including teh washer thick here, but I do want it extended anyway
         self.front_anchor_from_plate = front_anchor_from_plate
         if self.front_anchor_from_plate < 0:
-            self.front_anchor_from_plate = self.endshake + 2
+            self.front_anchor_from_plate = self.endshake# + 2 - IS THIS WHY THE ANCHOR ARBOR WAS ALWAYS TOO SHORT??
         # ============ anchor bits ===============
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6

@@ -621,6 +621,8 @@ class Dial:
 
         # a shape to be subtracted from the supports to avoid crashing into things, bit hacky, will be set by plates
         self.subtract_from_supports = None
+        # also a bit hacky, plates might want to add somethign to this dial (like front anchor holder)
+        self.add_to_back = None
 
     def get_hand_space_z(self):
         #how much space between the front of the dial and the hands should there be?
@@ -1187,6 +1189,9 @@ class Dial:
 
         if self.subtract_from_supports is not None:
             dial = dial.cut(self.subtract_from_supports)
+
+        if self.add_to_back is not None:
+            dial = dial.union(self.add_to_back)
 
         return dial
 
