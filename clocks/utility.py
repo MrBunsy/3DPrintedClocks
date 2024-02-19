@@ -1006,8 +1006,7 @@ BEARING_12MM_FLANGED = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_th
 BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
 BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
 BEARING_SMALL_M3 = BearingInfo(outer_d=8.1, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
-#2x6x3 safe diameters are guesses until they arrive
-BEARING_2MM = BearingInfo(outer_d=6.1, inner_d=2, height=3, inner_safe_d=2.2, outer_safe_d=5)
+BEARING_2MM = BearingInfo(outer_d=6.2, inner_d=2, height=3, inner_safe_d=2.9, outer_safe_d=3.8)
 def get_bearing_info(innerD):
     '''
     Get some stock bearings

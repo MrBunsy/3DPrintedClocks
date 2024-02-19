@@ -3765,7 +3765,7 @@ class SimpleClockPlates:
         key_wiggle_room = 0.75 # the default
         wall_thick = 2.5 # the default
         sideways = False
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:# and not self.going_train.powered_wheel.ratchet_at_back:
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
             #take into accuont the ratchet on the front
             ratchet_thickness = self.going_train.powered_wheel.ratchet.thick + self.going_train.powered_wheel.ratchet_collet_thick
             key_hole_deep -= ratchet_thickness
@@ -3774,7 +3774,9 @@ class SimpleClockPlates:
             # key_wiggle_room = 0.5
             #this was a bit too much, going back to default
             # key_wiggle_room = 1
-            wall_thick=5
+
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
+            wall_thick = 5
             sideways = True
 
         self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
@@ -4266,7 +4268,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         '''
 
         if self.dial is not None and self.escapement_on_front:
-            self.dial.add_to_back = self.get_front_anchor_bearing_holder().translate((0,0, self.dial.thick))
+            self.dial.add_to_back = self.get_front_anchor_bearing_holder().translate((-self.hands_position[0],-self.hands_position[1], self.dial.thick))
 
 
 
@@ -4518,7 +4520,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         else:
             for pos in self.anchor_holder_fixing_points:
                 line = Line(centre, anotherPoint=pos)
-                start = polar(line.get_angle(), self.radius)
+                start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
                 plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
 
             plate = self.front_additions_to_plate(plate)
@@ -4546,6 +4548,9 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
                 cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
 
             plate = plate.cut(cutter)
+
+            if for_printing and not back:
+                plate = plate.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
 
         return plate
 
