@@ -1379,6 +1379,7 @@ class SimpleClockPlates:
 
         #escapement is on top of the front plate
         self.escapement_on_front = escapement_on_front
+        self.front_anchor_holder_part_of_dial = False
 
         #many designs have thet escapement above the hands anyway, but do we force it? currently I think this is a 1:1 mapping with escapement_on_front
         self.force_escapement_above_hands = escapement_on_front
@@ -3813,7 +3814,7 @@ class SimpleClockPlates:
             plates = plates.add(self.get_wall_standoff(top=True, for_printing=False))
             plates = plates.add(self.get_wall_standoff(top=False, for_printing=False))
 
-        if self.need_front_anchor_bearing_holder():
+        if self.need_front_anchor_bearing_holder() and not self.front_anchor_holder_part_of_dial:
             plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
 
         if self.need_motion_works_holder:
@@ -4254,6 +4255,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         self.anchor_holder_arc_angle = math.pi * 0.3
         self.anchor_holder_fixing_points = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
 
+
         # centre = self.bearing_positions[self.going_train.powered_wheels][:2]
         # self.radius = 1
         # for bearing_pos in self.bearing_positions:
@@ -4270,8 +4272,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         if self.dial is not None and self.escapement_on_front:
             self.dial.add_to_back = self.get_front_anchor_bearing_holder().translate((-self.hands_position[0],-self.hands_position[1], self.dial.thick))
 
-
-
+        self.front_anchor_holder_part_of_dial = True
 
     # def need_front_anchor_bearing_holder(self):
     #     if self.escapement_on_front:
@@ -4518,10 +4519,12 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
                 plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width/2)
                          .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width*0.4).loft(combine=True))
         else:
-            for pos in self.anchor_holder_fixing_points:
-                line = Line(centre, anotherPoint=pos)
-                start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
-                plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
+            if self.need_front_anchor_bearing_holder():
+                for pos in self.anchor_holder_fixing_points:
+                    line = Line(centre, anotherPoint=pos)
+                    start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
+                    plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
+                    plate = plate.cut(self.small_fixing_screws.get_cutter().translate(pos))
 
             plate = self.front_additions_to_plate(plate)
 
@@ -4641,7 +4644,9 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         for pos in self.anchor_holder_fixing_points:
             #don't need to take into account holder thick because wer're unioning with it
             holder = holder.union(cq.Workplane("XY").circle(self.pillar_r).extrude(top_z).translate(pos))
-            holder = holder.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+            holder = holder.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.small_fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+            nut_hole_deep = self.small_fixing_screws.get_nut_height()+1
+            holder = holder.cut(self.small_fixing_screws.get_nut_cutter(height=nut_hole_deep, with_bridging=True, layer_thick=self.layer_thick).translate((pos[0], pos[1], top_z/2 - nut_hole_deep/2)))
 
         if not for_printing:
 
@@ -5234,7 +5239,7 @@ class Assembly:
             bearing = arbor_for_plate.bearing
             bearing_thick = bearing.height
 
-            rod_in_front_of_hands = WASHER_THICK_M3 + getNutHeight(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
+            rod_in_front_of_hands = WASHER_THICK_M3 + get_nut_height(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
 
             length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
 
@@ -5385,7 +5390,7 @@ class Assembly:
 
         if self.plates.has_seconds_hand():
             #second hand!! yay
-            secondHand = self.hands.getHand(hand_type=HandType.SECOND).mirror().translate((0,0,self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), self.secondAngle)
+            secondHand = self.hands.get_hand(hand_type=HandType.SECOND).mirror().translate((0, 0, self.hands.thick)).rotate((0, 0, 0), (0, 0, 1), self.secondAngle)
 
             clock = clock.add(secondHand.translate(self.second_hand_pos))
 
@@ -5689,7 +5694,7 @@ def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, tim
 
         secondsHand = None
         try:
-            secondsHand =hands.getHand(hand_type=HandType.SECOND)
+            secondsHand =hands.get_hand(hand_type=HandType.SECOND)
         except:
             print("Unable to generate second hand for {}".format(style.value))
 
@@ -5717,8 +5722,8 @@ def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, tim
 
 
         else:
-            demo = demo.add(hands.getHand(hand_type=HandType.HOUR).translate((x, y)))
-            demo = demo.add(hands.getHand(hand_type=HandType.MINUTE).translate((x+length*0.3, y)))
+            demo = demo.add(hands.get_hand(hand_type=HandType.HOUR).translate((x, y)))
+            demo = demo.add(hands.get_hand(hand_type=HandType.MINUTE).translate((x + length * 0.3, y)))
             if secondsHand is not None and include_seconds:
                 demo = demo.add(secondsHand.translate((x - length * 0.3, y)))
 

@@ -716,7 +716,7 @@ class Hands:
 
         return hand
    
-    def outLineIsSubtractive(self):
+    def out_line_is_subtractive(self):
         '''
         If the outline is a negative shell from the outline provided by hand, return true
         if the outline is a positive shell, return false (for hands with thin bits where there isn't enough width)
@@ -729,7 +729,7 @@ class Hands:
 
         return True
 
-    def getExtraColours(self):
+    def get_extra_colours(self):
         #first colour is default
         if self.style == HandStyle.XMAS_TREE:
             #green leaves, red tinsel, brown trunk
@@ -740,7 +740,7 @@ class Hands:
 
         return [None]
 
-    def getBasicHandShape(self, hour=False, minute=False, second=False, colour=None, thick=-1):
+    def get_basic_hand_shape(self, hour=False, minute=False, second=False, colour=None, thick=-1):
         '''
         Get the hand shape without fixing or outline
         '''
@@ -1413,7 +1413,7 @@ class Hands:
         return hand
 
 
-    def getHand(self, hand_type=HandType.MINUTE, generate_outline=False, colour=None):
+    def get_hand(self, hand_type=HandType.MINUTE, generate_outline=False, colour=None):
         '''
         #either hour, minute or second hand (for now?)
         if provide a colour, return the layer for just that colour (for novelty hands with lots of colours)
@@ -1428,7 +1428,7 @@ class Hands:
             #then we can use the outline from that on the normal thickness hand
             thick = self.outline*2.5
 
-        hand = self.getBasicHandShape(hand_type == HandType.HOUR, hand_type == HandType.MINUTE, hand_type == HandType.SECOND, colour=colour, thick=thick)
+        hand = self.get_basic_hand_shape(hand_type == HandType.HOUR, hand_type == HandType.MINUTE, hand_type == HandType.SECOND, colour=colour, thick=thick)
 
         if hand is None:
             #should only happen if multicolour hands don't have all colours on all hands
@@ -1467,7 +1467,7 @@ class Hands:
             thick = self.second_thick
 
         if outline_wide > 0:# and not ignoreOutline:
-            if self.outLineIsSubtractive():
+            if self.out_line_is_subtractive():
                 #the outline cuts into the hand shape
 
                 if generate_outline:
@@ -1503,7 +1503,7 @@ class Hands:
                         self.outline_shapes[hand_type] = outline
                         return outline
                 else:
-                    outlineShape = self.getHand(hand_type, generate_outline=True)
+                    outlineShape = self.get_hand(hand_type, generate_outline=True)
                     #chop out the outline from the shape
                     if outlineShape is not None:
                         hand = hand.cut(outlineShape)
@@ -1533,7 +1533,7 @@ class Hands:
                         hand = hand.intersect(bigSlab)
                     else:
                         try:
-                            outlineShape = self.getHand(hand_type, generate_outline=True)
+                            outlineShape = self.get_hand(hand_type, generate_outline=True)
                             # chop out the outline from the shape
 
                             #make the whole hand bigger by the outline amount
@@ -1574,17 +1574,17 @@ class Hands:
                  }
 
 
-        for colour in self.getExtraColours():
+        for colour in self.get_extra_colours():
             #None means the main hand colour
             for type in HandType:
-                hand = self.getHand(hand_type=type, colour=colour)
+                hand = self.get_hand(hand_type=type, colour=colour)
                 if hand is not None:
                     hands[type][colour] = hand
 
         if self.outline > 0:
             for type in HandType:
                 try:
-                    hand = self.getHand(hand_type=type, generate_outline=True)
+                    hand = self.get_hand(hand_type=type, generate_outline=True)
                     if hand is not None:
                         hands[type]["outline"] = hand
                 except:
@@ -1621,16 +1621,16 @@ class Hands:
         hourHand = cq.Workplane("XY")
         secondHand = cq.Workplane("XY")
 
-        for colour in self.getExtraColours():
-            minuteHand = minuteHand.add(self.getHand(hand_type=HandType.MINUTE, colour=colour))
-            hourHand = hourHand.add(self.getHand(hand_type=HandType.HOUR, colour=colour))
-            secondHand = secondHand.add(self.getHand(hand_type=HandType.SECOND, colour = colour))
+        for colour in self.get_extra_colours():
+            minuteHand = minuteHand.add(self.get_hand(hand_type=HandType.MINUTE, colour=colour))
+            hourHand = hourHand.add(self.get_hand(hand_type=HandType.HOUR, colour=colour))
+            secondHand = secondHand.add(self.get_hand(hand_type=HandType.SECOND, colour = colour))
 
         if self.outline > 0:
-            minuteHand = minuteHand.add(self.getHand(hand_type=HandType.MINUTE, generate_outline=True))
-            hourHand = hourHand.add(self.getHand(hand_type=HandType.HOUR, generate_outline=True))
+            minuteHand = minuteHand.add(self.get_hand(hand_type=HandType.MINUTE, generate_outline=True))
+            hourHand = hourHand.add(self.get_hand(hand_type=HandType.HOUR, generate_outline=True))
             try:
-                secondHand = secondHand.add(self.getHand(hand_type=HandType.SECOND, generate_outline=True))
+                secondHand = secondHand.add(self.get_hand(hand_type=HandType.SECOND, generate_outline=True))
             except:
                 pass
 
@@ -1652,33 +1652,33 @@ class Hands:
 
     def output_STLs(self, name="clock", path="../out"):
 
-        colours = self.getExtraColours()
+        colours = self.get_extra_colours()
 
         for colour in colours:
             colour_string = "_"+colour if colour is not None else ""
-            out = os.path.join(path, "{}_hour_hand{}.stl".format(name, colour_string))
+            out = os.path.join(path, "{}_hand_hour{}.stl".format(name, colour_string))
             print("Outputting ", out)
-            exporters.export(self.getHand(hand_type=HandType.HOUR, colour=colour), out)
+            exporters.export(self.get_hand(hand_type=HandType.HOUR, colour=colour), out)
 
-            out = os.path.join(path, "{}_minute_hand{}.stl".format(name, colour_string))
+            out = os.path.join(path, "{}_hand_minute{}.stl".format(name, colour_string))
             print("Outputting ", out)
-            exporters.export(self.getHand(hand_type=HandType.MINUTE, colour=colour), out)
+            exporters.export(self.get_hand(hand_type=HandType.MINUTE, colour=colour), out)
 
-            out = os.path.join(path, "{}_second_hand{}.stl".format(name, colour_string))
+            out = os.path.join(path, "{}_hand_second{}.stl".format(name, colour_string))
             print("Outputting ", out)
-            exporters.export(self.getHand(hand_type=HandType.SECOND, colour=colour), out)
+            exporters.export(self.get_hand(hand_type=HandType.SECOND, colour=colour), out)
 
         if self.outline > 0:
-            out = os.path.join(path, "{}_hour_hand_outline.stl".format(name))
+            out = os.path.join(path, "{}_hand_hour_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(hand_type=HandType.HOUR, generate_outline=True), out)
+            exporters.export(self.get_hand(hand_type=HandType.HOUR, generate_outline=True), out)
 
-            out = os.path.join(path, "{}_minute_hand_outline.stl".format(name))
+            out = os.path.join(path, "{}_hand_minute_outline.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHand(hand_type=HandType.MINUTE, generate_outline=True), out)
+            exporters.export(self.get_hand(hand_type=HandType.MINUTE, generate_outline=True), out)
 
-            secondoutline = self.getHand(hand_type=HandType.SECOND, generate_outline=True)
+            secondoutline = self.get_hand(hand_type=HandType.SECOND, generate_outline=True)
             if secondoutline is not None:
-                out = os.path.join(path, "{}_second_hand_outline.stl".format(name))
+                out = os.path.join(path, "{}_hand_second_outline.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(secondoutline, out)

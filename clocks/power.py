@@ -2032,7 +2032,7 @@ class CordWheel:
             if self.use_key:
                 minScrewLength -= self.thick
             #I think this might assume caps all the same thickness? which is true when not using a key
-            print("cord wheel screw (m{}) length between".format(self.screw_thread_metric), minScrewLength + getNutHeight(self.screw_thread_metric), minScrewLength + self.thick / 2 + self.cap_thick)
+            print("cord wheel screw (m{}) length between".format(self.screw_thread_metric), minScrewLength + get_nut_height(self.screw_thread_metric), minScrewLength + self.thick / 2 + self.cap_thick)
 
 
     def getChainHoleD(self):

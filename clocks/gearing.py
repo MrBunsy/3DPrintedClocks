@@ -1385,7 +1385,7 @@ class FrictionFitPendulumBits:
 
         #hole that the pendulum (threaded rod with nyloc nut on the end) rests in
         holeStartY=-get_nut_containing_diameter(self.arbor_d)*0.5-0.4#-5#-8#-height*0.2
-        holeHeight = getNutHeight(self.arbor_d,nyloc=True) + getNutHeight(self.arbor_d) + 1
+        holeHeight = get_nut_height(self.arbor_d, nyloc=True) + get_nut_height(self.arbor_d) + 1
 
         nutD = get_nut_containing_diameter(holeD)
 
@@ -1396,7 +1396,7 @@ class FrictionFitPendulumBits:
         pendulum = pendulum.faces(">Z").workplane().circle(holeD / 2).cutThruAll()
 
         #nut to hold to anchor rod
-        nutThick = getNutHeight(holeD, nyloc=True)
+        nutThick = get_nut_height(holeD, nyloc=True)
         nutSpace = cq.Workplane("XY").polygon(6,nutD).extrude(nutThick).translate((0,0,self.pendulumTopThick-nutThick))
         pendulum = pendulum.cut(nutSpace)
 

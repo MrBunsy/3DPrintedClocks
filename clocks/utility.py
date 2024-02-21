@@ -118,7 +118,7 @@ def get_nut_containing_diameter(metric_thread, wiggleRoom=0):
     return nutWidth / math.cos(math.pi / 6)
 
 
-def getNutHeight(metric_thread, nyloc=False, halfHeight=False):
+def get_nut_height(metric_thread, nyloc=False, halfHeight=False):
     if metric_thread > 2 and halfHeight:
         return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
 
@@ -279,7 +279,7 @@ class MachineScrew:
         return screw
 
     def get_nut_height(self, nyloc=False, half=False):
-        return getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
+        return get_nut_height(self.metric_thread, nyloc=nyloc, halfHeight=half)
 
     def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=-1, rod_loose=False):
         '''
@@ -291,7 +291,7 @@ class MachineScrew:
         if wiggle < 0:
             wiggle = layer_thick-0.2
 
-        nutHeight = getNutHeight(self.metric_thread, nyloc=nyloc, halfHeight=half)
+        nutHeight = get_nut_height(self.metric_thread, nyloc=nyloc, halfHeight=half)
         if height < 0:
             height = nutHeight
         nutD = self.get_nut_containing_diameter() + wiggle
@@ -1077,7 +1077,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
     # a square hole that can fit the end of the pendulum rod with two nuts on it
     holeStartY = 0
-    holeHeight = getNutHeight(pendulum_rod_d, nyloc=True) + getNutHeight(pendulum_rod_d) + 1
+    holeHeight = get_nut_height(pendulum_rod_d, nyloc=True) + get_nut_height(pendulum_rod_d) + 1
 
     nutD = get_nut_containing_diameter(pendulum_rod_d)
 
@@ -1100,7 +1100,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
 
     shape = shape.add(rod)
 
-    nutThick = getNutHeight(pendulum_rod_d, nyloc=True)
+    nutThick = get_nut_height(pendulum_rod_d, nyloc=True)
 
     nutSpace2 = cq.Workplane("XZ").moveTo(0, z).polygon(6, nutD + extraSpaceForNut).extrude(nutThick).translate((0, holeStartY - holeHeight, 0))
     shape = shape.add(nutSpace2)

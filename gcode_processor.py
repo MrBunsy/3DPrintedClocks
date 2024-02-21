@@ -327,7 +327,7 @@ if __name__ == "__main__":
     - wipefix
     
     
-    C:/Python311_2023/python.exe C:/Users/Luke/Documents/Clocks/3DPrintedClocks/gcode_processor.py
+    C:/Python311_2023/python.exe C:/Users/Luke/Documents/Clocks/3DPrintedClocks/gcode_processor.py 2.7.1 firstm600
     '''
 
     logfile = "C:/Users/Luke/Documents/Clocks/3DPrintedClocks/postprocesslog.txt"

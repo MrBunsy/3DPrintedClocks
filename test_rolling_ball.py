@@ -56,8 +56,8 @@ if False:
         show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180).translate(position), options={"color": Colour.BLACK} )
 
     show_dial(dial_hours, (-130,0,0))
-    show_object(hands_hours_and_seconds.getHand(hand_type=HandType.HOUR).translate((-130, 0, 10)), options={"color": Colour.BLACK})
+    show_object(hands_hours_and_seconds.get_hand(hand_type=HandType.HOUR).translate((-130, 0, 10)), options={"color": Colour.BLACK})
     show_dial(dial_minutes, (0, 0, 0))
-    show_object(hands_minutes.getHand(hand_type=HandType.MINUTE).translate((0, 0, 10)), options={"color": Colour.BLACK})
+    show_object(hands_minutes.get_hand(hand_type=HandType.MINUTE).translate((0, 0, 10)), options={"color": Colour.BLACK})
     show_dial(dial_seconds, (130, 0, 0))
-    show_object(hands_hours_and_seconds.getHand(hand_type=HandType.SECOND).translate((130, 0, 10)), options={"color": Colour.BLACK})
+    show_object(hands_hours_and_seconds.get_hand(hand_type=HandType.SECOND).translate((130, 0, 10)), options={"color": Colour.BLACK})

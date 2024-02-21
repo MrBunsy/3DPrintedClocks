@@ -2319,7 +2319,7 @@ class Pendulum:
         # currently assuming M3
         nutD=get_nut_containing_diameter(3, 0.1)
         #and going to try a nyloc nut to see if that stops it untightening itself
-        nutHeight=getNutHeight(3,nyloc=True)
+        nutHeight=get_nut_height(3, nyloc=True)
 
         nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0, 0, self.bob_nut_thick - nutHeight))
 
