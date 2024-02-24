@@ -1866,7 +1866,7 @@ class ArborForPlate:
             assembly = assembly.add(pinion)
 
             wheel = self.get_escape_wheel(for_printing=False)
-            #same as anchor, pulling back by half the endshake
+            #same as anchor, pulling back by half the endshake (see above for why)
             wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2))
             assembly = assembly.add(wheel)
         elif self.type == ArborType.POWERED_WHEEL:

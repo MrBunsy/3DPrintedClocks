@@ -1757,6 +1757,12 @@ class SimpleClockPlates:
             "Luke Wallin",
             "{:.1f}cm".format(self.going_train.pendulum_length * 100)
         ]
+    def get_rod_lengths(self):
+        '''
+        TODO
+        returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
+        '''
+        return ([], [])
 
     def generate_arbours_for_plate(self):
 
@@ -4702,6 +4708,38 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         return standoff
 
+    def get_rod_lengths(self):
+        '''
+        returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
+        '''
+
+        total_plate_distance = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance
+
+        extra_length = self.fixing_screws.get_nut_height()*2 + 2
+
+        bottom_pillar_length = total_plate_distance
+        if self.leg_height > 0:
+            bottom_pillar_length += self.plate_thick*2
+
+        if self.has_vanity_plate:
+            bottom_pillar_length += self.vanity_plate_base_z + self.vanity_plate_thick
+            if self.leg_height > 0:
+                #leg is included in the pillar that holds the vanity plate
+                bottom_pillar_length -= self.plate_thick
+
+        bottom_pillar_length += extra_length
+
+        top_pillar_length = total_plate_distance + self.back_plate_from_wall + extra_length
+
+        print("Need rod (M{}) of length {}mm for top pillars and {}mm for bottom pillars".format(self.fixing_screws.metric_thread, math.ceil(top_pillar_length), math.ceil(bottom_pillar_length)))
+
+        lengths = [bottom_pillar_length for pillar in self.bottom_pillar_positions] + [top_pillar_length for pillar in self.top_pillar_positions]
+
+        zs = [-self.plate_thick - extra_length/2 for pillar in self.bottom_pillar_positions] + [-self.back_plate_from_wall - extra_length/2 for pillar in self.top_pillar_positions]
+
+        return (lengths, zs)
+
+
     def get_assembled(self):
         plates = super().get_assembled()
 
@@ -5318,8 +5356,11 @@ class Assembly:
                     rod_length = simple_arbour_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
 
             elif arbor.type == ArborType.ESCAPE_WHEEL:
-                #"normal" arbour
-                rod_length = simple_arbour_length
+                if self.plates.escapement_on_front:
+                    rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.bearing.inner_d)) + 1
+                else:
+                    #"normal" arbour
+                    rod_length = simple_arbour_length
             elif arbor.type == ArborType.ANCHOR:
                 if self.plates.escapement_on_front:
                     holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].bearing)
@@ -5665,13 +5706,19 @@ class Assembly:
                 show_object(weightShape.translate(weight_pos), options={"color": weight_colour}, name="Weight_{}".format(i))
 
         if with_rods:
+            #show with diameter slightly smaller so it's clearer on the render what's rod and what's hole
             rod_colour = Colour.SILVER
             rod_lengths, rod_zs = self.get_arbour_rod_lengths()
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
                 rod = cq.Workplane("XY").circle(self.going_train.get_arbour_with_conventional_naming(i).arbor_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
-                show_object(rod, options={"color": rod_colour}, name="Rod_{}".format(i))
+                show_object(rod, options={"color": rod_colour}, name="Arbor Rod {}".format(i))
+            pillar_rod_lengths, pillar_rod_zs = self.plates.get_rod_lengths()
+            for p, length in enumerate(pillar_rod_lengths):
+                pos = self.plates.all_pillar_positions[p]
+                rod = cq.Workplane("XY").circle(self.plates.fixing_screws.metric_thread/2 - 0.2).extrude(length).translate((pos[0], pos[1], pillar_rod_zs[p]))
+                show_object(rod, options={"color": rod_colour}, name="Fixing Rod {}".format(p))
 
         if with_key:
             if self.key_model is not None:
