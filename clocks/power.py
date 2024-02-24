@@ -970,7 +970,7 @@ class SpringBarrel:
         #calculate this given we know the spring length+thickness and arbor diameter
         self.barrel_diameter = self.get_inner_diameter()
 
-        self.ratchet_wiggle_room = 0.5 #0.5 only fitted with some filing, but when the arbor was pritned with a 0.6 nozzle 0.7 was a tiny bit loose
+        self.collet_wiggle_room = 0.5 #0.5 only fitted with some filing, but when the arbor was pritned with a 0.6 nozzle 0.7 was a tiny bit loose
 
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
@@ -986,9 +986,12 @@ class SpringBarrel:
 
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
-        self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1
+        self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1.5
+        self.back_collet_thick = self.ratchet_collet_thick + self.back_bearing_standoff
 
         self.radius_for_style = self.barrel_diameter/2-1
+
+        self.collet_diameter = self.arbor_d+8
 
     def get_key_size(self):
         return self.key_containing_diameter
@@ -1175,6 +1178,20 @@ class SpringBarrel:
 
         return washer
 
+    def get_inner_collet(self):
+        '''
+        if the ratchet is at the back (and barrely at front, still assumed), need a collet inside so the arbor can't just slip out backwards
+        '''
+
+        inner_r = self.arbor_d/2+self.collet_wiggle_room/2
+        collet = cq.Workplane("XY").circle(self.collet_diameter / 2).circle(inner_r).extrude(self.back_collet_thick - self.back_bearing_standoff)
+        collet = collet.faces(">Z").workplane().circle(self.key_bearing.inner_safe_d/2).circle(inner_r).extrude(self.back_bearing_standoff)
+
+        screwshape = self.collet_screws.get_cutter(length=self.collet_diameter / 2).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.collet_diameter / 2, (self.back_collet_thick - self.back_bearing_standoff) / 2))
+
+        collet = collet.cut(screwshape)
+
+        return collet
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
 
@@ -1211,7 +1228,7 @@ class SpringBarrel:
             lid = lid.rotate((0,0,0),(1,0,0),180).translate((0,0,self.lid_thick))
         return lid
 
-    def get_arbor(self, extra_at_back=0, extra_in_front=0, key_length=30, for_printing=True, ratchet_key_extra_length=0):
+    def get_arbor(self, extra_at_back=0, extra_in_front=0, key_length=30, for_printing=True, ratchet_key_extra_length=0, back_collet_from_back=0):
         #standoff from rear bearing
 
         '''
@@ -1223,7 +1240,7 @@ class SpringBarrel:
         currently thinking it doesn't need bearings through the plates, it only rotates in the plates when winding.
         '''
 
-        behind_spring_length = self.internal_endshake / 2 + self.base_thick + extra_at_back
+        behind_spring_cylinder_length = self.internal_endshake / 2 + self.base_thick + extra_at_back
 
         in_front_spring_length = self.internal_endshake / 2 + self.lid_thick + self.front_bearing_standoff + extra_in_front
 
@@ -1231,7 +1248,11 @@ class SpringBarrel:
 
         arbor = arbor.faces(">Z").workplane().circle(self.arbor_d/2).extrude(in_front_spring_length)
 
-        arbor = arbor.faces("<Z").workplane().circle(self.arbor_d/2).extrude(behind_spring_length)
+        # if self.ratchet_at_back:
+        #     #instead of extending a cylinder all the way to the back of the back plate, we'll extend a polygon from the start of teh back collet
+        #     arbor = arbor.faces("<Z").workplane().circle(self.arbor_d / 2).extrude(behind_spring_cylinder_length - (back_collet_from_back + self.ratchet_collet_thick))
+        # else:
+        arbor = arbor.faces("<Z").workplane().circle(self.arbor_d/2).extrude(behind_spring_cylinder_length)
 
 
         if self.ratchet_at_back:
@@ -1258,12 +1279,16 @@ class SpringBarrel:
 
         #screwhole for ratchet collet TODO
         top_z = self.key_containing_diameter - self.cutoff_height*2
+        ratchet_screwhole_x = []
         if self.ratchet_at_back:
-            screwhole_x = -behind_spring_length -self.ratchet.thick - self.ratchet_collet_thick/2
+            ratchet_x = -behind_spring_cylinder_length - self.ratchet.thick - self.ratchet_collet_thick / 2
+            back_collet_screwhole_x = -behind_spring_cylinder_length + back_collet_from_back + self.back_bearing_standoff + (self.back_collet_thick - self.back_bearing_standoff) / 2
+            ratchet_screwhole_x = [ratchet_x, back_collet_screwhole_x]
         else:
-            screwhole_x = self.barrel_height + self.internal_endshake + self.lid_thick + self.front_bearing_standoff + extra_in_front + self.ratchet.thick + self.ratchet_collet_thick/2
-        collet_screwhole = cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((screwhole_x,0,top_z/2 ))
-        collet_screwhole = collet_screwhole.add(self.lid_fixing_screws.get_nut_cutter().translate((screwhole_x, 0, top_z-self.lid_fixing_screws.get_nut_height())))
+            ratchet_screwhole_x = [self.barrel_height + self.internal_endshake + self.lid_thick + self.front_bearing_standoff + extra_in_front + self.ratchet.thick + self.ratchet_collet_thick / 2]
+        collet_screwhole = cq.Workplane("XY")
+        for x in ratchet_screwhole_x:
+            collet_screwhole = collet_screwhole.add(cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((x,0,top_z/2 )))
         arbor = arbor.cut(collet_screwhole)
 
         #so it should line up better with the barrel
@@ -1308,14 +1333,17 @@ class SpringBarrel:
         '''
         gear = self.ratchet.get_gear()
         # if self.ratchet_at_back:
-        outer_d = self.arbor_d+8
+        outer_d = self.collet_diameter
         gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
         # means to hold screw that will hold this in place
-        screwshape = self.collet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2))
+        screwshape = self.collet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick / 2))
+
+        #TODO put a hole for a nut in the collet, instead of the arbor like it was previously
+
         # return screwshape
         gear = gear.cut(screwshape)
             # gear = gear.cut(self.collet_screws.getNutCutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.arbor_d / 2, self.ratchet.thick + self.ratchet_collet_thick/2)))
-        gear = gear.faces(">Z").workplane().polygon(6, self.key_containing_diameter + self.ratchet_wiggle_room).cutThruAll()
+        gear = gear.faces(">Z").workplane().polygon(6, self.key_containing_diameter + self.collet_wiggle_room).cutThruAll()
 
         return gear
 

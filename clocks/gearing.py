@@ -1891,6 +1891,8 @@ class ArborForPlate:
                 assembly = assembly.add(arbor)
                 assembly = assembly.add(spring_barrel.get_lid(for_printing=False).translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
                 assembly = assembly.add(spring_barrel.get_front_bearing_standoff_washer().translate((0,0,spring_barrel.get_height() - spring_barrel.front_bearing_standoff)))
+                if spring_barrel.ratchet_at_back:
+                    assembly = assembly.add(spring_barrel.get_inner_collet().rotate((0,0,0),(0,1,0),180).translate((0, 0, -self.bearing_position[2] + spring_barrel.back_collet_thick)))
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
@@ -1922,7 +1924,7 @@ class ArborForPlate:
 
         extras = self.arbor.get_extras(rear_side_extension=self.distance_from_back + self.endshake + self.back_plate_thick,
                                        front_side_extension=self.endshake / 2 + self.front_plate_thick, key_length=self.key_length,
-                                       ratchet_key_extra_length=0)
+                                       ratchet_key_extra_length=0, back_collet_from_back=self.endshake + self.back_plate_thick)
         for extraName in extras:
             shapes[extraName] = extras[extraName]
 
@@ -2396,8 +2398,11 @@ class Arbor:
 
         return pinion
 
-    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0):
+    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0, back_collet_from_back=0):
         '''
+        rear_side_extension - how far to extend the spring arbor to the back of the back plates + endshaoe
+        back_collet_from_back - how far to the inside of the back plate - endshake
+
         are there any extra bits taht need printing for this arbour?
         returns {'name': shape,}
         '''
@@ -2416,8 +2421,10 @@ class Arbor:
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
+            #back_collet_from_back only used if the ratchet is at the back (and barrel at front, still assumed for now)
             extras['spring_arbor']=self.powered_wheel.get_arbor(extra_at_back=rear_side_extension, extra_in_front=front_side_extension,
-                                                                key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length)
+                                                                key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length,
+                                                                back_collet_from_back= back_collet_from_back)
             extras['lid'] = self.powered_wheel.get_lid()
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_for_arbor()
             extras['front_washer'] = self.powered_wheel.get_front_bearing_standoff_washer()

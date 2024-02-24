@@ -3829,11 +3829,11 @@ class SimpleClockPlates:
 
         out = os.path.join(path, "{}_plate_front.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_plate(False), out)
+        exporters.export(self.get_plate(False, for_printing=True), out)
 
         out = os.path.join(path, "{}_plate_back.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_plate(True), out)
+        exporters.export(self.get_plate(True, for_printing=True), out)
 
         out = os.path.join(path, "{}_plate_back_text.stl".format(name))
         print("Outputting ", out)
@@ -4554,6 +4554,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
             if for_printing and not back:
                 plate = plate.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
+
 
         return plate
 
