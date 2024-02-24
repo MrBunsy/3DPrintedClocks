@@ -2428,11 +2428,14 @@ class Arbor:
             extras['lid'] = self.powered_wheel.get_lid()
             extras['ratchet_gear'] = self.powered_wheel.get_ratchet_gear_for_arbor()
             extras['front_washer'] = self.powered_wheel.get_front_bearing_standoff_washer()
+            #only needed if ratchet at back and barrel at front
+            extras['back_collet'] = self.powered_wheel.get_inner_collet()
             traditional_ratchet = True
 
         if traditional_ratchet:
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
             extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
+            #not needed on all designs
             extras['ratchet_pawl_supporter'] = self.powered_wheel.ratchet.get_little_plate_for_pawl()
 
         return extras

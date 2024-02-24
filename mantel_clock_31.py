@@ -124,7 +124,7 @@ hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="square", minut
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
-# assembly.get_arbour_rod_lengths()
+assembly.get_arbour_rod_lengths()
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
@@ -133,9 +133,9 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 # show_object(plates.get_plate())
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
-if not outputSTL or True:
+if not outputSTL:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.BLACK], motion_works_colours=[clock.Colour.BLACK],
-                    bob_colours=[clock.Colour.SILVER], with_rods=False, with_key=True, ratchet_colour=clock.Colour.GOLD,
+                    bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
                     dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], key_colour=clock.Colour.GOLD, plate_colour=clock.Colour.BRASS,
                     gear_colours=[clock.Colour.GOLD])
 

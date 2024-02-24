@@ -5212,6 +5212,17 @@ class Assembly:
         Calculate the lengths to cut the steel rods - stop me just guessing wrong all the time!
         '''
 
+        # for i,arbor in enumerate(self.plates.arbors_for_plate):
+        #     if arbor.type in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and arbor.arbor.pinion.lantern:
+        #         #calculate length of lantern pinion
+        #         diameter = arbor.arbor.pinion.trundle_r*2
+        #         min_length = arbor.arbor.pinion_thick
+        #         #assumed knowledge, the default value of offset in get_lantern_cap is 1. TODO improve this
+        #         max_lenth = arbor.arbor.pinion_thick + (arbor.arbor.end_cap_thick - 1) +  (arbor.arbor.wheel_thick - 1)
+        #
+        #         print("for arbor {} need lantern trundles of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i, diameter, min_length, max_lenth))
+
+
         total_plate_thick = self.plates.plate_distance + self.plates.get_plate_thick(True) + self.plates.get_plate_thick(False)
         plate_distance =self.plates.plate_distance
         front_plate_thick = self.plates.get_plate_thick(back=False)
@@ -5244,7 +5255,7 @@ class Assembly:
 
             length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
 
-            beyond_back_of_arbour = spare_rod_length_beyond_bearing + bearing_thick + self.plates.endshake
+            beyond_back_of_arbour = spare_rod_length_beyond_bearing + bearing_thick# + self.plates.endshake
             #true for nearly all of it
             rod_z = back_plate_thick - (bearing_thick + spare_rod_length_beyond_bearing)
 
@@ -5311,7 +5322,15 @@ class Assembly:
                 rod_length = simple_arbour_length
             elif arbor.type == ArborType.ANCHOR:
                 if self.plates.escapement_on_front:
-                    raise ValueError("TODO calculate rod lengths for escapement on front")
+                    holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].bearing)
+                    out_front = self.plates.get_front_anchor_bearing_holder_total_length() - holder_thick
+                    out_back = self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)
+                    extra = spare_rod_length_beyond_bearing
+                    if self.plates.dial is not None:
+                        #make smaller since there's not much space on the front
+                        extra = self.plates.endshake
+                    rod_length = out_back + total_plate_thick + out_front + self.plates.arbors_for_plate[-1].bearing.height*2 + extra*2
+                    rod_z = -out_back - self.plates.arbors_for_plate[-1].bearing.height - extra
                 elif self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
                     rod_length_to_back_of_front_plate = spare_rod_length_beyond_bearing + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + self.plates.get_plate_thick(back=True) + plate_distance
 
@@ -5328,7 +5347,11 @@ class Assembly:
             if rod_length > 0:
                 print("Arbor {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, round(rod_length), beyond_back_of_arbour))
             if arbor.pinion is not None and arbor.pinion.lantern:
-                print("Arbor {} needs steel rod of diameter {:.2f}mm for the lantern pinion".format(i, arbor.pinion.trundle_r*2))
+                diameter = arbor.pinion.trundle_r * 2
+                min_length = arbor.pinion_thick
+                # assumed knowledge, the default value of offset in get_lantern_cap is 1. TODO improve this
+                max_lenth = arbor.pinion_thick + (arbor.end_cap_thick - 1) + (arbor.wheel_thick - 1)
+                print("Arbor {} has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i,  diameter, min_length, max_lenth))
 
 
         return rod_lengths, rod_zs
