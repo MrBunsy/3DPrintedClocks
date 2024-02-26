@@ -311,6 +311,19 @@ Working whistles and bellow parts also!
 ### Leaves
 Can generate a few types of leaves, used for cuckoo clocks and the Christmas clock.
 
+# Slicing Gears
+The gears need careful configuration when slicing - rarely do default settings result in good gears.
+ - Check no small bits of perimeter or infill in the teeth/leaves. Sometimes this can be achieved by slightly adjusting the perimeter and external perimeter widths. May need to import *_pinion_STL_modifier.stl and add settings:
+   - 1 Perimeter
+   - No top or bottom solid layers
+   - 0% Fill density
+ - Elephant foot needs to be correct (note that for the MK4 0.25 nozzle, prusaslicer has 0 elephant foot by default! 0.1mm was sufficient)
+ - Manually place seam to be between gaps in teeth
+ - Extra perimeter and minimum shell thickness at top and bottom for strength.
+ - Usually Classic slicer is better than Arachne
+ - Disable gap fill to reduce stringing
+ - I've used `Avoid crossing perimeters`. I'm undecided how important it is.
+
 # Multi-Colour on a non Multi-Material Printer
 This is surprisingly easy to do and looks great when printed on a textured sheet. Since I don't own a multi-material printer I've used a variation on a technique I found on a [blog post](http://schlosshan.eu/blog/2019/03/02/prusa-i3-mk3-real-multicolour-prints-without-mmu/) that works with PrusaSlicer and my Prusa Mk3:
 

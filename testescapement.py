@@ -15,10 +15,10 @@ if 'show_object' not in globals():
         pass
 
 
-escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper()#BrocotEscapment()
+# escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper()#BrocotEscapment()
 # show_object(escapement.get_assembled())
 
-# escapement = BrocotEscapment()
+escapement = BrocotEscapment()
 
 # show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1),-(escapement.lift_deg/2+escapement.lock_deg/2)))
 # show_object(escapement.get_anchor())

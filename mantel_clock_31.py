@@ -84,7 +84,9 @@ train.set_ratios([[66, 9], [65, 14], [55, 14]])
 pendulumSticksOut=10
 backPlateFromWall=30
 
-pinion_extensions = {1:25}#, 2:5}
+#was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
+#so reprints are a mix of old and new STLs...
+pinion_extensions = {1:30} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1]

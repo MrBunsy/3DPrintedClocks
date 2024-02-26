@@ -1651,6 +1651,9 @@ class ArborForPlate:
         standalone_pinion = self.arbor.get_standalone_pinion()
         # include the shortest arbor extension (since the short one could be a pain to thread onto the rod by itself)
         including_front_arbor_extension = self.distance_from_front < self.distance_from_back
+        if self.arbor_d < 3:
+            # TEMP HACK - for flimsy rods, do this the other way around
+            including_front_arbor_extension = not including_front_arbor_extension
         arbour_extension = self.get_arbour_extension(front=including_front_arbor_extension)
 
         thick = self.arbor.end_cap_thick * 2 + self.arbor.pinion_thick
@@ -1993,8 +1996,13 @@ class ArborForPlate:
             return self.pendulum_at_front != front
 
         if self.arbor.get_type() == ArborType.ESCAPE_WHEEL and self.escapement_on_front:
-            #the longest is the one separate
-            if self.distance_from_back > self.distance_from_front:
+            #the longest is the one separate NOTE - DUPLICATED LOGIC HERE, needs to match with get_escape_wheel_shapes
+
+            front_separate = self.distance_from_back > self.distance_from_front
+            if self.arbor_d < 3:
+                #invert for wobbly rods
+                front_separate = not front_separate
+            if front_separate:
                 #back one is longest
                 return not front
             else:
@@ -2044,7 +2052,7 @@ class ArborForPlate:
         bearing = get_bearing_info(self.arbor.get_rod_d())
 
         outer_r = self.arbor.get_arbor_extension_r()
-        inner_r = self.arbor.get_arbor_extension_r() / 2 + ARBOUR_WIGGLE_ROOM / 2
+        inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
             tip_r = outer_r
@@ -2197,7 +2205,12 @@ class Arbor:
     def get_rod_d(self):
         return self.arbor_d
     def get_arbor_extension_r(self):
-        return self.arbor_d
+        r = self.arbor_d
+        # discovered that 2mm rod is really bendy
+        if r < 3:
+            #bodge, make 2mm rod stronger
+            r = 3.5
+        return r
 
     def get_total_thickness(self, just_pinion=False):
         '''

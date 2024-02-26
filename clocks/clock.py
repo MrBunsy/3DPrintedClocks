@@ -1998,8 +1998,11 @@ class SimpleClockPlates:
             if forcing_escape_wheel_location:
                 minute_wheel_r = self.going_train.get_arbor(0).get_max_radius()
                 escape_wheel_arbor_r = self.going_train.get_arbor(3).get_arbor_extension_r()
-
-                minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius()+ self.going_train.get_arbor(3).get_arbor_extension_r() + self.small_gear_gap
+                #HACK HACK HACK TEMP instead of self.going_train.get_arbor(3).get_arbor_extension_r() use the old value of 2
+                escape_wheel_arbor_r = self.going_train.get_arbor(3).get_rod_d()
+                #MORE HACK TODO REMOVE ME
+                escape_wheel_arbor_r = 2
+                minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius()+ escape_wheel_arbor_r + self.small_gear_gap
                 escape_wheel_relative_pos = (0, minute_wheel_to_escape_wheel)
                 third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour
                 third_wheel_pos = ( -on_side*third_wheel_to_escape_wheel, minute_wheel_to_escape_wheel)
@@ -4480,6 +4483,7 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         main_arm_wide = self.plate_width
         medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
         small_arm_wide = get_bearing_info(2).outer_d + self.bearing_wall_thick * 2
+        #small_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2 - 1
 
         # plate = cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.radius+main_arm_wide/2).circle(self.radius-main_arm_wide/2).extrude(plate_thick)
 
