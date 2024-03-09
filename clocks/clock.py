@@ -155,7 +155,7 @@ class GoingTrain:
             self.pendulum_period = getPendulumPeriod(pendulum_length_m)
         else:
             raise ValueError("Must provide either pendulum length or perioud, not neither or both")
-
+        print("Pendulum length {}cm and period {}s".format(self.pendulum_length*100, self.pendulum_period))
         #note - this has become assumed in many places and will require work to the plates and layout of gears to undo
         self.chain_at_back = chain_at_back
         #likewise, this has been assumed, but I'm trying to undo those assumptions to use this
@@ -4222,29 +4222,33 @@ class MantelClockPlates(SimpleClockPlates):
 
         return pillar
 
-class SkeletonCarriageClockPlates(SimpleClockPlates):
+class RoundClockPlates(SimpleClockPlates):
     '''
     Plan for a traditional-ish movement shape on legs, so the pendulum will be visible below the dial.
     Inspired by some Brocot clocks I've seen
 
-    Original plan was for a circular movement, but decided against that as it'll be hard to add legs to
+    Original plan was for a circular movement, but ended up with semicircular when adding legs, set fully_round True for fully round
+
+    Only been designed to work well with springs so far - wouldn't be much work to support cord
 
     This was based on a copy of MantelClockPlates - I think it's going to be similar, but not similar enough to warrant extending or being a set of options
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150):
+                 leg_height=150, endshake=1, fully_round=False):
         '''
 
         '''
         self.leg_height = leg_height
+        self.wall_mounted = leg_height == 0
+        self.fully_round = fully_round
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=None,
+                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                      layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius)
 
 
@@ -4338,6 +4342,12 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
         # self.radius = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)
         self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
         self.radius = self.bottom_pillar_distance/2
+
+
+        if self.fully_round:
+            bottom_pillar_pos = (self.bearing_positions[0][0] + self.bottom_pillar_distance/2, self.bearing_positions[0][1])
+            self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
+
         # self.radius = barrel_distance + self.arbors_for_plate[0].bearing.outer_d/2 + self.bearing_wall_thick - self.plate_width/2
 
 
@@ -4384,13 +4394,22 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick*2
 
+
         barrel_pos = self.bearing_positions[0]
 
         y = barrel_pos[1] - self.bottom_arm_wide/2 + self.pillar_r
+        pillar_distance = self.radius
+
+        if self.fully_round:
+            #pillars inline with the powered wheel
+            y = barrel_pos[1]
+            pillar_distance = self.bottom_pillar_distance/2
+
+
 
         self.bottom_pillar_positions = [
-            (barrel_pos[0] - self.radius, y),
-            (barrel_pos[0] + self.radius, y),
+            (barrel_pos[0] - pillar_distance, y),
+            (barrel_pos[0] + pillar_distance, y),
         ]
 
         self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
@@ -4487,12 +4506,18 @@ class SkeletonCarriageClockPlates(SimpleClockPlates):
 
         # plate = cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.radius+main_arm_wide/2).circle(self.radius-main_arm_wide/2).extrude(plate_thick)
 
-        plate = get_stroke_arc((self.radius,centre[1]), (-self.radius,centre[1]), self.radius, main_arm_wide, plate_thick)
+        if self.fully_round:
+            plate = cq.Workplane("XY").circle(self.radius + main_arm_wide/2).circle(self.radius - main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)
+            bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide).extrude(plate_thick).translate(self.bearing_positions[0][:2])
+            plate = plate.union(bottom_arm.intersect(cq.Workplane("XY").circle(self.radius + main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)))
+        else:
+            #semicircular with rectangle on the bottom
+            plate = get_stroke_arc((self.radius,centre[1]), (-self.radius,centre[1]), self.radius, main_arm_wide, plate_thick)
 
-        plate = plate.union(get_stroke_line([(self.radius,centre[1]), self.bottom_pillar_positions[1], self.bottom_pillar_positions[0], [-self.radius,centre[1]]], thick=plate_thick, wide=medium_arm_wide))
+            plate = plate.union(get_stroke_line([(self.radius,centre[1]), self.bottom_pillar_positions[1], self.bottom_pillar_positions[0], [-self.radius,centre[1]]], thick=plate_thick, wide=medium_arm_wide))
 
-        #beef up bottom arm
-        plate = plate.union(cq.Workplane("XY").rect(self.radius*2, self.bottom_arm_wide).extrude(plate_thick).translate(self.bearing_positions[0][:2]))
+            #beef up bottom arm
+            plate = plate.union(cq.Workplane("XY").rect(self.radius*2, self.bottom_arm_wide).extrude(plate_thick).translate(self.bearing_positions[0][:2]))
 
         #vertical link
         # plate = plate.union(cq.Workplane("XY").rect(medium_arm_wide, self.radius*2).extrude(plate_thick))

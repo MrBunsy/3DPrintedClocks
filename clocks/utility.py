@@ -193,6 +193,60 @@ def get_diameter_for_die_cutting(M, sideways=False):
     raise ValueError("Hole size not known for M{}".format(M))
 
 
+
+class CountersunkWoodScrew:
+
+    @staticmethod
+    def get_wood_screw(imperial_size=4):
+        if imperial_size == 4:
+            return CountersunkWoodScrew(imperial_size = imperial_size, metric_size=3, head_diameter=6, head_depth=1.95)
+        if imperial_size == 6:
+            return CountersunkWoodScrew(imperial_size=imperial_size, metric_size=3.5, head_diameter=7, head_depth=2.3)
+        if imperial_size == 8:
+            return CountersunkWoodScrew(imperial_size=imperial_size, metric_size=4, head_diameter=8, head_depth=2.6)
+
+        raise ValueError("Wood screw size #{} not known".format(imperial_size))
+
+    def __init__(self, imperial_size=4, metric_size=3.0, head_diameter=6, head_depth=1.95, pilot_diameter=1.5, length=-1):
+        self.imperial_size = imperial_size
+        self.metric_size = metric_size
+        self.diameter = metric_size
+        self.head_diameter = head_diameter
+        self.head_depth = head_depth
+        self.pilot_diameter = pilot_diameter
+        self.length = length
+
+    def get_head_diameter(self):
+        return self.head_diameter
+
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False):
+        if length < 0:
+            if self.length < 0:
+                # default to something really long
+                length = 1000
+            else:
+                # use the length that this screw represents, plus some wiggle
+                length = self.length + SCREW_LENGTH_EXTRA
+
+        r = self.diameter/2
+        if loose:
+            r+=LOOSE_SCREW
+        if for_tap_die:
+            r = self.pilot_diameter/2
+
+        screw = cq.Workplane("XY")  # .circle(self.metric_thread/2).extrude(length)
+
+        screw = screw.add(cq.Solid.makeCone(radius1=self.head_diameter / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=self.diameter/2,
+                                            height=self.head_depth + COUNTERSUNK_HEAD_WIGGLE_SMALL))
+
+        screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
+
+        # extend out from the headbackwards too
+        if head_space_length > 0:
+            screw = screw.faces("<Z").workplane().circle(self.head_diameter / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
+
+        return screw
+
 class MachineScrew:
     '''
     Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
@@ -206,6 +260,7 @@ class MachineScrew:
         self.countersunk = countersunk
         # if length is provided, this represents a specific screw
         self.length = length
+
 
     def get_nut_for_die_cutting(self):
         '''

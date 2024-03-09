@@ -26,6 +26,8 @@ from clocks import clock
 
 '''
 
+accidentally printed as "Mantel clock 30" with endshake of 1.5mm, 1mm would have been fine
+
 Continuation of the mantel clocks, but I want to see how small I can make them (now the spring barrel properly calculates its dimensions)
 and I'd like to test out the new brocot escapment on the front.
 
@@ -116,8 +118,8 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 dial = clock.Dial(outside_d=185, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
                    inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
                    dial_width=25)
-plates = clock.SkeletonCarriageClockPlates(train, motionWorks, name="Mantel 30", dial=dial, plate_thick=6, layer_thick=0.2, escapement_on_front=True, pendulum_sticks_out=20,
-                                           vanity_plate_radius=75, motion_works_angle_deg=180+45, leg_height=120)
+plates = clock.RoundClockPlates(train, motionWorks, name="Mantel 31", dial=dial, plate_thick=6, layer_thick=0.2, escapement_on_front=True, pendulum_sticks_out=20,
+                                vanity_plate_radius=75, motion_works_angle_deg=180+45, leg_height=120, endshake=1.5)
 
 
 hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
