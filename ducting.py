@@ -32,6 +32,61 @@ class Ducting:
 
         self.fillet_r = 2
 
+        # hacky, need them either clockwise or anticlockwise for the template to be easy to make
+        self.fan_screw_positions = [
+            (self.fan.screw_distance/2, self.fan.screw_distance/2),
+            (self.fan.screw_distance / 2, -self.fan.screw_distance / 2),
+            (-self.fan.screw_distance / 2, -self.fan.screw_distance / 2),
+            (-self.fan.screw_distance / 2, self.fan.screw_distance / 2),
+        ]
+        # for x in [-1, 1]:
+        #     for y in [1, -1]:
+        #         self.fan_screw_positions += [(x*self.fan.screw_distance/2, y*self.fan.screw_distance/2)]
+
+
+    def get_fan_fixing_template(self):
+        # template = cq.Workplane("XY").rect(self.fan.size, self.fan.size).pushPoints(self.fan_screw_positions+[(0,0)]).circle(self.screw.get_rod_cutter_r()).extrude(2)
+        # template = template.edges("|Z").fillet(5)
+        #
+        # #cut out some bits
+        # thickness = 10
+        # for i in range(len(self.fan_screw_positions)-3):
+        #     points = [
+        #         self.fan_screw_positions[i % len(self.fan_screw_positions)],
+        #         self.fan_screw_positions[(i+1) % len(self.fan_screw_positions)],
+        #         (0,0)
+        #         ]
+        #
+        #     centre = get_average_of_points(points)
+        #
+        #
+        #
+        #     newpoints = []
+        #     for point in points:
+        #         line = Line(point, anotherPoint=centre)
+        #         newpoints.append(np_to_set(np.add(point, np.multiply(line.dir, thickness))))
+        #
+        #     template = template.faces(">Z").workplane().moveTo(newpoints[0][0], newpoints[0][1])
+        #     for point in newpoints[1:]:
+        #         template = template.lineTo(point[0], point[1])
+        #     template = template.close().extrude(10)
+        #     # return template
+
+        thickness = 10
+
+        template = get_stroke_line(self.fan_screw_positions, thickness,2)
+        for i in range(len(self.fan_screw_positions)):
+            points = [
+                self.fan_screw_positions[i % len(self.fan_screw_positions)],
+                self.fan_screw_positions[(i+1) % len(self.fan_screw_positions)],
+                (0,0)
+                ]
+            template = template.union(get_stroke_line(points, thickness,2))
+
+        template = template.faces(">Z").workplane().pushPoints(self.fan_screw_positions+[(0,0)]).circle(self.screw.get_rod_cutter_r()).cutThruAll()
+
+        return template
+
     def get_fan_fixing(self):
         fixing = self.get_flat_surface_fixing(base_wide=self.fan.size, screw_distance= self.fan.screw_distance)
 
@@ -78,6 +133,7 @@ ducting = Ducting(screw=MachineScrew(4, countersunk=True))
 
 show_object(ducting.get_fan_fixing())
 show_object(ducting.get_flat_surface_fixing().translate((120,120,0)))
+show_object(ducting.get_fan_fixing_template().translate((-120,-120,0)))
 
 if outputSTL:
     path = "out"
@@ -90,3 +146,8 @@ if outputSTL:
     out = os.path.join(path, "{}.stl".format(name))
     print("Outputting ", out)
     exporters.export(ducting.get_fan_fixing(), out)
+
+    name = "duct_fan_fixing_template"
+    out = os.path.join(path, "{}.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(ducting.get_fan_fixing_template(), out)

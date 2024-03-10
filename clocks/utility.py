@@ -219,6 +219,10 @@ class CountersunkWoodScrew:
     def get_head_diameter(self):
         return self.head_diameter
 
+    def get_rod_cutter_r(self, layer_thick=LAYER_THICK, loose=False, for_tap_die=False, sideways=False):
+        return self.diameter/2
+
+
     def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False):
         if length < 0:
             if self.length < 0:
@@ -228,7 +232,7 @@ class CountersunkWoodScrew:
                 # use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
 
-        r = self.diameter/2
+        r = self.get_rod_cutter_r()
         if loose:
             r+=LOOSE_SCREW
         if for_tap_die:
@@ -389,7 +393,25 @@ class MachineScrew:
 def np_to_set(npVector):
     return (npVector[0], npVector[1])
 
-#TODO all of this should be moved to geometry
+#TODO all of this should be moved to geometry?
+
+
+def get_average_of_points(pointslist):
+    if len(pointslist) < 2:
+        raise ValueError("Cannot generate average of list shorter than 2")
+    dimensions = len(pointslist[0])
+    totals = [ 0 for i in range(dimensions)]
+
+
+    for point in pointslist:
+        for i, axis in enumerate(point):
+            totals[i] += axis
+
+    average = [axis/len(pointslist) for axis in totals]
+
+    return tuple(average)
+
+
 def average_of_two_points(a, b):
     if len(a) != len(b):
         raise ValueError("Points not same number of dimensions")
