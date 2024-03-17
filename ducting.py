@@ -131,7 +131,7 @@ class Ducting:
 
 class WindowVent:
 
-    def __init__(self, wood_thick=5, fixing_screws=None, above_window_sticks_out=4):
+    def __init__(self, wood_thick=5, fixing_screws=None, above_window_sticks_out=7):
         '''
         plan is that the duct fixing can be screwed to a sheet of plywood, which can slot into some fixings attached to the window frame
         two corner bits at the bottom and maybe some sort of latch on the top
@@ -146,6 +146,11 @@ class WindowVent:
         self.fixing_screws = fixing_screws
         if self.fixing_screws is None:
             self.fixing_screws = MachineScrew(3, countersunk=True)
+
+        self.above_window_sticks_out = above_window_sticks_out
+
+        self.handle_holder_thick=6
+        # self.holder_length = self.handle_wide * 2
 
     def get_corner_holder(self, left=True):
 
@@ -167,7 +172,10 @@ class WindowVent:
 
         return holder
 
-    def get_handle(self):
+    def get_handle(self, foldupable=False):
+        '''
+        foldupable: if true then this can rotate upwards inline with the holder
+        '''
 
         ends = [(0,0), (0,self.handle_length)]
 
@@ -180,8 +188,25 @@ class WindowVent:
         #decided against knob
         # handle = handle.cut(self.fixing_screws.get_cutter(for_tap_die=True).translate(ends[1]))
 
+        #sticky out bit that will press tightly against the wood
+
+        sticky_out_thick = self.above_window_sticks_out + self.handle_holder_thick - self.wood_thick
+        if foldupable:
+            sticky_out_thick = self.handle_holder_thick
+
+        handle = handle.faces(">Z").workplane().moveTo(ends[1][0], ends[1][1]).circle(self.handle_wide/2).extrude(sticky_out_thick)
+
 
         return handle
+
+    def get_pad(self):
+        '''
+        for handle that is foldupable, need to make the wood thicker
+        '''
+        pad = get_stroke_line([(0,0), (0,self.handle_length)], wide=self.handle_wide, thick = self.above_window_sticks_out)
+
+        return pad
+
     def get_knob(self):
         '''
         don't think I need a knob after all, just the handle should be enough, like the bits that hold drop-down tables on trains in place
@@ -191,12 +216,22 @@ class WindowVent:
         #knob is loose, no need for embedding nyloc nut! that can go on the end
         # knob = knob.cut(self.fixing_screws.get_nut_cutter(nyloc=True).translate((0,0,self.knob_long - self.fixing_screws.get_nut_height(nyloc=True))))
         return knob
-    def get_handle_pivot(self):
+    def get_handle_holder(self):
         '''
         bit above the window sticks out a bit, the plywood isn't very thick, so I'm not sure how to do this yet
 
         IDEA - make the handle thicker on the end, can then keep the pivot as thick as needed
         '''
+
+        # length = self.handle_wide*2
+        #the two radii at ends of handle and holder cancel out, so this is just short enough that the handle can rotate 360deg if foldupable
+        length = self.handle_length - 2
+
+        holder = get_stroke_line([(-length/2, 0), (length/2, 0)], wide=self.handle_wide, thick = self.handle_holder_thick)
+
+        holder = holder.cut(self.fixing_screws.get_cutter(for_tap_die=True))
+
+        return holder
 
 
 ducting = Ducting(screw=MachineScrew(4, countersunk=True))
@@ -207,7 +242,9 @@ ducting = Ducting(screw=MachineScrew(4, countersunk=True))
 
 windowVent = WindowVent()
 
-show_object(windowVent.get_handle())
+show_object(windowVent.get_handle(foldupable=True))
+show_object(windowVent.get_pad())
+# show_object(windowVent.get_handle_holder())
 # show_object(windowVent.get_knob().translate((0, windowVent.handle_length, windowVent.holder_thick)))
 
 if outputSTL:
@@ -236,3 +273,23 @@ if outputSTL:
     out = os.path.join(path, "{}.stl".format(name))
     print("Outputting ", out)
     exporters.export(windowVent.get_corner_holder(left=False), out)
+
+    name = "window_fixing_handle"
+    out = os.path.join(path, "{}.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(windowVent.get_handle(), out)
+
+    name = "window_fixing_handle_foldupable"
+    out = os.path.join(path, "{}.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(windowVent.get_handle(foldupable=True), out)
+
+    name = "window_fixing_pad"
+    out = os.path.join(path, "{}.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(windowVent.get_pad(), out)
+
+    name = "window_fixing_handle_holder"
+    out = os.path.join(path, "{}.stl".format(name))
+    print("Outputting ", out)
+    exporters.export(windowVent.get_handle_holder(), out)
