@@ -1993,7 +1993,14 @@ class SimpleClockPlates:
             #if we do have 3 wheels then the escape wheel is above the hands
             minute_wheel_to_second_wheel = self.going_train.get_arbor(0).distance_to_next_arbour
             second_wheel_to_third_wheel = self.going_train.get_arbor(1).distance_to_next_arbour
-            minute_wheel_to_third_wheel = self.going_train.get_arbor(0).get_max_radius() + self.going_train.get_arbor(2).pinion.get_max_radius() + self.small_gear_gap
+
+            third_wheel_pinion_r = self.going_train.get_arbor(2).pinion.get_max_radius()
+            #bit of hackery here, we should really work out exactly where all the pinions and wheels will line up, then we don't need to guess
+            if self.going_train.get_arbor(1).pinion_extension > 0:
+                #...this is guessing how thick the arbor extension will be, which is calcualted in ArborForPlate. TODO
+                third_wheel_pinion_r = self.going_train.get_arbor(2).arbor_d
+
+            minute_wheel_to_third_wheel = self.going_train.get_arbor(0).get_max_radius() + third_wheel_pinion_r + self.small_gear_gap
             minute_wheel_pos = (0, 0)
             if forcing_escape_wheel_location:
                 minute_wheel_r = self.going_train.get_arbor(0).get_max_radius()
@@ -2002,6 +2009,8 @@ class SimpleClockPlates:
                 escape_wheel_arbor_r = self.going_train.get_arbor(3).get_rod_d()
                 #MORE HACK TODO REMOVE ME
                 escape_wheel_arbor_r = 2
+
+
                 minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius()+ escape_wheel_arbor_r + self.small_gear_gap
                 escape_wheel_relative_pos = (0, minute_wheel_to_escape_wheel)
                 third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour

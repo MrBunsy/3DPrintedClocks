@@ -646,10 +646,12 @@ class BrocotEscapment(AnchorEscapement):
     RUBY_LENGTH = 6
 
 
-    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True, arbor_d=3):
+    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True, arbor_d=3, anchor_teeth=-1):
         self.use_rubies = use_rubies
-        #increasing number of anchor teeth to increase distance between anchor pivot and escape wheel - entirely for cosmetic purposes given the brocot is usually on teh front of the clock
-        super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=math.floor(teeth / 3) + 0.5, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
+        if anchor_teeth < 0:
+            # increasing number of anchor teeth to increase distance between anchor pivot and escape wheel - entirely for cosmetic purposes given the brocot is usually on teh front of the clock
+            anchor_teeth = math.floor(teeth / 3) + 0.5
+        super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=anchor_teeth, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
                          tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=3,
                          style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=arbor_d)
 

@@ -203,7 +203,7 @@ class WindowVent:
         '''
         for handle that is foldupable, need to make the wood thicker
         '''
-        pad = get_stroke_line([(0,0), (0,self.handle_length)], wide=self.handle_wide, thick = self.above_window_sticks_out)
+        pad = get_stroke_line([(0,0), (0,self.handle_length)], wide=self.handle_wide, thick = self.above_window_sticks_out - self.wood_thick)
 
         return pad
 
@@ -242,8 +242,8 @@ ducting = Ducting(screw=MachineScrew(4, countersunk=True))
 
 windowVent = WindowVent()
 
-show_object(windowVent.get_handle(foldupable=True))
-show_object(windowVent.get_pad())
+show_object(windowVent.get_handle(foldupable=True), options={"color": Colour.RED, "alpha":0.1}, name="handle")
+# show_object(windowVent.get_pad())
 # show_object(windowVent.get_handle_holder())
 # show_object(windowVent.get_knob().translate((0, windowVent.handle_length, windowVent.holder_thick)))
 
