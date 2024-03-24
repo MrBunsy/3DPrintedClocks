@@ -1305,7 +1305,7 @@ class SimpleClockPlates:
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
 
-        escapementOnFront: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
+        escapement_on_front: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         '''
 
@@ -1799,8 +1799,14 @@ class SimpleClockPlates:
                 bearing = get_bearing_info(round(arbour.arbor_d))
             front_anchor_from_plate = -1
 
-            if self.escapement_on_front and self.has_vanity_plate:
-                front_anchor_from_plate = self.vanity_plate_base_z + self.vanity_plate_thick + self.endshake + 2
+            if self.escapement_on_front:
+                if self.has_vanity_plate:
+                    front_anchor_from_plate = self.vanity_plate_base_z + self.vanity_plate_thick + self.endshake + 2
+                if self.going_train.escapement.get_anchor_thick() < 10:
+                    #this won't be thick enough for the escape wheel to have much of a cylinder to grip the rod - so it might be wonky.
+                    #so stick the esacpement out a bit further#
+                    front_anchor_from_plate = 10
+
 
             #new way of doing it, new class for combining all this logic in once place
             arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,

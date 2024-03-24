@@ -39,15 +39,23 @@ gearStyle=clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 #for period 1.5
-drop =1.5
+# drop =1.5
+# lift =3
+# lock=1.5
+pendulum_period=1.5
+
+#from paul's clock with period 2.0
+drop =3
 lift =3
-lock=1.5
-escapement = clock.BrocotEscapment(drop=drop, lift=lift, teeth=40, lock=lock, diameter=55)#,anchor_teeth=10
+lock=1.25
+pendulum_period=2.0
+
+escapement = clock.BrocotEscapment(drop=drop, lift=lift, teeth=30, lock=lock, diameter=55)#,anchor_teeth=10
 
 # show_object(escapement.get_wheel_2d())
 #
 #
-train = clock.GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, max_weight_drop=1100, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24, support_second_hand=True)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=pendulum_period, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 
@@ -56,8 +64,12 @@ train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=
 # train.setRatios( [[72, 10], [75, 9], [60, 27]])
 
 #think this is promising for good compromise of size
-train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=29, loose_on_rod=False, prefer_small=True)
+# train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=29, loose_on_rod=False, prefer_small=True)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
+
+#from paul's clock
+train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
+                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
 
 
@@ -74,8 +86,10 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 # #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculate_size(arbor_distance=30)
 
-motionWorks = clock.MotionWorks(extra_height=11, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1)#, bearing=clock.get_bearing_info(3)
-
+motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
+                                module=1, inset_at_base=clock.TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1)#, bearing=clock.get_bearing_info(3)
+#make furtehr apart so we get a big enough cannon pinion for the inset_at_base, which we want so we don't clash with the escape wheel
+motionWorks.calculate_size(arbor_distance=35)
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10, bob_text=["F & P", "40"])
 
 dial = clock.Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC, inner_edge_style=None, outer_edge_style=None)
@@ -85,7 +99,7 @@ dial = clock.Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=clo
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 24", style=clock.ClockPlateStyle.COMPACT,
                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360-50,
+                                 chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360-30,
                                  allow_bottom_pillar_height_reduction=False, endshake=1.5, second_hand=False, centred_second_hand=False, escapement_on_front=True)
 
 

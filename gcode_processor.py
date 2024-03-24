@@ -190,7 +190,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
 
     return gcode_out
 
-def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
+def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder_to_fix=1):
     '''
     for small objects on the dial, attempt to re-order to reduce total distance travelled (and thus stringing)
     '''
@@ -208,6 +208,8 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
     changing_tool = False
 
     last_known_pos = None
+
+    relevant_shape_types = ["External perimeter", "Perimeter", "Solid infill"]
 
     relevant_shapes_in_layer = []
 
@@ -227,26 +229,50 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
         if line.strip() == "M600":
             if gcode_in[i+1].startswith("T"):
                 current_tool = int(gcode_in[i + 1].strip()[1:])
-                log.write("Current tool: T{}\n".format(current_tool))
+                log.write("Start changing to tool: T{} line {}\n".format(current_tool, i))
                 changing_tool = True
             #if it doesn't say T[int] then it's probably a manual layer filament change
 
-        if line.startswith("; printing object"):
+        if line.startswith("; printing object") and changing_tool:
             #assume this means we've dealt with all the toolchange and wipe tower and are back to printing proper
+            #THIS DOESN'T HAPPEN with prusaslicer 2.7.2 targetting the mk4
             changing_tool = False
+            log.write("Finished changing to tool: T{} line {}\n".format(current_tool, i))
+
+        if printer_version == "MK4" and line.startswith(";TYPE:") and changing_tool:
+            #we don't seem to get the nice "printing object [blah]" for the mk4 :(
+            #so instead stop when we see we're printing something proper
+            current_shape_type = line.strip().split(":")[1]
+            if current_shape_type in relevant_shape_types:
+                log.write("Finished changing to tool: T{} line {}\n".format(current_tool, i))
+                changing_tool = False
 
         if layer < layers_to_fix and current_tool == extruder_to_fix and not changing_tool:
             '''
             this is the layer and tool we want to tinker with
+            
+            
+            on the mk3 we raise after an object and lower just before printing with G1 Z.
+            on the mk4 we raise as part of a move after the last object, so the line won't start G1 Z.
+            it will be a standard move with a Z as well like:
+            
+            G1 X203.226 Y79.155 Z.359 F18000 <- finish last object
+            G1 Z.2 F720 <- lower to start next
+            
             '''
-            if line.startswith("G1 Z."):
+            if line.startswith("G1") and " Z." in line:
                 #are we raising up or lowering down?
                 #TODO last shape in layer doesn't end with raising the nozzle - check for ";stop printing object" ?
                 #also TODO seeing 73 unique shapes on a layer - since we've missed the last shape we've seen two too many. how?
                 #I think the two bonus shapes are the inside circles in the 9 and 6, so if we fix the last shape everything's accounted for!
                 #eg G1 Z.45 F720
-                #want the "0.45" bit
-                z = float(line.strip().split(" ")[1][1:])
+                #want the "0.45" bit THIS DOESN'T WORK ON THE MK4, which doesn't appear to raise and lower the head for printing
+                #z = float(line.strip().split(" ")[1][1:])
+                axes = line.split(" ")
+                for axis in axes:
+                    if axis.startswith("Z."):
+                        z = float(axis[1:])
+
                 starting_shape = abs(z - current_z) < 0.01
                 if starting_shape and not inside_a_shape:
                     inside_a_shape = True
@@ -266,7 +292,7 @@ def apply_dialfix(gcode_in, log, layers_to_fix=2, extruder_to_fix=1):
                         actually_same_shape = True
                         # log.write("current {}, last {}, assuming same shape line: {}\n".format(current_shape_type, last_shape_type, i))
 
-                    if current_shape_type not in ["External perimeter", "Perimeter", "Solid infill"]:
+                    if current_shape_type not in relevant_shape_types:
                         #"Skirt/Brim" or something else entirely, sent directly to gcode_out without re-arranging
                         gcode_out.extend(current_shape)
                         log.write("current shape not being processed: {} line in {} line out {} \n{}\n\n".format(current_shape_type, i,len(gcode_out), current_shape))
@@ -324,10 +350,10 @@ if __name__ == "__main__":
     optional:
     - firstm600
     - dialfix
-    - wipefix
+    - wipefix - think this isn't needed since 2.7.2
     
     
-    C:/Python311_2023/python.exe C:/Users/Luke/Documents/Clocks/3DPrintedClocks/gcode_processor.py 2.7.1 firstm600
+    C:/Python311_2023/python.exe C:/Users/Luke/Documents/Clocks/3DPrintedClocks/gcode_processor.py MK3 firstm600
     '''
 
     logfile = "C:/Users/Luke/Documents/Clocks/3DPrintedClocks/postprocesslog.txt"
@@ -343,7 +369,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         raise ValueError("Need more arguments - prusaslicer versaion and the path to the gcode file")
 
-    prusaslicer_version = sys.argv[1]
+    #haven't ended up actually using this...
+    prusaslicer_version = sys.argv[1].upper()
     relevant_args = sys.argv[2:-1]
 
     remove_first_m600 = "firstm600" in relevant_args
@@ -366,11 +393,13 @@ if __name__ == "__main__":
 
     print(gcode_in)
 
+    printer_version = None
+
     gcode_out = []
     with open(logfile, "a+") as log:
         try:
             log.write("\n=======Post processing {} on {}===========\n".format(gcode_temp_file, datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")))
-            log.write("remove_first_m600: {}, rearrange_dial_bits:{}, need_wipefix:{}\n".format(remove_first_m600, need_dialfix, need_wipefix))
+            log.write("remove_first_m600: {}, rearrange_dial_bits:{}, need_wipefix:{} Prusaslicer {}\n".format(remove_first_m600, need_dialfix, need_wipefix, prusaslicer_version))
             line_number = 1
             for line in gcode_in:
                 keepline = True
@@ -378,16 +407,18 @@ if __name__ == "__main__":
                     keepline = False
                     found_first_m600 = True
                     log.write("removed first M600 from line {}\n".format(line_number))
+                if line.startswith("M862.3 P ") and printer_version is None:
+                    printer_version = line.split("\"")[1]
+                    log.write("Found printer: {}\n".format(printer_version))
 
                 if keepline:
                     gcode_out.append(line)
-
                 line_number+=1
 
             if need_wipefix:
                 gcode_out = apply_wipefix(gcode_out, log)
             if need_dialfix:
-                gcode_out = apply_dialfix(gcode_out, log)
+                gcode_out = apply_dialfix(gcode_out, log, printer_version)
         except Exception as error:
             log.write("Exception: {}\n{}".format(error, traceback.format_exc()))
 
