@@ -68,7 +68,7 @@ train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
 #from paul's clock
-train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
+train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=26,
                       loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
 
 
@@ -76,8 +76,8 @@ train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=2, cor
 pendulumSticksOut=10
 backPlateFromWall=30
 
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2.25, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions={1:10})
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions={1:10})
 train.print_info(weight_kg=3)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
