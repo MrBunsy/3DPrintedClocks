@@ -1017,6 +1017,11 @@ class GoingTrain:
         for i in range(self.wheels):
             clockwise = i % 2 == 0
             clockwise_from_pinion_side = clockwise == pinion_at_front
+
+            pinion_extension = 0
+            if i in pinion_extensions:
+                pinion_extension = pinion_extensions[i]
+
             if i == 0:
                 # == minute wheel ==
                 if self.powered_wheels == 0:
@@ -1046,7 +1051,6 @@ class GoingTrain:
             elif i < self.wheels-1:
                 ## == wheel-pinion pair ==
                 pinion_thick = arbours[-1].wheel_thick * pinion_thick_multiplier
-                pinionExtension = 0
                 if self.powered_wheels == 0 and i == 1:
                     #this pinion is for the chain wheel
                     pinion_thick = arbours[-1].wheel_thick * chain_wheel_pinion_thick_multiplier
@@ -1057,12 +1061,10 @@ class GoingTrain:
 
                 if pinion_thick_extra > 0:
                     pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
-                if i in pinion_extensions:
-                    pinionExtension = pinion_extensions[i]
                 #intermediate wheels
                 #no need to worry about front and back as they can just be turned around
                 arbours.append(Arbor(wheel=pairs[i].wheel, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick * (thickness_reduction ** i),
-                                     pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinionExtension,
+                                     pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinion_extension,
                                      distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
             else:
                 # == escape wheel ==
@@ -1070,12 +1072,14 @@ class GoingTrain:
                 #automating would require knowing how far apart the plates are, which we don't at this point, so just do it manually
                 pinion_at_front = self.escape_wheel_pinion_at_front
                 pinion_thick = arbours[-1].wheel_thick * pinion_thick_multiplier
+
                 if pinion_thick_extra > 0:
                     pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 #last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 #escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
                 arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
-                                     distance_to_next_arbour=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side))
+                                     distance_to_next_arbour=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
+                                     pinion_extension=pinion_extension))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
 
@@ -1300,7 +1304,7 @@ class SimpleClockPlates:
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
-                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None):
+                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1382,7 +1386,7 @@ class SimpleClockPlates:
         self.front_anchor_holder_part_of_dial = False
 
         #many designs have thet escapement above the hands anyway, but do we force it? currently I think this is a 1:1 mapping with escapement_on_front
-        self.force_escapement_above_hands = escapement_on_front
+        self.force_escapement_above_hands = escapement_on_front or force_escapement_above_hands
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
         #if false, it's between the plates like the rest of the gear train
@@ -4259,12 +4263,13 @@ class RoundClockPlates(SimpleClockPlates):
         self.fully_round = fully_round
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
+        #force_escapement_above_hands because the gear train looks better on a circular plate that way
         super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                      pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                      pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                      centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                      second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
-                     layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius)
+                     layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=True)
 
 
 
