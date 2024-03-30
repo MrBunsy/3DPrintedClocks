@@ -40,7 +40,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_24"
+clockName="wall_clock_32"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -80,7 +80,7 @@ backPlateFromWall=30
 
 #was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
 #so reprints are a mix of old and new STLs...
-pinion_extensions = {1:10,3:10} #{1:25}
+pinion_extensions = {3:10} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
@@ -108,11 +108,11 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
 
 dial = clock.Dial(outside_d=205, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=25)
-plates = clock.RoundClockPlates(train, motionWorks, name="Wall 24", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=20,
+plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
 
@@ -129,9 +129,9 @@ plates.get_rod_lengths()
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.RED, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
                     bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
-                    dial_colours=[clock.Colour.WHITE, clock.Colour.RED], key_colour=clock.Colour.GOLD, plate_colour=clock.Colour.BRASS)
+                    dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD, plate_colour=clock.Colour.BRASS)
 
 # show_object(plates.getDrillTemplate(6))
 

@@ -71,7 +71,7 @@ pendulum = clock.Pendulum(bob_d=70, bob_thick=10)
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Granny", style=clock.ClockPlateStyle.VERTICAL)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Granny", gear_train_layout=clock.GearTrainLayout.VERTICAL)
 
 
 hands = clock.Hands(style=clock.HandStyle.CUCKOO, second_length=40, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=100, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False)

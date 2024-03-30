@@ -1190,7 +1190,7 @@ class MoonHolder:
         self.moon_spoon_thick = 1.6
         self.lid_thick = 6
 
-        if self.plates.style == ClockPlateStyle.ROUND:
+        if self.plates.style == GearTrainLayout.ROUND:
             raise ValueError("TODO moon phase holder for round plates")
 
         # max_y = self.bearingPositions[-1][1] - self.arboursForPlate[-1].bearing.outerD/2 - 3
@@ -1298,7 +1298,7 @@ class SimpleClockPlates:
 
     TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
     '''
-    def __init__(self, going_train, motion_works, pendulum, style=ClockPlateStyle.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
+    def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
@@ -1356,7 +1356,7 @@ class SimpleClockPlates:
         angles_from_minute = None
         anglesFromChain = None
 
-        self.style=style
+        self.style=gear_train_layout
         self.compact_zigzag = compact_zigzag
 
         #to print on the back
@@ -1600,7 +1600,7 @@ class SimpleClockPlates:
 
         motionWorksDistance = self.motion_works.get_arbor_distance()
         # get position of motion works relative to the minute wheel
-        if style == ClockPlateStyle.ROUND:
+        if gear_train_layout == GearTrainLayout.ROUND:
             # place the motion works on the same circle as the rest of the bearings
             angle = self.hands_on_side*2 * math.asin(motionWorksDistance / (2 * self.compact_radius))
             compactCentre = (0, self.compact_radius)
@@ -1608,7 +1608,7 @@ class SimpleClockPlates:
             motionWorksPos = polar(minuteAngle - angle, self.compact_radius)
             motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
             self.motion_works_relative_pos = (motionWorksPos[0] - self.bearing_positions[self.going_train.powered_wheels][0], motionWorksPos[1] - self.bearing_positions[self.going_train.powered_wheels][1])
-        elif self.style == ClockPlateStyle.COMPACT and motion_works_above and self.has_seconds_hand() and not self.centred_second_hand and self.extra_heavy:
+        elif self.style == GearTrainLayout.COMPACT and motion_works_above and self.has_seconds_hand() and not self.centred_second_hand and self.extra_heavy:
             '''
             niche case maybe?
             put the motion works along the arm to the offset gear
@@ -1662,7 +1662,7 @@ class SimpleClockPlates:
 
             if self.dial.is_full_dial():
                 #free placement of the dial fixings
-                if self.bottom_pillars > 1 and self.style == ClockPlateStyle.COMPACT:
+                if self.bottom_pillars > 1 and self.style == GearTrainLayout.COMPACT:
                     #put two fixings on either side of the chain wheel
                     #currently this is designed around tony the clock, and should be made more generic in the future
                     from_pillar_x = self.bottom_pillar_width if self.narrow_bottom_pillar else self.bottom_pillar_r * 1.5
@@ -1880,7 +1880,7 @@ class SimpleClockPlates:
 
         # find the Y position of the bottom of the top pillar
         topY = self.bearing_positions[0][1]
-        if self.style == ClockPlateStyle.ROUND:
+        if self.style == GearTrainLayout.ROUND:
             # find the highest point on the going train
             # TODO for potentially large gears this might be lower if they're spaced right
             for i in range(len(self.bearing_positions) - 1):
@@ -1951,7 +1951,7 @@ class SimpleClockPlates:
 
             self.angles_from_chain = [angle for i in range(self.going_train.powered_wheels)]
 
-        if self.style == ClockPlateStyle.COMPACT:
+        if self.style == GearTrainLayout.COMPACT:
             '''
             idea for even more compact: in a loop guess at the first angle, then do all the next angles such that it's as compact as possible without the wheels touching each other
             then see if it's possible to put the pendulum directly above the hands
@@ -2108,7 +2108,7 @@ class SimpleClockPlates:
 
 
 
-        if self.style == ClockPlateStyle.ROUND:
+        if self.style == GearTrainLayout.ROUND:
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
             self.hands_on_side = -1 if self.going_train.is_weight_on_the_right() else 1
@@ -2384,7 +2384,7 @@ class SimpleClockPlates:
         in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
         '''
 
-        if self.style ==ClockPlateStyle.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
+        if self.style ==GearTrainLayout.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
             #potentially
 
             motion_works_arbour_y = self.motion_works_pos[1]
@@ -2589,13 +2589,13 @@ class SimpleClockPlates:
                 # line up the hole with the big heavy weight
                 weightX = weightOnSide * self.going_train.powered_wheel.diameter / 2
 
-            if self.style == ClockPlateStyle.ROUND:
+            if self.style == GearTrainLayout.ROUND:
                 #screwHoleY = chainWheelR * 1.4
                 #raise NotImplementedError("Haven't fixed this for round clocks")
                 print("TODO: fix screwholes for round clocks properly")
                 return [(weightX, self.compact_radius, True)]
 
-            elif self.style == ClockPlateStyle.VERTICAL:
+            elif self.style == GearTrainLayout.VERTICAL:
                 if self.extra_heavy:
 
                     # below anchor
@@ -2852,15 +2852,15 @@ class SimpleClockPlates:
 
         #the bulk material that holds the bearings
         plate = cq.Workplane("XY").tag("base")
-        if self.style==ClockPlateStyle.ROUND:
+        if self.style==GearTrainLayout.ROUND:
             radius = self.compact_radius + plate_width / 2
             #the ring that holds the gears
             plate = plate.moveTo(self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius).circle(radius).circle(radius - plate_width).extrude(thick)
-        elif self.style in [ClockPlateStyle.VERTICAL, ClockPlateStyle.COMPACT ]:
+        elif self.style in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT]:
             #rectangle that just spans from the top bearing to the bottom pillar (so we can vary the width of the bottom section later)
             plate = plate.moveTo((self.bearing_positions[0][0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[0][1] + self.bearing_positions[-1][1]) / 2).rect(plate_width, abs(self.bearing_positions[-1][1] - self.bearing_positions[0][1])).extrude(self.get_plate_thick(back))
 
-        if self.style == ClockPlateStyle.COMPACT:
+        if self.style == GearTrainLayout.COMPACT:
             '''
             need some extra bits to hold the bearings that are off to one side
             '''
@@ -2922,7 +2922,7 @@ class SimpleClockPlates:
             bottom_pillar_joins_plate_pos = (0, bottomScrewHoleY)
 
         #supports all the combinations of round/vertical and chainwheels or not
-        bottom_pillar_link_has_rounded_top = self.style in [ClockPlateStyle.VERTICAL, ClockPlateStyle.COMPACT]
+        bottom_pillar_link_has_rounded_top = self.style in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT]
         #narrow = self.goingTrain.chainWheels == 0
         bottomBitWide = plate_width# if narrow else self.bottomPillarR*2
 
@@ -2944,7 +2944,7 @@ class SimpleClockPlates:
 
 
 
-        if self.style == ClockPlateStyle.ROUND:
+        if self.style == GearTrainLayout.ROUND:
             #centre of the top of the ring
             topOfPlate = (self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius * 2)
         else:
@@ -3581,7 +3581,7 @@ class SimpleClockPlates:
                 # extra bits of plate to hold the screw holes for extra arbors
 
                 #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates
-                if i != 1 or (self.style != ClockPlateStyle.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
+                if i != 1 or (self.style != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
 
                     plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
 
@@ -3954,12 +3954,12 @@ class MantelClockPlates(SimpleClockPlates):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
-        super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
-                     pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
-                     pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
-                     centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
-                     layer_thick=layer_thick, escapement_on_front=escapement_on_front)
+        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
+                         pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
+                         centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front)
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
@@ -4264,12 +4264,12 @@ class RoundClockPlates(SimpleClockPlates):
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         #force_escapement_above_hands because the gear train looks better on a circular plate that way
-        super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
-                     pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
-                     pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
-                     centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                     second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
-                     layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=True)
+        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
+                         pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
+                         centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=True)
 
 
 
@@ -4433,8 +4433,10 @@ class RoundClockPlates(SimpleClockPlates):
         ]
 
         self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
-
-        self.leg_pillar_positions = [np_to_set(np.add((0, -self.leg_height), pillar)) for pillar in self.bottom_pillar_positions]
+        if self.wall_mounted:
+            self.leg_pillar_positions = []
+        else:
+            self.leg_pillar_positions = [np_to_set(np.add((0, -self.leg_height), pillar)) for pillar in self.bottom_pillar_positions]
 
     def get_fixing_screws_cutter(self):
         '''
@@ -4528,7 +4530,15 @@ class RoundClockPlates(SimpleClockPlates):
 
         if self.fully_round:
             plate = cq.Workplane("XY").circle(self.radius + main_arm_wide/2).circle(self.radius - main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)
-            bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide).extrude(plate_thick).translate(self.bearing_positions[0][:2])
+
+            #if there isn't only going to be a tiny gap under the arm, just make the whole bit solid
+            extra_width_at_bottom = 0
+            bottom_of_arm_y = self.bearing_positions[0][1] - self.bottom_arm_wide/2
+            top_of_circle_y = self.hands_position[1] - self.radius + main_arm_wide/2
+            if bottom_of_arm_y - top_of_circle_y < 5:
+                extra_width_at_bottom=5
+
+            bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide + extra_width_at_bottom).extrude(plate_thick).translate(self.bearing_positions[0][:2]).translate((0,-extra_width_at_bottom))
             plate = plate.union(bottom_arm.intersect(cq.Workplane("XY").circle(self.radius + main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)))
         else:
             #semicircular with rectangle on the bottom
@@ -4792,12 +4802,13 @@ class RoundClockPlates(SimpleClockPlates):
     def get_assembled(self):
         plates = super().get_assembled()
 
-        plates = plates.add(self.get_legs(back=True).translate((0,0,-self.plate_thick)))
+        if not self.wall_mounted:
+            plates = plates.add(self.get_legs(back=True).translate((0,0,-self.plate_thick)))
 
-        plates = plates.add(self.get_legs(back=False).translate((0, 0, self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance)))
+            plates = plates.add(self.get_legs(back=False).translate((0, 0, self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance)))
 
-        for pillar_pos in self.leg_pillar_positions:
-            plates = plates.add(self.get_legs_pillar().translate(pillar_pos))
+            for pillar_pos in self.leg_pillar_positions:
+                plates = plates.add(self.get_legs_pillar().translate(pillar_pos))
 
         return plates
 
@@ -5113,7 +5124,7 @@ class StrikingClockPlates(SimpleClockPlates):
 
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK):
-        super().__init__(going_train, motion_works, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
@@ -5211,7 +5222,7 @@ class Assembly:
 
         if self.plates.pendulum_at_front:
             # if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
-            if self.plates.style != ClockPlateStyle.ROUND:
+            if self.plates.style != GearTrainLayout.ROUND:
                 # centre around the hands by default
                 self.ring_pos[1] = self.plates.bearing_positions[self.going_train.powered_wheels][1]
                 if self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key:

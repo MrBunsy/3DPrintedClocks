@@ -96,7 +96,7 @@ dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Euro
 #accidentally printed everything with endshake at 1, which I know isn't good for long thin plates (it's already jamming with a lighter weight). Planning to reprint the pillars at 1.75
 #endshake of 1 resulted in pillars printed (when rounded to nearest 0.4 I assume) at 44.6 tall, 1.75 endshake only gets 45.0 tall, so I'm putting it up to 2.
 #overriding pillar r to reprint pillars with new endshake
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28: For Paul", style=clock.ClockPlateStyle.VERTICAL,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 28: For Paul", gear_train_layout=clock.GearTrainLayout.VERTICAL,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, motion_works_angle_deg=-1, top_pillar_holds_dial=True, endshake=2.25,

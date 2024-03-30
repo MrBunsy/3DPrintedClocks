@@ -100,7 +100,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=10)
 dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.TONY_THE_CLOCK, detail_thick=clock.LAYER_THICK*3)
 
 #using non-countersunk screws and screwing from front so I can build this with threaded rod before the long screws are delivered
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall22 Tony", style=clock.ClockPlateStyle.COMPACT,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall22 Tony", gear_train_layout=clock.GearTrainLayout.COMPACT,
                                  motion_works_above=False, heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=False),
                                  chain_through_pillar_required=False, pillars_separate=True, dial=dial, allow_bottom_pillar_height_reduction=False, bottom_pillars=2)

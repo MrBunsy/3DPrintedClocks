@@ -70,7 +70,7 @@ pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="Wall 05", style=clock.ClockPlateStyle.ROUND, heavy=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="Wall 05", gear_train_layout=clock.GearTrainLayout.ROUND, heavy=True)
 
 # hands = clock.Hands(style="simple_rounded", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False)
 #outline of 0.6 works but this clock was actually printed with old cuckoo hands without an outline, so set without outline for the preview

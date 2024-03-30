@@ -765,7 +765,7 @@ class Dial:
 
         big_dot_r = max_dot_r
         small_dot_r = max_dot_r/2
-        if big_dot_r < 10:
+        if big_dot_r < 4:
             small_dot_r = max_dot_r*0.66
 
         detail = cq.Workplane("XY")

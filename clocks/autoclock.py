@@ -399,7 +399,7 @@ class AutoWallClock:
         if self.centred_second_hand:
             motionWorksAbove = False
 
-        self.plates = SimpleClockPlates(self.train, self.motionWorks, self.pendulum, plate_thick=front_thick, back_plate_thick=back_thick, pendulum_sticks_out=self.pendulumSticksOut, name="auto", style=ClockPlateStyle.VERTICAL,
+        self.plates = SimpleClockPlates(self.train, self.motionWorks, self.pendulum, plate_thick=front_thick, back_plate_thick=back_thick, pendulum_sticks_out=self.pendulumSticksOut, name="auto", gear_train_layout=GearTrainLayout.VERTICAL,
                                         motion_works_above=motionWorksAbove, heavy=heavy, extra_heavy=extraHeavy, pendulum_fixing=self.pendulumFixing, pendulum_at_front=False,
                                         back_plate_from_wall=self.pendulumSticksOut * 2, fixing_screws=MachineScrew(metric_thread=3, countersunk=True, length=40),
                                         chain_through_pillar_required=True, dial=self.dial, centred_second_hand=self.centred_second_hand, pillars_separate=True)
