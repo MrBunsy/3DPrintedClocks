@@ -1190,7 +1190,7 @@ class MoonHolder:
         self.moon_spoon_thick = 1.6
         self.lid_thick = 6
 
-        if self.plates.style == GearTrainLayout.ROUND:
+        if self.plates.gear_train_layout == GearTrainLayout.ROUND:
             raise ValueError("TODO moon phase holder for round plates")
 
         # max_y = self.bearingPositions[-1][1] - self.arboursForPlate[-1].bearing.outerD/2 - 3
@@ -1356,7 +1356,7 @@ class SimpleClockPlates:
         angles_from_minute = None
         anglesFromChain = None
 
-        self.style=gear_train_layout
+        self.gear_train_layout=gear_train_layout
         self.compact_zigzag = compact_zigzag
 
         #to print on the back
@@ -1608,7 +1608,7 @@ class SimpleClockPlates:
             motionWorksPos = polar(minuteAngle - angle, self.compact_radius)
             motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
             self.motion_works_relative_pos = (motionWorksPos[0] - self.bearing_positions[self.going_train.powered_wheels][0], motionWorksPos[1] - self.bearing_positions[self.going_train.powered_wheels][1])
-        elif self.style == GearTrainLayout.COMPACT and motion_works_above and self.has_seconds_hand() and not self.centred_second_hand and self.extra_heavy:
+        elif self.gear_train_layout == GearTrainLayout.COMPACT and motion_works_above and self.has_seconds_hand() and not self.centred_second_hand and self.extra_heavy:
             '''
             niche case maybe?
             put the motion works along the arm to the offset gear
@@ -1662,7 +1662,7 @@ class SimpleClockPlates:
 
             if self.dial.is_full_dial():
                 #free placement of the dial fixings
-                if self.bottom_pillars > 1 and self.style == GearTrainLayout.COMPACT:
+                if self.bottom_pillars > 1 and self.gear_train_layout == GearTrainLayout.COMPACT:
                     #put two fixings on either side of the chain wheel
                     #currently this is designed around tony the clock, and should be made more generic in the future
                     from_pillar_x = self.bottom_pillar_width if self.narrow_bottom_pillar else self.bottom_pillar_r * 1.5
@@ -1880,7 +1880,7 @@ class SimpleClockPlates:
 
         # find the Y position of the bottom of the top pillar
         topY = self.bearing_positions[0][1]
-        if self.style == GearTrainLayout.ROUND:
+        if self.gear_train_layout == GearTrainLayout.ROUND:
             # find the highest point on the going train
             # TODO for potentially large gears this might be lower if they're spaced right
             for i in range(len(self.bearing_positions) - 1):
@@ -1951,7 +1951,7 @@ class SimpleClockPlates:
 
             self.angles_from_chain = [angle for i in range(self.going_train.powered_wheels)]
 
-        if self.style == GearTrainLayout.COMPACT:
+        if self.gear_train_layout == GearTrainLayout.COMPACT:
             '''
             idea for even more compact: in a loop guess at the first angle, then do all the next angles such that it's as compact as possible without the wheels touching each other
             then see if it's possible to put the pendulum directly above the hands
@@ -2108,7 +2108,7 @@ class SimpleClockPlates:
 
 
 
-        if self.style == GearTrainLayout.ROUND:
+        if self.gear_train_layout == GearTrainLayout.ROUND:
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
             self.hands_on_side = -1 if self.going_train.is_weight_on_the_right() else 1
@@ -2384,7 +2384,7 @@ class SimpleClockPlates:
         in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
         '''
 
-        if self.style ==GearTrainLayout.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
+        if self.gear_train_layout ==GearTrainLayout.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
             #potentially
 
             motion_works_arbour_y = self.motion_works_pos[1]
@@ -2589,13 +2589,13 @@ class SimpleClockPlates:
                 # line up the hole with the big heavy weight
                 weightX = weightOnSide * self.going_train.powered_wheel.diameter / 2
 
-            if self.style == GearTrainLayout.ROUND:
+            if self.gear_train_layout == GearTrainLayout.ROUND:
                 #screwHoleY = chainWheelR * 1.4
                 #raise NotImplementedError("Haven't fixed this for round clocks")
                 print("TODO: fix screwholes for round clocks properly")
                 return [(weightX, self.compact_radius, True)]
 
-            elif self.style == GearTrainLayout.VERTICAL:
+            elif self.gear_train_layout == GearTrainLayout.VERTICAL:
                 if self.extra_heavy:
 
                     # below anchor
@@ -2852,15 +2852,15 @@ class SimpleClockPlates:
 
         #the bulk material that holds the bearings
         plate = cq.Workplane("XY").tag("base")
-        if self.style==GearTrainLayout.ROUND:
+        if self.gear_train_layout==GearTrainLayout.ROUND:
             radius = self.compact_radius + plate_width / 2
             #the ring that holds the gears
             plate = plate.moveTo(self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius).circle(radius).circle(radius - plate_width).extrude(thick)
-        elif self.style in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT]:
+        elif self.gear_train_layout in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT]:
             #rectangle that just spans from the top bearing to the bottom pillar (so we can vary the width of the bottom section later)
             plate = plate.moveTo((self.bearing_positions[0][0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[0][1] + self.bearing_positions[-1][1]) / 2).rect(plate_width, abs(self.bearing_positions[-1][1] - self.bearing_positions[0][1])).extrude(self.get_plate_thick(back))
 
-        if self.style == GearTrainLayout.COMPACT:
+        if self.gear_train_layout == GearTrainLayout.COMPACT:
             '''
             need some extra bits to hold the bearings that are off to one side
             '''
@@ -2922,7 +2922,7 @@ class SimpleClockPlates:
             bottom_pillar_joins_plate_pos = (0, bottomScrewHoleY)
 
         #supports all the combinations of round/vertical and chainwheels or not
-        bottom_pillar_link_has_rounded_top = self.style in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT]
+        bottom_pillar_link_has_rounded_top = self.gear_train_layout in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT]
         #narrow = self.goingTrain.chainWheels == 0
         bottomBitWide = plate_width# if narrow else self.bottomPillarR*2
 
@@ -2944,7 +2944,7 @@ class SimpleClockPlates:
 
 
 
-        if self.style == GearTrainLayout.ROUND:
+        if self.gear_train_layout == GearTrainLayout.ROUND:
             #centre of the top of the ring
             topOfPlate = (self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius * 2)
         else:
@@ -3581,7 +3581,7 @@ class SimpleClockPlates:
                 # extra bits of plate to hold the screw holes for extra arbors
 
                 #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates
-                if i != 1 or (self.style != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
+                if i != 1 or (self.gear_train_layout != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
 
                     plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
 
@@ -5222,7 +5222,7 @@ class Assembly:
 
         if self.plates.pendulum_at_front:
             # if the hands are directly below the pendulum pivot point (not necessarily true if this isn't a vertical clock)
-            if self.plates.style != GearTrainLayout.ROUND:
+            if self.plates.gear_train_layout != GearTrainLayout.ROUND:
                 # centre around the hands by default
                 self.ring_pos[1] = self.plates.bearing_positions[self.going_train.powered_wheels][1]
                 if self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.powered_wheel.use_key:
