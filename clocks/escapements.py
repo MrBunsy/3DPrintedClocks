@@ -665,17 +665,27 @@ class BrocotEscapment(AnchorEscapement):
 
         #calculate what radius the brocot pallet stones need to be. My plan is to support 3D printed or real stones (cousins sell them)
 
-        entry_pallet_dir = Line(self.anchor_centre, anotherPoint=self.entry_pallet_start_pos)
-        entry_pallet_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_start_pos)
-        entry_pallet_end_distance_along_line = np.dot(entry_pallet_dir.dir, np.subtract(self.entry_pallet_end_pos,self.anchor_centre))
-        self.entry_pallet_r = abs(entry_pallet_distance - entry_pallet_end_distance_along_line)
+        entry_pallet_start_dir = Line(self.anchor_centre, anotherPoint=self.entry_pallet_start_pos)
+        entry_pallet_end_dir = Line(self.anchor_centre, anotherPoint=self.entry_pallet_end_pos)
+        entry_pallet_start_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_start_pos)
+        entry_pallet_end_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_end_pos)
+        entry_pallet_end_distance_along_line = np.dot(entry_pallet_start_dir.dir, np.subtract(self.entry_pallet_end_pos,self.anchor_centre))
+        self.entry_pallet_r = abs(entry_pallet_start_distance - entry_pallet_end_distance_along_line)
 
+        entry_pallet_centre = average_of_two_points(self.entry_pallet_start_pos, self.entry_pallet_end_pos)
+        entry_pallet_centre_dir = Line(self.anchor_centre, anotherPoint=entry_pallet_centre)
+        entry_pallet_centre_distance = distance_between_two_points(self.anchor_centre, entry_pallet_centre)
 
+        exit_pallet_start_dir = Line(self.anchor_centre, anotherPoint=self.exit_pallet_start_pos)
+        exit_pallet_end_dir = Line(self.anchor_centre, anotherPoint=self.exit_pallet_end_pos)
+        exit_pallet_start_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_start_pos)
+        exit_pallet_end_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_end_pos)
+        exit_pallet_distance_along_line = np.dot(exit_pallet_start_dir.dir, np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
+        self.exit_pallet_r = abs(exit_pallet_start_distance - exit_pallet_distance_along_line)
 
-        exit_pallet_dir = Line(self.anchor_centre, anotherPoint=self.exit_pallet_start_pos)
-        exit_pallet_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_start_pos)
-        exit_pallet_distance_along_line = np.dot(exit_pallet_dir.dir, np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
-        self.exit_pallet_r = abs(exit_pallet_distance - exit_pallet_distance_along_line)
+        exit_pallet_centre = average_of_two_points(self.exit_pallet_start_pos, self.exit_pallet_end_pos)
+        exit_pallet_centre_dir = Line(self.anchor_centre, anotherPoint=exit_pallet_centre)
+        exit_pallet_centre_distance = distance_between_two_points(self.anchor_centre, exit_pallet_centre)
 
         print("entry_pallet_r: {}, exit_pallet_r:{}".format(self.entry_pallet_r, self.exit_pallet_r))
 
@@ -688,8 +698,15 @@ class BrocotEscapment(AnchorEscapement):
 
         print("using pallet radius of {}".format(self.pallet_r))
 
-        self.entry_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(entry_pallet_dir.dir, entry_pallet_distance - self.pallet_r)))
-        self.exit_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(exit_pallet_dir.dir, exit_pallet_distance + self.pallet_r)))
+        #this results in pallet stones that are too far apart!
+        # self.entry_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(entry_pallet_start_dir.dir, entry_pallet_start_distance - self.pallet_r)))
+        # self.exit_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(exit_pallet_start_dir.dir, exit_pallet_start_distance + self.pallet_r)))
+        #aiming instead for the round side of the stone to be in the centre of the pallet
+        # self.entry_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(entry_pallet_centre_dir.dir, entry_pallet_centre_distance - self.pallet_r)))
+        # self.exit_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(exit_pallet_centre_dir.dir, exit_pallet_centre_distance + self.pallet_r)))
+
+        self.entry_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(entry_pallet_centre_dir.dir, entry_pallet_end_distance)))
+        self.exit_pallet_stone_centre = np_to_set(np.add(self.anchor_centre, np.multiply(exit_pallet_centre_dir.dir, exit_pallet_end_distance)))
 
     def get_anchor(self):
         # cylinder around the rod

@@ -1296,6 +1296,9 @@ class SimpleClockPlates:
 
     This produces viable simple wall clocks and also supports being extended for other types of clock plate
 
+    This has become a monster of a class. I think it's better to try and simplify this class and extend it for new types of clock plate, rather than adding yet more options
+    to this class.
+
     TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
     '''
     def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
@@ -1304,7 +1307,7 @@ class SimpleClockPlates:
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
-                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False):
+                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -2830,7 +2833,12 @@ class SimpleClockPlates:
 
         return spaces
 
-
+    def get_plate_detail(self, back=True, for_printing=True):
+        '''
+        For styles of clock plate which might have ornate detailing. Similar to dial detail or text, this is a separate 3d shape
+        designed to be sliced as a multicolour object
+        '''
+        return None
     def get_plate(self, back=True, for_printing=True):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.

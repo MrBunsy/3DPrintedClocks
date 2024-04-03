@@ -177,6 +177,9 @@ def re_arrange_shapes(shapes, log, start_pos = None):
         if angle < start_angle:
             angle += math.pi*2
 
+        # if angle < 0:
+        #     angle += math.pi*2
+
         shape_info = {"gcode":shape_gcode, "angle":angle, "type": type}
         shapes_processed.append(shape_info)
 
@@ -186,7 +189,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
     gcode_out = []
     for shape_info in shapes_processed:
         gcode_out.extend(shape_info["gcode"])
-        # log.write("adding shape with angle: {}\n".format(shape_info["angle"]))
+        log.write("adding shape with angle: {}, {}\n".format(shape_info["angle"], shape_info['type']))
 
     return gcode_out
 
@@ -350,7 +353,7 @@ if __name__ == "__main__":
     optional:
     - firstm600
     - dialfix
-    - wipefix - think this isn't needed since 2.7.2
+    - wipefix - think this isn't needed since 2.7.2? (still needed)
     
     
     C:/Python311_2023/python.exe C:/Users/Luke/Documents/Clocks/3DPrintedClocks/gcode_processor.py 2.7.2 firstm600
