@@ -90,7 +90,7 @@ motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle, thick=3, compe
                                 module=1, inset_at_base=clock.TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1)#, bearing=clock.get_bearing_info(3)
 #make furtehr apart so we get a big enough cannon pinion for the inset_at_base, which we want so we don't clash with the escape wheel
 motionWorks.calculate_size(arbor_distance=35)
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10, bob_text=["F & P", "40"])
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=10, bob_text=["F & P", "40"])
 
 dial = clock.Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC, inner_edge_style=None, outer_edge_style=None)
 # dial = None

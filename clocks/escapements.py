@@ -2205,7 +2205,7 @@ class Pendulum:
 
         text_height = self.bob_r * 0.6
         text_width = self.bob_r * 1.2
-        text_spaces = [TextSpace(0, self.gap_height * 3 / 4 + text_height / 2, width=text_width, height=text_height, text=self.bob_text[0], font=self.font[0])]
+        text_spaces = [TextSpace(0, self.gap_height * 3 / 4 + text_height / 2, width=text_width, height=text_height, text=self.bob_text[0], font=self.font[0], thick=LAYER_THICK*2)]
         if len(self.bob_text) > 1:
             text_spaces.append(TextSpace(0, -(self.gap_height * 3 / 4 + text_height / 2), width=text_width, height=text_height, text=self.bob_text[1], font=self.font[1 % len(self.font)]))
 
@@ -2353,6 +2353,11 @@ class Pendulum:
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_bob(), out)
+
+        if self.bob_text is not None:
+            out = os.path.join(path, "{}_bob_text.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_bob_text(), out)
 
         out = os.path.join(path, "{}_bob_solid.stl".format(name))
         print("Outputting ", out)
