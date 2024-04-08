@@ -3058,6 +3058,11 @@ class SimpleClockPlates:
 
         #TODO - could easily have a larger hole in the standoff so the screw or nut starts deeper and thus need shorter screws
 
+        #hacky logic that shouldn't live here
+        if top_screw_length > 100 and self.fixing_screws.metric_thread <= 4:
+            print("top screw length exceeds 100mm, limiting to 100mm, check design to make sure it fits")
+            top_screw_length = 100
+
         #TODO add option to use threaded rod with nuts on both sides. I've bodged this for tony by printing half with screws from back, and the rest with screws from front
         print("Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
         if top_screw_length > 60 and self.fixing_screws.metric_thread < 4:
@@ -3072,8 +3077,8 @@ class SimpleClockPlates:
         if self.back_plate_from_wall > 0:
             #depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
             #extra nut height just in case
-            top_nut_hole_height = (top_total_length%10) + self.fixing_screws.get_nut_height() + 5
-            bottom_nut_hole_height = (bottom_total_length%10) + self.fixing_screws.get_nut_height() + 5
+            top_nut_hole_height = (top_total_length - top_screw_length) + self.fixing_screws.get_nut_height() + 5
+            bottom_nut_hole_height = (bottom_total_length - bottom_screw_length) + self.fixing_screws.get_nut_height() + 5
         # elif self.embed_nuts_in_plate:
         #     # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
         #     print("you may have to cut the fixing screws to length in the case of no back standoff")

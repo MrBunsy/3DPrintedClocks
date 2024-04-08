@@ -2148,6 +2148,8 @@ class Pendulum:
         if self.font is None:
             self.font = [DEFAULT_FONT]
 
+        self.text_thick = LAYER_THICK*2
+
         #hole for the bob nut
         self.gap_height = self.bob_nut_thick + 0.5
         self.gap_width = self.bob_nut_d + 1
@@ -2205,9 +2207,9 @@ class Pendulum:
 
         text_height = self.bob_r * 0.6
         text_width = self.bob_r * 1.2
-        text_spaces = [TextSpace(0, self.gap_height * 3 / 4 + text_height / 2, width=text_width, height=text_height, text=self.bob_text[0], font=self.font[0], thick=LAYER_THICK*2)]
+        text_spaces = [TextSpace(0, self.gap_height * 3 / 4 + text_height / 2, width=text_width, height=text_height, text=self.bob_text[0], font=self.font[0], thick=self.text_thick)]
         if len(self.bob_text) > 1:
-            text_spaces.append(TextSpace(0, -(self.gap_height * 3 / 4 + text_height / 2), width=text_width, height=text_height, text=self.bob_text[1], font=self.font[1 % len(self.font)]))
+            text_spaces.append(TextSpace(0, -(self.gap_height * 3 / 4 + text_height / 2), width=text_width, height=text_height, text=self.bob_text[1], font=self.font[1 % len(self.font)], thick=self.text_thick))
 
         max_text_size = min([text_space.get_text_max_size() for text_space in text_spaces])
 
