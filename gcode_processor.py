@@ -193,7 +193,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
 
     return gcode_out
 
-def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder_to_fix=1):
+def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder_to_fix=1, detail_printed_first=False):
     '''
     for small objects on the dial, attempt to re-order to reduce total distance travelled (and thus stringing)
     '''
@@ -209,6 +209,10 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
     current_shape_type = None
     last_shape_type = None
     changing_tool = False
+
+    if detail_printed_first:
+        #bodgetastic time
+        current_tool = extruder_to_fix
 
     last_known_pos = None
 
@@ -308,7 +312,7 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
                         relevant_shapes_in_layer[-1].extend(current_shape)
                     else:
                         relevant_shapes_in_layer.append(current_shape)
-                    # log.write("finished processing shape type {} line: {}\n".format(current_shape_type, i))
+                    log.write("finished processing shape type {} line: {}\n".format(current_shape_type, i))
                     last_shape_type = current_shape_type
                     #don't add this line to gcode out
                     continue
@@ -321,7 +325,10 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
 
                 log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
                 log.write("extending gcode out starting at line {}\n".format(len(gcode_out)))
-                gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer, log, last_known_pos))
+                if len(relevant_shapes_in_layer) > 1:
+                    gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer, log, last_known_pos))
+                else:
+                    print("insufficient relevant_shapes_in_layer, only found: {}".format(len(relevant_shapes_in_layer)))
                 relevant_shapes_in_layer = []
                 current_shape_type = None
                 last_shape_type = None
@@ -421,7 +428,7 @@ if __name__ == "__main__":
             if need_wipefix:
                 gcode_out = apply_wipefix(gcode_out, log)
             if need_dialfix:
-                gcode_out = apply_dialfix(gcode_out, log, printer_version)
+                gcode_out = apply_dialfix(gcode_out, log, printer_version, detail_printed_first=True)
         except Exception as error:
             log.write("Exception: {}\n{}".format(error, traceback.format_exc()))
 
