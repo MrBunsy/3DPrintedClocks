@@ -104,7 +104,7 @@ Smaller pendulum periods (aprox < 1s) will probably need 4 wheels to find a vali
 
 30 hours is about the most you can achieve from a clock without a chainwheel (powered wheels are interchangable called chainwheels or powered wheels throughout, because the chain was the first implemented). For eight day clocks you will need one chainwheel.
 
-Using degreased and oiled bearings clocks can run reliably with ~40uW. With greased bearings you will need at least ~65uW. There is always a trade off to be had: heavier weights provide more power and in theory make the clock more reliable - except they also require more robust plates and can cause the plates to bend, making the clock less reliable. Newer designs use M4 machine screws through the whole length of the pillars which help with rigidity.
+Using degreased and oiled bearings clocks can run reliably with ~40uW. With just degreased stainless steel, even lower. With greased bearings (as you can usually buy them) you will need at least ~65uW. There is always a trade off to be had: heavier weights provide more power and in theory make the clock more reliable - except they also require more robust plates and can cause the plates to bend, making the clock less reliable. Newer designs use M4 machine screws through the whole length of the pillars which help with rigidity.
 
 A variety of different power sources are supported. All are weight driven (for now, I have plans for springs):
  - ChainWheel: The very first implemented, works for lightweight chains only. Deprecated - use ChainWheel2 instead, it's better and has no drawbacks.
@@ -323,6 +323,18 @@ The gears need careful configuration when slicing - rarely do default settings r
  - Usually Classic slicer is better than Arachne
  - Disable gap fill to reduce stringing
  - I've used `Avoid crossing perimeters`. I'm undecided how important it is.
+
+# General reliability 
+A ticklist of things I need to remember to check when building a clock:
+ - The motion works must be cleanly printed. The hour holder should be free to spin over the cannon pinion. MotionWorks cannon_pinion_to_hour_holder_gap_size can be increased if need be.
+ - Check all wheel and pinion teeth for any stringing or 3D printed detritus. Even a small bit of plastic swarf in the wrong pinion can jam the gear train.
+ - Remember to add any washers required - escapements on the front will need a washer to prevent the anchor rubbing up against the inside of a plate. Chain driven power wheels also require a washer.
+ - Check rods used for arbors are straight. More of a problem for  M2, but M3 can also be bent.
+
+# Bearings
+After much experimentation I've arrived at the conclusion that the best bearings to use are fully degreased stainless steel deep groove bearings. Degreased and oiled chrome bearings are significantly cheaper, but don't seem to reliably last as long. Bearings as they arrive are packed with grease, and just using them like that works, but adds a lot more friction. On some older clocks I've observed the grease slowly leaking out. 
+
+EZO make very high quality stainless steel bearings and I've been using these for the pendulum and escape wheel. Cheaper no-name brand stainless steel bearings seem pretty good when degreased as well, but with a bit more variability. I've assembled some clocks entirely from cheaper stainless steel bearings, but mostly I'm using EZO for the top of the train and no-name for the rest. I'm still using grease-packed bearings for the power wheel as larger stainless steel bearings become prohibitively expensive.
 
 # Multi-Colour on a non Multi-Material Printer
 This is surprisingly easy to do and looks great when printed on a textured sheet. Since I don't own a multi-material printer I've used a variation on a technique I found on a [blog post](http://schlosshan.eu/blog/2019/03/02/prusa-i3-mk3-real-multicolour-prints-without-mmu/) that works with PrusaSlicer and my Prusa Mk3:

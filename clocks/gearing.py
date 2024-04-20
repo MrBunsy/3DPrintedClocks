@@ -2599,8 +2599,11 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0):
+                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5):
         '''
+
+        cannon_pinion_to_hour_holder_gap_size - in mm, how much extra diameter to add to the hour holder to slot over the cannon pinion. Can be a bit filament specific to what works well
+        default works for most colours, but the brass seems to need more space (sometimes?)
 
         inset_at_base - if >0 (usually going to want just less than TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT) then inset the bearing or create a space large enoguh
         for the two locked nuts, washer and spring washer. this way the motion works can be closer to the clock plate
@@ -2719,7 +2722,9 @@ class MotionWorks:
 
         #done in calc_bearing_holder_thick
         # self.cannonPinionBaseHeight = self.cannonPinionPinionThick + self.pinionCapThick * 2 + self.bearingHolderThick
+        #vertical space
         self.space = 0.5
+        self.cannon_pinion_to_hour_holder_gap_size = cannon_pinion_to_hour_holder_gap_size
         #old size of space so I can reprint without reprinting the hands (for the non-bearing version)
         self.hour_hand_holder_d = self.minute_hand_holder_d + 1 + self.wallThick * 2
 
@@ -2883,7 +2888,7 @@ class MotionWorks:
             motionWorksRelativePos = [0, -self.get_arbor_distance()]
         parts = {}
         parts["cannon_pinion"] = self.get_cannon_pinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
-        parts["hour_holder"] = self.getHourHolder().translate((0, 0, self.get_cannon_pinion_base_thick()))
+        parts["hour_holder"] = self.get_hour_holder().translate((0, 0, self.get_cannon_pinion_base_thick()))
         parts["arbor"] = self.get_motion_arbour_shape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], (self.get_cannon_pinion_base_thick() - self.bearing_holder_thick) / 2 + self.bearing_holder_thick - self.thick / 2))
 
         if self.centred_second_hand:
@@ -3094,7 +3099,7 @@ class MotionWorks:
         # fiddled the numbers so that fill isn't required to print
         return self.hour_hand_holder_d / 2 + 0.7
 
-    def getHourHolder(self):
+    def get_hour_holder(self):
         #the final wheel and arm that friction holds the hour hand
         #this used to be excessively tapered, but now a lightly tapered friction fit slot.
         style=self.style
@@ -3103,17 +3108,17 @@ class MotionWorks:
 
         #fiddled the numbers so that fill isn't required to print
         # bottomR = self.hourHandHolderD / 2 + 0.7
-        bottomR = self.get_widest_radius()
+        bottom_r = self.get_widest_radius()
 
-        bottom_r_for_style = bottomR
+        bottom_r_for_style = bottom_r
         if self.moon_complication is not None:
             bottom_r_for_style = self.moon_complication.get_pinion_for_motion_works_max_radius()
 
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
         # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
-        holderR_base = self.hour_hand_holder_d / 2 + 0.1
-        holderR_top = self.hour_hand_holder_d / 2 - 0.2
+        holder_r_base = self.hour_hand_holder_d / 2 + 0.1
+        holder_r_top = self.hour_hand_holder_d / 2 - 0.2
 
         hour = self.pairs[1].wheel.get3D(holeD=self.hole_d, thick=self.thick, style=style, innerRadiusForStyle=bottom_r_for_style, clockwise_from_pinion_side=True)
 
@@ -3126,17 +3131,17 @@ class MotionWorks:
 
         # hour = hour.faces(">Z").workplane().circle(self.hourHandHolderD/2).extrude(height)
 
-        handHolderStartZ = top_z - self.hour_hand_slot_height
+        hand_holder_start_z = top_z - self.hour_hand_slot_height
 
-        if handHolderStartZ < 0.0001:
+        if hand_holder_start_z < 0.0001:
             #because CQ won't let you make shapes of zero height
-            handHolderStartZ = 0.0001
+            hand_holder_start_z = 0.0001
 
-        holeR = self.minute_hand_holder_d / 2 + self.space / 2
+        hole_r = self.minute_hand_holder_d / 2 + self.cannon_pinion_to_hour_holder_gap_size / 2
 
         # return hour
-        circle = cq.Workplane("XY").circle(bottomR)
-        shape = cq.Workplane("XZ").moveTo(bottomR,self.thick).lineTo(bottomR,handHolderStartZ).lineTo(holderR_base,handHolderStartZ).lineTo(holderR_top,top_z).lineTo(holeR,top_z).lineTo(holeR,self.thick).close().sweep(circle)
+        circle = cq.Workplane("XY").circle(bottom_r)
+        shape = cq.Workplane("XZ").moveTo(bottom_r,self.thick).lineTo(bottom_r,hand_holder_start_z).lineTo(holder_r_base,hand_holder_start_z).lineTo(holder_r_top,top_z).lineTo(hole_r,top_z).lineTo(hole_r,self.thick).close().sweep(circle)
 
         hour = hour.add(shape)
 
@@ -3145,7 +3150,7 @@ class MotionWorks:
             hour = hour.cut(cq.Workplane("XY").circle(bottom_r_for_style).extrude(self.moon_complication.hour_hand_pinion_thick).translate((0, 0, self.thick)))
             hour = hour.union(self.moon_complication.get_pinion_for_motion_works_shape().translate((0, 0, self.thick)))
 
-        hole = cq.Workplane("XY").circle(holeR).extrude(self.get_cannon_pinion_total_height())
+        hole = cq.Workplane("XY").circle(hole_r).extrude(self.get_cannon_pinion_total_height())
         hour = hour.cut(hole)
 
         #seems like we can't cut through all when we've added shapes? I'm sure this has worked elsewhere!
@@ -3187,4 +3192,4 @@ class MotionWorks:
 
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHourHolder(), out)
+        exporters.export(self.get_hour_holder(), out)

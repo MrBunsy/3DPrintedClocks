@@ -3020,6 +3020,58 @@ class SimpleClockPlates:
 
         return plate
 
+    def get_fixing_screw_length_info(self):
+        bottom_total_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
+        tal_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
+        top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
+
+        if not self.screws_from_back[0][0] and self.back_plate_from_wall > 0:
+            # space to embed the nut in the standoff
+            top_screw_length = top_total_length - (top_total_length % 10)
+        else:
+            # nut will stick out the front or back
+            top_screw_length = top_total_length + self.fixing_screws.get_nut_height() - (top_total_length + self.fixing_screws.get_nut_height()) % 10
+
+        if not self.screws_from_back[1][0] and self.back_plate_from_wall > 0:
+            # space to embed the nut in the standoff
+            bottom_screw_length = bottom_total_length - (bottom_total_length % 10)
+        else:
+            # nut will stick out the front or back
+            bottom_screw_length = bottom_total_length + self.fixing_screws.get_nut_height() - (bottom_total_length + self.fixing_screws.get_nut_height()) % 10
+
+        # top and bottom screws are different lengths if there is a front-mounted escapement
+
+        # TODO - could easily have a larger hole in the standoff so the screw or nut starts deeper and thus need shorter screws
+
+        # hacky logic that shouldn't live here
+        if top_screw_length > 100 and self.fixing_screws.metric_thread <= 4:
+            print("top screw length exceeds 100mm, limiting to 100mm, check design to make sure it fits")
+            top_screw_length = 100
+
+        # TODO add option to use threaded rod with nuts on both sides. I've bodged this for tony by printing half with screws from back, and the rest with screws from front
+        print(
+            "Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
+        if top_screw_length > 60 and self.fixing_screws.metric_thread < 4:
+            print("WARNING may not be able to source screws long enough, try M4")
+
+        return (bottom_total_length, top_total_length, bottom_screw_length, top_screw_length)
+
+    def get_fixing_screw_nut_info(self):
+        bottom_total_length, top_total_length, bottom_screw_length, top_screw_length = self.get_fixing_screw_length_info()
+
+        top_nut_base_z = -self.back_plate_from_wall
+        bottom_nut_base_z = -self.back_plate_from_wall
+        top_nut_hole_height = self.fixing_screws.get_nut_height()
+        bottom_nut_hole_height = top_nut_hole_height
+
+        if self.back_plate_from_wall > 0:
+            # depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
+            # extra nut height just in case
+            top_nut_hole_height = (top_total_length - top_screw_length) + self.fixing_screws.get_nut_height() + 5
+            bottom_nut_hole_height = (bottom_total_length - bottom_screw_length) + self.fixing_screws.get_nut_height() + 5
+
+        return (bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height)
+
     def get_fixing_screws_cutter(self):
         '''
         in position, assuming back of back plate is resting on the XY plane
@@ -3037,48 +3089,12 @@ class SimpleClockPlates:
             #fetch from cache if possible
             return self.fixing_screws_cutter
 
-        bottom_total_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
-        top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
+        # bottom_total_length, top_total_length, bottom_screw_length, top_screw_length = self.get_fixing_screw_length_info()
 
-        if not self.screws_from_back[0][0] and self.back_plate_from_wall > 0:
-            #space to embed the nut in the standoff
-            top_screw_length = top_total_length - (top_total_length%10)
-        else:
-            #nut will stick out the front or back
-            top_screw_length = top_total_length + self.fixing_screws.get_nut_height() - (top_total_length + self.fixing_screws.get_nut_height()) % 10
 
-        if not self.screws_from_back[1][0] and self.back_plate_from_wall > 0:
-            #space to embed the nut in the standoff
-            bottom_screw_length = bottom_total_length - (bottom_total_length % 10)
-        else:
-            #nut will stick out the front or back
-            bottom_screw_length = bottom_total_length + self.fixing_screws.get_nut_height() - (bottom_total_length + self.fixing_screws.get_nut_height()) % 10
+        bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
 
-        #top and bottom screws are different lengths if there is a front-mounted escapement
-
-        #TODO - could easily have a larger hole in the standoff so the screw or nut starts deeper and thus need shorter screws
-
-        #hacky logic that shouldn't live here
-        if top_screw_length > 100 and self.fixing_screws.metric_thread <= 4:
-            print("top screw length exceeds 100mm, limiting to 100mm, check design to make sure it fits")
-            top_screw_length = 100
-
-        #TODO add option to use threaded rod with nuts on both sides. I've bodged this for tony by printing half with screws from back, and the rest with screws from front
-        print("Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
-        if top_screw_length > 60 and self.fixing_screws.metric_thread < 4:
-            print("WARNING may not be able to source screws long enough, try M4")
         cutter = cq.Workplane("XY")
-
-        top_nut_base_z = -self.back_plate_from_wall
-        bottom_nut_base_z = -self.back_plate_from_wall
-        top_nut_hole_height = self.fixing_screws.get_nut_height()
-        bottom_nut_hole_height = top_nut_hole_height
-
-        if self.back_plate_from_wall > 0:
-            #depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
-            #extra nut height just in case
-            top_nut_hole_height = (top_total_length - top_screw_length) + self.fixing_screws.get_nut_height() + 5
-            bottom_nut_hole_height = (bottom_total_length - bottom_screw_length) + self.fixing_screws.get_nut_height() + 5
         # elif self.embed_nuts_in_plate:
         #     # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
         #     print("you may have to cut the fixing screws to length in the case of no back standoff")
@@ -4272,6 +4288,7 @@ class RoundClockPlates(SimpleClockPlates):
 
         '''
         self.leg_height = leg_height
+        #review this later, but for now at least its a different variable
         self.wall_mounted = leg_height == 0
         self.fully_round = fully_round
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
@@ -4467,6 +4484,11 @@ class RoundClockPlates(SimpleClockPlates):
         # for screw_pos in self.anchor_holder_fixing_points:
         #     #these are symetric so don't need to worry much about mixing up which side they're on
         #     cutter = cutter.add(self.fi)
+
+        if self.wall_mounted:
+            bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
+            for pos in self.top_pillar_positions:
+                cutter = cutter.cut(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height).translate((pos[0], pos[1], top_nut_base_z)))
 
         return cutter
 
@@ -4776,7 +4798,10 @@ class RoundClockPlates(SimpleClockPlates):
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))
-        standoff = standoff.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
+        standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0,self.back_plate_from_wall)))#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
+
+
+
 
         return standoff
 
