@@ -880,7 +880,7 @@ class GoingTrain:
         if module_sizes is None:
             module_sizes = [module_size * math.pow(module_reduction, i) for i in range(self.wheels)]
 
-
+        print("module_sizes: {}".format(module_sizes))
         #the module of each wheel is slightly smaller than the preceeding wheel
         # pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i]) for i,wheel in enumerate(self.trains[0]["train"])]
         pairs = [WheelPinionPair(wheel[0],wheel[1],module_sizes[i], lantern=(i+self.powered_wheels) in lanterns) for i,wheel in enumerate(self.trains[0]["train"])]
@@ -950,6 +950,7 @@ class GoingTrain:
 
         loop = 0
         while not fits and loop < 100:
+            loop += 1
             self.powered_wheel_pairs = []
             for i in range(self.powered_wheels):
                 #TODO review this
@@ -969,14 +970,14 @@ class GoingTrain:
                 pair = WheelPinionPair(self.chain_wheel_ratios[i][0], self.chain_wheel_ratios[i][1], chain_module, lantern=i in lanterns)
                 self.powered_wheel_pairs.append(pair)
 
-            minuteWheelSpace = pairs[0].wheel.get_max_radius() + rod_diameters[1]
+            minute_wheel_space = pairs[0].wheel.get_max_radius() + rod_diameters[1]
             last_chain_wheel_space = self.powered_wheel_pairs[-1].wheel.get_max_radius()
             if not self.powered_wheel.loose_on_rod:
                 #TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel
                 # need space for the steel rod as the wheel itself is loose on the threaded rod
-                minuteWheelSpace += 1
+                minute_wheel_space += 1
 
-            if last_chain_wheel_space < minuteWheelSpace:
+            if last_chain_wheel_space < minute_wheel_space:
                 # calculate module for the chain wheel based on teh space available
                 chain_module_multiplier *= 1.01
                 print("Chain wheel module multiplier to {} in order to fit next to minute wheel".format(chain_module_multiplier))

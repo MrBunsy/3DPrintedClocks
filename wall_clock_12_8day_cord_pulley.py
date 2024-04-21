@@ -56,7 +56,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_12b"
+clockName="wall_clock_12_retrofit"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
@@ -76,30 +76,27 @@ train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escap
 
 moduleReduction=0.85
 
-train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
+# train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 # train.setChainWheelRatio([93, 10])
+#to keep with old gear train so I can retrofit parts
+train.set_ratios([[72, 10], [75, 9]])
 
-#original test
-# train.genCordWheels(ratchetThick=4, rodMetricThread=4, cordThick=1, cordCoilThick=18, style=gearStyle, useKey=True, preferedDiameter=42.5, loose_on_rod=False)
-#think this is promising for good compromise of size
-train.gen_cord_wheels(ratchet_thick=4, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=25, loose_on_rod=False, prefer_small=True)
+#smaller diameter than the original as I'll need to make it thinner in order to fit new ratchet in
+train.gen_cord_wheels(ratchet_thick=4+1, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14-1, style=gearStyle, use_key=True, prefered_diameter=24,
+                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
 
-#override default until it calculates an ideally sized wheel
-# train.calculatePoweredWheelRatios(wheel_max=100)
-
-#for pulley
-# train.genRopeWheels(ratchetThick = 4, arbor_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=40,o_ring_diameter=2)
-# train.genRopeWheels(ratchetThick = 4, arbor_d=4, ropeThick=2.2, wallThick=2, preferedDiameter=35,o_ring_diameter=2, prefer_small=True)
-
 train.set_chain_wheel_ratio([67, 11])
+
 
 pendulumSticksOut=20
 
 train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=2)
+
+
 '''
 Powered wheel diameter: 29
 [67, 11]
@@ -144,6 +141,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, ba
                                  motion_works_above=False, heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True)
+
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
