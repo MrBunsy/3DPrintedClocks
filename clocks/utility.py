@@ -556,6 +556,7 @@ class Colour:
     ORANGE = (255, 102, 0)
     YELLOW = "yellow"
     GREEN = "green"
+    DARK_GREEN = (0, 25, 13)
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
     DARKBLUE = (0, 0, 55)

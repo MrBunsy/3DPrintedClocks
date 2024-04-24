@@ -20,38 +20,38 @@ if 'show_object' not in globals():
         pass
 
 
-motionWorks = MotionWorks(compensate_loose_arbour=False, compact=True, bearing=get_bearing_info(3), cannon_pinion_friction_ring=True, module=1.2, minute_hand_thick=2)
-motionWorks.calculate_size(40)
+# motionWorks = MotionWorks(compensate_loose_arbour=False, compact=True, bearing=get_bearing_info(3), cannon_pinion_friction_ring=True, module=1.2, minute_hand_thick=2)
+# motionWorks.calculate_size(40)
+#
+# # hands = Hands(style=HandStyle.SYRINGE, minuteFixing="rectangle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),minuteFixing_d2=motionWorks.get_minute_hand_square_size(),
+# #               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=90, thick=3, outline=1, outlineSameAsBody=False,
+# #               second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True, hour_style_override=HandStyle.BREGUET, second_style_override=HandStyle.SIMPLE_ROUND)
+# dial_d = 205
+# dial = Dial(205, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
+#             outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_d/6)
+# hands = Hands(style=HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), minute_fixing_d2=motionWorks.get_minute_hand_square_size(),
+#               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False,
+#               second_hand_centred=True, second_fixing_d=get_diameter_for_die_cutting(3), chunky=True, outline_colour="black", seconds_hand_thick=1)
+#
+#
+# # hands.show_hands(show_object=show_object)
+#
+#
+#
+# # show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180), options={"color":"white"} )
+# # show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180), options={"color": Colour.BRASS} )#
+#
+# # show_object(motionWorks.get_assembled())
+#
+# # show_object(hands.getHand(hand_type=HandType.SECOND, colour="black"))
+#
+# # hands.show_hands(show_object=show_object, show_second_hand=True)
+#
+# # hands.output_STLs("test_hands", "out")
+#
+#
+# pendulum = Pendulum(bob_d=120, bob_text=["Paul","34"], font=[SANS_GILL_FONT, FANCY_WATCH_FONT])
+#
+# show_object(pendulum.get_bob())
 
-# hands = Hands(style=HandStyle.SYRINGE, minuteFixing="rectangle", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),minuteFixing_d2=motionWorks.get_minute_hand_square_size(),
-#               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=90, thick=3, outline=1, outlineSameAsBody=False,
-#               second_hand_centred=True, secondFixing_d=get_diameter_for_die_cutting(3), chunky=True, hour_style_override=HandStyle.BREGUET, second_style_override=HandStyle.SIMPLE_ROUND)
-dial_d = 205
-dial = Dial(205, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
-            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_d/6)
-hands = Hands(style=HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), minute_fixing_d2=motionWorks.get_minute_hand_square_size(),
-              hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False,
-              second_hand_centred=True, second_fixing_d=get_diameter_for_die_cutting(3), chunky=True, outline_colour="black", seconds_hand_thick=1)
-
-
-# hands.show_hands(show_object=show_object)
-
-
-
-# show_object(dial.get_dial().rotate((0,0,0),(0,1,0),180), options={"color":"white"} )
-# show_object(dial.get_main_dial_detail().rotate((0,0,0),(0,1,0),180), options={"color": Colour.BRASS} )#
-
-# show_object(motionWorks.get_assembled())
-
-# show_object(hands.getHand(hand_type=HandType.SECOND, colour="black"))
-
-# hands.show_hands(show_object=show_object, show_second_hand=True)
-
-# hands.output_STLs("test_hands", "out")
-
-
-pendulum = Pendulum(bob_d=120, bob_text=["Paul","34"], font=[SANS_GILL_FONT, FANCY_WATCH_FONT])
-
-show_object(pendulum.get_bob())
-
-
+show_object(SimpleClockPlates.fancy_pillar(30, 100))

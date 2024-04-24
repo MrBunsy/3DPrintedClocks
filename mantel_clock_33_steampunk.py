@@ -92,27 +92,29 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #as printed
 # dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=True,style=clock.DialStyle.ARABIC_NUMBERS, font="Arial", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
 #if I were to print again
-dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.9, font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=clock.DialStyle.RING, inner_edge_style=clock.DialStyle.LINES_ARC, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
+                  outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=26)
 
 # dial=None
 
-plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]], style=clock.PlateStyle.RAISED_EDGING)
+plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]], style=clock.PlateStyle.RAISED_EDGING,
+                                 fancy_pillars=True)
 
 
 # show_object(plates.get_plate_detail(back=True))
 
 
-hands = clock.Hands(style=clock.HandStyle.BAROQUE, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = clock.Hands(style=clock.HandStyle.SPADE, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.outside_d*0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-                    second_length=dial.second_hand_mini_dial_d * 0.45, seconds_hand_thick=1.5, outline_on_seconds=1)
+                    second_length=dial.second_hand_mini_dial_d * 0.45, seconds_hand_thick=1.5, outline_on_seconds=0.5)
 
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK],
-                    plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS])
-
+                    plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.SILVER, clock.Colour.BRASS], gear_colours=[clock.Colour.GOLD])
+#plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:

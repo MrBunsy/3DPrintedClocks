@@ -1302,13 +1302,36 @@ class SimpleClockPlates:
 
     TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
     '''
+
+    @staticmethod
+    def fancy_pillar(r, length):
+        '''
+        produce a fancy turned-wood style pillar
+        '''
+        circle = cq.Workplane("XY").circle(r)
+
+        ridge_length = min(3, length*0.1)
+        curve_end_gap = min(2, r*0.07)
+        inner_r = r*0.75
+        curve_r = r - inner_r - curve_end_gap
+
+        #can't figure out how to use mirror properly, so building whole pillar despite being same on both ends
+        #actually I need this as the pillar needs to be printable, so I can remove overhangs on the second half
+
+        pillar_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).line(0, ridge_length).radiusArc((inner_r + curve_end_gap, ridge_length + curve_r), curve_r).line(-curve_end_gap, 0).lineTo(inner_r,length - ridge_length - curve_r)
+                          .line(curve_end_gap, curve_end_gap*0.75).radiusArc((r, length - (ridge_length)), curve_r*1.5).line(0, ridge_length).lineTo(0, length)).close()
+
+        pillar = pillar_outline.sweep(circle)
+
+        return pillar#.union(pillar.mirrorX().translate((0,0,length/2)))
+
     def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
-                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE):
+                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1316,7 +1339,7 @@ class SimpleClockPlates:
         escapement_on_front: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         '''
-
+        self.fancy_pillars = fancy_pillars
         self.style = style
         #for raised edging style
         self.edging_wide = 3
@@ -3316,7 +3339,8 @@ class SimpleClockPlates:
                 return top_pillar
             top_pillar = top_pillar.extrude(self.plate_distance)
 
-
+        if self.fancy_pillars and not flat:
+            top_pillar = SimpleClockPlates.fancy_pillar(self.top_pillar_r, self.plate_distance)
 
 
         if not flat and self.dial and self.dial_top_above_front_plate and self.top_pillar_holds_dial:
@@ -4036,7 +4060,7 @@ class MantelClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False,
-                 symetrical=False, style=PlateStyle.SIMPLE):
+                 symetrical=False, style=PlateStyle.SIMPLE, fancy_pillars = False):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
@@ -4045,11 +4069,12 @@ class MantelClockPlates(SimpleClockPlates):
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style)
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, fancy_pillars = fancy_pillars)
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
         self.symetrical = symetrical
+
 
         self.little_arm_to_motion_works = False
 
@@ -4318,17 +4343,21 @@ class MantelClockPlates(SimpleClockPlates):
 
         overriding default pillars to give ones with flat bottoms
         '''
-
-
         pillar = cq.Workplane("XY").moveTo(self.bottom_pillar_r,0).lineTo(self.bottom_pillar_r, -self.bottom_pillar_r + self.foot_fillet_r)\
             .radiusArc((self.bottom_pillar_r - self.foot_fillet_r, -self.bottom_pillar_r), self.foot_fillet_r).\
             lineTo(-self.bottom_pillar_r + self.foot_fillet_r, -self.bottom_pillar_r).radiusArc((-self.bottom_pillar_r, -self.bottom_pillar_r+self.foot_fillet_r), self.foot_fillet_r).\
             lineTo(-self.bottom_pillar_r, 0).radiusArc((self.bottom_pillar_r,0), self.bottom_pillar_r).close()
 
+
+
         if flat:
             return pillar
 
-        pillar = pillar.extrude(self.plate_distance)
+
+        if self.fancy_pillars:
+            pillar = SimpleClockPlates.fancy_pillar(self.bottom_pillar_r, self.plate_distance)
+        else:
+            pillar = pillar.extrude(self.plate_distance)
 
         # hack - assume screws are in the same place for both pillars for now
         pillar = pillar.cut(self.get_fixing_screws_cutter().translate((-self.bottom_pillar_positions[0][0], -self.bottom_pillar_positions[0][1], -self.get_plate_thick(back=True))))
@@ -5760,7 +5789,7 @@ class Assembly:
         show_object(pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Pillars")
         if plate_detail is not None:
             show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
-            
+
         show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
 
 
