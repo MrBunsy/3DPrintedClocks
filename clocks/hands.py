@@ -442,7 +442,8 @@ class BaroqueHands(HandGenerator):
         self.minute_hand_cache = hand
         return hand
 
-    def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False):
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False, fixing_thick=1.6):
+        #TODO use fixing_thick
         if self.second_hand_cache is not None:
             return self.second_hand_cache
         line_width=1.2

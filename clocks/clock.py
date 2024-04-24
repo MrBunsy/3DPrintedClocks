@@ -1317,6 +1317,11 @@ class SimpleClockPlates:
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         '''
 
+        self.style = style
+        #for raised edging style
+        self.edging_wide = 3
+        self.edging_thick=LAYER_THICK*2
+
         self.vanity_plate_fixing_positions = []
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulum_fixing = pendulum_fixing
@@ -2305,6 +2310,9 @@ class SimpleClockPlates:
         if self.pendulum_at_front and self.pendulum_sticks_out > 0:
             #arm that holds the bearing (old designs)
             return False
+        if self.style in [PlateStyle.RAISED_EDGING]:
+            return False
+
         if self.huygens_maintaining_power:
             #ratchet is on the front
             return False
@@ -2834,13 +2842,26 @@ class SimpleClockPlates:
 
         return spaces
 
-    def get_plate_detail(self, back=True, for_printing=True):
+    def get_plate_detail(self, back=True):
         '''
         For styles of clock plate which might have ornate detailing. Similar to dial detail or text, this is a separate 3d shape
         designed to be sliced as a multicolour object
         '''
+
+        if self.style == PlateStyle.RAISED_EDGING:
+            #not for printing so we know it's got its back on the plane with bearing holes facing up
+            plate = self.get_plate(back = back, for_printing=False, just_basic_shape=True, thick_override=self.edging_wide*10)
+
+            shell = plate.shell(-self.edging_wide)
+            # return shell
+            # return cq.Workplane("XY").rect(50000, 50000).extrude(self.edging_thick)
+            edging = shell.translate((0,0,-self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
+            # this is on the xy plane sticking up +ve z, will need translating to be useful
+            return edging
+            # return edging.translate((0,0,self.get_plate_thick(back=back)))
+
         return None
-    def get_plate(self, back=True, for_printing=True):
+    def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
         Designed to be flat up against the wall, with everything offset to avoid the wall and picture rail
@@ -2858,6 +2879,8 @@ class SimpleClockPlates:
             raise ValueError("simple clock plates don't yet support multiple top pillars")
 
         thick = self.get_plate_thick(back)
+        if thick_override > 0:
+            thick = thick_override
 
         #the bulk material that holds the bearings
         plate = cq.Workplane("XY").tag("base")
@@ -2963,7 +2986,7 @@ class SimpleClockPlates:
         # link the top pillar to the rest of the plate
         plate = plate.workplaneFromTagged("base").moveTo(topOfPlate[0] - top_pillar_r, topOfPlate[1]) \
             .lineTo(top_pillar_positions[0][0] - top_pillar_r, top_pillar_positions[0][1]).radiusArc((top_pillar_positions[0][0] + top_pillar_r, top_pillar_positions[0][1]), top_pillar_r) \
-            .lineTo(topOfPlate[0] + top_pillar_r, topOfPlate[1]).close().extrude(self.get_plate_thick(back))
+            .lineTo(topOfPlate[0] + top_pillar_r, topOfPlate[1]).close().extrude(thick)
 
         #not sure this will print well
         # if not back and self.front_plate_has_flat_front():
@@ -2977,7 +3000,7 @@ class SimpleClockPlates:
 
         if back:
             #the hole for holding the clock to the wall - can inset the head of the screw if the plate is thick enough
-            screwHolebackThick = max(self.get_plate_thick(back) - 5, 4)
+            screwHolebackThick = max(thick - 5, 4)
 
 
             if self.back_plate_from_wall == 0:
@@ -3001,7 +3024,11 @@ class SimpleClockPlates:
 
         if not back:
             #front
-            plate = self.front_additions_to_plate(plate)
+            plate = self.front_additions_to_plate(plate, plate_thick=thick)
+
+
+        if just_basic_shape:
+            return plate
 
         plate = self.punch_bearing_holes(plate, back)
 
@@ -3011,13 +3038,28 @@ class SimpleClockPlates:
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
 
+        plate = self.apply_style_to_plate(plate, back=back)
 
         if for_printing and not back and self.front_plate_has_flat_front():
             '''
             front plate is generated front-up, but we can flip it for printing
             '''
-            plate = plate.rotate((0,0,0), (0,1,0),180).translate((0,0,self.get_plate_thick(back=False)))
+            plate = plate.rotate((0,0,0), (0,1,0),180).translate((0,0,thick))
 
+
+
+
+        return plate
+
+    def apply_style_to_plate(self, plate, back=True):
+        #assuming here that plates are in the default orentation, with back plate back down and front plate front up
+
+        if self.style == PlateStyle.RAISED_EDGING:
+
+            z = - self.edging_thick
+            if not back:
+                z = self.get_plate_thick(back=False)
+            return plate.union(self.get_plate_detail(back=back).translate((0,0,z)))
 
         return plate
 
@@ -3537,11 +3579,12 @@ class SimpleClockPlates:
 
         return plate
 
-    def front_additions_to_plate(self, plate):
+    def front_additions_to_plate(self, plate, plate_thick=-1):
         '''
         stuff only needed to be added to the front plate
         '''
-        plate_thick = self.get_plate_thick(back=False)
+        if plate_thick < 0:
+            plate_thick = self.get_plate_thick(back=False)
         # FRONT
 
         # note - works fine with the pendulum on the same rod as teh anchor, but I'm not sure about the long term use of ball bearings for just rocking back and forth
@@ -3566,7 +3609,7 @@ class SimpleClockPlates:
             #screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
-                plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(self.get_plate_thick(back=False)).translate(screw_pos))
+                plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(plate_thick).translate(screw_pos))
         else:
             if self.little_arm_to_motion_works:
                 #extra material in case the motion works is at an angle off to one side
@@ -3680,9 +3723,9 @@ class SimpleClockPlates:
                 raise ValueError("Hyugens wheel not yet supported with more than 1 bottom pillar")
             #assumes single pillar
             huygens_pos = self.bottom_pillar_positions[0]
-            plate = plate.union(ratchet.translate(huygens_pos).translate((0, self.huygens_wheel_y_offset, self.get_plate_thick(back=False))))
+            plate = plate.union(ratchet.translate(huygens_pos).translate((0, self.huygens_wheel_y_offset, plate_thick)))
             if ratchetD > self.bottom_pillar_r:
-                plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(self.get_plate_thick(back=False)).translate(huygens_pos).translate((0, self.huygens_wheel_y_offset)))
+                plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(plate_thick).translate(huygens_pos).translate((0, self.huygens_wheel_y_offset)))
 
         if self.weight_driven and not self.escapement_on_front and not self.huygens_maintaining_power and not self.pendulum_at_front and self.bottom_pillars > 1 and not self.going_train.chain_at_back:
             #add a semicircular bit under the chain wheel (like on huygens) to stop chain from being able to fall off easily
@@ -3851,7 +3894,7 @@ class SimpleClockPlates:
         return self.winding_key
 
 
-    def get_assembled(self):
+    def get_assembled(self, one_peice = True):
         '''
         3D model of teh assembled plates
         '''
@@ -3859,13 +3902,16 @@ class SimpleClockPlates:
         top_plate = self.get_plate(False, for_printing=False)
         front_of_clock_z = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance
 
+        plates = bottom_plate.add(top_plate.translate((0, 0, self.plate_distance + self.get_plate_thick(back=True))))
+
+        pillars = cq.Workplane("XY")
         if self.pillars_separate:
             for bottom_pillar_pos in self.bottom_pillar_positions:
-                bottom_plate = bottom_plate.add(self.get_pillar(top=False).translate(bottom_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
+                pillars = pillars.add(self.get_pillar(top=False).translate(bottom_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
             for top_pillar_pos in self.top_pillar_positions:
-                bottom_plate = bottom_plate.add(self.get_pillar(top=True).translate(top_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
+                pillars = pillars.add(self.get_pillar(top=True).translate(top_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
 
-        plates = bottom_plate.add(top_plate.translate((0, 0, self.plate_distance + self.get_plate_thick(back=True))))
+
 
         if self.back_plate_from_wall > 0:
             # need wall standoffs
@@ -3878,7 +3924,16 @@ class SimpleClockPlates:
         if self.need_motion_works_holder:
             plates = plates.add(self.get_motion_works_holder().translate((self.motion_works_pos[0], self.motion_works_pos[1], front_of_clock_z)))
 
-        return plates
+        detail = None
+        if self.style in [PlateStyle.RAISED_EDGING]:
+            detail = self.apply_style_to_plate(cq.Workplane("XY"), back=True).add(self.apply_style_to_plate(cq.Workplane("XY"), back=False)
+                                                                                  .translate((0,0,self.get_plate_thick(back=True) + self.plate_distance)))
+
+        if one_peice:
+            return plates.union(pillars).union(detail)
+
+        return (plates, pillars, detail)
+
 
     def output_STLs(self, name="clock", path="../out"):
 
@@ -3980,7 +4035,8 @@ class MantelClockPlates(SimpleClockPlates):
     Skeleton mantel clock
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False):
+                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False,
+                 symetrical=False, style=PlateStyle.SIMPLE):
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
@@ -3989,10 +4045,11 @@ class MantelClockPlates(SimpleClockPlates):
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front)
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style)
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
+        self.symetrical = symetrical
 
         self.little_arm_to_motion_works = False
 
@@ -4010,7 +4067,8 @@ class MantelClockPlates(SimpleClockPlates):
                 self.dial.subtract_from_supports = self.dial.subtract_from_supports.add(cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
                     .circle(arbor.bearing.outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall)))
 
-            if self.centred_second_hand:
+            if self.centred_second_hand or True:
+                #I'm not sure why this was only for centred second hand, it makes a lot of sense for all mantel dials?
                 pillar_positions = []
                 for side in [0,1]:
                     #relocate the pillars holding the dial
@@ -4028,6 +4086,8 @@ class MantelClockPlates(SimpleClockPlates):
 
                 self.dial.override_fixing_positions(dial_fixing_positions)
                 self.dial.support_d=15
+                if self.style == PlateStyle.RAISED_EDGING:
+                    self.dial.support_d = self.plate_width - self.edging_wide*2 - 1
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
@@ -4091,9 +4151,11 @@ class MantelClockPlates(SimpleClockPlates):
 
         self.plate_fixings = self.plate_top_fixings + self.plate_bottom_fixings
 
-    def get_plate(self, back=True, for_printing=True):
+    def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
 
         plate_thick = self.get_plate_thick(back=back)
+        if thick_override > 0:
+            plate_thick = thick_override
 
         plate = cq.Workplane("XY")
 
@@ -4151,8 +4213,8 @@ class MantelClockPlates(SimpleClockPlates):
                 plate = plate.union(cq.Workplane("XY").circle(bearing_info.outer_d / 2 + self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
 
         plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outer_d / 2 + self.bearing_wall_thick * 1.5).extrude(plate_thick))
-
-
+        if just_basic_shape:
+            return plate
 
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
@@ -4163,7 +4225,7 @@ class MantelClockPlates(SimpleClockPlates):
 
 
         if not back:
-            plate = self.front_additions_to_plate(plate)
+            plate = self.front_additions_to_plate(plate, plate_thick)
 
         plate = self.punch_bearing_holes(plate, back)
 
@@ -4182,6 +4244,9 @@ class MantelClockPlates(SimpleClockPlates):
                 cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
 
             plate = plate.cut(cutter)
+
+        if for_printing:
+            plate = self.apply_style_to_plate(plate, back=back)
 
         return plate
 
@@ -4551,7 +4616,7 @@ class RoundClockPlates(SimpleClockPlates):
 
         return plate
 
-    def get_plate(self, back=True, for_printing=True):
+    def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
 
         plate_thick = self.get_plate_thick(back=back)
 
@@ -4839,7 +4904,7 @@ class RoundClockPlates(SimpleClockPlates):
 
 
     def get_assembled(self):
-        plates = super().get_assembled()
+        plates, pillars, detail = super().get_assembled(one_peice=False)
 
         if not self.wall_mounted:
             plates = plates.add(self.get_legs(back=True).translate((0,0,-self.plate_thick)))
@@ -4847,9 +4912,9 @@ class RoundClockPlates(SimpleClockPlates):
             plates = plates.add(self.get_legs(back=False).translate((0, 0, self.get_plate_thick(back=True) + self.get_plate_thick(back=False) + self.plate_distance)))
 
             for pillar_pos in self.leg_pillar_positions:
-                plates = plates.add(self.get_legs_pillar().translate(pillar_pos))
+                pillars = pillars.add(self.get_legs_pillar().translate(pillar_pos))
 
-        return plates
+        return (plates, pillars, detail)
 
     def output_STLs(self, name="clock", path="../out"):
         super().output_STLs(name, path)
@@ -5507,8 +5572,6 @@ class Assembly:
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
         '''
 
-
-
         clock = self.plates.get_assembled()
 
         for a,arbour in enumerate(self.plates.arbors_for_plate):
@@ -5651,7 +5714,7 @@ class Assembly:
         return clock
 
 
-    def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colour="gray", hand_colours=None,
+    def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
                    moon_complication_colour=Colour.BRASS, vanity_plate_colour=Colour.WHITE):
@@ -5681,10 +5744,23 @@ class Assembly:
             #default to bob and nut are same colour and any text is black
             bob_colours = [default_bob_colour,default_bob_colour, Colour.BLACK]
 
-        if ratchet_colour is None:
-            ratchet_colour = plate_colour
+        if plate_colours is None:
+            plate_colours = [Colour.LIGHTGREY]
 
-        show_object(self.plates.get_assembled(), options={"color":plate_colour}, name="Plates")
+        if not isinstance(plate_colours, list):
+            #backwards compatibility
+            plate_colours = [plate_colours]
+
+        if ratchet_colour is None:
+            ratchet_colour = plate_colours[0]
+
+        plates,pillars,plate_detail = self.plates.get_assembled(one_peice=False)
+
+        show_object(plates, options={"color":plate_colours[0]}, name= "Plates")
+        show_object(pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Pillars")
+        if plate_detail is not None:
+            show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
+            
         show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
 
 
@@ -5700,7 +5776,7 @@ class Assembly:
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
 
         if self.motion_works.cannon_pinion_friction_ring:
-            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z)), options={"color":plate_colour}, name="Friction Clip")
+            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z)), options={"color":plate_colours}, name="Friction Clip")
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors
@@ -5714,7 +5790,7 @@ class Assembly:
 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i,holder in enumerate(holder_parts):
-                show_object(holder.translate((0, 0, self.front_of_clock_z)), options={"color":plate_colour, "name":"moon_holder_part{}".format(i)})
+                show_object(holder.translate((0, 0, self.front_of_clock_z)), options={"color":plate_colours, "name": "moon_holder_part{}".format(i)})
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)

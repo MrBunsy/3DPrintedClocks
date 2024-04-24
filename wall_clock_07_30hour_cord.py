@@ -89,7 +89,7 @@ bigweight.printInfo()
 
 assembly = clock.Assembly(plates, hands=hands, weights=[weight], pendulum=pendulum)
 # show_object(assembly.getClock())
-assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE], plate_colour=clock.Colour.DARKGREY,
+assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE], plate_colours=clock.Colour.DARKGREY,
                     hand_colours=[clock.Colour.WHITE, clock.Colour.DARKGREY])
 
 if outputSTL:

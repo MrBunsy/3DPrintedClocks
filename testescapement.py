@@ -37,5 +37,14 @@ diameter = 55
 
 # show_object(cq.Workplane("XY").circle(escapement.diameter/2))
 
-escapement = AnchorEscapement(diameter=diameter)
+# escapement = AnchorEscapement(diameter=diameter)
+
+drop =4
+lift =3
+lock=1.25
+pendulum_period=2.0
+teeth = 20
+toothspan = floor(teeth / 4) + 0.5
+escapement = BrocotEscapment(drop=drop, lift=lift, teeth=teeth, lock=lock, diameter=55, anchor_teeth=toothspan)
+
 show_object(escapement.get_assembled())

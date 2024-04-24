@@ -103,7 +103,7 @@ hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_f
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
 
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
-assembly.show_clock(show_object, with_rods=True, plate_colour=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])
+assembly.show_clock(show_object, with_rods=True, plate_colours=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])
 
 assembly.get_arbour_rod_lengths()
 if outputSTL:

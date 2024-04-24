@@ -130,8 +130,8 @@ plates.get_rod_lengths()
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
-                    bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
-                    dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD, plate_colour=clock.Colour.BRASS)
+                        bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
+                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD, plate_colours=clock.Colour.BRASS)
 
 # show_object(plates.getDrillTemplate(6))
 

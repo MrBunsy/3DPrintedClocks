@@ -3413,7 +3413,7 @@ class TraditionalRatchet:
                             .lineTo(click_end_inner_pos[0], click_end_inner_pos[1]).radiusArc(click_start_inner, -self.direction*(click_spring_r - self.click_wide/2)).close().extrude(self.thick))
 
         for screwpos in self.click_fixings:
-            click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2 + LOOSE_SCREW).extrude(self.thick).translate(screwpos))
+            click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.thick).translate(screwpos))
 
         return click
 

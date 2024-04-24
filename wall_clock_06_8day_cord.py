@@ -133,7 +133,7 @@ print("Plate distance: ", plates.plate_distance)
 #
 # show_object(assembly.getClock())
 #
-assembly.show_clock(show_object, plate_colour=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW])
+assembly.show_clock(show_object, plate_colours=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.YELLOW])
 if outputSTL:
     train.output_STLs(clockName, clockOutDir)
     motionWorks.output_STLs(clockName,clockOutDir)

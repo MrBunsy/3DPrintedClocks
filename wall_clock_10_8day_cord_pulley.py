@@ -126,7 +126,7 @@ assembly.printInfo()
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock())
 
-assembly.show_clock(show_object, plate_colour=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN,clock.Colour.GREEN,clock.Colour.YELLOW])
+assembly.show_clock(show_object, plate_colours=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.YELLOW])
 
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).get_assembled())
 # show_object(assembly.goingTrain.getArbourWithConventionalNaming(0).getShape())
