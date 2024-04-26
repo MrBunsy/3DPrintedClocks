@@ -1317,11 +1317,23 @@ class SimpleClockPlates:
 
         #can't figure out how to use mirror properly, so building whole pillar despite being same on both ends
         #actually I need this as the pillar needs to be printable, so I can remove overhangs on the second half
-
-        pillar_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).line(0, ridge_length).radiusArc((inner_r + curve_end_gap, ridge_length + curve_r), curve_r).line(-curve_end_gap, 0).lineTo(inner_r,length - ridge_length - curve_r)
+        if False:
+            pillar_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).line(0, ridge_length).radiusArc((inner_r + curve_end_gap, ridge_length + curve_r), curve_r).line(-curve_end_gap, 0).lineTo(inner_r,length - ridge_length - curve_r)
                           .line(curve_end_gap, curve_end_gap*0.75).radiusArc((r, length - (ridge_length)), curve_r*1.5).line(0, ridge_length).lineTo(0, length)).close()
+            pillar = pillar_outline.sweep(circle)
+        else:
+            ridge_length = min(10, length*0.1)
+            inner_r = r * 0.85
+            base_thick = curve_r*1.5
+            next_bulge_thick = curve_r*2
+            base_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick)], tangents=[(0,1),(-0.5,0.5)])
+                              .spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick + next_bulge_thick)], tangents=[(1,1),(-1,1)]).lineTo(0,base_thick + next_bulge_thick).close())
+            base = base_outline.sweep(circle)
+            twists = math.ceil(length/400)
+            barley_twist = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(length - 2*(base_thick + next_bulge_thick), 180*twists).translate((0,0,base_thick + next_bulge_thick))
 
-        pillar = pillar_outline.sweep(circle)
+            pillar = base.union(barley_twist).union(base.rotate((0,0,0),(1,0,0),180).translate((0,0,length)))
+
 
         return pillar#.union(pillar.mirrorX().translate((0,0,length/2)))
 
@@ -2871,7 +2883,8 @@ class SimpleClockPlates:
         designed to be sliced as a multicolour object
         '''
 
-        if self.style == PlateStyle.RAISED_EDGING:
+        #undecided - might be easier to just not put this on the back plate? it's going to be hard to see and makes it harder to print and work out how to do standoffs
+        if self.style == PlateStyle.RAISED_EDGING and not back:
             #not for printing so we know it's got its back on the plane with bearing holes facing up
             plate = self.get_plate(back = back, for_printing=False, just_basic_shape=True, thick_override=self.edging_wide*10)
 
@@ -3078,11 +3091,13 @@ class SimpleClockPlates:
         #assuming here that plates are in the default orentation, with back plate back down and front plate front up
 
         if self.style == PlateStyle.RAISED_EDGING:
-
+            detail = self.get_plate_detail(back=back)
+            if detail is None:
+                return plate
             z = - self.edging_thick
             if not back:
                 z = self.get_plate_thick(back=False)
-            return plate.union(self.get_plate_detail(back=back).translate((0,0,z)))
+            return plate.union(detail.translate((0,0,z)))
 
         return plate
 
@@ -4061,6 +4076,7 @@ class MantelClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, fancy_pillars = False):
+        self.symetrical = symetrical
 
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
@@ -4073,7 +4089,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
-        self.symetrical = symetrical
+
 
 
         self.little_arm_to_motion_works = False
@@ -4140,26 +4156,19 @@ class MantelClockPlates(SimpleClockPlates):
         bottom_angle = -math.pi/4
         self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
 
-        # right_pillar_line = Line(self.bearing_positions[1][:2], anotherPoint=self.bearing_positions[-2][:2])
-        # #how far between the arbors 1 and -2
-        # right_distance = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[-2][:2]))
-        # #calculate how far along is "in the middle" of the empty space between them
-        # right_bottom_distance = self.arbours_for_plate[1].get_max_radius()
-        # along_distance = right_bottom_distance + (right_distance - self.arbours_for_plate[-2].get_max_radius() - right_bottom_distance)/2
-        # right_bottom_equidistance_point = npToSet(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, along_distance)))
-        # #now go outwards from teh minute wheel along the line that goes through the minutewheel and this point
-        # right_pillar_line2 = Line(self.bearing_positions[self.going_train.powered_wheels][:2], anotherPoint=right_bottom_equidistance_point)
-        #
-        # from_minute_wheel = self.arbours_for_plate[self.going_train.powered_wheels].get_max_radius() + self.gear_gap + self.top_pillar_r
-        # right_pillar_pos = npToSet(np.add(right_pillar_line2.start,np.multiply(right_pillar_line2.dir, from_minute_wheel)))
-        #
-        # self.top_pillar_positions = [right_pillar_pos]
+
         right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
-        # left_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[self.going_train.powered_wheels+1][:2])
-        self.top_pillar_positions = [
-            np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
-            np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
-        ]
+        if self.symetrical:
+            y = self.bearing_positions[-2][1] + self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r
+            self.top_pillar_positions = [
+                (self.bottom_pillar_positions[0][0], y),
+                (self.bottom_pillar_positions[1][0], y)
+            ]
+        else:
+            self.top_pillar_positions = [
+                np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+                np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+            ]
         print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
 
     def calc_fixing_info(self):
@@ -4378,7 +4387,7 @@ class RoundClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150, endshake=1, fully_round=False):
+                 leg_height=150, endshake=1, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
         '''
 
         '''
@@ -4394,7 +4403,8 @@ class RoundClockPlates(SimpleClockPlates):
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=True)
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=True, style=style,
+                         fancy_pillars=fancy_pillars)
 
 
 
@@ -4443,9 +4453,11 @@ class RoundClockPlates(SimpleClockPlates):
         '''
 
         pillar_length = self.plate_distance
-        pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
 
-        #TODO fancy pillars?
+        if self.fancy_pillars:
+            pillar = SimpleClockPlates.fancy_pillar(self.pillar_r, pillar_length)
+        else:
+            pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
 
         return pillar
 
@@ -4648,6 +4660,8 @@ class RoundClockPlates(SimpleClockPlates):
     def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
 
         plate_thick = self.get_plate_thick(back=back)
+        if thick_override > 0:
+            plate_thick = thick_override
 
         centre = self.bearing_positions[self.going_train.powered_wheels][:2]
 
@@ -4695,6 +4709,9 @@ class RoundClockPlates(SimpleClockPlates):
                 end = bearing_pos[:2]
 
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
+
+        if just_basic_shape:
+            return plate
 
         self.beefed_up_pawl_thickness = 0
 
@@ -4932,7 +4949,7 @@ class RoundClockPlates(SimpleClockPlates):
         return (lengths, zs)
 
 
-    def get_assembled(self):
+    def get_assembled(self, one_peice=True):
         plates, pillars, detail = super().get_assembled(one_peice=False)
 
         if not self.wall_mounted:
@@ -4942,7 +4959,8 @@ class RoundClockPlates(SimpleClockPlates):
 
             for pillar_pos in self.leg_pillar_positions:
                 pillars = pillars.add(self.get_legs_pillar().translate(pillar_pos))
-
+        if one_peice:
+            return plates.union(pillars).union(detail)
         return (plates, pillars, detail)
 
     def output_STLs(self, name="clock", path="../out"):

@@ -98,7 +98,7 @@ dial = clock.Dial(outside_d=200, bottom_fixing=False, top_fixing=False, romain_n
 # dial=None
 
 plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]], style=clock.PlateStyle.RAISED_EDGING,
-                                 fancy_pillars=True)
+                                 fancy_pillars=True)#, symetrical=True
 
 
 # show_object(plates.get_plate_detail(back=True))

@@ -105,11 +105,12 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 #                   font_scale=0.75, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
 #                   dial_width=20)
 
-
-
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1, module=0.8)
+moon_complication = None
 dial = clock.Dial(outside_d=205, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=25)
 plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True)
+                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
+                                moon_complication=moon_complication)
 
 
 hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
@@ -131,7 +132,8 @@ plates.get_rod_lengths()
 if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
                         bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
-                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD, plate_colours=clock.Colour.BRASS)
+                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD,
+                        plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])
 
 # show_object(plates.getDrillTemplate(6))
 
