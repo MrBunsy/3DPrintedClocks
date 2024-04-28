@@ -102,6 +102,9 @@ hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_f
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
 
+# parts = plates.moon_holder.get_moon_holder_parts(for_printing=False)
+# show_object(parts[0])
+#
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
 assembly.show_clock(show_object, with_rods=True, plate_colours=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])
 

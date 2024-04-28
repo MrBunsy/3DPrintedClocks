@@ -1251,22 +1251,26 @@ class MoonHolder:
         #moon hole
         cutter = cq.Workplane("XY").sphere(self.moon_complication.moon_radius + self.moon_extra_space).translate(moon_centre_pos)
 
+
         for screw_pos in self.get_fixing_positions():
-            cutter = cutter.add(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.plates.layer_thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((screw_pos[0], screw_pos[1], moon_z + lid_thick)))
+            cutter = cutter.union(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.plates.layer_thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((screw_pos[0], screw_pos[1], moon_z + lid_thick)))
 
         #the steel tube
         cutter = cutter.add(cq.Workplane("XY").circle(STEEL_TUBE_DIAMETER/2).extrude(1000).translate((0,0,-500)).rotate((0,0,0),(1,0,0), 90).translate((0,0,moon_z)))
 
-        space_d = self.fixing_screws.get_washer_diameter()+1
+        # space_d = self.fixing_screws.get_washer_diameter()+1
+        space_d = max(self.fixing_screws.get_nut_containing_diameter(), self.fixing_screws.get_washer_diameter()) + 1
 
         # space for the two nuts, spring washer and normal washer at the bottom of the moon and nut at the top of the moon
-        nut_space = cq.Workplane("XY").circle(space_d/2).extrude(moon_r)
-        #space for nuts at the top of the moon (like on the front of the hands)
-        nut_space = nut_space.union(cq.Workplane("XY").circle(self.fixing_screws.get_nut_containing_diameter() / 2 + 0.5).extrude(self.moon_complication.moon_radius * 2).translate((0, 0, moon_r)))
-
+        # nut_space = cq.Workplane("XY").circle(space_d/2).extrude(moon_r)
+        # #space for nuts at the top of the moon (like on the front of the hands)
+        # nut_space = nut_space.union(cq.Workplane("XY").circle(self.fixing_screws.get_nut_containing_diameter() / 2 + 0.5).extrude(self.moon_complication.moon_radius * 2).translate((0, 0, moon_r)))
+        nut_space = cq.Workplane("XY").circle(space_d/2).extrude(moon_r*2 + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT*2)
         #.faces(">Z").workplane().circle(self.fixing_screws.get_nut_containing_diameter()/2+0.5)).extrude(self.moon_complication.moon_radius*2)
 
-        cutter = cutter.add(nut_space.rotate((0,0,0),(1,0,0),-90).translate(moon_centre_pos).translate((0,-moon_r-TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT, 0)))
+        nut_space = nut_space.rotate((0,0,0),(1,0,0),-90).translate(moon_centre_pos).translate((0,-moon_r-TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT, 0))
+
+        cutter = cutter.union(nut_space)
 
         #copypaste from above
         lid = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
@@ -3969,7 +3973,10 @@ class SimpleClockPlates:
                                                                                   .translate((0,0,self.get_plate_thick(back=True) + self.plate_distance)))
 
         if one_peice:
-            return plates.union(pillars).union(detail)
+            whole =  plates.union(pillars)
+            if detail is not None:
+                whole= whole.union(detail)
+            return whole
 
         return (plates, pillars, detail)
 
@@ -4495,6 +4502,8 @@ class RoundClockPlates(SimpleClockPlates):
 
         # used in base class
         self.pillar_r = self.plate_width / 2
+        #moon complication refers to this
+        self.top_pillar_r = self.pillar_r
 
         # self.radius = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)
         self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
@@ -5837,7 +5846,7 @@ class Assembly:
 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i,holder in enumerate(holder_parts):
-                show_object(holder.translate((0, 0, self.front_of_clock_z)), options={"color":plate_colours, "name": "moon_holder_part{}".format(i)})
+                show_object(holder.translate((0, 0, self.front_of_clock_z)), name="moon_holder_part{}".format(i), options={"color":plate_colours[0]})
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
