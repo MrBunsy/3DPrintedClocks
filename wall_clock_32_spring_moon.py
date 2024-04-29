@@ -108,7 +108,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1, module=0.8)
 moon_complication = None
 dial = clock.Dial(outside_d=205, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=25)
-plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=20,
+plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=25,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
                                 moon_complication=moon_complication)
 
@@ -116,7 +116,7 @@ plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, p
 hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
-
+# show_object(plates.get_fixing_screws_cutter())
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
 assembly.get_arbour_rod_lengths()

@@ -52,14 +52,19 @@ def get_smooth_knob_2d(inner_r, outer_r, knobs=5):
 #
 #     return circle
 
-def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUND):
+def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUND, fill_in=False):
+    '''
+    if fill_in then it's more of a rounded semicircle
 
+    negative radius seems to be broken in some cases? workaround is to adjust order of from and to pos
+    '''
     line = Line(from_pos, anotherPoint=to_pos)
     midpoint = average_of_two_points(from_pos, to_pos)
     nighty_deg = math.pi/2 * (1 if radius > 0 else -1)
     from_midpoint_to_centre_angle = line.get_angle() + nighty_deg
 
     wide_radius = wide / 2 * (1 if radius > 0 else -1)
+
 
     #sagitta to work out where the centre should be
     l = distance_between_two_points(from_pos, to_pos)
@@ -75,7 +80,18 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
     inner_to = np_to_set(np.add(centre, polar(to_line.get_angle(), radius - wide / 2)))
     outer_to = np_to_set(np.add(centre, polar(to_line.get_angle(), radius + wide / 2)))
 
-    arc = cq.Workplane("XY").moveTo(inner_from[0], inner_from[1]).radiusArc(inner_to, -(radius-wide/2))
+    if fill_in:
+        if style == StrokeStyle.ROUND:
+            base_from = np_to_set(np.add(from_pos, polar(from_midpoint_to_centre_angle, wide/2)))
+            base_to = np_to_set(np.add(to_pos, polar(from_midpoint_to_centre_angle, wide / 2)))
+            arc = cq.Workplane("XY").moveTo(base_from[0], base_from[1]).lineTo(base_to[0], base_to[1])
+            # arc = arc.radiusArc(inner_to, wide_radius+0.00001)
+        else:
+            #direct line
+            arc = cq.Workplane("XY").moveTo(inner_from[0], inner_from[1]).lineTo(inner_to[0], inner_to[1])
+    else:
+        #the inner curve
+        arc = cq.Workplane("XY").moveTo(inner_from[0], inner_from[1]).radiusArc(inner_to, -(radius-wide/2))
 
     if style == StrokeStyle.ROUND:
         arc = arc.radiusArc(outer_to, wide_radius+0.00001)
@@ -85,7 +101,10 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
     arc = arc.radiusArc(outer_from, radius + wide/2)
 
     if style == StrokeStyle.ROUND:
-        arc = arc.radiusArc(inner_from, wide_radius+0.00001)
+        if fill_in:
+            arc = arc.radiusArc(base_from, wide_radius + 0.00001)
+        else:
+            arc = arc.radiusArc(inner_from, wide_radius+0.00001)
     else:
         arc = arc.lineTo(inner_from[0], inner_from[1])
 
