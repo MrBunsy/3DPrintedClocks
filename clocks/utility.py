@@ -907,28 +907,38 @@ def get_hole_with_hole(innerD, outerD, deep, sides=1, layerThick=LAYER_THICK):
     if sides is 1 it's a circle, else it's a polygone with that number of sides
     funnily enough zero and 2 are invalid values
 
+    TODO if the radii are too similar (only a thin ring around the edge) we don't need the two layers
     '''
 
     if sides <= 0 or sides == 2:
         raise ValueError("Impossible polygon, can't have {} sides".format(sides))
 
+    layers = 2
+    square_r = (innerD/2)/math.cos(math.pi/4)
+    if square_r > outerD/2:
+        #can do this in one layer
+        layers = 1
     hole = cq.Workplane("XY")
     if sides == 1:
         hole = hole.circle(outerD / 2)
     else:
         hole = hole.polygon(sides, outerD)
-    hole = hole.extrude(deep + layerThick * 2)
+    hole = hole.extrude(deep + layerThick * layers)
 
     # the shape we want the bridging to end up
-    bridgeCutterCutter = cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD, innerD).extrude(layerThick)  #
 
+
+    if layers == 1:
+        bridgeCutterCutter = cq.Workplane("XY").rect(innerD, innerD).extrude(layerThick)
+    else:
+        bridgeCutterCutter = cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD, innerD).extrude(layerThick)  #
     bridgeCutter = cq.Workplane("XY")
     if sides == 1:
         bridgeCutter = bridgeCutter.circle(outerD / 2)
     else:
         bridgeCutter = bridgeCutter.polygon(sides, outerD)
 
-    bridgeCutter = bridgeCutter.extrude(layerThick * 2).cut(bridgeCutterCutter).translate((0, 0, deep))
+    bridgeCutter = bridgeCutter.extrude(layerThick * layers).cut(bridgeCutterCutter).translate((0, 0, deep))
 
     hole = hole.cut(bridgeCutter)
 

@@ -4399,7 +4399,7 @@ class RoundClockPlates(SimpleClockPlates):
     This was based on a copy of MantelClockPlates - I think it's going to be similar, but not similar enough to warrant extending or being a set of options
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
+                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
         '''
 
@@ -4609,7 +4609,7 @@ class RoundClockPlates(SimpleClockPlates):
 
         if self.wall_mounted:
             bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
-            for pos in self.top_pillar_positions:
+            for pos in self.all_pillar_positions:
                 cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height).translate((pos[0], pos[1], top_nut_base_z)))
 
         return cutter
