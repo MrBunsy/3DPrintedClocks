@@ -1308,7 +1308,7 @@ class SimpleClockPlates:
     '''
 
     @staticmethod
-    def fancy_pillar(r, length):
+    def fancy_pillar(r, length, clockwise=True):
         '''
         produce a fancy turned-wood style pillar
         '''
@@ -1333,8 +1333,14 @@ class SimpleClockPlates:
             base_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick)], tangents=[(0,1),(-0.5,0.5)])
                               .spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick + next_bulge_thick)], tangents=[(1,1),(-1,1)]).lineTo(0,base_thick + next_bulge_thick).close())
             base = base_outline.sweep(circle)
-            twists = math.ceil(length/400)
-            barley_twist = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(length - 2*(base_thick + next_bulge_thick), 180*twists).translate((0,0,base_thick + next_bulge_thick))
+
+            twists_per_mm = 1/100
+
+            twists = twists_per_mm * (length - base_thick*2 - next_bulge_thick*2)#math.ceil(length/100)/2
+            angle = 360*twists
+            if not clockwise:
+                angle *= -1
+            barley_twist = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(length - 2*(base_thick + next_bulge_thick), angle).translate((0,0,base_thick + next_bulge_thick))
 
             pillar = base.union(barley_twist).union(base.rotate((0,0,0),(1,0,0),180).translate((0,0,length)))
 
@@ -4604,7 +4610,7 @@ class RoundClockPlates(SimpleClockPlates):
         if self.wall_mounted:
             bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
             for pos in self.top_pillar_positions:
-                cutter = cutter.cut(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height).translate((pos[0], pos[1], top_nut_base_z)))
+                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height).translate((pos[0], pos[1], top_nut_base_z)))
 
         return cutter
 
@@ -4914,12 +4920,17 @@ class RoundClockPlates(SimpleClockPlates):
 
         standoff = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r, wide=width, thick=plate_thick)
 
+        clockwise = True
         for pillar_pos in anchor_holder_fixing_points:
-            standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
+            if self.fancy_pillars:
+                standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0,0, plate_thick)))
+                clockwise = not clockwise
+            else:
+                standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))
-        standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0,self.back_plate_from_wall)))#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
+        standoff = standoff.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
 
 
 
