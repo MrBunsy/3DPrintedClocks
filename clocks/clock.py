@@ -831,6 +831,8 @@ class GoingTrain:
 
         pinion_thick_extra: newer idea, override pinion_thick_multiplier and chain_wheel_pinion_thick_multiplier.
          Just add this value to the thickness of the previous wheel for each pinion thickness
+
+         bodge: chain_wheel_pinion_thick_multiplier will override pinion_thick_extra if chain_wheel_pinion_thick_multiplier is positive
         '''
 
         if rod_diameters is None:
@@ -1000,7 +1002,7 @@ class GoingTrain:
                 #just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
                 clockwise_from_pinion_side = first_chainwheel_clockwise == (i %2 == 0)
                 pinion_thick = self.powered_wheel_arbors[i - 1].wheel_thick * chain_wheel_pinion_thick_multiplier
-                if pinion_thick_extra > 0:
+                if pinion_thick_extra > 0 and chain_wheel_pinion_thick_multiplier < 0:
                     pinion_thick = self.powered_wheel_arbors[i - 1].wheel_thick + pinion_thick_extra
                 cap_thick = gear_pinion_end_cap_thick
                 wheel_thick = chain_wheel_thick * (thickness_reduction ** i)
@@ -2097,7 +2099,7 @@ class SimpleClockPlates:
                     third_wheel_pos = (-escape_wheel_relative_pos[0], escape_wheel_relative_pos[1])
                     # anchor is directly above minutes
                     #TODO does htis work if we're on the right hand side?
-                    self.angles_from_minute[3] = math.pi - math.acos(escape_wheel_relative_pos[0]/escape_wheel_to_anchor)
+                    self.angles_from_minute[3] = math.pi - on_side*math.acos(escape_wheel_relative_pos[0]/escape_wheel_to_anchor)
                 else:
 
 
@@ -4552,9 +4554,6 @@ class RoundClockPlates(SimpleClockPlates):
         self.radius = self.bottom_pillar_distance/2
 
 
-        if self.fully_round:
-            bottom_pillar_pos = (self.bearing_positions[0][0] + self.bottom_pillar_distance/2, self.bearing_positions[0][1])
-            self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
 
         # self.radius = barrel_distance + self.arbors_for_plate[0].bearing.outer_d/2 + self.bearing_wall_thick - self.plate_width/2
 
@@ -4583,6 +4582,45 @@ class RoundClockPlates(SimpleClockPlates):
             point = points[1]
         line_to_point = Line(centre, anotherPoint=point)
 
+        self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick*2
+
+
+        barrel_pos = self.bearing_positions[0]
+
+        y = barrel_pos[1] - self.bottom_arm_wide/2 + self.pillar_r
+        pillar_distance = self.radius
+
+        if self.fully_round:
+            #pillars inline with the powered wheel
+            y = barrel_pos[1]
+            pillar_distance = self.bottom_pillar_distance/2
+
+            if not self.going_train.powered_wheels > 1:
+                raise ValueError("TODO calculate pillar positions for non eight day spring clocks")
+            #assuming spring driven here
+            b = self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1
+            a = self.arbors_for_plate[0].arbor.distance_to_next_arbour
+            c = self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1
+            # cosine law
+            angle = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
+            second_wheel_from_first = np_to_set(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[0][:2]))
+            second_wheel_from_first_angle = math.atan2(second_wheel_from_first[1], second_wheel_from_first[0])
+            final_angle = second_wheel_from_first_angle - angle
+            bottom_pillar_pos = np_to_set(np.add(self.bearing_positions[0][:2], polar(final_angle, b)))
+            self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
+            self.bottom_pillar_positions = [
+                bottom_pillar_pos,
+                (-bottom_pillar_pos[0], bottom_pillar_pos[1]),
+            ]
+        else:
+
+            self.bottom_pillar_positions = [
+                (barrel_pos[0] - pillar_distance, y),
+                (barrel_pos[0] + pillar_distance, y),
+            ]
+
+
+
         #just above second power wheel
         # right_pillar_pos = np_to_set(np.add(centre, polar(second_pillar_angle, self.radius)))
 
@@ -4600,25 +4638,6 @@ class RoundClockPlates(SimpleClockPlates):
             # np_to_set(np.add(centre, polar(bottom_pillar_angle, self.radius))),
         ]
 
-        self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick*2
-
-
-        barrel_pos = self.bearing_positions[0]
-
-        y = barrel_pos[1] - self.bottom_arm_wide/2 + self.pillar_r
-        pillar_distance = self.radius
-
-        if self.fully_round:
-            #pillars inline with the powered wheel
-            y = barrel_pos[1]
-            pillar_distance = self.bottom_pillar_distance/2
-
-
-
-        self.bottom_pillar_positions = [
-            (barrel_pos[0] - pillar_distance, y),
-            (barrel_pos[0] + pillar_distance, y),
-        ]
 
         self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
         if self.wall_mounted:
@@ -4750,9 +4769,14 @@ class RoundClockPlates(SimpleClockPlates):
 
         for i, bearing_pos in enumerate(self.bearing_positions):
             if i == self.going_train.powered_wheels:
+                #the minute wheel, in the centre
                 continue
             if i > self.going_train.powered_wheels:
                 line_wide = small_arm_wide
+
+            if distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].bearing.outer_d/2 > self.radius - self.pillar_r:
+                #this bearing will be in the outer circle
+                continue
             line = Line(centre, anotherPoint=bearing_pos[:2])
             end = np_to_set(np.add(polar(line.get_angle(), self.radius), centre))
             if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front:
