@@ -65,9 +65,9 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, t
 
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=7.5 * 24, support_second_hand=True, escape_wheel_pinion_at_front=True)
-
+barrel_gear_thick = 8
 moduleReduction=0.9#0.85
-train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4)
+train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4, base_thick=barrel_gear_thick)
 #2/3s
 train.set_ratios([[75, 9], [72, 10], [55, 22]])
 
@@ -75,10 +75,10 @@ pendulumSticksOut=10
 backPlateFromWall=30
 
 pinion_extensions = {1:12, 2:5}
-
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0])
+                pinion_extensions=pinion_extensions, lanterns=[0], powered_wheel_module_sizes=powered_modules)
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 

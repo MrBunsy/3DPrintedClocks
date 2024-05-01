@@ -4162,6 +4162,8 @@ class MantelClockPlates(SimpleClockPlates):
         self.top_pillar_positions = []
         self.bottom_pillar_r = self.plate_width/2
         self.top_pillar_r = self.min_plate_width/2
+        # if self.fancy_pillars:
+        #     self.top_pillar_r = self.bottom_pillar_r
 
 
         bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.gear_gap + self.bottom_pillar_r
@@ -4349,9 +4351,14 @@ class MantelClockPlates(SimpleClockPlates):
         plate_thick = self.get_plate_thick(standoff=True)
         #to match the plate
         standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=width, thick=plate_thick)
+        clockwise = True
 
         for pillar_pos in self.top_pillar_positions:
-            standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
+            if self.fancy_pillars:
+                standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.top_pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0, 0, plate_thick)))
+                clockwise = not clockwise
+            else:
+                standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))
@@ -4400,7 +4407,7 @@ class RoundClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150, endshake=1, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
+                 leg_height=150, endshake=1.25, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
         '''
 
         '''
@@ -5031,21 +5038,32 @@ class RoundClockPlates(SimpleClockPlates):
     def output_STLs(self, name="clock", path="../out"):
         super().output_STLs(name, path)
 
-        out = os.path.join(path, "{}_legs_back.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_legs(back=True), out)
+        if not self.wall_mounted:
+            out = os.path.join(path, "{}_legs_back.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_legs(back=True), out)
 
-        out = os.path.join(path, "{}_legs_front.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_legs(back=False), out)
+            out = os.path.join(path, "{}_legs_front.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_legs(back=False), out)
 
-        out = os.path.join(path, "{}_legs_pillar.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_legs_pillar(), out)
+            out = os.path.join(path, "{}_legs_pillar.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_legs_pillar(), out)
 
-        out = os.path.join(path, "{}_anchor_holder_back.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_back_anchor_holder(), out)
+            out = os.path.join(path, "{}_anchor_holder_back.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_back_anchor_holder(), out)
+        else:
+            out = os.path.join(path, "{}_wall_standoff_top.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_wall_standoff(top=True, for_printing=True), out)
+
+            out = os.path.join(path, "{}_wall_standoff_bottom.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_wall_standoff(top=False, for_printing=True), out)
+
+
 
         if self.has_vanity_plate:
             out = os.path.join(path, "{}_vanity_plate.stl".format(name))

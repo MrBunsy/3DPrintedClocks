@@ -79,12 +79,20 @@ class MoonPhaseComplication3D:
     module of 0.9 on first experiment
     '''
     def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=2.4, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,
-                 on_left=True, bevel_module=-1):
+                 on_left=True, bevel_module=-1, moon_inside_dial = False, bevel_angle_deg=90, moon_from_hands=40):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
         self.gear_style = gear_style
         self.on_left = on_left
+        #if false, sticks off the top of the clock
+        self.moon_inside_dial = moon_inside_dial
+        #angle the rod off directly upright? can be useful for fitting moon inside a dial
+        #this is the angle from the motion works to the bevel gear (but note that if on_left is false, this is flipped sides)
+        self.bevel_angle_deg = bevel_angle_deg
+        self.bevel_angle = degToRad(bevel_angle_deg)
+        #if moon angle, use to calculate position of the bevel gear. in mm
+        self.moon_from_hands = moon_from_hands
 
         self.moon_radius = moon_radius
         self.first_gear_angle = degToRad(first_gear_angle_deg)
@@ -220,8 +228,8 @@ class MoonPhaseComplication3D:
 
         (arbor -1 is the hour holder)
         arbor 0 is off to one side - standard arbor except driven backwards (pinion drives the wheel)
-        arbor 1 has the first bevel gear
-        arbor 2 is just the last bevel gear
+        arbor 2 has the first bevel gear
+        arbor 3 is just the last bevel gear
         '''
         if index < 2:
             pinion_length = self.first_pinion_thick if index == 0 else self.pinion_thick
@@ -267,8 +275,8 @@ class MoonPhaseComplication3D:
         positions = []
 
         #directly above and as close to the motion works as possible
-        motion_works_to_belvel0 = self.cannon_pinion_max_r + self.pairs[1].wheel.get_max_radius() + 3
-        bevel0_pos = (0, motion_works_to_belvel0)
+        motion_works_to_belvel0 = self.cannon_pinion_max_r + self.pairs[2].wheel.get_max_radius() + 3
+        bevel0_pos = polar(self.bevel_angle, motion_works_to_belvel0)#(0, motion_works_to_belvel0)
         # directly to the left of teh motion works
         arbor0_pos = polar(self.first_gear_angle, self.get_arbor_distances(0))#(-self.get_arbor_distances(0),0)
 
@@ -334,11 +342,19 @@ class MoonPhaseComplication3D:
 
         #would like the bevel at the top, keeping it further out the way of the motion works and closer to where it can be through a pipe/bearing (to reduce wobble)
         #but with the extra gear it'd be spinning the wrong way!
-        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).translate(
-            (0,
-             positions[2][1] - self.bevel_pair.get_centre_of_pinion_to_back_of_wheel(),
-             self.get_relative_moon_z())
+
+        bevel_angle = (math.pi/2 - self.bevel_angle)
+
+        bevel_relative_pos = polar(-math.pi/2 +bevel_angle,self.bevel_pair.get_centre_of_pinion_to_back_of_wheel())
+        if not self.on_left:
+            bevel_relative_pos = (-bevel_relative_pos[0], bevel_relative_pos[1])
+        bevel_pos = np_to_set(np.add(positions[2][:2], bevel_relative_pos))
+        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).rotate((0,0,0), (0,0,1),self.bevel_angle_deg-90).translate(
+            (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
         ))
+        # model = model.add(cq.Workplane("XY").circle(1).extrude(40).translate(
+        #     (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
+        # ))
 
         return model
 
