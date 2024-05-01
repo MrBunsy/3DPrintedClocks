@@ -57,7 +57,7 @@ train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max
 
 barrel_gear_thick = 8
 
-moduleReduction=1#0.85
+moduleReduction=0.95#0.85
 #train.gen_spring_barrel(click_angle=-math.pi*0.25)
 #smiths ratios but with more teeth on the first pinion (so I can print it with two perimeters, with external perimeter at 0.435 and perimeter at 0.43)
 #could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
@@ -82,7 +82,7 @@ dial_width=25
 
 #was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
 #so reprints are a mix of old and new STLs...
-pinion_extensions = {1:10,3:10} #{1:25}
+pinion_extensions = {1:5,3:5} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
@@ -94,14 +94,14 @@ train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=3, thickn
 # train.print_info(weight_kg=1.5)#
 moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()
-moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.8, moon_radius=moon_radius,
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                   bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 # moon_complication = None
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
 motionWorks = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
                                 moon_complication=moon_complication)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-# motionWorks.calculate_size(arbor_distance=20)
+motionWorks.calculate_size(arbor_distance=30)
 moon_complication.set_motion_works_sizes(motionWorks)
 print("motion works widest r: ", motionWorks.get_widest_radius())
 # # show_object(moon_complication.get_arbor_shape(3))
