@@ -1167,7 +1167,7 @@ class GoingTrain:
 class MoonHolder:
     '''
     bolts to the front of the front plate to hold the moon on a stick for the moon complication.
-    needs both moon complication and plates objects to calculate all the relevant dimensions
+    needs both moon complication and SimpleClockPlates objects to calculate all the relevant dimensions
     highly coupled to both
 
     this needs to be able to be screwed into the front plate from the front - so i think space for the nuts behind the front plate
@@ -1186,6 +1186,7 @@ class MoonHolder:
         self.moon_complication = moon_complication
         self.fixing_screws = fixing_screws
         self.arbor_d = self.moon_complication.arbor_d
+        self.moon_inside_dial = moon_complication.moon_inside_dial
 
         self.moon_extra_space = 1.5
         self.moon_spoon_thick = 1.6
@@ -1205,10 +1206,16 @@ class MoonHolder:
         self.height = max_y - min_y
         self.centre_y = (max_y + min_y) / 2
 
+        self.moon_y = self.centre_y + self.height/2 + self.moon_complication.moon_radius
+
+        if self.moon_inside_dial:
+            self.moon_y = self.plates.hands_position[1] + self.moon_complication.moon_from_hands
+
+
         print("Screw length for moon fixing: {}mm".format(self.moon_complication.get_relative_moon_z() + self.plates.get_plate_thick(back=False) + self.lid_thick))
 
     def get_moon_base_y(self):
-        return self.centre_y + self.height/2
+        return self.moon_y - self.moon_complication.moon_radius
 
     def get_fixing_positions(self):
         #between pillar screws and anchor arbor
@@ -2047,8 +2054,14 @@ class SimpleClockPlates:
             4 wheels and escape wheel would not be directly above hands using above logic
             Place the escape wheel directly above the hands and then put the second and third wheel off to the side
             Trying putting the third wheel directly left of the escape wheel and using the normal compact logic to place the second wheel
+            
+            
+            PLAN: when we don't have a second hand or need escapement above the hands we can do compact with 4 wheels better:
+            basically rotate the third wheel and escape wheel around slightly to the right so they're both equidistant from the line above the hands
+            this will be useful for the moon escapement (so the fixing doesn't clash with a bearing) and I think will result in an even more compact design
             '''
-            forcing_escape_wheel_location = self.going_train.wheels > 3 and self.force_escapement_above_hands
+            forcing_escape_wheel_above_hands = self.going_train.wheels > 3 and self.force_escapement_above_hands
+            forcing_escape_wheel_slightly_off_centre = self.going_train.wheels > 3 and not self.second_hand
 
 
 
@@ -2066,24 +2079,40 @@ class SimpleClockPlates:
 
             minute_wheel_to_third_wheel = self.going_train.get_arbor(0).get_max_radius() + third_wheel_pinion_r + self.small_gear_gap
             minute_wheel_pos = (0, 0)
-            if forcing_escape_wheel_location:
+            if forcing_escape_wheel_above_hands:
                 minute_wheel_r = self.going_train.get_arbor(0).get_max_radius()
                 escape_wheel_arbor_r = self.going_train.get_arbor(3).get_arbor_extension_r()
-                #HACK HACK HACK TEMP instead of self.going_train.get_arbor(3).get_arbor_extension_r() use the old value of 2
-                escape_wheel_arbor_r = self.going_train.get_arbor(3).get_rod_d()
-                #MORE HACK TODO REMOVE ME
-                escape_wheel_arbor_r = 2
-
-
-                minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius()+ escape_wheel_arbor_r + self.small_gear_gap
-                escape_wheel_relative_pos = (0, minute_wheel_to_escape_wheel)
+                # #HACK HACK HACK TEMP instead of self.going_train.get_arbor(3).get_arbor_extension_r() use the old value of 2
+                # escape_wheel_arbor_r = self.going_train.get_arbor(3).get_rod_d()
+                # #MORE HACK TODO REMOVE ME
+                # escape_wheel_arbor_r = 2
+                minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius() + escape_wheel_arbor_r + self.small_gear_gap
                 third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour
-                third_wheel_pos = ( -on_side*third_wheel_to_escape_wheel, minute_wheel_to_escape_wheel)
+                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbour
+
+                if forcing_escape_wheel_slightly_off_centre:
+                    escape_wheel_angle_from_hands = math.pi/2 - on_side*math.asin((third_wheel_to_escape_wheel/2)/minute_wheel_to_escape_wheel)
+                    escape_wheel_relative_pos = polar(escape_wheel_angle_from_hands, minute_wheel_to_escape_wheel)
+                    #arbitarily choosing mirror of escape wheel
+                    third_wheel_pos = (-escape_wheel_relative_pos[0], escape_wheel_relative_pos[1])
+                    # anchor is directly above minutes
+                    #TODO does htis work if we're on the right hand side?
+                    self.angles_from_minute[3] = math.pi - math.acos(escape_wheel_relative_pos[0]/escape_wheel_to_anchor)
+                else:
+
+
+                    escape_wheel_relative_pos = (0, minute_wheel_to_escape_wheel)
+
+                    third_wheel_pos = ( -on_side*third_wheel_to_escape_wheel, minute_wheel_to_escape_wheel)
+                    # anchor is directly above escape wheel
+                    self.angles_from_minute[3] = math.pi / 2
+
+
                 minute_wheel_to_third_wheel = distance_between_two_points(minute_wheel_pos, third_wheel_pos)
                 #escape wheel is directly right of third wheel
                 self.angles_from_minute[2] = math.pi if on_side < 0 else 0
-                #anchor is directly above escape wheel
-                self.angles_from_minute[3] = math.pi / 2
+
+
             #this is the same regardless of forcing_escape_wheel_location, only the position of the third wheel changes
             b = minute_wheel_to_second_wheel
             c = second_wheel_to_third_wheel
@@ -2095,7 +2124,7 @@ class SimpleClockPlates:
 
 
 
-            if not forcing_escape_wheel_location:
+            if not forcing_escape_wheel_above_hands:
                 third_wheel_pos = (0,minute_wheel_to_third_wheel)
 
             # third_wheel_line = Line(minute_wheel_pos, anotherPoint=third_wheel_pos)

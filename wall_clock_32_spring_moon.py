@@ -77,6 +77,8 @@ train.set_ratios([[65, 12], [60, 14], [56, 13]])
 
 pendulumSticksOut=10
 backPlateFromWall=30
+dial_d = 205
+dial_width=25
 
 #was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
 #so reprints are a mix of old and new STLs...
@@ -89,10 +91,11 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)#, rod_diameters=[12,3,3,2,2,2,2,2])
-# train.print_info(weight_kg=1.5)
+# train.print_info(weight_kg=1.5)#
+moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()
-moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.8, moon_radius=15,
-                                                  bevel_angle_deg=90,moon_from_hands=40)
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.8, moon_radius=moon_radius,
+                                                  bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 # moon_complication = None
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
 motionWorks = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
@@ -101,54 +104,54 @@ motionWorks = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compe
 # motionWorks.calculate_size(arbor_distance=20)
 moon_complication.set_motion_works_sizes(motionWorks)
 print("motion works widest r: ", motionWorks.get_widest_radius())
-# show_object(moon_complication.get_arbor_shape(3))
-show_object(motionWorks.get_assembled())
-show_object(moon_complication.get_assembled())
+# # show_object(moon_complication.get_arbor_shape(3))
+# show_object(motionWorks.get_assembled())
+# show_object(moon_complication.get_assembled())
 
-#
-# pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
-#
-# # dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ROMAN_NUMERALS,
-# #                   font_scale=0.75, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
-# #                   dial_width=20)
-#
-#
-# dial = clock.Dial(outside_d=205, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=25)
-# plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
-#                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
-#                                 moon_complication=moon_complication)
-#
-#
-# hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-#                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
-#                     outline_on_seconds=0, second_hand_centred=False)
-# # show_object(plates.get_fixing_screws_cutter())
-# assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
-#
-# assembly.get_arbour_rod_lengths()
-# plates.get_rod_lengths()
-#
-# # show_object(plates.getPlate(back=True))
-# # show_object(assembly.getClock(with_key=False, with_pendulum=True))
-# # show_object(plates.get_fixing_screws_cutter())
-#
-# # show_object(plates.get_plate())
-# # show_object(plates.get_fixing_screws_cutter())
-# #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
-# if not outputSTL or True:
-#     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
-#                         bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
-#                         dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD,
-#                         plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])
-#
-# # show_object(plates.getDrillTemplate(6))
-#
-# if outputSTL:
-#
-#     moon_complication.output_STLs(clockName, clockOutDir)
-#     motionWorks.output_STLs(clockName,clockOutDir)
-#     pendulum.output_STLs(clockName, clockOutDir)
-#     plates.output_STLs(clockName, clockOutDir)
-#     hands.output_STLs(clockName, clockOutDir)
-#     assembly.output_STLs(clockName, clockOutDir)
-#
+
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
+
+# dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ROMAN_NUMERALS,
+#                   font_scale=0.75, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
+#                   dial_width=20)
+
+
+dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width)
+plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
+                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
+                                moon_complication=moon_complication, second_hand=False)
+
+
+hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
+                    outline_on_seconds=0, second_hand_centred=False)
+# show_object(plates.get_fixing_screws_cutter())
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
+
+assembly.get_arbour_rod_lengths()
+plates.get_rod_lengths()
+
+# show_object(plates.getPlate(back=True))
+# show_object(assembly.getClock(with_key=False, with_pendulum=True))
+# show_object(plates.get_fixing_screws_cutter())
+
+# show_object(plates.get_plate())
+# show_object(plates.get_fixing_screws_cutter())
+#, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
+if not outputSTL or True:
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
+                        bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
+                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD,
+                        plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])
+
+# show_object(plates.getDrillTemplate(6))
+
+if outputSTL:
+
+    moon_complication.output_STLs(clockName, clockOutDir)
+    motionWorks.output_STLs(clockName,clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)
+
