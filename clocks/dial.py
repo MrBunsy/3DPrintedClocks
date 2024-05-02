@@ -327,8 +327,11 @@ class MoonPhaseComplication3D:
         #TODO way to attach the two halves together? Inset little areas to hold glue like on the model trains?
         #panhead screws stick and out it slots on and rotates?
 
+        hole_size = self.moon_radius*0.5
+        if hole_size > 15:
+            hole_size = 15
         #slight inset areas to provide grip and space for glue, crude but should work
-        moon = moon.cut(cq.Workplane("XY").pushPoints([(self.moon_radius/2,0),(-self.moon_radius/2,0)]).rect(15,15).extrude(LAYER_THICK*2))
+        moon = moon.cut(cq.Workplane("XY").pushPoints([(self.moon_radius/2,0),(-self.moon_radius/2,0)]).rect(hole_size,hole_size).extrude(LAYER_THICK*2))
 
         return moon
 

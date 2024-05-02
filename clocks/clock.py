@@ -6022,9 +6022,9 @@ class Assembly:
             moon = self.moon_complication.get_moon_half()
             # moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
             show_object(moon.translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)),
-                        options={"color":"gray"}, name="Dark Side of the Moon")
+                        options={"color":"gray"}, name="Light Side of the Moon")
             show_object(moon.rotate((0,0,0),(0,1,0),180).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)),
-                        options={"color":"black"}, name="Light Side of the Moon")
+                        options={"color":"black"}, name="Dark Side of the Moon")
 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i,holder in enumerate(holder_parts):
