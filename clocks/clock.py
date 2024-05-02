@@ -1376,6 +1376,9 @@ class SimpleClockPlates:
         self.edging_wide = 3
         self.edging_thick=LAYER_THICK*2
 
+        #for other clock plates to override
+        self.text_on_standoffs = False
+
         self.vanity_plate_fixing_positions = []
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulum_fixing = pendulum_fixing
@@ -2831,7 +2834,7 @@ class SimpleClockPlates:
 
         return standoff
 
-    def get_text(self):
+    def get_text(self, top_standoff=False):
 
         all_text = cq.Workplane("XY")
 
@@ -2842,11 +2845,27 @@ class SimpleClockPlates:
 
         for space in spaces:
             space.set_size(max_text_size)
-
+        any_text = False
         for space in spaces:
-            all_text = all_text.add(space.get_text_shape())
+            if self.text_on_standoffs:
+                if top_standoff and space.y < self.hands_position[1]:
+                    continue
+                if not top_standoff and space.y > self.hands_position[1]:
+                    continue
 
-        all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
+            all_text = all_text.add(space.get_text_shape())
+            any_text = True
+
+        if not any_text:
+            #would fail to cut shapes below and everything assumes text exists
+            raise ValueError("No text available, something has gone wrong")
+
+        if self.text_on_standoffs:
+            all_text = all_text.cut(self.get_fixing_screws_cutter().translate((0,0,self.back_plate_from_wall)))
+        else:
+            all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
+
+
 
         return all_text
 
@@ -4025,9 +4044,10 @@ class SimpleClockPlates:
         print("Outputting ", out)
         exporters.export(self.get_plate(True, for_printing=True), out)
 
-        out = os.path.join(path, "{}_plate_back_text.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_text(), out)
+        if not self.text_on_standoffs:
+            out = os.path.join(path, "{}_plate_back_text.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_text(), out)
 
         if self.pillars_separate:
             out = os.path.join(path, "{}_pillar_bottom.stl".format(name))
@@ -4061,6 +4081,14 @@ class SimpleClockPlates:
             out = os.path.join(path, "{}_wall_bottom_standoff.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_wall_standoff(top=False), out)
+            if self.text_on_standoffs:
+                out = os.path.join(path, "{}_wall_top_standoff_text.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.get_text(top_standoff=True), out)
+
+                out = os.path.join(path, "{}_wall_bottom_standoff_text.stl".format(name))
+                print("Outputting ", out)
+                exporters.export(self.get_text(top_standoff=False), out)
 
         if self.huygens_maintaining_power:
             self.huygens_wheel.output_STLs(name + "_huygens", path)
@@ -4451,7 +4479,8 @@ class RoundClockPlates(SimpleClockPlates):
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          fancy_pillars=fancy_pillars)
 
-
+        if self.wall_mounted:
+            self.text_on_standoffs=True
 
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
@@ -4794,7 +4823,8 @@ class RoundClockPlates(SimpleClockPlates):
         plate = plate.cut(self.get_fixing_screws_cutter())
         if back:
 
-            plate = plate.cut(self.get_text())
+            if not self.text_on_standoffs:
+                plate = plate.cut(self.get_text())
 
             if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back:
                 #beef up the plate where the pawl screw goes through so we don't need to have an extra plate on the back to make it strong enough
@@ -4870,22 +4900,32 @@ class RoundClockPlates(SimpleClockPlates):
         return legs
 
     def get_text_spaces(self):
-
-        # (x,y,width,height, horizontal)
         spaces = []
+        texts = self.texts
+        if not self.wall_mounted:
+            # (x,y,width,height, horizontal)
 
-        texts = ["{}\n{}".format(self.texts[0], self.texts[1]), "{}\n{}".format(self.texts[2], self.texts[3])]
 
-        y_offset = 0
-        if self.leg_height > 0:
-            # shift up to avoid join with legs
-            y_offset = self.pillar_r - abs(self.bearing_positions[0][1] - self.bottom_pillar_positions[0][1])
+            texts = ["{}\n{}".format(self.texts[0], self.texts[1]), "{}\n{}".format(self.texts[2], self.texts[3])]
 
-        text_centre_y = average_of_two_points(self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2])[1] + y_offset/2
-        text_length = distance_between_two_points(self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2]) - y_offset
+            y_offset = 0
+            if self.leg_height > 0:
+                # shift up to avoid join with legs
+                y_offset = self.pillar_r - abs(self.bearing_positions[0][1] - self.bottom_pillar_positions[0][1])
 
-        spaces.append(TextSpace(-self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
-        spaces.append(TextSpace(self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
+            text_centre_y = average_of_two_points(self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2])[1] + y_offset/2
+            text_length = distance_between_two_points(self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2]) - y_offset
+
+            spaces.append(TextSpace(-self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
+            spaces.append(TextSpace(self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
+
+        else:
+            spaces.append(TextSpace(self.top_pillar_positions[0][0] / 2, self.top_pillar_positions[0][1], math.fabs(self.top_pillar_positions[0][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
+            spaces.append(TextSpace(self.top_pillar_positions[1][0] / 2, self.top_pillar_positions[1][1], math.fabs(self.top_pillar_positions[1][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
+
+            spaces.append(TextSpace(self.bottom_pillar_positions[0][0] / 2, self.bottom_pillar_positions[0][1], math.fabs(self.bottom_pillar_positions[0][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
+            spaces.append(TextSpace(self.bottom_pillar_positions[1][0] / 2, self.bottom_pillar_positions[1][1], math.fabs(self.bottom_pillar_positions[1][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
+
         for i, text in enumerate(texts):
             spaces[i].set_text(text)
         return spaces
@@ -4986,7 +5026,8 @@ class RoundClockPlates(SimpleClockPlates):
             else:
                 standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
 
-
+        if self.text_on_standoffs:
+            standoff = standoff.cut(self.get_text(top_standoff=False))
 
         standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
         standoff = standoff.cut(self.get_fixing_screws_cutter())
@@ -5041,6 +5082,9 @@ class RoundClockPlates(SimpleClockPlates):
             else:
                 standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
+
+        if self.text_on_standoffs:
+            standoff = standoff.cut(self.get_text(top_standoff=True))
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))
         standoff = standoff.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
@@ -5115,14 +5159,14 @@ class RoundClockPlates(SimpleClockPlates):
             out = os.path.join(path, "{}_anchor_holder_back.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_back_anchor_holder(), out)
-        else:
-            out = os.path.join(path, "{}_wall_standoff_top.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_wall_standoff(top=True, for_printing=True), out)
-
-            out = os.path.join(path, "{}_wall_standoff_bottom.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_wall_standoff(top=False, for_printing=True), out)
+        # else:
+        #     out = os.path.join(path, "{}_wall_standoff_top.stl".format(name))
+        #     print("Outputting ", out)
+        #     exporters.export(self.get_wall_standoff(top=True, for_printing=True), out)
+        #
+        #     out = os.path.join(path, "{}_wall_standoff_bottom.stl".format(name))
+        #     print("Outputting ", out)
+        #     exporters.export(self.get_wall_standoff(top=False, for_printing=True), out)
 
 
 
@@ -5306,7 +5350,8 @@ class RollingBallClock(SimpleClockPlates):
 
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
-            plate = plate.cut(self.get_text())
+            if not self.text_on_standoffs:
+                plate = plate.cut(self.get_text())
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
 
@@ -5333,7 +5378,7 @@ class RollingBallClock(SimpleClockPlates):
 
         return plate
 
-    def get_text(self):
+    def get_text(self, top_standoff=False):
 
         all_text = cq.Workplane("XY")
 
@@ -5946,7 +5991,11 @@ class Assembly:
         if plate_detail is not None:
             show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
 
-        show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
+        if not self.plates.text_on_standoffs:
+            show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
+        else:
+            show_object(self.plates.get_text(top_standoff=True).translate((0,0,-self.plates.back_plate_from_wall)), options={"color": text_colour}, name="Top Standoff Text")
+            show_object(self.plates.get_text(top_standoff=False).translate((0,0,-self.plates.back_plate_from_wall)), options={"color": text_colour}, name="Bottom Standoff Text")
 
 
         for a, arbor in enumerate(self.plates.arbors_for_plate):
