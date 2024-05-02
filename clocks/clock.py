@@ -2862,6 +2862,7 @@ class SimpleClockPlates:
 
         if self.text_on_standoffs:
             all_text = all_text.cut(self.get_fixing_screws_cutter().translate((0,0,self.back_plate_from_wall)))
+            all_text = all_text.translate((0, 0, -self.back_plate_from_wall))
         else:
             all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
 
@@ -4074,19 +4075,19 @@ class SimpleClockPlates:
             # print("Outputting ", out)
             # exporters.export(self.getCombinedWallStandOff(), out)
 
-            out = os.path.join(path, "{}_wall_top_standoff.stl".format(name))
+            out = os.path.join(path, "{}_wall_standoff_top.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_wall_standoff(top=True), out)
 
-            out = os.path.join(path, "{}_wall_bottom_standoff.stl".format(name))
+            out = os.path.join(path, "{}_wall_standoff_bottom.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_wall_standoff(top=False), out)
             if self.text_on_standoffs:
-                out = os.path.join(path, "{}_wall_top_standoff_text.stl".format(name))
+                out = os.path.join(path, "{}_wall_standoff_top_text.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.get_text(top_standoff=True), out)
 
-                out = os.path.join(path, "{}_wall_bottom_standoff_text.stl".format(name))
+                out = os.path.join(path, "{}_wall_standoff_bottom_text.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.get_text(top_standoff=False), out)
 
@@ -4686,9 +4687,13 @@ class RoundClockPlates(SimpleClockPlates):
         #     cutter = cutter.add(self.fi)
 
         if self.wall_mounted:
-            bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
+            #TODO make this more properly configurable for all plates, but for now we're using threaded rod rather than screws so we can attach the dial
+            #and have shiny brass dome nuts on the front
+            # bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
+            top_nut_base_z = - self.back_plate_from_wall
+            top_nut_hole_height = self.fixing_screws.get_nut_height()*2
             for pos in self.all_pillar_positions:
-                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height).translate((pos[0], pos[1], top_nut_base_z)))
+                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True).translate((pos[0], pos[1], top_nut_base_z)))
 
         return cutter
 
@@ -4760,8 +4765,8 @@ class RoundClockPlates(SimpleClockPlates):
 
         main_arm_wide = self.plate_width
         medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
-        small_arm_wide = get_bearing_info(2).outer_d + self.bearing_wall_thick * 2
-        #small_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2 - 1
+        # small_arm_wide = get_bearing_info(2).outer_d + self.bearing_wall_thick * 2
+        small_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2 - 1
 
         # plate = cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.radius+main_arm_wide/2).circle(self.radius-main_arm_wide/2).extrude(plate_thick)
 
@@ -5030,10 +5035,11 @@ class RoundClockPlates(SimpleClockPlates):
             else:
                 standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
 
-        if self.text_on_standoffs:
-            standoff = standoff.cut(self.get_text(top_standoff=False))
+
 
         standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
+        if self.text_on_standoffs:
+            standoff = standoff.cut(self.get_text(top_standoff=False))
         standoff = standoff.cut(self.get_fixing_screws_cutter())
 
         return standoff
@@ -5087,10 +5093,13 @@ class RoundClockPlates(SimpleClockPlates):
                 standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
+
+
+        standoff = standoff.translate((0,0,-self.back_plate_from_wall))
+
         if self.text_on_standoffs:
             standoff = standoff.cut(self.get_text(top_standoff=True))
 
-        standoff = standoff.translate((0,0,-self.back_plate_from_wall))
         standoff = standoff.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
 
 
@@ -5998,8 +6007,8 @@ class Assembly:
         if not self.plates.text_on_standoffs:
             show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
         else:
-            show_object(self.plates.get_text(top_standoff=True).translate((0,0,-self.plates.back_plate_from_wall)), options={"color": text_colour}, name="Top Standoff Text")
-            show_object(self.plates.get_text(top_standoff=False).translate((0,0,-self.plates.back_plate_from_wall)), options={"color": text_colour}, name="Bottom Standoff Text")
+            show_object(self.plates.get_text(top_standoff=True), options={"color": text_colour}, name="Top Standoff Text")
+            show_object(self.plates.get_text(top_standoff=False), options={"color": text_colour}, name="Bottom Standoff Text")
 
 
         for a, arbor in enumerate(self.plates.arbors_for_plate):
