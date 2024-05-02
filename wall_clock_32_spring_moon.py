@@ -88,7 +88,7 @@ pinion_extensions = {1:5,3:5} #{1:25}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
+train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 3)#, rod_diameters=[12,3,3,2,2,2,2,2])
 # train.print_info(weight_kg=1.5)#
