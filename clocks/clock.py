@@ -4920,11 +4920,15 @@ class RoundClockPlates(SimpleClockPlates):
             spaces.append(TextSpace(self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
 
         else:
-            spaces.append(TextSpace(self.top_pillar_positions[0][0] / 2, self.top_pillar_positions[0][1], math.fabs(self.top_pillar_positions[0][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
-            spaces.append(TextSpace(self.top_pillar_positions[1][0] / 2, self.top_pillar_positions[1][1], math.fabs(self.top_pillar_positions[1][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
+            top_width = math.fabs(self.top_pillar_positions[0][0]) - self.fixing_screws.get_nut_containing_diameter()/2 - self.wall_fixing_screw_head_d/2 - 1
 
-            spaces.append(TextSpace(self.bottom_pillar_positions[0][0] / 2, self.bottom_pillar_positions[0][1], math.fabs(self.bottom_pillar_positions[0][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
-            spaces.append(TextSpace(self.bottom_pillar_positions[1][0] / 2, self.bottom_pillar_positions[1][1], math.fabs(self.bottom_pillar_positions[1][0]) - self.pillar_r - 10, self.pillar_r * 1.8, horizontal=True))
+            spaces.append(TextSpace(self.top_pillar_positions[0][0] / 2, self.top_pillar_positions[0][1], top_width, self.pillar_r * 1.8, horizontal=True))
+            spaces.append(TextSpace(self.top_pillar_positions[1][0] / 2, self.top_pillar_positions[1][1], top_width, self.pillar_r * 1.8, horizontal=True))
+
+            bottom_width = math.fabs(self.bottom_pillar_positions[0][0]) - self.fixing_screws.get_nut_containing_diameter()/2 - self.wall_fixing_screw_head_d/2 - 1
+
+            spaces.append(TextSpace(self.bottom_pillar_positions[0][0] / 2, self.bottom_pillar_positions[0][1], bottom_width, self.pillar_r * 1.8, horizontal=True))
+            spaces.append(TextSpace(self.bottom_pillar_positions[1][0] / 2, self.bottom_pillar_positions[1][1], bottom_width, self.pillar_r * 1.8, horizontal=True))
 
         for i, text in enumerate(texts):
             spaces[i].set_text(text)
