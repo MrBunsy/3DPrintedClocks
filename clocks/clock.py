@@ -2081,7 +2081,7 @@ class SimpleClockPlates:
 
             minute_wheel_to_third_wheel = self.going_train.get_arbor(0).get_max_radius() + third_wheel_pinion_r + self.small_gear_gap
             minute_wheel_pos = (0, 0)
-            if forcing_escape_wheel_above_hands:
+            if forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre:
                 minute_wheel_r = self.going_train.get_arbor(0).get_max_radius()
                 escape_wheel_arbor_r = self.going_train.get_arbor(3).get_arbor_extension_r()
                 # #HACK HACK HACK TEMP instead of self.going_train.get_arbor(3).get_arbor_extension_r() use the old value of 2
@@ -2113,7 +2113,8 @@ class SimpleClockPlates:
                 minute_wheel_to_third_wheel = distance_between_two_points(minute_wheel_pos, third_wheel_pos)
                 #escape wheel is directly right of third wheel
                 self.angles_from_minute[2] = math.pi if on_side < 0 else 0
-
+            else:
+                third_wheel_pos = (0, minute_wheel_to_third_wheel)
 
             #this is the same regardless of forcing_escape_wheel_location, only the position of the third wheel changes
             b = minute_wheel_to_second_wheel
@@ -2121,13 +2122,6 @@ class SimpleClockPlates:
             a = minute_wheel_to_third_wheel
             # cosine law
             angle = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
-
-
-
-
-
-            if not forcing_escape_wheel_above_hands:
-                third_wheel_pos = (0,minute_wheel_to_third_wheel)
 
             # third_wheel_line = Line(minute_wheel_pos, anotherPoint=third_wheel_pos)
             # self.angles_from_minute[0] = third_wheel_line.getAngle() + on_side * angle
@@ -2145,7 +2139,7 @@ class SimpleClockPlates:
 
             #TODO if the second wheel would clash with the powered wheel, push the third wheel up higher
             #
-            if self.going_train.wheels > 3 and not self.force_escapement_above_hands:
+            if self.going_train.wheels > 3 and not (forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre):
                 #stick the escape wheel out too
                 third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour
                 escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbour
@@ -4448,13 +4442,13 @@ class RoundClockPlates(SimpleClockPlates):
         self.fully_round = fully_round
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
-        #force_escapement_above_hands because the gear train looks better on a circular plate that way
+        #was force_escapement_above_hands because the gear train looks better on a circular plate that way ( now got forcing_escape_wheel_slightly_off_centre in bearing placement)
         super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=True, style=style,
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          fancy_pillars=fancy_pillars)
 
 
@@ -4777,9 +4771,16 @@ class RoundClockPlates(SimpleClockPlates):
             if distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].bearing.outer_d/2 > self.radius - self.pillar_r:
                 #this bearing will be in the outer circle
                 continue
+
+            if i == len(self.bearing_positions) - 1 and not self.second_hand and not self.force_escapement_above_hands and back and self.going_train.wheels > 3:
+                #don't need a bit of plate to support just a hole for the anchor
+                #could do with better than repeating the logic in calc_bearing_positions, very brittle
+                continue
+
             line = Line(centre, anotherPoint=bearing_pos[:2])
             end = np_to_set(np.add(polar(line.get_angle(), self.radius), centre))
-            if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front:
+
+            if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front and distance_between_two_points(bearing_pos[:2], centre) > self.radius:
                 #the anchor needs something to support it on the front plate
                 end = bearing_pos[:2]
 
@@ -4896,7 +4897,14 @@ class RoundClockPlates(SimpleClockPlates):
         if not self.wall_mounted:
             return []
 
-        return [(0, (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1])/2, True), (0, self.bottom_pillar_positions[0][1], True)]
+
+        if self.bearing_positions[-1][1] - self.top_pillar_positions[0][1] < 20:
+            top_y = self.top_pillar_positions[0][1]
+        else:
+            #halway between top pillar y and anchor bearing
+            top_y = (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2
+
+        return [(0, top_y, True), (0, self.bottom_pillar_positions[0][1], True)]
 
     def get_front_anchor_bearing_holder(self, for_printing=True):
         '''
