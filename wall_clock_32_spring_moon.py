@@ -46,11 +46,11 @@ gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
 
 
-#this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
-lift=2
+#larger drop like mantel clock 30, but since we're using 30 teeth, a bit more lift to get the 45 degree pallets
+lift=3
 drop=3
 lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, tooth_tip_angle=3,
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=3,
                                     tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
@@ -65,15 +65,21 @@ moduleReduction=0.95#0.85
 # train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick,
 #                         chain_wheel_ratios=[[61, 10], [62, 10]])#[[66, 10], [76,13]])#, [[61, 10], [62, 10]]
 
+# train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+#                         wall_thick=9, chain_wheel_ratios=[[64, 10], [60, 11]])
 train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=9, chain_wheel_ratios=[[64, 10], [60, 11]])
+                        wall_thick=9, chain_wheel_ratios=[[64, 10], [61, 10]])#, fraction_of_max_turns=0.45)
+# train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+#                         wall_thick=9, chain_wheel_ratios=[[61, 10], [60, 11]])
 
 #TODO new option to favour large escape wheel?
-# train.calculate_ratios(max_wheel_teeth=90, min_pinion_teeth=9, wheel_min_teeth=55, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True)
+# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=55, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True)
                       # penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
-#1s period
-train.set_ratios([[65, 12], [60, 14], [56, 13]])
-
+#1s period with 36 teeth
+# train.set_ratios([[65, 12], [60, 14], [56, 13]])
+#1s period with 30 teeth
+#[[65, 10], [60, 14], [56, 13]]
+train.set_ratios([[65, 14], [60, 13], [56, 10]])
 
 pendulumSticksOut=10
 backPlateFromWall=30
@@ -82,16 +88,16 @@ dial_width=25
 
 #was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
 #so reprints are a mix of old and new STLs...
-pinion_extensions = {1:5,3:5} #{1:25}
+pinion_extensions = {0:1, 1:5,3:5} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.2]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 3)#, rod_diameters=[12,3,3,2,2,2,2,2])
-# train.print_info(weight_kg=1.5)#
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)#, rod_diameters=[12,3,3,2,2,2,2,2])
+train.print_info(for_runtime_hours=24*7)
 moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,

@@ -757,33 +757,46 @@ class GoingTrain:
         self.trains = [train]
 
 
-    def print_info(self, weight_kg=0.35):
+    def print_info(self, weight_kg=0.35, for_runtime_hours=168):
         print(self.trains[0])
+
+
+
 
         print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
         if PowerType.is_weight(self.powered_wheel.type):
             print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
-        chainRatio = self.minute_wheel_ratio
-        chainRatios=[1]
+        power_ratio = self.minute_wheel_ratio
+        power_wheel_ratios=[1]
         if self.powered_wheels > 0:
             #TODO if - for some reason - the minuteWheelRatio isn't 1, this logic needs checking
             print(self.chain_wheel_ratios)
             #how many turns per turn of the minute wheel
-            chainRatio = 1
+            power_ratio = 1
             for pair in self.chain_wheel_ratios:
-                chainRatio *= pair[0] / pair[1]
+                power_ratio *= pair[0] / pair[1]
             #the wheel/pinion tooth count
-            chainRatios=self.chain_wheel_ratios
+            power_wheel_ratios=self.chain_wheel_ratios
 
-        runtime_hours = self.powered_wheel.getRunTime(chainRatio, self.get_cord_usage())
+        if self.powered_wheel.type == PowerType.SPRING_BARREL:
+            max_barrel_turns = self.powered_wheel.get_max_barrel_turns()
+
+            turns = for_runtime_hours / power_ratio
+
+            rewinding_turns = self.powered_wheel.get_key_turns_to_rewind_barrel_turns(turns)
+            print("Over a runtime of {:.1f}hours the spring barrel will make {:.1f} full rotations which is {:.1f}% of the maximum number of turns ({:.1f}) and will take {:.1f} key turns to wind back up"
+                  .format(for_runtime_hours, turns, 100.0*turns/max_barrel_turns, max_barrel_turns, rewinding_turns))
+            return
+
+        runtime_hours = self.powered_wheel.getRunTime(power_ratio, self.get_cord_usage())
 
         drop_m = self.max_weight_drop / 1000
         power = weight_kg * GRAVITY * drop_m / (runtime_hours*60*60)
         power_uW = power * math.pow(10, 6)
         #for reference, the hubert hurr eight day cuckoo is aproximately 34uW
-        print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.get_cord_usage() / 1000, self.max_weight_drop, chainRatio, chainRatios))
+        print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.get_cord_usage() / 1000, self.max_weight_drop, power_ratio, power_wheel_ratios))
         print("With a weight of {}kg, this results in an average power usage of {:.1f}uW".format(weight_kg, power_uW))
 
         if len(self.arbors) > 0:
@@ -799,9 +812,9 @@ class GoingTrain:
             (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.powered_wheel.getCordTurningInfo(self.max_weight_drop * (2 if self.use_pulley else 1))
             #cord per rotation divided by chainRatio, gives speed in mm per hour, we want in m/s to calculate power
             effective_weight = weight_kg / (2 if self.use_pulley else 1)
-            min_weight_speed = (cordPerRotationPerLayer[0] / chainRatio) /(60*60*1000)
+            min_weight_speed = (cordPerRotationPerLayer[0] / power_ratio) /(60*60*1000)
             min_power = effective_weight * GRAVITY * min_weight_speed* math.pow(10, 6)
-            max_weight_speed = (cordPerRotationPerLayer[-1] / chainRatio) / (60 * 60 * 1000)
+            max_weight_speed = (cordPerRotationPerLayer[-1] / power_ratio) / (60 * 60 * 1000)
             max_power = effective_weight * GRAVITY * max_weight_speed* math.pow(10, 6)
             print("Cordwheel power varies from {:.1f}uW to {:.1f}uW".format(min_power, max_power))
 
@@ -1042,9 +1055,13 @@ class GoingTrain:
                         pinion_thick = self.powered_wheel_arbors[-1].wheel_thick * pinion_thick_multiplier
                     if pinion_thick_extra > 0:
                         pinion_thick = self.powered_wheel_arbors[-1].wheel_thick + pinion_thick_extra
+                    #occasionally useful on spring clocks to keep the minute wheel from bumping into the back part of a lantern wheel
+                    #just make the pinino longer rather than actually add a pinion_extension
+                    # pinion_thick += pinion_extension
+
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
                     arbour = Arbor(wheel = pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
-                                   distance_to_next_arbour= pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side)
+                                   distance_to_next_arbour= pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension)
 
                 arbours.append(arbour)
                 if stack_away_from_powered_wheel:

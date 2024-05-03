@@ -2335,9 +2335,15 @@ class Arbor:
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
         '''
         if self.get_type() == ArborType.WHEEL_AND_PINION:
+            pinion_thick = self.pinion_thick
+            pinion_extension = self.pinion_extension
+            if pinion_extension < 3:
+                #just print small pinion extensions as longer pinions
+                pinion_extension = 0
+                pinion_thick+=self.pinion_extension
 
-            shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
-                                             pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+            shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
             # shape = self.pinion.get3D
 

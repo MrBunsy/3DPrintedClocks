@@ -1155,6 +1155,41 @@ class SpringBarrel:
         # This would work out at 4.4 turns over 7 days, which fits with Smiths
         return total_barrel_turns
 
+    def get_key_turns_to_rewind_barrel_turns(self, barrel_turns):
+        '''
+        given a number of full rotations of the barrel, how many full key turns will be needed to wind back up fully?
+        '''
+        outer_r = self.barrel_diameter/2
+        area_of_barrel = math.pi*outer_r**2
+
+        inner_r = outer_r - barrel_turns * self.spring.thick
+
+        area_of_inner = math.pi*inner_r**2
+
+        area_of_spring_on_barrel_wall = area_of_barrel - area_of_inner
+
+        length_of_used_spring = area_of_spring_on_barrel_wall / self.spring.thick
+
+        area_of_used_spring = length_of_used_spring * self.spring.thick
+
+        unused_spring_length = self.spring.length - length_of_used_spring
+        area_of_unused_spring = unused_spring_length * self.spring.thick
+        area_of_full_spring = self.spring.length * self.spring.thick
+        arbor_radius = self.arbor_d_spring / 2
+        area_of_spring_arbor = math.pi * arbor_radius ** 2
+
+        radius_of_unused_spring_around_arbor = math.sqrt((area_of_unused_spring + area_of_spring_arbor)/math.pi)
+
+        unused_spring_turns = (radius_of_unused_spring_around_arbor - arbor_radius) / self.spring.thick
+
+        radius_of_fully_would_spring_around_arbor = math.sqrt((area_of_full_spring + area_of_spring_arbor)/math.pi)
+
+        spring_wound_turns = (radius_of_fully_would_spring_around_arbor - arbor_radius) / self.spring.thick
+
+        remaining_turns = spring_wound_turns - unused_spring_turns
+
+        return remaining_turns
+
 
     def get_outer_diameter(self):
         return self.barrel_diameter + self.wall_thick*2
