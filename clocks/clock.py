@@ -4515,6 +4515,31 @@ class RoundClockPlates(SimpleClockPlates):
         if self.dial is not None and self.escapement_on_front:
             self.dial.add_to_back = self.get_front_anchor_bearing_holder().translate((-self.hands_position[0],-self.hands_position[1], self.dial.thick))
 
+
+        if self.dial is not None:
+            #TODO more general purpose support for different relative sizes of plates and dial and different pillar locations.
+            #this works for now
+
+            #not evenly space so we don't clash with pillars
+            angles = [math.pi/2 + math.pi/8, math.pi/2 - math.pi/8, math.pi*1.5 + math.pi/8, math.pi*1.5 - math.pi/8]
+            if self.gear_train_layout == GearTrainLayout.COMPACT and not self.escapement_on_front and self.going_train.wheels == 4 and not self.second_hand:
+                #little bit brittle logic here, if we have two little arms on teh front because we're forcing_escape_wheel_slightly_off_centre
+                #line up dial supports with the little arms
+                for i in range(2):
+                    bearing_relative_pos = np_to_set(np.subtract(self.bearing_positions[-3 + i][:2], self.hands_position))
+                    bearing_angle = math.atan2(bearing_relative_pos[1], bearing_relative_pos[0])
+                    angles[i] = bearing_angle
+
+            dial_fixings_relative_to_dial = [polar(angle, self.radius) for angle in angles]
+
+            self.dial_fixing_positions = [np_to_set(np.add(pos, self.hands_position)) for pos in dial_fixings_relative_to_dial]
+
+            # array of arrays because we only want one screw per pillar here
+            self.dial.override_fixing_positions([[pos] for pos in dial_fixings_relative_to_dial])
+            self.dial.support_d = 15
+            if self.style == PlateStyle.RAISED_EDGING:
+                self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
+
         self.front_anchor_holder_part_of_dial = True
 
     # def need_front_anchor_bearing_holder(self):
