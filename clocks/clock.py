@@ -1185,15 +1185,13 @@ class GoingTrain:
 
 class MoonHolder:
     '''
+    This might be worth splitting into different classes for each class of supported clock plate?
+
     bolts to the front of the front plate to hold the moon on a stick for the moon complication.
     needs both moon complication and SimpleClockPlates objects to calculate all the relevant dimensions
     highly coupled to both
 
     this needs to be able to be screwed into the front plate from the front - so i think space for the nuts behind the front plate
-
-    TODO also the moon spoon (semisphere behind the moon to make it easier to "read")
-    I'm thinking it might be worth attaching it to the front of the top pillar
-
 
     current thinking: two peices. Print both with the bottom side facing forwards. One nearest the clock plates will have two branches on either side for the top of the dial to screw into
      and will be the moon spoon
@@ -1214,16 +1212,23 @@ class MoonHolder:
         if self.plates.gear_train_layout == GearTrainLayout.ROUND:
             raise ValueError("TODO moon phase holder for round plates")
 
-        # max_y = self.bearingPositions[-1][1] - self.arboursForPlate[-1].bearing.outerD/2 - 3
-        # max_y = self.plates.plate_top_fixings[0][1] - self.plates.fixingScrews.get_nut_containing_diameter()/2
-        #assuming only one top pillar, or at least that htey're both at the same y
-        max_y = self.plates.top_pillar_positions[0][1] + self.plates.top_pillar_r
+        if self.moon_inside_dial:
+            if not isinstance(self.plates, RoundClockPlates):
+                raise NotImplementedError("TODO support moon inside dial for other classes of plate")
+            self.centre_y = self.plates.hands_position[1] + self.plates.radius
+            self.height = self.plates.pillar_r*2
+            self.moon_extra_space = 1
+            # self.moon_spoon_thick = 1
+        else:
+            #sticking off the top of the clock, only used with SimpleClockPlates with a vertical gear train so far
+            #assuming only one top pillar, or at least that htey're both at the same y
+            max_y = self.plates.top_pillar_positions[0][1] + self.plates.top_pillar_r
 
-        #top of the last wheel in the complication
-        min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
+            #top of the last wheel in the complication
+            min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
 
-        self.height = max_y - min_y
-        self.centre_y = (max_y + min_y) / 2
+            self.height = max_y - min_y
+            self.centre_y = (max_y + min_y) / 2
 
         self.moon_y = self.centre_y + self.height/2 + self.moon_complication.moon_radius
 
@@ -1246,6 +1251,8 @@ class MoonHolder:
     def get_moon_holder_parts(self, for_printing=True):
         '''
         piece screwed onto the front of the front plate with a steel tube slotted into it to take the moon on a threaded rod
+
+        combined "moon spoon" to cup aroudn the back of the moon and a part to screw into the plates
         '''
 
         lid_thick = self.lid_thick
@@ -1255,23 +1262,53 @@ class MoonHolder:
         width = self.plates.plate_width
         # top_y = self.plates.top_pillar_positions[1] + self.plates.top_pillar_r
 
-        r = self.moon_complication.get_last_wheel_r()
-        sagitta = r - math.sqrt(r**2 - 0.25*width**2)
-        moon_centre_pos = (0, self.centre_y + self.height / 2 + moon_r, moon_z)
 
-        bottom_r = r + sagitta
-        holder = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
-                radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(moon_z)
+
+        # not a full spoon as i think this will be hard to print with the bridging
+        # not so deep that it will be behind the front plates
+        moon_spoon_deep = moon_z
+        if moon_spoon_deep > moon_r * 0.75:
+            # for smaller moons (likely moon-inside-plate) still limit to not being a full hemisphere
+            moon_spoon_deep = moon_r * 0.75
+        moon_centre_pos = (0, self.moon_y, moon_z)
+
+        if self.moon_inside_dial:
+            width = moon_r*2
+            holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width/2).circle(self.plates.radius - self.plates.plate_width/2)
+                      .extrude(moon_z).intersect(cq.Workplane("XY").rect(width,self.plates.radius*10).extrude(moon_z)))
+
+            lid = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width / 2).circle(self.plates.radius - self.plates.plate_width / 2)
+                      .extrude(moon_z).intersect(cq.Workplane("XY").rect(width, self.plates.radius * 10).extrude(lid_thick)))
+            lid = lid.translate((0, 0, moon_z))
+            #something to link spoon with the holder, don't worry about overlapping as the moon hole will be cut out later
+            link_height = self.centre_y - self.moon_y
+            holder = holder.union(cq.Workplane("XY").rect(self.plates.plate_width, link_height).extrude(moon_spoon_deep).translate((0,(self.centre_y + self.moon_y)/2,moon_z - moon_spoon_deep)))
+        else:
+            r = self.moon_complication.get_last_wheel_r()
+            sagitta = r - math.sqrt(r ** 2 - 0.25 * width ** 2)
+
+            bottom_r = r + sagitta
+            # designed to be inline with the top of the vertical clock plate
+            holder = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
+                    radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(moon_z)
+
+            lid = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height / 2 - width / 2).radiusArc((width / 2, self.centre_y + self.height / 2 - width / 2), width / 2).lineTo(width / 2, self.centre_y - self.height / 2). \
+                radiusArc((-width / 2, self.centre_y - self.height / 2), -bottom_r).close().extrude(lid_thick)
+            lid = lid.cut(cq.Workplane("XY").circle(moon_r + self.moon_extra_space).extrude(lid_thick).translate((0, moon_centre_pos[1], 0)))
+            lid = lid.translate((0, 0, moon_z))
 
         moon_and_more = cq.Workplane("XY").sphere(moon_r + self.moon_extra_space + self.moon_spoon_thick)
-        moon_half = moon_and_more.cut(cq.Workplane("XY").rect(moon_r*4, moon_r*4).extrude(moon_r*4))
-        moon_half = moon_half.translate(moon_centre_pos)
-        #testing, not full spoon as this will be a pain to print?
-        moon_half = moon_half.intersect(cq.Workplane("XY").rect(10000,10000).extrude(moon_z))
+        #just the back half
+        moon_spoon = moon_and_more.cut(cq.Workplane("XY").rect(moon_r*4, moon_r*4).extrude(moon_r*4))
+        moon_spoon = moon_spoon.translate(moon_centre_pos)
+
+        moon_spoon = moon_spoon.intersect(cq.Workplane("XY").rect(moon_r*4,moon_r*4).extrude(moon_spoon_deep).translate(moon_centre_pos).translate((0,0,-moon_spoon_deep)))
 
 
         #moon spoon!
-        holder = holder.union(moon_half)
+        holder = holder.union(moon_spoon)
+
+
 
 
         #moon hole
@@ -1298,11 +1335,6 @@ class MoonHolder:
 
         cutter = cutter.union(nut_space)
 
-        #copypaste from above
-        lid = cq.Workplane("XY").moveTo(-width / 2, self.centre_y + self.height/2 -width/2).radiusArc((width/2, self.centre_y + self.height/2-width/2), width/2).lineTo(width/2,self.centre_y-self.height/2).\
-                radiusArc((-width/2, self.centre_y - self.height/2), -bottom_r).close().extrude(lid_thick)
-        lid = lid.cut(cq.Workplane("XY").circle(moon_r + self.moon_extra_space).extrude(lid_thick).translate((0,moon_centre_pos[1],0)))
-        lid = lid.translate((0,0,moon_z))
         #experiment, as it looks a bit clunky right now
         # lid = lid.edges(">Z").fillet(1)
 

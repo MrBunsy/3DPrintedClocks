@@ -60,6 +60,9 @@ class EscapementType(Enum):
     NOT_IMPLEMENTED = None
 
 class GearTrainLayout(Enum):
+    '''
+    how to lay out gear train
+    '''
     #gear train directly vertical
     VERTICAL = "vertical"
     #gear train points on a circle (not printed since clock 05, but still broadly functional, might be worth ressurecting properly)
@@ -68,9 +71,13 @@ class GearTrainLayout(Enum):
     COMPACT = "compact"
 
 class PlateStyle(Enum):
+    '''
+    fancy detailing, if any, for clock plates
+    '''
     SIMPLE = "simple"
     #based on a clock I saw on ebay with raised brass edging and black plates
     RAISED_EDGING = "raised_edging"
+
 
 class PendulumFixing(Enum):
     #the first reliable mechanism, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod
