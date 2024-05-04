@@ -1335,6 +1335,25 @@ class MoonHolder:
 
         cutter = cutter.union(nut_space)
 
+        if self.moon_inside_dial:
+            final_wheel_pos = np_to_set3( np.add(self.moon_complication.get_arbor_positions_relative_to_motion_works()[2], (self.plates.hands_position[0], self.plates.hands_position[1], 0)))
+            bevel_r = self.moon_complication.bevel_pair.wheel_teeth * self.moon_complication.bevel_pair.module / 2
+            # bevel_gear_pair = self.moon_complication.bevel_pair.bevel_gear_pair
+            # #from _build_tooth_faces
+            # pc_h = np.cos(bevel_gear_pair.gamma_r) * bevel_gear_pair.gs_r  # pitch cone height
+            # pc_f = pc_h / np.cos(bevel_gear_pair.gamma_f)  # extended pitch cone flank length
+            # pc_rb = pc_f * np.sin(bevel_gear_pair.gamma_f)  # pitch cone base radius
+
+            padding = 3
+            increase_fraction = (bevel_r + padding)/bevel_r
+
+
+            #using a sphere as a rough measure for not clashing with the bevel gear
+            bevel_sphere = cq.Workplane("XY").sphere(bevel_r + 2)
+            bevel_cone = cq.Solid.makeCone(radius2=0, radius1=bevel_r + padding, height=self.moon_complication.bevel_pair.bevel_gear_pair.gear.cone_h * increase_fraction)
+            cutter = cutter.union(bevel_cone.translate(final_wheel_pos).translate((0,0,self.moon_complication.gear_thick)))
+            # holder = holder.union(bevel_cone.translate(final_wheel_pos).translate((0,0,self.moon_complication.gear_thick)))
+
         #experiment, as it looks a bit clunky right now
         # lid = lid.edges(">Z").fillet(1)
 

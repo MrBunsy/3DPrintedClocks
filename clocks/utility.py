@@ -393,6 +393,9 @@ class MachineScrew:
 def np_to_set(npVector):
     return (npVector[0], npVector[1])
 
+def np_to_set3(npVector):
+    return (npVector[0], npVector[1], npVector[2])
+
 #TODO all of this should be moved to geometry?
 
 
