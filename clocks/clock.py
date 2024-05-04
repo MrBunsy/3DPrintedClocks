@@ -1275,10 +1275,10 @@ class MoonHolder:
         if self.moon_inside_dial:
             width = moon_r*2
             holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width/2).circle(self.plates.radius - self.plates.plate_width/2)
-                      .extrude(moon_z).intersect(cq.Workplane("XY").rect(width,self.plates.radius*10).extrude(moon_z)))
+                      .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(moon_z)))
 
             lid = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width / 2).circle(self.plates.radius - self.plates.plate_width / 2)
-                      .extrude(moon_z).intersect(cq.Workplane("XY").rect(width, self.plates.radius * 10).extrude(lid_thick)))
+                      .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(lid_thick)))
             lid = lid.translate((0, 0, moon_z))
             #something to link spoon with the holder, don't worry about overlapping as the moon hole will be cut out later
             link_height = self.centre_y - self.moon_y
@@ -1411,7 +1411,8 @@ class SimpleClockPlates:
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOUR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
-                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
+                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, fancy_pillars=False,
+                 standoff_pillars_separate=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -1427,6 +1428,7 @@ class SimpleClockPlates:
 
         #for other clock plates to override
         self.text_on_standoffs = False
+        self.standoff_pillars_separate = standoff_pillars_separate
 
         self.vanity_plate_fixing_positions = []
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
@@ -3427,6 +3429,27 @@ class SimpleClockPlates:
         bottom_pillar = bottom_pillar.cut(self.get_fixing_screws_cutter().translate((-bottomPillarPos[0], -bottomPillarPos[1], -self.get_plate_thick(back=True))))
         return bottom_pillar
 
+    def get_standoff_pillar(self, top=True, left=True):
+        plate_thick = self.get_plate_thick(standoff=True)
+        pillar_r = self.top_pillar_r if top else self.bottom_pillar_r
+        if self.fancy_pillars:
+            return SimpleClockPlates.fancy_pillar(pillar_r, self.back_plate_from_wall - plate_thick, clockwise=left)
+        else:
+            return cq.Workplane("XY").circle(pillar_r).extrude(self.back_plate_from_wall - plate_thick)
+
+    def get_standoff_pillars(self, top=True):
+        pillar_positions = self.top_pillar_positions if top else self.bottom_pillar_positions
+        plate_thick = self.get_plate_thick(standoff=True)
+
+        standoff = cq.Workplane("XY")
+
+        clockwise = True
+        for pillar_pos in pillar_positions:
+            standoff = standoff.union(self.get_standoff_pillar(left=clockwise).translate(pillar_pos).translate((0, 0, plate_thick - self.back_plate_from_wall)))
+            clockwise = not clockwise
+
+        return standoff
+
     def get_pillar(self, top=True, flat=False):
         if top:
             return self.get_top_pillar(flat=flat)
@@ -4048,6 +4071,7 @@ class SimpleClockPlates:
         plates = bottom_plate.add(top_plate.translate((0, 0, self.plate_distance + self.get_plate_thick(back=True))))
 
         pillars = cq.Workplane("XY")
+        standoff_pillars = cq.Workplane("XY")
         if self.pillars_separate:
             for bottom_pillar_pos in self.bottom_pillar_positions:
                 pillars = pillars.add(self.get_pillar(top=False).translate(bottom_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
@@ -4060,6 +4084,9 @@ class SimpleClockPlates:
             # need wall standoffs
             plates = plates.add(self.get_wall_standoff(top=True, for_printing=False))
             plates = plates.add(self.get_wall_standoff(top=False, for_printing=False))
+            if self.standoff_pillars_separate:
+                standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=True))
+                standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=False))
 
         if self.need_front_anchor_bearing_holder() and not self.front_anchor_holder_part_of_dial:
             plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
@@ -4078,7 +4105,7 @@ class SimpleClockPlates:
                 whole= whole.union(detail)
             return whole
 
-        return (plates, pillars, detail)
+        return (plates, pillars, detail, standoff_pillars)
 
 
     def output_STLs(self, name="clock", path="../out"):
@@ -4139,6 +4166,14 @@ class SimpleClockPlates:
                 out = os.path.join(path, "{}_wall_standoff_bottom_text.stl".format(name))
                 print("Outputting ", out)
                 exporters.export(self.get_text(top_standoff=False), out)
+
+            if self.standoff_pillars_separate:
+                for left in [True, False]:
+                    for top in [True, False]:
+                        pillar_name = "{}_{}".format("left" if left else "right", "top" if top else "bottom")
+                        out = os.path.join(path, "{}_wall_standoff_pillar_{}.stl".format(name, pillar_name))
+                        print("Outputting ", out)
+                        exporters.export(self.get_standoff_pillar(top=top, left=left), out)
 
         if self.huygens_maintaining_power:
             self.huygens_wheel.output_STLs(name + "_huygens", path)
@@ -4510,7 +4545,7 @@ class RoundClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150, endshake=1.25, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False):
+                 leg_height=150, endshake=1.25, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False, standoff_pillars_separate=False):
         '''
 
         '''
@@ -4527,7 +4562,7 @@ class RoundClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
-                         fancy_pillars=fancy_pillars)
+                         fancy_pillars=fancy_pillars, standoff_pillars_separate=standoff_pillars_separate)
 
         if self.wall_mounted:
             self.text_on_standoffs=True
@@ -4644,8 +4679,9 @@ class RoundClockPlates(SimpleClockPlates):
 
         # used in base class
         self.pillar_r = self.plate_width / 2
-        #moon complication refers to this
+        # various shared bits expect these
         self.top_pillar_r = self.pillar_r
+        self.bottom_pillar_r = self.pillar_r
 
         # self.radius = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)
         self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
@@ -4765,7 +4801,8 @@ class RoundClockPlates(SimpleClockPlates):
             #and have shiny brass dome nuts on the front
             # bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
             top_nut_base_z = - self.back_plate_from_wall
-            top_nut_hole_height = self.fixing_screws.get_nut_height()*2
+            #THOUGHT: this might be thin enough that the standoff pillars could be seperate
+            top_nut_hole_height = self.fixing_screws.get_nut_height() + 1
             for pos in self.all_pillar_positions:
                 cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True).translate((pos[0], pos[1], top_nut_base_z)))
 
@@ -5084,6 +5121,7 @@ class RoundClockPlates(SimpleClockPlates):
                 return cq.Workplane("XY")
         return self.get_back_anchor_holder(for_printing=for_printing)
 
+
     def get_bottom_wall_standoff(self, for_printing=True):
         plate_thick = self.get_plate_thick(standoff=True)
 
@@ -5101,13 +5139,8 @@ class RoundClockPlates(SimpleClockPlates):
 
         standoff = self.cut_wall_fixing_hole(standoff, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True, plate_thick=plate_thick)
 
-        clockwise=True
-        for pillar_pos in self.bottom_pillar_positions:
-            if self.fancy_pillars:
-                standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0,0, plate_thick)))
-                clockwise = not clockwise
-            else:
-                standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
+        if not self.standoff_pillars_separate:
+            standoff = standoff.union(self.get_standoff_pillars(top=False).translate((0,0,self.back_plate_from_wall)))
 
 
 
@@ -5158,13 +5191,8 @@ class RoundClockPlates(SimpleClockPlates):
             wall_fixing_pos = self.get_screwhole_positions()[0][:2]
             standoff = self.cut_wall_fixing_hole(standoff, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
 
-        clockwise = True
-        for pillar_pos in anchor_holder_fixing_points:
-            if self.fancy_pillars:
-                standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0,0, plate_thick)))
-                clockwise = not clockwise
-            else:
-                standoff = standoff.union(cq.Workplane("XY").circle(self.pillar_r).extrude(self.back_plate_from_wall).translate(pillar_pos))
+        if not self.standoff_pillars_separate:
+            standoff = standoff.union(self.get_standoff_pillars(top=True).translate((0,0,self.back_plate_from_wall)))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
 
@@ -5214,7 +5242,7 @@ class RoundClockPlates(SimpleClockPlates):
 
 
     def get_assembled(self, one_peice=True):
-        plates, pillars, detail = super().get_assembled(one_peice=False)
+        plates, pillars, detail, standoff_pillars = super().get_assembled(one_peice=False)
 
         if not self.wall_mounted:
             plates = plates.add(self.get_legs(back=True).translate((0,0,-self.plate_thick)))
@@ -5225,7 +5253,7 @@ class RoundClockPlates(SimpleClockPlates):
                 pillars = pillars.add(self.get_legs_pillar().translate(pillar_pos))
         if one_peice:
             return plates.union(pillars).union(detail)
-        return (plates, pillars, detail)
+        return (plates, pillars, detail, standoff_pillars)
 
     def output_STLs(self, name="clock", path="../out"):
         super().output_STLs(name, path)
@@ -6071,10 +6099,11 @@ class Assembly:
         if ratchet_colour is None:
             ratchet_colour = plate_colours[0]
 
-        plates,pillars,plate_detail = self.plates.get_assembled(one_peice=False)
+        plates, pillars, plate_detail, standoff_pillars = self.plates.get_assembled(one_peice=False)
 
         show_object(plates, options={"color":plate_colours[0]}, name= "Plates")
         show_object(pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Pillars")
+        show_object(standoff_pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Standoff Pillars")
         if plate_detail is not None:
             show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
 

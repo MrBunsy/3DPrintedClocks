@@ -126,7 +126,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width)
 plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
-                                moon_complication=moon_complication, second_hand=False)
+                                moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
