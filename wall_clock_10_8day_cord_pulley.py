@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-from clocks import clock
+import clocks as clock
 
 '''
 Repeat of the eight day cord driven clock (clock 06), attempting to reduce plate distance, reduce friction and increase strength

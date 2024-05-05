@@ -19,7 +19,7 @@ source.
 '''
 import math
 
-from clocks import clock
+import clocks as clock
 
 '''
 Copy of clock 20, but with a larger module size (might fix reliability issues) and 1/3s pendulum

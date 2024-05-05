@@ -22,7 +22,7 @@ import cadquery as cq
 from cadquery import exporters
 import os
 
-from clocks import clock
+import clocks as clock
 
 '''
 

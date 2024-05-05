@@ -19,7 +19,7 @@ source.
 '''
 import math
 
-from clocks import clock
+import clocks as clock
 
 '''
 Copy of clock 27, but with new spring barrel

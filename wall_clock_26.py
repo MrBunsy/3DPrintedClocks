@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-from clocks import clock
+import clocks as clock
 
 '''
 Copy of clock 20 (eight day cord, dial with seconds hand on inner dial), but with a larger module size (might fix reliability issues) and 1/3s pendulum

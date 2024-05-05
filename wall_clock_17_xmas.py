@@ -20,7 +20,7 @@ source.
 import numpy as np
 import random
 import os
-import clocks.clock as clock
+import clocks as clock
 from cadquery import exporters
 
 '''

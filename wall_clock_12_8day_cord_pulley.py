@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-from clocks import clock
+import clocks as clock
 
 '''
 Originally this was following on from clock 10 (the previous pulley eight day), but then I diverted to grasshoppers and made progress with putting the pendulum

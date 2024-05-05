@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-from clocks import clock
+import clocks as clock
 
 '''
 Eight day cord wheel clock with "big cogs" that mum might like. 

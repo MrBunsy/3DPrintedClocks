@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-from clocks import clock
+import clocks as clock
 
 '''
 1 Day chain driven clock, short pendulum and no second hand, this was the first to use the new plate design and should remain compatible with future changes to the plate design

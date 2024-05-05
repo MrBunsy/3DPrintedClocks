@@ -19,7 +19,7 @@ source.
 '''
 import math
 
-from clocks import clock
+import clocks as clock
 
 '''
 Nothing particularly new, just had an idea for a clock that would look cool:

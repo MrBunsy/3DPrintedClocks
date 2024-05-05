@@ -22,7 +22,7 @@ import cadquery as cq
 from cadquery import exporters
 import os
 
-from clocks import clock
+import clocks as clock
 
 '''
 Copy of clock 29, but with much stronger first wheels as the clock 29 failed with a broken tooth on the first wheel and pinion! (not sure which broke first)

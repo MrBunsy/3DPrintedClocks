@@ -1,4 +1,4 @@
-from clocks import clock
+import clocks as clock
 
 '''
 Experiment to see how large I could make a clock if I used wood for the plates
