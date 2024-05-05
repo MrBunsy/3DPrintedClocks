@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.plates as clock
+import clocks as clock
 
 '''
 Simple one day clock with shortest pendulum I can manage to also have a second hand on the esacpe wheel

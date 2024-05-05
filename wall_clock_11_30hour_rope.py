@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.plates as clock
+import clocks as clock
 
 '''
 Simple one day clock with shortest pendulum I can manage and first test of the ropewheel
@@ -66,7 +66,7 @@ train.print_info()
 pendulumSticksOut=8+15
 
 #module size of 0.85 looks printable without stringing!
-train.gen_gears(module_size=0.85, module_reduction=moduleReduction, thick=2, thickness_reduction=0.9, chain_wheel_thick=2, useNyloc=False, pinion_thick_multiplier=3, chain_wheel_pinion_thick_multiplier=3, style=gearStyle, ratchet_screws=clock.MachineScrew(2, countersunk=True))
+train.gen_gears(module_size=0.85, module_reduction=moduleReduction, thick=2, thickness_reduction=0.9, chain_wheel_thick=2, pinion_thick_multiplier=3, chain_wheel_pinion_thick_multiplier=3, style=gearStyle, ratchet_screws=clock.MachineScrew(2, countersunk=True))
 
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle)

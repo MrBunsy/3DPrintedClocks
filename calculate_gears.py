@@ -1,4 +1,4 @@
-import clocks.plates as clock
+import clocks as clock
 
 '''
 

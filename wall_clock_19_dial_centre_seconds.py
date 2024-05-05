@@ -19,15 +19,7 @@ source.
 '''
 import math
 
-import clocks.utility
-from clocks.power import *
-from clocks.escapements import *
-from clocks.striking import *
-from clocks.plates import *
-from clocks.utility import *
-from clocks.leaves import HollyLeaf, Wreath, HollySprig
-from clocks.cosmetics import *
-from clocks.dial import *
+from clocks import *
 
 '''
 Based on wall clock 07. Shortest pendulum that can provide a seconds hand. 30 hour runtime, but chain driven
@@ -76,7 +68,7 @@ pendulumSticksOut=25
 # module_sizes = [first_module_size, first_module_size * ratio_of_teeth]
 module_sizes = None
 
-train.gen_gears(module_size=1.25, module_reduction=moduleReduction, thick=2, chain_wheel_thick=3, useNyloc=False, style=gearStyle, pinion_thick_multiplier=3, chain_wheel_pinion_thick_multiplier=3,
+train.gen_gears(module_size=1.25, module_reduction=moduleReduction, thick=2, chain_wheel_thick=3, style=gearStyle, pinion_thick_multiplier=3, chain_wheel_pinion_thick_multiplier=3,
                 pendulum_fixing=pendulumFixing, module_sizes=module_sizes)
 # train.printInfo(weight_kg=0.75-0.15)
 train.print_info(weight_kg=0.32)
@@ -99,7 +91,7 @@ hands = Hands(style=HandStyle.SIMPLE_ROUND, second_length=40, minute_fixing="cir
               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.outside_d / 2 - 10, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False,
               second_hand_centred=True, second_fixing_d=get_diameter_for_die_cutting(3), outline_on_seconds=1, seconds_hand_thick=2.5)
 
-assembly = Assembly(plates, hands=hands, time_seconds=15, pulley=pulley_no_pipe)
+assembly = Assembly(plates, hands=hands, time_seconds=15, pulley=pulley_no_pipe, pendulum=pendulum)
 
 assembly.printInfo()
 
@@ -112,10 +104,10 @@ weight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.get_assembled())
 
 # show_object(assembly.getClock())
-assembly.show_clock(show_object, dial_colours=[clocks.utility.Colour.LIGHTGREY,clocks.utility.Colour.BRASS],
-                    motion_works_colours=[clocks.utility.Colour.ORANGE,clocks.utility.Colour.ORANGE,clocks.utility.Colour.YELLOW,clocks.utility.Colour.GREEN],
+assembly.show_clock(show_object, dial_colours=[Colour.LIGHTGREY,Colour.BRASS],
+                    motion_works_colours=[Colour.ORANGE,Colour.ORANGE,Colour.YELLOW,Colour.GREEN],
                     hand_colours=["white", "black", "red"],
-                    plate_colours=clocks.utility.Colour.DARKGREY)
+                    plate_colours=Colour.DARKGREY)
 
 
 if outputSTL:

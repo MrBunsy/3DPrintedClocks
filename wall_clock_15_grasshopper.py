@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.plates as clock
+import clocks as clock
 
 '''
 second attempt at a grasshopper. Same as teh first attempt (clock 14) but with space to fit hands on properly and less drooping of the escape wheel and frame
@@ -63,9 +63,9 @@ pendulumSticksOut=20
 
 
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
-# train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, useNyloc=False, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
+# train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.gen_gears(module_size=1.1, module_reduction=1.1, thick=3, chain_wheel_thick=4, useNyloc=False, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
+train.gen_gears(module_size=1.1, module_reduction=1.1, thick=3, chain_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=1)
 
 motionWorks = clock.MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)

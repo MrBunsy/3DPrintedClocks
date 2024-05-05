@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.plates as clock
+import clocks as clock
 
 '''
 The first iteration of this clock was just some parts before I realised I needed to tweak the ratios. 

@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.plates as clock
+import clocks as clock
 
 '''
 Based on wall clock 07. Shortest pendulum that can provide a seconds hand. 30 hour runtime, but chain driven
@@ -57,7 +57,7 @@ train.gen_chain_wheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length
 #25 should comfortably stick out in front of the motion works
 pendulumSticksOut=25
 
-train.gen_gears(module_size=1.25, module_reduction=0.875, thick=3, chain_wheel_thick=4, useNyloc=False, style=gearStyle, pinion_thick_multiplier=4, chain_wheel_pinion_thick_multiplier=4)
+train.gen_gears(module_size=1.25, module_reduction=0.875, thick=3, chain_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=4, chain_wheel_pinion_thick_multiplier=4)
 train.print_info(weight_kg=0.425)
 
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle)

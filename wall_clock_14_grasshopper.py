@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.plates as clock
+import clocks as clock
 
 '''
 first attempt at a grasshopper. Plan:
@@ -67,7 +67,7 @@ train.gen_chain_wheels(ratchetThick=4, wire_thick=0.85, width=3.6, inside_length
 pendulumSticksOut=20
 
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.gen_gears(module_size=1.6, module_reduction=0.875, thick=3, chain_wheel_thick=4, useNyloc=False, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2)
+train.gen_gears(module_size=1.6, module_reduction=0.875, thick=3, chain_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, chain_wheel_pinion_thick_multiplier=2)
 train.print_info(weight_kg=1)
 
 motionWorks = clock.MotionWorks(extra_height=30, style=gearStyle)
