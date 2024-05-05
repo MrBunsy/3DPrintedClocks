@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.clock as clock
+import clocks.plates as clock
 
 '''
 second attempt at a grasshopper. Same as teh first attempt (clock 14) but with space to fit hands on properly and less drooping of the escape wheel and frame

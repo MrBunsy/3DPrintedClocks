@@ -23,7 +23,7 @@ import clocks.utility
 from clocks.power import *
 from clocks.escapements import *
 from clocks.striking import *
-from clocks.clock import *
+from clocks.plates import *
 from clocks.utility import *
 from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *

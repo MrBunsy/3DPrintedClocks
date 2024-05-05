@@ -1,6 +1,6 @@
 import cadquery as cq
 
-from .clock import *
+from .plates import *
 from .escapements import *
 from .gearing import *
 from .hands import *

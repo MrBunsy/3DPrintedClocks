@@ -25,7 +25,7 @@ import cProfile
 
 
 
-from clocks.clock import *
+from clocks.plates import *
 
 '''
 

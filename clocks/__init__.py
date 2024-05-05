@@ -1,5 +1,5 @@
 from .assembly import *
-from .clock import *
+from .plates import *
 from .cosmetics import *
 from .demos import *
 from .dial import *

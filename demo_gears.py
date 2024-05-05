@@ -1,7 +1,7 @@
 from clocks.power import *
 from clocks.escapements import *
 from clocks.striking import *
-from clocks.clock import *
+from clocks.plates import *
 
 if 'show_object' not in globals():
     #don't output STL when we're in cadquery editor

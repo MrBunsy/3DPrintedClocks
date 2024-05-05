@@ -19,7 +19,7 @@ source.
 '''
 import random
 import os
-import clocks.clock as clock
+import clocks.plates as clock
 from cadquery import exporters
 
 '''

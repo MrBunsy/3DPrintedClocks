@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import clocks.clock as clock
+import clocks.plates as clock
 
 '''
 Based on wall clock 07. Shortest pendulum that can provide a seconds hand. 30 hour runtime, but chain driven

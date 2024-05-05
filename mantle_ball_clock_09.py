@@ -1,4 +1,4 @@
-import clocks.clock as clock
+import clocks.plates as clock
 
 '''
 A spherical weight clock with short pendulum

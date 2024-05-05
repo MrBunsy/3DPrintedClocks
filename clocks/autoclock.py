@@ -23,7 +23,7 @@ from cadquery import exporters
 from .power import *
 from .escapements import *
 from .striking import *
-from .clock import *
+from .plates import *
 from .utility import *
 from .leaves import HollyLeaf, Wreath, HollySprig
 from .cosmetics import *

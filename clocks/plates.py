@@ -143,10 +143,13 @@ class MoonHolder:
         return self.moon_y - self.moon_complication.moon_radius
 
     def get_fixing_positions(self):
-        #between pillar screws and anchor arbor
-        top_fixing_y = (self.plates.top_pillar_positions[0][1] + self.plates.bearing_positions[-1][1]) / 2 - 1
-        #just inside the dial, by fluke
-        bottom_fixing_y = self.centre_y - self.height / 2 + 8
+        if self.moon_inside_dial:
+            top_fixing_y = bottom_fixing_y = self.centre_y
+        else:
+            #between pillar screws and anchor arbor
+            top_fixing_y = (self.plates.top_pillar_positions[0][1] + self.plates.bearing_positions[-1][1]) / 2 - 1
+            #just inside the dial, by fluke
+            bottom_fixing_y = self.centre_y - self.height / 2 + 8
         return [(-self.plates.plate_width / 3, top_fixing_y), (self.plates.plate_width / 3, bottom_fixing_y)]
 
     def get_moon_holder_parts(self, for_printing=True):
@@ -174,12 +177,15 @@ class MoonHolder:
         moon_centre_pos = (0, self.moon_y, moon_z)
 
         if self.moon_inside_dial:
+            fillet_r=3
             width = moon_r*2
             holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width/2).circle(self.plates.radius - self.plates.plate_width/2)
                       .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(moon_z)))
+            holder = holder.edges("|Z").fillet(fillet_r)
 
             lid = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width / 2).circle(self.plates.radius - self.plates.plate_width / 2)
                       .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(lid_thick)))
+            lid = lid.edges("|Z").fillet(fillet_r)
             lid = lid.translate((0, 0, moon_z))
             #something to link spoon with the holder, don't worry about overlapping as the moon hole will be cut out later
             link_height = self.centre_y - self.moon_y
@@ -1918,6 +1924,11 @@ class SimpleClockPlates:
             # return shell
             # return cq.Workplane("XY").rect(50000, 50000).extrude(self.edging_thick)
             edging = shell.translate((0,0,-self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
+
+            if self.moon_complication is not None:
+                #not for printing we actually want this in the position it will be when assembled
+                edging = edging.cut(self.moon_holder.get_moon_holder_parts(for_printing=False)[0])
+
             # this is on the xy plane sticking up +ve z, will need translating to be useful
             return edging
             # return edging.translate((0,0,self.get_plate_thick(back=back)))
@@ -2276,15 +2287,7 @@ class SimpleClockPlates:
             cutter = cutter.add(cq.Workplane("XY").moveTo(self.huygens_wheel_pos[0], self.huygens_wheel_pos[1] + self.huygens_wheel_y_offset).circle(self.fixing_screws.metric_thread / 2).extrude(1000).translate((0, 0, base_z)))
             cutter = cutter.add(self.fixing_screws.get_nut_cutter(nyloc=nyloc, with_bridging=bridging, layer_thick=self.layer_thick).translate(self.huygens_wheel_pos).translate((0, self.huygens_wheel_y_offset, nutZ)))
 
-        if self.moon_complication is not None:
-            moon_screws = self.moon_holder.get_fixing_positions()
 
-            for pos in moon_screws:
-                pos = (pos[0], pos[1], self.get_plate_thick(back=True) + self.plate_distance)
-                # cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate(pos))
-                # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
-                cutter = cutter.add(self.motion_works_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
-                cutter = cutter.add(cq.Workplane("XY").circle(self.motion_works_screws.metric_thread / 2).extrude(1000).translate(pos))
 
 
         #cache to avoid re-calculating (this is reused all over the plates)
@@ -2353,9 +2356,19 @@ class SimpleClockPlates:
         plate_thick = self.get_plate_thick(standoff=True)
         pillar_r = self.top_pillar_r if top else self.bottom_pillar_r
         if self.fancy_pillars:
-            return SimpleClockPlates.fancy_pillar(pillar_r, self.back_plate_from_wall - plate_thick, clockwise=left)
+            pillar = SimpleClockPlates.fancy_pillar(pillar_r, self.back_plate_from_wall - plate_thick, clockwise=left)
         else:
-            return cq.Workplane("XY").circle(pillar_r).extrude(self.back_plate_from_wall - plate_thick)
+            pillar = cq.Workplane("XY").circle(pillar_r).extrude(self.back_plate_from_wall - plate_thick)
+
+        if top:
+            # TODO care about left and right
+            pillar_pos = self.top_pillar_positions[0 if left else 1]
+        else:
+            pillar_pos = self.bottom_pillar_positions[0 if left else 1]
+
+        pillar = pillar.cut(self.get_fixing_screws_cutter().translate((-pillar_pos[0], -pillar_pos[1], self.back_plate_from_wall - plate_thick)))
+
+        return pillar
 
     def get_standoff_pillars(self, top=True):
         pillar_positions = self.top_pillar_positions if top else self.bottom_pillar_positions
@@ -2850,6 +2863,17 @@ class SimpleClockPlates:
         if self.escapement_on_front and self.extra_support_for_escape_wheel:
             #this is a bearing extended out the front, helps maintain the geometry for a grasshopper on plates with a narrow plateDistance
             plate = plate.add(self.getBearingHolder(-self.going_train.escapement.get_wheel_base_to_anchor_base_z()).translate((self.bearing_positions[-2][0], self.bearing_positions[-2][1], self.get_plate_thick(back=False))))
+
+        if self.moon_complication is not None:
+            moon_screws = self.moon_holder.get_fixing_positions()
+
+            for pos in moon_screws:
+                # pos = (pos[0], pos[1], self.get_plate_thick(back=True) + self.plate_distance)
+                # cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate(pos))
+                # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
+                plate = plate.cut(self.moon_holder.fixing_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
+                plate = plate.cut(cq.Workplane("XY").circle(self.moon_holder.fixing_screws.get_rod_cutter_r()).extrude(1000).translate(pos))
+
 
         return plate
 
@@ -3562,7 +3586,8 @@ class RoundClockPlates(SimpleClockPlates):
         pillar_length = self.plate_distance
 
         if self.fancy_pillars:
-            pillar = SimpleClockPlates.fancy_pillar(self.pillar_r, pillar_length)
+            pillar = (SimpleClockPlates.fancy_pillar(self.pillar_r, pillar_length)
+                      .cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)))
         else:
             pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
 
@@ -3727,7 +3752,7 @@ class RoundClockPlates(SimpleClockPlates):
             #THOUGHT: this might be thin enough that the standoff pillars could be seperate
             top_nut_hole_height = self.fixing_screws.get_nut_height() + 1
             for pos in self.all_pillar_positions:
-                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True).translate((pos[0], pos[1], top_nut_base_z)))
+                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True, rod_loose=True).translate((pos[0], pos[1], top_nut_base_z)))
 
         return cutter
 
