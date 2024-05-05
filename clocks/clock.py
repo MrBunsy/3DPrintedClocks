@@ -3187,13 +3187,15 @@ class MantelClockPlates(SimpleClockPlates):
                     line = Line(self.bottom_pillar_positions[side], anotherPoint=self.top_pillar_positions[side])
                     intersections = line.intersection_with_circle(self.hands_position, self.dial.outside_d/2 - self.dial.dial_width/2)
                     pillar_positions += intersections
-                #single screw in each pillar ought to be enoguh, hence putting each element in its own list
-                #NOTE dial is "upside down" so invert x
 
+
+                self.dial_fixing_positions = pillar_positions
                 dial_fixing_positions = []
 
                 for pos in pillar_positions:
                     pos_relative_to_hands = np_to_set(np.subtract(pos, self.hands_position))
+                    # NOTE dial is "upside down" so invert x (not done consistently as most clocks are symmetric, so it goes unnoticed)
+                    # single screw in each pillar ought to be enoguh, hence putting each element in its own list
                     dial_fixing_positions.append([(-pos_relative_to_hands[0], pos_relative_to_hands[1])])
 
                 self.dial.override_fixing_positions(dial_fixing_positions)
@@ -3539,7 +3541,8 @@ class RoundClockPlates(SimpleClockPlates):
             self.dial_fixing_positions = [np_to_set(np.add(pos, self.hands_position)) for pos in dial_fixings_relative_to_dial]
 
             # array of arrays because we only want one screw per pillar here
-            self.dial.override_fixing_positions([[pos] for pos in dial_fixings_relative_to_dial])
+            #invert x because dial is constructed upside down
+            self.dial.override_fixing_positions([[(-pos[0], pos[1])] for pos in dial_fixings_relative_to_dial])
             self.dial.support_d = 15
             if self.style == PlateStyle.RAISED_EDGING:
                 self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1

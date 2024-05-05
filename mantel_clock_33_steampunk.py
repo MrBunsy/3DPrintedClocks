@@ -113,7 +113,7 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK],
-                    plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.SILVER, clock.Colour.BRASS], gear_colours=[clock.Colour.GOLD])
+                    plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.SILVER, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 
