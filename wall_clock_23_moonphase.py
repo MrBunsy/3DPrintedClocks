@@ -34,7 +34,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_23"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 second_hand_centred = False
 #for period 1.5
 drop =1.5

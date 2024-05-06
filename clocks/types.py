@@ -85,11 +85,11 @@ class PendulumFixing(Enum):
     #using a 10mm bearing for the front anchor arbour, a long extension from the anchour arbour will end in a square and the rod will slot onto this like the minute hand slots
     #onto the cannon pinion
     #DEPRECATED and mostly removed from the codebase. large bearings had way too much friction to hold the anchor and pendulum
-    DIRECT_ARBOUR = "direct_arbour"
+    DIRECT_ARBOR = "direct_arbour"
     '''
     Same as direct arbour - but avoiding the use of the large (high friction) bearings. Experimental.
     '''
-    DIRECT_ARBOUR_SMALL_BEARINGS = "direct_arbour_small_bearings"
+    DIRECT_ARBOR_SMALL_BEARINGS = "direct_arbour_small_bearings"
     #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)
     KNIFE_EDGE = "knife_edge"
     #idea - 3D printed suspension spring, works for the ratchet, might work for this?

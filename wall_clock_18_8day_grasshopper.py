@@ -44,7 +44,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_18"
 clockOutDir="out"
 gearStyle = clock.GearStyle.FLOWER
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR
 
 escapement = clock.GrasshopperEscapement.get_harrison_compliant_grasshopper()
 

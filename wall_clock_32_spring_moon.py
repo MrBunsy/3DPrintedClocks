@@ -43,7 +43,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_32"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 
 #larger drop like mantel clock 30, but since we're using 30 teeth, a bit more lift to get the 45 degree pallets

@@ -60,7 +60,7 @@ NUT_WIGGLE_ROOM = 0.2
 ARBOUR_WIGGLE_ROOM = 0.1
 
 # six actually prints pretty well, but feels a bit small! contemplating bumping up to 7.5
-DIRECT_ARBOUR_D = 7  # 7.5
+DIRECT_ARBOR_D = 7  # 7.5
 
 # for calculating height of motion works - two half height m3 nuts are locked against each other and a spring washer is used to friction-fit the motion works to the minute wheel
 # includes a bit of slack

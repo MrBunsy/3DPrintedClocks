@@ -59,7 +59,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_12_retrofit"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CURVES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 #for period 1.5
 # drop =1.5

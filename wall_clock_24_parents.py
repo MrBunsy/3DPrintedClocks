@@ -36,7 +36,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_24_dialfix"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CURVES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 #for period 1.5
 # drop =1.5
@@ -59,9 +59,9 @@ train = clock.GoingTrain(pendulum_period=pendulum_period, wheels=3, escapement=e
 
 moduleReduction=0.85
 
-train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=20, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True, favour_smallest=False)
-# train.calculateRatios(max_wheel_teeth=70, min_pinion_teeth=12, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True)
-# train.setRatios( [[72, 10], [75, 9], [60, 27]])
+# train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=20, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True, favour_smallest=False)
+#this is what was calculated, just saving time
+train.set_ratios([[80, 9], [81, 12]])
 
 #think this is promising for good compromise of size
 # train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=29, loose_on_rod=False, prefer_small=True)
@@ -78,7 +78,7 @@ backPlateFromWall=30
 
 train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions={1:10})
-train.print_info(weight_kg=3)
+train.print_info(weight_kg=2.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable

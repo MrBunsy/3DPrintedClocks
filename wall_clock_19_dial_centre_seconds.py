@@ -37,7 +37,7 @@ if 'show_object' not in globals():
 clockName="wall_clock_19b"
 clockOutDir="out"
 gearStyle = GearStyle.HONEYCOMB_SMALL
-pendulumFixing=PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 
 drop =1.5

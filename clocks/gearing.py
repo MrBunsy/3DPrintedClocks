@@ -1428,9 +1428,38 @@ class FrictionFitPendulumBits:
 
         return pendulum
 
+class ColletFixingPendulumWithBeatSetting:
+    '''
+    The PendulumFixing.DIRECT_ARBOR has a pendulum holder that slots onto a square (or rounded square) rod.
+    This works really well, but there's no way to set the beat other than bending the pendulum rod.
+    So - this is an attempt to copy a mechanism I've seen on old clocks on ebay:
+    
+    We'll use a collet like the direct arbor fixing, but this won't hold the pendulum directly. it will hold a pivot point for the pendulum holder
+    and a horizontal threaded rod. the pendulum holder will pivot on the aforementioned pivot point and have the threaded rod passing through half way down
+    this will enable the threaded rod to be twisted to adjust the alignment left and right a bit
+
+    then at the bottom of the pendulum holder there will be a mechanism like the existing one that the top of the pendulum slots into
+    
+    
+    '''
+    
+    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space = 0.2):
+        self.collet_size = collet_size
+        self.fixing_screws = fixing_screws
+        if self.fixing_screws is None:
+            self.fixing_screws = MachineScrew(3, countersunk=True)
+        self.pendulum_fixing_extra_space = pendulum_fixing_extra_space
+
+
+    # def get_collet(self):
+
+        
+    
 class SuspensionSpringPendulumBits:
     '''
     Crutch and pendulum holder for a suspension spring, contained here to avoid making ArborForPlate far too large
+
+    UNFINISHED
     '''
 
     def __init__(self, crutch_length=40, square_side_length=6, crutch_thick=7.5, collet_screws=None, crutch_screw=None, printed_suspension=True):
@@ -1481,7 +1510,7 @@ class SuspensionSpringPendulumBits:
 class ArborForPlate:
 
     def __init__(self, arbour, plates, arbour_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False,
-                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOUR, bearing_position=None, direct_arbor_d = DIRECT_ARBOUR_D, crutch_space=10,
+                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOR, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
                  previous_bearing_position=None, front_anchor_from_plate=-1):
         '''
         Given a basic Arbour and a specific plate class do the following:
@@ -1617,8 +1646,8 @@ class ArborForPlate:
         for the direct arbours without suspension spring
         '''
         outer_d = self.outer_d
-        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS:
-            outer_d = self.cylinder_r*4#DIRECT_ARBOUR_D*2
+        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
+            outer_d = self.cylinder_r*4#DIRECT_ARBOR_D*2
 
         square_size = self.square_side_length + self.pendulum_fixing_extra_space
 
@@ -1735,7 +1764,7 @@ class ArborForPlate:
         anchor_thick = self.arbor.escapement.get_anchor_thick()
         # flip over so the front is on the print bed
         anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, anchor_thick))
-        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR, PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
+        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
 
 
             #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
@@ -1850,10 +1879,10 @@ class ArborForPlate:
                     #can be none if the anchor is pressed up against a plate
                     assembly = assembly.add(shapes["arbour_extension"])
             assembly = assembly.translate((0,0,anchor_assembly_end_z))
-            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOUR and self.escapement_on_front and not self.pendulum_at_front:
+            if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR and self.escapement_on_front and not self.pendulum_at_front:
                 collet = shapes["collet"]
                 assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
-            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD]:
+            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD]:
                 pendulum_z = -self.pendulum_sticks_out
 
                 if self.pendulum_at_front:

@@ -28,6 +28,8 @@ from .utility import *
 from .leaves import HollyLeaf, Wreath, HollySprig
 from .cosmetics import *
 from .dial import *
+from .assembly import *
+from.gear_trains import *
 from .cq_svg import exportSVG
 import os
 
@@ -281,7 +283,7 @@ class AutoWallClock:
         # currently based on clock 12
         self.hours = max(1,days-1) * 24 + 6
         self.pendulum_period_s = pendulum_period_s
-        self.pendulumFixing = PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+        self.pendulumFixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
         self.weight_drop = 1200
         self.huygens = False
         self.module_size=1

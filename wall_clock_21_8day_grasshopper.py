@@ -39,7 +39,7 @@ random.seed(7)
 clockName="wall_clock_21_grasshopper"
 clockOutDir="out"
 gearStyle = clock.GearStyle.CURVES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 need_space = clock.SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
 

@@ -50,7 +50,7 @@ if 'show_object' not in globals():
 clockName="mantel_clock_31"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 
 #this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well

@@ -40,7 +40,7 @@ if 'show_object' not in globals():
 clockName="mantel_clock_30b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.HONEYCOMB_CHUNKY
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOUR_SMALL_BEARINGS
+pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 #for period 1.5
 # drop =1.5
