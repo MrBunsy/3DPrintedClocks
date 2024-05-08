@@ -1443,15 +1443,55 @@ class ColletFixingPendulumWithBeatSetting:
     
     '''
     
-    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space = 0.2):
+    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space = 0.2, pendulum_holder_thick=15, length=50):
         self.collet_size = collet_size
         self.fixing_screws = fixing_screws
         if self.fixing_screws is None:
             self.fixing_screws = MachineScrew(3, countersunk=True)
         self.pendulum_fixing_extra_space = pendulum_fixing_extra_space
 
+        self.arm_width = collet_size*2
+        self.length = length
+        self.width = length*0.6
+        self.pendulum_holder_thick = pendulum_holder_thick
 
-    # def get_collet(self):
+        self.hinge_point = (0, - self.arm_width*1.5)
+
+
+    def get_collet(self):
+        '''
+        centred on centre of rod that goes through the collet
+        '''
+        thick = self.pendulum_holder_thick / 2
+
+        end_thick = self.arm_width*0.4
+        fillet_r =self.arm_width*0.25
+
+        ##get_stroke_line([(0,0),(0, -self.length)], wide = self.width, thick=thick)
+        collet = cq.Workplane("XY").moveTo(0, -self.length/2).rect(self.arm_width, self.length).extrude(thick).translate((0,0,thick))
+
+        collet = collet.union(cq.Workplane("XY").circle(self.arm_width/2).extrude(self.pendulum_holder_thick))
+
+        # square bit that slots over arbour
+        collet = collet.cut(cq.Workplane("XY").rect(self.collet_size, self.collet_size).extrude(self.pendulum_holder_thick))
+
+        #hinge point screw
+        collet = collet.cut(self.fixing_screws.get_cutter(with_bridging=True, for_tap_die=True).rotate((0,0,0),(1,0,0),180).translate((self.hinge_point[0],self.hinge_point[1],self.pendulum_holder_thick)))
+
+        #sideways arm for the adjustment
+        arm = cq.Workplane("XY").moveTo(0, -self.length).rect(self.width, self.arm_width).extrude(thick).translate((0,0, thick))#.edges("|Z").fillet(fillet_r))
+
+        for x in [-1, 1]:
+            edges=">X" if x > 0 else "<X"
+            arm = arm.union(cq.Workplane("XY").moveTo(x*(self.width/2 + end_thick/2),-self.length).rect(end_thick, self.arm_width).extrude(self.pendulum_holder_thick).edges("|Z and {}".format(edges)).fillet(fillet_r))
+
+        collet = collet.union(arm)
+
+        thread_cutter = (cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(self.width*4).rotate((0,0,0),(0,1,0),90)
+                         .translate((-self.width*2,-self.length,thick/2)))
+        collet = collet.cut(thread_cutter)
+
+        return collet
 
         
     
@@ -1582,6 +1622,7 @@ class ArborForPlate:
         self.square_side_length = math.sqrt(2) * self.cylinder_r
 
         if self.cylinder_r < 5:
+            #square with rounded edges, so we can get something as big as possible
             self.square_side_length = math.sqrt(2) * self.cylinder_r * 1.2
 
         self.crutch_holder_slack_space = 2

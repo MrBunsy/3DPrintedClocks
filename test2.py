@@ -57,4 +57,8 @@ if 'show_object' not in globals():
 # show_object(SimpleClockPlates.fancy_pillar(30, 100))
 
 
-show_object(get_stroke_arc((50,0), (-50,0), 150, wide=10, thick=5 , style=StrokeStyle.ROUND, fill_in=True))
+# show_object(get_stroke_arc((50,0), (-50,0), 150, wide=10, thick=5 , style=StrokeStyle.ROUND, fill_in=True))
+
+pendulum_holder = ColletFixingPendulumWithBeatSetting(collet_size=6)
+
+show_object(pendulum_holder.get_collet())
