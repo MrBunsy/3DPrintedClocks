@@ -6,6 +6,11 @@ import datetime
 import shutil
 import traceback
 
+# from clocks import radToDeg
+
+def radToDeg(rad):
+    return rad * 180 / math.pi
+
 def apply_wipefix(gcode_in, log):
     '''
     Find toolchanges:
@@ -160,7 +165,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
 
     #we want to start the dial shapes with as little travel as possible, find the angle of the last known position of the nozzle
     start_angle = math.atan2(start_pos[1] - centre[1], start_pos[0] - centre[0])
-    log.write("assuming attempting to start at angle {}deg\n".format(360*start_angle/(math.pi*2)))
+    log.write("assuming attempting to start at angle {:.1f}deg\n".format(radToDeg(start_angle)))
     for shape_gcode in shapes:
 
         shape_centre = get_average_position(shape_gcode)
@@ -189,7 +194,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
     gcode_out = []
     for shape_info in shapes_processed:
         gcode_out.extend(shape_info["gcode"])
-        log.write("adding shape with angle: {}, {}\n".format(shape_info["angle"], shape_info['type']))
+        log.write("adding shape with angle: {:.2f}={:.1f}deg, {}\n".format(shape_info["angle"], radToDeg(shape_info["angle"]), shape_info['type']))
 
     return gcode_out
 
@@ -358,9 +363,10 @@ if __name__ == "__main__":
     expects arguments: prusaslicer_version [optional] gcode/file/path
     
     optional:
-    - firstm600
-    - dialfix
-    - wipefix - think this isn't needed since 2.7.2? (still needed)
+    - firstm600 - remove the first M600 so we don't change filament immediately before the print
+    - dialfix - re-arrange the dial detail elements so there's less travel
+    - wipefix - re-arrange so the nozzle moves to the wipe tower BEFORE M600
+    - detailfirst - the dial is printed with the detail first (default is detail second)
     
     
     C:/Python311_2023/python.exe C:/Users/Luke/Documents/Clocks/3DPrintedClocks/gcode_processor.py 2.7.2 firstm600 wipefix
@@ -386,6 +392,7 @@ if __name__ == "__main__":
     remove_first_m600 = "firstm600" in relevant_args
     need_dialfix = "dialfix" in relevant_args
     need_wipefix = "wipefix" in relevant_args
+    detail_printed_first = "detailfirst" in relevant_args
 
     #file prusaslicer expects to be edited in situ
     gcode_temp_file = sys.argv[-1]
@@ -428,7 +435,7 @@ if __name__ == "__main__":
             if need_wipefix:
                 gcode_out = apply_wipefix(gcode_out, log)
             if need_dialfix:
-                gcode_out = apply_dialfix(gcode_out, log, printer_version, detail_printed_first=True)
+                gcode_out = apply_dialfix(gcode_out, log, printer_version, detail_printed_first=detail_printed_first)
         except Exception as error:
             log.write("Exception: {}\n{}".format(error, traceback.format_exc()))
 

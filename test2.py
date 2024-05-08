@@ -7,7 +7,7 @@ from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
 from clocks.cuckoo_bits import roman_numerals, CuckooWhistle
-from clocks.viewer import *
+# from clocks.viewer import *
 
 from clocks.cq_gears import BevelGear, BevelGearPair, CrownGearPair
 
@@ -61,4 +61,4 @@ if 'show_object' not in globals():
 
 pendulum_holder = ColletFixingPendulumWithBeatSetting(collet_size=6)
 
-show_object(pendulum_holder.get_collet())
+show_object(pendulum_holder.get_assembled())

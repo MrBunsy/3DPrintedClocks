@@ -78,6 +78,8 @@ METRIC_HEAD_D_MULT = 1.9
 METRIC_HEAD_DEPTH_MULT = 0.75
 # metric nut width is double the thread size
 METRIC_NUT_WIDTH_MULT = 2
+#true for M3 onwards
+METRIC_NUT_THUMB_WIDTH_MULT = 4
 
 # depth of a nut, right for m3, might be right for others
 METRIC_NUT_DEPTH_MULT = 0.77
@@ -96,7 +98,7 @@ def get_washer_diameter(metric_thread):
     raise ValueError("TODO measure more washers")
 
 
-def get_nut_containing_diameter(metric_thread, wiggleRoom=0):
+def get_nut_containing_diameter(metric_thread, wiggleRoom=0, thumb=False):
     '''
     Given a metric thread size we can safely assume the side-to-side size of the nut is 2*metric thread size
     but the poly() in cq requires:
@@ -113,12 +115,15 @@ def get_nut_containing_diameter(metric_thread, wiggleRoom=0):
     if metric_thread == 4:
         nutWidth = 6.85
 
+    if thumb:
+        nutWidth = metric_thread * METRIC_NUT_THUMB_WIDTH_MULT
+
     nutWidth += wiggleRoom
 
     return nutWidth / math.cos(math.pi / 6)
 
 
-def get_nut_height(metric_thread, nyloc=False, halfHeight=False):
+def get_nut_height(metric_thread, nyloc=False, halfHeight=False, thumb=False):
     if metric_thread > 2 and halfHeight:
         return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
 
@@ -128,6 +133,8 @@ def get_nut_height(metric_thread, nyloc=False, halfHeight=False):
     if metric_thread == 3:
         if nyloc:
             return 3.9
+        if thumb:
+            return 3.0
 
     if metric_thread == 4:
         if nyloc:
@@ -251,6 +258,18 @@ class CountersunkWoodScrew:
 
         return screw
 
+'''
+M3 thumb nuts:
+Thread Diameter - M3
+Thread Pitch - 0.5mm
+Head Diameter - 12mm
+Knurled Head Length - 2.5mm
+Shoulder Diameter - 6mm
+Shoulder Length (High Type) - 5mm
+Shoulder Length (Thin Type) - 0.5mm
+'''
+
+
 class MachineScrew:
     '''
     Instead of a myriad of different ways of passing information about screwholes around, have a real screw class that can produce a cutting shape
@@ -337,8 +356,8 @@ class MachineScrew:
 
         return screw
 
-    def get_nut_height(self, nyloc=False, half=False):
-        return get_nut_height(self.metric_thread, nyloc=nyloc, halfHeight=half)
+    def get_nut_height(self, nyloc=False, half=False, thumb=False):
+        return get_nut_height(self.metric_thread, nyloc=nyloc, halfHeight=half, thumb=False)
 
     def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=-1, rod_loose=False):
         '''
@@ -383,8 +402,8 @@ class MachineScrew:
         else:
             return self.length + self.get_head_height()
 
-    def get_nut_containing_diameter(self, wiggle=NUT_WIGGLE_ROOM):
-        return get_nut_containing_diameter(self.metric_thread, wiggle)
+    def get_nut_containing_diameter(self, wiggle=NUT_WIGGLE_ROOM, thumb=False):
+        return get_nut_containing_diameter(self.metric_thread, wiggle, thumb=thumb)
 
     def get_head_diameter(self):
         return get_screw_head_diameter(self.metric_thread, countersunk=self.countersunk)

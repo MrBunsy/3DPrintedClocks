@@ -93,7 +93,7 @@ motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle, thick=3, compe
 motionWorks.calculate_size(arbor_distance=35)
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=10, bob_text=["F & P", "40"])
 
-dial = clock.Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC, inner_edge_style=None, outer_edge_style=None, detail_thick=clock.LAYER_THICK)
+dial = clock.Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC, inner_edge_style=None, outer_edge_style=None, detail_thick=clock.LAYER_THICK*2)
 # dial = None
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
