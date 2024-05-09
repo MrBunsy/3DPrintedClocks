@@ -1466,7 +1466,7 @@ class ColletFixingPendulumWithBeatSetting:
 
     def get_thread_cutter(self):
         thick = self.pendulum_holder_thick
-        thread_cutter = self.fixing_screws.get_cutter(for_tap_die=True, sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.width / 2 - self.threadholder_arm_width, -self.length, thick / 2))
+        thread_cutter = self.fixing_screws.get_cutter(sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.width / 2 - self.threadholder_arm_width, -self.length, thick / 2))
         thread_cutter = thread_cutter.union(self.fixing_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.width / 2, -self.length, thick / 2)))
         return thread_cutter
 
@@ -1531,8 +1531,8 @@ class ColletFixingPendulumWithBeatSetting:
         # plus extra because we'll be at an angle
         nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
         #0.5 for space to squash a crinkle washer to add friction that will hopefully prevent this turning by itself
-        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.5
-        nut_hole_centre_height = self.fixing_screws.metric_thread*1.5
+        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 1
+        nut_hole_centre_height = self.fixing_screws.metric_thread
         nut_hole_width = self.arm_width*0.5
 
         #bit longer to give pendulum holder more length and therefore less wobble
@@ -1552,7 +1552,19 @@ class ColletFixingPendulumWithBeatSetting:
 
         holder = holder.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick / 2).translate((0, -self.length - nut_hole_height/2 - 1.5)))
 
-        holder = holder.cut(self.get_thread_cutter())
+        thumb_nut_d = self.fixing_screws.get_nut_containing_diameter(thumb=True)
+
+        #TODO cut away top of hexagon from top and bottom so the nut is accessible
+        #or maybe just make the holder half the thickness, then I can reduce the size of teh collet part too? back to two sticky-outy arms
+
+        # elongated hole for the threaded rod, elongated because this twists sideways
+        hole_wide = self.fixing_screws.get_rod_cutter_r(loose=True, sideways=True)*2 + 0.5
+        #get_stroke_line([(0, -nut_hole_centre_height/2), (0, nut_hole_centre_height/2)], wide=self.fixing_screws.get_rod_cutter_r(loose=True, sideways=True)*2 + 0.5, thick=self.width*3)
+        threaded_hole_cutter = (cq.Workplane("XY").rect(hole_wide, nut_hole_centre_height*2.5).extrude(self.width*3)
+                                .rotate((0,0,self.pendulum_holder_thick/2),(0,1,self.pendulum_holder_thick/2),90).translate((-self.width, -self.length,0)))
+        holder = holder.cut(threaded_hole_cutter)
+
+        holder = holder.rotate((0,-self.hinge_distance,0),(0,-self.hinge_distance,1),12)
 
         return holder
 
@@ -1700,6 +1712,7 @@ class ArborForPlate:
 
         self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
         self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
+        self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=self.square_side_length + self.pendulum_fixing_extra_space)
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1890,6 +1903,8 @@ class ArborForPlate:
 
             if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
                 shapes["pendulum_holder"]=self.get_pendulum_holder_collet()
+                shapes["pendulum_holder_for_beat_setter"] = self.beat_setting_pendulum_bits.get_pendulum_holder()
+                shapes["pendulum_collet_for_beat_setter"] = self.beat_setting_pendulum_bits.get_collet()
                 #else TODO suspension spring holder
 
             if not self.pendulum_at_front:

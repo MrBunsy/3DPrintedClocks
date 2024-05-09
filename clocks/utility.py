@@ -134,7 +134,7 @@ def get_nut_height(metric_thread, nyloc=False, halfHeight=False, thumb=False):
         if nyloc:
             return 3.9
         if thumb:
-            return 3.0
+            return 2.85#3.0
 
     if metric_thread == 4:
         if nyloc:

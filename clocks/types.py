@@ -81,16 +81,20 @@ class PlateStyle(Enum):
 
 class PendulumFixing(Enum):
     #the first reliable mechanism, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod
+    #works, but setting the beat is a right nuscance and it's easily knocked out of alignment
     FRICTION_ROD = "friction_rod"
     #using a 10mm bearing for the front anchor arbour, a long extension from the anchour arbour will end in a square and the rod will slot onto this like the minute hand slots
     #onto the cannon pinion
     #DEPRECATED and mostly removed from the codebase. large bearings had way too much friction to hold the anchor and pendulum
     DIRECT_ARBOR = "direct_arbour"
     '''
-    Same as direct arbour - but avoiding the use of the large (high friction) bearings. Experimental.
+    Same as direct arbour - but avoiding the use of the large (high friction) bearings. Now the recommended solution for all new designs
+    TODO remove DIRECT_ARBOR, it was unreliable so I have no reason to ever print again
+    ...or would degreased stainless steel large bearings work? might be handy for mantel clocks to avoid having a whole peice to hold the rear bearing
     '''
     DIRECT_ARBOR_SMALL_BEARINGS = "direct_arbour_small_bearings"
     #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)
+    #since using degreased stainless steel EZO bearings I'm not sure I've got any need to go back to this or even try suspension springs
     KNIFE_EDGE = "knife_edge"
     #idea - 3D printed suspension spring, works for the ratchet, might work for this?
     #might try with real steel spring too

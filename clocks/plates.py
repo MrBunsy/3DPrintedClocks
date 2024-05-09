@@ -1707,7 +1707,10 @@ class SimpleClockPlates:
         bearingInfo = self.arbors_for_plate[-1].bearing
 
 
-        standoff = standoff.cut(self.getBearingPunchDeprecated(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
+        # standoff = standoff.cut(self.getBearingPunchDeprecated(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
+        support = self.standoff_pillars_separate
+        standoff = standoff.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(standoff=True), bearing=bearingInfo, bearing_on_top=True, with_support=support)
+                                .translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
 
         return standoff
 
@@ -1811,7 +1814,7 @@ class SimpleClockPlates:
 
         return standoff
 
-    def get_text(self, top_standoff=False):
+    def get_text(self, top_standoff=False, for_printing=False):
 
         all_text = cq.Workplane("XY")
 
@@ -1843,7 +1846,9 @@ class SimpleClockPlates:
         else:
             all_text = self.punch_bearing_holes(all_text, back=True, make_plate_bigger=False)
 
-
+        # if for_printing and self.standoff_pillars_separate:
+        #     all_text = all_text.translate((0, 0, self.back_plate_from_wall))
+        #     all_text = all_text.rotate((0,0,0),(1,0,0),180).translate((0,0, spaces[0].thick + self.get_plate_thick(standoff=True)))
 
         return all_text
 
@@ -2543,8 +2548,12 @@ class SimpleClockPlates:
             raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
 
         if bearing_on_top:
-            punch = cq.Workplane("XY").circle(bearing.outer_safe_d / 2).extrude(plate_thick - bearing.height)
-            punch = punch.faces(">Z").workplane().circle(bearing.outer_d / 2).extrude(bearing.height)
+            if with_support:
+                punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
+                    plate_thick - bearing.height).rotate((0,0,0),(1,0,0),180).translate((0,0,plate_thick))
+            else:
+                punch = cq.Workplane("XY").circle(bearing.outer_safe_d / 2).extrude(plate_thick - bearing.height)
+                punch = punch.faces(">Z").workplane().circle(bearing.outer_d / 2).extrude(bearing.height)
         else:
             if with_support:
                 punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
@@ -3068,7 +3077,7 @@ class SimpleClockPlates:
         if not self.text_on_standoffs:
             out = os.path.join(path, "{}_plate_back_text.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.get_text(), out)
+            exporters.export(self.get_text(for_printing=True), out)
 
         if self.pillars_separate:
             out = os.path.join(path, "{}_pillar_bottom.stl".format(name))
@@ -3105,11 +3114,11 @@ class SimpleClockPlates:
             if self.text_on_standoffs:
                 out = os.path.join(path, "{}_wall_standoff_top_text.stl".format(name))
                 print("Outputting ", out)
-                exporters.export(self.get_text(top_standoff=True), out)
+                exporters.export(self.get_text(top_standoff=True, for_printing=True), out)
 
                 out = os.path.join(path, "{}_wall_standoff_bottom_text.stl".format(name))
                 print("Outputting ", out)
-                exporters.export(self.get_text(top_standoff=False), out)
+                exporters.export(self.get_text(top_standoff=False, for_printing=True), out)
 
             if self.standoff_pillars_separate:
                 for left in [True, False]:
@@ -3751,8 +3760,10 @@ class RoundClockPlates(SimpleClockPlates):
             top_nut_base_z = - self.back_plate_from_wall
             #THOUGHT: this might be thin enough that the standoff pillars could be seperate
             top_nut_hole_height = self.fixing_screws.get_nut_height() + 1
+            #if the pillars are separate we can print this upside down, no briding needed for nuts
+            bridging = not self.standoff_pillars_separate
             for pos in self.all_pillar_positions:
-                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True, rod_loose=True).translate((pos[0], pos[1], top_nut_base_z)))
+                cutter = cutter.add(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=bridging, rod_loose=True).translate((pos[0], pos[1], top_nut_base_z)))
 
         return cutter
 
@@ -4097,6 +4108,9 @@ class RoundClockPlates(SimpleClockPlates):
             standoff = standoff.cut(self.get_text(top_standoff=False))
         standoff = standoff.cut(self.get_fixing_screws_cutter())
 
+        # if for_printing and self.standoff_pillars_separate:
+        #     standoff = standoff.rotate((0,0,0),(1,0,0),180)
+
         return standoff
     def get_back_anchor_holder(self, for_printing=True):
         '''
@@ -4153,7 +4167,8 @@ class RoundClockPlates(SimpleClockPlates):
         standoff = standoff.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
 
 
-
+        # if for_printing and self.standoff_pillars_separate:
+        #     standoff = standoff.rotate((0,0,0),(1,0,0),180)
 
         return standoff
 
