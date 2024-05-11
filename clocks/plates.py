@@ -1914,7 +1914,7 @@ class SimpleClockPlates:
 
         return spaces
 
-    def get_plate_detail(self, back=True):
+    def get_plate_detail(self, back=True, for_printing=False):
         '''
         For styles of clock plate which might have ornate detailing. Similar to dial detail or text, this is a separate 3d shape
         designed to be sliced as a multicolour object
@@ -1935,6 +1935,10 @@ class SimpleClockPlates:
                 edging = edging.cut(self.moon_holder.get_moon_holder_parts(for_printing=False)[0])
 
             # this is on the xy plane sticking up +ve z, will need translating to be useful
+
+            if for_printing and not back:
+                edging = edging.translate((0,0,self.get_plate_thick(back=False)))
+
             return edging
             # return edging.translate((0,0,self.get_plate_thick(back=back)))
 
@@ -2592,7 +2596,7 @@ class SimpleClockPlates:
                 #no need for hole-in-hole!
                 punch = cq.Workplane("XY").circle(bearingInfo.outer_d/2).extrude(bearingInfo.height).faces(">Z").workplane().circle(bearingInfo.outer_safe_d/2).extrude(height - bearingInfo.height)
             else:
-                punch = get_hole_with_hole(bearingInfo.outer_safe_d, bearingInfo.outer_d, bearingInfo.height, layerThick=LAYER_THICK_EXTRATHICK).faces(">Z").workplane().circle(bearingInfo.outer_safe_d / 2).extrude(height - bearingInfo.height)
+                punch = get_hole_with_hole(bearingInfo.outer_safe_d, bearingInfo.outer_d, bearingInfo.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearingInfo.outer_safe_d / 2).extrude(height - bearingInfo.height)
 
         return punch
 
@@ -2877,10 +2881,11 @@ class SimpleClockPlates:
             moon_screws = self.moon_holder.get_fixing_positions()
 
             for pos in moon_screws:
+                bridging = not self.front_plate_has_flat_front()
                 # pos = (pos[0], pos[1], self.get_plate_thick(back=True) + self.plate_distance)
                 # cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate(pos))
                 # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
-                plate = plate.cut(self.moon_holder.fixing_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
+                plate = plate.cut(self.moon_holder.fixing_screws.get_nut_cutter(with_bridging=bridging).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.moon_holder.fixing_screws.get_rod_cutter_r()).extrude(1000).translate(pos))
 
 
@@ -3062,31 +3067,22 @@ class SimpleClockPlates:
 
 
     def output_STLs(self, name="clock", path="../out"):
-
         if self.dial is not None:
             self.dial.output_STLs(name, path)
+        export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path)
 
-        out = os.path.join(path, "{}_plate_front.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_plate(False, for_printing=True), out)
+        front_detail = self.get_plate_detail(back=False, for_printing=True)
+        if front_detail is not None:
+            export_STL(front_detail, "plate_front_detail", name, path)
 
-        out = os.path.join(path, "{}_plate_back.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_plate(True, for_printing=True), out)
+        export_STL(self.get_plate(True, for_printing=True), "plate_back", name, path)
 
         if not self.text_on_standoffs:
-            out = os.path.join(path, "{}_plate_back_text.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_text(for_printing=True), out)
+            export_STL(self.get_text(for_printing=True), "plate_back_text", name, path)
 
         if self.pillars_separate:
-            out = os.path.join(path, "{}_pillar_bottom.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_pillar(top=False), out)
-
-            out = os.path.join(path, "{}_pillar_top.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_pillar(top=True), out)
+            export_STL(self.get_pillar(top=False), "pillar_bottom", name, path)
+            export_STL(self.get_pillar(top=True), "pillar_top", name, path)
 
         if self.motion_works.cannon_pinion_friction_ring:
             out = os.path.join(path, "{}_friction_clip.stl".format(name))
@@ -4222,36 +4218,13 @@ class RoundClockPlates(SimpleClockPlates):
         super().output_STLs(name, path)
 
         if not self.wall_mounted:
-            out = os.path.join(path, "{}_legs_back.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_legs(back=True), out)
-
-            out = os.path.join(path, "{}_legs_front.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_legs(back=False), out)
-
-            out = os.path.join(path, "{}_legs_pillar.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_legs_pillar(), out)
-
-            out = os.path.join(path, "{}_anchor_holder_back.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_back_anchor_holder(), out)
-        # else:
-        #     out = os.path.join(path, "{}_wall_standoff_top.stl".format(name))
-        #     print("Outputting ", out)
-        #     exporters.export(self.get_wall_standoff(top=True, for_printing=True), out)
-        #
-        #     out = os.path.join(path, "{}_wall_standoff_bottom.stl".format(name))
-        #     print("Outputting ", out)
-        #     exporters.export(self.get_wall_standoff(top=False, for_printing=True), out)
-
-
+            export_STL(self.get_legs(back=True), "legs_back", name, path)
+            export_STL(self.get_legs(back=False), "legs_front", name, path)
+            export_STL(self.get_legs_pillar(), "legs_pillar", name, path)
+            export_STL(self.get_back_anchor_holder(), "anchor_holder_back", name, path)
 
         if self.has_vanity_plate:
-            out = os.path.join(path, "{}_vanity_plate.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_vanity_plate(), out)
+            export_STL(self.get_vanity_plate(), "vanity_plate", name, path)
 
 class RollingBallClock(SimpleClockPlates):
     '''

@@ -18,9 +18,12 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import math
+import os
+
 import numpy as np
 from math import sin, cos, pi, floor
 import cadquery as cq
+from cadquery import exporters
 
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
 IMAGEMAGICK_CONVERT_PATH = "C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
@@ -1296,3 +1299,8 @@ class TextSpace:
         height_ratio = self.height / bb.ylen
 
         return self.text_size * min(width_ratio, height_ratio)
+
+def export_STL(object, object_name, clock_name="clock", path="../out", tolerance=0.1):
+    out = os.path.join(path, "{}_{}.stl".format(clock_name, object_name))
+    print("Exporting ", out)
+    exporters.export(object, out, tolerance=tolerance, angularTolerance=tolerance)
