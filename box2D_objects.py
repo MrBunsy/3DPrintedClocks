@@ -31,7 +31,7 @@ class AnchorEscapementBox2D:
                 body.CreateCircleFixture(radius=pallet_r/1000, density=self.density, friction=self.friction,
                                          pos=(pos[0]/1000, pos[1]/1000 - self.anchor.anchor_centre_distance/1000 + offset_y))
 
-    def add_escape_wheel_to_body(self, body):
+    def add_escape_wheel_to_body(self, body, scale):
         '''
         copypaste from get_wheel_2d
         '''

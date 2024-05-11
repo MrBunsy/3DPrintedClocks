@@ -59,6 +59,16 @@ if 'show_object' not in globals():
 
 # show_object(get_stroke_arc((50,0), (-50,0), 150, wide=10, thick=5 , style=StrokeStyle.ROUND, fill_in=True))
 
-pendulum_holder = ColletFixingPendulumWithBeatSetting(collet_size=6)
+cylinder_r=3
+square_side_length = math.sqrt(2) * cylinder_r
+
+if cylinder_r < 5:
+    #square with rounded edges, so we can get something as big as possible
+   square_side_length = math.sqrt(2) * cylinder_r * 1.2
+
+pendulum_holder = ColletFixingPendulumWithBeatSetting(collet_size=square_side_length)
 
 show_object(pendulum_holder.get_assembled())
+
+export_STL(pendulum_holder.get_collet(), "test_collet", path="out/")
+export_STL(pendulum_holder.get_pendulum_holder(), "test_pendulum_holder", path="out/")

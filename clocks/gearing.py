@@ -1445,7 +1445,7 @@ class ColletFixingPendulumWithBeatSetting:
     
     '''
     
-    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space = 0.2, pendulum_holder_thick=15, length=40, collet_screws=None):
+    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space = 0.2, pendulum_holder_thick=15, length=35, collet_screws=None):
         self.collet_size = collet_size
         self.fixing_screws = fixing_screws
         if self.fixing_screws is None:
@@ -1456,22 +1456,33 @@ class ColletFixingPendulumWithBeatSetting:
         if self.collet_screws is None:
             self.collet_screws = MachineScrew(2, countersunk=True)
 
-        self.arm_width = collet_size*2
+        self.arm_width = collet_size*1.5
+        if self.arm_width < 12:
+            self.arm_width = 12
+        self.collet_radius = collet_size
+        if self.collet_radius < self.arm_width/2:
+            self.collet_radius = self.arm_width/2
         self.length = length
-        self.width = length*0.6
+        self.width = length*0.55
         self.pendulum_holder_thick = pendulum_holder_thick
-        self.threadholder_arm_width = self.arm_width#*0.75
-        self.hinge_distance =  self.width/2 + self.arm_width/2#self.arm_width*1.5
+        self.threadholder_arm_width = self.arm_width*0.75
+        self.hinge_distance =  self.collet_radius + self.arm_width/2 + 1#self.arm_width*1.5
         self.hinge_point = (0, - self.hinge_distance)
 
         # where the arcs will branch out from
-        self.arm_end_point = (0, -self.length + self.width / 2)
+        self.arm_end_point = (0, -self.length + self.width/2 + self.threadholder_arm_width/2)
+
+        print("beat setter needs {} of length {:.1f}".format(self.fixing_screws, self.get_thread_screw_length()))
 
     def get_thread_cutter(self):
         thick = self.pendulum_holder_thick
         thread_cutter = self.fixing_screws.get_cutter(sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.width / 2 - self.threadholder_arm_width, -self.length, thick / 4))
         thread_cutter = thread_cutter.union(self.fixing_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.width / 2, -self.length, thick / 4)))
         return thread_cutter
+
+    def get_thread_screw_length(self):
+        return self.width + self.threadholder_arm_width*2
+
 
     def get_collet(self):
         '''
@@ -1489,10 +1500,10 @@ class ColletFixingPendulumWithBeatSetting:
         collet = get_stroke_line([(0,0), self.arm_end_point], wide=self.arm_width, thick = half_thick, style=StrokeStyle.SQUARE).translate((0,0,half_thick))
 
         #collet
-        collet = collet.union(cq.Workplane("XY").circle(self.arm_width/2).extrude(thick))
+        collet = collet.union(cq.Workplane("XY").circle(self.collet_radius).extrude(thick))
 
 
-        curve_outer_r = self.width/2 + self.arm_width
+        curve_outer_r = self.width/2 + self.threadholder_arm_width
         #curve centred on hinge_pos
 
         #arms that curve down to the threaded rod holders
@@ -1500,7 +1511,7 @@ class ColletFixingPendulumWithBeatSetting:
         for x_dir in [-1, 1]:
             x = x_dir*(self.width/2 + self.threadholder_arm_width/2)
             # arms = arms.union(get_stroke_line([(x, self.hinge_point[1]), (x, -self.length - self.fixing_screws.get_nut_containing_diameter()/2)], wide=self.threadholder_arm_width, thick=thick))#arms.union(cq.Workplane.moveTo(x*self.width/2+self.threadholder_arm_width/2,-(self.length + self.)))
-            arms = arms.union(cq.Workplane("XY").moveTo(x, -self.length).circle(self.arm_width/2).extrude(thick))
+            arms = arms.union(cq.Workplane("XY").moveTo(x, -self.length).circle(self.threadholder_arm_width/2).extrude(thick))
         collet = collet.union(arms)
         #
         # #sideways arm for the adjustment
@@ -1514,7 +1525,8 @@ class ColletFixingPendulumWithBeatSetting:
 
         # cut hinge point screw hole
         # collet = collet.cut(self.fixing_screws.get_cutter(with_bridging=True, for_tap_die=True).rotate((0, 0, 0), (1, 0, 0), 180).translate((self.hinge_point[0], self.hinge_point[1], self.pendulum_holder_thick)))
-        #using a pan head with the head outside, so this is as strong as possible
+        # was considering using a pan head with the head outside, so this is as strong as possible, but then it can struggle to fit when the back_plate_from_wall isn't large enough
+        #might put countersunk head in teh pendulum holder arm instead
         collet = collet.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).extrude(thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((self.hinge_point[0], self.hinge_point[1], self.pendulum_holder_thick)))
         # cut out square bit that slots over arbour
         collet = collet.cut(cq.Workplane("XY").rect(self.collet_size, self.collet_size).extrude(thick))
@@ -1524,9 +1536,12 @@ class ColletFixingPendulumWithBeatSetting:
         collet = collet.cut(self.get_thread_cutter())
 
         # screw and nut to tightly fix to the anchor rod, will probably have to use pan head as cutting space for countersunk leaves the gap a bit thin
+        # used to come in from the bottom, but that makes assembly tricky, so going to come in from the side
         screw_length = self.arm_width/2 - self.collet_size/2 + 2
-        collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.collet_size/2 - screw_length, self.pendulum_holder_thick/4)))
-        collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.collet_size / 2, self.pendulum_holder_thick/4)))
+        # collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.collet_size/2 - screw_length, self.pendulum_holder_thick/4)))
+        # collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.collet_size / 2, self.pendulum_holder_thick/4)))
+        collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.collet_size / 2 - screw_length, 0,  self.pendulum_holder_thick / 4)))
+        collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.collet_size / 2, 0, self.pendulum_holder_thick / 4)))
 
         return collet
 
@@ -1555,7 +1570,8 @@ class ColletFixingPendulumWithBeatSetting:
 
         # holder = holder.cut(cq.Workplane("XY").circle(self.arm_width/2 + 0.25).extrude(self.pendulum_holder_thick/2).translate((self.hinge_point[0], self.hinge_point[1], half_thick/2)))
         #hinge point hole for screw
-        holder = holder.cut(cq.Workplane("XY").moveTo(self.hinge_point[0], self.hinge_point[1]).circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pendulum_holder_thick))
+        # holder = holder.cut(cq.Workplane("XY").moveTo(self.hinge_point[0], self.hinge_point[1]).circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pendulum_holder_thick))
+        holder = holder.cut(self.fixing_screws.get_cutter(with_bridging=True, loose=True).translate(self.hinge_point))
 
         # hole for thumb nut
         hole_cutter = (cq.Workplane("XY").moveTo(-nut_hole_centre_width/2, nut_hole_centre_height/2).lineTo(-nut_hole_width/2, nut_hole_height/2).lineTo(nut_hole_width/2, nut_hole_height/2)
@@ -1580,7 +1596,7 @@ class ColletFixingPendulumWithBeatSetting:
                                 .rotate((0,0,half_thick/2),(0,1,half_thick/2),90).translate((-self.width, -self.length,0)))
         holder = holder.cut(threaded_hole_cutter)
 
-        holder = holder.rotate((0,-self.hinge_distance,0),(0,-self.hinge_distance,1),12)
+        # holder = holder.rotate((0,-self.hinge_distance,0),(0,-self.hinge_distance,1),12)
 
         return holder
 
@@ -2030,7 +2046,11 @@ class ArborForPlate:
                 if self.pendulum_at_front:
                     pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
 
-                assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
+                #old non-beat adjustable holder. works, will keep it as part of the output STLs
+                # assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
+
+                assembly = assembly.add(self.beat_setting_pendulum_bits.get_assembled().rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
+
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
                 assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
@@ -2776,7 +2796,7 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5):
+                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0):
         '''
 
         cannon_pinion_to_hour_holder_gap_size - in mm, how much extra diameter to add to the hour holder to slot over the cannon pinion. Can be a bit filament specific to what works well
@@ -2874,7 +2894,7 @@ class MotionWorks:
         self.minute_hand_holder_is_square = True
 
 
-        self.minute_hand_holder_d = self.minute_hand_holder_size * math.sqrt(2) + 0.5
+        self.minute_hand_holder_d = self.minute_hand_holder_size * math.sqrt(2) + 0.5 -reduce_cannon_pinion_size
 
         if self.bearing is not None:
             self.minute_hand_holder_d = self.bearing.outer_d + 4
