@@ -1181,7 +1181,7 @@ def getPendulumPeriod(pendulum_length):
     return pendulum_period
 
 
-def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
+def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5, extra_nut_space=0.2):
     '''
     a square hole with rod space below it that can hold the top of a pendulum, top of holder is at 0,0
     z is height above xy plane for the rod centre
@@ -1204,7 +1204,7 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5):
     extraRodSpace = 1
 
     extraSpaceForRod = 0.1
-    extraSpaceForNut = 0.2
+    extraSpaceForNut = extra_nut_space
     #
     rod = cq.Workplane("XZ").tag("base").moveTo(0, z - extraRodSpace).circle(pendulum_rod_d / 2 + extraSpaceForRod / 2).extrude(100)
     # add slot for rod to come in and out

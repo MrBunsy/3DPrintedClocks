@@ -138,6 +138,8 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 assembly.get_arbour_rod_lengths()
 plates.get_rod_lengths()
 
+# show_object(moon_complication.get_assembled())
+
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
 # show_object(plates.get_fixing_screws_cutter())
@@ -148,7 +150,7 @@ plates.get_rod_lengths()
 if not outputSTL or True:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
                         bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
-                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.WHITE], key_colour=clock.Colour.GOLD,
+                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS], key_colour=clock.Colour.GOLD,
                         plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])
 
 # show_object(plates.getDrillTemplate(6))

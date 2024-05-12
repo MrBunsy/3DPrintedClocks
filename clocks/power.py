@@ -1308,7 +1308,10 @@ class SpringBarrel:
 
 
         #screwhole for spring hook
-        screwhole = cq.Workplane("XY").circle(self.spring_hook_screws.get_diameter_for_die_cutting()/2).extrude(self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
+        screwhole_r = self.spring_hook_screws.get_diameter_for_die_cutting()/2
+        #the die cutting never really worked, and printing with 0.6 nozzle not convinced it's helpful.
+        screwhole_r = self.spring_hook_screws.get_rod_cutter_r()
+        screwhole = cq.Workplane("XY").circle(screwhole_r).extrude(self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
         screwhole = screwhole.translate(((self.barrel_height - self.internal_endshake)/2, 0, 0))
         arbor = arbor.cut(screwhole)
 

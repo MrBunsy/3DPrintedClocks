@@ -1538,10 +1538,13 @@ class ColletFixingPendulumWithBeatSetting:
         # screw and nut to tightly fix to the anchor rod, will probably have to use pan head as cutting space for countersunk leaves the gap a bit thin
         # used to come in from the bottom, but that makes assembly tricky, so going to come in from the side
         screw_length = self.arm_width/2 - self.collet_size/2 + 2
+        #just a tiny bit makes it easier to put in
+        extra_deep = 0.25
+        nut_thick = self.collet_screws.get_nut_height(half=True)+extra_deep
         # collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.collet_size/2 - screw_length, self.pendulum_holder_thick/4)))
         # collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.collet_size / 2, self.pendulum_holder_thick/4)))
         collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.collet_size / 2 - screw_length, 0,  self.pendulum_holder_thick / 4)))
-        collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.collet_size / 2, 0, self.pendulum_holder_thick / 4)))
+        collet = collet.cut(self.collet_screws.get_nut_cutter(height=nut_thick).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.collet_size / 2, 0, self.pendulum_holder_thick / 4)))
 
         return collet
 
@@ -1550,14 +1553,14 @@ class ColletFixingPendulumWithBeatSetting:
         # plus extra because we'll be at an angle
         nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
         #0.5 for space to squash a crinkle washer to add friction that will hopefully prevent this turning by itself
-        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 1
+        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.8 # +1 worked, but think there was a tiny bit of slack
         nut_hole_centre_height = self.fixing_screws.metric_thread
         nut_hole_width = self.arm_width*0.5
 
         half_thick = self.pendulum_holder_thick/2
 
         #bit longer to give pendulum holder more length and therefore less wobble
-        bottom = (self.hinge_point[0], self.hinge_point[1] - self.length - 8)
+        bottom = (self.hinge_point[0], self.hinge_point[1] - self.length - 15)
 
         holder = get_stroke_line([self.hinge_point, bottom], wide=self.arm_width, thick=self.pendulum_holder_thick)
 
@@ -1582,7 +1585,10 @@ class ColletFixingPendulumWithBeatSetting:
 
         #place to hang pendulum
         # holder = holder.union()
-        holder = holder.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick / 2).translate((0, top_of_pendulum_holder_hole_y)))
+        z= self.pendulum_holder_thick / 2
+        #cut out of the bottom so we can place right up against the back plate if needed
+        #trying extra 0.2 nut space as the bridging makes it hard to get the pendulum in with the default of 0.2
+        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4).translate((0, top_of_pendulum_holder_hole_y)).rotate((0,0,z),(0,1,z), 180))
 
         thumb_nut_d = self.fixing_screws.get_nut_containing_diameter(thumb=True)
 
@@ -2456,6 +2462,9 @@ class Arbor:
         if self.get_type() == ArborType.ANCHOR:
             return self.escapement.get_anchor_max_r()
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.get_type()))
+
+    def get_pinion_max_radius(self):
+        return self.pinion.get_max_radius()
 
     def get_escape_wheel(self, standalone=False):
         '''

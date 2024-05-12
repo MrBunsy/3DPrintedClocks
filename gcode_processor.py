@@ -5,6 +5,7 @@ import os
 import datetime
 import shutil
 import traceback
+import numpy as np
 
 # from clocks import radToDeg
 
@@ -87,7 +88,7 @@ latest idea - copy the first G1 line to before M600
 
     return gcode_out
 
-def get_position(line):
+def get_position(line, log=None):
     '''
     returns None if no position in line of gcode
     '''
@@ -102,18 +103,23 @@ def get_position(line):
                 x += float(part[1:])
             if part.startswith("Y"):
                 y += float(part[1:])
-
+        if x == 0:
+            log.write("x==0 from line: {}\n".format(line))
+        if y == 0:
+            log.write("y==0 from line: {}\n".format(line))
         return (x,y)
     return None
 
-def get_average_position(gcode):
+def get_average_position(gcode, log=None):
 
     x=0
     y=0
     found=0
 
     for line in gcode:
-        pos = get_position(line)
+        # log.write(line)
+        pos = get_position(line, log=log)
+        # log.write("pos: {}\n".format(pos))
         if pos is not None:
             x += pos[0]
             y += pos[1]
@@ -127,7 +133,9 @@ def get_average_position(gcode):
         #         if part.startswith("Y"):
         #             y += float(part[1:])
         #     found +=1
-    return (x/found, y/found)
+    average = (x/found, y/found)
+    # log.write("average: {}\n".format(average))
+    return average
 
 def get_shape_type(gcode):
     '''
@@ -159,7 +167,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
     for shape_gcode in shapes:
         all_shape_gcode.extend(shape_gcode)
     #assume this is the centre of the dial
-    centre = get_average_position(all_shape_gcode)
+    centre = get_average_position(all_shape_gcode, log=log)
 
     log.write("Assuming centre of dial is: {}\n".format(centre))
 
@@ -168,9 +176,10 @@ def re_arrange_shapes(shapes, log, start_pos = None):
     log.write("assuming attempting to start at angle {:.1f}deg\n".format(radToDeg(start_angle)))
     for shape_gcode in shapes:
 
-        shape_centre = get_average_position(shape_gcode)
+        shape_centre = get_average_position(shape_gcode, log=log)
         diff = (shape_centre[0] - centre[0], shape_centre[1] - centre[1])
         angle = math.atan2(diff[1], diff[0])
+        distance = np.linalg.norm(diff)
         #want the most -ve angle to be the one nearest the start angle so the sort will put that first
 
 
@@ -185,7 +194,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
         # if angle < 0:
         #     angle += math.pi*2
 
-        shape_info = {"gcode":shape_gcode, "angle":angle, "type": type}
+        shape_info = {"gcode":shape_gcode, "angle":angle, "type": type, "centre": shape_centre, "distance": distance}
         shapes_processed.append(shape_info)
 
 
@@ -194,7 +203,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
     gcode_out = []
     for shape_info in shapes_processed:
         gcode_out.extend(shape_info["gcode"])
-        log.write("adding shape with angle: {:.2f}={:.1f}deg, {}\n".format(shape_info["angle"], radToDeg(shape_info["angle"]), shape_info['type']))
+        log.write("adding shape with angle: {:.2f}={:.1f}deg, {} centre: {} distance: {}\n".format(shape_info["angle"], radToDeg(shape_info["angle"]), shape_info['type'], shape_info['centre'], shape_info['distance']))
 
     return gcode_out
 
@@ -236,6 +245,7 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
             # gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer))
             relevant_shapes_in_layer = []
             current_shape_type = None
+            already_combined_with_previous_shape = False
             last_shape_type = None
 
         if line.strip() == "M600":
@@ -297,12 +307,18 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
                     actually_same_shape = False
                     inside_a_shape = False
                     current_shape.append(line)
-                    if ((current_shape_type == "Solid infill" and last_shape_type == "External perimeter") or
+                    if not already_combined_with_previous_shape:
+                        if ((current_shape_type == "Solid infill" and last_shape_type == "External perimeter") or
                             (current_shape_type == "External perimeter" and last_shape_type == "Perimeter") or
                             (current_shape_type == "Solid infill" and last_shape_type == "Solid infill")):
-                        #this is actually part of the same shape
-                        actually_same_shape = True
-                        # log.write("current {}, last {}, assuming same shape line: {}\n".format(current_shape_type, last_shape_type, i))
+                            #this is actually part of the same shape
+                            log.write("actually same shape. current: {}, previous: {}\n".format(current_shape_type, last_shape_type))
+                            actually_same_shape = True
+                            # log.write("current {}, last {}, assuming same shape line: {}\n".format(current_shape_type, last_shape_type, i))
+
+                    #mega bodge, need to figure this out
+                    if current_z > 0 and current_shape_type is None:
+                        current_shape_type = last_shape_type
 
                     if current_shape_type not in relevant_shape_types:
                         #"Skirt/Brim" or something else entirely, sent directly to gcode_out without re-arranging
@@ -319,6 +335,8 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
                         relevant_shapes_in_layer.append(current_shape)
                     log.write("finished processing shape type {} line: {}\n".format(current_shape_type, i))
                     last_shape_type = current_shape_type
+                    current_shape_type = None
+                    already_combined_with_previous_shape = False
                     #don't add this line to gcode out
                     continue
 
@@ -335,8 +353,12 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
                 else:
                     print("insufficient relevant_shapes_in_layer, only found: {}".format(len(relevant_shapes_in_layer)))
                 relevant_shapes_in_layer = []
+
+                # if already_combined_with_previous_shape:
                 current_shape_type = None
+                #seem to be some situations (second layer, larger objects) where we do raise the nozzle between perimeter and solid infill, but without declaring it's infil
                 last_shape_type = None
+                already_combined_with_previous_shape = False
 
 
 
@@ -344,8 +366,14 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
             if inside_a_shape:
                 current_shape.append(line)
                 if line.startswith(";TYPE:"):
+                    #it is possible to print multiple of these without raising the nozzle (seen with little circles) - at the moment we'll end up just choosing the LAST shape type
+                    #which may accidentally be merged wit hthe previous shape
                     # last_shape_type = current_shape_type
-                    current_shape_type = line.strip().split(":")[1]
+                    shape_found = line.strip().split(":")[1]
+                    if shape_found in relevant_shape_types and current_shape_type is not None and current_shape_type in relevant_shape_types:
+                        log.write("currently processing shape type {}, no sign of having raised nozzle so assume {} is same shape\n".format(current_shape_type, shape_found))
+                        already_combined_with_previous_shape = True
+                    current_shape_type = shape_found
             else:
                 gcode_out.append(line)
                 pos = get_position(line)
