@@ -2100,6 +2100,9 @@ class ArborForPlate:
             arbor = shapes["wheel"]
             if "lantern_pinion_cap" in shapes:
                 arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick)))
+            if "lantern_pinion_fixing" in shapes:
+                #messy, just wanted to avoid working out how to undo the rotation from for_printing
+                arbor = arbor.add(self.arbor.pinion.get_lantern_inner_fixing(base_thick=self.arbor.wheel_thick, pinion_height=self.arbor.pinion_thick, top_thick=self.arbor.end_cap_thick, hole_d=self.arbor.hole_d, for_printing=False))
 
             if not self.arbor.pinion_at_front:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.total_thickness))

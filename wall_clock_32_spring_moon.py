@@ -116,7 +116,7 @@ print("motion works widest r: ", motionWorks.get_widest_radius())
 # show_object(moon_complication.get_assembled())
 
 
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
 # dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ROMAN_NUMERALS,
 #                   font_scale=0.75, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
@@ -148,9 +148,9 @@ plates.get_rod_lengths()
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.GOLD],
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.DARKBLUE], motion_works_colours=[clock.Colour.GOLD],
                         bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
-                        dial_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS], key_colour=clock.Colour.GOLD,
+                        dial_colours=[clock.Colour.BLUE, clock.Colour.WHITE], key_colour=clock.Colour.DARKBLUE,
                         plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])
 
 # show_object(plates.getDrillTemplate(6))

@@ -4172,30 +4172,41 @@ class RoundClockPlates(SimpleClockPlates):
         '''
         returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
         '''
-
+        lengths = []
+        zs = []
         total_plate_distance = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance
+        if self.wall_mounted:
 
-        extra_length = self.fixing_screws.get_nut_height()*2 + 2
+            from_back = 1
 
-        bottom_pillar_length = total_plate_distance
-        if self.leg_height > 0:
-            bottom_pillar_length += self.plate_thick*2
+            length = total_plate_distance - from_back + self.back_plate_from_wall
 
-        if self.has_vanity_plate:
-            bottom_pillar_length += self.vanity_plate_base_z + self.vanity_plate_thick
+            print("Need rod (M{}) of length {:.1f}mm + locked into a dome nut for all pillars".format(self.fixing_screws.metric_thread, length))
+
+            zs = [-self.back_plate_from_wall + from_back for pillar in self.all_pillar_positions]
+            lengths = [length for pillar in self.all_pillar_positions]
+        else:
+            extra_length = self.fixing_screws.get_nut_height()*2 + 2
+
+            bottom_pillar_length = total_plate_distance
             if self.leg_height > 0:
-                #leg is included in the pillar that holds the vanity plate
-                bottom_pillar_length -= self.plate_thick
+                bottom_pillar_length += self.plate_thick*2
 
-        bottom_pillar_length += extra_length
+            if self.has_vanity_plate:
+                bottom_pillar_length += self.vanity_plate_base_z + self.vanity_plate_thick
+                if self.leg_height > 0:
+                    #leg is included in the pillar that holds the vanity plate
+                    bottom_pillar_length -= self.plate_thick
 
-        top_pillar_length = total_plate_distance + self.back_plate_from_wall + extra_length
+            bottom_pillar_length += extra_length
 
-        print("Need rod (M{}) of length {}mm for top pillars and {}mm for bottom pillars".format(self.fixing_screws.metric_thread, math.ceil(top_pillar_length), math.ceil(bottom_pillar_length)))
+            top_pillar_length = total_plate_distance + self.back_plate_from_wall + extra_length
 
-        lengths = [bottom_pillar_length for pillar in self.bottom_pillar_positions] + [top_pillar_length for pillar in self.top_pillar_positions]
+            print("Need rod (M{}) of length {}mm for top pillars and {}mm for bottom pillars".format(self.fixing_screws.metric_thread, math.ceil(top_pillar_length), math.ceil(bottom_pillar_length)))
 
-        zs = [-self.plate_thick - extra_length/2 for pillar in self.bottom_pillar_positions] + [-self.back_plate_from_wall - extra_length/2 for pillar in self.top_pillar_positions]
+            lengths = [bottom_pillar_length for pillar in self.bottom_pillar_positions] + [top_pillar_length for pillar in self.top_pillar_positions]
+
+            zs = [-self.plate_thick - extra_length/2 for pillar in self.bottom_pillar_positions] + [-self.back_plate_from_wall - extra_length/2 for pillar in self.top_pillar_positions]
 
         return (lengths, zs)
 
