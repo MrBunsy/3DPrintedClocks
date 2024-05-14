@@ -109,15 +109,22 @@ class MoonHolder:
         self.moon_extra_space = 1.5
         self.moon_spoon_thick = 1.6
         self.lid_thick = 6
+        #centre_y is centre of the holding mechanism - this screws to the front plate and holds the steel pipe
 
         if self.plates.gear_train_layout == GearTrainLayout.ROUND:
             raise ValueError("TODO moon phase holder for round plates")
 
         if self.moon_inside_dial:
-            if not isinstance(self.plates, RoundClockPlates):
-                raise NotImplementedError("TODO support moon inside dial for other classes of plate")
-            self.centre_y = self.plates.hands_position[1] + self.plates.radius
-            self.height = self.plates.pillar_r*2
+            # if not isinstance(self.plates, RoundClockPlates):
+            #     raise NotImplementedError("TODO support moon inside dial for other classes of plate")
+            if hasattr(self.plates, "radius"):
+                #round clock plates, TODO better encapsulation? explicit plate type enum?
+                self.centre_y = self.plates.hands_position[1] + self.plates.radius
+                self.height = self.plates.pillar_r * 2
+            else:
+                #TODO
+                self.centre_y = self.plates.top_pillar_positions[0][1]
+                self.height = self.plates.plate_width
             self.moon_extra_space = 1
             # self.moon_spoon_thick = 1
         else:
@@ -176,7 +183,9 @@ class MoonHolder:
             moon_spoon_deep = moon_r * 0.75
         moon_centre_pos = (0, self.moon_y, moon_z)
 
-        if self.moon_inside_dial:
+        if self.moon_inside_dial and hasattr(self.plates, "radius"):
+            #TODO this only works for the RoundClockPlates, need to think of better way of sorting out what logic to run
+            #extend this class for each plate type maybe?
             fillet_r=3
             width = moon_r*2
             holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width/2).circle(self.plates.radius - self.plates.plate_width/2)
@@ -430,6 +439,9 @@ class SimpleClockPlates:
 
         #many designs have thet escapement above the hands anyway, but do we force it? currently I think this is a 1:1 mapping with escapement_on_front
         self.force_escapement_above_hands = escapement_on_front or force_escapement_above_hands
+        self.going_train = going_train
+        #we can have the escape wheel and wheel before that at same y level and both same distance from y axis
+        self.no_upper_wheel_in_centre = self.going_train.wheels > 3 and not self.second_hand
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
         #if false, it's between the plates like the rest of the gear train
@@ -464,7 +476,7 @@ class SimpleClockPlates:
         self.crutch_space = 10
 
         self.motion_works = motion_works
-        self.going_train = going_train
+
         #TODO this is deprecated, remove it
         self.pendulum=pendulum
         #up to and including the anchor
@@ -1043,7 +1055,7 @@ class SimpleClockPlates:
             this will be useful for the moon escapement (so the fixing doesn't clash with a bearing) and I think will result in an even more compact design
             '''
             forcing_escape_wheel_above_hands = self.going_train.wheels > 3 and self.force_escapement_above_hands
-            forcing_escape_wheel_slightly_off_centre = self.going_train.wheels > 3 and not self.second_hand
+            forcing_escape_wheel_slightly_off_centre = self.no_upper_wheel_in_centre#self.going_train.wheels > 3 and not self.second_hand
 
 
 
@@ -2691,7 +2703,10 @@ class SimpleClockPlates:
 
         return plate
 
-    def front_additions_to_plate(self, plate, plate_thick=-1):
+    def get_moon_complication_fixings_absolute(self):
+        return [np_to_set(np.add(self.hands_position, relative_pos[:2])) for relative_pos in self.moon_complication.get_arbor_positions_relative_to_motion_works()]
+
+    def front_additions_to_plate(self, plate, plate_thick=-1, moon=False):
         '''
         stuff only needed to be added to the front plate
         '''
@@ -2758,20 +2773,19 @@ class SimpleClockPlates:
             for pos in self.dial_fixing_positions:
                 plate = plate.cut(self.dial.fixing_screws.get_cutter(loose=True, with_bridging=True, layer_thick=self.layer_thick).translate(pos))
 
-        if self.moon_complication is not None:
+        if self.moon_complication is not None and moon:
 
             #screw holes for the moon complication arbors
-            for i, relative_pos in enumerate(self.moon_complication.get_arbor_positions_relative_to_motion_works()):
-                pos = np_to_set(np.add(self.hands_position, relative_pos[:2]))
+            for i, pos in enumerate(self.get_moon_complication_fixings_absolute()):
                 # extra bits of plate to hold the screw holes for extra arbors
 
-                #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates
+                #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates (old very specific logic...)
                 if i != 1 or (self.gear_train_layout != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
 
                     plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
 
 
-                plate = plate.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
+                plate = plate.cut(self.moon_complication.screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
 
 
         # need an extra chunky hole for the big bearing that the key slots through
@@ -3263,11 +3277,14 @@ class MantelClockPlates(SimpleClockPlates):
 
         right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
         if self.symetrical:
-            y = self.bearing_positions[-2][1] + self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r
-            self.top_pillar_positions = [
-                (self.bottom_pillar_positions[0][0], y),
-                (self.bottom_pillar_positions[1][0], y)
-            ]
+            # y = self.bearing_positions[-2][1] + self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r
+            # self.top_pillar_positions = [
+            #     (self.bottom_pillar_positions[0][0], y),
+            #     (self.bottom_pillar_positions[1][0], y)
+            # ]
+            #probably only works when there's no second hand
+            top_left = np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.55), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r)))
+            self.top_pillar_positions = [top_left, (-top_left[0], top_left[1])]
         else:
             self.top_pillar_positions = [
                 np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
@@ -3315,10 +3332,13 @@ class MantelClockPlates(SimpleClockPlates):
         # plate = plate.union(get_stroke_line([self.top_pillar_positions[side], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
         if not back:
             #arch over the top
-            #no point holding the bearing that isn't there for the anchor arbor!
-            plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
-            plate = plate.union(get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
-            plate = plate.union(get_stroke_line([self.top_pillar_positions[1], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
+            #not for back because point holding the bearing that isn't there for the anchor arbor!
+            if self.symetrical:
+                plate = plate.union(get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=main_arm_wide, thick=plate_thick))
+            else:
+                plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
+                plate = plate.union(get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
+                plate = plate.union(get_stroke_line([self.top_pillar_positions[1], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
 
         if back:
             plate = plate.union(get_stroke_line([self.top_pillar_positions[1],self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
@@ -3342,6 +3362,13 @@ class MantelClockPlates(SimpleClockPlates):
         for link_pos in links:
             plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels + 2][:2], link_pos], wide=small_arm_wide, thick=plate_thick))
 
+        if self.symetrical and self.no_upper_wheel_in_centre:
+            links = [self.hands_position,
+                     self.top_pillar_positions[1]
+                     ]
+            for link_pos in links:
+                plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], link_pos], wide=small_arm_wide, thick=plate_thick))
+
         for i, pos in enumerate(self.bearing_positions):
 
             bearing_info = self.arbors_for_plate[i].bearing
@@ -3351,6 +3378,17 @@ class MantelClockPlates(SimpleClockPlates):
                 plate = plate.union(cq.Workplane("XY").circle(bearing_info.outer_d / 2 + self.bearing_wall_thick).extrude(plate_thick).translate(pos[:2]))
 
         plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outer_d / 2 + self.bearing_wall_thick * 1.5).extrude(plate_thick))
+
+        if not back and self.moon_complication is not None:
+            for i,pos in enumerate(self.get_moon_complication_fixings_absolute()):
+                plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.moon_complication.arbor_d*2).extrude(plate_thick))
+                if i == 1 and not self.moon_complication.on_left:
+                    #the little arm on the right
+                    plate = plate.union(get_stroke_line([pos, (self.bottom_pillar_positions[1][0], pos[1])], wide=small_arm_wide, thick=plate_thick))
+                if not just_basic_shape:
+                    plate = plate.cut(self.moon_complication.screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
+
+
         if just_basic_shape:
             return plate
 
@@ -3363,7 +3401,8 @@ class MantelClockPlates(SimpleClockPlates):
 
 
         if not back:
-            plate = self.front_additions_to_plate(plate, plate_thick)
+            #don't add the arms, we'll do that ourselves so they fit better with the style
+            plate = self.front_additions_to_plate(plate, plate_thick, moon=False)
 
         plate = self.punch_bearing_holes(plate, back)
 
@@ -3557,8 +3596,7 @@ class RoundClockPlates(SimpleClockPlates):
 
             #not evenly space so we don't clash with pillars
             angles = [math.pi/2 + math.pi/8, math.pi/2 - math.pi/8, math.pi*1.5 + math.pi/8, math.pi*1.5 - math.pi/8]
-            if self.gear_train_layout == GearTrainLayout.COMPACT and not self.escapement_on_front and self.going_train.wheels == 4 and not self.second_hand:
-                #little bit brittle logic here, if we have two little arms on teh front because we're forcing_escape_wheel_slightly_off_centre
+            if self.gear_train_layout == GearTrainLayout.COMPACT and not self.escapement_on_front and self.no_upper_wheel_in_centre:
                 #line up dial supports with the little arms
                 for i in range(2):
                     bearing_relative_pos = np_to_set(np.subtract(self.bearing_positions[-3 + i][:2], self.hands_position))
@@ -3872,9 +3910,8 @@ class RoundClockPlates(SimpleClockPlates):
                 #this bearing will be in the outer circle
                 continue
 
-            if i == len(self.bearing_positions) - 1 and not self.second_hand and not self.force_escapement_above_hands and back and self.going_train.wheels > 3:
+            if i == len(self.bearing_positions) - 1 and self.no_upper_wheel_in_centre:
                 #don't need a bit of plate to support just a hole for the anchor
-                #could do with better than repeating the logic in calc_bearing_positions, very brittle
                 continue
 
             line = Line(centre, anotherPoint=bearing_pos[:2])
