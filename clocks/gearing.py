@@ -1588,7 +1588,8 @@ class ColletFixingPendulumWithBeatSetting:
         z= self.pendulum_holder_thick / 2
         #cut out of the bottom so we can place right up against the back plate if needed
         #trying extra 0.2 nut space as the bridging makes it hard to get the pendulum in with the default of 0.2
-        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4).translate((0, top_of_pendulum_holder_hole_y)).rotate((0,0,z),(0,1,z), 180))
+        #0.4 works, but feels sliiightly too loose
+        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.3).translate((0, top_of_pendulum_holder_hole_y)).rotate((0,0,z),(0,1,z), 180))
 
         thumb_nut_d = self.fixing_screws.get_nut_containing_diameter(thumb=True)
 

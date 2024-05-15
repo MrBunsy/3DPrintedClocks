@@ -115,36 +115,13 @@ class MoonHolder:
         plate_shape = self.plates.get_plate_shape()
 
         if self.moon_inside_dial:
-            # if not isinstance(self.plates, RoundClockPlates):
-            #     raise NotImplementedError("TODO support moon inside dial for other classes of plate")
-            if plate_shape == PlateShape.ROUND:
-                self.centre_y = self.plates.hands_position[1] + self.plates.radius
-                self.height = self.plates.pillar_r * 2
-            elif plate_shape == PlateShape.MANTEL:
-                self.centre_y = self.plates.bearing_positions[-1][1]
-                self.height = self.plates.plate_width
-            elif plate_shape == PlateShape.SIMPLE_VERTICAL:
-                #assume vertical
-                self.centre_y = self.plates.top_pillar_positions[0][1]
-                self.height = self.plates.plate_width
-            else:
-                if self.plates.gear_train_layout == GearTrainLayout.ROUND:
-                    raise ValueError("TODO moon phase holder inside dial for {} plates".format(plate_shape.value))
             self.moon_extra_space = 1
-            # self.moon_spoon_thick = 1
-        else:
-            if plate_shape == PlateShape.SIMPLE_VERTICAL:
-                #sticking off the top of the clock, only used with SimpleClockPlates with a vertical gear train so far
-                #assuming only one top pillar, or at least that htey're both at the same y
-                max_y = self.plates.top_pillar_positions[0][1] + self.plates.top_pillar_r
+        #trying to be a bit less plate-dependant, putting that logic into the plates class
+        moon_info = self.plates.get_moon_holder_info()
 
-                #top of the last wheel in the complication
-                min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
-
-                self.height = max_y - min_y
-                self.centre_y = (max_y + min_y) / 2
-            else:
-                raise ValueError("TODO moon phase holder outside dial for {} plates".format(plate_shape.value))
+        self.centre_y = moon_info["y"]
+        self.height = moon_info["height"]
+        self.width = moon_info["wide"]
 
         self.moon_y = self.centre_y + self.height/2 + self.moon_complication.moon_radius
 
@@ -178,7 +155,7 @@ class MoonHolder:
 
         moon_z = self.moon_complication.get_relative_moon_z()# + self.plates.get_front_z()
         moon_r = self.moon_complication.moon_radius
-        width = self.plates.plate_width
+        width = self.width#self.plates.plate_width
         # top_y = self.plates.top_pillar_positions[1] + self.plates.top_pillar_r
 
 
@@ -191,11 +168,11 @@ class MoonHolder:
             moon_spoon_deep = moon_r * 0.75
         moon_centre_pos = (0, self.moon_y, moon_z)
 
-        if self.moon_inside_dial and hasattr(self.plates, "radius"):
+        if self.moon_inside_dial and self.plates.get_plate_shape() == PlateShape.ROUND:
             #TODO this only works for the RoundClockPlates, need to think of better way of sorting out what logic to run
             #extend this class for each plate type maybe?
             fillet_r=3
-            width = moon_r*2
+            # width = moon_r*2
             holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width/2).circle(self.plates.radius - self.plates.plate_width/2)
                       .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(moon_z)))
             holder = holder.edges("|Z").fillet(fillet_r)
@@ -207,6 +184,8 @@ class MoonHolder:
             #something to link spoon with the holder, don't worry about overlapping as the moon hole will be cut out later
             link_height = self.centre_y - self.moon_y
             holder = holder.union(cq.Workplane("XY").rect(self.plates.plate_width, link_height).extrude(moon_spoon_deep).translate((0,(self.centre_y + self.moon_y)/2,moon_z - moon_spoon_deep)))
+        # elif self.moon_inside_dial and self.plates.get_plate_shape() == PlateShape.MANTEL:
+        #
         else:
             r = self.moon_complication.get_last_wheel_r()
             sagitta = r - math.sqrt(r ** 2 - 0.25 * width ** 2)
@@ -827,6 +806,24 @@ class SimpleClockPlates:
             "Luke Wallin",
             "{:.1f}cm".format(self.going_train.pendulum_length * 100)
         ]
+
+    def get_moon_holder_info(self):
+        '''
+        assumes moon is on a little stick above the dial
+        TODO support inside dial
+        '''
+        if self.moon_complication is None:
+            raise ValueError("There is no moon")
+
+        max_y = self.top_pillar_positions[0][1] + self.top_pillar_r
+
+        # top of the last wheel in the complication
+        min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
+
+        height = max_y - min_y
+        centre_y = (max_y + min_y) / 2
+        return {"y": centre_y, "wide": self.plate_width, "height": height}
+
     def get_rod_lengths(self):
         '''
         TODO
@@ -3222,6 +3219,8 @@ class MantelClockPlates(SimpleClockPlates):
                          standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate)
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
+        # self.moon_holder_y = -1
+        # self.moon_holder_wide = self.plate_width*1.5
 
 
 
@@ -3264,6 +3263,20 @@ class MantelClockPlates(SimpleClockPlates):
                 self.dial.support_d=15
                 if self.style == PlateStyle.RAISED_EDGING:
                     self.dial.support_d = self.plate_width - self.edging_wide*2 - 1
+
+    def get_moon_holder_info(self):
+        if self.moon_complication is None:
+            raise ValueError("there is no moon")
+        if self.dial is None:
+            raise NotImplementedError("TODO support moon holder without dial")
+        #may want to extend upwards to hold the moon holder
+        if self.hands_position[1] + self.dial.outside_d/2 > self.bearing_positions[-1][1] + self.plate_width/2:
+            #dial is above top of plate
+            y = self.hands_position[1] + self.dial.outside_d/2 - self.plate_width/2
+
+            return {"y": y, "wide": self.plate_width*1.5, "height": self.plate_width}
+        else:
+            raise NotImplementedError("TODO moon support for larger plates that stick above dial")
 
     def get_plate_shape(self):
         return PlateShape.MANTEL
@@ -3402,6 +3415,14 @@ class MantelClockPlates(SimpleClockPlates):
         plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outer_d / 2 + self.bearing_wall_thick * 1.5).extrude(plate_thick))
 
         if not back and self.moon_complication is not None:
+
+            moon_holder_wide = self.get_moon_holder_info()["wide"]
+            moon_holder_arm = get_stroke_line([self.bearing_positions[-1][:2], [0, self.hands_position[1] + self.dial.outside_d/2]],
+                                                wide=moon_holder_wide, thick=plate_thick, style=StrokeStyle.SQUARE)
+            moon_holder_arm = moon_holder_arm.intersect(cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.dial.outside_d/2).extrude(plate_thick))
+
+            plate = plate.union(moon_holder_arm)
+
             for i,pos in enumerate(self.get_moon_complication_fixings_absolute()):
                 plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.moon_complication.arbor_d*2).extrude(plate_thick))
                 if i == 1 and not self.moon_complication.on_left:
@@ -3409,6 +3430,7 @@ class MantelClockPlates(SimpleClockPlates):
                     plate = plate.union(get_stroke_line([pos, (self.bottom_pillar_positions[1][0], pos[1])], wide=small_arm_wide, thick=plate_thick))
                 if not just_basic_shape:
                     plate = plate.cut(self.moon_complication.screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
+
 
 
         if just_basic_shape:
@@ -3639,8 +3661,23 @@ class RoundClockPlates(SimpleClockPlates):
 
         self.front_anchor_holder_part_of_dial = True
 
+    def get_moon_holder_info(self):
+        if self.moon_complication is None:
+            raise ValueError("there is no moon")
+        if self.dial is None:
+            raise NotImplementedError("TODO support moon holder without dial")
+        #may want to extend upwards to hold the moon holder
+        if self.hands_position[1] + self.dial.outside_d/2 > self.bearing_positions[-1][1] + self.plate_width/2:
+            #dial is above top of plate
+
+            centre_y = self.hands_position[1] + self.radius
+            height = self.pillar_r * 2
+            return {"y": centre_y, "wide": self.moon_complication.moon_radius*2, "height": height}
+        else:
+            raise NotImplementedError("TODO moon support for larger plates that stick above dial")
+
     def get_plate_shape(self):
-        return PlateShape.MANTEL
+        return PlateShape.ROUND
 
     def get_pillar(self, top=True, flat=False):
         '''
