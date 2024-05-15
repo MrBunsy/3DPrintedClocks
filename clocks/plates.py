@@ -3345,7 +3345,8 @@ class MantelClockPlates(SimpleClockPlates):
                 plate = plate.union(get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2]], wide=main_arm_wide, thick=plate_thick))
                 plate = plate.union(get_stroke_line([self.top_pillar_positions[1], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
 
-        if back:
+        if back and not self.symetrical:
+            #can't immediately remember what this is for
             plate = plate.union(get_stroke_line([self.top_pillar_positions[1],self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
 
         for foot_pos in self.bottom_pillar_positions:
