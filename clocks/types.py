@@ -78,6 +78,11 @@ class PlateStyle(Enum):
     #based on a clock I saw on ebay with raised brass edging and black plates
     RAISED_EDGING = "raised_edging"
 
+class PlateShape(Enum):
+    SIMPLE_VERTICAL = "simple_vertical"
+    SIMPLE_ROUND = "simple_round" # clock 5, offset hands and pendulum. probably won't use again
+    MANTEL = "mantel"
+    ROUND = "round" #wall or on legs
 
 class PendulumFixing(Enum):
     #the first reliable mechanism, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod
@@ -203,6 +208,7 @@ class DialStyle(Enum):
     #two concentric circles joined by lines along spokes
     CONCENTRIC_CIRCLES="concentric_circles"
     DOTS = "circles"
+    DOTS_MAJOR_ONLY = "major_dots"
     TONY_THE_CLOCK="tony_the_clock"
     #just numbers
     ARABIC_NUMBERS= "simple_arabic"

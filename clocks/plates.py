@@ -111,32 +111,40 @@ class MoonHolder:
         self.lid_thick = 6
         #centre_y is centre of the holding mechanism - this screws to the front plate and holds the steel pipe
 
-        if self.plates.gear_train_layout == GearTrainLayout.ROUND:
-            raise ValueError("TODO moon phase holder for round plates")
+
+        plate_shape = self.plates.get_plate_shape()
 
         if self.moon_inside_dial:
             # if not isinstance(self.plates, RoundClockPlates):
             #     raise NotImplementedError("TODO support moon inside dial for other classes of plate")
-            if hasattr(self.plates, "radius"):
-                #round clock plates, TODO better encapsulation? explicit plate type enum?
+            if plate_shape == PlateShape.ROUND:
                 self.centre_y = self.plates.hands_position[1] + self.plates.radius
                 self.height = self.plates.pillar_r * 2
-            else:
-                #TODO
+            elif plate_shape == PlateShape.MANTEL:
+                self.centre_y = self.plates.bearing_positions[-1][1]
+                self.height = self.plates.plate_width
+            elif plate_shape == PlateShape.SIMPLE_VERTICAL:
+                #assume vertical
                 self.centre_y = self.plates.top_pillar_positions[0][1]
                 self.height = self.plates.plate_width
+            else:
+                if self.plates.gear_train_layout == GearTrainLayout.ROUND:
+                    raise ValueError("TODO moon phase holder inside dial for {} plates".format(plate_shape.value))
             self.moon_extra_space = 1
             # self.moon_spoon_thick = 1
         else:
-            #sticking off the top of the clock, only used with SimpleClockPlates with a vertical gear train so far
-            #assuming only one top pillar, or at least that htey're both at the same y
-            max_y = self.plates.top_pillar_positions[0][1] + self.plates.top_pillar_r
+            if plate_shape == PlateShape.SIMPLE_VERTICAL:
+                #sticking off the top of the clock, only used with SimpleClockPlates with a vertical gear train so far
+                #assuming only one top pillar, or at least that htey're both at the same y
+                max_y = self.plates.top_pillar_positions[0][1] + self.plates.top_pillar_r
 
-            #top of the last wheel in the complication
-            min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
+                #top of the last wheel in the complication
+                min_y = self.moon_complication.get_arbor_positions_relative_to_motion_works()[-1][1] + self.plates.hands_position[1] + self.moon_complication.pairs[2].wheel.get_max_radius()
 
-            self.height = max_y - min_y
-            self.centre_y = (max_y + min_y) / 2
+                self.height = max_y - min_y
+                self.centre_y = (max_y + min_y) / 2
+            else:
+                raise ValueError("TODO moon phase holder outside dial for {} plates".format(plate_shape.value))
 
         self.moon_y = self.centre_y + self.height/2 + self.moon_complication.moon_radius
 
@@ -355,6 +363,7 @@ class SimpleClockPlates:
         escapement_on_front: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         '''
+
         self.fancy_pillars = fancy_pillars
         self.style = style
         #for raised edging style
@@ -822,6 +831,13 @@ class SimpleClockPlates:
         returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
         '''
         return ([], [])
+    def get_plate_shape(self):
+
+        if self.gear_train_layout == GearTrainLayout.ROUND:
+            # plate classes and gear train layouts are all a bit muddled and closely coupled, needs tidying up
+            return PlateShape.SIMPLE_ROUND
+
+        return PlateShape.SIMPLE_VERTICAL
 
     def generate_arbours_for_plate(self):
 
@@ -3200,7 +3216,6 @@ class MantelClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, fancy_pillars = fancy_pillars)
-
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
 
@@ -3245,6 +3260,9 @@ class MantelClockPlates(SimpleClockPlates):
                 self.dial.support_d=15
                 if self.style == PlateStyle.RAISED_EDGING:
                     self.dial.support_d = self.plate_width - self.edging_wide*2 - 1
+
+    def get_plate_shape(self):
+        return PlateShape.MANTEL
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
@@ -3616,10 +3634,8 @@ class RoundClockPlates(SimpleClockPlates):
 
         self.front_anchor_holder_part_of_dial = True
 
-    # def need_front_anchor_bearing_holder(self):
-    #     if self.escapement_on_front:
-    #         #only need a separa
-    #         return self.dial is None
+    def get_plate_shape(self):
+        return PlateShape.MANTEL
 
     def get_pillar(self, top=True, flat=False):
         '''

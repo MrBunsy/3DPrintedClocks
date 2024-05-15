@@ -644,7 +644,7 @@ class Dial:
         self.seconds_only = seconds_only
         self.minutes_only = minutes_only
 
-        #if -1 this will be overriden in configure_dimensions
+        #if -1 this will be overriden in configure_dimensions to the default of 0.1*diameter
         self.dial_width = dial_width
         #backwards compatibiltiy with things that relied on teh minimum dial width being 15mm:
         hacky_default_support_d = 5
@@ -801,13 +801,16 @@ class Dial:
 
         return fixing_positions
 
-    def get_dots_detail(self, outer_r, dial_width, thick_fives=True):
+    def get_dots_detail(self, outer_r, dial_width, thick_fives=True, only_fives=False):
         dots = 60
-        dA = math.pi * 2 / 60
+        if only_fives:
+            dots = 12
+        dA = math.pi * 2 / dots
 
         centre_radius = outer_r - dial_width/2
 
         max_dot_r = centre_radius * math.sin(dA/2)
+
         if max_dot_r > dial_width/2:
             max_dot_r = dial_width/2 - 0.7
 
@@ -816,10 +819,16 @@ class Dial:
         if big_dot_r < 4:
             small_dot_r = max_dot_r*0.66
 
+        if only_fives:
+            big_dot_r -= self.dial_detail_from_edges*2
+
         detail = cq.Workplane("XY")
 
         for d in range(dots):
-            big = d %5 == 0 and thick_fives
+            # if d % 5 != 0 and only_fives:
+            #     continue
+
+            big = (d % 5 == 0 and thick_fives) or only_fives
             r = big_dot_r if big else small_dot_r
 
             pos = polar(dA*d, centre_radius)
@@ -1049,6 +1058,8 @@ class Dial:
             return self.get_roman_numerals_detail(outer_r, width, detail_from_edges)
         elif style == DialStyle.DOTS:
             return self.get_dots_detail(outer_r, width)
+        elif style == DialStyle.DOTS_MAJOR_ONLY:
+            return self.get_dots_detail(outer_r, width, only_fives=True)
         elif style == DialStyle.ARABIC_NUMBERS:
             return self.get_numbers_detail(outer_r, width, detail_from_edges, minutes=self.minutes_only, seconds= self.seconds_only)
         elif style == DialStyle.FANCY_WATCH_NUMBERS:

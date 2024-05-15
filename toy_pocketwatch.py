@@ -7,7 +7,7 @@ from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
 from clocks.cuckoo_bits import roman_numerals, CuckooWhistle
-from clocks.viewer import *
+# from clocks.viewer import *
 
 outputSTL = False
 
@@ -18,22 +18,26 @@ if 'show_object' not in globals():
         pass
 
 class ToyPocketwatch:
-    def __init__(self, diameter=50, thick=10, hands=HandStyle.SPADE, dial=DialStyle.ARABIC_NUMBERS):
-        self.detail_thick = LAYER_THICK * 2
-
+    def __init__(self, diameter=50, thick=10, hands=HandStyle.SPADE, dial=DialStyle.ARABIC_NUMBERS, extra_dial_layer=False, dial_width=-1, detail_thick= LAYER_THICK*2, hole_d=3):
+        self.detail_thick = detail_thick
+        #if true, do a full layer behind the dial (helps with tiny numbers)
+        self.extra_dial_layer = extra_dial_layer
         self.diameter=diameter
         self.thick = thick
+        self.hole_d = hole_d
 
         self.dial_diameter = self.diameter*0.8
 
         self.hand_thick = self.detail_thick
 
+        if dial_width < 0:
+            dial_width = self.dial_diameter * 0.15
 
-        self.dial = Dial(outside_d=self.dial_diameter, style=dial, detail_thick = self.detail_thick)
+        self.dial = Dial(outside_d=self.dial_diameter, style=dial, detail_thick = self.detail_thick, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, dial_width=dial_width)
         self.dial.configure_dimensions(support_length=0, support_d=0, outside_d=self.dial_diameter)
-        self.dial.dial_width = self.dial_diameter * 0.15
+        self.dial.dial_width = dial_width
 
-        self.hands = Hands(style=hands, length=self.dial.get_hand_length(), outline=0, thick=self.hand_thick)
+        self.hands = Hands(style=hands, length=self.dial.get_hand_length(), outline=0, thick=self.hand_thick, minute_fixing_d1=0.5, minute_fixing_d2=0.5,hourfixing_d=0.5)
 
         self.hands_shape = self.gen_hands()
         self.dial_detail_shape = self.gen_dial_detail().cut(self.hands_shape)
@@ -50,7 +54,10 @@ class ToyPocketwatch:
         return self.dial_shape
 
     def gen_dial(self):
-        return cq.Workplane("XY").circle(self.dial_diameter/2).extrude(self.detail_thick).translate((0,0, self.thick - self.detail_thick))
+        thick = self.detail_thick
+        if self.extra_dial_layer:
+            thick += self.detail_thick
+        return cq.Workplane("XY").circle(self.dial_diameter/2).extrude(thick).translate((0,0, self.thick - thick))
 
     def get_hands(self):
         return self.hands_shape
@@ -71,7 +78,7 @@ class ToyPocketwatch:
         # body = body.fillet(self.thick/3)
         body = body.fillet(self.thick / 4)
 
-        hole_d = 3
+        hole_d = self.hole_d
 
         crown_base_wide = self.diameter*0.15
         crown_top_wide = crown_base_wide*1.5
@@ -106,12 +113,16 @@ class ToyPocketwatch:
         print("Outputting ", out)
         exporters.export(self.get_dial_detail(), out)
 
-pocketwatch = ToyPocketwatch()
+# pocketwatch = ToyPocketwatch()
+#hopefully will make a good keyfob
+pocketwatch = ToyPocketwatch(diameter=30, thick=5,dial=DialStyle.DOTS_MAJOR_ONLY, hands=HandStyle.SIMPLE_ROUND, dial_width=4.8, detail_thick=0.3, hole_d=2.5)#, dial_width=4)
 
 show_object(pocketwatch.get_dial(), options={"color":Colour.WHITE}, name="Dial")
 show_object(pocketwatch.get_dial_detail(), options={"color":Colour.BLACK}, name="Numbers")
 show_object(pocketwatch.get_hands(), options={"color":Colour.BLACK}, name="Hands")
-show_object(pocketwatch.get_body(), options={"color":Colour.BRASS}, name="Body")
+show_object(pocketwatch.get_body(), options={"color":Colour.GOLD}, name="Body")
+
+# show_object(pocketwatch.gen_hands())
 
 if outputSTL:
-    pocketwatch.output_STLs()
+    pocketwatch.output_STLs(name="keyfob")
