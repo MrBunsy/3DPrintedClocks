@@ -609,7 +609,7 @@ class Dial:
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
-                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None):
+                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -618,6 +618,8 @@ class Dial:
 
         '''
         self.style = style
+        #pillars/supports terms used interchangably
+        self.pillar_style = pillar_style
         self.outer_edge_style = outer_edge_style
         self.inner_edge_style = inner_edge_style
         self.seconds_style = seconds_style
@@ -1219,7 +1221,7 @@ class Dial:
 
 
         if self.support_length > 0:
-            support = cq.Workplane("XY").circle(self.support_d/2).extrude(self.support_length)
+
             # if self.top_fixing:
             #     dial = dial.union(support.translate((0,r - self.dial_width/2, self.thick)))
             # if self.bottom_fixing:
@@ -1227,6 +1229,12 @@ class Dial:
 
             for fixing_pos_set in self.get_fixing_positions():
                 support_pos = (sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
+
+                if self.pillar_style == PillarStyle.SIMPLE:
+                    support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
+                else:
+                    support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0)
+
                 dial = dial.union(support.translate(support_pos))
                 for fixing_pos in fixing_pos_set:
                     # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))

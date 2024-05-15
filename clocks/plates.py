@@ -105,6 +105,8 @@ class MoonHolder:
         self.fixing_screws = fixing_screws
         self.arbor_d = self.moon_complication.arbor_d
         self.moon_inside_dial = moon_complication.moon_inside_dial
+        #prefer 3, but mantel clock struggles to auto generate the edging with 3 for some reason
+        self.fillet_r = 2.5#3
 
         self.moon_extra_space = 1.5
         self.moon_spoon_thick = 1.6
@@ -168,23 +170,30 @@ class MoonHolder:
             moon_spoon_deep = moon_r * 0.75
         moon_centre_pos = (0, self.moon_y, moon_z)
 
-        if self.moon_inside_dial and self.plates.get_plate_shape() == PlateShape.ROUND:
+        if self.moon_inside_dial and self.plates.get_plate_shape() in [PlateShape.ROUND, PlateShape.MANTEL]:
             #TODO this only works for the RoundClockPlates, need to think of better way of sorting out what logic to run
             #extend this class for each plate type maybe?
-            fillet_r=3
+            fillet_r=self.fillet_r
             # width = moon_r*2
-            holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width/2).circle(self.plates.radius - self.plates.plate_width/2)
-                      .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(moon_z)))
+            outer_radius = self.centre_y - self.plates.hands_position[1] + self.height/2
+            if self.plates.get_plate_shape() == PlateShape.ROUND:
+                outer_radius = self.plates.radius + self.height/2
+
+            inner_radius = outer_radius - self.height
+
+            holder = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(outer_radius).circle(inner_radius)
+                      .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + outer_radius - self.height/2).rect(width,outer_radius).extrude(moon_z)))
             holder = holder.edges("|Z").fillet(fillet_r)
 
-            lid = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(self.plates.radius + self.plates.plate_width / 2).circle(self.plates.radius - self.plates.plate_width / 2)
-                      .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + self.plates.radius).rect(width,self.plates.radius).extrude(lid_thick)))
+            lid = (cq.Workplane("XY").moveTo(self.plates.hands_position[0], self.plates.hands_position[1]).circle(outer_radius).circle(inner_radius)
+                      .extrude(moon_z).intersect(cq.Workplane("XY").moveTo(0, self.plates.hands_position[1] + outer_radius - self.height/2).rect(width,outer_radius).extrude(lid_thick)))
             lid = lid.edges("|Z").fillet(fillet_r)
             lid = lid.translate((0, 0, moon_z))
             #something to link spoon with the holder, don't worry about overlapping as the moon hole will be cut out later
             link_height = self.centre_y - self.moon_y
             holder = holder.union(cq.Workplane("XY").rect(self.plates.plate_width, link_height).extrude(moon_spoon_deep).translate((0,(self.centre_y + self.moon_y)/2,moon_z - moon_spoon_deep)))
         # elif self.moon_inside_dial and self.plates.get_plate_shape() == PlateShape.MANTEL:
+        #     fillet_r = self.plates.foot_fillet_r
         #
         else:
             r = self.moon_complication.get_last_wheel_r()
@@ -287,45 +296,6 @@ class SimpleClockPlates:
     TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
     '''
 
-    @staticmethod
-    def fancy_pillar(r, length, clockwise=True):
-        '''
-        produce a fancy turned-wood style pillar
-        '''
-        circle = cq.Workplane("XY").circle(r)
-
-        ridge_length = min(3, length*0.1)
-        curve_end_gap = min(2, r*0.07)
-        inner_r = r*0.75
-        curve_r = r - inner_r - curve_end_gap
-
-        #can't figure out how to use mirror properly, so building whole pillar despite being same on both ends
-        #actually I need this as the pillar needs to be printable, so I can remove overhangs on the second half
-        if False:
-            pillar_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).line(0, ridge_length).radiusArc((inner_r + curve_end_gap, ridge_length + curve_r), curve_r).line(-curve_end_gap, 0).lineTo(inner_r,length - ridge_length - curve_r)
-                          .line(curve_end_gap, curve_end_gap*0.75).radiusArc((r, length - (ridge_length)), curve_r*1.5).line(0, ridge_length).lineTo(0, length)).close()
-            pillar = pillar_outline.sweep(circle)
-        else:
-            ridge_length = min(10, length*0.1)
-            inner_r = r * 0.85
-            base_thick = curve_r*1.5
-            next_bulge_thick = curve_r*2
-            base_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick)], tangents=[(0,1),(-0.5,0.5)])
-                              .spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick + next_bulge_thick)], tangents=[(1,1),(-1,1)]).lineTo(0,base_thick + next_bulge_thick).close())
-            base = base_outline.sweep(circle)
-
-            twists_per_mm = 1/100
-
-            twists = twists_per_mm * (length - base_thick*2 - next_bulge_thick*2)#math.ceil(length/100)/2
-            angle = 360*twists
-            if not clockwise:
-                angle *= -1
-            barley_twist = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(length - 2*(base_thick + next_bulge_thick), angle).translate((0,0,base_thick + next_bulge_thick))
-
-            pillar = base.union(barley_twist).union(base.rotate((0,0,0),(1,0,0),180).translate((0,0,length)))
-
-
-        return pillar#.union(pillar.mirrorX().translate((0,0,length/2)))
 
     def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
@@ -2398,7 +2368,7 @@ class SimpleClockPlates:
         plate_thick = self.get_plate_thick(standoff=True)
         pillar_r = self.top_pillar_r if top else self.bottom_pillar_r
         if self.fancy_pillars:
-            pillar = SimpleClockPlates.fancy_pillar(pillar_r, self.back_plate_from_wall - plate_thick, clockwise=left)
+            pillar = fancy_pillar(pillar_r, self.back_plate_from_wall - plate_thick, clockwise=left)
         else:
             pillar = cq.Workplane("XY").circle(pillar_r).extrude(self.back_plate_from_wall - plate_thick)
 
@@ -2457,7 +2427,7 @@ class SimpleClockPlates:
             top_pillar = top_pillar.extrude(self.plate_distance)
 
         if self.fancy_pillars and not flat:
-            top_pillar = SimpleClockPlates.fancy_pillar(self.top_pillar_r, self.plate_distance)
+            top_pillar = fancy_pillar(self.top_pillar_r, self.plate_distance)
 
 
         if not flat and self.dial and self.dial_top_above_front_plate and self.top_pillar_holds_dial:
@@ -3420,7 +3390,7 @@ class MantelClockPlates(SimpleClockPlates):
             moon_holder_arm = get_stroke_line([self.bearing_positions[-1][:2], [0, self.hands_position[1] + self.dial.outside_d/2]],
                                                 wide=moon_holder_wide, thick=plate_thick, style=StrokeStyle.SQUARE)
             moon_holder_arm = moon_holder_arm.intersect(cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.dial.outside_d/2).extrude(plate_thick))
-
+            moon_holder_arm = moon_holder_arm.edges("|Z").fillet(self.moon_holder.fillet_r)
             plate = plate.union(moon_holder_arm)
 
             for i,pos in enumerate(self.get_moon_complication_fixings_absolute()):
@@ -3528,7 +3498,7 @@ class MantelClockPlates(SimpleClockPlates):
         if not self.standoff_pillars_separate:
             for pillar_pos in self.top_pillar_positions:
                 if self.fancy_pillars:
-                    standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.top_pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0, 0, plate_thick)))
+                    standoff = standoff.union(fancy_pillar(self.top_pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0, 0, plate_thick)))
                     clockwise = not clockwise
                 else:
                     standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
@@ -3557,7 +3527,7 @@ class MantelClockPlates(SimpleClockPlates):
 
 
         if self.fancy_pillars:
-            pillar = SimpleClockPlates.fancy_pillar(self.bottom_pillar_r, self.plate_distance)
+            pillar = fancy_pillar(self.bottom_pillar_r, self.plate_distance)
         else:
             pillar = pillar.extrude(self.plate_distance)
 
@@ -3687,7 +3657,7 @@ class RoundClockPlates(SimpleClockPlates):
         pillar_length = self.plate_distance
 
         if self.fancy_pillars:
-            pillar = (SimpleClockPlates.fancy_pillar(self.pillar_r, pillar_length, clockwise=top)
+            pillar = (fancy_pillar(self.pillar_r, pillar_length, clockwise=top)
                       .cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)))
         else:
             pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)

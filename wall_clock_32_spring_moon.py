@@ -105,12 +105,12 @@ moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_ge
                                                   bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 # moon_complication = None
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
-                                moon_complication=moon_complication)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH
+motion_works = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
+                                 moon_complication=moon_complication)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH
 #slightly larger allows for the inset and thus dial and hands closer to the plate
-motionWorks.calculate_size(arbor_distance=30)
-moon_complication.set_motion_works_sizes(motionWorks)
-print("motion works widest r: ", motionWorks.get_widest_radius())
+motion_works.calculate_size(arbor_distance=30)
+moon_complication.set_motion_works_sizes(motion_works)
+print("motion works widest r: ", motion_works.get_widest_radius())
 # # show_object(moon_complication.get_arbor_shape(3))
 # show_object(motionWorks.get_assembled())
 # show_object(moon_complication.get_assembled())
@@ -124,13 +124,13 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width)
-plates = clock.RoundClockPlates(train, motionWorks, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
+plates = clock.RoundClockPlates(train, motion_works, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
                                 moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True)
 
 
-hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
+hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
 # show_object(plates.get_fixing_screws_cutter())
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
@@ -158,7 +158,7 @@ if not outputSTL or True:
 if outputSTL:
 
     moon_complication.output_STLs(clockName, clockOutDir)
-    motionWorks.output_STLs(clockName,clockOutDir)
+    motion_works.output_STLs(clockName, clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)
     hands.output_STLs(clockName, clockOutDir)

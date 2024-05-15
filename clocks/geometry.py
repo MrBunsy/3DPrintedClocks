@@ -214,3 +214,43 @@ def rotate_vector(vector, axis, angle_rad):
     if len(rotate_vector) < 3:
         rotate_vector += [0]
     return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
+
+#not sure where to put this
+def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
+    '''
+    produce a fancy turned-wood style pillar
+    '''
+    circle = cq.Workplane("XY").circle(r)
+
+    ridge_length = min(3, length*0.1)
+    curve_end_gap = min(2, r*0.07)
+    inner_r = r*0.75
+    curve_r = r - inner_r - curve_end_gap
+
+    #can't figure out how to use mirror properly, so building whole pillar despite being same on both ends
+    #actually I need this as the pillar needs to be printable, so I can remove overhangs on the second half
+    if False:
+        pillar_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).line(0, ridge_length).radiusArc((inner_r + curve_end_gap, ridge_length + curve_r), curve_r).line(-curve_end_gap, 0).lineTo(inner_r,length - ridge_length - curve_r)
+                      .line(curve_end_gap, curve_end_gap*0.75).radiusArc((r, length - (ridge_length)), curve_r*1.5).line(0, ridge_length).lineTo(0, length)).close()
+        pillar = pillar_outline.sweep(circle)
+    else:
+        ridge_length = min(10, length*0.1)
+        inner_r = r * 0.85
+        base_thick = curve_r*1.5
+        next_bulge_thick = curve_r*2
+        base_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick)], tangents=[(0,1),(-0.5,0.5)])
+                          .spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick + next_bulge_thick)], tangents=[(1,1),(-1,1)]).lineTo(0,base_thick + next_bulge_thick).close())
+        base = base_outline.sweep(circle)
+
+        twists_per_mm = 1/100
+
+        twists = twists_per_mm * (length - base_thick*2 - next_bulge_thick*2)#math.ceil(length/100)/2
+        angle = 360*twists
+        if not clockwise:
+            angle *= -1
+        barley_twist = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(length - 2*(base_thick + next_bulge_thick), angle).translate((0,0,base_thick + next_bulge_thick))
+
+        pillar = base.union(barley_twist).union(base.rotate((0,0,0),(1,0,0),180).translate((0,0,length)))
+
+
+    return pillar#.union(pillar.mirrorX().translate((0,0,length/2)))

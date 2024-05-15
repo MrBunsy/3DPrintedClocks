@@ -93,17 +93,22 @@ dial_d=205
 dial_width=25
 moon_radius=13
 if moon:
-    dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width)
+    dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)
     moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                       bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d / 2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 else:
     dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
-                  outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width)
+                  outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)
     moon_complication = None
 
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
+motion_works_height = 23 if moon else 10
 
-plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial, plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
+motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
+
+if moon:
+    moon_complication.set_motion_works_sizes(motion_works)
+
+plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  fancy_pillars=True, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False))
 
@@ -111,8 +116,8 @@ plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial
 # show_object(plates.get_plate_detail(back=True))
 
 hand_style = clock.HandStyle.MOON if moon else clock.HandStyle.SPADE
-hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.outside_d*0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
+hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                    length=dial.outside_d*0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                     second_length=dial.second_hand_mini_dial_d * 0.45 if not moon else 1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
 
 
@@ -127,7 +132,7 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-    motionWorks.output_STLs(clockName,clockOutDir)
+    motion_works.output_STLs(clockName, clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)
     hands.output_STLs(clockName, clockOutDir)

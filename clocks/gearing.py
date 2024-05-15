@@ -2055,8 +2055,8 @@ class ArborForPlate:
 
                 #old non-beat adjustable holder. works, will keep it as part of the output STLs
                 # assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
-
-                assembly = assembly.add(self.beat_setting_pendulum_bits.get_assembled().rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
+                #.rotate((0,0,0),(0,1,0),180)
+                assembly = assembly.add(self.beat_setting_pendulum_bits.get_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
 
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
                 assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))

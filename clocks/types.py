@@ -185,6 +185,10 @@ class PowerType(Enum):
     def is_spring(type):
         return not PowerType.is_weight(type)
 
+class PillarStyle(Enum):
+    SIMPLE = "simple"
+    BARLEY_TWIST = "barley_twist"
+
 class DialStyle(Enum):
     '''
     Thoughts, there's lots here that could be abstracted out into options for the dial as a whole, rather than separate styles
