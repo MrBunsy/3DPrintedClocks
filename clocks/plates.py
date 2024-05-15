@@ -534,8 +534,10 @@ class SimpleClockPlates:
         self.screws_from_back = screws_from_back
         if self.screws_from_back is None:
             self.screws_from_back = [[False, False], [False, False]]
-        #plates try to put screws that hold the pillars together in the rear standoff, but can override to put them in the back plate (if there isn't a wall standoff)
+        #ignore lengths of screws and just put the nuts in the back of the back plate (or wall standoff)
         self.embed_nuts_in_plate = embed_nuts_in_plate
+        #by default we assume bolts from front or back with the head embedded in the plate
+        #so if you provide pan head screws instead the logic will detect that and instead just put a plain hole and embed nuts in teh back
 
         # how thick the bearing holder out the back or front should be
         # can't use bearing from ArborForPlate yet as they haven't been generated
@@ -2216,10 +2218,9 @@ class SimpleClockPlates:
 
         top_nut_base_z = -self.back_plate_from_wall
         bottom_nut_base_z = -self.back_plate_from_wall
-        top_nut_hole_height = self.fixing_screws.get_nut_height()
-        bottom_nut_hole_height = top_nut_hole_height
+        top_nut_hole_height = bottom_nut_hole_height = self.fixing_screws.get_nut_height() + 1
 
-        if self.back_plate_from_wall > 0:
+        if self.back_plate_from_wall > 0 and not self.embed_nuts_in_plate:
             # depth of the hole in the wall standoff before the screw head or nut, so specific sizes of screws can be used
             # extra nut height just in case
             top_nut_hole_height = (top_total_length - top_screw_length) + self.fixing_screws.get_nut_height() + 5
@@ -2271,24 +2272,31 @@ class SimpleClockPlates:
                 nut_base_z = bottom_nut_base_z
 
             for i,fixingPos in enumerate(plate_fixings):
-                screws_from_back = self.screws_from_back[pillar][i]
+                this_screw_from_back = self.screws_from_back[pillar][i]
 
                 if self.embed_nuts_in_plate:
-                    # unlikely I'll be printing any wall clocks without this standoff until I get to striking longcase-style clocks and then I can just use rod and nuts anyway
-                    print("you may have to cut the fixing screws to length in the case of no back standoff")
-                    if screws_from_back:
+                    # this was previously a mechanism to always put the nuts in the literal back plate. now it's a command to ignore lengths of bolts
+                    # and put the nuts in the back of the rear plate or wallstandoff (or front if screws from back)
+                    if this_screw_from_back:
                         nut_base_z = self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False) - self.fixing_screws.get_nut_height()
 
+                nut_bridging = True
+
+                if self.back_plate_from_wall > 0 and self.standoff_pillars_separate:
+                    nut_bridging = False
+
                 z = self.front_z
-                if self.embed_nuts_in_plate or (self.back_plate_from_wall > 0 and not screws_from_back):
+                if self.embed_nuts_in_plate or (self.back_plate_from_wall > 0 and not this_screw_from_back):
                     #make a hole for the nut
                     if fixingPos in self.plate_top_fixings and self.need_front_anchor_bearing_holder():
                         z += self.get_front_anchor_bearing_holder_total_length()
-                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=True, layer_thick=self.layer_thick, rod_loose=True).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=top_nut_hole_height, with_bridging=nut_bridging, layer_thick=self.layer_thick, rod_loose=True)
+                                              .translate(fixingPos).translate((0, 0, nut_base_z)))
                     else:
-                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=bottom_nut_hole_height, with_bridging=True, layer_thick=self.layer_thick, rod_loose=True).translate(fixingPos).translate((0, 0, nut_base_z)))
+                        cutter = cutter.union(self.fixing_screws.get_nut_cutter(height=bottom_nut_hole_height, with_bridging=nut_bridging, layer_thick=self.layer_thick, rod_loose=True)
+                                              .translate(fixingPos).translate((0, 0, nut_base_z)))
                 # holes for the screws
-                if screws_from_back:
+                if this_screw_from_back:
                     if pillar == 0:
                         screw_start_z = top_nut_hole_height
                     else:
@@ -3070,11 +3078,16 @@ class SimpleClockPlates:
 
         if self.back_plate_from_wall > 0:
             # need wall standoffs
-            plates = plates.add(self.get_wall_standoff(top=True, for_printing=False))
-            plates = plates.add(self.get_wall_standoff(top=False, for_printing=False))
+            top_standoff = self.get_wall_standoff(top=True, for_printing=False)
+            if top_standoff is not None:
+                plates = plates.add(top_standoff)
+            bottom_standoff = self.get_wall_standoff(top=False, for_printing=False)
+            if bottom_standoff is not None:
+                plates = plates.add(bottom_standoff)
             if self.standoff_pillars_separate:
                 standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=True))
-                standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=False))
+                if bottom_standoff is not None:
+                    standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=False))
 
         if self.need_front_anchor_bearing_holder() and not self.front_anchor_holder_part_of_dial:
             plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
@@ -3126,25 +3139,14 @@ class SimpleClockPlates:
             exporters.export(self.get_drill_template(6, layer_thick=0.4), out)
 
         if self.back_plate_from_wall > 0:
-            # out = os.path.join(path, "{}_wall_standoff.stl".format(name))
-            # print("Outputting ", out)
-            # exporters.export(self.getCombinedWallStandOff(), out)
+            export_STL(self.get_wall_standoff(top=True), "wall_standoff_top", clock_name=name, path=path)
 
-            out = os.path.join(path, "{}_wall_standoff_top.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_wall_standoff(top=True), out)
+            bottom_standoff = self.get_wall_standoff(top=False)
+            export_STL(bottom_standoff, "wall_standoff_bottom", clock_name=name, path=path)
 
-            out = os.path.join(path, "{}_wall_standoff_bottom.stl".format(name))
-            print("Outputting ", out)
-            exporters.export(self.get_wall_standoff(top=False), out)
             if self.text_on_standoffs:
-                out = os.path.join(path, "{}_wall_standoff_top_text.stl".format(name))
-                print("Outputting ", out)
-                exporters.export(self.get_text(top_standoff=True, for_printing=True), out)
-
-                out = os.path.join(path, "{}_wall_standoff_bottom_text.stl".format(name))
-                print("Outputting ", out)
-                exporters.export(self.get_text(top_standoff=False, for_printing=True), out)
+                export_STL(self.get_text(top_standoff=True, for_printing=True), "wall_standoff_top_text", clock_name=name, path=path)
+                export_STL(self.get_text(top_standoff=False, for_printing=True), "wall_standoff_bottom_text", clock_name=name, path=path)
 
             if self.standoff_pillars_separate:
                 for left in [True, False]:
@@ -3205,17 +3207,19 @@ class MantelClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False,
-                 symetrical=False, style=PlateStyle.SIMPLE, fancy_pillars = False):
+                 symetrical=False, style=PlateStyle.SIMPLE, fancy_pillars = False, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True):
         self.symetrical = symetrical
-
+        if fixing_screws is None:
+            fixing_screws = MachineScrew(4, countersunk=True)
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
-                         pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
+                         pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=fixing_screws,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, fancy_pillars = fancy_pillars)
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, fancy_pillars = fancy_pillars,
+                         standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate)
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
 
@@ -3490,7 +3494,7 @@ class MantelClockPlates(SimpleClockPlates):
         not really a wall standoff, but the bit that holds the pendulum at the top
         '''
         if not top:
-            return cq.Workplane("XY")
+            return None
 
         width = self.min_plate_width
 
@@ -3499,12 +3503,13 @@ class MantelClockPlates(SimpleClockPlates):
         standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=width, thick=plate_thick)
         clockwise = True
 
-        for pillar_pos in self.top_pillar_positions:
-            if self.fancy_pillars:
-                standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.top_pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0, 0, plate_thick)))
-                clockwise = not clockwise
-            else:
-                standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
+        if not self.standoff_pillars_separate:
+            for pillar_pos in self.top_pillar_positions:
+                if self.fancy_pillars:
+                    standoff = standoff.union(SimpleClockPlates.fancy_pillar(self.top_pillar_r, self.back_plate_from_wall - plate_thick, clockwise=clockwise).translate(pillar_pos).translate((0, 0, plate_thick)))
+                    clockwise = not clockwise
+                else:
+                    standoff = standoff.union(cq.Workplane("XY").circle(self.top_pillar_r-0.0001).extrude(self.back_plate_from_wall-plate_thick).translate((0,0,plate_thick)).translate(pillar_pos))
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
 
         standoff = standoff.translate((0,0,-self.back_plate_from_wall))

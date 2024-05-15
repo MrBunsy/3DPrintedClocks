@@ -103,8 +103,9 @@ else:
 
 motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
 
-plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial, plate_thick=6, screws_from_back=[[True, False],[False,False]], style=clock.PlateStyle.RAISED_EDGING,
-                                 fancy_pillars=True, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25)#, symetrical=True
+plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 33", dial=dial, plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
+                                 fancy_pillars=True, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
+                                 standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False))
 
 
 # show_object(plates.get_plate_detail(back=True))
@@ -118,10 +119,10 @@ hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=m
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 if moon:
-    dial_colours.reverse()
+    dial_colours =  [clock.Colour.BLUE, clock.Colour.WHITE]
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=dial_colours,
-                    plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
+                    plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 

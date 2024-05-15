@@ -320,11 +320,14 @@ class MachineScrew:
 
         return r
 
-    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False, space_for_pan_head=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
         if withBridging, then still in exactly the same shape and orentation, but using hole-in-hole for printing with bridging
+
+        previously pan heads provided a cutter to fit the head into. but I don't think I ever actually used this and now this does not happen
+        only countersunk screws have a space for the head included in the cutter
         '''
 
         if length < 0:
@@ -346,13 +349,15 @@ class MachineScrew:
             # countersunk screw lengths seem to include the head
             screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
         else:
-            # pan head screw lengths do not include the head
-            if not with_bridging:
-                screw = screw.circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
+            if space_for_pan_head:
+                # pan head screw lengths do not include the head
+                if not with_bridging:
+                    screw = screw.circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
+                else:
+                    screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layerThick=layer_thick))
+                screw = screw.faces(">Z").workplane().circle(r).extrude(length)
             else:
-                screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layerThick=layer_thick))
-            screw = screw.faces(">Z").workplane().circle(r).extrude(length)
-
+                screw = cq.Workplane("XY").circle(r).extrude(length)
         # extend out from the headbackwards too
         if head_space_length > 0:
             screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
@@ -1301,6 +1306,9 @@ class TextSpace:
         return self.text_size * min(width_ratio, height_ratio)
 
 def export_STL(object, object_name, clock_name="clock", path="../out", tolerance=0.1):
+    if object is None:
+        print("Not exporting {} as object is None".format(object_name))
+        return
     out = os.path.join(path, "{}_{}.stl".format(clock_name, object_name))
     print("Exporting ", out)
     exporters.export(object, out, tolerance=tolerance, angularTolerance=tolerance)
