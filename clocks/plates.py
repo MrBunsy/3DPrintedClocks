@@ -334,6 +334,9 @@ class SimpleClockPlates:
 
         self.layer_thick = layer_thick
 
+        #if spring powered and little_plate_for_pawl is false (only in sub-classes so far)
+        self.beefed_up_pawl_thickness = 7.5
+
         #diameter of the cylinder that forms the arbour that physically links pendulum holder (or crutch in future) and anchor
         self.direct_arbor_d = direct_arbor_d
 
@@ -2195,6 +2198,32 @@ class SimpleClockPlates:
 
         return (bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height)
 
+    def get_spring_ratchet_screws_cutter(self, back_plate=True):
+        plate_thick = self.get_plate_thick(back=back_plate)
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back_plate:
+            #spring powered, need the ratchet!
+            screw = self.going_train.powered_wheel.ratchet.fixing_screws
+
+            cutter = cq.Workplane("XY")
+
+            positions = self.going_train.powered_wheel.ratchet.get_screw_positions()
+            if self.little_plate_for_pawl:
+                positions += self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions()
+            for relative_pos in positions:
+                extra_z = 0
+                if relative_pos == self.going_train.powered_wheel.ratchet.get_pawl_screw_position():
+                    extra_z = -self.beefed_up_pawl_thickness
+                pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
+                pos = (pos[0], pos[1], extra_z)
+                #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
+                cutter = cutter.add(screw.get_cutter(with_bridging=True).translate(pos)) # for_tap_die=True,
+
+            if back_plate:
+                cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
+
+            return cutter
+        return None
+
     def get_fixing_screws_cutter(self):
         '''
         in position, assuming back of back plate is resting on the XY plane
@@ -2697,6 +2726,19 @@ class SimpleClockPlates:
     def get_moon_complication_fixings_absolute(self):
         return [np_to_set(np.add(self.hands_position, relative_pos[:2])) for relative_pos in self.moon_complication.get_arbor_positions_relative_to_motion_works()]
 
+    def rear_additions_to_plate(self, plate, plate_thick=-1):
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back:
+            # beef up the plate where the pawl screw goes through so we don't need to have an extra plate on the back to make it strong enough
+            # only possible at the back unless I change where the barrel is (TODO support power at back again...)
+            pawl_pos = np_to_set(np.add(self.bearing_positions[0][:2], self.going_train.powered_wheel.ratchet.get_pawl_screw_position()))
+            # should probably do somethign sensible like work out how much space there actually is between the nearby wheel and the plate
+
+
+            plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width / 2)
+                     .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width * 0.4).loft(combine=True))
+
+        return plate
+
     def front_additions_to_plate(self, plate, plate_thick=-1, moon=False):
         '''
         stuff only needed to be added to the front plate
@@ -3192,7 +3234,7 @@ class MantelClockPlates(SimpleClockPlates):
         # self.moon_holder_y = -1
         # self.moon_holder_wide = self.plate_width*1.5
 
-
+        self.little_plate_for_pawl = False
 
         self.little_arm_to_motion_works = False
 
@@ -3410,10 +3452,16 @@ class MantelClockPlates(SimpleClockPlates):
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
             plate = plate.cut(self.get_text())
+            plate = self.rear_additions_to_plate(plate)
+
+
+
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
 
-
+        ratchet_screws_cutter = self.get_spring_ratchet_screws_cutter(back_plate=back)
+        if ratchet_screws_cutter is not None:
+            plate = plate.cut(ratchet_screws_cutter)
 
         if not back:
             #don't add the arms, we'll do that ourselves so they fit better with the style
@@ -3421,21 +3469,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         plate = self.punch_bearing_holes(plate, back)
 
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back:
-            #spring powered, need the ratchet!
-            screw = self.going_train.powered_wheel.ratchet.fixing_screws
 
-            cutter = cq.Workplane("XY")
-
-            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions() + self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions():
-                pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
-                #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
-                cutter = cutter.add(screw.get_cutter(with_bridging=True).translate(pos)) # for_tap_die=True,
-
-            if back:
-                cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
-
-            plate = plate.cut(cutter)
 
         if for_printing:
             plate = self.apply_style_to_plate(plate, back=back)
@@ -3955,24 +3989,15 @@ class RoundClockPlates(SimpleClockPlates):
         if just_basic_shape:
             return plate
 
-        self.beefed_up_pawl_thickness = 0
-
         plate = plate.cut(self.get_fixing_screws_cutter())
         if back:
+
+            plate = self.rear_additions_to_plate(plate)
 
             if not self.text_on_standoffs:
                 plate = plate.cut(self.get_text())
 
-            if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back:
-                #beef up the plate where the pawl screw goes through so we don't need to have an extra plate on the back to make it strong enough
-                #only possible at the back unless I change where the barrel is (TODO support power at back again...)
-                pawl_pos = np_to_set(np.add(self.bearing_positions[0][:2], self.going_train.powered_wheel.ratchet.get_pawl_screw_position()))
-                #should probably do somethign sensible like work out how much space there actually is between the nearby wheel and the plate
-                self.beefed_up_pawl_thickness = 7.5
 
-
-                plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width/2)
-                         .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width*0.4).loft(combine=True))
         else:
             if self.need_front_anchor_bearing_holder():
                 for pos in self.anchor_holder_fixing_points:
@@ -3986,29 +4011,15 @@ class RoundClockPlates(SimpleClockPlates):
 
         plate = self.punch_bearing_holes(plate, back)
 
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back:
-            #spring powered, need the ratchet!
-            screw = self.going_train.powered_wheel.ratchet.fixing_screws
+        ratchet_screws_cutter = self.get_spring_ratchet_screws_cutter(back_plate=back)
+        if ratchet_screws_cutter is not None:
+            plate = plate.cut(ratchet_screws_cutter)
 
-            cutter = cq.Workplane("XY")
-
-            #not using the little extra pawl plate on this plate, going to instead make the back plate thicker around the ratchet
-            for relative_pos in self.going_train.powered_wheel.ratchet.get_screw_positions():
-                extra_z = 0
-                if relative_pos == self.going_train.powered_wheel.ratchet.get_pawl_screw_position():
-                    extra_z = -self.beefed_up_pawl_thickness
-                pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
-                pos = (pos[0], pos[1], extra_z)
-                #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
-                cutter = cutter.add(screw.get_cutter(with_bridging=True).translate(pos)) # for_tap_die=True,
-
-            if back:
-                cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
-
-            plate = plate.cut(cutter)
-
-            if for_printing and not back:
-                plate = plate.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
+        # if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back:
+        #
+        #     #think this was so we flip the front plate if the ratchet was at the front?
+        #     if for_printing and not back:
+        #         plate = plate.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
 
 
         return plate

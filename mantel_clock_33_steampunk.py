@@ -32,20 +32,23 @@ Nothing particularly new, just had an idea for a clock that would look cool:
 
 Maybe one for printables?
 '''
-outputSTL = False
+output_STL = False
 
 if 'show_object' not in globals():
     #don't output STL when we're in cadquery editor
-    outputSTL = True
+    output_STL = True
     def show_object(*args, **kwargs):
         pass
 
-clockName="mantel_clock_33"
-clockOutDir="out"
-gearStyle=clock.GearStyle.ARCS
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+clock_name= "mantel_clock_33"
+clock_out_dir= "out"
+gear_style=clock.GearStyle.ARCS
+pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 moon = True
+
+if moon:
+    gear_style = clock.GearStyle.CIRCLES
 
 #for period 1.5
 # drop =1.5
@@ -74,7 +77,8 @@ if moon:
 else:
     module_reduction=0.9#0.85
 #ratios from wall clock 32 as these fit next to a module 1 minute wheel
-train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4, base_thick=barrel_gear_thick, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[62, 10], [61, 10]])
+train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4, base_thick=barrel_gear_thick, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[62, 10], [61, 10]],
+                        style=gear_style)
 
 
 if not moon:
@@ -85,13 +89,13 @@ else:
     train.set_ratios([[75, 10], [65, 15], [60, 13]])
 # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=10, max_wheel_teeth=80, pinion_max_teeth=16, wheel_min_teeth=60, loud=True)
 
-pendulumSticksOut=10
-backPlateFromWall=30
+pendulum_sticks_out=10
+back_plate_from_wall=30
 
 pinion_extensions = {1:5, 3:8} if moon else {1:12, 2:5}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
-train.gen_gears(module_size=0.9, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+train.gen_gears(module_size=0.9, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
+                powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], powered_wheel_module_sizes=powered_modules)
 # train.print_info(weight_kg=1.5)
 train.print_info(for_runtime_hours=24*7)
@@ -105,7 +109,7 @@ dial_width=25
 moon_radius=13
 if moon:
     dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)
-    moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
+    moon_complication = clock.MoonPhaseComplication3D(gear_style=gear_style, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                       bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d / 2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 else:
     dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
@@ -114,7 +118,7 @@ else:
 
 motion_works_height = 23 if moon else 10
 
-motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
+motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
 
 if moon:
     moon_complication.set_motion_works_sizes(motion_works)
@@ -142,10 +146,10 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 
-if outputSTL:
-    motion_works.output_STLs(clockName, clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+if output_STL:
+    motion_works.output_STLs(clock_name, clock_out_dir)
+    pendulum.output_STLs(clock_name, clock_out_dir)
+    plates.output_STLs(clock_name, clock_out_dir)
+    hands.output_STLs(clock_name, clock_out_dir)
+    assembly.output_STLs(clock_name, clock_out_dir)
 
