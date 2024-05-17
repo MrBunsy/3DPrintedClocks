@@ -77,7 +77,7 @@ if moon:
 else:
     module_reduction=0.9#0.85
 #ratios from wall clock 32 as these fit next to a module 1 minute wheel
-train.gen_spring_barrel(pawl_angle=-math.pi/4, click_angle=-math.pi*3/4, base_thick=barrel_gear_thick, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[62, 10], [61, 10]],
+train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[62, 10], [61, 10]],
                         style=gear_style)
 
 

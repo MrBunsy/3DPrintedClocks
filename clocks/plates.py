@@ -3477,11 +3477,17 @@ class MantelClockPlates(SimpleClockPlates):
         return plate
 
     def get_text_spaces(self):
-
+        '''
+        default shapehas a short and long space for text, symmetric plates can have long on both
+        '''
         # (x,y,width,height, horizontal)
         spaces = []
 
-        texts = [" ".join(self.texts[1:]), self.texts[0]]
+
+        if self.symetrical:
+            texts = [" ".join(self.texts[2:]), " ".join(self.texts[:2])]
+        else:
+            texts = [" ".join(self.texts[1:]), self.texts[0]]
 
 
         long_line = Line(self.bottom_pillar_positions[0], anotherPoint=self.top_pillar_positions[0])
@@ -3492,7 +3498,11 @@ class MantelClockPlates(SimpleClockPlates):
         long_angle = long_line.get_angle()
 
         short_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.top_pillar_positions[1])
-        short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
+        if self.symetrical:
+            short_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bottom_pillar_positions[1])) - self.top_pillar_r
+            text_height = self.plate_width * 0.4
+        else:
+            short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
         short_line_length = short_space_length - 10
         short_centre = np_to_set(np.add(short_line.start, np.multiply(short_line.dir, short_space_length / 2)))
         short_angle = short_line.get_angle() + math.pi
@@ -3585,9 +3595,10 @@ class RoundClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150, endshake=1.25, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False, standoff_pillars_separate=False):
+                 leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, fancy_pillars=False, standoff_pillars_separate=False):
         '''
-
+        only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
+        bumping up the default to 1.5
         '''
         self.leg_height = leg_height
         #review this later, but for now at least its a different variable

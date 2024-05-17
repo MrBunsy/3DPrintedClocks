@@ -761,11 +761,12 @@ if False:
 # show_object(escapement.get_wheel_2d())
 
 #
-# ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=math.pi*0.9, click_fixing_angle=math.pi*0.1)#, click_fixing_angle=-math.pi/4)
-# # #
-# show_object(ratchet.get_gear())
-# show_object(ratchet.get_pawl())
-# show_object(ratchet.get_click())
+ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=-math.pi*0.1, click_fixing_angle=math.pi*0.2)#, click_fixing_angle=-math.pi/4)
+# #
+show_object(ratchet.get_gear())
+show_object(ratchet.get_pawl())
+show_object(ratchet.get_click())
+# show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), degToRad(ratchet.rotate_by_deg))))
 # show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
@@ -885,8 +886,8 @@ if False:
 #
 # show_object(shape)
 
-numerals = RomanNumerals(height=20, centre_radius=150, style=RomanNumeralStyle.SIMPLE_SQUARE)
-
-# show_object(numerals.get_V())
-show_object(numerals.get_number("XVIII"))
+# numerals = RomanNumerals(height=20, centre_radius=150, style=RomanNumeralStyle.SIMPLE_SQUARE)
+#
+# # show_object(numerals.get_V())
+# show_object(numerals.get_number("XVIII"))
 # show_object(numerals.get_X())

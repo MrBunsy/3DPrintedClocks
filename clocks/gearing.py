@@ -1553,7 +1553,7 @@ class ColletFixingPendulumWithBeatSetting:
         # plus extra because we'll be at an angle
         nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
         #0.5 for space to squash a crinkle washer to add friction that will hopefully prevent this turning by itself
-        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.8 # +1 worked, but think there was a tiny bit of slack
+        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.9 # +1 worked, but think there was a tiny bit of slack +0.8 worked but was really tough to get the washer in
         nut_hole_centre_height = self.fixing_screws.metric_thread
         nut_hole_width = self.arm_width*0.5
 
@@ -1589,7 +1589,9 @@ class ColletFixingPendulumWithBeatSetting:
         #cut out of the bottom so we can place right up against the back plate if needed
         #trying extra 0.2 nut space as the bridging makes it hard to get the pendulum in with the default of 0.2
         #0.4 works, but feels sliiightly too loose
-        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.3).translate((0, top_of_pendulum_holder_hole_y)).rotate((0,0,z),(0,1,z), 180))
+        #0.3 works but is still a bit tight, not sure end-users would be able to easily put pendulum in, going back to 0.4 but with reduced space for rod
+        #tryin reducing sideways space too, default was 0.1
+        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4, extra_space_for_rod=0.0).translate((0, top_of_pendulum_holder_hole_y)).rotate((0,0,z),(0,1,z), 180))
 
         thumb_nut_d = self.fixing_screws.get_nut_containing_diameter(thumb=True)
 

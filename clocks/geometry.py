@@ -171,7 +171,7 @@ def rationalise_angle(angle_radians):
     '''
     there's probably a proper term for this - ensure 0 <= angle < math.pi*2
     '''
-    angle = angle_radians % math.pi * 2
+    angle = angle_radians % (math.pi * 2)
 
     while angle < 0:
         angle += math.pi * 2

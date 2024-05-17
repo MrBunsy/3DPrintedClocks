@@ -3265,9 +3265,11 @@ class TraditionalRatchet:
         #pawl and gear and built in a position I could visualise, then rotated into requested position. the click is always built in the requested position
         self.rotate_by_deg = radToDeg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
-        click_fixing_centre = polar(self.click_fixing_angle, self.pawl_fixing_r)
+        # inside the little arm of the pawl
+        self.click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 0.65)))
+        self.click_fixings_r = np.linalg.norm(self.click_end_pos)
+        click_fixing_centre = polar(self.click_fixing_angle, self.click_fixings_r)
         self.click_fixings_distance = self.fixing_screws.metric_thread*3
-        self.click_fixings_r = self.pawl_fixing_r
         #0.9 works for a two-extrusion-wide click, but I think I want something stronger
         self.click_wide = 1.7#0.9
 
@@ -3275,6 +3277,7 @@ class TraditionalRatchet:
             np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance / 2))),
             np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle - math.pi / 2, self.click_fixings_distance / 2)))
         ]
+
 
     def get_inner_radius(self):
         '''
@@ -3428,13 +3431,13 @@ class TraditionalRatchet:
     def get_click(self):
 
 
-        click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 3 / 4)))
+        click_end_pos = self.click_end_pos
 
         click_end_pos = rotate_vector(click_end_pos, (0,0,1), degToRad(self.rotate_by_deg))
 
-        click = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.fixing_screws.metric_thread*3, self.click_fixings_distance + self.fixing_screws.metric_thread*3).extrude(self.thick).rotate((0,0,0),(0,0,1), radToDeg(self.click_fixing_angle))
+        click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.fixing_screws.metric_thread*3, self.click_fixings_distance + self.fixing_screws.metric_thread*3).extrude(self.thick).rotate((0,0,0),(0,0,1), radToDeg(self.click_fixing_angle))
 
-        click = click.edges("|Z").fillet(2)
+        click_fixing = click_fixing.edges("|Z").fillet(2)
 
         # click = click.union(cq.Workplane("XY").circle(self.click_fixings_r + self.click_wide/2).circle(self.click_fixings_r - self.click_wide/2).extrude(self.thick))
 
@@ -3443,12 +3446,67 @@ class TraditionalRatchet:
         click_end_inner_pos = np_to_set(np.subtract(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
         click_end_outer_pos = np_to_set(np.add(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
 
-        click_spring_r = self.click_fixings_r + self.pawl_diameter/2
+        click_spring_r = self.click_fixings_r
         click_start_outer = polar(self.click_fixing_angle, self.click_fixings_r + self.click_wide / 2)
         click_start_inner = polar(self.click_fixing_angle, self.click_fixings_r - self.click_wide / 2)
 
-        click = click.union(cq.Workplane("XY").moveTo(click_start_outer[0], click_start_outer[1]).radiusArc(click_end_outer_pos, self.direction*(click_spring_r+self.click_wide/2))
-                            .lineTo(click_end_inner_pos[0], click_end_inner_pos[1]).radiusArc(click_start_inner, -self.direction*(click_spring_r - self.click_wide/2)).close().extrude(self.thick))
+        # clickspring = (cq.Workplane("XY").moveTo(click_start_outer[0], click_start_outer[1]).radiusArc(click_end_outer_pos, self.direction*(click_spring_r+self.click_wide/2)).
+        #                lineTo(click_end_inner_pos[0], click_end_inner_pos[1]).radiusArc(click_start_inner, -self.direction*(click_spring_r - self.click_wide/2)).close().extrude(self.thick))
+
+        # click_end_pos_angle = math.atan2(self.click_end_pos[1], self.click_end_pos[0])
+        # pawl_angle = rationalise_angle(click_end_pos_angle)
+
+        # click_angle = rationalise_angle(self.click_fixing_angle)
+
+        # using unit vectors to make this easier
+        pawl_dir = np_to_set(np.multiply(click_end_pos, 1/np.linalg.norm(click_end_pos)))
+        click_dir = polar(self.click_fixing_angle)
+
+        #I want the clockwise (if blocks_clockwise) or anticlockwise (if not blocks_clockwise) angle from the clock to the pawl
+        #I think without headaches this is easier to do via dot or cross product
+
+        from_dir = click_dir
+        to_dir = pawl_dir
+        # if self.blocks_clockwise:
+        #     to_dir = click_dir
+        #     from_dir = to_dir
+        # work out if the angle we want to keep is >180deg, then either cut or include a segment of a circle
+        dot_product = np.dot(from_dir, to_dir)
+        small_angle = math.acos(dot_product)
+        cross_product = np.cross(from_dir, to_dir)
+        # if cross_product
+
+        if self.blocks_clockwise:
+            want_small_angle = cross_product > 0
+        else:
+            want_small_angle = cross_product < 0
+
+        # print("want the SMALL ANGLE", want_small_angle)
+
+
+        clickspring = cq.Workplane("XY").circle(click_spring_r + self.click_wide / 2).circle(click_spring_r - self.click_wide / 2).extrude(self.thick)
+        wedge_r = click_spring_r * 5
+        start = np_to_set(np.multiply(pawl_dir, wedge_r))
+        end = np_to_set(np.multiply(click_dir, wedge_r))
+        start_angle = math.atan2(pawl_dir[1], pawl_dir[0])
+        #I'll be honest this was instinctive after playing about and I'm not sure I could tell you why it works
+        dir = 1 if want_small_angle != self.blocks_clockwise else -1
+        #making a funny shape rather than a wedge as I can't think through the clockwise logic needed for radiusarc
+        mid_angle = start_angle + dir*small_angle*0.5
+        mid = polar(mid_angle, wedge_r)
+
+        # dir = -1 if self.blocks_clockwise else 1
+        # small_angle_wedge = cq.Workplane("XY").lineTo(start[0], start[1]).radiusArc(end, wedge_r*dir).lineTo(0,0).close().extrude(self.thick)
+        small_angle_wedge = cq.Workplane("XY").lineTo(start[0], start[1]).lineTo(mid[0], mid[1]).lineTo(end[0], end[1]).lineTo(0,0).close().extrude(self.thick)
+        # return small_angle_wedge
+        if want_small_angle:
+            clickspring = clickspring.intersect(small_angle_wedge)
+        else:
+            clickspring = clickspring.cut(small_angle_wedge)
+
+        clickspring = clickspring.union(cq.Workplane("XY").moveTo(click_end_pos[0], click_end_pos[1]).circle(self.click_wide / 2).extrude(self.thick))
+
+        click = click_fixing.union(clickspring)
 
         for screwpos in self.click_fixings:
             click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.thick).translate(screwpos))
