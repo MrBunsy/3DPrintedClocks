@@ -67,7 +67,7 @@ moduleReduction=0.95#0.85
 
 # train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
 #                         wall_thick=9, chain_wheel_ratios=[[64, 10], [60, 11]])
-train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
                         wall_thick=9, chain_wheel_ratios=[[64, 10], [61, 10]])#, fraction_of_max_turns=0.45)
 # train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
 #                         wall_thick=9, chain_wheel_ratios=[[61, 10], [60, 11]])
@@ -124,7 +124,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)
-plates = clock.RoundClockPlates(train, motion_works, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
+plates = clock.RoundClockPlates(train, motion_works, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
                                 moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True)
 
@@ -148,7 +148,7 @@ plates.get_rod_lengths()
 # show_object(plates.get_fixing_screws_cutter())
 #, clock.Colour.LIGHTBLUE, clock.Colour.GREEN
 if not outputSTL or True:
-    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.DARKBLUE], motion_works_colours=[clock.Colour.GOLD],
+    assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.DARKBLUE], motion_works_colours=[clock.Colour.BRASS],
                         bob_colours=[clock.Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
                         dial_colours=[clock.Colour.BLUE, clock.Colour.WHITE], key_colour=clock.Colour.DARKBLUE,
                         plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])

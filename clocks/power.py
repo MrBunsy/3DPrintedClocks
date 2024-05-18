@@ -989,7 +989,7 @@ class SpringBarrel:
         self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1.5
         self.back_collet_thick = self.ratchet_collet_thick + self.back_bearing_standoff
 
-        self.radius_for_style = self.barrel_diameter/2-1
+        self.radius_for_style = self.barrel_diameter/2#-1
 
         self.collet_diameter = self.arbor_d+8
 
@@ -3241,7 +3241,7 @@ class TraditionalRatchet:
 
         self.pawl_diameter = self.fixing_screws.metric_thread*3
 
-        self.spring_rest_length = self.pawl_diameter*1.5
+        self.spring_rest_length = self.pawl_diameter*2
 
         # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
 
@@ -3266,7 +3266,7 @@ class TraditionalRatchet:
         self.rotate_by_deg = radToDeg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
         # inside the little arm of the pawl
-        self.click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 0.65)))
+        self.click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 0.5)))
         self.click_fixings_r = np.linalg.norm(self.click_end_pos)
         click_fixing_centre = polar(self.click_fixing_angle, self.click_fixings_r)
         self.click_fixings_distance = self.fixing_screws.metric_thread*3
