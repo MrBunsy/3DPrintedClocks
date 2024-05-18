@@ -3315,14 +3315,24 @@ class MantelClockPlates(SimpleClockPlates):
         # if self.fancy_pillars:
         #     self.top_pillar_r = self.bottom_pillar_r
 
+        a = self.bearing_positions[self.going_train.powered_wheels + 1][:2]
+        b = self.bearing_positions[self.going_train.powered_wheels + 2][:2]
+        distance_to_a = self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.top_pillar_r + self.small_gear_gap
+        distance_to_b = self.arbors_for_plate[self.going_train.powered_wheels + 2].get_max_radius() + self.top_pillar_r + self.small_gear_gap
+        top_left = get_point_from_two_points(pos0=a, pos1=b, distance0=distance_to_a, distance1=distance_to_b)
 
         bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.gear_gap + self.bottom_pillar_r
         #TODO check this doesn't collide with next wheel
         bottom_angle = -math.pi/4
         self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
 
+        if top_left[0] < self.bottom_pillar_positions[0][0] and self.symetrical:
+            self.bottom_pillar_positions[0] = (top_left[0], self.bottom_pillar_positions[0][1])
+            self.bottom_pillar_positions[1] = (-top_left[0], self.bottom_pillar_positions[0][1])
 
         right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
+
+
         if self.symetrical:
             # y = self.bearing_positions[-2][1] + self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r
             # self.top_pillar_positions = [
@@ -3330,12 +3340,16 @@ class MantelClockPlates(SimpleClockPlates):
             #     (self.bottom_pillar_positions[1][0], y)
             # ]
             #probably only works when there's no second hand
-            top_left = np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.55), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r)))
+            # top_left = np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.55), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r)))
+
             self.top_pillar_positions = [top_left, (-top_left[0], top_left[1])]
+
+
         else:
             self.top_pillar_positions = [
-                np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
-                np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+                # np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.525), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r))),
+                top_left,
+                np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.small_gear_gap + self.top_pillar_r))),
             ]
         print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
 

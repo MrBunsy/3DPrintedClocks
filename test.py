@@ -763,16 +763,35 @@ if False:
 
 # show_object(cq.Solid.makeSphere(10, angleDegrees1=0, angleDegrees2=360, angleDegrees3=360))
 
-show_object(fancy_pillar(r=15,length=50, style=PillarStyle.BLOBS))
+# show_object(fancy_pillar(r=15,length=50, style=PillarStyle.BLOBS))
 
+
+test_cosine_law = False
+
+if test_cosine_law:
+
+    pos0=(0,0)
+    r0 = 8
+    pos1=(10,10)
+    r1=9
+    show_object(cq.Workplane("XY").moveTo(pos0[0], pos0[1]).circle(r0))
+    show_object(cq.Workplane("XY").moveTo(pos1[0], pos1[1]).circle(r1))
+
+    r=3
+    pos = get_point_from_two_points(pos0=pos0, pos1=pos1, distance0=r0+r, distance1=r1+r, anticlockwise_from_0=True)
+
+    show_object(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(r))
+
+test_ratchet = False
+if test_ratchet:
 #
-# ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=-math.pi*0.1, click_fixing_angle=math.pi*0.2)#, click_fixing_angle=-math.pi/4)
-# # #
-# show_object(ratchet.get_gear())
-# show_object(ratchet.get_pawl())
-# show_object(ratchet.get_click())
-# show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), degToRad(ratchet.rotate_by_deg))))
-# show_object(ratchet.get_little_plate_for_pawl())
+    ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=-math.pi*0.1, click_fixing_angle=math.pi*0.2)#, click_fixing_angle=-math.pi/4)
+    # #
+    show_object(ratchet.get_gear())
+    show_object(ratchet.get_pawl())
+    show_object(ratchet.get_click())
+    show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), degToRad(ratchet.rotate_by_deg))))
+    show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)

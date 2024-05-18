@@ -216,6 +216,29 @@ def rotate_vector(vector, axis, angle_rad):
     return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
 
 
+def get_point_from_two_points(pos0, distance0, pos1, distance1, anticlockwise_from_0=True):
+    '''
+    needs a better name.
+    Given two positions, a and b, find the position of another point when you know all the distances
+    I've done this all over the place in calculating gear train placement in plates, but let's finally abstract it out so I can re-use it cleanly
+    '''
+    #putting into standard form for cosine rule
+    c = distance1
+    a = distance0
+    b = distance_between_two_points(pos0, pos1)
+
+    #cosine rule
+    angle = math.acos((a**2 + b**2 - c**2)/(2*a*b))
+
+    a_to_b = np_to_set(np.subtract(pos1, pos0))
+    a_to_b_angle = math.atan2(a_to_b[1], a_to_b[0])
+
+    dir = 1 if anticlockwise_from_0 else -1
+    point_angle = a_to_b_angle + dir*angle
+
+    return np_to_set(np.add(pos0, polar(point_angle, distance0)))
+
+
 #not sure where to put the pillars, maybe their own file?
 def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
     if style == PillarStyle.BARLEY_TWIST:
