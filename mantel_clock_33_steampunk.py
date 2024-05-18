@@ -69,7 +69,7 @@ escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, t
                                     tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=7.5 * 24, support_second_hand=not moon, escape_wheel_pinion_at_front=False)
+                         runtime_hours=8 * 24, support_second_hand=not moon, escape_wheel_pinion_at_front=False)
 barrel_gear_thick = 8
 if moon:
     #can't fit without making the top pillars further apart or much higher up
@@ -77,9 +77,13 @@ if moon:
 else:
     module_reduction=0.9#0.85
 #ratios from wall clock 32 as these fit next to a module 1 minute wheel
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[62, 10], [61, 10]],
-                        style=gear_style)
-
+train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
+                        style=gear_style, fraction_of_max_turns=0.35)#, chain_wheel_ratios=[[62, 10], [61, 10]]), spring=clock.MAINSPRING_183535,
+'''
+[[61, 10], [78, 10]]
+spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653
+Over a runtime of 168.0hours the spring barrel will make 3.5 full rotations which is 33.0% of the maximum number of turns (10.7) and will take 5.3 key turns to wind back up
+'''
 
 if not moon:
     # 2/3s with second hand
@@ -93,7 +97,7 @@ pendulum_sticks_out=10
 back_plate_from_wall=30
 
 pinion_extensions = {1:5, 3:8} if moon else {1:12, 2:5}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1]
 train.gen_gears(module_size=0.9, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], powered_wheel_module_sizes=powered_modules)
@@ -124,7 +128,7 @@ if moon:
     moon_complication.set_motion_works_sizes(motion_works)
 
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
-                                 fancy_pillars=True, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
+                                 pillar_style=clock.PillarStyle.BLOBS, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False))
 
 

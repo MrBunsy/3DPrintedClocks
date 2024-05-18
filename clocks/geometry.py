@@ -215,8 +215,37 @@ def rotate_vector(vector, axis, angle_rad):
         rotate_vector += [0]
     return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
 
-#not sure where to put this
+
+#not sure where to put the pillars, maybe their own file?
 def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
+    if style == PillarStyle.BARLEY_TWIST:
+        return fancy_pillar_barley_twist(r, length, clockwise)
+    elif style == PillarStyle.BLOBS:
+        return fancy_pillar_blobs(r, length, clockwise)
+
+def fancy_pillar_blobs(r, length, clockwise=True):
+
+    blob_desired_height = r*1.6
+
+    blobs = math.ceil(length/blob_desired_height)
+    blob_height = length/blobs
+
+    pillar = cq.Workplane("XY")
+
+    for blob in range(blobs):
+        pillar = pillar.union(cq.Workplane("XY").sphere(r).translate((0,0,blob*blob_height + blob_height/2)))
+        # pillar = pillar.union(cq.Workplane("XY").add(cq.Solid.makeSphere(radius=r)).rotate((0,0,0),(1,0,0),180).translate((0, 0, blob * blob_height + blob_height / 2)))
+
+    pillar = pillar.union(cq.Workplane("XY").circle(r).extrude(blob_height/2))
+    pillar = pillar.union(cq.Workplane("XY").circle(r).extrude(blob_height / 2).translate((0,0,length - blob_height/2)))
+
+    pillar = pillar.intersect(cq.Workplane("XY").circle(r*2).extrude(length))
+
+    return pillar
+
+
+
+def fancy_pillar_barley_twist(r, length, clockwise=True):
     '''
     produce a fancy turned-wood style pillar
     '''

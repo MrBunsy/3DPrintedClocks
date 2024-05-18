@@ -760,12 +760,17 @@ if False:
 #                               toothBaseAngle=6, style=AnchorStyle.CURVED_MATCHING_WHEEL)
 # show_object(escapement.get_wheel_2d())
 
+
+# show_object(cq.Solid.makeSphere(10, angleDegrees1=0, angleDegrees2=360, angleDegrees3=360))
+
+show_object(fancy_pillar(r=15,length=50, style=PillarStyle.BLOBS))
+
 #
-ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=-math.pi*0.1, click_fixing_angle=math.pi*0.2)#, click_fixing_angle=-math.pi/4)
-# #
-show_object(ratchet.get_gear())
-show_object(ratchet.get_pawl())
-show_object(ratchet.get_click())
+# ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=-math.pi*0.1, click_fixing_angle=math.pi*0.2)#, click_fixing_angle=-math.pi/4)
+# # #
+# show_object(ratchet.get_gear())
+# show_object(ratchet.get_pawl())
+# show_object(ratchet.get_click())
 # show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), degToRad(ratchet.rotate_by_deg))))
 # show_object(ratchet.get_little_plate_for_pawl())
 # #

@@ -40,7 +40,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_32"
+clockName="wall_clock_32b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -58,23 +58,17 @@ train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max
 barrel_gear_thick = 8
 
 moduleReduction=0.95#0.85
-#train.gen_spring_barrel(click_angle=-math.pi*0.25)
-#smiths ratios but with more teeth on the first pinion (so I can print it with two perimeters, with external perimeter at 0.435 and perimeter at 0.43)
-#could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
-#[[61, 10], [62, 10]] auto generated but putting here to save time
-# train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick,
-#                         chain_wheel_ratios=[[61, 10], [62, 10]])#[[66, 10], [76,13]])#, [[61, 10], [62, 10]]
 
-# train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-#                         wall_thick=9, chain_wheel_ratios=[[64, 10], [60, 11]])
 train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=9, chain_wheel_ratios=[[64, 10], [61, 10]])#, fraction_of_max_turns=0.45)
-# train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-#                         wall_thick=9, chain_wheel_ratios=[[61, 10], [60, 11]])
+                        wall_thick=9, fraction_of_max_turns=0.35)#, chain_wheel_ratios=[[64, 10], [61, 10]])
 
-#TODO new option to favour large escape wheel?
+'''
+[[61, 10], [83, 10]]
+spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653
+Over a runtime of 168.0hours the spring barrel will make 3.3 full rotations which is 31.0% of the maximum number of turns (10.7) and will take 5.0 key turns to wind back up
+'''
+
 # train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=55, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True)
-                      # penultimate_wheel_min_ratio=0.8, allow_integer_ratio=True)
 #1s period with 36 teeth
 # train.set_ratios([[65, 12], [60, 14], [56, 13]])
 #1s period with 30 teeth
@@ -91,7 +85,7 @@ dial_width=25
 pinion_extensions = {0:1, 1:5,3:5} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.2]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.0]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 #module_sizes=[1, 0.95, 0.95]
@@ -125,7 +119,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)
 plates = clock.RoundClockPlates(train, motion_works, name="Wall 32", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, fancy_pillars=True,
+                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST,
                                 moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True)
 
 

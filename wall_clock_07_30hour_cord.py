@@ -18,6 +18,9 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import clocks as clock
+from ocp_vscode import show, show_object, reset_show, set_port, set_defaults, get_defaults
+set_port(3939)
+
 
 '''
 Simple one day clock with shortest pendulum I can manage to also have a second hand on the esacpe wheel
@@ -55,7 +58,7 @@ train.print_info()
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1.25, module_reduction=0.875, thick=3, chain_wheel_thick=6, useNyloc=False)
+train.gen_gears(module_size=1.25, module_reduction=0.875, thick=3, chain_wheel_thick=6)
 
 
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30)

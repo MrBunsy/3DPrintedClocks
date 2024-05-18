@@ -188,6 +188,8 @@ class PowerType(Enum):
 class PillarStyle(Enum):
     SIMPLE = "simple"
     BARLEY_TWIST = "barley_twist"
+    COLUMN = "column"
+    BLOBS = "blobs"
 
 class DialStyle(Enum):
     '''
