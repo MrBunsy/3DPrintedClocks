@@ -3142,8 +3142,8 @@ class SimpleClockPlates:
             export_STL(self.get_text(for_printing=True), "plate_back_text", name, path)
 
         if self.pillars_separate:
-            export_STL(self.get_pillar(top=False), "pillar_bottom", name, path)
-            export_STL(self.get_pillar(top=True), "pillar_top", name, path)
+            export_STL(self.get_pillar(top=False), "pillar_bottom", name, path, tolerance=0.05)
+            export_STL(self.get_pillar(top=True), "pillar_top", name, path, tolerance=0.05)
 
         if self.motion_works.cannon_pinion_friction_ring:
             out = os.path.join(path, "{}_friction_clip.stl".format(name))
@@ -3170,9 +3170,7 @@ class SimpleClockPlates:
                 for left in [True, False]:
                     for top in [True, False]:
                         pillar_name = "{}_{}".format("left" if left else "right", "top" if top else "bottom")
-                        out = os.path.join(path, "{}_wall_standoff_pillar_{}.stl".format(name, pillar_name))
-                        print("Outputting ", out)
-                        exporters.export(self.get_standoff_pillar(top=top, left=left), out)
+                        export_STL(self.get_standoff_pillar(top=top, left=left), pillar_name, clock_name=name, path=path, tolerance=0.05)
 
         if self.huygens_maintaining_power:
             self.huygens_wheel.output_STLs(name + "_huygens", path)

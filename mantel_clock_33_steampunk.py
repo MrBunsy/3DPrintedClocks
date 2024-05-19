@@ -103,8 +103,8 @@ back_plate_from_wall=30
 pinion_extensions = {1:5, 3:8} if moon else {1:12, 2:5}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1]
 train.gen_gears(module_sizes=[1,0.9,0.9], module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
-                powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], powered_wheel_module_sizes=powered_modules)
+                powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
 # train.print_info(weight_kg=1.5)
 train.print_info(for_runtime_hours=24*7)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -153,7 +153,7 @@ dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 if moon:
     dial_colours =  [clock.Colour.BLUE, clock.Colour.WHITE]
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.BRASS, dial_colours=dial_colours,
+                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=dial_colours,
                     plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BLACK, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
