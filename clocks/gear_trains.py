@@ -621,9 +621,11 @@ class GoingTrain:
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style=GearStyle.ARCS, prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
-                        ratchet_diameter=-1, traditional_ratchet=False, min_wheel_teeth=20):
+                        ratchet_diameter=-1, traditional_ratchet=True, min_wheel_teeth=20):
         '''
         If preferred diameter is provided, use that rather than the min diameter
+
+        switching to defaulting to tradition ratchet as the old ratchet has proven not to hold up long term, I'm hoping the tradition ratchet with a long click will be better
         '''
         diameter = prefered_diameter
         if diameter < 0:

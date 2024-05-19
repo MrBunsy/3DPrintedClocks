@@ -2507,7 +2507,8 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0):
+                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0,
+                 distance_between_hands=2):
         '''
 
         cannon_pinion_to_hour_holder_gap_size - in mm, how much extra diameter to add to the hour holder to slot over the cannon pinion. Can be a bit filament specific to what works well
@@ -2619,7 +2620,8 @@ class MotionWorks:
 
         # print("minute hand holder D: {}".format(self.minuteHandHolderD))
 
-        self.distance_between_hands = minute_hand_thick
+        #used to default to minute_hand_thick
+        self.distance_between_hands = distance_between_hands
         self.minute_hand_slot_height = minute_hand_thick
         self.hour_hand_slot_height = minute_hand_thick + self.distance_between_hands
 
@@ -2983,6 +2985,9 @@ class MotionWorks:
         return pinion
 
     def get_motion_arbour(self):
+        '''
+        this might be better known as teh "minute arbor"? since the proper terms are the minute wheel and minute pinion
+        '''
         # mini arbour that sits between the cannon pinion and the hour wheel
         #this is an actual Arbour object
         wheel = self.pairs[0].wheel

@@ -916,7 +916,7 @@ if test_ratchet:
 # show_object(numerals.get_number("XVIII"))
 # show_object(numerals.get_X())
 
-show_object(fancy_pillar(30, 100, style=PillarStyle.TWISTY))
+show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
 
 # spring_barrel = SpringBarrel(spring=MAINSPRING_102525, key_bearing=BEARING_8x16x5, lid_bearing=BEARING_8x16x5, barrel_bearing=BEARING_8x16x5,
 #                              spring_hook_screws=MachineScrew(2,countersunk=True, length=12))

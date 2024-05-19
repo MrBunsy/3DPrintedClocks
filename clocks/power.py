@@ -2066,7 +2066,12 @@ class CordWheel:
             raise ValueError("Cannot make cord wheel without a ratchet")
         self.traditional_ratchet = traditional_ratchet
         if self.traditional_ratchet:
-            self.ratchet = TraditionalRatchet(gear_diameter=self.diameter+6.5, thick=ratchet_thick, blocks_clockwise=power_clockwise)
+            pawl_angle = 0
+            if power_clockwise:
+                click_angle = math.pi/2
+            else:
+                click_angle = -math.pi/2
+            self.ratchet = TraditionalRatchet(gear_diameter=self.diameter+6.5, thick=ratchet_thick, blocks_clockwise=power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle)
         else:
             #inner radius slightly larger than cord diameter so there's space for nuts
             self.ratchet = Ratchet(totalD=self.cap_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, innerRadius=self.diameter / 2 + 2)

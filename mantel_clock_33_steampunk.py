@@ -110,7 +110,7 @@ train.print_info(for_runtime_hours=24*7)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
-pillar_style=clock.PillarStyle.TWISTY
+pillar_style=clock.PillarStyle.CLASSIC
 
 dial_d=205
 dial_width=25
@@ -124,7 +124,7 @@ else:
                   outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
     moon_complication = None
 
-motion_works_height = 23 if moon else 10
+motion_works_height = 22 if moon else 10
 
 motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
 

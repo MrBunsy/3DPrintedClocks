@@ -91,30 +91,20 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 #module_sizes=[1, 0.95, 0.95]
 train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)#, rod_diameters=[12,3,3,2,2,2,2,2])
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, chain_wheel_pinion_thick_multiplier=1.875)
 train.print_info(for_runtime_hours=24*7)
 moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                   bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
-# moon_complication = None
-#although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motion_works = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
-                                 moon_complication=moon_complication)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH
-#slightly larger allows for the inset and thus dial and hands closer to the plate
+#no need to make inset, we've got lots of space here with the moon complication
+motion_works = clock.MotionWorks(extra_height=22, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
+                                 moon_complication=moon_complication)
+# balance out the moon complication by making the motion works a bit bigger
 motion_works.calculate_size(arbor_distance=30)
 moon_complication.set_motion_works_sizes(motion_works)
 print("motion works widest r: ", motion_works.get_widest_radius())
-# # show_object(moon_complication.get_arbor_shape(3))
-# show_object(motionWorks.get_assembled())
-# show_object(moon_complication.get_assembled())
-
-
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
-
-# dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=False, font="Gill Sans Medium", style=clock.DialStyle.ROMAN_NUMERALS,
-#                   font_scale=0.75, font_path="../fonts/GillSans/Gill Sans Medium.otf", inner_edge_style=clock.DialStyle.RING, outer_edge_style=clock.DialStyle.LINES_ARC,
-#                   dial_width=20)
 
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)

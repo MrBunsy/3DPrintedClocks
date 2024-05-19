@@ -320,6 +320,8 @@ class SimpleClockPlates:
         self.edging_wide = 3
         self.edging_thick=LAYER_THICK*2
 
+        self.export_tolerance = 0.1
+
         #for other clock plates to override
         self.text_on_standoffs = False
         self.standoff_pillars_separate = standoff_pillars_separate
@@ -3128,13 +3130,13 @@ class SimpleClockPlates:
     def output_STLs(self, name="clock", path="../out"):
         if self.dial is not None:
             self.dial.output_STLs(name, path)
-        export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path)
+        export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path, tolerance=self.export_tolerance)
 
         front_detail = self.get_plate_detail(back=False, for_printing=True)
         if front_detail is not None:
             export_STL(front_detail, "plate_front_detail", name, path)
 
-        export_STL(self.get_plate(True, for_printing=True), "plate_back", name, path)
+        export_STL(self.get_plate(True, for_printing=True), "plate_back", name, path, tolerance=self.export_tolerance)
 
         if not self.text_on_standoffs:
             export_STL(self.get_text(for_printing=True), "plate_back_text", name, path)
@@ -3321,8 +3323,9 @@ class MantelClockPlates(SimpleClockPlates):
         self.top_pillar_positions = []
         self.bottom_pillar_r = self.plate_width/2
         self.top_pillar_r = self.min_plate_width/2
-        # if self.fancy_pillars:
-        #     self.top_pillar_r = self.bottom_pillar_r
+        if self.pillar_style is not PillarStyle.SIMPLE:
+            #I keep changing my mind over this
+            self.top_pillar_r = self.bottom_pillar_r
 
         a = self.bearing_positions[self.going_train.powered_wheels + 1][:2]
         b = self.bearing_positions[self.going_train.powered_wheels + 2][:2]
@@ -3565,7 +3568,7 @@ class MantelClockPlates(SimpleClockPlates):
         if not top:
             return None
 
-        width = self.min_plate_width
+        width = self.top_pillar_r*2
 
         plate_thick = self.get_plate_thick(standoff=True)
         #to match the plate
@@ -3648,8 +3651,12 @@ class RoundClockPlates(SimpleClockPlates):
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate)
 
         if self.wall_mounted:
-            self.text_on_standoffs=True
+            #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
+            #so it's as strong as possible
+            self.text_on_standoffs=False
 
+        #much more noticable on the round plate
+        self.export_tolerance = 0.01
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
         self.little_arm_to_motion_works = True
@@ -4111,15 +4118,36 @@ class RoundClockPlates(SimpleClockPlates):
             spaces.append(TextSpace(self.radius, text_centre_y, self.plate_width*0.9, text_length, angle_rad=math.pi/2))
 
         else:
-            top_width = math.fabs(self.top_pillar_positions[0][0]) - self.fixing_screws.get_nut_containing_diameter()/2 - self.wall_fixing_screw_head_d/2 - 1
+            if self.text_on_standoffs:
+                top_width = math.fabs(self.top_pillar_positions[0][0]) - self.fixing_screws.get_nut_containing_diameter()/2 - self.wall_fixing_screw_head_d/2 - 1
 
-            spaces.append(TextSpace(self.top_pillar_positions[0][0] / 2, self.top_pillar_positions[0][1], top_width, self.pillar_r * 1.8, horizontal=True))
-            spaces.append(TextSpace(self.top_pillar_positions[1][0] / 2, self.top_pillar_positions[1][1], top_width, self.pillar_r * 1.8, horizontal=True))
+                spaces.append(TextSpace(self.top_pillar_positions[0][0] / 2, self.top_pillar_positions[0][1], top_width, self.pillar_r * 1.8, horizontal=True))
+                spaces.append(TextSpace(self.top_pillar_positions[1][0] / 2, self.top_pillar_positions[1][1], top_width, self.pillar_r * 1.8, horizontal=True))
 
-            bottom_width = math.fabs(self.bottom_pillar_positions[0][0]) - self.fixing_screws.get_nut_containing_diameter()/2 - self.wall_fixing_screw_head_d/2 - 1
+                bottom_width = math.fabs(self.bottom_pillar_positions[0][0]) - self.fixing_screws.get_nut_containing_diameter()/2 - self.wall_fixing_screw_head_d/2 - 1
 
-            spaces.append(TextSpace(self.bottom_pillar_positions[0][0] / 2, self.bottom_pillar_positions[0][1], bottom_width, self.pillar_r * 1.8, horizontal=True))
-            spaces.append(TextSpace(self.bottom_pillar_positions[1][0] / 2, self.bottom_pillar_positions[1][1], bottom_width, self.pillar_r * 1.8, horizontal=True))
+                spaces.append(TextSpace(self.bottom_pillar_positions[0][0] / 2, self.bottom_pillar_positions[0][1], bottom_width, self.pillar_r * 1.8, horizontal=True))
+                spaces.append(TextSpace(self.bottom_pillar_positions[1][0] / 2, self.bottom_pillar_positions[1][1], bottom_width, self.pillar_r * 1.8, horizontal=True))
+            else:
+                height = self.bottom_arm_wide*0.5
+                top_y = self.bearing_positions[0][1] + self.bottom_arm_wide/4
+                bottom_y = self.bearing_positions[0][1] - self.bottom_arm_wide / 4
+
+                #start the lines at x=0 and remember the intersection with circle only does intersections from the origin on the line
+                top_line = Line((0, top_y),direction=(1,0))
+                bottom_line = Line((0, bottom_y), direction=(1, 0))
+                #making wider than needed as I'm not sure what's going on with the text spacing
+                top_end_x = top_line.intersection_with_circle(self.hands_position, self.radius + self.plate_width/2)[0][0]
+                bottom_end_x = bottom_line.intersection_with_circle(self.hands_position, self.radius + self.plate_width/2)[0][0]
+
+                #keep away from the potential ratchet or bearing
+                start_x = self.bottom_arm_wide*0.3
+
+                spaces.append(TextSpace(start_x / 2 + top_end_x / 2, top_y, top_end_x / 2 - start_x / 2, height, horizontal=True))
+                spaces.append(TextSpace(start_x / 2 + bottom_end_x / 2, bottom_y, bottom_end_x / 2 - start_x / 2, height, horizontal=True))
+
+                spaces.append(TextSpace(-start_x / 2 -top_end_x / 2, top_y, top_end_x / 2 - start_x / 2, height, horizontal=True))
+                spaces.append(TextSpace(-start_x / 2 -bottom_end_x / 2, bottom_y, bottom_end_x / 2 - start_x / 2, height, horizontal=True))
 
         for i, text in enumerate(texts):
             spaces[i].set_text(text)

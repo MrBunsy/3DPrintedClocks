@@ -13,6 +13,8 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
         return fancy_pillar_column(r, length, clockwise)
     elif style == PillarStyle.TWISTY:
         return fancy_pillar_twisty(r, length, clockwise)
+    elif style == PillarStyle.CLASSIC:
+        return fancy_pillar_classic(r, length, clockwise)
     else:
         raise NotImplementedError("Pillar style {} not yet implemented".format(style))
 def fancy_pillar_twisty(r, length, clockwise=True):
@@ -30,7 +32,8 @@ def fancy_pillar_twisty(r, length, clockwise=True):
 
     return pillar
 
-def fancy_pillar_column(r, length, clockwise=True):
+
+def fancy_pillar_classic(r, length, clockwise=True):
     '''
     the top and bottom bit copy-pasted from barley twist, could probably consider abstracting out
     '''
@@ -48,27 +51,23 @@ def fancy_pillar_column(r, length, clockwise=True):
     base = base_outline.sweep(circle)
     centre_length = length - 2*(base_thick + next_bulge_thick)
 
-    centre = cq.Workplane("XY").circle(inner_r).extrude(centre_length).translate((0,0,base_thick + next_bulge_thick))
+    central_ring_r = r*0.75
+    central_ring_thick = base_thick + next_bulge_thick
+    central_ring_curve_r = central_ring_thick
 
-    cut_gap_thick = base_thick/2
-    cut_length = centre_length - cut_gap_thick*2
-    cuts = 12
-    circumference = math.pi*r*2
-    cut_r = circumference / (cuts*3)
-    cutter= cq.Workplane("XY")
-    for cut in range(cuts):
-        pole = cq.Workplane("XY").circle(cut_r).extrude(cut_length - cut_r*2).translate((0,0,cut_gap_thick + cut_r))
-        pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_r)))
-        pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_length - cut_r)))
-        angle = cut * math.pi*2/cuts
-        pos_2d = polar(angle, inner_r + cut_r*0.4)
-        cutter = cutter.union(pole.translate((pos_2d[0], pos_2d[1], base_thick + next_bulge_thick)))
-    # return cutter
-    centre = centre.cut(cutter)
+    central_ring = (cq.Workplane("XZ").moveTo(0, -central_ring_thick/2).lineTo(central_ring_r,-central_ring_thick/2).radiusArc((central_ring_r, central_ring_thick/2),-central_ring_curve_r)
+                    .lineTo(0, central_ring_thick/2).close()).sweep(circle)
+
+
+
+    cone = cq.Solid.makeCone(inner_r,central_ring_r, length/2 - central_ring_thick/2 - base_thick - next_bulge_thick)
+    centre = central_ring.translate((0,0,length/2)).union(cone.translate((0,0, base_thick + next_bulge_thick))).union(cone.rotate((0,0,0),(1,0,0),180).translate((0,0,length-base_thick - next_bulge_thick)))
+
 
     pillar = base.union(centre).union(base.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length)))
 
     return pillar
+
 
 def fancy_pillar_blobs(r, length, clockwise=True):
 

@@ -611,7 +611,7 @@ class Dial:
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
-                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE):
+                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -619,6 +619,8 @@ class Dial:
         Alternatively a style an inner and/or outer edge style can be provided. Intention: numbers with a ring around the outside.
 
         '''
+        #used to be 3 before made configurable
+        self.hand_space_z = hand_space_z
         self.style = style
         #pillars/supports terms used interchangably
         self.pillar_style = pillar_style
@@ -679,9 +681,9 @@ class Dial:
     def get_hand_space_z(self):
         #how much space between the front of the dial and the hands should there be?
         if self.style == DialStyle.TONY_THE_CLOCK:
-            return 3 + self.eye_radius - self.eye_pivot_z - self.thick
+            return self.hand_space_z + self.eye_radius - self.eye_pivot_z - self.thick
 
-        return 3
+        return self.hand_space_z
 
     def get_hand_length(self, hand=HandType.MINUTE):
         '''

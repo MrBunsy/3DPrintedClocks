@@ -189,8 +189,12 @@ class PillarStyle(Enum):
     SIMPLE = "simple"
     BARLEY_TWIST = "barley_twist"
     COLUMN = "column"
+    #uh this didn't quite come out as planned
     BLOBS = "blobs"
+    #*love* this one but it doesn't fit with the old-fashioned style of RAISED_EDGING, need to think of a good plate design for it
     TWISTY = "twisty"
+    CLASSIC = "classic"
+
 
 class DialStyle(Enum):
     '''
