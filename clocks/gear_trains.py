@@ -660,10 +660,10 @@ class GoingTrain:
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
-    def gen_spring_barrel(self, spring=None, key_bearing=None, rod_d=4, pawl_angle=math.pi / 2, click_angle=-math.pi / 2, ratchet_at_back=True,
+    def gen_spring_barrel(self, spring=None, key_bearing=None, pawl_angle=math.pi / 2, click_angle=-math.pi / 2, ratchet_at_back=True,
                           style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, fraction_of_max_turns=0.5, wheel_min_teeth=60, wall_thick=12):
 
-        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, rod_d=rod_d, clockwise=self.powered_wheels % 2 == 0,
+        self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, clockwise=self.powered_wheels % 2 == 0,
                                           pawl_angle=pawl_angle, click_angle=click_angle, ratchet_at_back=ratchet_at_back, style=style, base_thick=base_thick,
                                           fraction_of_max_turns=fraction_of_max_turns, wall_thick=wall_thick)
         '''

@@ -27,6 +27,7 @@ from .escapements import *
 from .cosmetics import *
 from .leaves import *
 from .dial import *
+from .pillars import fancy_pillar
 import cadquery as cq
 from pathlib import Path
 from cadquery import exporters
@@ -859,7 +860,8 @@ class SimpleClockPlates:
             arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, escapement_on_front=self.escapement_on_front, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
-                                           previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate)
+                                           previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
+                                           pendulum_length=self.going_train.pendulum_length)
             self.arbors_for_plate.append(arbourForPlate)
 
 
@@ -2143,7 +2145,12 @@ class SimpleClockPlates:
             z = - self.edging_thick
             if not back:
                 z = self.get_plate_thick(back=False)
-            return plate.union(detail.translate((0,0,z)))
+            try:
+                combined = plate.union(detail.translate((0,0,z)))
+            except:
+                combined = plate.union(detail.translate((0, 0, z)), clean=False)
+
+            return combined
 
         return plate
 

@@ -2,6 +2,8 @@ import cadquery as cq
 from pathlib import Path
 from cadquery import exporters
 import math
+
+from .pillars import *
 from .types import *
 from .utility import *
 from .cuckoo_bits import roman_numerals
@@ -1233,7 +1235,7 @@ class Dial:
                 if self.pillar_style == PillarStyle.SIMPLE:
                     support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
                 else:
-                    support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0)
+                    support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
 
                 dial = dial.union(support.translate(support_pos))
                 for fixing_pos in fixing_pos_set:

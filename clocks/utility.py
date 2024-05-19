@@ -1107,6 +1107,10 @@ BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d
 BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
 BEARING_SMALL_M3 = BearingInfo(outer_d=8.1, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
 BEARING_2MM = BearingInfo(outer_d=6.2, inner_d=2, height=3, inner_safe_d=2.9, outer_safe_d=3.8)
+
+#guesses on safe ds
+BEARING_8x16x5 = BearingInfo(outer_d = 16, inner_d=8, height=5, outer_safe_d=13, inner_safe_d=10)
+BEARING_7x14x5 = BearingInfo(outer_d = 14, inner_d=7, height=5, outer_safe_d=11, inner_safe_d=9)
 def get_bearing_info(innerD):
     '''
     Get some stock bearings

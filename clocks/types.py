@@ -190,6 +190,7 @@ class PillarStyle(Enum):
     BARLEY_TWIST = "barley_twist"
     COLUMN = "column"
     BLOBS = "blobs"
+    TWISTY = "twisty"
 
 class DialStyle(Enum):
     '''

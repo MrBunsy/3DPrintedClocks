@@ -727,7 +727,7 @@ class MainSpring:
 # 18 40 45
 SMITHS_EIGHT_DAY_MAINSPRING = MainSpring(height=18, thick=0.4, barrel_diameter=45, arbor_d=9, length=1650)
 MAINSPRING_183535 = MainSpring(height=18, thick=0.35, barrel_diameter=35, length=1400)
-
+MAINSPRING_102525 = MainSpring(height=10, thick=0.25, barrel_diameter=25, length=950)
 class SpringArbour:
     '''
     This was intended to work with a loop end mainspring like an alarm clock.
@@ -880,8 +880,8 @@ class SpringBarrel:
 
     '''
 
-    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, rod_d=4, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
-                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12):
+    def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None):
         '''
 
         '''
@@ -919,8 +919,6 @@ class SpringBarrel:
 
         if self.barrel_bearing is None:
             self.barrel_bearing = BEARING_12MM_THIN
-
-        self.rod_d = rod_d
 
         self.barrel_height = self.spring.height + 2
 
@@ -975,7 +973,10 @@ class SpringBarrel:
         self.lid_fixing_screws_count = 3
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.collet_screws = self.lid_fixing_screws
-        self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
+
+        self.spring_hook_screws = spring_hook_screws
+        if self.spring_hook_screws is None:
+            self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
 
         self.spring_hook_space=2
         ratchet_d = self.arbor_d*2.5
