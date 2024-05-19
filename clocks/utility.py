@@ -677,8 +677,11 @@ class Line:
     def dot_product(self, b):
         return np.dot(self.dir, b.dir)
 
-    def intersection_with_circle(self, circle_centre, circle_r):
+    def intersection_with_circle(self, circle_centre, circle_r, line_length=-1):
         '''
+        assumes line is from start pos to anotherPoint, or if this line doesn't have anotherPoint (was created with angle or dir)
+        then assumes the line is line_length long. if line_length is provided, that overrides anotherPoint
+        only finds intersections along the length of that bit of the line.
 
         ported from my old javascript physics engine
 
@@ -687,9 +690,11 @@ class Line:
         '''
         x1, y1 = self.start
 
-        if self.anotherPoint is None:
-            x2 = self.start[0] + self.dir[0] * 100
-            y2 = self.start[1] + self.dir[1] * 100
+        if self.anotherPoint is None or line_length > 0:
+            if line_length < 0:
+                line_length = 10000
+            x2 = self.start[0] + self.dir[0] * line_length
+            y2 = self.start[1] + self.dir[1] * line_length
         else:
             x2, y2 = self.anotherPoint
         a = circle_centre[0]
@@ -742,73 +747,49 @@ class Line:
             # //b^2 - 4ac
             discrim = math.pow((-2 * b), 2) - 4 * (b * b + (x - a) * (x - a) - r * r)
             if discrim >= 0:
-                overlap = False
-                thisY = False
+                points = []
                 # //minus
                 y = (-(-2 * b) - math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    overlap = True
-                    thisY = y
+                    points.append((x, y))
                 # //plus
                 y = (-(-2 * b) + math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    if overlap:
-                        # //take average of two colliding coords
-                        thisY += y
-                        thisY /= 2
-                    else:
-                        overlap = True
-                        thisY = y
-                if overlap:
-                    return [(x, thisY)]
+                    points.append((x, y))
+                return points
 
         elif m == 0:
             # //horizontal line, two potential Xs
             y = y1
             discrim = math.pow((-2 * a), 2) - 4 * (a * a + (y - b) * (y - b) - r * r)
             if discrim >= 0:
-                overlap = False
-                thisX = False
+                points = []
                 # //minus
                 x = (-(-2 * a) - math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    overlap = True
-                    thisX = x
+                    points.append((x, y))
                 # //plus
                 x = (-(-2 * a) + math.sqrt(discrim)) / 2
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    if overlap:
-                        # //take average of two colliding coords
-                        thisX += x
-                        thisX /= 2
-                    else:
-                        overlap = True
-                        thisX = x
-                if overlap:
-                    return [(thisX, y)]
+                    points.append((x, y))
+                return points
         else:
             # //re-arrangement of the equation of a circle and the equation of a straight line to find the x co-ordinate of an intersection
             discrim = math.pow((-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m), 2) - 4 * (1 + m * m) * (-2 * m * x1 * y1 + 2 * m * x1 * b + m * m * x1 * x1 - r * r + a * a + (y1 - b) * (y1 - b))
             # //if discriminant is less than zero then there are no real roots and :. no interesction
             if discrim >= 0:
-                # overlap=False
                 points = []
                 # //circle intersects line, but where?
                 # //minus first
                 x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) - math.sqrt(discrim)) / (2 * (1 + m * m))
                 y = m * (x - x1) + y1
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    overlap = True
                     points.append((x, y))
                 # //then plus
                 x = (-(-2 * a - 2 * m * m * x1 + 2 * y1 * m - 2 * b * m) + math.sqrt(discrim)) / (2 * (1 + m * m))
                 y = m * (x - x1) + y1
 
                 if testx1 <= x and x <= testx2 and testy1 <= y and y <= testy2:
-                    # if overlap:
-                    #     point=((point[0]+x)/2,(point[1]+y)/2)
-                    # else:
-                    #     overlap=True
                     points.append((x, y))
 
                 return points

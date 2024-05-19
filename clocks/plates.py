@@ -3218,6 +3218,8 @@ class MantelClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True):
         self.symetrical = symetrical
+        #if we've got the moon sticking out the top, can arrange the pillars in such a way that we'rea taller
+        self.can_be_extra_tall = moon_complication is not None
         if fixing_screws is None:
             fixing_screws = MachineScrew(4, countersunk=True)
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
@@ -3327,8 +3329,17 @@ class MantelClockPlates(SimpleClockPlates):
         self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
 
         if top_left[0] < self.bottom_pillar_positions[0][0] and self.symetrical:
-            self.bottom_pillar_positions[0] = (top_left[0], self.bottom_pillar_positions[0][1])
-            self.bottom_pillar_positions[1] = (-top_left[0], self.bottom_pillar_positions[0][1])
+            if self.can_be_extra_tall:
+                #raise the pillars upwards by rotating around the left-top gear until we're inline with the bottom pillar
+                left_line = Line(self.bottom_pillar_positions[0], direction=(0,1))
+                # from_gear = abs(self.bottom_pillar_positions[0] - self.bearing_positions[self.going_train.powered_wheels + 2][0])
+                points = left_line.intersection_with_circle(b, distance_to_b)
+                y = max([p[1] for p in points])
+                top_left = [self.bottom_pillar_positions[0][0], y]
+            else:
+                #widen out the bottom pillars
+                self.bottom_pillar_positions[0] = (top_left[0], self.bottom_pillar_positions[0][1])
+                self.bottom_pillar_positions[1] = (-top_left[0], self.bottom_pillar_positions[0][1])
 
         right_pillar_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.bearing_positions[1][:2])
 
