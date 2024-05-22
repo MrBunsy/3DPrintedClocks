@@ -57,8 +57,8 @@ class AnchorEscapement:
         test_anchor = AnchorEscapement(teeth=teeth, type=EscapementType.DEADBEAT, lift=lift_deg, drop=test_drop)
         test_anchor.get_anchor_2d()
         print(test_anchor.pallet_angles)
-        print(radToDeg(test_anchor.pallet_angles[0]), radToDeg(test_anchor.pallet_angles[1]))
-        diff = radToDeg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
+        print(rad_to_deg(test_anchor.pallet_angles[0]), rad_to_deg(test_anchor.pallet_angles[1]))
+        diff = rad_to_deg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
         print(diff, "degrees")
 
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
@@ -107,23 +107,23 @@ class AnchorEscapement:
         self.style = style
 
         self.lift_deg = lift
-        self.half_lift = 0.5 * degToRad(lift)
-        self.lift = degToRad(lift)
+        self.half_lift = 0.5 * deg_to_rad(lift)
+        self.lift = deg_to_rad(lift)
         #meet the Escapement interface
         self.escaping_arc = self.lift
 
         self.drop_deg= drop
-        self.drop = degToRad(drop)
+        self.drop = deg_to_rad(drop)
 
         self.lock_deg = lock
-        self.lock=degToRad(lock)
+        self.lock=deg_to_rad(lock)
 
         #to fine tune the teeth, the defaults work well with 30 teeth
-        self.tooth_tip_angle=degToRad(tooth_tip_angle)
-        self.tooth_base_angle=degToRad(tooth_base_angle)
+        self.tooth_tip_angle=deg_to_rad(tooth_tip_angle)
+        self.tooth_base_angle=deg_to_rad(tooth_base_angle)
 
         self.run_deg = run
-        self.run = degToRad(run)
+        self.run = deg_to_rad(run)
 
         self.teeth = teeth
         self.tooth_height_fraction = tooth_height_fraction
@@ -410,8 +410,8 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         #TODO, what should this be for most efficiency?
         #currently bodged in order to get enough drop to be reliable
-        entryPalletAngle=degToRad(12)
-        exitPalletAngle=-math.pi/2-degToRad(12)#entryPalletAngle
+        entryPalletAngle=deg_to_rad(12)
+        exitPalletAngle= -math.pi / 2 - deg_to_rad(12)#entryPalletAngle
 
 
 
@@ -460,8 +460,8 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         exitPalletEnd=(exitPalletMiddle[0]-(liftExtension + entryPalletLength)*math.cos(exitPalletAngle), exitPalletMiddle[1]-(liftExtension + entryPalletLength)*math.sin(exitPalletAngle))
 
 
-        endOfEntryPalletAngle = degToRad(35) # math.pi + wheelAngle/2 +
-        endOfExitPalletAngle = degToRad(45)
+        endOfEntryPalletAngle = deg_to_rad(35) # math.pi + wheelAngle/2 +
+        endOfExitPalletAngle = deg_to_rad(45)
 
         h = self.anchor_centre_distance - self.anchor_top_thick_base - entryPalletTip[1]
 
@@ -593,7 +593,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         wheel = wheel.close()
 
         #rotate so a tooth is at 0deg on the edge of the entry pallet (makes animations of the escapement easier)
-        wheel = wheel.rotate((0,0,0),(0,0,1),radToDeg(-toothTipAngle-toothTipArcAngle))
+        wheel = wheel.rotate((0,0,0), (0,0,1), rad_to_deg(-toothTipAngle - toothTipArcAngle))
 
         return wheel
     def get_wheel_max_r(self):
@@ -866,14 +866,14 @@ class GrasshopperEscapement:
         self.teeth=teeth
         self.tooth_span=tooth_span
         #I don't think there's actually anything to be gained from modifying this
-        self.an=degToRad(90)
+        self.an=deg_to_rad(90)
         self.T=T
         self.mean_torque_arm_length=mean_torque_arm_length
         if self.mean_torque_arm_length < 0:
             #harrison's stipulation, "The mean  torque  arm  should be  one hundredth  of  the pendulum length"
             self.mean_torque_arm_length = self.pendulum_length/100
         # self.escaping_arc_deg=escaping_arc_deg
-        self.escaping_arc = degToRad(escaping_arc_deg)
+        self.escaping_arc = deg_to_rad(escaping_arc_deg)
 
         self.diagrams = []
         self.geometry = {}
@@ -886,7 +886,7 @@ class GrasshopperEscapement:
         self.composer_min_distance = composer_min_distance
         self.frame_screw_fixing_min_thick = frame_screw_fixing_min_thick
         #angle from the arm to the nib, from the arm pivot, so the arm stays out the way of the wheel
-        self.nib_offset_angle = degToRad(8)
+        self.nib_offset_angle = deg_to_rad(8)
         self.pallet_arm_wide=3
         self.screws = screws
         if self.screws is None:
@@ -941,7 +941,7 @@ class GrasshopperEscapement:
                 ax_deg, d, En, Ex = self.chooseEscapingArc(acceptableError=acceptableError)
             elif d < 0 :
                 d, En, Ex = self.balanceEscapingArcs(ax_deg, acceptableError)
-            print("Balanced escaping arc of {:.4f}deg with d of {:.8f} and ax of {:.8f}".format(radToDeg(En), d, ax_deg))
+            print("Balanced escaping arc of {:.4f}deg with d of {:.8f} and ax of {:.8f}".format(rad_to_deg(En), d, ax_deg))
             if diameter < 0:
                 diameter, M = self.chooseDiameter(d_deg=d, ax_deg=ax_deg)
                 print("Diameter of {:.8f} results in mean torque arm of {:.4f}".format(diameter, M))
@@ -1064,7 +1064,7 @@ class GrasshopperEscapement:
 
         radius = diameter/2
         #default to 90, can adjust to control the arc
-        ax = degToRad(ax_deg)
+        ax = deg_to_rad(ax_deg)
 
         #these can apparently be arbitrary as the result comes out the same
         active_length_entry_pallet_arm = 10
@@ -1125,7 +1125,7 @@ class GrasshopperEscapement:
 
         #[10]
         #arbitary to start with
-        d = degToRad(d_deg)
+        d = deg_to_rad(d_deg)
         #I think this will be the centre of the torque arms?
         line_10 = Line([0,0],d)
 
@@ -1457,7 +1457,7 @@ class GrasshopperEscapement:
         line_OD = Line(geometry["O"], anotherPoint=geometry["D"])
         COD = line_CO.get_angle_between_lines(line_OD)
         if loud:
-            print("COD: {}deg, half tooth angle:{}deg".format(radToDeg(COD), radToDeg(half_tooth_angle)))
+            print("COD: {}deg, half tooth angle:{}deg".format(rad_to_deg(COD), rad_to_deg(half_tooth_angle)))
         if not self.skip_failed_checks:
             assert abs(COD - half_tooth_angle) < acceptableError, "check 1: Angle COD should be the angle subtended by half an escape wheel tooth space"
 
@@ -1467,7 +1467,7 @@ class GrasshopperEscapement:
         line_OK = Line(geometry["O"], anotherPoint=geometry["K"])
         DOK = line_DO.get_angle_between_lines(line_OK)
         if loud:
-            print("DOK: {}deg, minimum_tooth_spaces: {}deg".format(radToDeg(DOK), radToDeg(minimum_tooth_spaces)))
+            print("DOK: {}deg, minimum_tooth_spaces: {}deg".format(rad_to_deg(DOK), rad_to_deg(minimum_tooth_spaces)))
         if not self.skip_failed_checks:
             assert abs(DOK - minimum_tooth_spaces) < acceptableError, "check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned."
 
@@ -1476,14 +1476,14 @@ class GrasshopperEscapement:
         line_OJ = Line(geometry["O"], anotherPoint=geometry["J"])
         COJ = line_CO.get_angle_between_lines(line_OJ)
         if loud:
-            print("COJ: {}deg, maximum_tooth_spaces: {}deg".format(radToDeg(COJ), radToDeg(maximum_tooth_spaces)))
+            print("COJ: {}deg, maximum_tooth_spaces: {}deg".format(rad_to_deg(COJ), rad_to_deg(maximum_tooth_spaces)))
         if not self.skip_failed_checks:
             assert abs(COJ - maximum_tooth_spaces) < acceptableError, "check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned."
 
         #check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space
         JOK = line_OJ.get_angle_between_lines(line_OK)
         if loud:
-            print("JOK: {}deg, half tooth: {}deg".format(radToDeg(JOK), radToDeg(half_tooth_angle)))
+            print("JOK: {}deg, half tooth: {}deg".format(rad_to_deg(JOK), rad_to_deg(half_tooth_angle)))
         if not self.skip_failed_checks:
             assert abs(JOK - half_tooth_angle) < acceptableError, "check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space"
 
@@ -1523,7 +1523,7 @@ class GrasshopperEscapement:
         line_PJ = Line(geometry["P"], anotherPoint=geometry["J"])
         PJO = line_PJ.get_angle_between_lines(line_OJ)
         if loud:
-            print("PJO: {}deg an: {}deg".format(radToDeg(PJO), radToDeg(self.an)))
+            print("PJO: {}deg an: {}deg".format(rad_to_deg(PJO), rad_to_deg(self.an)))
         if not self.skip_failed_checks:
             assert abs(PJO - self.an) < acceptableError, " Angle PJO should match the designer-chosen STEP ONE entry angle (an)"
 
@@ -1535,9 +1535,9 @@ class GrasshopperEscapement:
         line_DF = Line(geometry["D"], anotherPoint=geometry["F"])
         HDO = line_DF.get_angle_between_lines(line_DO)
         if loud:
-            print("HDO/DFO: {}deg ax: {}deg".format(radToDeg(HDO), radToDeg(geometry["ax"])))
+            print("HDO/DFO: {}deg ax: {}deg".format(rad_to_deg(HDO), rad_to_deg(geometry["ax"])))
         if not self.skip_failed_checks:
-            assert abs(HDO - geometry["ax"]) < degToRad(2), "check 10: Angle HDO should almost match the designer-chosen STEP ONE initial exit angle ax"
+            assert abs(HDO - geometry["ax"]) < deg_to_rad(2), "check 10: Angle HDO should almost match the designer-chosen STEP ONE initial exit angle ax"
 
         '''
         check 11: Start of impulse lines of action JL and FH should be tangential to the smaller, green, start of impulse
@@ -1593,10 +1593,10 @@ class GrasshopperEscapement:
         FZG = line_FZ.get_angle_between_lines(line_ZG)
 
         if loud:
-            print("Escaping angles, NZP: {}deg, FZG:{}deg design:{}deg".format(radToDeg(NZP), radToDeg(FZG), radToDeg(self.escaping_arc)))
+            print("Escaping angles, NZP: {}deg, FZG:{}deg design:{}deg".format(rad_to_deg(NZP), rad_to_deg(FZG), rad_to_deg(self.escaping_arc)))
         if not self.skip_failed_checks:
             assert abs(FZG - NZP) < acceptableError, "Escaping angles aren't balanced"
-            assert abs(FZG - self.escaping_arc) < degToRad(0.1), "Escaping arc isn't close to designed escaping arc. FZG: {}, escaping arc:{}".format(FZG, self.escaping_arc)
+            assert abs(FZG - self.escaping_arc) < deg_to_rad(0.1), "Escaping arc isn't close to designed escaping arc. FZG: {}, escaping arc:{}".format(FZG, self.escaping_arc)
 
     def get_anchor(self):
         #comply with expected interface
@@ -1723,7 +1723,7 @@ class GrasshopperEscapement:
             frame = self.rotateToUpright(frame).translate((0,-np.linalg.norm(self.geometry["Z"]),0))
 
             #rotate so it's aligned with a vertical pendulum
-            frame = frame.rotate((0, 0, 0), (0, 0, 1), radToDeg(-self.escaping_arc / 2))
+            frame = frame.rotate((0, 0, 0), (0, 0, 1), rad_to_deg(-self.escaping_arc / 2))
             #
             # if self.xmas:
             #     #this is a massive bodge doing it here, if I'm giong to make a habit of themed clocks I should create a more generic way of customising parts
@@ -1763,7 +1763,7 @@ class GrasshopperEscapement:
         '''
         # rotate so that Z is at the top
         line_OZ = Line(self.geometry["O"], anotherPoint=self.geometry["Z"])
-        part = part.rotate((0, 0, 0), (0, 0, 1), radToDeg((math.pi / 2 - line_OZ.get_angle())))
+        part = part.rotate((0, 0, 0), (0, 0, 1), rad_to_deg((math.pi / 2 - line_OZ.get_angle())))
 
         return part
 
@@ -1852,7 +1852,7 @@ class GrasshopperEscapement:
 
         if not for_printing:
             #rotate and translate into place
-            composer = composer.rotate((0,0,0), (0,0,1), radToDeg(line_along_arm.get_angle()) - 180)
+            composer = composer.rotate((0,0,0), (0,0,1), rad_to_deg(line_along_arm.get_angle()) - 180)
             composer = composer.translate(pivot_pos)
         else:
             #put flat on its back
@@ -2052,7 +2052,7 @@ class GrasshopperEscapement:
             # if not centre_on_anchor:
             # return anchor_part
             centre = self.geometry["Z"]
-            anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), radToDeg(-self.escaping_arc / 2))
+            anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), rad_to_deg(-self.escaping_arc / 2))
             return anchor_part
 
         if not leave_out_wheel_and_frame:
@@ -2394,7 +2394,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
 
     palletAngleFromWheel_deg = (toothAngle_deg / 2 - escapement.drop_deg)
 
-    wheelAngle_toothAtEndOfExitPallet_deg = radToDeg(math.pi / 2 + escapement.anchor_angle / 2) - palletAngleFromWheel_deg / 2
+    wheelAngle_toothAtEndOfExitPallet_deg = rad_to_deg(math.pi / 2 + escapement.anchor_angle / 2) - palletAngleFromWheel_deg / 2
     #increment (-ve for clockwise) by drop
     wheelAngle_toothAtStartOfEntryPallet_deg = wheelAngle_toothAtEndOfExitPallet_deg - escapement.drop_deg#(toothAngle_deg - escapement.drop_deg)
     wheelAngle_toothAtEndOfEntryPallet_deg = wheelAngle_toothAtStartOfEntryPallet_deg - palletAngleFromWheel_deg
@@ -2410,7 +2410,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
     #pendulum swings by simple harmonic motion, a sine wave, so the entire animations spans 2pi
     circlePerFrame = math.pi*2/frames
 
-    swingAmplitude_rad = (escapement.lift + escapement.lock + degToRad(overswing_deg)) / 2
+    swingAmplitude_rad = (escapement.lift + escapement.lock + deg_to_rad(overswing_deg)) / 2
 
     #when not free running, this is the pallet/lock face we're against, when free running it's where we'll be in contact with NEXT
     toothContactWithEntry=False
@@ -2425,7 +2425,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
     # anchor_angle_rad_lastPos = degToRad(anchorAngle_toothAtEndOfExitPallet_deg)
 
     def getAnchorAngleForFrame_rad(frame):
-        return math.sin(circlePerFrame * frame + math.asin(degToRad(anchorAngle_endOfExitPallet_deg) / swingAmplitude_rad)) * swingAmplitude_rad
+        return math.sin(circlePerFrame * frame + math.asin(deg_to_rad(anchorAngle_endOfExitPallet_deg) / swingAmplitude_rad)) * swingAmplitude_rad
 
     for frame in range(frames):
 
@@ -2434,10 +2434,10 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
         #starting at the point where a tooth is leaving the exit pallet, when frame == 0 anchor angle == anchorAngle_toothAtEndOfExitPallet_deg
         anchor_angle_rad = getAnchorAngleForFrame_rad(frame)
 
-        print("anchor_angle",radToDeg(anchor_angle_rad))
+        print("anchor_angle", rad_to_deg(anchor_angle_rad))
         print("anchorAngle_toothAtEndOfExitPallet_deg", anchorAngle_endOfExitPallet_deg)
 
-        anchor_angle = radToDeg(anchor_angle_rad)
+        anchor_angle = rad_to_deg(anchor_angle_rad)
         #bodge
         if frame > 0:
             if wheelFreeRunning:
@@ -2478,7 +2478,7 @@ def animateEscapement(escapement, frames=100, path="out", name="escapement_anima
 
                     # wheel_angle_deg += -abs(radToDeg(getAnchorAngleForFrame_rad(frame) - getAnchorAngleForFrame_rad(frame -1)))
 
-                    wheel_angle_deg += -abs(radToDeg(getAnchorAngleForFrame_rad(frame +1) - getAnchorAngleForFrame_rad(frame)))
+                    wheel_angle_deg += -abs(rad_to_deg(getAnchorAngleForFrame_rad(frame + 1) - getAnchorAngleForFrame_rad(frame)))
 
                     if not toothContactWithEntry and anchor_angle > anchorAngle_endOfExitPallet_deg:
                         #tooth has left exit pallet
@@ -2689,7 +2689,7 @@ class RollingBallEscapement:
             b2f_straight_section_centre = average_of_two_points(back_pivot, front_pivot)
             b2f_straight_section_angle = math.atan2(b2f_diff[1], b2f_diff[0])+math.acos(2*x/b2f_distance)
 
-            track_cutter = track_cutter.union(cq.Workplane("XY").rect(track_wide, b2f_straight_section_length).extrude(track_thick).rotate((0,0,0), (0,0,1), radToDeg(b2f_straight_section_angle)).translate(b2f_straight_section_centre))
+            track_cutter = track_cutter.union(cq.Workplane("XY").rect(track_wide, b2f_straight_section_length).extrude(track_thick).rotate((0,0,0), (0,0,1), rad_to_deg(b2f_straight_section_angle)).translate(b2f_straight_section_centre))
 
             #from front to next back
             f2b_distance = np.linalg.norm(np.subtract(front_pivot, next_back_pivot))
@@ -2698,7 +2698,7 @@ class RollingBallEscapement:
             f2b_straight_section_centre = average_of_two_points(front_pivot, next_back_pivot)
             #-ve x this time (same as negative angle)
             f2b_straight_section_angle = math.atan2(f2b_diff[1], f2b_diff[0]) - math.acos(2 * x / f2b_distance)
-            track_cutter = track_cutter.union(cq.Workplane("XY").rect(track_wide, f2b_straight_section_length).extrude(track_thick).rotate((0, 0, 0), (0, 0, 1), radToDeg(f2b_straight_section_angle)).translate(f2b_straight_section_centre))
+            track_cutter = track_cutter.union(cq.Workplane("XY").rect(track_wide, f2b_straight_section_length).extrude(track_thick).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(f2b_straight_section_angle)).translate(f2b_straight_section_centre))
 
             front_right = np.add(front_pivot, polar(f2b_straight_section_angle, inner_radius))
             front_left = np.add(front_pivot, polar(b2f_straight_section_angle+math.pi, inner_radius))

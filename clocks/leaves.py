@@ -700,7 +700,7 @@ class Wreath:
             angle += math.pi*2 / len(self.leaves)
             leaf_angle = angle + random.uniform(-math.pi*0.05, math.pi*0.05)
             pos = polar(angle, self.diameter/2 + self.leaf_offset_from_centre)
-            wreath = wreath.add(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), radToDeg(-math.pi/2 + leaf_angle)).translate((pos[0], pos[1])))
+            wreath = wreath.add(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(-math.pi / 2 + leaf_angle)).translate((pos[0], pos[1])))
 
         return wreath
 
@@ -819,7 +819,7 @@ class MistletoeLeafPair:
     def gen_leaves(self):
         leaves = cq.Workplane("XY")
         for i, leaf in enumerate(self.leaves):
-            leaves = leaves.union(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), radToDeg(self.leaf_angles[i])).translate((0,self.branch_length)))
+            leaves = leaves.union(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(self.leaf_angles[i])).translate((0, self.branch_length)))
             # return leaf.get_2d().extrude(self.thick)
 
         return leaves

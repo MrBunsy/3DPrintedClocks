@@ -788,7 +788,7 @@ class SpringArbour:
         if self.diameter < self.bearingBitR*2:
             #need to taper up to the bearing, as it's bigger!
             r = self.bearing.inner_safe_d / 2 - self.diameter / 2
-            angle=degToRad(30)
+            angle=deg_to_rad(30)
             self.beforeBearingTaperHeight = r * math.sqrt(1/math.sin(angle) - 1)
 
         self.ratchet = None
@@ -817,7 +817,7 @@ class SpringArbour:
         #angle relative to completely flat
         hook_angle = 10
         #crudely create a large triangle that will chop away everything not needed
-        point = polar(degToRad(hook_angle),hook_r*200)
+        point = polar(deg_to_rad(hook_angle), hook_r * 200)
 
         #cutting it flat
         # spring_hook = spring_hook.cut(cq.Workplane("XY").moveTo(0,self.hook_deep).rect(self.hook_deep*2,self.hook_deep*2).extrude(self.spring.hook_height))
@@ -908,17 +908,17 @@ class SpringBarrel:
         self.key_bearing = key_bearing
 
         if self.key_bearing is None:
-            self.key_bearing = BEARING_12MM
+            self.key_bearing = BEARING_12x21x5
 
         self.lid_bearing = lid_bearing
 
         if self.lid_bearing is None:
-            self.lid_bearing = BEARING_12MM_FLANGED
+            self.lid_bearing = BEARING_12x18x4_FLANGED
 
         self.barrel_bearing = barrel_bearing
 
         if self.barrel_bearing is None:
-            self.barrel_bearing = BEARING_12MM_THIN
+            self.barrel_bearing = BEARING_12x18x4_THIN
 
         self.barrel_height = self.spring.height + 2
 
@@ -1898,7 +1898,7 @@ class WindingKey:
 
         adapter = adapter.cut(cq.Workplane("XY").polygon(self.key_sides, self.key_containing_diameter + self.wiggle_room).extrude(self.key_hole_deep))
 
-        r = 11/(2*math.cos(degToRad(30)))
+        r = 11/(2 * math.cos(deg_to_rad(30)))
         adapter = adapter.faces(">Z").polygon(6,r*2).extrude(20)
 
         return adapter
@@ -2531,8 +2531,8 @@ class PocketChainWheel2:
         pocket_angle = math.acos(1 - (pocket_length**2)/(2*self.radius**2))
 
 
-        end_cylinder = cq.Workplane("XY").circle(self.pocket_wide/2).extrude(self.radius*2).translate((-self.pocket_wide/2,0,0)).rotate((0,0,0), (1,0,0),-90).rotate((0,0,0),(0,0,1), radToDeg(-pocket_angle/2))
-        start_cylinder = cq.Workplane("XY").circle(self.pocket_wide/2).extrude(self.radius*2).translate((self.pocket_wide/2,0,0)).rotate((0,0,0), (1,0,0),-90).rotate((0,0,0),(0,0,1), radToDeg(pocket_angle/2))
+        end_cylinder = cq.Workplane("XY").circle(self.pocket_wide/2).extrude(self.radius*2).translate((-self.pocket_wide/2,0,0)).rotate((0,0,0), (1,0,0),-90).rotate((0,0,0), (0,0,1), rad_to_deg(-pocket_angle / 2))
+        start_cylinder = cq.Workplane("XY").circle(self.pocket_wide/2).extrude(self.radius*2).translate((self.pocket_wide/2,0,0)).rotate((0,0,0), (1,0,0),-90).rotate((0,0,0), (0,0,1), rad_to_deg(pocket_angle / 2))
 
         cutter = end_cylinder.union(start_cylinder)
 
@@ -2579,7 +2579,7 @@ class PocketChainWheel2:
 
         for p in range(self.pockets):
             angle = p*math.pi*2/self.pockets
-            wheel = wheel.cut(self.get_pocket_cutter().rotate((0,0,0), (0,0,1), radToDeg(angle)))
+            wheel = wheel.cut(self.get_pocket_cutter().rotate((0,0,0), (0,0,1), rad_to_deg(angle)))
 
         wheel = wheel.faces(">Z").workplane().circle(self.hole_d/2).cutThruAll()
 
@@ -3077,7 +3077,7 @@ class Ratchet:
         self.anticlockwise = -1 if blocks_clockwise else 1
 
         self.toothLength = max(self.outsideDiameter*0.025, 1)
-        self.toothAngle = degToRad(2)* self.anticlockwise
+        self.toothAngle = deg_to_rad(2) * self.anticlockwise
 
         self.toothRadius = self.outsideDiameter / 2 - self.outer_thick
         self.toothTipR = self.toothRadius - self.toothLength
@@ -3269,7 +3269,7 @@ class TraditionalRatchet:
             raise ValueError("Pawl is unsafe!")
 
         #pawl and gear and built in a position I could visualise, then rotated into requested position. the click is always built in the requested position
-        self.rotate_by_deg = radToDeg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
+        self.rotate_by_deg = rad_to_deg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
         # inside the little arm of the pawl
         self.click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 0.5)))
@@ -3295,7 +3295,7 @@ class TraditionalRatchet:
         return self.blocks_clockwise
 
     def get_pawl_screw_position(self):
-        return rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
+        return rotate_vector(self.pawl_fixing, (0,0,1), deg_to_rad(self.rotate_by_deg))
 
     def get_screw_positions(self):
         return [self.get_pawl_screw_position()] + self.click_fixings
@@ -3394,7 +3394,7 @@ class TraditionalRatchet:
     def get_little_plate_for_pawl_screw_positions(self):
 
 
-        pawl_position = rotate_vector(self.pawl_fixing, (0,0,1), degToRad(self.rotate_by_deg))
+        pawl_position = rotate_vector(self.pawl_fixing, (0,0,1), deg_to_rad(self.rotate_by_deg))
         pawl_distance = np.linalg.norm(pawl_position)
 
         distance_1 = pawl_distance + self.pawl_diameter*1.25 + self.fixing_screws.metric_thread
@@ -3439,9 +3439,9 @@ class TraditionalRatchet:
 
         click_end_pos = self.click_end_pos
 
-        click_end_pos = rotate_vector(click_end_pos, (0,0,1), degToRad(self.rotate_by_deg))
+        click_end_pos = rotate_vector(click_end_pos, (0,0,1), deg_to_rad(self.rotate_by_deg))
 
-        click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.fixing_screws.metric_thread*3, self.click_fixings_distance + self.fixing_screws.metric_thread*3).extrude(self.thick).rotate((0,0,0),(0,0,1), radToDeg(self.click_fixing_angle))
+        click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.fixing_screws.metric_thread*3, self.click_fixings_distance + self.fixing_screws.metric_thread*3).extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(self.click_fixing_angle))
 
         click_fixing = click_fixing.edges("|Z").fillet(2)
 

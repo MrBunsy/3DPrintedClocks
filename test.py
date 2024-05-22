@@ -2,6 +2,7 @@ from clocks import *
 
 from clocks.cq_gears import BevelGear, BevelGearPair, CrownGearPair
 
+
 outputSTL = False
 
 if 'show_object' not in globals():
@@ -790,7 +791,7 @@ if test_ratchet:
     show_object(ratchet.get_gear())
     show_object(ratchet.get_pawl())
     show_object(ratchet.get_click())
-    show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), degToRad(ratchet.rotate_by_deg))))
+    show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), deg_to_rad(ratchet.rotate_by_deg))))
     show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
@@ -916,7 +917,13 @@ if test_ratchet:
 # show_object(numerals.get_number("XVIII"))
 # show_object(numerals.get_X())
 
-show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
+# show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
+
+# show_object(BEARING_3x10x4.get_cutter(with_bridging=True))
+# show_object(BEARING_3x10x4.get_cutter(with_bridging=False))
+
+fan = CentrifugalFan()
+show_object(fan.get_assembled())
 
 # spring_barrel = SpringBarrel(spring=MAINSPRING_102525, key_bearing=BEARING_8x16x5, lid_bearing=BEARING_8x16x5, barrel_bearing=BEARING_8x16x5,
 #                              spring_hook_screws=MachineScrew(2,countersunk=True, length=12))

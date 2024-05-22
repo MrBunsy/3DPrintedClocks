@@ -354,7 +354,7 @@ class MachineScrew:
                 if not with_bridging:
                     screw = screw.circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
                 else:
-                    screw = screw.add(get_hole_with_hole(innerD=r * 2, outerD=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layerThick=layer_thick))
+                    screw = screw.add(get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layer_thick=layer_thick))
                 screw = screw.faces(">Z").workplane().circle(r).extrude(length)
             else:
                 screw = cq.Workplane("XY").circle(r).extrude(length)
@@ -382,7 +382,7 @@ class MachineScrew:
             height = nutHeight
         nutD = self.get_nut_containing_diameter() + wiggle
         if with_bridging:
-            nut = get_hole_with_hole(innerD=inner_r*2, outerD=nutD, deep=height, sides=6, layerThick=layer_thick)
+            nut = get_hole_with_hole(inner_d=inner_r * 2, outer_d=nutD, deep=height, sides=6, layer_thick=layer_thick)
         else:
             nut = cq.Workplane("XY").polygon(nSides=6, diameter=nutD).extrude(height)
         if with_screw_length > 0:
@@ -888,11 +888,11 @@ class Line:
         return (Px, Py)
 
 
-def degToRad(deg):
+def deg_to_rad(deg):
     return math.pi * deg / 180
 
 
-def radToDeg(rad):
+def rad_to_deg(rad):
     return rad * 180 / math.pi
 
 
@@ -900,13 +900,13 @@ def polar(angle, radius=1):
     return (math.cos(angle) * radius, math.sin(angle) * radius)
 
 
-def toPolar(x, y):
+def to_polar(x, y):
     r = math.sqrt(x * x + y * y)
     angle = math.atan2(y, x)
     return (angle, r)
 
 
-def get_hole_with_hole(innerD, outerD, deep, sides=1, layerThick=LAYER_THICK):
+def get_hole_with_hole(inner_d, outer_d, deep, sides=1, layer_thick=LAYER_THICK):
     '''
     Generate the shape of a hole ( to be used to cut out of another shape)
     that can be printed with bridging
@@ -925,31 +925,31 @@ def get_hole_with_hole(innerD, outerD, deep, sides=1, layerThick=LAYER_THICK):
         raise ValueError("Impossible polygon, can't have {} sides".format(sides))
 
     layers = 2
-    square_r = (innerD/2)/math.cos(math.pi/4)
-    if square_r > outerD/2:
+    square_r = (inner_d / 2) / math.cos(math.pi / 4)
+    if square_r > outer_d/2:
         #can do this in one layer
         layers = 1
     hole = cq.Workplane("XY")
     if sides == 1:
-        hole = hole.circle(outerD / 2)
+        hole = hole.circle(outer_d / 2)
     else:
-        hole = hole.polygon(sides, outerD)
-    hole = hole.extrude(deep + layerThick * layers)
+        hole = hole.polygon(sides, outer_d)
+    hole = hole.extrude(deep + layer_thick * layers)
 
     # the shape we want the bridging to end up
 
 
     if layers == 1:
-        bridgeCutterCutter = cq.Workplane("XY").rect(innerD, innerD).extrude(layerThick)
+        bridgeCutterCutter = cq.Workplane("XY").rect(inner_d, inner_d).extrude(layer_thick)
     else:
-        bridgeCutterCutter = cq.Workplane("XY").rect(innerD, outerD).extrude(layerThick).faces(">Z").workplane().rect(innerD, innerD).extrude(layerThick)  #
+        bridgeCutterCutter = cq.Workplane("XY").rect(inner_d, outer_d).extrude(layer_thick).faces(">Z").workplane().rect(inner_d, inner_d).extrude(layer_thick)  #
     bridgeCutter = cq.Workplane("XY")
     if sides == 1:
-        bridgeCutter = bridgeCutter.circle(outerD / 2)
+        bridgeCutter = bridgeCutter.circle(outer_d / 2)
     else:
-        bridgeCutter = bridgeCutter.polygon(sides, outerD)
+        bridgeCutter = bridgeCutter.polygon(sides, outer_d)
 
-    bridgeCutter = bridgeCutter.extrude(layerThick * layers).cut(bridgeCutterCutter).translate((0, 0, deep))
+    bridgeCutter = bridgeCutter.extrude(layer_thick * layers).cut(bridgeCutterCutter).translate((0, 0, deep))
 
     hole = hole.cut(bridgeCutter)
 
@@ -1065,10 +1065,11 @@ class BearingInfo:
     '''
 
     def __init__(self, outer_d=10, height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d=-1, inner_safe_d_at_a_push=-1,
-                 flange_thick=0, flange_diameter=0):
+                 flange_thick=0, flange_diameter=0, cutter_wiggle_room=0.1):
         self.outer_d = outer_d
         self.height = height
         self.inner_d = inner_d
+        self.cutter_wiggle_room = cutter_wiggle_room
         # how large can something that comes into contact with the bearing (from the rod) be
         self.inner_safe_d = inner_safe_d
         # for times when I really need to push the limits rather than play it safe
@@ -1083,14 +1084,30 @@ class BearingInfo:
         self.flange_thick = flange_thick
         self.flange_diameter = flange_diameter
 
-    def get_cutter(self):
+    def get_cutter(self, with_bridging=False, layer_thick = LAYER_THICK, rod_long=20):
         '''
         flange side down
         '''
-        if self.flange_diameter > 0:
-            return cq.Workplane("XY").circle(self.flange_diameter / 2).extrude(self.flange_thick).faces(">Z").workplane().circle(self.outer_d / 2).extrude(self.height - self.flange_thick)
 
-        return cq.Workplane("XY").circle(self.outer_d / 2).extrude(self.height)
+        outer_d = self.outer_d + self.cutter_wiggle_room
+        inner_d = self.outer_safe_d
+
+        if self.flange_diameter > 0:
+            flange_outer_d = self.flange_diameter + self.cutter_wiggle_room
+            if with_bridging:
+                cutter = get_hole_with_hole(inner_d=outer_d, outer_d=flange_outer_d, deep=self.flange_thick, layer_thick=layer_thick)
+                cutter = cutter.union(get_hole_with_hole(inner_d=inner_d, outer_d=outer_d, deep=self.height - self.flange_thick, layer_thick=layer_thick).translate((0,0,self.flange_thick)))
+            else:
+                cutter = cq.Workplane("XY").circle(flange_outer_d/2).extrude(self.flange_thick).faces(">Z").workplane().circle(self.outer_d / 2).extrude(self.height - self.flange_thick)
+        else:
+            if with_bridging:
+                cutter = get_hole_with_hole(inner_d=inner_d, outer_d=outer_d, deep=self.height, layer_thick=layer_thick)
+            else:
+                cutter = cq.Workplane("XY").circle(outer_d / 2).extrude(self.height)
+
+        if rod_long > 0:
+            cutter = cutter.union(cq.Workplane("XY").circle(inner_d/2).extrude(rod_long*2).translate((0,0,-rod_long/2)))
+        return cutter
 
     def get_string(self):
         flange_string = ""
@@ -1101,49 +1118,52 @@ class BearingInfo:
     def __str__(self):
         return self.get_string()
 
-#TODO have outer_d has exact and add the extra via another means
-BEARING_12MM_FLANGED = BearingInfo(outer_d=18.1, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
-BEARING_12MM_THIN = BearingInfo(outer_d=18.1, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
-BEARING_12MM = BearingInfo(outer_d=21.1, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
-BEARING_SMALL_M3 = BearingInfo(outer_d=8.1, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
-BEARING_2MM = BearingInfo(outer_d=6.2, inner_d=2, height=3, inner_safe_d=2.9, outer_safe_d=3.8)
+BEARING_12x18x4_FLANGED = BearingInfo(outer_d=18, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
+BEARING_12x18x4_THIN = BearingInfo(outer_d=18, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
+BEARING_12x21x5 = BearingInfo(outer_d=21, height=5, inner_d=12, outer_safe_d=16.5, inner_safe_d=14)
+BEARING_3x8x4 = BearingInfo(outer_d=8, inner_d=3, height=4, inner_safe_d=4, outer_safe_d=6)
+#can't remember why I gave this one more space
+BEARING_2x6x3 = BearingInfo(outer_d=6, inner_d=2, height=3, inner_safe_d=2.9, outer_safe_d=3.8, cutter_wiggle_room=0.2)
 
-#guesses on safe ds
+#guess on safe d
 BEARING_8x16x5 = BearingInfo(outer_d = 16, inner_d=8, height=5, outer_safe_d=13, inner_safe_d=10)
+#guess on safe d
 BEARING_7x14x5 = BearingInfo(outer_d = 14, inner_d=7, height=5, outer_safe_d=11, inner_safe_d=9)
+
+BEARING_3x10x4 = BearingInfo(outer_d=10, outer_safe_d=10 - 3, height=4, inner_d=3, inner_safe_d=4.25, inner_safe_d_at_a_push=5.2)
 def get_bearing_info(innerD):
     '''
-    Get some stock bearings
+    Get some stock bearings, although now I have a much larger selection and more use cases, consider phasing this out
     '''
     if innerD == 2:
         #2x6x3
-        return BEARING_2MM
+        return BEARING_2x6x3
     if innerD == 3:
         # 3x10x4
         # most arbors
-        return BearingInfo(outer_d=10.1, outer_safe_d=10 - 3, height=4, inner_d=3, inner_safe_d=4.25, inner_safe_d_at_a_push=5.2)
+        return BEARING_3x10x4
     if innerD == 4:
         # 4x13x5
         # used for power arbor on eight day clocks
         # was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
-        return BearingInfo(outer_d=13.1, outer_safe_d=13 - 4, height=5, inner_d=innerD, inner_safe_d=5.4)
+        return BearingInfo(outer_d=13, outer_safe_d=13 - 4, height=5, inner_d=innerD, inner_safe_d=5.4)
     if innerD == 6:
         # these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
-        return BearingInfo(outer_d=19.2, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8)
+        return BearingInfo(outer_d=19, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8, cutter_wiggle_room=0.2)
     if innerD == 12:
         # 12x21x5
-        return BEARING_12MM
-    if innerD == 10:
-        # not used much since direct-arbor with small bearings (this had too much friction)
-        # 19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
-        return BearingInfo(outer_d=19.2, outer_safe_d=19.4, height=5, inner_d=innerD, inner_safe_d=12.5)
+        return BEARING_12x21x5
+    # if innerD == 10:
+    #     # not used much since direct-arbor with small bearings (this had too much friction)
+    #     # 19.2 works well for plastic and metal bearings - I think I should actually make the 3 and 4mm bearing holders bigger too
+    #     return BearingInfo(outer_d=19.2, outer_safe_d=19.4, height=5, inner_d=innerD, inner_safe_d=12.5)
     if innerD == 15:
         # 15x24x5
         # (used for the winding key)
         # nominally 24mm OD, but we can't squash it in like the metal bearings. 24.2 seems a tight fit without squashing (and presumably increasing friction?)
         # printed in light grey 24.2 was a tiny bit too loose! not sure why the dark and light grey are so different, both fibreology easy-PETG
         # with 24.15 light grey again latest print fell out again, wondering if tolerences are better since the new nozzle?
-        return BearingInfo(outer_d=24.1, outer_safe_d=24 - 5, height=5, inner_d=innerD, inner_safe_d=17.5)
+        return BearingInfo(outer_d=24, outer_safe_d=24 - 5, height=5, inner_d=innerD, inner_safe_d=17.5)
     raise ValueError("Bearing not found")
     return None
 
@@ -1278,7 +1298,7 @@ class TextSpace:
         if self.inverted:
             shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.thick))
 
-        shape = shape.rotate((0, 0, 0), (0, 0, 1), radToDeg(self.angle_rad))
+        shape = shape.rotate((0, 0, 0), (0, 0, 1), rad_to_deg(self.angle_rad))
 
         shape = shape.translate((self.x, self.y))
 

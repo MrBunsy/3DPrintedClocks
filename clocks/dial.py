@@ -97,12 +97,12 @@ class MoonPhaseComplication3D:
         #angle the rod off directly upright? can be useful for fitting moon inside a dial
         #this is the angle from the motion works to the bevel gear (but note that if on_left is false, this is flipped sides)
         self.bevel_angle_from_hands_deg = bevel_angle_from_hands_deg
-        self.bevel_angle_from_hands = degToRad(bevel_angle_from_hands_deg)
+        self.bevel_angle_from_hands = deg_to_rad(bevel_angle_from_hands_deg)
         #if bevel_angle_from_hands_deg is not 90, use to calculate position of the bevel gear. in mm
         self.moon_from_hands = moon_from_hands
 
         self.moon_radius = moon_radius
-        self.first_gear_angle = degToRad(first_gear_angle_deg)
+        self.first_gear_angle = deg_to_rad(first_gear_angle_deg)
 
         '''
         TODO - each one will need carefully controlled thickness
@@ -383,7 +383,7 @@ class MoonPhaseComplication3D:
         # if not self.on_left:
         #     bevel_relative_pos = (-bevel_relative_pos[0], bevel_relative_pos[1])
         bevel_pos = np_to_set(np.add(positions[2][:2], bevel_relative_pos))
-        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).rotate((0,0,0), (0,0,1), radToDeg(bevel_angle + math.pi/2)).translate(
+        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).rotate((0,0,0), (0,0,1), rad_to_deg(bevel_angle + math.pi / 2)).translate(
             (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
         ))
         # model = model.add(cq.Workplane("XY").circle(1).extrude(40).translate(
@@ -523,8 +523,8 @@ class RomanNumerals:
         angle_thick_line = thick_line.get_angle()
         angle_thin_line = thin_line.get_angle()
 
-        x = cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(self.height_extra, self.width_line_thick).extrude(self.thick).rotate(centre, (centre[0], centre[1], 1), radToDeg(angle_thick_line))
-        x = x.union(cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(self.height_extra, self.width_line_thin).extrude(self.thick).rotate(centre, (centre[0], centre[1], 1), radToDeg(angle_thin_line)))
+        x = cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(self.height_extra, self.width_line_thick).extrude(self.thick).rotate(centre, (centre[0], centre[1], 1), rad_to_deg(angle_thick_line))
+        x = x.union(cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(self.height_extra, self.width_line_thin).extrude(self.thick).rotate(centre, (centre[0], centre[1], 1), rad_to_deg(angle_thin_line)))
 
         x = x.intersect(self.get_inclusion_ring())
 
@@ -564,7 +564,7 @@ class RomanNumerals:
 
         current_angle = total_angle/2 - angles[0]/2
         for i, char in enumerate(number_string):
-            number_shape = number_shape.union(self.get_character(char).rotate((0,0,0), (0,0,1), radToDeg(current_angle)))
+            number_shape = number_shape.union(self.get_character(char).rotate((0,0,0), (0,0,1), rad_to_deg(current_angle)))
             current_angle -= angles[i]/2
             if i < len(number_string)-1:
                 current_angle -= angles[i+1]/2
@@ -864,7 +864,7 @@ class Dial:
             this_line_width = line_width*2 if big else line_width
             angle = math.pi / 2 - i * dA
 
-            detail = detail.union(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(self.detail_thick).translate((0, (outer_circle_r + inner_circle_r) / 2)).rotate((0, 0, 0), (0, 0, 1), radToDeg(angle)))
+            detail = detail.union(cq.Workplane("XY").rect(this_line_width,outer_circle_r - inner_circle_r).extrude(self.detail_thick).translate((0, (outer_circle_r + inner_circle_r) / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle)))
 
         return detail
 
@@ -904,7 +904,7 @@ class Dial:
             else:
                 numeral_shape = number_spaces[i].get_text_shape()
 
-            detail = detail.add(numeral_shape.rotate((0, 0, 0), (0, 0, 1), radToDeg(angle - math.pi / 2)).translate(pos))
+            detail = detail.add(numeral_shape.rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle - math.pi / 2)).translate(pos))
         if with_lines:
             # detail = detail.add(self.get_lines_detail(outer_r, dial_width=from_edge, from_edge=0))
             detail = detail.add(self.get_concentric_circles_detail(outer_r, dial_width=outer_ring_width, from_edge=0, thick_fives=False))
@@ -963,7 +963,7 @@ class Dial:
 
             line = cq.Workplane("XY").moveTo(centre_r, 0).rect(line_length,line_thick).extrude(self.detail_thick)
 
-            detail = detail.add(line.rotate((0,0,0),(0,0,1),radToDeg(angle)))
+            detail = detail.add(line.rotate((0,0,0), (0,0,1), rad_to_deg(angle)))
 
         return detail
 

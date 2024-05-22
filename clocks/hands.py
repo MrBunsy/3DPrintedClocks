@@ -135,7 +135,7 @@ class FancyWatchHands(HandGenerator):
 
             centre = polar(angle, circle_r/2)
             three_prongs = three_prongs.union(cq.Workplane("XY").rect(prong_thick, circle_r).extrude(self.detail_thick)
-                                              .rotate((0,0,0),(0,0,1),radToDeg(angle + math.pi/2)).translate(centre))
+                                              .rotate((0,0,0), (0,0,1), rad_to_deg(angle + math.pi / 2)).translate(centre))
 
         three_prongs = three_prongs.union(cq.Workplane("XY").circle(circle_r).circle(circle_r - self.outline).extrude(self.detail_thick))
 

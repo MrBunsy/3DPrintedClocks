@@ -243,7 +243,7 @@ class Gear:
             # return square
             arm = arm.cut(square)
             # return arm
-            arm = arm.translate((0,innerRadius + gap_size/2 )).rotate((0,0,0), (0,0,1), radToDeg(angle))
+            arm = arm.translate((0,innerRadius + gap_size/2 )).rotate((0,0,0), (0,0,1), rad_to_deg(angle))
             # return arm
             cutter = cutter.cut(arm)
             # cutter = cutter.add(arm)
@@ -312,7 +312,7 @@ class Gear:
                 thisBranchAbsAngle=armAngle + i * branchAngle
                 branchEnd = np.add(branchStart, polar(thisBranchAbsAngle, branchLength))
                 branchCentre = average_of_two_points(branchStart, branchEnd)
-                branchShape = cq.Workplane("XY").rect(branchLength, branchThick).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), radToDeg(thisBranchAbsAngle)).translate(branchCentre)
+                branchShape = cq.Workplane("XY").rect(branchLength, branchThick).extrude(cutterThick).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(thisBranchAbsAngle)).translate(branchCentre)
                 shape = shape.add(branchShape)
                 if depth < branchDepth-1:
                     #find angle from centre
@@ -484,7 +484,7 @@ class Gear:
         angle_per_flower = math.pi*2/petals
         angle_over_arm = armWidth/innerRadius
         angle_for_sagitta = angle_per_flower*2 - angle_over_arm
-        angle_for_sagitta_deg = radToDeg(angle_for_sagitta)
+        angle_for_sagitta_deg = rad_to_deg(angle_for_sagitta)
         l_old = np.linalg.norm(np.subtract(polar(0, innerRadius), polar(angle_for_sagitta, innerRadius)))
         l = 2*innerRadius*math.sin(angle_for_sagitta/2)
         r = petal_inner_radius
@@ -675,7 +675,7 @@ class Gear:
         for arm in range(arms):
             angle = arm*dA
             #cut out arms
-            cutter = cutter.cut(cq.Workplane("XY").moveTo((outerRadius+innerRadius)/2,0).rect((outerRadius-innerRadius)*1.1,armThick).extrude(thick).rotate((0,0,1),(0,0,0),radToDeg(angle)))
+            cutter = cutter.cut(cq.Workplane("XY").moveTo((outerRadius+innerRadius)/2,0).rect((outerRadius-innerRadius)*1.1,armThick).extrude(thick).rotate((0,0,1), (0,0,0), rad_to_deg(angle)))
 
         gear = gear.cut(cutter)
 
@@ -871,7 +871,7 @@ class Gear:
                 elif cutmoons:
                     moon = Gear.crescent_moon_2D(big_circle_r,((circle)/big_circle_count))
                     if moon is not None:
-                        cutter = cutter.add(moon.extrude(cutter_thick).rotate((0,0,0),(0,0,1),radToDeg(angle-math.pi/2)).translate(pos))
+                        cutter = cutter.add(moon.extrude(cutter_thick).rotate((0,0,0), (0,0,1), rad_to_deg(angle - math.pi / 2)).translate(pos))
                 else:
                     cutter = cutter.add(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(big_circle_r).extrude(cutter_thick))
 
@@ -1621,7 +1621,7 @@ class ArborForPlate:
         previous_bearing_to_here = np_to_set(np.subtract(self.bearing_position, self.previous_bearing_position))
         anchor_angle = math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2
         #the Arbor will flip the anchor to the correct clockwiseness
-        anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), radToDeg(anchor_angle))
+        anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), rad_to_deg(anchor_angle))
         anchor_thick = self.arbor.escapement.get_anchor_thick()
         # flip over so the front is on the print bed
         anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, anchor_thick))
@@ -2975,12 +2975,12 @@ class MotionWorks:
             pinion = pinion.cut(cq.Workplane("XY").circle(self.bearing.outer_d / 2).extrude(self.bearing.height).translate((0, 0, self.get_cannon_pinion_total_height() - self.bearing.height)))
 
 
-            pinion = pinion.cut(get_hole_with_hole(innerD=self.hole_d, outerD=self.bearing.outer_d, deep=self.bearing.height + self.inset_at_base))
+            pinion = pinion.cut(get_hole_with_hole(inner_d=self.hole_d, outer_d=self.bearing.outer_d, deep=self.bearing.height + self.inset_at_base))
 
         elif self.inset_at_base > 0:
             # cut out space for the nuts/bearing to go further into the cannon pinion, so it can be closer to the front plate
             # pinion = pinion.cut(cq.Workplane("XY").circle(self.inset_at_base_r).extrude(self.inset_at_base))
-            pinion = pinion.cut(get_hole_with_hole(innerD=self.hole_d, outerD=self.inset_at_base_r * 2, deep=self.inset_at_base))
+            pinion = pinion.cut(get_hole_with_hole(inner_d=self.hole_d, outer_d=self.inset_at_base_r * 2, deep=self.inset_at_base))
 
         return pinion
 

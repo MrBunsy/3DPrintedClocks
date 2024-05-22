@@ -385,7 +385,7 @@ class SimpleClockPlates:
         self.endshake = endshake
 
         # override default position of the motion works (for example if it would be in the way of a keywind and it can't go above because there's a moon complication)
-        self.motion_works_angle = degToRad(motion_works_angle_deg)
+        self.motion_works_angle = deg_to_rad(motion_works_angle_deg)
 
         self.little_arm_to_motion_works = True
 
@@ -778,9 +778,9 @@ class SimpleClockPlates:
 
         self.texts = [
             self.name,
+            "{:.1f}cm".format(self.going_train.pendulum_length * 100),
             "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
             "Luke Wallin",
-            "{:.1f}cm".format(self.going_train.pendulum_length * 100)
         ]
 
     def get_moon_holder_info(self):
@@ -1182,7 +1182,7 @@ class SimpleClockPlates:
 
             foundSolution = False
             while (not foundSolution and arcAngleDeg > 180):
-                arcRadius = getRadiusForPointsOnAnArc(distances, degToRad(arcAngleDeg))
+                arcRadius = getRadiusForPointsOnAnArc(distances, deg_to_rad(arcAngleDeg))
 
                 # minDistance = max(distances)
 
@@ -1551,7 +1551,7 @@ class SimpleClockPlates:
 
             arm_start_bent = np_to_set(np.add(arm_start, polar(angles[2]+math.pi, brake_pad_offset)))
 
-            brake_pad = brake_pad.rotate((arm_centre[0], arm_centre[1], 0), (arm_centre[0], arm_centre[1], 1), radToDeg(bend_angle))
+            brake_pad = brake_pad.rotate((arm_centre[0], arm_centre[1], 0), (arm_centre[0], arm_centre[1], 1), rad_to_deg(bend_angle))
 
             arm = get_stroke_line([arm_start_bent, arm_finish], wide=arm_thick, thick=clip_thick)
             brake_pad = brake_pad.union(arm)
@@ -2552,7 +2552,7 @@ class SimpleClockPlates:
             #make the space open to the top of the pillar
             extra_space = extra_space.union(cq.Workplane("XY").rect(max_extra_space*2, 1000).extrude(self.chain_hole_d).translate((pulleyX, pulleyY + 500, pulleyZ - self.chain_hole_d / 2)))
             #and keep it printable
-            extra_space = extra_space.union(get_hole_with_hole(innerD=self.fixing_screws.metric_thread, outerD=max_extra_space * 2, deep=self.chain_hole_d, layerThick=self.layer_thick)
+            extra_space = extra_space.union(get_hole_with_hole(inner_d=self.fixing_screws.metric_thread, outer_d=max_extra_space * 2, deep=self.chain_hole_d, layer_thick=self.layer_thick)
                                             .rotate((0,0,0),(0,0,1),90).translate((pulleyX, pulleyY, pulleyZ - self.chain_hole_d / 2)))
 
             #I'm worried about the threads cutting the thinner cord, but there's not quite enough space to add a printed bit around the screw
@@ -2564,7 +2564,11 @@ class SimpleClockPlates:
             chainHoles.add(pulleyScrewHole)
         return chainHoles
 
-    def getBearingHolder(self, height, addSupport=True, bearingInfo=None):
+    def get_bearing_holder(self, height, addSupport=True, bearingInfo=None):
+        '''
+        cylinder with bearing holder on the end for putting on the front of a front plate
+        '''
+
         #height from base (outside) of plate, so this is inclusive of base thickness, not in addition to
         if bearingInfo is None:
             bearingInfo = get_bearing_info(self.arbor_d)
@@ -2587,63 +2591,21 @@ class SimpleClockPlates:
 
     def get_bearing_punch(self, plate_thick, bearing, bearing_on_top=True , with_support=False):
         '''
-        General purpose bearing punch
+        General purpose bearing punch, aligned for cutting into the plate
         '''
         if bearing.height >= plate_thick:
             raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
 
+        punch = bearing.get_cutter(layer_thick=self.layer_thick, with_bridging=with_support)
+
         if bearing_on_top:
-            if with_support:
-                punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
-                    plate_thick - bearing.height).rotate((0,0,0),(1,0,0),180).translate((0,0,plate_thick))
-            else:
-                punch = cq.Workplane("XY").circle(bearing.outer_safe_d / 2).extrude(plate_thick - bearing.height)
-                punch = punch.faces(">Z").workplane().circle(bearing.outer_d / 2).extrude(bearing.height)
-        else:
-            if with_support:
-                punch = get_hole_with_hole(bearing.outer_safe_d, bearing.outer_d, bearing.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(
-                    plate_thick - bearing.height)
-            else:
-                #no need for hole-in-hole!
-                punch = cq.Workplane("XY").circle(bearing.outer_d / 2).extrude(bearing.height).faces(">Z").workplane().circle(bearing.outer_safe_d / 2).extrude(plate_thick - bearing.height)
-
-        return punch
-
-
-
-    def getBearingPunchDeprecated(self, bearingOnTop=True, bearingInfo=None, back=True, standoff=False):
-        '''
-        A shape that can be cut out of a clock plate to hold a bearing
-        TODO use get_bearing_punch instead, the logic here is hard to follow as it's grown.
-        '''
-
-
-
-        if bearingInfo is None:
-            bearingInfo = get_bearing_info(self.arbor_d)
-
-        height = self.get_plate_thick(back)
-        if standoff:
-            height = self.rear_standoff_bearing_holder_thick#self.getPlateThick(standoff=True)
-
-        if bearingInfo.height >= height:
-            raise ValueError("{} plate not thick enough to hold bearing: {}".format("Back" if back else "Front",bearingInfo.get_string()))
-
-        if bearingOnTop:
-            punch = cq.Workplane("XY").circle(bearingInfo.outer_safe_d/2).extrude(height - bearingInfo.height)
-            punch = punch.faces(">Z").workplane().circle(bearingInfo.outer_d/2).extrude(bearingInfo.height)
-        else:
-            if not back and self.front_plate_has_flat_front():
-                #no need for hole-in-hole!
-                punch = cq.Workplane("XY").circle(bearingInfo.outer_d/2).extrude(bearingInfo.height).faces(">Z").workplane().circle(bearingInfo.outer_safe_d/2).extrude(height - bearingInfo.height)
-            else:
-                punch = get_hole_with_hole(bearingInfo.outer_safe_d, bearingInfo.outer_d, bearingInfo.height, layerThick=self.layer_thick).faces(">Z").workplane().circle(bearingInfo.outer_safe_d / 2).extrude(height - bearingInfo.height)
+            punch = punch.rotate((0,0,0),(1,0,0),180).translate((0,0,plate_thick))
 
         return punch
 
     def punch_bearing_holes(self, plate, back, make_plate_bigger=True):
         for i, pos in enumerate(self.bearing_positions):
-            bearing_info = self.arbors_for_plate[i].bearing#get_bearing_info(self.going_train.get_arbour_with_conventional_naming(i).get_rod_d())
+            bearing = self.arbors_for_plate[i].bearing
             bearing_on_top = back
 
             needs_plain_hole = False
@@ -2662,7 +2624,7 @@ class SimpleClockPlates:
                     needs_plain_hole = True
 
 
-            outer_d =  bearing_info.outer_d
+            outer_d =  bearing.outer_d
             if needs_plain_hole:
                 outer_d = self.direct_arbor_d + 3
 
@@ -2676,7 +2638,11 @@ class SimpleClockPlates:
             if needs_plain_hole:
                 plate = plate.cut(cq.Workplane("XY").circle(outer_d/2).extrude(self.get_plate_thick(back=back)).translate((pos[0], pos[1], 0)))
             else:
-                plate = plate.cut(self.getBearingPunchDeprecated(bearingOnTop=bearing_on_top, bearingInfo=bearing_info, back=back).translate((pos[0], pos[1], 0)))
+                bridging = False
+                if not back and not self.front_plate_has_flat_front():
+                    bridging = True
+                plate = plate.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(back=back),bearing=bearing, bearing_on_top=bearing_on_top, with_support=bridging)
+                                  .translate((pos[0], pos[1], 0)))
         return plate
 
     def cut_wall_fixing_hole(self, plate, screwhole_pos, screw_head_d = 9, screw_body_d = 6, slot_length = 7, back_thick = -1, add_extra_support=False, plate_thick=-1):
@@ -2838,7 +2804,7 @@ class SimpleClockPlates:
                 #can print front-side on the build plate, so the bearing holes are printed on top
                 cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outer_d / 2).extrude(powered_wheel.key_bearing.height)
             else:
-                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layerThick=self.layer_thick)
+                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layer_thick=self.layer_thick)
 
             cord_bearing_hole = cord_bearing_hole.faces(">Z").workplane().circle(self.key_hole_d / 2).extrude(plate_thick)
 
@@ -2931,7 +2897,7 @@ class SimpleClockPlates:
 
         if self.escapement_on_front and self.extra_support_for_escape_wheel:
             #this is a bearing extended out the front, helps maintain the geometry for a grasshopper on plates with a narrow plateDistance
-            plate = plate.add(self.getBearingHolder(-self.going_train.escapement.get_wheel_base_to_anchor_base_z()).translate((self.bearing_positions[-2][0], self.bearing_positions[-2][1], self.get_plate_thick(back=False))))
+            plate = plate.add(self.get_bearing_holder(-self.going_train.escapement.get_wheel_base_to_anchor_base_z()).translate((self.bearing_positions[-2][0], self.bearing_positions[-2][1], self.get_plate_thick(back=False))))
 
         if self.moon_complication is not None:
             moon_screws = self.moon_holder.get_fixing_positions()
@@ -3222,7 +3188,7 @@ class MantelClockPlates(SimpleClockPlates):
     Skeleton mantel clock
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK_EXTRATHICK, escapement_on_front=False,
+                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True):
         self.symetrical = symetrical
         #if we've got the moon sticking out the top, can arrange the pillars in such a way that we'rea taller
@@ -3518,24 +3484,23 @@ class MantelClockPlates(SimpleClockPlates):
 
 
         if self.symetrical:
-            texts = [" ".join(self.texts[2:]), " ".join(self.texts[:2])]
+            texts = ["\n".join(self.texts[2:]), "\n".join(self.texts[:2])]
         else:
             texts = [" ".join(self.texts[1:]), self.texts[0]]
 
-
+        #in line with the pillar, but length just to the bearing
         long_line = Line(self.bottom_pillar_positions[0], anotherPoint=self.top_pillar_positions[0])
-        long_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[0], self.bottom_pillar_positions[0]))
+        long_space_length = np.linalg.norm(np.subtract( self.bearing_positions[3][:2], self.bottom_pillar_positions[0]))
         long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
         text_height = self.plate_width * 0.9
         long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
         long_angle = long_line.get_angle()
 
         short_line = Line(self.bottom_pillar_positions[1], anotherPoint=self.top_pillar_positions[1])
+        short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
         if self.symetrical:
-            short_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bottom_pillar_positions[1])) - self.top_pillar_r
-            text_height = self.plate_width * 0.4
-        else:
-            short_space_length = np.linalg.norm(np.subtract(self.bearing_positions[1][:2], self.bottom_pillar_positions[1]))
+            # short_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bottom_pillar_positions[1])) - self.top_pillar_r
+            text_height = self.plate_width * 0.8
         short_line_length = short_space_length - 10
         short_centre = np_to_set(np.add(short_line.start, np.multiply(short_line.dir, short_space_length / 2)))
         short_angle = short_line.get_angle() + math.pi

@@ -17,14 +17,12 @@ if 'show_object' not in globals():
         pass
 
 
-whistle = Whistle(text="Evie's Train", harmonics=2, mouthpiece=True)
+# whistle = Whistle(text="Evie's Train", harmonics=2, mouthpiece=True, nozzle_size=0.25)
+whistle = Whistle(nozzle_size=0.25)
 
 # show_object(whistle.get_whistle_top())
 # show_object(whistle.get_body())
 show_object(whistle.get_whole_whistle())
 
-path = "out"
-name="evies_train_whistle"
-out = os.path.join(path, "{}.stl".format(name))
-print("Outputting ", out)
-exporters.export(whistle.get_whole_whistle(), out, angularTolerance=0.01)
+
+export_STL(whistle.get_whole_whistle(), "whistle", "test", "out", tolerance=0.01)

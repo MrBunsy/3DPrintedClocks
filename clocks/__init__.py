@@ -4,11 +4,13 @@ from .cosmetics import *
 from .demos import *
 from .dial import *
 from .escapements import *
+from .fan import *
 from .gear_trains import *
 from .gearing import *
 from .geometry import *
 from .hands import *
 from .leaves import *
+from .pillars import *
 from .power import *
 from .striking import *
 from .types import *

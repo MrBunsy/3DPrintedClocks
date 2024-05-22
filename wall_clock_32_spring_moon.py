@@ -59,8 +59,9 @@ barrel_gear_thick = 8
 
 moduleReduction=0.95#0.85
 
+#wall thick of 9 seemed fine, but I want it to be consistent with the arbor
 train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=9, fraction_of_max_turns=0.35)#, chain_wheel_ratios=[[64, 10], [61, 10]])
+                        wall_thick=10, fraction_of_max_turns=0.35)#, chain_wheel_ratios=[[64, 10], [61, 10]])
 
 '''
 [[61, 10], [83, 10]]

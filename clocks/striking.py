@@ -427,7 +427,8 @@ class Whistle:
         hole_d=self.hole_d
         #0.025" (aprox 0.6mm)
         #later comments suggest thinner is louder, so although 0.6 worked fine I'm going to try smaller
-        wedge_end_thick = 0.4
+        #was just 0.4, but with a smaller nozzle I think I can go thinner
+        wedge_end_thick = self.nozzle_size#0.4
         #~0.03" the bit that focuses the air onto the wedge
         #0.8 was too big - needs lots of airflow to whistle
         #0.2 is too small - needs a lot of weight to make a noise
@@ -441,7 +442,7 @@ class Whistle:
         #building the whistle on its side, hoping the wedge shape can be printed side-on
         #I drew this side-on so x is the height of the whistle and y is the width of the whistle.
 
-        airgap_wedge_tip_width=0.4
+        airgap_wedge_tip_width=self.nozzle_size
         airgap_wedge_end_width= self.chamber_wall_thick * 0.3
 
         #just to make the following bit less verbose

@@ -132,7 +132,7 @@ def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=
         angle = math.atan2(next_point[1] - point[1], next_point[0] - point[0]) + math.pi/2
         centre = ((point[0] + next_point[0])/2, (point[1] + next_point[1])/2)
         length = np.linalg.norm(np.subtract(next_point, point))
-        line = line.union(cq.Workplane("XY").rect(wide,length).extrude(thick).rotate((0,0,0), (0,0,1), radToDeg(angle)).translate(centre))
+        line = line.union(cq.Workplane("XY").rect(wide,length).extrude(thick).rotate((0,0,0), (0,0,1), rad_to_deg(angle)).translate(centre))
         if style == StrokeStyle.ROUND:
             line = line.union(cq.Workplane("XY").circle(wide/2).extrude(thick).translate(point))
 
