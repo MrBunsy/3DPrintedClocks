@@ -355,6 +355,16 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
 
             if line.startswith("; stop printing object"):
                 current_shape.append(line)
+
+                if increase_z_hop:
+                    z_string = "{:.1f}".format(z + 0.2)
+                    if z_string.startswith("0"):
+                        z_string = z_string[1:]
+                    #G1 Z{z_offset+min(max_layer_z+1, max_print_height)} F720 ;
+                    z_hop_line = "G1 Z{}  F720 ;".format(z_string)
+                    current_shape.append(z_hop_line)
+
+
                 relevant_shapes_in_layer.append(current_shape)
                 inside_a_shape = False
                 log.write("finished processing shape LAST IN LAYER type {} line: {}\n".format(current_shape_type, i))
