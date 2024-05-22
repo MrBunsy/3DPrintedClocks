@@ -207,7 +207,7 @@ def re_arrange_shapes(shapes, log, start_pos = None):
 
     return gcode_out
 
-def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder_to_fix=1, detail_printed_first=False):
+def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder_to_fix=1, detail_printed_first=False, increase_z_hop=False):
     '''
     for small objects on the dial, attempt to re-order to reduce total distance travelled (and thus stringing)
     '''
@@ -299,14 +299,27 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
                 if starting_shape and not inside_a_shape:
                     inside_a_shape = True
                     #keep the previous line which was to move to the start position
-                    current_shape = [gcode_in[i-1]]
+                    current_shape = [gcode_in[i-1].strip()]
                     #scratch previous line from gcode
                     gcode_out = gcode_out[:-1]
                 if inside_a_shape and not starting_shape:
                     #finished a shape
                     actually_same_shape = False
                     inside_a_shape = False
-                    current_shape.append(line)
+                    if increase_z_hop:
+                        line_with_z_hop = ""
+                        for axis in line.split(" "):
+                            if axis.startswith("Z."):
+                                z_string = "{:.1f}".format(z+0.2)
+                                if z_string.startswith("0"):
+                                    z_string = z_string[1:]
+                                line_with_z_hop += "Z{} ".format(z_string)
+                            else:
+                                line_with_z_hop+= axis+" "
+                        log.write("increasing z hop. Line {} was \"{}\" now \"{}\"".format(i, line, line_with_z_hop))
+                        current_shape.append(line_with_z_hop)
+                    else:
+                        current_shape.append(line)
                     if not already_combined_with_previous_shape:
                         if ((current_shape_type == "Solid infill" and last_shape_type == "External perimeter") or
                             (current_shape_type == "External perimeter" and last_shape_type == "Perimeter") or
@@ -349,7 +362,11 @@ def apply_dialfix(gcode_in, log, printer_version=None, layers_to_fix=2, extruder
                 log.write("previous relevant_shapes_in_layer: {}\n".format(len(relevant_shapes_in_layer)))
                 log.write("extending gcode out starting at line {}\n".format(len(gcode_out)))
                 if len(relevant_shapes_in_layer) > 1:
-                    gcode_out.extend(re_arrange_shapes(relevant_shapes_in_layer, log, last_known_pos))
+                    re_arranged_lines = re_arrange_shapes(relevant_shapes_in_layer, log, last_known_pos)
+                    for line in re_arranged_lines:
+                        if line.startswith(" "):
+                            log.write("re-arranged line starts with space, line: {}\n".format(line))
+                    gcode_out.extend(re_arranged_lines)
                 else:
                     print("insufficient relevant_shapes_in_layer, only found: {}".format(len(relevant_shapes_in_layer)))
                 relevant_shapes_in_layer = []
@@ -421,6 +438,9 @@ if __name__ == "__main__":
     need_dialfix = "dialfix" in relevant_args
     need_wipefix = "wipefix" in relevant_args
     detail_printed_first = "detailfirst" in relevant_args
+    #this... does not work as intended. the nozzel seems to raise,then immediately lower before moving, making it even worse
+    #think I've found it, we're accidentally putting a space before the next line so it gets ignored and the next thing it does process is lowering the nozzle!!
+    increase_z_hop = "zhop" in relevant_args
 
     #file prusaslicer expects to be edited in situ
     gcode_temp_file = sys.argv[-1]
@@ -463,9 +483,12 @@ if __name__ == "__main__":
             if need_wipefix:
                 gcode_out = apply_wipefix(gcode_out, log)
             if need_dialfix:
-                gcode_out = apply_dialfix(gcode_out, log, printer_version, detail_printed_first=detail_printed_first)
+                gcode_out = apply_dialfix(gcode_out, log, printer_version, detail_printed_first=detail_printed_first, increase_z_hop=increase_z_hop)
         except Exception as error:
             log.write("Exception: {}\n{}".format(error, traceback.format_exc()))
 
+    #not sure where this is creeping in, but let's try belt-and-braces
+    gcode_out_no_spaces = [line.strip()+"\n" for line in gcode_out]
+
     with open(gcode_temp_file, 'w') as out_file:
-        out_file.writelines(gcode_out)
+        out_file.writelines(gcode_out_no_spaces)

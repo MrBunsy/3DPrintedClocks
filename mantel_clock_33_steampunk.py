@@ -77,9 +77,9 @@ if moon:
     module_reduction = 0.9#1
 else:
     module_reduction=0.9#0.85
-#ratios from wall clock 32 as these fit next to a module 1 minute wheel
+#ratios from wall clock 32 but larger wheel for the intermediate wheel as we have a larger minute wheel on this clock
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=10, fraction_of_max_turns=0.35)#  chain_wheel_ratios=[[62, 10], [61, 10]]fraction_of_max_turns=0.35)#,, spring=clock.MAINSPRING_183535,
+                        style=gear_style, wall_thick=10, chain_wheel_ratios=[[61, 10], [64, 10]])
 '''
 0.35:
 [[61, 10], [78, 10]]
@@ -120,7 +120,7 @@ pendulum_sticks_out=10
 back_plate_from_wall=30
 
 pinion_extensions = {0:1, 1:5, 3:8} if moon else {0:1, 1:12, 2:5}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
 train.gen_gears(module_sizes=[1,0.9,0.9], module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
@@ -157,7 +157,7 @@ if moon:
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg)
-
+print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
 hand_style = clock.HandStyle.MOON if moon else clock.HandStyle.SPADE
 hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),

@@ -7,7 +7,6 @@ from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
 from clocks.cuckoo_bits import roman_numerals, CuckooWhistle
-from clocks.viewer import *
 outputSTL = False
 
 if 'show_object' not in globals():

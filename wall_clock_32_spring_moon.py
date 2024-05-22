@@ -60,8 +60,9 @@ barrel_gear_thick = 8
 moduleReduction=0.95#0.85
 
 #wall thick of 9 seemed fine, but I want it to be consistent with the arbor
+#larger barrel wheel actually works out at a smaller plate than having a larger intermediate wheel
 train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=10, fraction_of_max_turns=0.35)#, chain_wheel_ratios=[[64, 10], [61, 10]])
+                        wall_thick=10, chain_wheel_ratios=[[64, 10], [61, 10]])
 
 '''
 [[61, 10], [83, 10]]
@@ -86,7 +87,7 @@ dial_width=25
 pinion_extensions = {0:1, 1:5,3:5} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.0]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.2]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 #module_sizes=[1, 0.95, 0.95]
@@ -113,7 +114,7 @@ plates = clock.RoundClockPlates(train, motion_works, name="Wall 32", dial=dial, 
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST,
                                 moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True)
 
-
+print("plate radius: ", plates.radius)
 hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)

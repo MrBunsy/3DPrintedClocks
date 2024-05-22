@@ -266,6 +266,8 @@ class Whistle:
         #affects the size of thin edges so they will print as close as possible to the desired dimensions
         #scrap that, it'll take 4 hours to print with a 0.25 nozzle. It's only going to support 0.4 nozzles for now. Might be useful for printing only the top peice
         #NOT YET USED
+        #note, i tried using this to adjust the sharpness of points and then print with 0.25 on the mk4. However the whistle simply didn't work!
+        #going back to hardcoded 0.4 for everything
         self.nozzle_size = nozzle_size
 
         self.mouthpiece = mouthpiece
@@ -428,7 +430,8 @@ class Whistle:
         #0.025" (aprox 0.6mm)
         #later comments suggest thinner is louder, so although 0.6 worked fine I'm going to try smaller
         #was just 0.4, but with a smaller nozzle I think I can go thinner
-        wedge_end_thick = self.nozzle_size#0.4
+        #tried 0.25 with 0.25 nozzle - didn't work!
+        wedge_end_thick =0.4
         #~0.03" the bit that focuses the air onto the wedge
         #0.8 was too big - needs lots of airflow to whistle
         #0.2 is too small - needs a lot of weight to make a noise
@@ -441,8 +444,8 @@ class Whistle:
         exit_gap = 2.3
         #building the whistle on its side, hoping the wedge shape can be printed side-on
         #I drew this side-on so x is the height of the whistle and y is the width of the whistle.
-
-        airgap_wedge_tip_width=self.nozzle_size
+        # tried 0.25 with 0.25 nozzle - didn't work!
+        airgap_wedge_tip_width=0.4
         airgap_wedge_end_width= self.chamber_wall_thick * 0.3
 
         #just to make the following bit less verbose

@@ -1025,6 +1025,8 @@ class ChainInfo:
         if self.outside_length < 0:
             self.outside_length = self.inside_length + self.wire_thick * 2
 
+        self.pitch = self.inside_length*2
+
 
 # consistently reliable results have been obtained by laying out and pulling tight) a stretch of chain against a ruler to calculate inside_length (half chain pitch)
 

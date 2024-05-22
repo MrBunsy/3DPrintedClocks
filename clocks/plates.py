@@ -2137,10 +2137,12 @@ class SimpleClockPlates:
 
         return plate
 
-    def apply_style_to_plate(self, plate, back=True):
+    def apply_style_to_plate(self, plate, back=True, addition_allowed=False):
         #assuming here that plates are in the default orentation, with back plate back down and front plate front up
 
         if self.style == PlateStyle.RAISED_EDGING:
+            if not addition_allowed:
+                return plate
             detail = self.get_plate_detail(back=back)
             if detail is None:
                 return plate
@@ -3081,7 +3083,7 @@ class SimpleClockPlates:
 
         detail = None
         if self.style in [PlateStyle.RAISED_EDGING]:
-            detail = self.apply_style_to_plate(cq.Workplane("XY"), back=True).add(self.apply_style_to_plate(cq.Workplane("XY"), back=False)
+            detail = self.apply_style_to_plate(cq.Workplane("XY"), back=True, addition_allowed=True).add(self.apply_style_to_plate(cq.Workplane("XY"), back=False, addition_allowed=True)
                                                                                   .translate((0,0,self.get_plate_thick(back=True) + self.plate_distance)))
 
         if one_peice:
@@ -3094,14 +3096,15 @@ class SimpleClockPlates:
 
 
     def output_STLs(self, name="clock", path="../out"):
+
         if self.dial is not None:
             self.dial.output_STLs(name, path)
-        export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path, tolerance=self.export_tolerance)
 
         front_detail = self.get_plate_detail(back=False, for_printing=True)
-        if front_detail is not None:
-            export_STL(front_detail, "plate_front_detail", name, path)
 
+        export_STL(front_detail, "plate_front_detail", name, path)
+
+        export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path, tolerance=self.export_tolerance)
         export_STL(self.get_plate(True, for_printing=True), "plate_back", name, path, tolerance=self.export_tolerance)
 
         if not self.text_on_standoffs:
@@ -3297,7 +3300,7 @@ class MantelClockPlates(SimpleClockPlates):
         distance_to_b = self.arbors_for_plate[self.going_train.powered_wheels + 2].get_max_radius() + self.top_pillar_r + self.small_gear_gap
         top_left = get_point_from_two_points(pos0=a, pos1=b, distance0=distance_to_a, distance1=distance_to_b)
 
-        bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.gear_gap + self.bottom_pillar_r
+        bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.small_gear_gap + self.bottom_pillar_r
         #TODO check this doesn't collide with next wheel
         bottom_angle = -math.pi/4
         self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
