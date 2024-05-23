@@ -145,7 +145,9 @@ else:
 
 motion_works_height = 22 if moon else 10
 
-motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication)
+#tiny bit extra gap as the brass PETG seems to need it
+motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
+                                 cannon_pinion_to_hour_holder_gap_size=0.6)
 
 motion_works_angle_deg=180+90
 
@@ -176,6 +178,8 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 # show_object(plates.getDrillTemplate(6))
 
 if output_STL:
+    if moon:
+        moon_complication.output_STLs(clock_name, clock_out_dir)
     motion_works.output_STLs(clock_name, clock_out_dir)
     pendulum.output_STLs(clock_name, clock_out_dir)
     plates.output_STLs(clock_name, clock_out_dir)

@@ -101,7 +101,7 @@ moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_ge
                                                   bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 #no need to make inset, we've got lots of space here with the moon complication
 motion_works = clock.MotionWorks(extra_height=22, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
-                                 moon_complication=moon_complication)
+                                 moon_complication=moon_complication, cannon_pinion_to_hour_holder_gap_size=0.6)
 # balance out the moon complication by making the motion works a bit bigger
 motion_works.calculate_size(arbor_distance=30)
 moon_complication.set_motion_works_sizes(motion_works)
