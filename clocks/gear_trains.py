@@ -884,11 +884,12 @@ class GoingTrain:
             print("chain module: ", chain_module)
 
         loop = 0
+        has_lantern = False
         while not fits and loop < 100:
             loop += 1
             self.powered_wheel_pairs = []
             for i in range(self.powered_wheels):
-                # TODO review this
+                # TODO review this, should be able to just calculate needed module rather than use a loop? do i still need this at all?
                 # chain_module = chain_module_base * powered_wheel_module_increase ** (self.powered_wheels - i)
                 chain_module = powered_wheel_module_sizes[i] * chain_module_multiplier
                 # chain_wheel_space = chainModule * (self.chainWheelRatios[i][0] + self.chainWheelRatios[i][1]) / 2
@@ -902,9 +903,11 @@ class GoingTrain:
                 # only supporting one at the moment, but open to more in the future if needed
                 pair = WheelPinionPair(self.chain_wheel_ratios[i][0], self.chain_wheel_ratios[i][1], chain_module, lantern=i in lanterns)
                 self.powered_wheel_pairs.append(pair)
+                if i in lanterns:
+                    has_lantern=True
 
             minute_wheel_space = pairs[0].wheel.get_max_radius() + rod_diameters[1]
-            last_chain_wheel_space = self.powered_wheel_pairs[-1].wheel.get_max_radius()
+            last_chain_wheel_space = self.powered_wheel_pairs[-1].centre_distance
             if not self.powered_wheel.loose_on_rod:
                 # TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel
                 # need space for the steel rod as the wheel itself is loose on the threaded rod
@@ -914,6 +917,8 @@ class GoingTrain:
                 # calculate module for the chain wheel based on teh space available
                 chain_module_multiplier *= 1.01
                 print("Chain wheel module multiplier to {} in order to fit next to minute wheel".format(chain_module_multiplier))
+                if has_lantern:
+                    raise RuntimeError("Trying to change module size for a lantern pinion, will likely not support available steel rods")
             else:
                 fits = True
 

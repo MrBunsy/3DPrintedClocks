@@ -1056,6 +1056,7 @@ class SpringBarrel:
         elsewhere I've read "The spring should occupy 1/3 to 1/2 of the free space inside a barrel" https://www.m-p.co.uk/muk/ryoc/doc_page27.shtml
         I think this is all variations on a theme, that the barrel needs to be slightly larger than calculated as from "half of the available area in the barrel"
 
+        https://www.abbeyclock.com/usmsp.html
         Abbeyclock again says, about the maximum number of turns "This figure is theoretical: in practice, the net turns is one to two turns fewer,
          depending on the thickness and the condition of the spring" so I should bare that in mind with how many turns I get out of the barrel
 

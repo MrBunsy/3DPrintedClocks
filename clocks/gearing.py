@@ -935,6 +935,7 @@ class Gear:
         dedendum_height = self.dedendum_factor * self.module
         self.inner_r = self.pitch_diameter / 2 - dedendum_height
 
+        self.fake_outer_r = -1
 
         self.lantern = lantern
         if self.lantern:
@@ -970,6 +971,8 @@ class Gear:
         '''
         radius that encompasses the outermost parts of the teeth
         '''
+        if self.fake_outer_r > 0:
+            return self.fake_outer_r
         return self.outer_r
         # return self.pitch_diameter/2 + self.addendum_factor*self.module
 
@@ -1201,6 +1204,15 @@ class WheelPinionPair:
 
         # trundle_r = math.sin((self.toothFactor / (self.teeth / 2)) / 2) * (self.module * self.teeth) / 2
 
+    @staticmethod
+    def get_module_size_for_distance(centre_distance, wheel_teeth, pinion_teeth):
+        guess_module = 1
+        guess_pair = WheelPinionPair(wheel_teeth, pinion_teeth, guess_module)
+        guess_distance = guess_pair.centre_distance
+
+        ratio = centre_distance / guess_distance
+
+        return guess_module * ratio
 
     errorLimit=0.000001
     def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, lantern=False):

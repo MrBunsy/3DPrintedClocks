@@ -930,17 +930,22 @@ if test_ratchet:
 #                              spring_hook_screws=MachineScrew(2,countersunk=True, length=12))
 #
 # show_object(spring_barrel.get_model())
-chain = COUSINS_1_5MM_CHAIN
+# chain = COUSINS_1_5MM_CHAIN
+#
+# sprocket = Sprocket(
+#     num_teeth=32,
+#     clearance=0.05,
+#     bolt_circle_diameter=30 * MM,
+#     num_mount_bolts=4,
+#     mount_bolt_diameter=3 * MM,
+#     bore_diameter=4 * MM,
+#     chain_pitch=chain.pitch,
+#     #this is the bodge bit
+#     roller_diameter = chain.wire_thick*2
+# )
+# show_object(sprocket)
 
-sprocket = Sprocket(
-    num_teeth=32,
-    clearance=0.05,
-    bolt_circle_diameter=30 * MM,
-    num_mount_bolts=4,
-    mount_bolt_diameter=3 * MM,
-    bore_diameter=4 * MM,
-    chain_pitch=chain.pitch,
-    #this is the bodge bit
-    roller_diameter = chain.wire_thick*2
-)
-show_object(sprocket)
+plaque = Plaque(["First Line", "Second Line"], 50, 20)
+
+show_object(plaque.get_plaque())
+show_object(plaque.get_text())

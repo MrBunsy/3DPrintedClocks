@@ -329,3 +329,74 @@ def get_star(star_thick=3, star_size = 75):
         .lineTo(secondary_top[0], -secondary_top[1]).close().extrude(star_thick)
 
     return star
+
+
+class Plaque:
+
+    def __init__(self, text_lines, width, height, border=False, raised=True, screws = None, thick=0.6, screw_count = 4, font=None, text_thick = 0.3):
+        #expect list of strings
+        self.text_lines = text_lines
+        self.width = width
+        self.height = height
+        self.border = border
+        self.raised = raised
+        self.screws = screws
+        self.thick = thick
+        self.font = font
+        if self.font is None:
+            self.font = DEFAULT_FONT
+
+        self.text_thick = text_thick
+
+
+        if self.screws is None:
+            self.screws = MachineScrew(2, countersunk=False)#
+
+        self.fillet_r = self.screws.get_head_diameter()/2
+
+        if self.screws.countersunk:
+            from_edge = self.screws.get_head_diameter()
+        else:
+            from_edge = self.screws.get_head_diameter()/2
+        self.screw_positions = [(-self.width/2 + from_edge, self.height/2 - from_edge), (self.width/2 - from_edge, -self.height/2 + from_edge)]
+
+        if screw_count == 4:
+            self.screw_positions += [(-self.width/2 + from_edge, -self.height/2 + from_edge), (self.width/2 - from_edge, self.height/2 - from_edge)]
+
+    def get_plaque(self):
+        plaque = cq.Workplane("XY").rect(self.width, self.height).extrude(self.thick).edges("|Z").fillet(self.fillet_r)
+
+        for pos in self.screw_positions:
+            plaque = plaque.cut(self.screws.get_cutter(loose=True).rotate((0,0,0), (1,0,0),180).translate((0,0,self.thick)).translate(pos))
+
+        return plaque
+
+    def get_text(self):
+        available_height = self.height - self.fillet_r*2
+        available_width = self.width - self.fillet_r*4
+
+        text_space_height = 0.9*available_height/3
+
+        text_spaces = []
+        for y in range(len(self.text_lines)):
+            text_space = TextSpace(x=0, y=available_height/2 - available_height*(0.5 + y)/len(self.text_lines), width=available_width,
+                                   height=text_space_height, horizontal=True, font=self.font, inverted=False)
+            text_space.set_text(self.text_lines[y])
+            text_spaces.append(text_space)
+
+        max_text_size = min([text_space.get_text_max_size() for text_space in text_spaces])
+
+        for space in text_spaces:
+            space.set_size(max_text_size)
+
+        text = cq.Workplane("XY")
+
+        for text_space in text_spaces:
+            text = text.add(text_space.get_text_shape())
+
+        z = self.thick - self.text_thick
+        if self.raised:
+            z = self.thick
+        text = text.translate((0,0,z))
+
+        return text

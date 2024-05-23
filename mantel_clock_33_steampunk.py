@@ -79,7 +79,7 @@ else:
     module_reduction=0.9#0.85
 #ratios from wall clock 32 but larger wheel for the intermediate wheel as we have a larger minute wheel on this clock
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=10, chain_wheel_ratios=[[61, 10], [64, 10]])
+                        style=gear_style, wall_thick=10, chain_wheel_ratios=[[61, 10], [61, 10]])
 '''
 0.35:
 [[61, 10], [78, 10]]
@@ -95,11 +95,12 @@ Over a runtime of 168.0hours the spring barrel will make 3.6 full rotations whic
 spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653
 Over a runtime of 168.0hours the spring barrel will make 3.8 full rotations which is 35.8% of the maximum number of turns (10.7) and will take 5.8 key turns to wind back u
 
+designed plates around rhtis before the wall clock stopped after 1.5 days after winding first time
 [[61, 10], [64, 10]]
 spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653
 Over a runtime of 168.0hours the spring barrel will make 4.3 full rotations which is 40.2% of the maximum number of turns (10.7) and will take 6.6 key turns to wind back up
 
-from printed wall 32:
+from (before) printed wall 32: (ended up printing 64-10, 61-10 apparently)
 [[62, 10], [61, 10]]
 spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653
 Over a runtime of 168.0hours the spring barrel will make 4.4 full rotations which is 41.5% of the maximum number of turns (10.7) and will take 6.8 key turns to wind back up
@@ -119,11 +120,25 @@ else:
 pendulum_sticks_out=10
 back_plate_from_wall=30
 
+# pair = clock.WheelPinionPair(64, 10, 1.2)
+# distance = pair.centre_distance
+# print("old distance", distance)
+# print("old wheel r", pair.wheel.get_max_radius(), "old pinion r", pair.pinion.get_max_radius())
+# intermediate_wheel_module = clock.WheelPinionPair.get_module_size_for_distance(distance, 61, 10)
+# print("intermediate_wheel_module", intermediate_wheel_module)
+#
+# newpair = clock.WheelPinionPair(61, 10, intermediate_wheel_module)
+# print("new distance", newpair.centre_distance)
+# print("new wheel r", newpair.wheel.get_max_radius(), "new pinion r", newpair.pinion.get_max_radius())
+intermediate_wheel_module=1.2
 pinion_extensions = {0:1, 1:5, 3:8} if moon else {0:1, 1:12, 2:5}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1.2]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), intermediate_wheel_module]
 train.gen_gears(module_sizes=[1,0.9,0.9], module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
+# train.powered_wheel_arbors[1].wheel.fake_outer_r = pair.wheel.get_max_radius()
+print("train.powered_wheel_arbors[0].centre_distance, ", train.powered_wheel_arbors[0].distance_to_next_arbour)
+print("train.powered_wheel_arbors[1].centre_distance, ", train.powered_wheel_arbors[1].distance_to_next_arbour)
 # train.print_info(weight_kg=1.5)
 train.print_info(for_runtime_hours=24*7)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
