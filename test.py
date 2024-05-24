@@ -947,5 +947,7 @@ if test_ratchet:
 
 plaque = Plaque(["First Line", "Second Line"], 50, 20)
 
+plaque.set_dimensions(50,20)
+
 show_object(plaque.get_plaque())
 show_object(plaque.get_text())

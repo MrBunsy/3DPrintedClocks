@@ -29,6 +29,7 @@ class Assembly:
         self.time_seconds = time_seconds
         self.pulley=pulley
         self.moon_complication = self.plates.moon_complication
+        self.plaque = self.plates.plaque
         #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)
         self.weights=weights
         if self.weights is None:
@@ -37,6 +38,10 @@ class Assembly:
         #cosmetic parts taht override the defaults
 
         self.pretty_bob = pretty_bob
+
+        if self.plaque is not None:
+            self.plaque_shape = self.plaque.get_plaque().rotate((0,0,0), (0,0,1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-self.plaque.thick))
+            self.plaque_text_shape = self.plaque.get_text().rotate((0,0,0),(1,0,0),180).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos)
 
 
         # =============== shared geometry (between clock model and show_clock) ================
@@ -490,7 +495,7 @@ class Assembly:
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
-                   moon_complication_colour=Colour.BRASS, vanity_plate_colour=Colour.WHITE):
+                   moon_complication_colour=Colour.BRASS, vanity_plate_colour=Colour.WHITE, plaque_colours=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -526,6 +531,8 @@ class Assembly:
 
         if ratchet_colour is None:
             ratchet_colour = plate_colours[0]
+        if plaque_colours is None:
+            plaque_colours = [Colour.GOLD, Colour.BLACK]
 
         plates, pillars, plate_detail, standoff_pillars = self.plates.get_assembled(one_peice=False)
 
@@ -535,11 +542,15 @@ class Assembly:
         if plate_detail is not None:
             show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
 
-        if not self.plates.text_on_standoffs:
-            show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
+        if self.plaque is not None:
+            show_object(self.plaque_shape, options={"color": plaque_colours[0]}, name="Back Plaque")
+            show_object(self.plaque_text_shape, options={"color": plaque_colours[1]}, name = "Back Plaque Text")
         else:
-            show_object(self.plates.get_text(top_standoff=True), options={"color": text_colour}, name="Top Standoff Text")
-            show_object(self.plates.get_text(top_standoff=False), options={"color": text_colour}, name="Bottom Standoff Text")
+            if not self.plates.text_on_standoffs:
+                show_object(self.plates.get_text(), options={"color":text_colour}, name="Text")
+            else:
+                show_object(self.plates.get_text(top_standoff=True), options={"color": text_colour}, name="Top Standoff Text")
+                show_object(self.plates.get_text(top_standoff=False), options={"color": text_colour}, name="Bottom Standoff Text")
 
 
         for a, arbor in enumerate(self.plates.arbors_for_plate):

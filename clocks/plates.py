@@ -305,7 +305,7 @@ class SimpleClockPlates:
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False):
+                 standoff_pillars_separate=False, texts=None, plaque=None):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -325,6 +325,11 @@ class SimpleClockPlates:
         #for other clock plates to override
         self.text_on_standoffs = False
         self.standoff_pillars_separate = standoff_pillars_separate
+        #if provided then the text is on a little plaque screwed onto the back instead of printed MMU style
+        #TODO front and back plaque options?
+        self.plaque = plaque
+        self.plaque_pos = (0,0)
+        self.plaque_angle = 0
 
         self.vanity_plate_fixing_positions = []
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
@@ -775,13 +780,17 @@ class SimpleClockPlates:
         self.fixing_screws_cutter = None
         self.need_motion_works_holder = self.calc_need_motion_works_holder()
 
+        self.texts = texts
+        if self.texts is None:
+            self.texts = [
+                self.name,
+                "{:.1f}cm".format(self.going_train.pendulum_length * 100),
+                "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
+                "Luke Wallin",
+            ]
 
-        self.texts = [
-            self.name,
-            "{:.1f}cm".format(self.going_train.pendulum_length * 100),
-            "{}".format(datetime.date.today().strftime('%Y-%m-%d')),
-            "Luke Wallin",
-        ]
+        if self.plaque is not None:
+            self.calc_plaque_config()
 
     def get_moon_holder_info(self):
         '''
@@ -1858,7 +1867,7 @@ class SimpleClockPlates:
 
     def get_text_spaces(self):
         '''
-        get a list of TextSpace objects with text assigned
+        get a list of TextSpace objects with text assigned, assuming no plaque is being used
         '''
 
         texts = self.texts
@@ -1917,6 +1926,15 @@ class SimpleClockPlates:
             spaces[i].set_text(text)
 
         return spaces
+
+    def calc_plaque_config(self):
+        '''
+        if this clock has a little plaque, calculate where it goes and what size it should be
+        side effect of setting width and height on teh plaque itself (lazy but simple)
+
+        will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
+        '''
+        raise NotImplementedError("TODO: generate plaque position for simple clock plates")
 
     def get_plate_detail(self, back=True, for_printing=False):
         '''
@@ -2714,6 +2732,15 @@ class SimpleClockPlates:
             plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width / 2)
                      .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width * 0.4).loft(combine=True))
 
+        if self.plaque is not None:
+            for relative_pos in self.plaque.get_screw_positions():
+                pos = rotate_vector(relative_pos, (0, 0, 1), self.plaque_angle)
+                pos = np_to_set(np.add(self.plaque_pos, pos))
+                plate = plate.cut(self.plaque.screws.get_cutter().translate((pos[0], pos[1], - self.plaque.thick)))
+
+        else:
+            plate = plate.cut(self.get_text())
+
         return plate
 
     def front_additions_to_plate(self, plate, plate_thick=-1, moon=False):
@@ -3192,7 +3219,8 @@ class MantelClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
-                 symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True):
+                 symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
+                 plaque = None):
         self.symetrical = symetrical
         #if we've got the moon sticking out the top, can arrange the pillars in such a way that we'rea taller
         self.can_be_extra_tall = moon_complication is not None
@@ -3206,7 +3234,7 @@ class MantelClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
-                         standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate)
+                         standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque)
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
         # self.moon_holder_y = -1
@@ -3453,7 +3481,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         if back:
             plate = plate.cut(self.get_fixing_screws_cutter())
-            plate = plate.cut(self.get_text())
+
             plate = self.rear_additions_to_plate(plate)
 
 
@@ -3520,6 +3548,27 @@ class MantelClockPlates(SimpleClockPlates):
         for i, text in enumerate(texts):
             spaces[i].set_text(text)
         return spaces
+
+    def calc_plaque_config(self):
+        '''
+        if this clock has a little plaque, calculate where it goes and what size it should be
+        side effect of setting width and height on teh plaque itself (lazy but simple)
+
+        will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
+        '''
+
+        long_line = Line(self.bottom_pillar_positions[0], anotherPoint=self.top_pillar_positions[0])
+        long_space_length = np.linalg.norm(np.subtract(self.bearing_positions[3][:2], self.bottom_pillar_positions[0]))
+        long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
+        text_height = self.plate_width * 0.9
+        long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
+        long_angle = long_line.get_angle()
+
+        self.plaque.set_dimensions(long_line_length, self.bottom_pillar_r*2*0.9)
+
+        self.plaque_pos = long_centre
+        self.plaque_angle = long_angle
+
 
     def get_screwhole_positions(self):
         '''

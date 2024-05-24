@@ -333,7 +333,7 @@ def get_star(star_thick=3, star_size = 75):
 
 class Plaque:
 
-    def __init__(self, text_lines, width, height, border=False, raised=True, screws = None, thick=0.6, screw_count = 4, font=None, text_thick = 0.3):
+    def __init__(self, text_lines, width=-1, height=-1, border=False, raised=True, screws = None, thick=0.6, screw_count = 4, font=None, text_thick = 0.3):
         #expect list of strings
         self.text_lines = text_lines
         self.width = width
@@ -344,42 +344,60 @@ class Plaque:
         self.thick = thick
         self.font = font
         if self.font is None:
-            self.font = DEFAULT_FONT
+            self.font = SANS_GILL_BOLD_FONT
 
         self.text_thick = text_thick
 
+        self.screw_count = screw_count
 
         if self.screws is None:
-            self.screws = MachineScrew(2, countersunk=False)#
+            self.screws = MachineScrew(2, countersunk=False, length=6)#
 
         self.fillet_r = self.screws.get_head_diameter()/2
 
+    def get_screw_positions(self):
         if self.screws.countersunk:
             from_edge = self.screws.get_head_diameter()
         else:
-            from_edge = self.screws.get_head_diameter()/2
-        self.screw_positions = [(-self.width/2 + from_edge, self.height/2 - from_edge), (self.width/2 - from_edge, -self.height/2 + from_edge)]
+            from_edge = self.screws.get_head_diameter() / 2
+        screw_positions = [(-self.width / 2 + from_edge, self.height / 2 - from_edge), (self.width / 2 - from_edge, -self.height / 2 + from_edge)]
 
-        if screw_count == 4:
-            self.screw_positions += [(-self.width/2 + from_edge, -self.height/2 + from_edge), (self.width/2 - from_edge, self.height/2 - from_edge)]
+        if self.screw_count == 4:
+            screw_positions += [(-self.width / 2 + from_edge, -self.height / 2 + from_edge), (self.width / 2 - from_edge, self.height / 2 - from_edge)]
+        return screw_positions
+
+    def set_dimensions(self, max_width, max_height):
+        '''
+        will use the provided height and reduce width if possible
+        '''
+        self.height = max_height
+        self.width = max_width
+
+        text_spaces = self.get_text_spaces()
+        max_width = max([text_space.get_text_width() for text_space in text_spaces])
+
+        if self.width > max_width + self.fillet_r * 4:
+            self.width = max_width + self.fillet_r * 4
+
+        #TODO reduce height if possible?
 
     def get_plaque(self):
         plaque = cq.Workplane("XY").rect(self.width, self.height).extrude(self.thick).edges("|Z").fillet(self.fillet_r)
 
-        for pos in self.screw_positions:
+        for pos in self.get_screw_positions():
             plaque = plaque.cut(self.screws.get_cutter(loose=True).rotate((0,0,0), (1,0,0),180).translate((0,0,self.thick)).translate(pos))
 
         return plaque
 
-    def get_text(self):
-        available_height = self.height - self.fillet_r*2
-        available_width = self.width - self.fillet_r*4
+    def get_text_spaces(self):
+        available_height = self.height - self.fillet_r * 2
+        available_width = self.width - self.fillet_r * 4
 
-        text_space_height = 0.9*available_height/3
+        text_space_height = 0.9 * available_height / 3
 
         text_spaces = []
         for y in range(len(self.text_lines)):
-            text_space = TextSpace(x=0, y=available_height/2 - available_height*(0.5 + y)/len(self.text_lines), width=available_width,
+            text_space = TextSpace(x=0, y=available_height / 2 - available_height * (0.5 + y) / len(self.text_lines), width=available_width,
                                    height=text_space_height, horizontal=True, font=self.font, inverted=False)
             text_space.set_text(self.text_lines[y])
             text_spaces.append(text_space)
@@ -388,6 +406,13 @@ class Plaque:
 
         for space in text_spaces:
             space.set_size(max_text_size)
+
+        return text_spaces
+
+    def get_text(self):
+
+        text_spaces = self.get_text_spaces()
+
 
         text = cq.Workplane("XY")
 
@@ -400,3 +425,7 @@ class Plaque:
         text = text.translate((0,0,z))
 
         return text
+
+    def output_STLs(self, name="clock", path="../out"):
+        export_STL(self.get_plaque(), "plaque_base", clock_name=name, path=path)
+        export_STL(self.get_text(), "plaque_text", clock_name=name, path=path)

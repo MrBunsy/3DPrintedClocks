@@ -4,3 +4,10 @@ adjust layer height on the angled bit of the wheel to make as smooth as possible
 
 
 on wheels with smaller pinions, need a modifier on the pinion to allow Fill Gaps and Gap Fill Speed just for the pinion
+
+
+Brass PETG:
+220C on mk3 0.4 nozzle works really well
+
+Most PETG mk4 in cupboard:
+0.6nozzle 230C works well

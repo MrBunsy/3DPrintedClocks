@@ -1250,6 +1250,8 @@ class Font:
 FANCY_WATCH_FONT = Font(name="Eurostile Extended #2", dial_scale=1.5, filepath="../fonts/Eurostile_Extended_2_Bold.otf")
 FANCY_WATCH_TEXT_FONT = Font(name = "EB Garamond", filepath = "../fonts/EBGaramond-Bold.ttf")
 SANS_GILL_FONT = Font(name="Gill Sans Medium", dial_scale=0.9, filepath="../fonts/GillSans/Gill Sans Medium.otf")
+SANS_GILL_HEAVY_FONT = Font(name="Gill Sans Heavy", dial_scale=0.9, filepath="../fonts/GillSans/Gill Sans Heavy.otf")
+SANS_GILL_BOLD_FONT = Font(name="Gill Sans Bold", dial_scale=0.9, filepath="../fonts/GillSans/Gill Sans Bold.otf")
 ARIAL_FONT = Font(name="Arial")
 DEFAULT_FONT = SANS_GILL_FONT
 
@@ -1305,6 +1307,16 @@ class TextSpace:
         shape = shape.translate((self.x, self.y))
 
         return shape
+
+    def get_text_width(self):
+        shape = self.get_text_shape()
+        bb = shape.val().BoundingBox()
+        return bb.xlen
+
+    def get_text_height(self):
+        shape = self.get_text_shape()
+        bb = shape.val().BoundingBox()
+        return bb.ylen
 
     def get_text_max_size(self):
         shape = self.get_text_shape()

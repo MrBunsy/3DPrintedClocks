@@ -146,6 +146,10 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 pillar_style=clock.PillarStyle.CLASSIC
 
+if not output_STL:
+    #hack to make preview render faster
+    pillar_style = clock.PillarStyle.SIMPLE
+
 dial_d=205
 dial_width=25
 moon_radius=13
@@ -171,9 +175,12 @@ if moon:
     motion_works.calculate_size(arbor_distance=30)
     moon_complication.set_motion_works_sizes(motion_works)
 
-plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
+plaque = clock.Plaque(text_lines=["M33#0 {:.1f}cm L.Wallin".format(train.pendulum_length * 100), "Happy Birthday Ffi"])
+
+plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=8, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
-                                 standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg)
+                                 standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
+                                 plaque=plaque)
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
 hand_style = clock.HandStyle.MOON if moon else clock.HandStyle.SPADE
@@ -186,6 +193,11 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 if moon:
     dial_colours =  [clock.Colour.BLUE, clock.Colour.WHITE]
+
+
+# show_object(plates.get_plate(back=True))
+# show_object(plaque.get_plaque().rotate((0,0,0), (0,0,1), clock.rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-plaque.thick)))
+
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=dial_colours,
                     plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
@@ -193,6 +205,7 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 # show_object(plates.getDrillTemplate(6))
 
 if output_STL:
+    plaque.output_STLs(clock_name, clock_out_dir)
     if moon:
         moon_complication.output_STLs(clock_name, clock_out_dir)
     motion_works.output_STLs(clock_name, clock_out_dir)
@@ -200,4 +213,6 @@ if output_STL:
     plates.output_STLs(clock_name, clock_out_dir)
     hands.output_STLs(clock_name, clock_out_dir)
     assembly.output_STLs(clock_name, clock_out_dir)
+
+
 
