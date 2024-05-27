@@ -85,9 +85,11 @@ class ColletFixingPendulumWithBeatSetting:
     then at the bottom of the pendulum holder there will be a mechanism like the existing one that the top of the pendulum slots into
 
 
+    default to 14.5 thick because it's easy to buy 14mm countersunk m3 screws but for some reason hard to buy 15mm
+    so then I can use a 14mm screw without it sticking out the end or looking like it's too short
     '''
 
-    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space=0.2, pendulum_holder_thick=15, length=35, collet_screws=None):
+    def __init__(self, collet_size, fixing_screws=None, pendulum_fixing_extra_space=0.2, pendulum_holder_thick=14.5, length=35, collet_screws=None):
         self.collet_size = collet_size
         self.fixing_screws = fixing_screws
         if self.fixing_screws is None:

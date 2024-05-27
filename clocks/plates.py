@@ -3244,6 +3244,9 @@ class MantelClockPlates(SimpleClockPlates):
 
         self.little_arm_to_motion_works = False
 
+        if self.symetrical:
+            self.little_arm_to_motion_works = True
+
         if self.dial is not None:
             #hacky, cut away a bit from the top support so it won't crash into the anchor rod
 

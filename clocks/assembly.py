@@ -212,7 +212,7 @@ class Assembly:
 
         #how much extra to extend out the bearing
         #used to be 3mm, but when using thinner plates this isn't ideal.
-        spare_rod_length_beyond_bearing=self.plates.endshake*2
+        spare_rod_length_rear=self.plates.endshake*1.5
         #extra length out the front of hands, or front-mounted escapements
         spare_rod_length_in_front=2
         rod_lengths = []
@@ -233,14 +233,14 @@ class Assembly:
 
             rod_in_front_of_hands = WASHER_THICK_M3 + get_nut_height(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
 
-            length_up_to_inside_front_plate = spare_rod_length_beyond_bearing + bearing_thick + plate_distance
+            length_up_to_inside_front_plate = spare_rod_length_rear + bearing_thick + plate_distance
 
-            beyond_back_of_arbour = spare_rod_length_beyond_bearing + bearing_thick# + self.plates.endshake
+            plain_rod_rear_length = spare_rod_length_rear + bearing_thick# + self.plates.endshake
             #true for nearly all of it
-            rod_z = back_plate_thick - (bearing_thick + spare_rod_length_beyond_bearing)
+            rod_z = back_plate_thick - (bearing_thick + spare_rod_length_rear)
 
             #"normal" arbour that does not extend out the front or back
-            simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+            simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_rear
             # hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
             hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + rod_in_front_of_hands
 
@@ -308,27 +308,27 @@ class Assembly:
                     holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].bearing)
                     out_front = self.plates.get_front_anchor_bearing_holder_total_length() - holder_thick
                     out_back = self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)
-                    extra = spare_rod_length_beyond_bearing
+                    extra = spare_rod_length_rear
                     if self.plates.dial is not None:
                         #make smaller since there's not much space on the front
                         extra = self.plates.endshake
                     rod_length = out_back + total_plate_thick + out_front + self.plates.arbors_for_plate[-1].bearing.height*2 + extra*2
                     rod_z = -out_back - self.plates.arbors_for_plate[-1].bearing.height - extra
                 elif self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
-                    rod_length_to_back_of_front_plate = spare_rod_length_beyond_bearing + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + self.plates.get_plate_thick(back=True) + plate_distance
+                    rod_length_to_back_of_front_plate = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + self.plates.get_plate_thick(back=True) + plate_distance
 
                     if self.dial is not None and self.dial.has_eyes():
                         rod_length = rod_length_to_back_of_front_plate + front_plate_thick + self.plates.endshake + 1 + self.dial.get_wire_to_arbor_fixer_thick() + 5
                     else:
-                        rod_length = rod_length_to_back_of_front_plate + bearing_thick + spare_rod_length_beyond_bearing
-                    rod_z = -self.plates.back_plate_from_wall + (self.plates.get_plate_thick(standoff=True) - bearing_thick - spare_rod_length_beyond_bearing)
+                        rod_length = rod_length_to_back_of_front_plate + bearing_thick + spare_rod_length_rear
+                    rod_z = -self.plates.back_plate_from_wall + (self.plates.get_plate_thick(standoff=True) - bearing_thick - spare_rod_length_rear)
                 else:
                     raise ValueError("TODO calculate rod lengths for pendulum on front")
             rod_lengths.append(rod_length)
             rod_zs.append(rod_z)
-            beyond_back_of_arbours.append(beyond_back_of_arbour)
+            beyond_back_of_arbours.append(plain_rod_rear_length)
             if rod_length > 0:
-                print("Arbor {} rod (M{}) length: {}mm with {:.1f}mm beyond the arbour".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, round(rod_length), beyond_back_of_arbour))
+                print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
             if arbor.pinion is not None and arbor.pinion.lantern:
                 diameter = arbor.pinion.trundle_r * 2
                 min_length = arbor.pinion_thick

@@ -1840,21 +1840,33 @@ class WindingKey:
 
             key_grip_wide = self.body_wide * 2.5
 
-            r=self.key_grip_tall/2
+
 
             #I can't remember what shape I was going for, but I've decided to instead go for something more simple
             # grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide/2,0).lineTo(key_grip_wide/2,key_grip_tall).tangentArcPoint((-r,r*1.25))\
             #     .tangentArcPoint((0,key_grip_tall),relative=False).mirrorY().extrude(self.handle_thick)
 
-            grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide / 2, 0).lineTo(key_grip_wide / 2, self.key_grip_tall-r).radiusArc((key_grip_wide/2 - r, self.key_grip_tall), radius=-r) \
-                    .lineTo(0, self.key_grip_tall).mirrorY().extrude(self.handle_thick)
+            if self.print_sideways:
+                r = self.key_grip_tall * 0.2
+                small_r = 0.5
+                grippy_bit = (cq.Workplane("XZ").moveTo(0, self.key_grip_tall/2).rect(key_grip_wide, self.key_grip_tall).extrude(self.handle_thick)
+                              .edges("|Y").fillet(r).edges("|Z or |X").fillet(small_r))
+
+                # put holes in it?
+                # hole_r =
+                # grippy_bit = grippy_bit.faces(">Y").workplane().pushPoints()
+            else:
+                r = self.key_grip_tall / 2
+                grippy_bit = cq.Workplane("XZ").lineTo(key_grip_wide / 2, 0).lineTo(key_grip_wide / 2, self.key_grip_tall-r).radiusArc((key_grip_wide/2 - r, self.key_grip_tall), radius=-r) \
+                        .lineTo(0, self.key_grip_tall).mirrorY().extrude(self.handle_thick)
+
 
             # return grippyBit
             if self.print_sideways:
                 key = cq.Workplane("XY").polygon(6, self.body_wide).extrude(self.key_grip_tall)
             else:
                 key = cq.Workplane("XY").circle(self.body_wide/2).extrude(self.key_grip_tall)
-            key = key.union(grippyBit.translate((0, self.handle_thick / 2, 0)))
+            key = key.union(grippy_bit.translate((0, self.handle_thick / 2, 0)))
 
 
         #key bit

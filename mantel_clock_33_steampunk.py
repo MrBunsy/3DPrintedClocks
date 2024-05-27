@@ -18,7 +18,7 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import math
-
+import cadquery as cq
 import clocks as clock
 
 '''
@@ -146,9 +146,9 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 pillar_style=clock.PillarStyle.CLASSIC
 
-if not output_STL:
-    #hack to make preview render faster
-    pillar_style = clock.PillarStyle.SIMPLE
+# if not output_STL:
+#     #hack to make preview render faster
+#     pillar_style = clock.PillarStyle.SIMPLE
 
 dial_d=205
 dial_width=25
@@ -177,7 +177,7 @@ if moon:
 
 plaque = clock.Plaque(text_lines=["M33#0 {:.1f}cm L.Wallin".format(train.pendulum_length * 100), "Happy Birthday Ffi"])
 
-plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=8, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
+plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
                                  plaque=plaque)
@@ -194,6 +194,23 @@ dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 if moon:
     dial_colours =  [clock.Colour.BLUE, clock.Colour.WHITE]
 
+
+if moon and False:
+    #hack to retrofit missing motion works holder!
+    plates.little_arm_to_motion_works=False
+    mini_arm_width = plates.motion_works_screws.get_nut_containing_diameter() * 2
+    extra = 0.6
+    thick = plates.get_plate_thick(back=False)
+    centre = plates.bearing_positions[train.powered_wheels][:2]
+    holder = clock.get_stroke_line([plates.motion_works_pos, centre], wide=mini_arm_width, thick=thick+extra)
+    holder = holder.cut(cq.Workplane("XY").moveTo(centre[0], centre[1]).circle(plates.arbors_for_plate[train.powered_wheels].bearing.outer_d).extrude(thick+extra))
+    holder = holder.cut(plates.motion_works_screws.get_cutter().translate(plates.motion_works_pos))
+    holder = holder.translate((0,0,-extra))
+    holder = holder.cut(plates.get_plate(back=False))
+
+
+    show_object(holder.translate((0,0, plates.get_plate_thick(True) + plates.plate_distance)))
+    clock.export_STL(holder, "motion_works_holder_retrofit", clock_name=clock_name, path=clock_out_dir)
 
 # show_object(plates.get_plate(back=True))
 # show_object(plaque.get_plaque().rotate((0,0,0), (0,0,1), clock.rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-plaque.thick)))

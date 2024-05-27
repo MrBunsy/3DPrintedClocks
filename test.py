@@ -812,10 +812,10 @@ if test_ratchet:
 #
 # show_object(spring.get_ratchet_gear_for_arbor())
 #
-# key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
-# # #
-# # show_object(key.get_let_down_adapter())
-# show_object(key.get_assembled())
+key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
+# #
+# show_object(key.get_let_down_adapter())
+show_object(key.get_assembled())
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #
@@ -945,9 +945,9 @@ if test_ratchet:
 # )
 # show_object(sprocket)
 
-plaque = Plaque(["First Line", "Second Line"], 50, 20)
-
-plaque.set_dimensions(50,20)
-
-show_object(plaque.get_plaque())
-show_object(plaque.get_text())
+# plaque = Plaque(["First Line", "Second Line"], 50, 20)
+#
+# plaque.set_dimensions(50,20)
+#
+# show_object(plaque.get_plaque())
+# show_object(plaque.get_text())
