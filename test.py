@@ -816,6 +816,7 @@ key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,
 # #
 # show_object(key.get_let_down_adapter())
 show_object(key.get_assembled())
+# show_object(key.get_key(for_printing=False))
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #

@@ -1781,6 +1781,9 @@ class WindingKey:
         #print on the side for more strength? (hopefully, might just split lengthways instead, would screws alongside the barrel work better?)
         self.print_sideways = print_sideways
 
+        # if this works I'm not sure I'll have much reason to go back to the one which needs supports to print
+        self.handle_separate = print_sideways
+
         self.wall_thick = wall_thick
 
         self.handle_thick = handle_thick
@@ -1884,12 +1887,22 @@ class WindingKey:
         key = key.cut(key_hole)
 
         if not for_printing:
-            # for the model
-            key = key.translate((-self.body_wide / 2, 0))
-            key = key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0,0,0), (0,0,1),180).translate((0, 0, self.cylinder_length + self.handle_thick))
-            key = key.add(self.get_knob().translate((0, self.handle_length - self.body_wide / 2, self.cylinder_length + self.handle_thick)))
+            # for the model, standing on end lined up with the internal end of the key on the xy plane
+            # key = key.translate((-self.body_wide / 2, 0))
+            key = (key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0,0,0), (0,0,1),180)
+                   .translate((0, 0, self.get_key_total_height() - self.key_hole_deep)))
+
+            # key = key.add(self.get_knob().translate((0, self.handle_length - self.body_wide / 2, self.cylinder_length + self.handle_thick)))
 
         return key
+
+    def get_key_total_height(self):
+        if self.crank:
+            handle_tall = self.handle_thick
+        else:
+            handle_tall = self.key_grip_tall
+
+        return self.cylinder_length + handle_tall
 
     def get_height(self):
         handle_tall = 0
@@ -1931,12 +1944,12 @@ class WindingKey:
 
         return knob
     def get_assembled(self):
-        key = self.get_key()
+        key = self.get_key(for_printing=False)
         if self.crank:
-            key = key.add(self.get_knob().rotate((0,0,0),(1,0,0),180).translate((0,self.handle_length-self.body_wide/2,0)))
+            key = key.add(self.get_knob().rotate((0,0,0),(1,0,0),180).translate((0,self.handle_length-self.body_wide/2, self.get_key_total_height() - self.key_hole_deep + self.knob_length + self.knob_fixing_screw.get_washer_thick())))
 
 
-        key = key.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_height()))
+        # key = key.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_height()))
         return key
 
     def output_STLs(self, name, path):

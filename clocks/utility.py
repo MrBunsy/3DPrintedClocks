@@ -100,6 +100,10 @@ def get_washer_diameter(metric_thread):
         return 6.8
     raise ValueError("TODO measure more washers")
 
+def get_washer_thick(metric_thread):
+    if metric_thread == 3:
+        return WASHER_THICK_M3
+    raise NotImplementedError("TODO add more washer dimensions")
 
 def get_nut_containing_diameter(metric_thread, wiggleRoom=0, thumb=False):
     '''
@@ -309,6 +313,9 @@ class MachineScrew:
 
     def get_washer_diameter(self):
         return get_washer_diameter(self.metric_thread)
+
+    def get_washer_thick(self):
+        return get_washer_thick(self.metric_thread)
 
     def get_rod_cutter_r(self, layer_thick=LAYER_THICK, loose=False, for_tap_die=False, sideways=False):
         r = self.metric_thread / 2

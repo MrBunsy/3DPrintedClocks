@@ -172,7 +172,7 @@ class Assembly:
             self.key_model = key_model.translate(
                 (self.plates.bearing_positions[0][0],
                  self.plates.bearing_positions[0][1],
-                 self.front_of_clock_z + self.plates.key_length + self.plates.endshake / 2 - key.key_hole_deep)
+                 self.front_of_clock_z + self.plates.key_length )#+ self.plates.endshake / 2 # not sure why I used to add endshake to leave a gap
             )
 
         self.vanity_plate = None
