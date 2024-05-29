@@ -626,7 +626,10 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
             endPos = (math.cos(angle+toothBaseAngle) * self.inner_radius, math.sin(angle + toothBaseAngle) * self.inner_radius)
             # print(tipPos)
             # wheel = wheel.lineTo(0,tipPos[1])
-            wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos, self.inner_diameter)
+            r = self.inner_diameter/2
+            if dA > 0:
+                r*=-1
+            wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos, r)
             # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
 
         wheel = wheel.close()
