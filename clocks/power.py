@@ -1065,45 +1065,13 @@ class SpringBarrel:
 
         '''
 
-        #calculate total diameter of fully wound spring
-        # current_diameter = self.arbor_d_spring
-        # current_diameter = 9
-        # length_left = self.spring.length
-        # fully_wound_turns = 0
-        # while length_left >= 0:
-        #
-        #     coil_length = math.pi*(current_diameter + self.spring.thick/2)
-        #
-        #     #count half a coil as a full coil for the diameter, doesn't need to be perfect as I'm not taking into account lots of little details anyway
-        #     # if length_left > coil_length:
-        #     length_left -= coil_length
-        #
-        #
-        #     # if length_left < coil_length:
-        #     #     break
-        #     fully_wound_turns += 1
-        #     current_diameter += self.spring.thick * 2
-        #
-        # print("total coils when fully wound: {}, diameter of wound spring: {}".format(fully_wound_turns, current_diameter))
-        #
-        # #following The Modern Clock, the inner diameter of the spring when fully unwound should be at the same as the outer diameter when fully wound
-        #
-        # length_left = self.spring.length
-        # unwound_turns = 0
-        # while length_left >= 0:
-        #     coil_length = math.pi*(current_diameter + self.spring.thick/2)
-        #     length_left -= coil_length
-        #     # if length_left < coil_length:
-        #     #     break
-        #     current_diameter += self.spring.thick * 2
-        #     unwound_turns += 1
-        #
-        # print("total coils when unwound: {}, outer diameter of unwound spring: {}".format(unwound_turns, current_diameter))
 
         arbor_d = self.arbor_d_spring
         # arbor_d = 9
         area_of_coiled_spring = self.spring.thick * self.spring.length
         #free area inside barrel needs to be twice this, plus some fudge factor chosen so that the calculations line up with the "known" smiths spring
+        #thoughts - I'm using countersunk machine screw heads as hooks, they take up more space than proper hooks - should I take this into account?
+        #or just leave the fudge factor as is?
         desired_free_area_of_inside_barrel = area_of_coiled_spring*2.325
         area_of_spring_arbor = math.pi*(arbor_d/2)**2
         total_area_of_inside_barrel = desired_free_area_of_inside_barrel + area_of_spring_arbor

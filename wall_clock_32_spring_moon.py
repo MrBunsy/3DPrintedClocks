@@ -51,7 +51,7 @@ lift=3
 drop=3
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=3,
-                                    tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
+                                    tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=clock.EscapementType.RECOIL)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
 

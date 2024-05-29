@@ -2,7 +2,7 @@ from clocks import *
 
 from clocks.cq_gears import BevelGear, BevelGearPair, CrownGearPair
 
-from cq_warehouse.sprocket import *
+# from cq_warehouse.sprocket import *
 
 outputSTL = False
 
@@ -812,10 +812,10 @@ if test_ratchet:
 #
 # show_object(spring.get_ratchet_gear_for_arbor())
 #
-key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
-# #
-# show_object(key.get_let_down_adapter())
-show_object(key.get_assembled())
+# key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
+# # #
+# # show_object(key.get_let_down_adapter())
+# show_object(key.get_assembled())
 # show_object(key.get_key(for_printing=False))
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
@@ -856,15 +856,15 @@ show_object(key.get_assembled())
 # print(pair.pinion.addendum_radius_factor*pair.module*2)
 
 
-# lift=2
-# drop=2.5
-# lock=2
-# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock,  toothTipAngle=3,
-#                                     toothBaseAngle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
-#
-#
-# show_object(escapement.get_wheel_2d())
-# show_object(escapement.get_anchor_2d())
+lift=2
+drop=2.5
+lock=2
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock,  tooth_tip_angle=3,
+                                    tooth_base_angle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.RECOIL)
+
+
+show_object(escapement.get_wheel_2d())
+show_object(escapement.get_anchor_2d())
 
 # screw_test_block = cq.Workplane("XY").rect(30,15).extrude(6)
 #

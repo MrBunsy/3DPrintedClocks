@@ -169,22 +169,26 @@ class AnchorEscapement:
         self.anchor_centre = (0, self.anchor_centre_distance)
         self.wheel_centre = (0, 0)
 
-        armThick = self.diameter * 0.05
+        arm_thick = self.diameter * 0.05
         # aprox
         midEntryPalet = polar(math.pi + self.wheel_angle / 2, self.radius)
         armLength = np.linalg.norm(np.subtract(midEntryPalet, self.anchor_centre))
-        armThickAngle = armThick / armLength
+        armThickAngle = arm_thick / armLength
 
-        # angle of the arms holding the pallets - doesn't affect performance of escapement unless arc is really large (and then the arms crash into the teeth)
-        deadbeatAngle = self.run  # math.pi*0.05
+        # angle of the arms holding the pallets - doesn't affect performance of escapement unless arc is really large (and then the arms crash into the teeth). I think...
+        deadbeat_angle = self.run  # math.pi*0.05
 
         # for calculating the positions of the straight arms - this isn't quite right, but works
         if self.style == AnchorStyle.STRAIGHT:
-            self.anchor_centre_bottom = (0, self.anchor_centre_distance - (armThick / 2) / sin(self.anchor_angle / 2))
-            self.anchor_centre_top = (0, self.anchor_centre_distance + (armThick / 2) / sin(self.anchor_angle / 2))
+            self.anchor_centre_bottom = (0, self.anchor_centre_distance - (arm_thick / 2) / sin(self.anchor_angle / 2))
+            self.anchor_centre_top = (0, self.anchor_centre_distance + (arm_thick / 2) / sin(self.anchor_angle / 2))
         else:
             self.anchor_centre_bottom = (0, self.anchor_centre_distance - self.centre_r)
             self.anchor_centre_top = (0, self.anchor_centre_distance + self.centre_r)
+
+        if self.type == EscapementType.RECOIL:
+            self.bottom_arm_r = self.anchor_centre_distance - arm_thick/2
+            self.top_arm_r = self.bottom_arm_r + arm_thick
 
         # from the anchor centre, the length of the pallets determines how wide the pendulum will swing (the lift)
         palletLengthAngle = self.lift
@@ -207,6 +211,13 @@ class AnchorEscapement:
         self.entry_pallet_start_pos = entryPalletStartLineFromAnchor.intersection(entryPalletStartLineFromWheel)
         self.entry_pallet_end_pos = entryPalletEndLineFromAnchor.intersection(entryPalletEndLineFromWheel)
 
+        if self.type == EscapementType.RECOIL:
+            #extend the start outwards
+            self.entry_pallet_line = Line(self.entry_pallet_end_pos, anotherPoint=self.entry_pallet_start_pos)
+            # self.entry_pallet_length = distance_between_two_points(self.entry_pallet_start_pos, self.entry_pallet_end_pos)*5
+            # self.entry_pallet_start_pos = np_to_set(np.add(self.entry_pallet_end_pos, np.multiply(self.entry_pallet_line.dir, self.entry_pallet_length)))
+            self.entry_pallet_start_pos = self.entry_pallet_line.intersection_with_circle(self.wheel_centre, self.top_arm_r, line_length=self.diameter*4)[0]
+
         # =========== exit pallet ============
         exitPalletStartLineFromAnchor = Line(self.anchor_centre, anchorToExitPalletCentreAngle + palletLengthAngle / 2)
         exitPalletEndLineFromAnchor = Line(self.anchor_centre, anchorToExitPalletCentreAngle - palletLengthAngle / 2)
@@ -216,6 +227,13 @@ class AnchorEscapement:
 
         self.exit_pallet_start_pos = exitPalletStartLineFromAnchor.intersection(exitPalletStartLineFromWheel)
         self.exit_pallet_end_pos = exitPalletEndLineFromAnchor.intersection(exitPalletEndLineFromWheel)
+        
+        if self.type == EscapementType.RECOIL:
+            #extend the start outwards
+            self.exit_pallet_line = Line(self.exit_pallet_end_pos, anotherPoint=self.exit_pallet_start_pos)
+            # self.exit_pallet_length = distance_between_two_points(self.exit_pallet_start_pos, self.exit_pallet_end_pos)*5
+            # self.exit_pallet_start_pos = np_to_set(np.add(self.exit_pallet_end_pos, np.multiply(self.exit_pallet_line.dir, self.exit_pallet_length)))
+            self.exit_pallet_start_pos = self.exit_pallet_line.intersection_with_circle(self.wheel_centre, self.bottom_arm_r, line_length=self.diameter * 4)[0]
 
         # ========== pallet angles ==========
 
@@ -224,35 +242,48 @@ class AnchorEscapement:
 
         self.pallet_angles = [math.atan2(entryPalletDifference[1], entryPalletDifference[0]), math.atan2(exitPalletDifference[1], exitPalletDifference[0])]
 
-        # ========== points on the anchor =========
+        # ========== points on the anchor (generally assumes deadbeat) =========
 
         # distance of the end of the entry pallet from the anchor centre
         self.entry_pallet_end_r = np.linalg.norm(np.subtract(self.entry_pallet_end_pos, self.anchor_centre))
         self.entry_pallet_start_r = np.linalg.norm(np.subtract(self.entry_pallet_start_pos, self.anchor_centre))
-        self.inner_left_point = tuple(np.add(polar(math.pi * 1.5 - self.anchor_angle / 2 - palletLengthAngle / 2 - deadbeatAngle, self.entry_pallet_end_r), self.anchor_centre))
-        self.arm_thick_angle_entry = armThick / self.entry_pallet_end_r
-        self.outer_left_point = tuple(np.add(polar(math.pi * 1.5 - self.anchor_angle / 2 - palletLengthAngle / 2 - self.arm_thick_angle_entry - deadbeatAngle, self.entry_pallet_start_r), self.anchor_centre))
+        self.inner_left_point = tuple(np.add(polar(math.pi * 1.5 - self.anchor_angle / 2 - palletLengthAngle / 2 - deadbeat_angle, self.entry_pallet_end_r), self.anchor_centre))
+        self.arm_thick_angle_entry = arm_thick / self.entry_pallet_end_r
+        self.outer_left_point = tuple(np.add(polar(math.pi * 1.5 - self.anchor_angle / 2 - palletLengthAngle / 2 - self.arm_thick_angle_entry - deadbeat_angle, self.entry_pallet_start_r), self.anchor_centre))
 
         self.exit_pallet_end_r = np.linalg.norm(np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
         self.exit_pallet_start_r = np.linalg.norm(np.subtract(self.exit_pallet_start_pos, self.anchor_centre))
-        self.inner_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeatAngle, self.exit_pallet_start_r), self.anchor_centre))
-        self.arm_thick_angle_exit = armThick / self.exit_pallet_end_r
-        self.outer_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeatAngle + self.arm_thick_angle_exit, self.exit_pallet_end_r), self.anchor_centre))
+        self.inner_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeat_angle, self.exit_pallet_start_r), self.anchor_centre))
+        self.arm_thick_angle_exit = arm_thick / self.exit_pallet_end_r
+        self.outer_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeat_angle + self.arm_thick_angle_exit, self.exit_pallet_end_r), self.anchor_centre))
+        if self.type == EscapementType.RECOIL:
+            wheel_to_exit_pallet_end = Line(self.wheel_centre, anotherPoint=self.exit_pallet_end_pos)
+            self.outer_right_point = polar(math.atan2(self.exit_pallet_end_pos[1], self.exit_pallet_end_pos[0]), self.top_arm_r)
+            self.outer_left_point = self.entry_pallet_start_pos
+            self.inner_left_point = polar(math.atan2(self.entry_pallet_end_pos[1], self.entry_pallet_end_pos[0]), self.bottom_arm_r)
+            self.inner_right_point = self.exit_pallet_start_pos
+
+
 
         self.largest_anchor_r = max(self.entry_pallet_start_r, self.exit_pallet_end_r)
 
-        if self.style == AnchorStyle.CURVED:
-            # calculate the radii of the curved bits
-            # sagitta (from wikipedia)
-            # innerLeft and innerRight aren't quite parallel - inner right is slightly lower. I think this is expected as I don't attempt to keep inner radii the same
-            s = self.anchor_centre_bottom[1] - self.inner_right_point[1]
-            l = self.inner_right_point[0] - self.inner_left_point[0]
-            self.bottom_arm_r = s / 2 + l ** 2 / (8 * s)
-            self.top_arm_r = self.bottom_arm_r + armThick
-        elif self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
-            self.bottom_arm_r = np.linalg.norm(self.inner_right_point)
-            # check to see if the arm will intersect the centre circle enough and make it thicker if not
-            self.top_arm_r = self.bottom_arm_r + armThick
+
+        if self.type == EscapementType.DEADBEAT:
+            if self.style == AnchorStyle.CURVED:
+                # calculate the radii of the curved bits
+                # sagitta (from wikipedia)
+                # innerLeft and innerRight aren't quite parallel - inner right is slightly lower. I think this is expected as I don't attempt to keep inner radii the same
+                s = self.anchor_centre_bottom[1] - self.inner_right_point[1]
+                l = self.inner_right_point[0] - self.inner_left_point[0]
+                self.bottom_arm_r = s / 2 + l ** 2 / (8 * s)
+                self.top_arm_r = self.bottom_arm_r + arm_thick
+            elif self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
+                self.bottom_arm_r = np.linalg.norm(self.inner_right_point)
+                # check to see if the arm will intersect the centre circle enough and make it thicker if not
+                self.top_arm_r = self.bottom_arm_r + arm_thick
+
+
+
 
     def get_anchor_arbor_d(self):
         return self.arbor_d
@@ -328,14 +359,15 @@ class AnchorEscapement:
 
         draw the rest of the anchor depending on if it's recoil or deadbeat
         NOTE - only deadbeat works at the moment, but since it's wonderfully reliable I don't see the need to revisit recoil
+        update - toying with polishing the pallets and recoil has easier shapes to polish
 
         As a side effect, this function sets self.pallet_angles. TODO refactor to perform all the maths elsewhere
 
         '''
 
-        if self.type == EscapementType.RECOIL:
-            #just in case I ever want this again?
-            return self.get_anchor_2d_old()
+        # if self.type == EscapementType.RECOIL:
+        #     #just in case I ever want this again?
+        #     return self.get_anchor_2d_old()
 
         anchor = cq.Workplane("XY").tag("anchorbase")
 
@@ -373,14 +405,18 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         if self.type == EscapementType.DEADBEAT:
             anchor = anchor.radiusArc(self.outer_left_point, self.entry_pallet_end_r + 0.01)
 
+
         if self.style == AnchorStyle.STRAIGHT:
             #just temp - need proper arm and centre
             anchor = anchor.lineTo(self.anchor_centre_top[0], self.anchor_centre_top[1]).lineTo(self.outer_right_point[0], self.outer_right_point[1])
         elif self.style in [AnchorStyle.CURVED, AnchorStyle.CURVED_MATCHING_WHEEL]:
             anchor = anchor.radiusArc(self.outer_right_point, self.top_arm_r)
 
+
         if self.type == EscapementType.DEADBEAT:
             anchor = anchor.radiusArc(self.exit_pallet_end_pos, self.exit_pallet_end_r)
+        elif self.type == EscapementType.RECOIL:
+            anchor = anchor.lineTo(self.exit_pallet_end_pos[0], self.exit_pallet_end_pos[1])
 
         anchor = anchor.lineTo(self.exit_pallet_start_pos[0], self.exit_pallet_start_pos[1])
 
@@ -557,9 +593,12 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         if self.type == EscapementType.RECOIL:
             #based on the angle of the tooth being 20deg, but I want to calculate everyting in angles from the cetnre of the wheel
             #lazily assume arc along edge of inner wheel is a straight line
-            toothAngle = math.pi*20/180
-            toothTipAngle = 0
-            toothBaseAngle = -math.atan(math.tan(toothAngle) * self.tooth_height / self.inner_radius)
+            # toothAngle = math.pi*20/180
+            # toothTipAngle = 0
+            # toothBaseAngle = -math.atan(math.tan(toothAngle) * self.tooth_height / self.inner_radius)
+            toothTipAngle = self.tooth_tip_angle
+            toothBaseAngle = self.tooth_base_angle
+            dA*=-1
         elif self.type in [EscapementType.DEADBEAT]:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
             toothTipAngle = -self.tooth_tip_angle#-math.pi*0.05
