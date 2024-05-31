@@ -4041,14 +4041,17 @@ class RoundClockPlates(SimpleClockPlates):
                 #this bearing will be in the outer circle
                 continue
 
-            if i == len(self.bearing_positions) - 1 and self.no_upper_wheel_in_centre:
+            if back and i == len(self.bearing_positions) - 1 and self.no_upper_wheel_in_centre:
                 #don't need a bit of plate to support just a hole for the anchor
                 continue
 
             line = Line(centre, anotherPoint=bearing_pos[:2])
             end = np_to_set(np.add(polar(line.get_angle(), self.radius), centre))
 
-            if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front and distance_between_two_points(bearing_pos[:2], centre) > self.radius:
+            bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].bearing.outer_d
+            bearing_from_radius = abs(distance_between_two_points(bearing_pos[:2], centre) - self.radius)
+
+            if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front and bearing_from_radius > bearing_in_plate_space:
                 #the anchor needs something to support it on the front plate
                 end = bearing_pos[:2]
 

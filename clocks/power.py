@@ -881,7 +881,8 @@ class SpringBarrel:
     '''
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
-                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None):
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=2,
+                 ratchet_thick=8):
         '''
 
         '''
@@ -897,6 +898,10 @@ class SpringBarrel:
 
         #ratchet is out the back plate, rather than on the front plate?
         self.ratchet_at_back = ratchet_at_back
+        self.ratchet_thick = ratchet_thick
+
+        #how much more space to allow in the barrel to prevent the spring rubbing up against the base or lid?
+        self.extra_barrel_height = extra_barrel_height
 
         self.spring = spring
         if self.spring is None:
@@ -920,7 +925,7 @@ class SpringBarrel:
         if self.barrel_bearing is None:
             self.barrel_bearing = BEARING_12x18x4_THIN
 
-        self.barrel_height = self.spring.height + 2
+        self.barrel_height = self.spring.height + self.extra_barrel_height
 
         #10 from first experiment seemd like more than needed
         #8 did crack after the tooth failed - *probably* just because of the tooth failing, but let's go back up anyway
@@ -965,18 +970,21 @@ class SpringBarrel:
         #     self.key_square_side_length = self.arbor_d_bearing*0.6 * math.sqrt(2)
         # self.key_max_r =
 
-        #calculate this given we know the spring length+thickness and arbor diameter
-        self.barrel_diameter = self.get_inner_diameter()
+
 
         self.collet_wiggle_room = 0.5 #0.5 only fitted with some filing, but when the arbor was pritned with a 0.6 nozzle 0.7 was a tiny bit loose
 
         self.lid_fixing_screws_count = 3
+        # self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.collet_screws = self.lid_fixing_screws
 
         self.spring_hook_screws = spring_hook_screws
         if self.spring_hook_screws is None:
             self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
+
+        # calculate this given we know the spring length+thickness and arbor diameter
+        self.barrel_diameter = self.get_inner_diameter()
 
         self.spring_hook_space=2
         ratchet_d = self.arbor_d*2.5
@@ -985,7 +993,7 @@ class SpringBarrel:
         if self.ratchet_at_back:
             ratchet_blocks_clockwise = self.clockwise
 
-        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.base_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
+        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d,thick=self.ratchet_thick, blocks_clockwise= ratchet_blocks_clockwise, click_fixing_angle=click_angle, pawl_angle=pawl_angle)
 
         self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1.5
         self.back_collet_thick = self.ratchet_collet_thick + self.back_bearing_standoff
@@ -1086,6 +1094,8 @@ class SpringBarrel:
 
         #this also matches up with the rule of thumb that the mainspring thickness should be aproximately 1/100th of the barrel diameter
 
+        #I think that my hooks are larger than "real" hooks and also it's a PITA to put the spring in without coning it. So, further bodge:
+        diameter_of_spring_barrel += self.spring_hook_screws.get_head_height()
 
         return diameter_of_spring_barrel
 
@@ -1200,7 +1210,7 @@ class SpringBarrel:
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
 
-        barrel = Gear.cutStyle(barrel, outerRadius=self.radius_for_style, innerRadius=self.key_bearing.outer_d / 2 + self.wall_thick / 2, style=self.style,
+        barrel = Gear.cutStyle(barrel, outerRadius=self.radius_for_style, innerRadius=self.key_bearing.outer_d / 2 + self.wall_thick / 3, style=self.style,
                                clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)

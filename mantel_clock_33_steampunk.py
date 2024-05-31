@@ -78,8 +78,8 @@ if moon:
 else:
     module_reduction=0.9#0.85
 #ratios from wall clock 32 but larger wheel for the intermediate wheel as we have a larger minute wheel on this clock
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=10, chain_wheel_ratios=[[61, 10], [61, 10]])
+train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick-2,
+                        style=gear_style, wall_thick=10, chain_wheel_ratios=[[61, 10], [61, 10]], extra_barrel_height=4, ratchet_thick=barrel_gear_thick)
 '''
 0.35:
 [[61, 10], [78, 10]]

@@ -663,11 +663,12 @@ class GoingTrain:
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_spring_barrel(self, spring=None, key_bearing=None, pawl_angle=math.pi / 2, click_angle=-math.pi / 2, ratchet_at_back=True,
-                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, fraction_of_max_turns=0.5, wheel_min_teeth=60, wall_thick=12):
+                          style=GearStyle.ARCS, chain_wheel_ratios=None, base_thick=8, fraction_of_max_turns=0.5, wheel_min_teeth=60, wall_thick=12, extra_barrel_height=2,
+                          ratchet_thick=8):
 
         self.powered_wheel = SpringBarrel(spring=spring, key_bearing=key_bearing, clockwise=self.powered_wheels % 2 == 0,
                                           pawl_angle=pawl_angle, click_angle=click_angle, ratchet_at_back=ratchet_at_back, style=style, base_thick=base_thick,
-                                          fraction_of_max_turns=fraction_of_max_turns, wall_thick=wall_thick)
+                                          fraction_of_max_turns=fraction_of_max_turns, wall_thick=wall_thick, extra_barrel_height=extra_barrel_height, ratchet_thick=ratchet_thick)
         '''
         smiths: 66 teeth on barrel, 10 on next pinion
         76 teeth on next wheel, 13 on next pinion
@@ -711,8 +712,8 @@ class GoingTrain:
             turns = for_runtime_hours / power_ratio
 
             rewinding_turns = self.powered_wheel.get_key_turns_to_rewind_barrel_turns(turns)
-            print("Over a runtime of {:.1f}hours the spring barrel will make {:.1f} full rotations which is {:.1f}% of the maximum number of turns ({:.1f}) and will take {:.1f} key turns to wind back up"
-                  .format(for_runtime_hours, turns, 100.0 * turns / max_barrel_turns, max_barrel_turns, rewinding_turns))
+            print("Over a runtime of {:.1f}hours the spring barrel ({:.1f}mm diameter) will make {:.1f} full rotations which is {:.1f}% of the maximum number of turns ({:.1f}) and will take {:.1f} key turns to wind back up"
+                  .format(for_runtime_hours, self.powered_wheel.barrel_diameter, turns, 100.0 * turns / max_barrel_turns, max_barrel_turns, rewinding_turns))
             return
 
         runtime_hours = self.powered_wheel.getRunTime(power_ratio, self.get_cord_usage())

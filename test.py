@@ -856,15 +856,15 @@ if test_ratchet:
 # print(pair.pinion.addendum_radius_factor*pair.module*2)
 
 
-lift=2
-drop=2.5
-lock=2
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock,  tooth_tip_angle=3,
-                                    tooth_base_angle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.RECOIL)
-
-
-show_object(escapement.get_wheel_2d())
-show_object(escapement.get_anchor_2d())
+# lift=2
+# drop=2.5
+# lock=2
+# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock,  tooth_tip_angle=3,
+#                                     tooth_base_angle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.RECOIL)
+#
+#
+# show_object(escapement.get_wheel_2d())
+# show_object(escapement.get_anchor_2d())
 
 # screw_test_block = cq.Workplane("XY").rect(30,15).extrude(6)
 #
@@ -891,7 +891,7 @@ show_object(escapement.get_anchor_2d())
 # show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
 # show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25, just_style=HandStyle.XMAS_TREE)
 
-# spring_barrel = SpringBarrel(spring=MAINSPRING_183535)
+spring_barrel = SpringBarrel()
 #
 # spring_barrel.get_max_barrel_turns()
 #
