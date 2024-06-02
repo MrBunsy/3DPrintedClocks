@@ -45,7 +45,7 @@ clock_out_dir= "out"
 gear_style=clock.GearStyle.ARCS
 pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
-moon = True
+moon = False
 
 if moon:
     gear_style = clock.GearStyle.CIRCLES

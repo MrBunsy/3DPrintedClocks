@@ -111,7 +111,7 @@ if 'show_object' not in globals():
 # show_object(hands.getHand(hour=False))
 
 
-# show_object(getHandDemo(assembled=True, chunky=True, justStyle=HandStyle.MOON, outline=1, length=85))
+# show_object(get_hand_demo(assembled=True, chunky=True, just_style=HandStyle.MOON, outline=1, length=85))
 # show_object(getGearDemo(justStyle=GearStyle.DIAMONDS))
 
 
@@ -276,11 +276,11 @@ if False:
 #
 # show_object(holder)
 #
-# motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2)
-# hands = Hands(style=HandStyle.INDUSTRIAL, chunky=True, secondLength=68.18131703845526*0.45, minuteFixing="square", minuteFixing_d1=motionWorks.get_minute_hand_square_size(),
-#               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=200*0.45, thick=motionWorks.minute_hand_slot_height, outline=0.5, outlineSameAsBody=False)
-#
-# # show_object(hands.get_assembled())
+motionWorks = MotionWorks(extra_height=0, style=GearStyle.SIMPLE5, compact=True, thick=3, module=2)
+hands = Hands(style=HandStyle.CIRCLES, chunky=True, second_length=68.18131703845526*0.45, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(),
+              hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=200*0.45, thick=motionWorks.minute_hand_slot_height, outline=0.5, outline_same_as_body=False, second_hand_centred=False)
+# #
+# # # show_object(hands.get_assembled())
 # hands.show_hands(show_object)
 # show_object(hands.getHand(hand_type=HandType.SECOND, generate_outline=False))
 # show_object(hands.getHand(hand_type=HandType.SECOND, generate_outline=True))
@@ -458,25 +458,41 @@ if False:
 # dial = Dial(outside_d=200, style=DialStyle.TONY_THE_CLOCK)
 # show_object(dial.get_wire_to_arbor_fixer())
 
-if False:
-    lift=4
-    drop=2
-    lock=2
-    escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,  toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
-    pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
-                              bobD=60, bobThick=10, useNylocForAnchor=False)
-    bow_tie = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gap_width, bob_nut_height=pendulum.gap_height)
+if True:
+    # lift=4
+    # drop=2
+    # lock=2
+    # escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,  toothTipAngle=5, toothBaseAngle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL)
+    # lift = 2.5
+    # drop = 3.5
+    # lock = 2.5
+    # lift = 2
+    # drop = 4
+    # lock = 2
+    lift = 4
+    drop = 2
+    lock = 2
 
-    # show_object(bow.get_outline())
-    # show_object(bow.get_red(),options={"color":"red"} )
-    # show_object(bow.get_yellow(),options={"color":"yellow"} )
+    #originally printed with tooth tip and base angles of 3 and 3, putting back to defaults incase to make stronger in case it was a bent tooth problem
+    # tooth_tip_angle=3, tooth_base_angle=3,
+    escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
 
-    cosmetics={"red": bow_tie.get_red(),
-               "yellow": bow_tie.get_yellow()}
+    show_object(escapement.get_assembled())
+    #
+    # pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
+    #                           bobD=60, bobThick=10, useNylocForAnchor=False)
+    # bow_tie = BowTie(width=200*tony_the_clock["bow_tie_width"]/tony_the_clock["diameter"], bob_nut_width=pendulum.gap_width, bob_nut_height=pendulum.gap_height)
+    #
+    # # show_object(bow.get_outline())
+    # # show_object(bow.get_red(),options={"color":"red"} )
+    # # show_object(bow.get_yellow(),options={"color":"yellow"} )
+    #
+    # cosmetics={"red": bow_tie.get_red(),
+    #            "yellow": bow_tie.get_yellow()}
+    #
+    # pretty_bob = ItemWithCosmetics(shape = pendulum.get_bob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics)
 
-    pretty_bob = ItemWithCosmetics(shape = pendulum.get_bob(), name="bow_tie_bob", background_colour="black", cosmetics=cosmetics)
-
-    show_object(pretty_bob.get_models())
+    # show_object(pretty_bob.get_models())
 
 
 if False:
@@ -891,7 +907,7 @@ if test_ratchet:
 # show_object(hands.getHand(hand_type=HandType.HOUR, generate_outline=False, colour="brown"))
 # show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25, just_style=HandStyle.XMAS_TREE)
 
-spring_barrel = SpringBarrel()
+# spring_barrel = SpringBarrel()
 #
 # spring_barrel.get_max_barrel_turns()
 #
@@ -919,7 +935,7 @@ spring_barrel = SpringBarrel()
 # show_object(numerals.get_number("XVIII"))
 # show_object(numerals.get_X())
 
-# show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
+# show_object(fancy_pillar(30, 100, style=PillarStyle.TWISTY))
 
 # show_object(BEARING_3x10x4.get_cutter(with_bridging=True))
 # show_object(BEARING_3x10x4.get_cutter(with_bridging=False))

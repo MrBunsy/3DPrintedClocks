@@ -47,11 +47,15 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 
 #larger drop like mantel clock 30, but since we're using 30 teeth, a bit more lift to get the 45 degree pallets
-lift=3
-drop=3
-lock=2
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=3,
-                                    tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=clock.EscapementType.RECOIL)
+# lift=3
+# drop=3
+# lock=2
+#struggling with reliability, wondering if it isn't a spring problem but an escapement problem. Going for belt-and braces with increased drop and lock
+lift = 2.5
+drop = 3.5
+lock = 2.5
+#originally printed with tooth tip and base angles of 3 and 3, putting back to defaults incase to make stronger in case it was a bent tooth problem # tooth_tip_angle=3, tooth_base_angle=3,
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=clock.EscapementType.DEADBEAT)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
 
@@ -143,7 +147,7 @@ if not outputSTL or True:
 
 if outputSTL:
 
-    moon_complication.output_STLs(clockName, clockOutDir)
+    # moon_complication.output_STLs(clockName, clockOutDir)
     motion_works.output_STLs(clockName, clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)

@@ -3461,7 +3461,7 @@ class MantelClockPlates(SimpleClockPlates):
         plate = plate.union(cq.Workplane("XY").circle(self.going_train.powered_wheel.key_bearing.outer_d / 2 + self.bearing_wall_thick * 1.5).extrude(plate_thick))
 
         if not back and self.moon_complication is not None:
-
+            #little arm that sticks off the top to hold the moon holder
             moon_holder_wide = self.get_moon_holder_info()["wide"]
             moon_holder_arm = get_stroke_line([self.bearing_positions[-1][:2], [0, self.hands_position[1] + self.dial.outside_d/2]],
                                                 wide=moon_holder_wide, thick=plate_thick, style=StrokeStyle.SQUARE)
@@ -4053,9 +4053,11 @@ class RoundClockPlates(SimpleClockPlates):
 
             if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front and bearing_from_radius > bearing_in_plate_space:
                 #the anchor needs something to support it on the front plate
-                end = bearing_pos[:2]
+                line = Line(centre, anotherPoint=bearing_pos[:2])
+                end = tuple(np.add(centre, np.multiply(line.dir, self.radius)))
 
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
+
 
         if just_basic_shape:
             return plate
@@ -4077,7 +4079,7 @@ class RoundClockPlates(SimpleClockPlates):
                     plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
                     plate = plate.cut(self.small_fixing_screws.get_cutter().translate(pos))
 
-            plate = self.front_additions_to_plate(plate)
+            plate = self.front_additions_to_plate(plate, moon=True)
 
 
         plate = self.punch_bearing_holes(plate, back)

@@ -45,6 +45,7 @@ class HandStyle(Enum):
     MOON = "moon"#Brequet but with crescents instead of circles
     INDUSTRIAL = "industrial"#based on a Siemens slave clock
     FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
+    TWIRLY = "twirly"
 
 class HandType(Enum):
     HOUR = "hour"
@@ -53,8 +54,7 @@ class HandType(Enum):
 
 class EscapementType(Enum):
     DEADBEAT = "deadbeat"
-    #recoil was broken when deadbeat introduced, in theory not hard to fix, I've just had no reason to do so
-    RECOIL = "recoil"
+    RECOIL = "recoil" # new recoil is still untested
     GRASSHOPPER = "grasshopper"
     BROCOT = "brocot"
     NOT_IMPLEMENTED = None

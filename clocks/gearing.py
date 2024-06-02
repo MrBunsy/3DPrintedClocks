@@ -2213,13 +2213,13 @@ class Arbor:
         pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=self.hole_d, style=self.style).translate([0, 0, self.wheel_thick])
 
         if self.pinion_extension > 0:
-            pinion = pinion.translate((0,0,self.pinion_extension)).faces("<Z").workplane().circle(self.pinion.get_max_radius()).extrude(self.pinion_extension)
+            pinion = pinion.translate((0,0,self.pinion_extension)).faces("<Z").workplane().circle(self.pinion.get_max_radius()).circle(self.hole_d / 2).extrude(self.pinion_extension)
 
         arbour = wheel.union(pinion)
         if self.end_cap_thick > 0:
-            arbour = arbour.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
+            arbour = arbour.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).circle(self.hole_d / 2).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
-        arbour = arbour.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.wheel_thick + self.pinion_thick + self.end_cap_thick))
+        arbour = arbour.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_total_thickness()))
 
         return arbour
 
