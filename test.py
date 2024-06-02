@@ -469,15 +469,21 @@ if True:
     # lift = 2
     # drop = 4
     # lock = 2
-    lift = 4
-    drop = 2
-    lock = 2
-
+    # lift = 4
+    # drop = 2
+    # lock = 2
+    lift = 2
+    drop = 4
+    lock = 3
     #originally printed with tooth tip and base angles of 3 and 3, putting back to defaults incase to make stronger in case it was a bent tooth problem
     # tooth_tip_angle=3, tooth_base_angle=3,
-    escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
+    escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT, tooth_tip_angle=5, tooth_base_angle=4)
 
-    show_object(escapement.get_assembled())
+    # show_object(escapement.get_assembled())
+    show_object(escapement.get_wheel_2d().rotate((0,0,0), (0,0,1), 4 + -(360/30)/2))
+    # show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0), (0,escapement.anchor_centre_distance,1), -lift-lock/2))
+    show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0), (0,escapement.anchor_centre_distance,1), -lift/2-lock/2 - 2))
+    show_object(cq.Workplane("XY").circle(escapement.radius))
     #
     # pendulum = Pendulum(escapement, 0.225, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0,handAvoiderInnerD=100,
     #                           bobD=60, bobThick=10, useNylocForAnchor=False)

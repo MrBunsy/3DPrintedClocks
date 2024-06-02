@@ -1214,6 +1214,12 @@ class WheelPinionPair:
 
         return guess_module * ratio
 
+    @staticmethod
+    def get_replacement_module_size(old_wheel_teeth, old_pinion_teeth, old_module, new_wheel_teeth, new_pinion_teeth):
+        old_pair = WheelPinionPair(old_wheel_teeth, old_pinion_teeth, old_module)
+        distance = old_pair.centre_distance
+        return WheelPinionPair.get_module_size_for_distance(distance, new_wheel_teeth, new_pinion_teeth)
+
     errorLimit=0.000001
     def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, lantern=False):
         '''
