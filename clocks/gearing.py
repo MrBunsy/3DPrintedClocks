@@ -1816,10 +1816,10 @@ class ArborForPlate:
             #"normal" wheel-pinion pair (or escape wheel if not on the front)
             arbor = shapes["wheel"]
             if "lantern_pinion_cap" in shapes:
-                arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick)))
+                arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick + self.arbor.pinion_extension)))
             if "lantern_pinion_fixing" in shapes:
                 #messy, just wanted to avoid working out how to undo the rotation from for_printing
-                arbor = arbor.add(self.arbor.pinion.get_lantern_inner_fixing(base_thick=self.arbor.wheel_thick, pinion_height=self.arbor.pinion_thick, top_thick=self.arbor.end_cap_thick, hole_d=self.arbor.hole_d, for_printing=False))
+                arbor = arbor.add(self.arbor.pinion.get_lantern_inner_fixing(base_thick=self.arbor.wheel_thick, pinion_height=self.arbor.pinion_thick + self.arbor.pinion_extension, top_thick=self.arbor.end_cap_thick, hole_d=self.arbor.hole_d, for_printing=False))
 
             if not self.arbor.pinion_at_front:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.total_thickness))
@@ -2321,8 +2321,8 @@ class Arbor:
                 shape = shape.add(self.powered_wheel.get_assembled().translate((0, 0, self.wheel_thick)))
 
         if self.pinion.lantern:
-            shape = shape.add(self.pinion.get_lantern_cap(self.end_cap_thick).translate((0,0, self.wheel_thick + self.pinion_thick)))
-            shape = shape.add(self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick, top_thick=self.end_cap_thick, for_printing=False))
+            shape = shape.add(self.pinion.get_lantern_cap(self.end_cap_thick).translate((0,0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
+            shape = shape.add(self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick + self.pinion_extension, top_thick=self.end_cap_thick, for_printing=False))
 
         return shape
 
@@ -2356,7 +2356,7 @@ class Arbor:
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.pinion.lantern:
             extras["lantern_pinion_cap"] = self.pinion.get_lantern_cap(cap_thick=self.end_cap_thick)
-            extras["lantern_pinion_fixing"] = self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick, top_thick=self.end_cap_thick, hole_d=self.hole_d)
+            extras["lantern_pinion_fixing"] = self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick + self.pinion_extension, top_thick=self.end_cap_thick, hole_d=self.hole_d)
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
             traditional_ratchet = True
@@ -2459,9 +2459,7 @@ class Arbor:
         if rear_side_extension > 0 and not self.combine_with_powered_wheel:
             #rear side extension - chunky bit out the back to help provide stability on the threaded rod
             #limit to r of 1cm
-            max_r = 10
-            if self.loose_on_rod:
-                max_r = 12.5
+            max_r = self.powered_wheel.get_rod_radius()
 
             extension_r = min(max_r, arbour_extension_max_radius)
 

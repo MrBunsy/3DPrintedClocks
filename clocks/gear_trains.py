@@ -907,7 +907,12 @@ class GoingTrain:
                 if i in lanterns:
                     has_lantern=True
 
-            minute_wheel_space = pairs[0].wheel.get_max_radius() + rod_diameters[1]
+            minute_wheel_space = pairs[0].wheel.get_max_radius()
+            if self.powered_wheels == 1:
+                minute_wheel_space +=  self.powered_wheel.get_rod_radius()
+            else:
+                minute_wheel_space += rod_diameters[1]
+
             last_chain_wheel_space = self.powered_wheel_pairs[-1].centre_distance
             if not self.powered_wheel.loose_on_rod:
                 # TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel

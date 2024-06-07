@@ -1002,6 +1002,14 @@ class SpringBarrel:
 
         self.collet_diameter = self.arbor_d+8
 
+    def get_rod_radius(self):
+        '''
+        get space behind* the powered wheel space so the gear train can fit the minute wheel
+
+        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+        '''
+        return self.arbor_d/2
+
     def get_key_size(self):
         return self.key_containing_diameter
 
@@ -1381,6 +1389,8 @@ class SpringBarrel:
 class WeightPoweredWheel:
     '''
     Python doesn't have interfaces, but this is the interface for the powered wheel classes (for weights! I forgot entirely about springs when I wrote this)
+
+    TODO probably should refactor so this is a base class and then can re-use code between the different weight powered wheels.
     '''
 
     @staticmethod
@@ -1412,7 +1422,7 @@ class WeightPoweredWheel:
         self.loose_on_rod = False
         self.arbor_d = 3
 
-    def getChainHoleD(self):
+    def get_chain_hole_diameter(self):
         '''
         Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
         '''
@@ -1472,6 +1482,14 @@ class WeightPoweredWheel:
         '''
         print to console information on screws required to assemble
         '''
+
+    def get_rod_radius(self):
+        '''
+        get space behind* the powered wheel space so the gear train can fit the minute wheel
+
+        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+        '''
+        return None
 
 
 class RopeWheel:
@@ -1554,6 +1572,15 @@ class RopeWheel:
 
         print("rope wheel needs steel pipe of length {}mm".format(self.wheel_thick + self.bearing_standoff_thick))
 
+    def get_rod_radius(self):
+        '''
+        get space behind* the powered wheel space so the gear train can fit the minute wheel
+
+        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+        '''
+        #TODO if there's ever an eight day version of this, it'll have the same winding mechanism as the cord wheel?
+        return self.arbor_d
+
     def get_screw_positions(self):
         '''
         acn be printed in one peice, but still might want screw positions if we're being bolted to a wheel (eg huygen's)
@@ -1587,7 +1614,7 @@ class RopeWheel:
     def get_turns(self, cord_usage=0):
         return cord_usage/self.circumference
 
-    def getChainHoleD(self):
+    def get_chain_hole_diameter(self):
         return self.rope_diameter + 4
     #
     # def getHalf(self, top=False):
@@ -2082,6 +2109,16 @@ class CordWheel:
 
         self.power_clockwise = power_clockwise
 
+    def get_rod_radius(self):
+        '''
+        get space behind* the powered wheel space so the gear train can fit the minute wheel
+
+        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+        '''
+        max_r = 10
+        if self.loose_on_rod:
+            max_r = 12.5
+        return max_r
 
     def is_clockwise(self):
         '''
@@ -2111,7 +2148,7 @@ class CordWheel:
             print("cord wheel screw (m{}) length between".format(self.screw_thread_metric), minScrewLength + get_nut_height(self.screw_thread_metric), minScrewLength + self.thick / 2 + self.cap_thick)
 
 
-    def getChainHoleD(self):
+    def get_chain_hole_diameter(self):
         (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.getCordTurningInfo()
 
         #assume that the cord is going to squish a bit, so don't need to make this too excessive
@@ -2634,7 +2671,7 @@ class PocketChainWheel2:
         else:
             return self.outer_radius
 
-    def getChainHoleD(self):
+    def get_chain_hole_diameter(self):
         '''
         Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
         '''
@@ -2730,6 +2767,18 @@ class PocketChainWheel2:
         minScrewLength = self.ratchet.thick + self.wheel_thick*0.75 + self.fixing_screws.get_nut_height()
         print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.fixing_screws.get_string(), self.get_height(), minScrewLength))
 
+    def get_rod_radius(self):
+        '''
+        get space behind* the powered wheel space so the gear train can fit the minute wheel
+
+        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+
+        note - shared between most of the weight wheels, should really be in a base class
+        '''
+        max_r = 10
+        if self.loose_on_rod:
+            max_r = 12.5
+        return max_r
 class PocketChainWheel:
     '''
     This is a pocket chain wheel, printed in two parts.
@@ -2850,7 +2899,7 @@ class PocketChainWheel:
     def get_turns(self, cord_usage=0):
         return cord_usage / self.circumference
 
-    def getChainHoleD(self):
+    def get_chain_hole_diameter(self):
         #diameter of the hole in the bottom of the plate for the chain to dangle through
         return self.chain_width + 2
 
@@ -3032,6 +3081,19 @@ class PocketChainWheel:
 
     def setRatchet(self, ratchet):
         self.ratchet=ratchet
+
+    def get_rod_radius(self):
+        '''
+        get space behind* the powered wheel space so the gear train can fit the minute wheel
+
+        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+
+        note - shared between most of the weight wheels, should really be in a base class
+        '''
+        max_r = 10
+        if self.loose_on_rod:
+            max_r = 12.5
+        return max_r
 
     def output_STLs(self, name="clock", path="../out"):
 

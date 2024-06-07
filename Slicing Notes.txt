@@ -14,3 +14,6 @@ Most PETG mk4 in cupboard:
 
 dark green PETG in cupboard:
 225C 0.6 nozzle
+
+
+Red (even the new red) with 0.25 nozzle needs at least as low as 225C. 225C still has problems on the thin extension, try 220C next time.

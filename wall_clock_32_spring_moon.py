@@ -55,7 +55,20 @@ lift = 2.5
 drop = 3.5
 lock = 2.5
 #originally printed with tooth tip and base angles of 3 and 3, putting back to defaults incase to make stronger in case it was a bent tooth problem # tooth_tip_angle=3, tooth_base_angle=3,
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=clock.EscapementType.DEADBEAT)
+
+#trying the opposite idea. This is what wall clock 05 (1s period pendulum, small 30tooth escape wheel) has been reliably using for over a year
+#it used tooth_tip_angle=5, tooth_base_angle=4, (the defaults). I'm undecided and might exagerate the teeth to 6,4
+#this did not work. jammed immediately. Clock 5 is much smaller and the anchor is below the escape wheel *shrug*
+# lift = 4
+# drop = 2
+# lock = 3
+
+#let's go all in with the drop and lock
+lift = 2
+drop = 4
+lock = 3
+
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
 

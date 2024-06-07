@@ -528,7 +528,7 @@ class SimpleClockPlates:
 
         if PowerType.is_weight(self.going_train.powered_wheel.type):
             self.weight_driven = True
-            self.chain_hole_d = self.going_train.powered_wheel.getChainHoleD()
+            self.chain_hole_d = self.going_train.powered_wheel.get_chain_hole_diameter()
         else:
             self.weight_driven = False
         self.chain_hole_d =0
@@ -2855,7 +2855,7 @@ class SimpleClockPlates:
 
 
             #add an extra bit at the bottom so the chain can't easily fall off
-            chainholeD = self.huygens_wheel.getChainHoleD()
+            chainholeD = self.huygens_wheel.get_chain_hole_diameter()
             holePositions = self.huygens_wheel.get_chain_positions_from_top()
             relevantChainHoles = [ pair[0] for pair in holePositions ]
 
@@ -2896,7 +2896,7 @@ class SimpleClockPlates:
 
             powered_wheel = self.going_train.powered_wheel
 
-            chainholeD = powered_wheel.getChainHoleD()
+            chainholeD = powered_wheel.get_chain_hole_diameter()
             holePositions = powered_wheel.get_chain_positions_from_top()
             relevantChainHoles = [pair[0] for pair in holePositions]
 
