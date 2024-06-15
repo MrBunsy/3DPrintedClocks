@@ -116,6 +116,11 @@ class ColletFixingPendulumWithBeatSetting:
         # where the arcs will branch out from
         self.arm_end_point = (0, -self.length + self.width / 2 + self.threadholder_arm_width / 2)
 
+        # plus extra because we'll be at an angle
+        self.nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
+
+        self.top_of_pendulum_holder_hole_y = -self.length - self.nut_hole_height / 2 - 1.5
+
         print("beat setter needs {} of length {:.1f}".format(self.fixing_screws, self.get_thread_screw_length()))
 
     def get_thread_cutter(self):
@@ -191,7 +196,7 @@ class ColletFixingPendulumWithBeatSetting:
     def get_pendulum_holder(self, for_printing=True):
 
         # plus extra because we'll be at an angle
-        nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
+        # nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
         # 0.5 for space to squash a crinkle washer to add friction that will hopefully prevent this turning by itself
         nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.9  # +1 worked, but think there was a tiny bit of slack +0.8 worked but was really tough to get the washer in
         nut_hole_centre_height = self.fixing_screws.metric_thread
@@ -204,9 +209,9 @@ class ColletFixingPendulumWithBeatSetting:
 
         holder = get_stroke_line([self.hinge_point, bottom], wide=self.arm_width, thick=self.pendulum_holder_thick)
 
-        top_of_pendulum_holder_hole_y = -self.length - nut_hole_height / 2 - 1.5
+        nut_hole_height = self.nut_hole_height
 
-        end_of_half_thick = top_of_pendulum_holder_hole_y + 1.5
+        end_of_half_thick = self.top_of_pendulum_holder_hole_y + 1.5
 
         holder = holder.cut(cq.Workplane("XY").moveTo(0, end_of_half_thick / 2).rect(self.arm_width * 2, abs(end_of_half_thick)).extrude(half_thick).translate((0, 0, half_thick)))
 
@@ -229,7 +234,7 @@ class ColletFixingPendulumWithBeatSetting:
         # 0.4 works, but feels sliiightly too loose
         # 0.3 works but is still a bit tight, not sure end-users would be able to easily put pendulum in, going back to 0.4 but with reduced space for rod
         # tryin reducing sideways space too, default was 0.1
-        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4, extra_space_for_rod=0.0).translate((0, top_of_pendulum_holder_hole_y)).rotate((0, 0, z), (0, 1, z), 180))
+        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4, extra_space_for_rod=0.0).translate((0, self.top_of_pendulum_holder_hole_y)).rotate((0, 0, z), (0, 1, z), 180))
 
         thumb_nut_d = self.fixing_screws.get_nut_containing_diameter(thumb=True)
 

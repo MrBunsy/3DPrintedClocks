@@ -95,7 +95,7 @@ pinion_extensions = {}
 
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(2)]
 
-train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
+train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
 

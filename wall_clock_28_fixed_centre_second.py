@@ -70,8 +70,9 @@ train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=1, cor
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, override_powered_wheel_distance=44.5)
+#1.1725786449236986 module size for the pwoered wheel is waht the old logic calculated to get it to fit. Hardcoding as I intend to change that logic
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, override_powered_wheel_distance=44.5, powered_wheel_module_sizes=[1.1725786449236986])
 train.print_info(weight_kg=3)
 print("powered wheel distance: {}".format(train.arbors[0].distance_to_next_arbour))
 train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -114,7 +115,8 @@ pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=cloc
 print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
-assembly.get_arbour_rod_lengths()
+assembly.get_arbor_rod_lengths()
+assembly.get_pendulum_rod_lengths()
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_rods=True, with_key=True))
 # show_object(plates.get_winding_key(for_printing=False))
@@ -126,7 +128,9 @@ assembly.get_arbour_rod_lengths()
 #
 # pretty_bob = clock.ItemWithCosmetics(shape = pendulum.get_bob(hollow=True), name="bob", background_colour="purple", cosmetics=cosmetics)
 
+# show_object(plates.get_cannon_pinion_friction_clip())
 
+#
 dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS]
 assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
                    motion_works_colours=[clock.Colour.BRASS],

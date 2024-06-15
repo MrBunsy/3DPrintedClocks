@@ -2175,6 +2175,10 @@ class Pendulum:
 
         self.hand_avoider_inner_d=hand_avoider_inner_d
 
+        self.hand_avoider_wide = 5
+
+        self.rod_screws = MachineScrew(threaded_rod_m)
+
         self.bob_nut_d = bob_d * 0.3
         if self.bob_nut_d > 25:
             self.bob_nut_d = 25
@@ -2212,26 +2216,29 @@ class Pendulum:
         '''
         Get a circular part which attaches inline with pendulum rod, so it can go over the hands (for a front-pendulum)
         '''
-        extraR=5
+        extra_r=self.hand_avoider_wide
         if self.hand_avoider_is_circle():
-            avoider = cq.Workplane("XY").circle(self.hand_avoider_inner_d / 2).circle(self.hand_avoider_inner_d / 2 + extraR).extrude(self.hand_avoider_thick)
+            avoider = cq.Workplane("XY").circle(self.hand_avoider_inner_d / 2).circle(self.hand_avoider_inner_d / 2 + extra_r).extrude(self.hand_avoider_thick)
         else:
-            avoider = cq.Workplane("XY").moveTo(-self.hand_avoider_inner_d / 2 - extraR, 0).line(0, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2).\
-                radiusArc((self.hand_avoider_inner_d / 2 + extraR, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2), self.hand_avoider_inner_d / 2 + extraR).line(0, -self.hand_avoider_height / 2 + self.hand_avoider_inner_d / 2).mirrorX().extrude(self.hand_avoider_thick)
+            avoider = cq.Workplane("XY").moveTo(-self.hand_avoider_inner_d / 2 - extra_r, 0).line(0, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2).\
+                radiusArc((self.hand_avoider_inner_d / 2 + extra_r, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2), self.hand_avoider_inner_d / 2 + extra_r).line(0, -self.hand_avoider_height / 2 + self.hand_avoider_inner_d / 2).mirrorX().extrude(self.hand_avoider_thick)
 
             avoider = avoider.cut(cq.Workplane("XY").moveTo(-self.hand_avoider_inner_d / 2, 0).line(0, self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2). \
                                   radiusArc((self.hand_avoider_inner_d / 2 , self.hand_avoider_height / 2 - self.hand_avoider_inner_d / 2), self.hand_avoider_inner_d / 2).line(0, -self.hand_avoider_height / 2 + self.hand_avoider_inner_d / 2).mirrorX().extrude(self.hand_avoider_thick))
 
 
 
-        nutD = get_nut_containing_diameter(self.threaded_rod_m)
-        nutThick = METRIC_NUT_DEPTH_MULT * self.threaded_rod_m
+        nut_d = self.rod_screws.get_nut_containing_diameter(wiggle=0)#get_nut_containing_diameter(self.threaded_rod_m)
+        #this wasn't originally intended to use nyloc, but slotting nyloc into a whole for a normal nut works well
+        nut_thick = self.rod_screws.get_nut_height()#METRIC_NUT_DEPTH_MULT * self.threaded_rod_m
 
-        nutSpace = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nutD).extrude(nutThick).translate((0, -self.hand_avoider_height / 2 + 0.5, 0))
-        avoider = avoider.cut(nutSpace)
 
-        nutSpace2 = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nutD).extrude(nutThick).translate((0, self.hand_avoider_height / 2 + nutThick - 0.5, 0))
-        avoider = avoider.cut(nutSpace2)
+
+        nut_space = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nut_d).extrude(nut_thick).translate((0, -self.hand_avoider_height / 2 + 0.5, 0))
+        avoider = avoider.cut(nut_space)
+
+        nut_space2 = cq.Workplane("XZ").moveTo(0, self.hand_avoider_thick / 2).polygon(6, nut_d).extrude(nut_thick).translate((0, self.hand_avoider_height / 2 + nut_thick - 0.5, 0))
+        avoider = avoider.cut(nut_space2)
 
         # avoider = avoider.faces(">Y").workplane().moveTo(0,self.handAvoiderThick/2).circle(self.threadedRodM/2).cutThruAll()
         avoider = avoider.cut(cq.Workplane("XZ").circle(self.threaded_rod_m / 2).extrude(self.hand_avoider_height * 4).translate((0, self.hand_avoider_height, self.hand_avoider_thick / 2)))

@@ -82,7 +82,7 @@ class Assembly:
         else:
             pendulumRodCentreZ = -self.plates.pendulum_sticks_out
 
-        pendulumBobCentreY = self.plates.bearing_positions[-1][1] - self.going_train.pendulum_length * 1000
+        pendulumBobCentreY = self.plates.bearing_positions[-1][1] - self.going_train.pendulum_length_m * 1000
 
         self.pendulum_bob_centre_pos = (self.plates.bearing_positions[-1][0], pendulumBobCentreY, pendulumRodCentreZ)
 
@@ -116,7 +116,7 @@ class Assembly:
                 self.has_ring = True
         else:
             # pendulum is at the back, hand avoider is around the bottom pillar (unless this proves too unstable) if the pendulum is long enough to need it
-            if len(self.plates.bottom_pillar_positions) == 1 and np.linalg.norm(np.subtract(self.plates.bearing_positions[-1][:2], self.plates.bottom_pillar_positions[0][:2])) < self.going_train.pendulum_length*1000:
+            if len(self.plates.bottom_pillar_positions) == 1 and np.linalg.norm(np.subtract(self.plates.bearing_positions[-1][:2], self.plates.bottom_pillar_positions[0][:2])) < self.going_train.pendulum_length_m*1000:
                 self.ring_pos = (self.plates.bottom_pillar_positions[0][0], self.plates.bottom_pillar_positions[0][1], -self.plates.pendulum_sticks_out - self.pendulum.hand_avoider_thick / 2)
                 self.has_ring = True
         self.weight_positions = []
@@ -187,7 +187,7 @@ class Assembly:
             z = self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.going_train.powered_wheel.get_height() + self.plates.endshake / 2 + holeInfo[0][1]
             print("{} hole from wall = {}mm".format(self.going_train.powered_wheel.type.value, z))
 
-    def get_arbour_rod_lengths(self):
+    def get_arbor_rod_lengths(self):
         '''
         Calculate the lengths to cut the steel rods - stop me just guessing wrong all the time!
         '''
@@ -342,8 +342,44 @@ class Assembly:
     def get_pendulum_rod_lengths(self):
         '''
         Calculate lengths of threaded rod needed to make the pendulum
+        returns list of dicts of info (different to get_arbor_rod_lengths as it's harder to position these without knowing all the internal logic here)
+        this is likely to be brittle
         '''
+        rod_infos = []
 
+        # assume beat setting holder and m3 threaded rod and pendulum at x=0
+        anchor_top_y = self.plates.bearing_positions[-1][1]
+        pendulum_rod_d = 3
+        holder = self.plates.arbors_for_plate[-1].beat_setting_pendulum_bits
+        holder_hole_top_y = anchor_top_y + holder.top_of_pendulum_holder_hole_y
+        # bodgey, copied from get_pendulum_holder_cutter
+        hole_height = get_nut_height(pendulum_rod_d, nyloc=True) + get_nut_height(pendulum_rod_d) + 1
+        #the slot at the bottom of the hole is designed to be a nyloc nut tall, so we can ignore it and just go for a half nut taller
+        holder_hole_bottom_y = holder_hole_top_y - hole_height
+        top_y = holder_hole_bottom_y + get_nut_height(pendulum_rod_d, half_height=True)
+
+        # ring_pos should be set even if we don't use a ring
+        pendulum_centre_z = self.ring_pos[2] + self.pendulum.hand_avoider_thick/2
+
+        if self.has_ring:
+
+            ring_centre_y = self.plates.bottom_pillar_positions[0][1]
+            #top rod
+            bottom_y = ring_centre_y + self.pendulum.hand_avoider_inner_d/2 + self.pendulum.rod_screws.get_nut_height() - self.pendulum.rod_screws.get_nut_height(nyloc=True)
+            length = top_y - bottom_y
+            rod_infos.append({"length": length, "pos":(0, (bottom_y + top_y)/2, pendulum_centre_z)})
+
+            lower_rod_top_y =ring_centre_y - self.pendulum.hand_avoider_inner_d/2 - self.pendulum.rod_screws.get_nut_height() + self.pendulum.rod_screws.get_nut_height(nyloc=True)
+            print("Pendulum needs rod length {:.1f}mm from holder to hand avoider ring".format(length))
+        else:
+            lower_rod_top_y = top_y
+
+        pendulum_bottom_y = anchor_top_y - self.plates.arbors_for_plate[-1].pendulum_length*1.1
+        length = lower_rod_top_y - pendulum_bottom_y
+        print("Pendulum needs rod length {:.1f}mm to hold the bob".format(length))
+        rod_infos.append({"length": length, "pos":(0, (lower_rod_top_y + pendulum_bottom_y)/2, pendulum_centre_z)})
+
+        return rod_infos
 
     def get_clock(self, with_rods=False, with_key=False, with_pendulum=False):
         '''
@@ -482,7 +518,7 @@ class Assembly:
         #TODO weight?
 
         if with_rods:
-            rod_lengths, rod_zs = self.get_arbour_rod_lengths()
+            rod_lengths, rod_zs = self.get_arbor_rod_lengths()
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
@@ -539,6 +575,7 @@ class Assembly:
         show_object(plates, options={"color":plate_colours[0]}, name= "Plates")
         show_object(pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Pillars")
         show_object(standoff_pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Standoff Pillars")
+
         if plate_detail is not None:
             show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
 
@@ -565,7 +602,7 @@ class Assembly:
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
 
         if self.motion_works.cannon_pinion_friction_ring:
-            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z)), options={"color":plate_colours}, name="Friction Clip")
+            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z)), options={"color":plate_colours[0]}, name="Friction Clip")
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors
@@ -672,7 +709,7 @@ class Assembly:
         if with_rods:
             #show with diameter slightly smaller so it's clearer on the render what's rod and what's hole
             rod_colour = Colour.SILVER
-            rod_lengths, rod_zs = self.get_arbour_rod_lengths()
+            rod_lengths, rod_zs = self.get_arbor_rod_lengths()
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
@@ -683,6 +720,13 @@ class Assembly:
                 pos = self.plates.all_pillar_positions[p]
                 rod = cq.Workplane("XY").circle(self.plates.fixing_screws.metric_thread/2 - 0.2).extrude(length).translate((pos[0], pos[1], pillar_rod_zs[p]))
                 show_object(rod, options={"color": rod_colour}, name="Fixing Rod {}".format(p))
+
+            pendulum_rods = self.get_pendulum_rod_lengths()
+
+            for i,rod_info in enumerate(pendulum_rods):
+                rod = cq.Workplane("XY").circle(3/2).extrude(rod_info["length"]).translate((0,0,-rod_info["length"]/2)).rotate((0,0,0),(1,0,0),90)
+
+                show_object(rod.translate(rod_info["pos"]), options={"color": rod_colour}, name=f"Pendlum Rod {i}")
 
         if with_key:
             if self.key_model is not None:

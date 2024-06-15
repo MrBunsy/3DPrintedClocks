@@ -30,8 +30,8 @@ train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_th
 pendulumSticksOut=10
 backPlateFromWall=30
 
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=6.25, pinion_thick_multiplier=3, style=None,
-                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, stack_away_from_powered_wheel=True, pinion_extensions={1:10})
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=6.25, pinion_thick_multiplier=3, style=None,
+                powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, stack_away_from_powered_wheel=True, pinion_extensions={1:10})
 # train.print_info(weight_kg=5)
 train.print_info(for_runtime_hours=24*7)
 

@@ -130,11 +130,11 @@ def get_nut_containing_diameter(metric_thread, wiggleRoom=0, thumb=False):
     return nutWidth / math.cos(math.pi / 6)
 
 
-def get_nut_height(metric_thread, nyloc=False, halfHeight=False, thumb=False):
-    if metric_thread > 2 and halfHeight:
+def get_nut_height(metric_thread, nyloc=False, half_height=False, thumb=False):
+    if metric_thread > 2 and half_height:
         return metric_thread * METRIC_HALF_NUT_DEPTH_MULT
 
-    if metric_thread == 2 and halfHeight:
+    if metric_thread == 2 and half_height:
         return 1.2
 
     if metric_thread == 3:
@@ -372,7 +372,7 @@ class MachineScrew:
         return screw
 
     def get_nut_height(self, nyloc=False, half=False, thumb=False):
-        return get_nut_height(self.metric_thread, nyloc=nyloc, halfHeight=half, thumb=False)
+        return get_nut_height(self.metric_thread, nyloc=nyloc, half_height=half, thumb=False)
 
     def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=-1, rod_loose=False):
         '''
@@ -384,7 +384,7 @@ class MachineScrew:
         if wiggle < 0:
             wiggle = layer_thick-0.2
 
-        nutHeight = get_nut_height(self.metric_thread, nyloc=nyloc, halfHeight=half)
+        nutHeight = get_nut_height(self.metric_thread, nyloc=nyloc, half_height=half)
         if height < 0:
             height = nutHeight
         nutD = self.get_nut_containing_diameter() + wiggle
@@ -1034,6 +1034,9 @@ class ChainInfo:
 
         self.pitch = self.inside_length*2
 
+    def __str__(self):
+        return f"Chain_{self.wire_thick}x{self.width}_pitch_{self.pitch}"
+
 
 # consistently reliable results have been obtained by laying out and pulling tight) a stretch of chain against a ruler to calculate inside_length (half chain pitch)
 
@@ -1211,34 +1214,31 @@ def get_pendulum_holder_cutter(pendulum_rod_d=3, z=7.5, extra_nut_space=0.2, ext
     shape = cq.Workplane("XY")
 
     # a square hole that can fit the end of the pendulum rod with two nuts on it
-    holeStartY = 0
-    holeHeight = get_nut_height(pendulum_rod_d, nyloc=True) + get_nut_height(pendulum_rod_d) + 1
+    hole_start_y = 0
+    hole_height = get_nut_height(pendulum_rod_d, nyloc=True) + get_nut_height(pendulum_rod_d) + 1
 
-    nutD = get_nut_containing_diameter(pendulum_rod_d)
+    nut_d = get_nut_containing_diameter(pendulum_rod_d)
 
-    width = nutD * 1.5
+    width = nut_d * 1.5
 
-    space = cq.Workplane("XY").moveTo(0, holeStartY - holeHeight / 2).rect(width, holeHeight).extrude(1000).translate((0, 0, z - nutD))
+    space = cq.Workplane("XY").moveTo(0, hole_start_y - hole_height / 2).rect(width, hole_height).extrude(1000).translate((0, 0, z - nut_d))
     shape = shape.add(space)
 
     # I've noticed that the pendulum doesn't always hang vertical, so give more room for the rod than the minimum so it can hang forwards relative to the holder
     extra_rod_space_z = 1
 
-    # extraSpaceForRod = 0.1
-    extraSpaceForNut = extra_nut_space
-    #
     rod = cq.Workplane("XZ").tag("base").moveTo(0, z - extra_rod_space_z).circle(pendulum_rod_d / 2 + extra_space_for_rod / 2).extrude(100)
     # add slot for rod to come in and out
     rod = rod.workplaneFromTagged("base").moveTo(0, z - extra_rod_space_z + 500).rect(pendulum_rod_d + extra_space_for_rod, 1000).extrude(100)
 
-    rod = rod.translate((0, holeStartY, 0))
+    rod = rod.translate((0, hole_start_y, 0))
 
     shape = shape.add(rod)
 
-    nutThick = get_nut_height(pendulum_rod_d, nyloc=True)
+    nut_thick = get_nut_height(pendulum_rod_d, nyloc=True)
 
-    nutSpace2 = cq.Workplane("XZ").moveTo(0, z).polygon(6, nutD + extraSpaceForNut).extrude(nutThick).translate((0, holeStartY - holeHeight, 0))
-    shape = shape.add(nutSpace2)
+    nut_space2 = cq.Workplane("XZ").moveTo(0, z).polygon(6, nut_d + extra_nut_space).extrude(nut_thick).translate((0, hole_start_y - hole_height, 0))
+    shape = shape.add(nut_space2)
 
     return shape
 

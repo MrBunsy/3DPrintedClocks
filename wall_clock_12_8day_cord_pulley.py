@@ -92,8 +92,8 @@ train.set_chain_wheel_ratio([67, 11])
 
 pendulumSticksOut=20
 
-train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=2)
 
 
@@ -158,7 +158,7 @@ pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=cloc
 print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
-assembly.get_arbour_rod_lengths()
+assembly.get_arbor_rod_lengths()
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_rods=True, with_key=True))
 # show_object(plates.get_winding_key(for_printing=False))

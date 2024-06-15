@@ -61,7 +61,7 @@ train.print_info()
 
 pendulumSticksOut=15
 
-train.gen_gears(module_size=1, module_reduction=0.875, thick=3, chain_wheel_thick=6, useNyloc=False)#, chainModuleIncrease=1.1)
+train.gen_gears(module_size=1, module_reduction=0.875, thick=3, powered_wheel_thick=6, useNyloc=False)#, chainModuleIncrease=1.1)
 
 motionWorks = clock.MotionWorks(extra_height=10)
 

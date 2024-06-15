@@ -67,7 +67,7 @@ class GoingTrain:
         # in seconds
         self.pendulum_period = pendulum_period
         # in metres
-        self.pendulum_length = pendulum_length_m
+        self.pendulum_length_m = pendulum_length_m
 
         # was experimenting with having the minute wheel outside the powered wheel to escapement train - but I think it's a dead
         # end as it will end up with some slop if it's not in the train
@@ -80,12 +80,12 @@ class GoingTrain:
 
         if pendulum_length_m < 0 and pendulum_period > 0:
             # calulate length from period
-            self.pendulum_length = getPendulumLength(pendulum_period)
+            self.pendulum_length_m = getPendulumLength(pendulum_period)
         elif pendulum_period < 0 and pendulum_length_m > 0:
             self.pendulum_period = getPendulumPeriod(pendulum_length_m)
         else:
             raise ValueError("Must provide either pendulum length or perioud, not neither or both")
-        print("Pendulum length {}cm and period {}s".format(self.pendulum_length * 100, self.pendulum_period))
+        print("Pendulum length {}cm and period {}s".format(self.pendulum_length_m * 100, self.pendulum_period))
         # note - this has become assumed in many places and will require work to the plates and layout of gears to undo
         self.chain_at_back = chain_at_back
         # likewise, this has been assumed, but I'm trying to undo those assumptions to use this
@@ -582,7 +582,7 @@ class GoingTrain:
 
         diameter = preferedDiameter
         if diameter < 0:
-            diameter = PocketChainWheel2.getMinDiameter()
+            diameter = PocketChainWheel2.get_min_diameter()
         self.calculate_powered_wheel_info(diameter)
 
         if self.huygens_maintaining_power:
@@ -608,7 +608,7 @@ class GoingTrain:
         longer to make it generic than just make it work
         '''
 
-        self.calculate_powered_wheel_info(PocketChainWheel.getMinDiameter())
+        self.calculate_powered_wheel_info(PocketChainWheel.get_min_diameter())
 
         if self.huygens_maintaining_power:
             # there is no ratchet with this setup
@@ -629,7 +629,7 @@ class GoingTrain:
         '''
         diameter = prefered_diameter
         if diameter < 0:
-            diameter = CordWheel.getMinDiameter()
+            diameter = CordWheel.get_min_diameter()
 
         if self.huygens_maintaining_power:
             raise ValueError("Cannot use cord wheel with huygens maintaining power")
@@ -644,7 +644,7 @@ class GoingTrain:
 
         diameter = preferedDiameter
         if diameter < 0:
-            diameter = RopeWheel.getMinDiameter()
+            diameter = RopeWheel.get_min_diameter()
 
         self.calculate_powered_wheel_info(diameter)
 
@@ -689,11 +689,11 @@ class GoingTrain:
     def print_info(self, weight_kg=0.35, for_runtime_hours=168):
         print(self.trains[0])
 
-        print("pendulum length: {}m period: {}s".format(self.pendulum_length, self.pendulum_period))
+        print("pendulum length: {}m period: {}s".format(self.pendulum_length_m, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
         if PowerType.is_weight(self.powered_wheel.type):
             print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
-        # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.getRunTime()))
+        # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.get_run_time()))
         power_ratio = self.minute_wheel_ratio
         power_wheel_ratios = [1]
         if self.powered_wheels > 0:
@@ -716,7 +716,7 @@ class GoingTrain:
                   .format(for_runtime_hours, self.powered_wheel.barrel_diameter, turns, 100.0 * turns / max_barrel_turns, max_barrel_turns, rewinding_turns))
             return
 
-        runtime_hours = self.powered_wheel.getRunTime(power_ratio, self.get_cord_usage())
+        runtime_hours = self.powered_wheel.get_run_time(power_ratio, self.get_cord_usage())
 
         drop_m = self.max_weight_drop / 1000
         power = weight_kg * GRAVITY * drop_m / (runtime_hours * 60 * 60)
@@ -744,12 +744,12 @@ class GoingTrain:
             max_power = effective_weight * GRAVITY * max_weight_speed * math.pow(10, 6)
             print("Cordwheel power varies from {:.1f}uW to {:.1f}uW".format(min_power, max_power))
 
-    def gen_gears(self, module_size=1.5, rod_diameters=None, module_reduction=0.5, thick=6, chain_wheel_thick=-1, escape_wheel_max_d=-1,
-                  powered_wheel_module_increase=None, pinion_thick_multiplier=2.5, style="HAC", chain_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
+    def gen_gears(self, module_size=1.5, rod_diameters=None, module_reduction=0.5, thick=6, powered_wheel_thick=-1, escape_wheel_max_d=-1,
+                  powered_wheel_module_increase=None, pinion_thick_multiplier=2.5, style="HAC", powered_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes=None, stack_away_from_powered_wheel=False, pinion_extensions=None,
-                  powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1):
+                  powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1, powered_wheel_thicks = None):
         '''
-        What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up.
+        What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up. Might be worth breaking some backwards compatibility to do so
         Also this assumes a *lot* about the layout, which really should be in the control of the plates
         Might even be worth making it entirely user-configurable which way the gears stack as layouts get more complicated, rather than assume we can calculate the best
 
@@ -790,6 +790,12 @@ class GoingTrain:
             for i in range(self.powered_wheels):
                 powered_wheel_module_sizes.append(module_size * powered_wheel_module_increase ** (self.powered_wheels - i))
 
+        if powered_wheel_thick < 0:
+            powered_wheel_thick = thick
+
+        if powered_wheel_thicks is None:
+            powered_wheel_thicks = [powered_wheel_thick * thickness_reduction ** i for i in range(self.powered_wheels)]
+
         # can manually override the pinion extensions on a per arbor basis - used for some of the compact designs. Ideally I should automate this, but it feels like
         # a bit problem so solve so I'm offering the option to do it manually for now
         if pinion_extensions is None:
@@ -803,8 +809,7 @@ class GoingTrain:
         # thickness of arbour assembly
         # wheel + pinion (3*wheel) + pinion top (0.5*wheel)
 
-        if chain_wheel_thick < 0:
-            chain_wheel_thick = thick
+
 
         # self.gearPinionLength=thick*3
         # self.chainGearPinionLength = chainWheelThick*2.5
@@ -909,11 +914,12 @@ class GoingTrain:
 
             minute_wheel_space = pairs[0].wheel.get_max_radius()
             if self.powered_wheels == 1:
-                minute_wheel_space +=  self.powered_wheel.get_rod_radius()
+                minute_wheel_space += self.powered_wheel.get_rod_radius()
             else:
                 minute_wheel_space += rod_diameters[1]
 
             last_chain_wheel_space = self.powered_wheel_pairs[-1].centre_distance
+            # last_chain_wheel_space = self.powered_wheel_pairs[-1].wheel.get_max_radius()
             if not self.powered_wheel.loose_on_rod:
                 # TODO properly work out space on rod behind pwoered wheel - should be calculated by the powered wheel
                 # need space for the steel rod as the wheel itself is loose on the threaded rod
@@ -935,17 +941,17 @@ class GoingTrain:
             if i == 0:
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 # the powered wheel
-                self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=chain_wheel_thick, arbor_d=self.powered_wheel.arbor_d,
+                self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=powered_wheel_thicks[i], arbor_d=self.powered_wheel.arbor_d,
                                                        distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
                                                        use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
             else:
                 # just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
                 clockwise_from_pinion_side = first_chainwheel_clockwise == (i % 2 == 0)
-                pinion_thick = self.powered_wheel_arbors[i - 1].wheel_thick * chain_wheel_pinion_thick_multiplier
-                if pinion_thick_extra > 0 and chain_wheel_pinion_thick_multiplier < 0:
+                pinion_thick = self.powered_wheel_arbors[i - 1].wheel_thick * powered_wheel_pinion_thick_multiplier
+                if pinion_thick_extra > 0 and powered_wheel_pinion_thick_multiplier < 0:
                     pinion_thick = self.powered_wheel_arbors[i - 1].wheel_thick + pinion_thick_extra
                 cap_thick = gear_pinion_end_cap_thick
-                wheel_thick = chain_wheel_thick * (thickness_reduction ** i)
+                wheel_thick = powered_wheel_thicks[i]
                 if self.powered_wheel_pairs[i - 1].pinion.lantern:
                     cap_thick = wheel_thick
                 self.powered_wheel_arbors.append(Arbor(wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
@@ -969,14 +975,14 @@ class GoingTrain:
                 # == minute wheel ==
                 if self.powered_wheels == 0:
                     # the minute wheel also has the chain with ratchet
-                    arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=chain_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbour=pairs[i].centre_distance,
+                    arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=powered_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbour=pairs[i].centre_distance,
                                    style=style, pinion_at_front=not self.chain_at_back, ratchet_screws=ratchet_screws, use_ratchet=not self.huygens_maintaining_power,
                                    clockwise_from_pinion_side=not self.chain_at_back)
                 else:
                     # just a normal gear
 
                     if self.powered_wheels > 0:
-                        pinion_thick = self.powered_wheel_arbors[-1].wheel_thick * chain_wheel_pinion_thick_multiplier
+                        pinion_thick = self.powered_wheel_arbors[-1].wheel_thick * powered_wheel_pinion_thick_multiplier
                     else:
                         pinion_thick = self.powered_wheel_arbors[-1].wheel_thick * pinion_thick_multiplier
                     if pinion_thick_extra > 0:
@@ -999,7 +1005,7 @@ class GoingTrain:
                 pinion_thick = arbours[-1].wheel_thick * pinion_thick_multiplier
                 if self.powered_wheels == 0 and i == 1:
                     # this pinion is for the chain wheel
-                    pinion_thick = arbours[-1].wheel_thick * chain_wheel_pinion_thick_multiplier
+                    pinion_thick = arbours[-1].wheel_thick * powered_wheel_pinion_thick_multiplier
                 # if i == self.wheels-2 and self.has_second_hand_on_last_wheel() and stack_away_from_powered_wheel:
                 #     #extend this pinion a bit to keep the giant pinion on the escape wheel from clashing
                 #     #old bodge logic, use pinion_extensions instead now

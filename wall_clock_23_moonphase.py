@@ -64,8 +64,8 @@ train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_c
 pendulumSticksOut=10
 backPlateFromWall=40
 
-train.gen_gears(module_size=1.1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=2 / 2.4, chain_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
+train.gen_gears(module_size=1.1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=2 / 2.4, powered_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=3)
 train.print_info(weight_kg=2.5)
 train.print_info(weight_kg=1)
@@ -108,7 +108,7 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
 assembly.show_clock(show_object, with_rods=True, plate_colours=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])
 
-assembly.get_arbour_rod_lengths()
+assembly.get_arbor_rod_lengths()
 if outputSTL:
     pulley.output_STLs(clockName, clockOutDir)
     motionWorks.output_STLs(clockName,clockOutDir)

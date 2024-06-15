@@ -85,7 +85,7 @@ pinion_extensions = {1:15}#, 2:5}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.6), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.4)]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
-train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
+train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=3 + 2)
 # train.print_info(weight_kg=1.5)
@@ -117,7 +117,7 @@ hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minute_fixing="circle", 
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
-assembly.get_arbour_rod_lengths()
+assembly.get_arbor_rod_lengths()
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))

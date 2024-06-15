@@ -50,7 +50,15 @@ diameter = 55
 lift=3
 drop=3
 lock=2
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=3,
-                                    tooth_base_angle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
+tooth_tip_angle=3
+tooth_base_angle=3
+
+drop =3
+lift =3
+lock= 2
+tooth_tip_angle = 5
+tooth_base_angle = 4
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=tooth_tip_angle,
+                                    tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 
 show_object(escapement.get_assembled())

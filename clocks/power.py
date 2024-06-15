@@ -1394,7 +1394,7 @@ class WeightPoweredWheel:
     '''
 
     @staticmethod
-    def getMinDiameter():
+    def get_min_diameter():
         '''
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
@@ -1412,15 +1412,15 @@ class WeightPoweredWheel:
         '''
         return 30
 
-    def __init__(self):
+    def __init__(self, diameter=30, arbor_d=3, loose_on_rod=True):
         #diameter/circumference for the path the rope or chain takes. For the cord, this is the minimum diameter for the first layer of coils
-        self.diameter=30
+        self.diameter=diameter
         self.circumference=math.pi * self.diameter
         self.ratchet = Ratchet()
         self.type = PowerType.NOT_CONFIGURED
         #if false, the powered wheel is fixed to the rod and the gear wheel is loose.
-        self.loose_on_rod = False
-        self.arbor_d = 3
+        self.loose_on_rod = loose_on_rod
+        self.arbor_d = arbor_d
 
     def get_chain_hole_diameter(self):
         '''
@@ -1473,7 +1473,7 @@ class WeightPoweredWheel:
         this is trivial for rope or chain, but not so much for the cord
         '''
 
-    def getRunTime(self, minuteRatio=1, cordLength=2000):
+    def get_run_time(self, minuteRatio=1, cordLength=2000):
         '''
         print information about runtime based on the info provided
         '''
@@ -1489,7 +1489,7 @@ class WeightPoweredWheel:
 
         *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
         '''
-        return None
+        return self.arbor_d
 
 
 class RopeWheel:
@@ -1503,7 +1503,7 @@ class RopeWheel:
     '''
 
     @staticmethod
-    def getMinDiameter():
+    def get_min_diameter():
         '''
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
@@ -1763,7 +1763,7 @@ class RopeWheel:
         #if the calculation of innerDiameter is right, then the rope will be diameter apart
         return [[(-self.diameter / 2, zOffset)], [(self.diameter / 2, zOffset)]]
 
-    def getRunTime(self,minuteRatio=1,chainLength=2000):
+    def get_run_time(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
         return minuteRatio*chainLength/self.circumference
 
@@ -1987,7 +1987,7 @@ class CordWheel:
     '''
 
     @staticmethod
-    def getMinDiameter():
+    def get_min_diameter():
         '''
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
@@ -2115,10 +2115,13 @@ class CordWheel:
 
         *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
         '''
-        max_r = 10
-        if self.loose_on_rod:
-            max_r = 12.5
-        return max_r
+        # max_r = 10
+        # if self.loose_on_rod:
+        #     max_r = 12.5
+        # return max_r
+
+        #this is the smallest the thickened bit out the back can be
+        return self.arbor_d
 
     def is_clockwise(self):
         '''
@@ -2362,7 +2365,7 @@ class CordWheel:
     def get_key_sides(self):
         return 4
 
-    def getRunTime(self, minuteRatio=1, cordLength=2000):
+    def get_run_time(self, minuteRatio=1, cordLength=2000):
         '''
         minuteRatio is teeth of chain wheel divided by pinions of minute wheel, or just 1 if there aren't any chainwheels
         therefore the chain wheel rotates by 1/minuteRatio per hour
@@ -2476,12 +2479,12 @@ class CordWheel:
         print("Outputting ", out)
         exporters.export(self.get_ratchet_wheel_for_cord(), out)
 
-class SprocketChainWheel:
+class SprocketChainWheel(WeightPoweredWheel):
     '''
     I really want to be able to use heavier weights with a chain so I can do an eight grasshopper with simple maintaining power, so this is an attempt to make a
     stronger chainwheel using a sprocket sandwhiched between two large "washers"
     '''
-    def __init__(self, ratchet=None):
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, wall_thick=2):
         self.ratchet = ratchet
 
 class PocketChainWheel2:
@@ -2500,7 +2503,7 @@ class PocketChainWheel2:
     Worth trying on a 30 hour clock if I ever make one again?
     '''
 
-    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30,arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):
 
         self.type = PowerType.CHAIN2
         # if false, the powered wheel is fixed to the rod and the gear wheel is loose.
@@ -2656,7 +2659,7 @@ class PocketChainWheel2:
         return bottom
 
     @staticmethod
-    def getMinDiameter():
+    def get_min_diameter():
         '''
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
@@ -2751,7 +2754,7 @@ class PocketChainWheel2:
         '''
         return cord_usage / (self.pockets*self.chain.inside_length*2)
 
-    def getRunTime(self, minuteRatio=1, cordLength=2000):
+    def get_run_time(self, minuteRatio=1, cordLength=2000):
         '''
         print information about runtime based on the info provided
         '''
@@ -2775,10 +2778,8 @@ class PocketChainWheel2:
 
         note - shared between most of the weight wheels, should really be in a base class
         '''
-        max_r = 10
-        if self.loose_on_rod:
-            max_r = 12.5
-        return max_r
+
+        return self.arbor_d
 class PocketChainWheel:
     '''
     This is a pocket chain wheel, printed in two parts.
@@ -2802,7 +2803,7 @@ class PocketChainWheel:
     '''
 
     @staticmethod
-    def getMinDiameter():
+    def get_min_diameter():
         '''
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
@@ -2861,7 +2862,7 @@ class PocketChainWheel:
 
         self.radius = self.diameter/2
 
-        # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference,self.getRunTime()))
+        # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference,self.get_run_time()))
         self.outerDiameter = self.diameter + width * 0.75
         self.outerRadius = self.outerDiameter/2
 
@@ -2933,7 +2934,7 @@ class PocketChainWheel:
             thick += self.ratchet.thick
         return thick
 
-    def getRunTime(self,minuteRatio=1,chainLength=2000):
+    def get_run_time(self,minuteRatio=1,chainLength=2000):
         #minute hand rotates once per hour, so this answer will be in hours
         return chainLength/((self.pockets*self.chain_inside_length*2)/minuteRatio)
 
@@ -3090,10 +3091,8 @@ class PocketChainWheel:
 
         note - shared between most of the weight wheels, should really be in a base class
         '''
-        max_r = 10
-        if self.loose_on_rod:
-            max_r = 12.5
-        return max_r
+
+        return self.arbor_d
 
     def output_STLs(self, name="clock", path="../out"):
 

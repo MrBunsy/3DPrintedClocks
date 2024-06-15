@@ -108,9 +108,9 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 #module_sizes=[1, 0.95, 0.95]
-train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, chain_wheel_thick=barrel_gear_thick, style=gearStyle,
+train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, chain_wheel_pinion_thick_multiplier=1.875)
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875)
 train.print_info(for_runtime_hours=24*7)
 moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -138,7 +138,7 @@ hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_f
 # show_object(plates.get_fixing_screws_cutter())
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
-assembly.get_arbour_rod_lengths()
+assembly.get_arbor_rod_lengths()
 plates.get_rod_lengths()
 
 # show_object(moon_complication.get_assembled())

@@ -69,7 +69,7 @@ cicumference: 68.60000000000001, run time of:28.9hours
 '''
 pendulumSticksOut=30
 #keeping chain wheel slightly thicker so it might be less wonky on the rod?
-train.gen_gears(module_size=1, module_reduction=0.85, thick=2, chain_wheel_thick=5, escape_wheel_max_d=0.75)
+train.gen_gears(module_size=1, module_reduction=0.85, thick=2, powered_wheel_thick=5, escape_wheel_max_d=0.75)
 
 
 motionWorks = clock.MotionWorks(extra_height=40)

@@ -17,3 +17,15 @@ dark green PETG in cupboard:
 
 
 Red (even the new red) with 0.25 nozzle needs at least as low as 225C. 225C still has problems on the thin extension, try 220C next time.
+
+
+brass PETG 220C with 0.6 nozzle in cupboard
+
+
+ASA experiments:
+using prusament ASA as a starting config
+polylite dark blue ASA seemed to print well at 250C with 0.4 nozzle, slightly lower might be even better for small parts
+need to keep parts away from edge of build plate to avoid warping
+
+trying 240 for 3djake ASA as it says a max of 250
+was warping badly, TO DO try same as polylite and maybe with reduced volumetric flow

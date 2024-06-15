@@ -133,8 +133,8 @@ back_plate_from_wall=30
 intermediate_wheel_module=1.2
 pinion_extensions = {0:1, 1:5, 3:8} if moon else {0:1, 1:12, 2:5}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), intermediate_wheel_module]
-train.gen_gears(module_sizes=[1,0.9,0.9], module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
-                powered_wheel_module_increase=1.25, chain_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
+train.gen_gears(module_sizes=[1,0.9,0.9], module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=barrel_gear_thick, pinion_thick_multiplier=3, style=gear_style,
+                powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
 # train.powered_wheel_arbors[1].wheel.fake_outer_r = pair.wheel.get_max_radius()
 print("train.powered_wheel_arbors[0].centre_distance, ", train.powered_wheel_arbors[0].distance_to_next_arbour)

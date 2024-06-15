@@ -170,6 +170,8 @@ class PowerType(Enum):
     CHAIN = "chain"
     #the better version
     CHAIN2 = "chain2"
+    #third attempt to get a reliable chain wheel for heavy weights
+    SPROCKET = "sprocket"
     #drop in for chain, using friction and a hemp rope (not great, needs massive counterweight)
     ROPE = "rope"
     #thin synthetic cord, coiled multiple times

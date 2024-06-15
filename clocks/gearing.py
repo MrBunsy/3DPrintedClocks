@@ -1463,10 +1463,11 @@ class ArborForPlate:
 
         self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
         self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
-        beat_setter_length = 35
-        if self.pendulum_length < 20:
-            #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
-            beat_setter_length = 30
+        # beat_setter_length = 35
+        # if self.pendulum_length < 20:
+        #     #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
+        #accidentally had pendulum_length in metres so this was always the case. I think I prefer the smaller version so I'm sticking with it
+        beat_setter_length = 30
         self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=self.square_side_length + self.pendulum_fixing_extra_space, length=beat_setter_length)
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
@@ -1523,6 +1524,7 @@ class ArborForPlate:
         '''
         will slot over square bit of anchor arbour and screw in place
         for the direct arbours without suspension spring
+        TODO move this out to join ColletFixingPendulumWithBeatSetting in pendulum_holders
         '''
         outer_d = self.outer_d
         if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
@@ -2459,8 +2461,9 @@ class Arbor:
         if rear_side_extension > 0 and not self.combine_with_powered_wheel:
             #rear side extension - chunky bit out the back to help provide stability on the threaded rod
             #limit to r of 1cm
-            max_r = self.powered_wheel.get_rod_radius()
-
+            max_r = 10
+            if self.loose_on_rod:
+                max_r = 12.5
             extension_r = min(max_r, arbour_extension_max_radius)
 
 

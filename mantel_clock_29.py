@@ -81,8 +81,8 @@ backPlateFromWall=30
 
 pinion_extensions = {1:10}#, 2:5}
 
-train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, chain_wheel_thick=5, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_sizes=[1.2, 0.95], chain_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
+train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=5, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_sizes=[1.2, 0.95], powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
 # train.print_info(weight_kg=1.5)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -112,7 +112,7 @@ hands = clock.Hands(style=clock.HandStyle.SIMPLE_POINTED, minute_fixing="circle"
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 
-assembly.get_arbour_rod_lengths()
+assembly.get_arbor_rod_lengths()
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
