@@ -4008,11 +4008,11 @@ class RoundClockPlates(SimpleClockPlates):
         if self.fully_round:
             plate = cq.Workplane("XY").circle(self.radius + main_arm_wide/2).circle(self.radius - main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)
 
-            #if there isn't only going to be a tiny gap under the arm, just make the whole bit solid
+            #if there is only going to be a tiny gap under the arm, just make the whole bit solid
             extra_width_at_bottom = 0
             bottom_of_arm_y = self.bearing_positions[0][1] - self.bottom_arm_wide/2
             top_of_circle_y = self.hands_position[1] - self.radius + main_arm_wide/2
-            if bottom_of_arm_y - top_of_circle_y < 5:
+            if bottom_of_arm_y - top_of_circle_y < 4:
                 extra_width_at_bottom=5
 
             bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide + extra_width_at_bottom).extrude(plate_thick).translate(self.bearing_positions[0][:2]).translate((0,-extra_width_at_bottom))

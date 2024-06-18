@@ -40,7 +40,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_32b"
+clockName="wall_clock_32c"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -64,22 +64,27 @@ lock = 2.5
 # lock = 3
 
 #let's go all in with the drop and lock
-lift = 2
-drop = 4
-lock = 3
+# lift = 2
+# drop = 4
+# lock = 3
+
+#back to mantle clock 30
+lift=3
+drop=3
+lock=2
 
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
 
-barrel_gear_thick = 8
+barrel_gear_thick = 5#8
 
 moduleReduction=0.95#0.85
 
 #wall thick of 9 seemed fine, but I want it to be consistent with the arbor
 #larger barrel wheel actually works out at a smaller plate than having a larger intermediate wheel
-train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick-2,
-                        wall_thick=10, chain_wheel_ratios=[[64, 10], [61, 10]], extra_barrel_height=4)
+train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+                        wall_thick=10, chain_wheel_ratios=[[64, 10], [61, 10]], extra_barrel_height=1.5)
 
 '''
 [[61, 10], [83, 10]]
@@ -101,16 +106,16 @@ dial_width=25
 
 #was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
 #so reprints are a mix of old and new STLs...
-pinion_extensions = {0:1, 1:5,3:5} #{1:25}
+pinion_extensions = {0:1, 1:0,3:5} #{1:25}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.2]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 #module_sizes=[1, 0.95, 0.95]
-train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
+train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875)
+                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875, powered_wheel_thicks=[barrel_gear_thick, 4])
 train.print_info(for_runtime_hours=24*7)
 moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()

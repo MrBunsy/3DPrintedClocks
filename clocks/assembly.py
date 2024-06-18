@@ -358,8 +358,8 @@ class Assembly:
         holder_hole_bottom_y = holder_hole_top_y - hole_height
         top_y = holder_hole_bottom_y + get_nut_height(pendulum_rod_d, half_height=True)
 
-        # ring_pos should be set even if we don't use a ring
-        pendulum_centre_z = self.ring_pos[2] + self.pendulum.hand_avoider_thick/2
+        pendulum_centre_z = self.pendulum_bob_centre_pos[2]
+
 
         if self.has_ring:
 

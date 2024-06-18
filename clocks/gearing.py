@@ -1874,6 +1874,56 @@ class ArborForPlate:
             #rear side extended full endshake so we could go plain bushing if needed
 
 
+            if self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
+                '''
+                experiment for ASA which warps badly, split powered wheel into two parts, outer ring with teeth
+                few assumptions here, 0.2 layer height and that the screws will fit
+                '''
+                spring_barrel = self.arbor.powered_wheel
+                inner_r = spring_barrel.get_outer_diameter()/2
+                outer_r = self.arbor.wheel.get_min_radius() - 3
+
+                fixing_screws = MachineScrew(2, countersunk=True)
+                max_gap_size = outer_r - inner_r
+                gap_size = fixing_screws.get_head_diameter()*1.5
+                join_r = inner_r  + gap_size/2
+
+                if gap_size > max_gap_size:
+                    raise ValueError("Not enough space to split wheel into two")
+
+                wheel_thick = self.arbor.wheel_thick
+                bottom_thick = wheel_thick/2
+                top_thick = wheel_thick/2
+
+                layer_thick = LAYER_THICK
+
+
+                #ensure that layer height is taken into account, make bottom thicker and top thinner if it doesn't match up
+                bottom_above_layer_thick = bottom_thick % layer_thick
+                if bottom_above_layer_thick > 0.01:
+                    bottom_thick += layer_thick - bottom_above_layer_thick
+                    top_thick -= bottom_above_layer_thick
+
+                wiggle = 0.05
+                inner_keep = cq.Workplane("XY").circle(join_r + gap_size/2 - wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(join_r - gap_size/2 - wiggle/2).extrude(100)
+
+                outer_cut = cq.Workplane("XY").circle(join_r + gap_size/2 + wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(join_r - gap_size/2 + wiggle/2).extrude(100)
+
+                screw_cutter = cq.Workplane("XY")
+                screws = 4
+                for screw in range(screws):
+                    pos = polar(screw * math.pi*2/screws, join_r)
+                    screw_cutter = screw_cutter.add(fixing_screws.get_cutter(with_bridging=True).translate(pos))
+
+                wheel_with_screw_holes = wheel.cut(screw_cutter)
+
+                inner_wheel = wheel_with_screw_holes.intersect(inner_keep)
+                outer_wheel = wheel_with_screw_holes.cut(outer_cut)
+                shapes["wheel_parts_inner"] = inner_wheel
+                shapes["wheel_parts_outer"] = outer_wheel
+
+
+
 
 
         if self.need_separate_arbor_extension(front=False):
