@@ -170,6 +170,8 @@ class AnchorEscapement:
         self.wheel_centre = (0, 0)
 
         arm_thick = self.diameter * 0.05
+        if self.type == EscapementType.RECOIL:
+            arm_thick*=1.5
         # aprox
         midEntryPalet = polar(math.pi + self.wheel_angle / 2, self.radius)
         armLength = np.linalg.norm(np.subtract(midEntryPalet, self.anchor_centre))
@@ -187,7 +189,7 @@ class AnchorEscapement:
             self.anchor_centre_top = (0, self.anchor_centre_distance + self.centre_r)
 
         if self.type == EscapementType.RECOIL:
-            self.bottom_arm_r = self.anchor_centre_distance - arm_thick/2
+            self.bottom_arm_r = self.anchor_centre_distance - self.centre_r
             self.top_arm_r = self.bottom_arm_r + arm_thick
 
         # from the anchor centre, the length of the pallets determines how wide the pendulum will swing (the lift)
@@ -543,7 +545,12 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         anchor = self.get_anchor_2d()
 
         # cylinder around the rod
-        anchor = anchor.union(cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(thick))
+        cylinder = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(thick)
+
+        #cut out anything from that cylinder that might go inside the anchor
+        cylinder = cylinder.cut(cq.Workplane("XY").circle(self.bottom_arm_r).extrude(thick))
+
+        anchor = anchor.union(cylinder)
         
         if self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
             #beef this up a bit

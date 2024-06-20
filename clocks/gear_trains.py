@@ -831,7 +831,10 @@ class GoingTrain:
 
         # print(module_sizes)
         # make the escape wheel as large as possible, by default
-        if (stack_away_from_powered_wheel or self.wheels == 3) and self.escape_wheel_pinion_at_front == self.chain_at_back:
+        escape_wheel_by_arbor_extension = (stack_away_from_powered_wheel or self.wheels == 3) and self.escape_wheel_pinion_at_front == self.chain_at_back
+        if escape_wheel_by_arbor_extension or self.wheels-1 in pinion_extensions:
+            #assume if a pinion extension has been added that the escape wheel doesn't clash with pinion.
+            #this logic is awful and needs overhauling massively.
             # avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
             escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - rod_diameters[-2] - 2) * 2
         else:

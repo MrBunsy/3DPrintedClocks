@@ -1884,11 +1884,11 @@ class ArborForPlate:
                 outer_r = self.arbor.wheel.get_min_radius() - 3
 
                 fixing_screws = MachineScrew(2, countersunk=True)
-                max_gap_size = outer_r - inner_r
-                gap_size = fixing_screws.get_head_diameter()*1.5
+                gap_size = outer_r - inner_r
+                min_gap_size = fixing_screws.get_head_diameter()*1.5
                 join_r = inner_r  + gap_size/2
 
-                if gap_size > max_gap_size:
+                if gap_size < min_gap_size:
                     raise ValueError("Not enough space to split wheel into two")
 
                 wheel_thick = self.arbor.wheel_thick
@@ -1905,9 +1905,10 @@ class ArborForPlate:
                     top_thick -= bottom_above_layer_thick
 
                 wiggle = 0.05
-                inner_keep = cq.Workplane("XY").circle(join_r + gap_size/2 - wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(join_r - gap_size/2 - wiggle/2).extrude(100)
+                #putting wiggle into the outer bit so we don't cut into the spring barrel wall. will that eat into space for the screw head?
+                inner_keep = cq.Workplane("XY").circle(outer_r - wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r).extrude(100)
 
-                outer_cut = cq.Workplane("XY").circle(join_r + gap_size/2 + wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(join_r - gap_size/2 + wiggle/2).extrude(100)
+                outer_cut = cq.Workplane("XY").circle(outer_r + wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r + wiggle).extrude(100)
 
                 screw_cutter = cq.Workplane("XY")
                 screws = 4
@@ -1915,7 +1916,10 @@ class ArborForPlate:
                     pos = polar(screw * math.pi*2/screws, join_r)
                     screw_cutter = screw_cutter.add(fixing_screws.get_cutter(with_bridging=True).translate(pos))
 
-                wheel_with_screw_holes = wheel.cut(screw_cutter)
+                #want the outside to be solid for this to work
+                wheel_without_outer_style = self.arbor.get_powered_wheel(rear_side_extension=self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius, cut_style_in_outer_section=False)
+
+                wheel_with_screw_holes = wheel_without_outer_style.cut(screw_cutter)
 
                 inner_wheel = wheel_with_screw_holes.intersect(inner_keep)
                 outer_wheel = wheel_with_screw_holes.cut(outer_cut)
@@ -2469,7 +2473,7 @@ class Arbor:
                 length -= self.ratchet_screws.get_head_height()
             print("Ratchet needs {} screws of length {}mm".format(self.ratchet_screws.get_string(), length))
 
-    def get_powered_wheel(self, for_printing=True, rear_side_extension=0, arbour_extension_max_radius=0):
+    def get_powered_wheel(self, for_printing=True, rear_side_extension=0, arbour_extension_max_radius=0, cut_style_in_outer_section=True):
         '''
         The Arbor class no longer knows about the placement of the arbors in teh plates, so if we want to generate a complete wheel rear_side_extension and arbour_extension_max_r must be provided
         This will gracefully fall back to still producing a chain wheel if they're not
@@ -2502,7 +2506,7 @@ class Arbor:
                 barrel_r = self.powered_wheel.get_outer_diameter()/2
                 wheel_r = self.wheel.get_min_radius()
 
-                if barrel_r < wheel_r - 10:
+                if barrel_r < wheel_r - 10 and cut_style_in_outer_section:
                     gear_wheel = Gear.cutStyle(gear_wheel, wheel_r, barrel_r, self.style)
                 
                 

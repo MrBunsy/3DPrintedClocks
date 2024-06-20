@@ -29,3 +29,6 @@ need to keep parts away from edge of build plate to avoid warping
 
 trying 240 for 3djake ASA as it says a max of 250
 was warping badly, TO DO try same as polylite and maybe with reduced volumetric flow
+
+ASA mk4 satin sheeet
+can't decide between 0.2mm and 0.175mm elephant's foot

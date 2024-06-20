@@ -73,9 +73,9 @@ lift=3
 drop=3
 lock=2
 
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
+escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.RECOIL, tooth_tip_angle=6, tooth_base_angle=4)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
+                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True)
 
 barrel_gear_thick = 5#8
 
@@ -104,9 +104,7 @@ backPlateFromWall=30
 dial_d = 205
 dial_width=25
 
-#was 25, extending to 32 was meant to move the pinion closer to the edge so there's less wobble, but it appears to have made the plates slightly wider
-#so reprints are a mix of old and new STLs...
-pinion_extensions = {0:1, 1:0,3:5} #{1:25}
+pinion_extensions = {0:1, 1:15, 2:10,3:18}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.2]
