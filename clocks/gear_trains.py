@@ -144,7 +144,7 @@ class GoingTrain:
     '''
 
     def calculate_ratios(self, module_reduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
-                         max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True, allow_integer_ratio=False):
+                         max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True, allow_integer_ratio=False, constraint=None):
         '''
         Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
         module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
@@ -273,8 +273,20 @@ class GoingTrain:
                 # avoid if we can
                 weighting += 100
 
+
+
             train = {"time": total_time, "train": all_trains[c], "error": abs(error), "ratio": total_ratio, "teeth": total_wheel_teeth, "weighting": weighting}
+
+
+
             if fits and abs(error) < max_error:  # and not int_ratio:
+
+                if constraint is not None:
+                    if not constraint(train):
+                        continue
+                    else:
+                        print("constraint met", train)
+
                 all_times.append(train)
 
         if loud:

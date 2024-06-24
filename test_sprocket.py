@@ -6,6 +6,7 @@ from clocks.utility import *
 from clocks.leaves import HollyLeaf, Wreath, HollySprig
 from clocks.cosmetics import *
 from clocks.geometry import *
+from clocks.cq_gears import SpurGear
 
 # from cq_warehouse.sprocket import *
 
@@ -20,7 +21,7 @@ if 'show_object' not in globals():
 
 start_angle = 0
 end_angle = math.pi*2
-steps = 500
+steps = 100
 
 
 
@@ -30,16 +31,18 @@ chain = REGULA_8_DAY_1_05MM_CHAIN
 pocket_wheel = PocketChainWheel2(chain=chain, max_diameter=30)
 radius = pocket_wheel.radius
 
-circumference = chain.pitch*6
+sprocket_links = 6
+
+circumference = chain.pitch*sprocket_links
 radius = circumference/(math.pi*2)
 extra_space = 0.2
-
+sprocket_step_name = "sprocket_{}_{}.step".format(chain,sprocket_links)
 if outputSTL:
     sprocket = cq.Workplane("XY").circle(radius+chain.width).extrude(chain.width - chain.wire_thick*3)
 
     link_length = chain.inside_length + chain.wire_thick*2
 
-    links = 20
+    links = sprocket_links*3
 
 
     one_link = get_stroke_line([(0, link_length/2 - chain.width/2 - extra_space), (0, -link_length/2 + chain.width/2 + extra_space)], wide=chain.width+extra_space*2,thick=5)
@@ -66,15 +69,17 @@ if outputSTL:
 
     assembly = cq.Assembly()
     assembly.add(sprocket)
-    assembly.save("sprocket.step")
+    assembly.save(sprocket_step_name)
 
 else:
-    result = cq.importers.importStep("sprocket.step")
+    result = cq.importers.importStep(sprocket_step_name)
     show_object(result)
 
-pair = WheelPinionPair(wheelTeeth=100000, pinionTeeth=6, module=4)
+pair = WheelPinionPair(wheelTeeth=100000, pinionTeeth=sprocket_links, module=4)
 
 show_object(pair.pinion.get2D().rotate((0,0,0), (0,0,1), 8.25))
+
+show_object(SpurGear(module=4, teeth_number=sprocket_links, width=3, pressure_angle=25, clearance=-2)._build().translate((0,0,-3)).rotate((0,0,0), (0,0,1),-3.5), name= "spur gear")
 
 # cqsprocket = Sprocket(
 #     num_teeth=6,

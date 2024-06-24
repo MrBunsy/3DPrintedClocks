@@ -331,9 +331,9 @@ class Assembly:
                 print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
             if arbor.pinion is not None and arbor.pinion.lantern:
                 diameter = arbor.pinion.trundle_r * 2
-                min_length = arbor.pinion_thick
+                min_length = arbor.pinion_thick + arbor.pinion_extension
                 # assumed knowledge, the default value of offset in get_lantern_cap is 1. TODO improve this
-                max_lenth = arbor.pinion_thick + (arbor.end_cap_thick - 1) + (arbor.wheel_thick - 1)
+                max_lenth = arbor.pinion_thick  + arbor.pinion_extension + (arbor.end_cap_thick - 1) + (arbor.wheel_thick - 1)
                 print("Arbor {} has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i,  diameter, min_length, max_lenth))
 
 
