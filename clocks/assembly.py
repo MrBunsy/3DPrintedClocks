@@ -531,7 +531,7 @@ class Assembly:
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
-                   moon_complication_colour=Colour.BRASS, vanity_plate_colour=Colour.WHITE, plaque_colours=None):
+                   moon_complication_colour=Colour.BRASS, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -609,9 +609,10 @@ class Assembly:
             show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name="Moon Complication", options={"color":moon_complication_colour})
             moon = self.moon_complication.get_moon_half()
             # moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
-            show_object(moon.translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)),
+            moon_z = self.moon_complication.get_relative_moon_z() + self.front_of_clock_z
+            show_object(moon.rotate((0,0,0),(0,1,0), moon_angle_deg).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, moon_z)),
                         options={"color":"gray"}, name="Light Side of the Moon")
-            show_object(moon.rotate((0,0,0),(0,1,0),180).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)),
+            show_object(moon.rotate((0,0,0),(0,1,0),180 + moon_angle_deg).translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, moon_z)),
                         options={"color":"black"}, name="Dark Side of the Moon")
 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
@@ -645,28 +646,6 @@ class Assembly:
         hands_position = (self.plates.hands_position[0], self.plates.hands_position[1], self.minute_hand_z - self.motion_works.hour_hand_slot_height)
         self.hands.show_hands(show_object, hand_colours=hand_colours, position=hands_position, second_hand_pos=self.second_hand_pos, hour_hand_slot_height=self.motion_works.hour_hand_slot_height,
                               time_hours=self.time_hours, time_minutes=self.time_mins, time_seconds=self.time_seconds, show_second_hand=self.plates.has_seconds_hand())
-        # hands = self.hands.get_in_situ(time_minute=self.timeMins, time_hour=self.timeHours, time_seconds=self.timeSeconds, gap_size=self.motion_works.hourHandSlotHeight - self.hands.thick)
-        #
-        # for type in HandType:
-        #     for colour in hands[type]:
-        #         show_colour = colour
-        #         description="{} Hand{}".format(type.value.capitalize(), " "+colour.capitalize() if colour is not None else "")
-        #         if show_colour is None:
-        #             show_colour = hand_colours[0]
-        #             if type == HandType.SECOND:
-        #                 show_colour = hand_colours[2 % len(hand_colours)]
-        #         if show_colour == "outline":
-        #             show_colour = hand_colours[1 % len(hand_colours)]
-        #
-        #         show_colour = Colour.colour_tidier(show_colour)
-        #
-        #         if type != HandType.SECOND:
-        #             show_object(hands[type][colour].translate((self.plates.hands_position[0], self.plates.hands_position[1],
-        #                                           self.minuteHandZ - self.motion_works.hourHandSlotHeight)), options={"color": show_colour}, name=description)
-        #         elif self.plates.has_seconds_hand():
-        #             #second hand!! yay
-        #             secondHand = hands[type][colour].translate(self.second_hand_pos)
-        #             show_object(secondHand, options={"color": show_colour}, name=description)
 
         if self.has_ring:
 

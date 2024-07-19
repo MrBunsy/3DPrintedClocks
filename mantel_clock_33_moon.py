@@ -40,7 +40,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "mantel_clock_33c"
+clock_name= "mantel_clock_33e"
 clock_out_dir= "out"
 gear_style=clock.GearStyle.ARCS
 pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -65,13 +65,15 @@ lift =3
 lock= 2#1.25 # why did I have 1.25 lock on paul's clock?
 
 #for 40tooth recoil:
+#note - I think that since the problem was discovered to be dodgy bearings I can go back to deadbeat and see if the improved efficiency increases runtime
 drop =2.5
 lift =2
 lock= 2
 #42 as then a quarter span results in exactly the same distance as the old 30 tooth
-teeth = 42 if moon else 36
+#going back to 30 teeth, since it was a bearing problem
+teeth = 30 if moon else 36 # 42
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
-                                    type=clock.EscapementType.RECOIL)
+                                    type=clock.EscapementType.DEADBEAT)
 
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=not moon, escape_wheel_pinion_at_front=False)
@@ -117,14 +119,14 @@ else:
     #2/3s without second hand with 36 teeth
     # train.set_ratios([[75, 10], [65, 15], [60, 13]])
     #2/3s without second hand with 30 teeth
-    # train.set_ratios([[72, 10], [70, 12], [60, 14]])
+    train.set_ratios([[72, 10], [70, 12], [60, 14]])
     # constraint = lambda train : train["train"][0][0] == 72 and train["train"][0][1] == 10
     # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=10, max_wheel_teeth=72, pinion_max_teeth=20, wheel_min_teeth=50, loud=True, constraint=constraint)
     # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=10, max_wheel_teeth=72, pinion_max_teeth=15, wheel_min_teeth=60, loud=True)#, constraint=constraint)
     # 2/3s with 40 teeth
     # train.set_ratios([[65, 10], [63, 14], [60, 13]])
     #2/3s with 42 teeth
-    train.set_ratios([[65, 10], [60, 13], [60, 14]])
+    # train.set_ratios([[65, 10], [60, 13], [60, 14]])
 # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=10, max_wheel_teeth=80, pinion_max_teeth=16, wheel_min_teeth=60, loud=True)
 
 
@@ -157,10 +159,13 @@ old_modules = [1,0.9,0.9]
 # last_module = clock.WheelPinionPair.get_replacement_module_size(60,14, 0.9, 45, 14)
 last_module = 0.9
 
-module_sizes=[clock.WheelPinionPair.get_replacement_module_size(old_train[i][0], old_train[i][1], old_modules[i], train.trains[0]["train"][i][0],  train.trains[0]["train"][i][1]) for i in range(len(old_modules))]
+#for retrofitting new train to existing plates
+# module_sizes=[clock.WheelPinionPair.get_replacement_module_size(old_train[i][0], old_train[i][1], old_modules[i], train.trains[0]["train"][i][0],  train.trains[0]["train"][i][1]) for i in range(len(old_modules))]
+#if printing fresh let's have default sizes?
+module_sizes = old_modules
 
 print("module_sizes", module_sizes)
-lanterns=[0]#, 1]
+lanterns=[0, 1]
 train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[barrel_gear_thick, 4],
                 pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
@@ -204,7 +209,7 @@ if moon:
     motion_works.calculate_size(arbor_distance=30)
     moon_complication.set_motion_works_sizes(motion_works)
 
-plaque = clock.Plaque(text_lines=["M33#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "Happy Birthday Ffi"])
+plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "For Mr Modge 2024"])
 
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,

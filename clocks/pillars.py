@@ -17,6 +17,44 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
         return fancy_pillar_classic(r, length, clockwise)
     else:
         raise NotImplementedError("Pillar style {} not yet implemented".format(style))
+def fancy_pillar_column(r, length, clockwise=True):
+    '''
+    the top and bottom bit copy-pasted from barley twist, could probably consider abstracting out
+    '''
+
+    circle = cq.Workplane("XY").circle(r)
+    curve_end_gap = min(2, r * 0.07)
+
+    curve_r = r * 0.25 - curve_end_gap
+
+    inner_r = r * 0.85
+    base_thick = curve_r * 1.5
+    next_bulge_thick = curve_r * 2
+    base_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick)], tangents=[(0, 1), (-0.5, 0.5)])
+                    .spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_thick + next_bulge_thick)], tangents=[(1, 1), (-1, 1)]).lineTo(0, base_thick + next_bulge_thick).close())
+    base = base_outline.sweep(circle)
+    centre_length = length - 2*(base_thick + next_bulge_thick)
+
+    centre = cq.Workplane("XY").circle(inner_r).extrude(centre_length).translate((0,0,base_thick + next_bulge_thick))
+
+    cut_gap_thick = base_thick/2
+    cut_length = centre_length - cut_gap_thick*2
+    cuts = 12
+    circumference = math.pi*r*2
+    cut_r = circumference / (cuts*3)
+    cutter= cq.Workplane("XY")
+    for cut in range(cuts):
+        pole = cq.Workplane("XY").circle(cut_r).extrude(cut_length - cut_r*2).translate((0,0,cut_gap_thick + cut_r))
+        pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_r)))
+        pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_length - cut_r)))
+        angle = cut * math.pi*2/cuts
+        pos_2d = polar(angle, inner_r + cut_r*0.4)
+        cutter = cutter.union(pole.translate((pos_2d[0], pos_2d[1], base_thick + next_bulge_thick)))
+    # return cutter
+    centre = centre.cut(cutter)
+    pillar = base.union(centre).union(base.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length)))
+
+    return pillar
 def fancy_pillar_twisty(r, length, clockwise=True):
 
     dir = 1 if clockwise else -1
