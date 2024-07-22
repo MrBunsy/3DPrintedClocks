@@ -56,10 +56,12 @@ if 'show_object' not in globals():
 
 # show_object(fancy_pillar(30, 100))
 
+show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
+
 
 # show_object(get_stroke_arc((50,0), (-50,0), 150, wide=10, thick=5 , style=StrokeStyle.ROUND, fill_in=True))
 
-if True:
+if False:
     cylinder_r=7
     square_side_length = math.sqrt(2) * cylinder_r
 
@@ -76,4 +78,4 @@ if True:
     # export_STL(pendulum_holder.get_collet(), "test_collet", path="out/")
     # export_STL(pendulum_holder.get_pendulum_holder(), "test_pendulum_holder", path="out/")
 
-cone = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=15, radius2=0,height=15,pnt=(0,0,15), dir=(0,0,-1)))
+# cone = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=15, radius2=0,height=15,pnt=(0,0,15), dir=(0,0,-1)))

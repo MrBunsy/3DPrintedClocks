@@ -4,7 +4,10 @@ from .utility import *
 import cadquery as cq
 
 #not sure where to put the pillars, maybe their own file?
-def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
+def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base_fillet_r=-1):
+    '''
+    base_fillet_r if +ve then the base is flat with rounded edges
+    '''
     if style == PillarStyle.BARLEY_TWIST:
         return fancy_pillar_barley_twist(r, length, clockwise)
     elif style == PillarStyle.BLOBS:
@@ -14,7 +17,7 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST):
     elif style == PillarStyle.TWISTY:
         return fancy_pillar_twisty(r, length, clockwise)
     elif style == PillarStyle.CLASSIC:
-        return fancy_pillar_classic(r, length, clockwise)
+        return fancy_pillar_classic(r, length, clockwise=clockwise, base_fillet_r=base_fillet_r)
     else:
         raise NotImplementedError("Pillar style {} not yet implemented".format(style))
 def fancy_pillar_column(r, length, clockwise=True):
@@ -71,7 +74,7 @@ def fancy_pillar_twisty(r, length, clockwise=True):
     return pillar
 
 
-def fancy_pillar_classic(r, length, clockwise=True):
+def fancy_pillar_classic(r, length, clockwise=True, base_fillet_r=-1):
     '''
     the top and bottom bit copy-pasted from barley twist, could probably consider abstracting out
     '''

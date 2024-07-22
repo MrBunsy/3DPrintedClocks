@@ -838,11 +838,11 @@ if test_ratchet:
 #
 # show_object(spring.get_ratchet_gear_for_arbor())
 #
-# key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
-# # #
-# # show_object(key.get_let_down_adapter())
-# show_object(key.get_assembled())
-# show_object(key.get_key(for_printing=False))
+key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
+# #
+# show_object(key.get_let_down_adapter())
+show_object(key.get_assembled())
+show_object(key.get_key(for_printing=False))
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #
@@ -950,8 +950,8 @@ if test_ratchet:
 # show_object(BEARING_3x10x4.get_cutter(with_bridging=True))
 # show_object(BEARING_3x10x4.get_cutter(with_bridging=False))
 
-fan = CentrifugalFan()
-show_object(fan.get_assembled())
+# fan = CentrifugalFan()
+# show_object(fan.get_assembled())
 
 # spring_barrel = SpringBarrel(spring=MAINSPRING_102525, key_bearing=BEARING_8x16x5, lid_bearing=BEARING_8x16x5, barrel_bearing=BEARING_8x16x5,
 #                              spring_hook_screws=MachineScrew(2,countersunk=True, length=12))

@@ -87,7 +87,7 @@ train.print_info(for_runtime_hours=24*7)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
-pillar_style=clock.PillarStyle.BARLEY_TWIST
+pillar_style=clock.PillarStyle.COLUMN
 
 dial_d=190
 dial_width=25
