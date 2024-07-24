@@ -1068,7 +1068,10 @@ class Gear:
 
         return holder_together
 
+
+
     def get_lantern_cap(self, offset = 1, cap_thick=5):
+        # offset = self.get_lantern_trundle_offset()
         cap = cq.Workplane("XY").circle(self.outer_r).polygon(self.slot_sides, self.inner_r_for_lantern_fixing_slot * 2).extrude(cap_thick)
 
         cap = cap.cut(self.get_lantern_cutter(0, cap_thick-offset))
@@ -1077,7 +1080,7 @@ class Gear:
 
         return cap
 
-    def add_to_wheel(self, wheel, hole_d=0, thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True, pinion_extension=0):
+    def add_to_wheel(self, wheel, hole_d=0, thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True, pinion_extension=0, lantern_offset=1):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
@@ -1087,7 +1090,7 @@ class Gear:
         base = wheel.get3D(thick=thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
         if self.lantern:
-            base = base.cut(self.get_lantern_cutter())
+            base = base.cut(self.get_lantern_cutter(offset=lantern_offset))
             # base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
             return base
 
@@ -1904,7 +1907,7 @@ class ArborForPlate:
                     bottom_thick += layer_thick - bottom_above_layer_thick
                     top_thick -= bottom_above_layer_thick
 
-                wiggle = 0.05
+                wiggle = 0.1#0.05
                 #putting wiggle into the outer bit so we don't cut into the spring barrel wall. will that eat into space for the screw head?
                 inner_keep = cq.Workplane("XY").circle(outer_r - wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r).extrude(100)
 
@@ -2319,7 +2322,8 @@ class Arbor:
                 pinion_thick+=self.pinion_extension
 
             shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
-                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
+                                             lantern_offset=self.get_lantern_trundle_offset())
 
             # shape = self.pinion.get3D
 
@@ -2377,7 +2381,7 @@ class Arbor:
                 shape = shape.add(self.powered_wheel.get_assembled().translate((0, 0, self.wheel_thick)))
 
         if self.pinion.lantern:
-            shape = shape.add(self.pinion.get_lantern_cap(self.end_cap_thick).translate((0,0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
+            shape = shape.add(self.pinion.get_lantern_cap(self.end_cap_thick, offset=self.get_lantern_trundle_offset()).translate((0,0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
             shape = shape.add(self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick + self.pinion_extension, top_thick=self.end_cap_thick, for_printing=False))
 
         return shape
@@ -2395,7 +2399,15 @@ class Arbor:
         pinion = pinion.add(cap).add(cap.translate((0, 0, self.end_cap_thick + self.pinion_thick)))
 
         return pinion
-
+    def get_lantern_trundle_offset(self):
+        '''
+        If +ve then the trundle hole doesn't go all the way through the wheel or cap (for thicker wheels)
+        if 0 then the trundle hole goes all the way through (thinner wheels) and we rely on the arbor extensions and glue to hold everything firmly in place
+        '''
+        # return self.pinion.get_lantern_trundle_offset()
+        if self.wheel_thick < 3:
+            return 0
+        return 1
     def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0, back_collet_from_back=0):
         '''
         rear_side_extension - how far to extend the spring arbor to the back of the back plates + endshaoe
@@ -2411,7 +2423,7 @@ class Arbor:
             extras['ratchet']= self.get_extra_ratchet()
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.pinion.lantern:
-            extras["lantern_pinion_cap"] = self.pinion.get_lantern_cap(cap_thick=self.end_cap_thick)
+            extras["lantern_pinion_cap"] = self.pinion.get_lantern_cap(cap_thick=self.end_cap_thick, offset=self.get_lantern_trundle_offset())
             extras["lantern_pinion_fixing"] = self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick + self.pinion_extension, top_thick=self.end_cap_thick, hole_d=self.hole_d)
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:

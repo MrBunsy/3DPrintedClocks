@@ -31,6 +31,15 @@ Nothing particularly new, just had an idea for a clock that would look cool:
 - Maybe try the smaller spring and see if that's up to it? (uncertain since the centred second hand clock struggled to make a week)
 
 Maybe one for printables?
+
+
+This went through many iterations until I discovered that the dry stainless steel bearings were seizing up.
+The original gear train was fine (and version e has gone back to it), but I've kept the work that reduced the thickness of the powered wheels (using ASA) and more lantern pinions.
+Sticking with the 30 tooth escape wheel as I believe this should result in a more efficient train (reduced drop)
+
+TODO before printing more:
+thin wheels with lantern pinions should have holes all the way through
+bit more wiggle room on the teeth bit of the spring barrel (separate now it's in ASA)
 '''
 output_STL = False
 
@@ -209,7 +218,7 @@ if moon:
     motion_works.calculate_size(arbor_distance=30)
     moon_complication.set_motion_works_sizes(motion_works)
 
-plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "For Mr Modge 2024"])
+plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "For The Hodgsons 2024"])
 
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
