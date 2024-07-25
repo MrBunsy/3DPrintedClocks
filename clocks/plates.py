@@ -305,13 +305,15 @@ class SimpleClockPlates:
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
 
         escapement_on_front: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
+        split_detailed_plate - if the detail is raised on the front plate we'd have to print using hole-in-hole supports for the bearing holes. Some filaments this isn't as clean as others
+        so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
         '''
 
         self.pillar_style = pillar_style
@@ -321,6 +323,8 @@ class SimpleClockPlates:
         self.edging_thick=LAYER_THICK*2
 
         self.export_tolerance = 0.1
+
+        self.split_detailed_plate = split_detailed_plate
 
         #for other clock plates to override
         self.text_on_standoffs = False
@@ -1381,6 +1385,13 @@ class SimpleClockPlates:
             return False
         return True
 
+    def front_plate_printed_front_face_down(self):
+        if self.front_plate_has_flat_front():
+            return True
+        else:
+            #sort of true, the bulk of the front plate is printed face down
+            return self.split_detailed_plate
+
     def get_seconds_hand_position(self):
         if self.centred_second_hand:
             return self.hands_position.copy()
@@ -2144,7 +2155,7 @@ class SimpleClockPlates:
 
         plate = self.apply_style_to_plate(plate, back=back)
 
-        if for_printing and not back and self.front_plate_has_flat_front():
+        if for_printing and not back and self.front_plate_printed_front_face_down():
             '''
             front plate is generated front-up, but we can flip it for printing
             '''
@@ -2659,7 +2670,7 @@ class SimpleClockPlates:
                 plate = plate.cut(cq.Workplane("XY").circle(outer_d/2).extrude(self.get_plate_thick(back=back)).translate((pos[0], pos[1], 0)))
             else:
                 bridging = False
-                if not back and not self.front_plate_has_flat_front():
+                if not back and not self.front_plate_printed_front_face_down():
                     bridging = True
                 plate = plate.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(back=back),bearing=bearing, bearing_on_top=bearing_on_top, with_support=bridging)
                                   .translate((pos[0], pos[1], 0)))
@@ -2829,7 +2840,7 @@ class SimpleClockPlates:
         if self.winding_key is not None:
             powered_wheel = self.going_train.powered_wheel
 
-            if self.front_plate_has_flat_front():
+            if self.front_plate_printed_front_face_down():
                 #can print front-side on the build plate, so the bearing holes are printed on top
                 cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outer_d / 2).extrude(powered_wheel.key_bearing.height)
             else:
@@ -2932,7 +2943,7 @@ class SimpleClockPlates:
             moon_screws = self.moon_holder.get_fixing_positions()
 
             for pos in moon_screws:
-                bridging = not self.front_plate_has_flat_front()
+                bridging = not self.front_plate_printed_front_face_down()
                 # pos = (pos[0], pos[1], self.get_plate_thick(back=True) + self.plate_distance)
                 # cutter = cutter.add(self.motion_works_screws.getCutter(headSpaceLength=0).translate(pos))
                 # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
@@ -3122,17 +3133,46 @@ class SimpleClockPlates:
         return (plates, pillars, detail, standoff_pillars)
 
 
+    def get_front_plate_in_parts(self):
+        '''
+        if self.split_detailed_plate divide the front plate into two parts to be printed seperately to avoid needing bridging
+        '''
+        tallest_bearing = max([arbor.bearing.height for arbor in self.arbors_for_plate])
+
+        plate_thick = self.get_plate_thick(back=False)
+
+        main_chunk_thick = (tallest_bearing + 1)
+        main_chunk_thick = main_chunk_thick - main_chunk_thick % self.layer_thick
+
+        front_plate = self.get_plate(back=False, for_printing=True)
+
+        plane = cq.Workplane("XY").rect(1000,1000).extrude(main_chunk_thick)
+
+        base = front_plate.intersect(plane)
+        top = front_plate.cut(plane).translate((0,0,-main_chunk_thick))
+        detail = self.get_plate_detail(back=False, for_printing=True).translate((0,0,-main_chunk_thick))
+
+        return base, top, detail
+
+
     def output_STLs(self, name="clock", path="../out"):
 
         if self.dial is not None:
             self.dial.output_STLs(name, path)
 
         front_detail = self.get_plate_detail(back=False, for_printing=True)
-
-        export_STL(front_detail, "plate_front_detail", name, path)
-
-        export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path, tolerance=self.export_tolerance)
         export_STL(self.get_plate(True, for_printing=True), "plate_back", name, path, tolerance=self.export_tolerance)
+
+
+        if self.split_detailed_plate:
+            front_plate_main, front_plate_top, front_plate_detail = self.get_front_plate_in_parts()
+            export_STL(front_plate_main, "plate_front_main", name, path, tolerance=self.export_tolerance)
+            export_STL(front_plate_top, "plate_front_top", name, path, tolerance=self.export_tolerance)
+            export_STL(front_plate_detail, "plate_front_detail", name, path, tolerance=self.export_tolerance)
+        else:
+            export_STL(self.get_plate(False, for_printing=True), "plate_front", name, path, tolerance=self.export_tolerance)
+            export_STL(front_detail, "plate_front_detail", name, path, tolerance=self.export_tolerance)
+
 
         if not self.text_on_standoffs:
             export_STL(self.get_text(for_printing=True), "plate_back_text", name, path)
@@ -3220,7 +3260,7 @@ class MantelClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
-                 plaque = None, vanity_plate_radius=-1, prefer_tall = False):
+                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False):
         self.symetrical = symetrical
         #if we've got the moon sticking out the top, can arrange the pillars in such a way that we'rea taller
         self.can_be_extra_tall = (moon_complication is not None) or prefer_tall
@@ -3234,7 +3274,8 @@ class MantelClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
-                         standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius)
+                         standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
+                         split_detailed_plate=split_detailed_plate)
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
         # self.moon_holder_y = -1

@@ -223,7 +223,7 @@ plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulu
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
-                                 plaque=plaque)
+                                 plaque=plaque, split_detailed_plate=True)
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
 hand_style = clock.HandStyle.MOON if moon else clock.HandStyle.SPADE
