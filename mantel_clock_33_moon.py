@@ -186,7 +186,8 @@ print("train.powered_wheel_arbors[1].centre_distance, ", train.powered_wheel_arb
 train.print_info(for_runtime_hours=24*7)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
+#had been using the leftover bob from wall clock 32 before I made it thicker, so bumping up to 10 from 8 and 8 was a bit fiddly to get any weight into
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 pillar_style=clock.PillarStyle.CLASSIC
 
 # if not output_STL:

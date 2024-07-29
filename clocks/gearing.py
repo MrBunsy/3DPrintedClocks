@@ -1892,7 +1892,7 @@ class ArborForPlate:
                 join_r = inner_r  + gap_size/2
 
                 if gap_size < min_gap_size:
-                    raise ValueError("Not enough space to split wheel into two")
+                    raise ValueError(f"Not enough space to split wheel into two: {gap_size} {min_gap_size}")
 
                 wheel_thick = self.arbor.wheel_thick
                 bottom_thick = wheel_thick/2

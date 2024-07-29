@@ -30,6 +30,10 @@ This is based on mantel_clock_31, but bigger
 
 Plan is a circular wall mounted clock with short pendulum and mini moon complication in a mini dial like the second hand 
 
+clock works! few tweaks I think worth doing before making another:
+ - change screwhole to be above the top bearing so we can adjust the beat setter more easily (it didn't exist when this was designed)
+ - work out where to put a plaque on the back
+ - optional plaque on front?
 
 '''
 outputSTL = False

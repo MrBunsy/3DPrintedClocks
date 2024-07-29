@@ -61,8 +61,8 @@ barrel_gear_thick =5
 module_reduction=0.9
 #chain_wheel_ratios=[[61, 10], [62, 10]],
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=8, extra_barrel_height=1.5, ratchet_thick=8, chain_wheel_ratios=[[61, 10], [62, 10]])#, spring=clock.MAINSPRING_183535, fraction_of_max_turns=0.4)
-
+                        style=gear_style, wall_thick=5, ratchet_thick=8, spring=clock.MAINSPRING_183535, fraction_of_max_turns=0.5)
+#, chain_wheel_ratios=[[61, 10], [62, 10]])#
 # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=9, max_wheel_teeth=150, pinion_max_teeth=12, wheel_min_teeth=100, loud=True)
 #2/3s without second hand with 30 teeth
 train.set_ratios([[72, 10], [70, 12], [60, 14]])
@@ -72,9 +72,9 @@ back_plate_from_wall=30
 
 
 pinion_extensions = {0:1, 1:3, 3:8}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.25), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 
-module_sizes = [0.9,0.8,0.8]
+module_sizes = [0.8,0.8,0.8]
 
 print("module_sizes", module_sizes)
 lanterns=[0, 1]
