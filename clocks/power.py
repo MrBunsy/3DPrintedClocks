@@ -1103,7 +1103,8 @@ class SpringBarrel:
         #this also matches up with the rule of thumb that the mainspring thickness should be aproximately 1/100th of the barrel diameter
 
         #I think that my hooks are larger than "real" hooks and also it's a PITA to put the spring in without coning it. So, further bodge:
-        diameter_of_spring_barrel += self.spring_hook_screws.get_head_height()
+        #printed a few successful clocks with this, but trying dividing by two to see if I can get a tiny bit more runtime
+        diameter_of_spring_barrel += self.spring_hook_screws.get_head_height()/2
 
         return diameter_of_spring_barrel
 

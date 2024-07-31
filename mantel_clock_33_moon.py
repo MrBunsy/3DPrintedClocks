@@ -50,6 +50,7 @@ if 'show_object' not in globals():
         pass
 
 clock_name= "mantel_clock_33e"
+# clock_name= "mantel_clock_33_retrofit"
 clock_out_dir= "out"
 gear_style=clock.GearStyle.ARCS
 pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -159,6 +160,7 @@ back_plate_from_wall=30
 # newpair = clock.WheelPinionPair(61, 10, intermediate_wheel_module)
 # print("new distance", newpair.centre_distance)
 # print("new wheel r", newpair.wheel.get_max_radius(), "new pinion r", newpair.pinion.get_max_radius())
+#this was a mistake, should have been clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2) (but this doesn't fit current design)
 intermediate_wheel_module=1.2
 pinion_extensions = {0:1, 1:3, 3:8} if moon else {0:1, 1:12, 2:5}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), intermediate_wheel_module]

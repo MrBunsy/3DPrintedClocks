@@ -111,7 +111,10 @@ dial_width=25
 pinion_extensions = {0:1, 1:15, 2:10,3:18}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]), 1.2]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
+                    #1.2
+                    clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)
+                   ]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 #module_sizes=[1, 0.95, 0.95]
