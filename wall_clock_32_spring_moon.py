@@ -88,7 +88,7 @@ moduleReduction=0.95#0.85
 #wall thick of 9 seemed fine, but I want it to be consistent with the arbor
 #larger barrel wheel actually works out at a smaller plate than having a larger intermediate wheel
 train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=10, chain_wheel_ratios=[[64, 10], [61, 10]], extra_barrel_height=1.5)
+                        wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
 
 '''
 [[61, 10], [83, 10]]
@@ -112,7 +112,7 @@ pinion_extensions = {0:1, 1:15, 2:10,3:18}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
-                    #1.2
+                    # 1.2
                     clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)
                    ]
 #[1.6, 1.25]

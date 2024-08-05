@@ -1740,6 +1740,8 @@ class SimpleClockPlates:
 
     def get_wall_standoff(self, top=True, for_printing=True):
         '''
+        I suppose the top wall standoff is technically the back cock
+
         If the back plate isn't directly up against the wall, we need two more peices that attach to the top and bottom pillars on the back
         if the pendulum is at the back (likely given there's not much other reason to not be against the wall) the bottom peice will need
         a large gap or the hand-avoider
@@ -4224,12 +4226,18 @@ class RoundClockPlates(SimpleClockPlates):
         if not self.wall_mounted:
             return []
 
+        top_y = self.hands_position[1] + self.radius
+        #HACK TODO tidy up screwhole cutting and calculate size in the same place (use newish WoodScrew?)
+        screwhole_length =  self.wall_fixing_screw_head_d/2 + 7# + 6/2
+        if top_y - self.bearing_positions[-1][1] < self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 1:
+            top_y = self.bearing_positions[-1][1] + self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 1
 
-        if self.bearing_positions[-1][1] - self.top_pillar_positions[0][1] < 20:
-            top_y = self.top_pillar_positions[0][1]
-        else:
-            #halway between top pillar y and anchor bearing
-            top_y = (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2
+        # if self.bearing_positions[-1][1] - self.top_pillar_positions[0][1] < 20:
+        #     #bearing position is sufficiently above the pillars
+        #     top_y = self.top_pillar_positions[0][1]
+        # else:
+        #     #halway between top pillar y and anchor bearing
+        #     top_y = (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2
 
         return [(0, top_y, True), (0, self.bottom_pillar_positions[0][1], True)]
 
@@ -4286,7 +4294,7 @@ class RoundClockPlates(SimpleClockPlates):
                 return self.get_bottom_wall_standoff(for_printing=for_printing)
             else:
                 return cq.Workplane("XY")
-        return self.get_back_anchor_holder(for_printing=for_printing)
+        return self.get_back_cock(for_printing=for_printing)
 
 
     def get_bottom_wall_standoff(self, for_printing=True):
@@ -4320,7 +4328,7 @@ class RoundClockPlates(SimpleClockPlates):
         #     standoff = standoff.rotate((0,0,0),(1,0,0),180)
 
         return standoff
-    def get_back_anchor_holder(self, for_printing=True):
+    def get_back_cock(self, for_printing=True):
         '''
         the bit that holds the pendulum at the top
         '''
@@ -4333,10 +4341,10 @@ class RoundClockPlates(SimpleClockPlates):
 
         anchor_holder_fixing_points = self.top_pillar_positions
 
-        curve_ends = []
-        for fixing_pos in anchor_holder_fixing_points:
-            line_up = Line(fixing_pos, direction=(0,1))
-            curve_ends += line_up.intersection_with_circle(circle_centre=self.hands_position, circle_r = anchor_distance)
+        # curve_ends = []
+        # for fixing_pos in anchor_holder_fixing_points:
+        #     line_up = Line(fixing_pos, direction=(0,1))
+        #     curve_ends += line_up.intersection_with_circle(circle_centre=self.hands_position, circle_r = anchor_distance)
 
         # curve_ends = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
 
@@ -4349,16 +4357,29 @@ class RoundClockPlates(SimpleClockPlates):
         #using sagitta to work out radius of curve that links all points
         l = distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
         s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
-        r = s/2 + (l**2)/(8*s)
+        r_anchor_bearing = s/2 + (l**2)/(8*s)
 
-        standoff = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
+        standoff = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
 
 
         if self.wall_mounted:
-            standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
-            standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
+            # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
+            # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
             # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
             wall_fixing_pos = self.get_screwhole_positions()[0][:2]
+            # using sagitta to work out radius of curve that links all points (again)
+            s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
+            r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
+
+            standoff = standoff.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_wall_fixing, wide=width, thick=plate_thick))
+
+            gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
+            if gap_size < 2:
+                #don't leave little gaps
+                standoff = standoff.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
+
+
+
             standoff = self.cut_wall_fixing_hole(standoff, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
 
         if not self.standoff_pillars_separate:
@@ -4444,7 +4465,7 @@ class RoundClockPlates(SimpleClockPlates):
             export_STL(self.get_legs(back=True), "legs_back", name, path)
             export_STL(self.get_legs(back=False), "legs_front", name, path)
             export_STL(self.get_legs_pillar(), "legs_pillar", name, path)
-            export_STL(self.get_back_anchor_holder(), "anchor_holder_back", name, path)
+            export_STL(self.get_back_cock(), "back_cock", name, path)
 
         if self.has_vanity_plate:
             export_STL(self.get_vanity_plate(), "vanity_plate", name, path)
