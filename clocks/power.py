@@ -2247,7 +2247,9 @@ class CordWheel:
         segment = segment.faces(">Z").circle(self.holeD/2).cutThruAll()
 
         #holes for the screws that hold this together
-        segment = segment.faces(">Z").pushPoints(self.fixing_points).circle(self.screw_thread_metric / 2).cutThruAll()
+        #this can sometimes hang, not sure what conditions cause that.
+        # segment = segment.faces(">Z").pushPoints(self.fixing_points).circle(self.screw_thread_metric / 2).cutThruAll()
+        segment = segment.cut(cq.Workplane("XY").pushPoints(self.fixing_points).circle(self.screw_thread_metric / 2).extrude(self.thick*10))
 
         if front:
             #base of this needs space for the nuts (for the non-key version)

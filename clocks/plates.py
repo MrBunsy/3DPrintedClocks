@@ -1943,13 +1943,15 @@ class SimpleClockPlates:
     def calc_plaque_config(self):
         '''
         if this clock has a little plaque, calculate where it goes and what size it should be
-        side effect of setting width and height on teh plaque itself (lazy but simple)
+        side effect: sets width and height on teh plaque itself (lazy but simple)
 
         will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
-        '''
-        raise NotImplementedError("TODO: generate plaque position for simple clock plates")
 
-    def get_plate_detail(self, back=True, for_printing=False):
+        '''
+
+        raise NotImplementedError("TODO implement plaque for this clock plate")
+
+    def get_plate_detail(self, back=True, for_printing=False, for_this_shape=None):
         '''
         For styles of clock plate which might have ornate detailing. Similar to dial detail or text, this is a separate 3d shape
         designed to be sliced as a multicolour object
@@ -1957,8 +1959,11 @@ class SimpleClockPlates:
 
         #undecided - might be easier to just not put this on the back plate? it's going to be hard to see and makes it harder to print and work out how to do standoffs
         if self.style == PlateStyle.RAISED_EDGING and not back:
-            #not for printing so we know it's got its back on the plane with bearing holes facing up
-            plate = self.get_plate(back = back, for_printing=False, just_basic_shape=True, thick_override=self.edging_wide*10)
+            if for_this_shape is not None:
+                plate = for_this_shape
+            else:
+                #not for printing so we know it's got its back on the plane with bearing holes facing up
+                plate = self.get_plate(back = back, for_printing=False, just_basic_shape=True, thick_override=self.edging_wide*10)
 
             shell = plate.shell(-self.edging_wide)
             # return shell
@@ -2141,7 +2146,7 @@ class SimpleClockPlates:
 
         if not back:
             #front
-            plate = self.front_additions_to_plate(plate, plate_thick=thick)
+            plate = self.front_additions_to_plate(plate, plate_thick=thick, moon=True)
 
 
         if just_basic_shape:
@@ -2969,7 +2974,7 @@ class SimpleClockPlates:
 
             return huygensChainZ - chainWheelChainZ
         else:
-            return abs(holePositions[0][0] - holePositions[1][0])
+            return abs(holePositions[0][0][0] - holePositions[1][0][0])
 
     def key_is_inside_dial(self):
         '''
@@ -3598,7 +3603,7 @@ class MantelClockPlates(SimpleClockPlates):
     def calc_plaque_config(self):
         '''
         if this clock has a little plaque, calculate where it goes and what size it should be
-        side effect of setting width and height on teh plaque itself (lazy but simple)
+        side effect: sets width and height on teh plaque itself (lazy but simple)
 
         will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
         '''
@@ -3650,6 +3655,30 @@ class MantelClockPlates(SimpleClockPlates):
 
         return standoff
 
+    def get_mat(self):
+        '''
+        little mat to sit under the clock, felt backed to make it less loud
+        returns array of objects if detail is involved
+        '''
+        rounded_r = 10
+
+        extra_space = rounded_r*2 + self.edging_wide*2 + 10
+
+        width = abs(self.bottom_pillar_positions[0][0] - self.bottom_pillar_positions[1][0]) + self.plate_width + extra_space
+        length = self.plate_distance + self.get_plate_thick(True) + self.get_plate_thick(False) + extra_space
+        thick = 4
+
+        def get_mat_shape(mat_thick):
+            return cq.Workplane("XY").rect(width,length).extrude(mat_thick).edges("|Z").fillet(rounded_r)
+
+        mat = get_mat_shape(thick)
+
+        #thicker mat because otherwise the shell won't work
+        detail = self.get_plate_detail(back=False, for_this_shape=get_mat_shape(self.edging_wide*10)).translate((0,0,thick))
+        # detail = None
+        return [mat, detail]
+
+
     def get_bottom_pillar(self, flat=False):
         '''
         centred on 0,0 flat on the XY plane
@@ -3691,7 +3720,7 @@ class RoundClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=False):
+                 leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=False, plaque=None):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -3709,7 +3738,7 @@ class RoundClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
-                         pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate)
+                         pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque)
 
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
@@ -3791,6 +3820,27 @@ class RoundClockPlates(SimpleClockPlates):
             return {"y": centre_y, "wide": self.moon_complication.moon_radius*2, "height": height}
         else:
             raise NotImplementedError("TODO moon support for larger plates that stick above dial")
+
+    def calc_plaque_config(self):
+        '''
+        if this clock has a little plaque, calculate where it goes and what size it should be
+        side effect: sets width and height on teh plaque itself (lazy but simple)
+
+        will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
+
+        this is copy pasted and tweaked from mantleclockplates - TODO think about how to abstract out the useful bits
+        '''
+        long_line = Line(self.hands_position, anotherPoint=self.bearing_positions[self.going_train.powered_wheels + 1][:2])
+        long_space_length = self.radius
+        long_line_length = long_space_length - self.plate_width
+        text_height = self.plate_width * 0.9
+        long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
+        long_angle = long_line.get_angle()
+
+        self.plaque.set_dimensions(long_line_length, text_height)
+
+        self.plaque_pos = long_centre
+        self.plaque_angle = long_angle
 
     def get_plate_shape(self):
         return PlateShape.ROUND
@@ -4109,10 +4159,6 @@ class RoundClockPlates(SimpleClockPlates):
         if back:
 
             plate = self.rear_additions_to_plate(plate)
-
-            if not self.text_on_standoffs:
-                plate = plate.cut(self.get_text())
-
 
         else:
             if self.need_front_anchor_bearing_holder():

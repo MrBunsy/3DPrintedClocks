@@ -22,15 +22,7 @@ import cadquery as cq
 import clocks as clock
 
 '''
-Nothing particularly new, just had an idea for a clock that would look cool:
-
-- black plates with raised brass edging
-- symetric style
-- fancy hands - maybe improve my existing fancy hands?
-- Unsure of style of dial
-- Maybe try the smaller spring and see if that's up to it? (uncertain since the centred second hand clock struggled to make a week)
-
-Maybe one for printables?
+Tinkering with using a smaller spring in a similar gear train to clocks 32/33
 '''
 output_STL = False
 
@@ -61,7 +53,7 @@ barrel_gear_thick =5
 module_reduction=0.9
 #chain_wheel_ratios=[[61, 10], [62, 10]],
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=5, ratchet_thick=8, spring=clock.MAINSPRING_183535, fraction_of_max_turns=0.5)
+                        style=gear_style, wall_thick=5, ratchet_thick=8, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[64, 10], [62, 10]])#, fraction_of_max_turns=0.5)
 #, chain_wheel_ratios=[[61, 10], [62, 10]])#
 # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=9, max_wheel_teeth=150, pinion_max_teeth=12, wheel_min_teeth=100, loud=True)
 #2/3s without second hand with 30 teeth
@@ -72,7 +64,7 @@ back_plate_from_wall=30
 
 
 pinion_extensions = {0:1, 1:3, 3:8}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.25), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 
 module_sizes = [0.8,0.8,0.8]
 
@@ -89,9 +81,8 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 pillar_style=clock.PillarStyle.COLUMN
 
-dial_d=190
+dial_d=175
 dial_width=25
-moon_radius=13
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
               outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
@@ -103,7 +94,7 @@ motion_works_height = 10
 motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
                                  cannon_pinion_to_hour_holder_gap_size=0.6)
 
-motion_works_angle_deg=180+90
+motion_works_angle_deg=180+90+57
 
 
 plaque = clock.Plaque(text_lines=["M34#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2024"])
@@ -112,6 +103,7 @@ plates = clock.MantelClockPlates(train, motion_works, name="Mantel 34", dial=dia
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=False, symetrical=True, pendulum_sticks_out=pendulum_sticks_out,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
                                  plaque=plaque, vanity_plate_radius=-1, escapement_on_front=False, prefer_tall=True)
+plates.little_arm_to_motion_works = False
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
 hand_style = clock.HandStyle.SPADE

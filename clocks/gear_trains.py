@@ -633,7 +633,7 @@ class GoingTrain:
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style=GearStyle.ARCS, prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
-                        ratchet_diameter=-1, traditional_ratchet=True, min_wheel_teeth=20):
+                        ratchet_diameter=-1, traditional_ratchet=True, min_wheel_teeth=20, cap_diameter=-1):
         '''
         If preferred diameter is provided, use that rather than the min diameter
 
@@ -646,10 +646,13 @@ class GoingTrain:
         if self.huygens_maintaining_power:
             raise ValueError("Cannot use cord wheel with huygens maintaining power")
 
+        if cap_diameter < 0:
+            cap_diameter = ratchet_diameter
+
         self.calculate_powered_wheel_info(diameter)
         self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchet_thick, power_clockwise=self.powered_wheel_clockwise,
                                        rod_metric_size=rod_metric_thread, thick=cord_coil_thick, use_key=use_key, cord_thick=cord_thick, style=style, loose_on_rod=loose_on_rod,
-                                       cap_diameter=ratchet_diameter, traditional_ratchet=traditional_ratchet)
+                                       cap_diameter=cap_diameter, traditional_ratchet=traditional_ratchet)
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small, wheel_min=min_wheel_teeth)  # prefer_large_second_wheel=False,
 
     def gen_rope_wheels(self, ratchetThick=3, arbor_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):
@@ -1076,6 +1079,9 @@ class GoingTrain:
         +ve is in direction of the anchor
         0 is minute wheel
         -ve is in direction of power ( so last chain wheel is -1, first chain wheel is -chainWheels)
+
+        ended up switching to more conventional numbering with the powered wheel as zero - works more easily for looping through all arbors
+        this is now deprecated and I don't think it's used anywhere anymore
         '''
 
         if i >= 0:
@@ -1083,43 +1089,178 @@ class GoingTrain:
         else:
             return self.powered_wheel_arbors[self.powered_wheels + i]
 
-    # def getMinuteWheelPinionPair(self):
-    #     return self.wheelPinionPairs[0]
+#
+# def generic_gear_train_calculator(module_reduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
+#                      max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True, allow_integer_ratio=False, constraint=None):
+#     '''
+#     Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
+#     module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
+#     penultimate_wheel_min_ratio - check that the ratio of teeth on the last wheel is greater than the previous wheel's teeth * penultimate_wheel_min_ratio (mainly for trains
+#     where the second hand is on the penultimate wheel rather than the escape wheel - since we prioritise smaller trains we can end up with a teeny tiny escape wheel)
+#
+#     now favours a low standard deviation of number of teeth on the wheels - this should stop situations where we get a giant first wheel and tiny final wheels (and tiny escape wheel)
+#     This is slow, but seems to work well
+#     '''
+#
+#     pinion_min = min_pinion_teeth
+#     pinion_max = pinion_max_teeth
+#     wheel_min = wheel_min_teeth
+#     wheel_max = max_wheel_teeth
+#
+#     '''
+#     https://needhamia.com/clock-repair-101-making-sense-of-the-time-gears/
+#     “With an ‘integer ratio’, the same pairs of teeth (gear/pinion) always mesh on each revolution.
+#      With a non-integer ratio, each pass puts a different pair of teeth in mesh. (Some fractional
+#      ratios are also called a ‘hunting ratio’ because a given tooth ‘hunts’ [walks around] the other gear.)”
+#
+#      "So it seems clock designers prefer non-whole-number gear ratios to even out the wear of the gears’ teeth. "
+#
+#      seems reasonable to me
+#     '''
+#     all_gear_pair_combos = []
+#     all_seconds_wheel_combos = []
+#
+#     target_time = 60 * 60 / self.minute_wheel_ratio
+#
+#     for p in range(pinion_min, pinion_max):
+#         for w in range(wheel_min, wheel_max):
+#             all_gear_pair_combos.append([w, p])
+#
+#     # use a much wider range
+#     if self.support_second_hand and not self.has_seconds_hand_on_escape_wheel():
+#         for p in range(pinion_min, pinion_max * 3):
+#             for w in range(pinion_max, wheel_max * 4):
+#                 # print(p, w, self.escapement_time / (p/w))
+#                 if self.escapement_time / (p / w) == 60:
+#                     all_seconds_wheel_combos.append([w, p])
+#     if loud:
+#         print("allGearPairCombos", len(all_gear_pair_combos))
+#     # [ [[w,p],[w,p],[w,p]] ,  ]
+#     all_trains = []
+#
+#     print(all_seconds_wheel_combos)
+#
+#     all_trains_length = 1
+#     for i in range(self.wheels):
+#         all_trains_length *= len(all_gear_pair_combos)
+#     allcombo_count = len(all_gear_pair_combos)
+#
+#     def add_combos(pair_index=0, previous_pairs=None):
+#         if previous_pairs is None:
+#             previous_pairs = []
+#         # one fewer pair than wheels, and if we're the last pair then add the combos, else recurse
+#         final_pair = pair_index == self.wheels - 2
+#         valid_combos = all_gear_pair_combos
+#         if self.support_second_hand and not self.has_seconds_hand_on_escape_wheel() and final_pair:
+#             # using a different set of combinations that will force the penultimate wheel to rotate at 1 rpm
+#             valid_combos = all_seconds_wheel_combos
+#         for pair in range(len(valid_combos)):
+#             if loud and pair % 10 == 0 and pair_index == 0:
+#                 print("\r{:.1f}% of calculating train options".format(100 * pair / allcombo_count), end='')
+#
+#             all_pairs = previous_pairs + [valid_combos[pair]]
+#             if final_pair:
+#                 all_trains.append(all_pairs)
+#             else:
+#                 add_combos(pair_index + 1, all_pairs)
+#
+#     # recursively create an array of all gear trains to test - should work with any number of wheels >= 2
+#     add_combos()
+#
+#     if loud:
+#         print("\nallTrains", len(all_trains))
+#     all_times = []
+#     total_trains = len(all_trains)
+#     for c in range(total_trains):
+#         if loud and c % 100 == 0:
+#             print("\r{:.1f}% of trains evaluated".format(100 * c / total_trains), end='')
+#         total_ratio = 1
+#         int_ratio = False
+#         total_teeth = 0
+#         # trying for small wheels and big pinions
+#         total_wheel_teeth = 0
+#         total_pinion_teeth = 0
+#         weighting = 0
+#         last_size = 0
+#         fits = True
+#         for p in range(len(all_trains[c])):
+#             ratio = all_trains[c][p][0] / all_trains[c][p][1]
+#             if ratio == round(ratio):
+#                 int_ratio = True
+#                 if not allow_integer_ratio:
+#                     break
+#             total_ratio *= ratio
+#             total_teeth += all_trains[c][p][0] + all_trains[c][p][1]
+#             total_wheel_teeth += all_trains[c][p][0]
+#             total_pinion_teeth += all_trains[c][p][1]
+#             # module * number of wheel teeth - proportional to diameter
+#             size = math.pow(module_reduction, p) * all_trains[c][p][0]
+#             if favour_smallest:
+#                 weighting += size
+#             else:
+#                 # still don't want to just choose largest by mistake
+#                 weighting += size * 0.3
+#             if p > 0 and size > last_size * 0.9:
+#                 # this wheel is unlikely to physically fit
+#                 fits = False
+#                 break
+#             last_size = size
+#         # favour evenly sized wheels
+#         wheel_tooth_counts = [pair[0] for pair in all_trains[c]]
+#         weighting += np.std(wheel_tooth_counts)
+#         if self.support_second_hand and not self.has_seconds_hand_on_escape_wheel():
+#             # want to check last wheel won't be too tiny (would rather add more teeth than increase the module size for asthetics)
+#             if all_trains[c][-1][0] < all_trains[c][-2][0] * penultimate_wheel_min_ratio:
+#                 # only continue if the penultimate wheel has more than half the number of teeth of the wheel before that
+#                 continue
+#
+#         total_time = total_ratio * self.escapement_time
+#         error = target_time - total_time
+#         if int_ratio:
+#             # avoid if we can
+#             weighting += 100
+#
+#
+#
+#         train = {"time": total_time, "train": all_trains[c], "error": abs(error), "ratio": total_ratio, "teeth": total_wheel_teeth, "weighting": weighting}
+#
+#
+#
+#         if fits and abs(error) < max_error:  # and not int_ratio:
+#
+#             if constraint is not None:
+#                 if not constraint(train):
+#                     continue
+#                 else:
+#                     print("constraint met", train)
+#
+#             all_times.append(train)
+#
+#     if loud:
+#         print("")
+#
+#     all_times.sort(key=lambda x: x["error"])
+#     # print(allTimes)
+#
+#     self.trains = all_times
+#
+#     if len(all_times) == 0:
+#         raise RuntimeError("Unable to calculate valid going train")
+#     print(all_times[0])
+#     return all_times
 
-    # def output_STLs(self, name="clock", path="../out"):
-    #     '''
-    #     Going train soon will no longer need to generates shapes - it provides only basic Arbours for the plates to turn into printable objects
-    #     '''
-    #     # wheels, chainwheels
-    #     for i in range(self.wheels + self.powered_wheels + 1):
-    #         arbour = self.get_arbour_with_conventional_naming(i)
-    #         out = os.path.join(path, "{}_wheel_{}.stl".format(name, i))
-    #         print("Outputting ", out)
-    #         exporters.export(arbour.get_shape(), out)
-    #         extras = arbour.get_extras()
-    #         for extraName in extras:
-    #             out = os.path.join(path, "{}_wheel_{}_{}.stl".format(name, i, extraName))
-    #             print("Outputting ", out)
-    #             exporters.export(extras[extraName], out)
-    #
-    #     self.powered_wheel.output_STLs(name, path)
-    #
-    #     if self.escapement.type == EscapementType.GRASSHOPPER:
-    #         self.escapement.output_STLs(name, path)
-    #
-    #     # if not self.huygensMaintainingPower:
-    #     # undecided, but I think I'm going to keep the STLs generated here
-    #     # if we are using huygens there powered wheel is permanently attached to a gear wheel, and is generated with the arbour
-    #
-    #     # for i,arbour in enumerate(self.chainWheelArbours):
-    #     #     out = os.path.join(path, "{}_chain_wheel_{}.stl".format(name, i))
-    #     #     print("Outputting ", out)
-    #     #     exporters.export(arbour.getShape(), out)
-    #
-    #     # out = os.path.join(path, "{}_escapement_test_rig.stl".format(name))
-    #     # print("Outputting ", out)
-    #     # exporters.export(self.escapement.getTestRig(), out)
-    #
-    #     # out = os.path.join(path, "{}_anchor_spanner.stl".format(name))
-    #     # print("Outputting ", out)
-    #     # exporters.export(getSpanner(thick=self.arbours[-1].spannerBitThick,size=self.arbours[-1].getAnchorSpannerSize()), out)
+class SlideWhistleTrain:
+    '''
+    Going to write this completely independantly of GoingTrain, but with the idea of re-writing GoingTrain later using this to test out neater ways to do it
+    and maybe some sort of base class for calculating gear trains
+    '''
+
+    def __init__(self, powered_wheel, fan, wheels=4):
+        # going to be a spring to develop this, but might eventually be any other source of power if it ends up in a clock
+        #think it's much easier to just provide this in the constructor than the mess in goingtrain
+        self.powered_wheel = powered_wheel
+        self.fan = fan
+
+    def calculate_ratios(self, module_reduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
+                         max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True, allow_integer_ratio=False, constraint=None):
+        pass

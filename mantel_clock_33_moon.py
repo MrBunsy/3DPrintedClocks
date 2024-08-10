@@ -221,7 +221,7 @@ if moon:
     motion_works.calculate_size(arbor_distance=30)
     moon_complication.set_motion_works_sizes(motion_works)
 
-plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "For The Hodgsons 2024"])
+plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "Insert Text Here 2024"])
 
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
@@ -267,6 +267,11 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 
+mat, mat_detail = plates.get_mat()
+
+show_object(mat.rotate((0,0,0),(1,0,0),90).translate((0,0,0)), options={"color": clock.Colour.DARK_GREEN}, name="Mat")
+show_object(mat_detail.rotate((0,0,0),(1,0,0),90), options={"color": clock.Colour.BRASS}, name="Mat Detail")
+
 if output_STL:
 
     a = clock.polar(0, 100)
@@ -285,6 +290,9 @@ if output_STL:
     plates.output_STLs(clock_name, clock_out_dir)
     hands.output_STLs(clock_name, clock_out_dir)
     assembly.output_STLs(clock_name, clock_out_dir)
+    clock.export_STL(mat, "mat", clock_name, clock_out_dir)
+    clock.export_STL(mat_detail, "mat_detail", clock_name, clock_out_dir)
+
 
 
 
