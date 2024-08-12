@@ -11,4 +11,12 @@ if 'show_object' not in globals():
 
 fan = CentrifugalFan()
 
+power = SpringBarrel()
+
+train = SlideWhistleTrain(power, fan)
+
+train.calculate_ratios(loud=True)
+
+# print(train.trains)
+
 show_object(fan.get_assembled())

@@ -86,7 +86,7 @@ moon_complication.set_motion_works_sizes(motionWorks)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)
 
-dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.LINES_ARC)
+dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.LINES_ARC, pillar_style=clock.PillarStyle.CLASSIC)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.COMPACT,
                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
@@ -106,7 +106,7 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulu
 # show_object(parts[0])
 #
 # show_object(assembly.getClock(with_key=True, with_pendulum=True))
-assembly.show_clock(show_object, with_rods=True, plate_colours=clock.Colour.DARKGREY, dial_colours=[clock.Colour.WHITE, clock.Colour.PINK])
+assembly.show_clock(show_object, with_rods=True, plate_colours=clock.Colour.LIGHTGREY, dial_colours=[clock.Colour.BLUE, clock.Colour.WHITE])
 
 assembly.get_arbor_rod_lengths()
 if outputSTL:

@@ -1260,7 +1260,101 @@ class SlideWhistleTrain:
         #think it's much easier to just provide this in the constructor than the mess in goingtrain
         self.powered_wheel = powered_wheel
         self.fan = fan
+        self.wheels = wheels
+        self.trains = []
 
-    def calculate_ratios(self, module_reduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
-                         max_error=0.1, loud=False, penultimate_wheel_min_ratio=0, favour_smallest=True, allow_integer_ratio=False, constraint=None):
-        pass
+    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=10, max_wheel_teeth=110, pinion_max_teeth=12, wheel_min_teeth=90,
+                         max_error=10, loud=False, cam_rpm = 1, fan_rpm=100):
+        all_gear_pair_combos = []
+
+        for p in range(min_pinion_teeth, pinion_max_teeth):
+            for w in range(wheel_min_teeth, max_wheel_teeth):
+                all_gear_pair_combos.append([w, p])
+        # [ [[w,p],[w,p],[w,p]] ,  ]
+        all_trains = []
+        all_trains_length = 1
+        for i in range(self.wheels):
+            all_trains_length *= len(all_gear_pair_combos)
+        allcombo_count = len(all_gear_pair_combos)
+
+        def add_combos(pair_index=0, previous_pairs=None):
+            if previous_pairs is None:
+                previous_pairs = []
+            # one fewer pair than wheels, and if we're the last pair then add the combos, else recurse
+            final_pair = pair_index == self.wheels - 2
+            valid_combos = all_gear_pair_combos
+            for pair in range(len(valid_combos)):
+                if loud and pair % 10 == 0 and pair_index == 0:
+                    print("\r{:.1f}% of calculating train options".format(100 * pair / allcombo_count), end='')
+
+                all_pairs = previous_pairs + [valid_combos[pair]]
+                if final_pair:
+                    all_trains.append(all_pairs)
+                else:
+                    add_combos(pair_index + 1, all_pairs)
+
+        # recursively create an array of all gear trains to test - should work with any number of wheels >= 2
+        add_combos()
+
+        desired_ratio = fan_rpm / cam_rpm
+
+        all_times = []
+        total_trains = len(all_trains)
+        if loud:
+            print("\nTotal trains:", total_trains)
+        for c in range(total_trains):
+            if loud and c % 100 == 0:
+                print("\r{:.1f}% of trains evaluated".format(100 * c / total_trains), end='')
+            total_ratio = 1
+            total_teeth = 0
+            # trying for small wheels and big pinions
+            total_wheel_teeth = 0
+            total_pinion_teeth = 0
+            weighting = 0
+            last_size = 0
+            fits = True
+            for p in range(len(all_trains[c])):
+                ratio = all_trains[c][p][0] / all_trains[c][p][1]
+                if ratio == round(ratio):
+                    break
+                total_ratio *= ratio
+                total_teeth += all_trains[c][p][0] + all_trains[c][p][1]
+                total_wheel_teeth += all_trains[c][p][0]
+                total_pinion_teeth += all_trains[c][p][1]
+                # module * number of wheel teeth - proportional to diameter
+                size = math.pow(module_reduction, p) * all_trains[c][p][0]
+                weighting += size
+
+                if p > 0 and size > last_size * 0.9:
+                    # this wheel is unlikely to physically fit
+                    #TODO actually test this?
+                    fits = False
+                    break
+                last_size = size
+            # favour evenly sized wheels
+            wheel_tooth_counts = [pair[0] for pair in all_trains[c]]
+            weighting += np.std(wheel_tooth_counts)
+
+            error = abs(desired_ratio - total_ratio)
+
+            # print(total_ratio)
+
+            train = {"ratio": total_ratio, "train": all_trains[c], "error": abs(error), "ratio": total_ratio, "teeth": total_wheel_teeth, "weighting": weighting}
+
+
+
+            if fits and abs(error) < max_error:  # and not int_ratio:
+
+
+                all_times.append(train)
+
+        if loud:
+            print("")
+
+        all_times.sort(key=lambda x: x["error"])
+
+        self.trains = all_times
+
+        if len(all_times) == 0:
+            raise RuntimeError("Unable to calculate valid going train")
+        print(all_times[0])

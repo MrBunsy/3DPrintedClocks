@@ -414,6 +414,7 @@ class SimpleClockPlates:
         self.force_escapement_above_hands = escapement_on_front or force_escapement_above_hands
         self.going_train = going_train
         #we can have the escape wheel and wheel before that at same y level and both same distance from y axis
+        #IDEA - why not with 3 wheels as well? would be less wide
         self.no_upper_wheel_in_centre = self.going_train.wheels > 3 and not self.second_hand
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
@@ -2908,7 +2909,9 @@ class SimpleClockPlates:
             if ratchetD > self.bottom_pillar_r:
                 plate = plate.union(cq.Workplane("XY").circle(ratchetD/2).extrude(plate_thick).translate(huygens_pos).translate((0, self.huygens_wheel_y_offset)))
 
-        if self.weight_driven and not self.escapement_on_front and not self.huygens_maintaining_power and not self.pendulum_at_front and self.bottom_pillars > 1 and not self.going_train.chain_at_back:
+        if (self.going_train.powered_wheel.type in [PowerType.CHAIN2, PowerType.CHAIN] and not self.escapement_on_front
+                and not self.huygens_maintaining_power and not self.pendulum_at_front and self.bottom_pillars > 1
+                and not self.going_train.chain_at_back):
             #add a semicircular bit under the chain wheel (like on huygens) to stop chain from being able to fall off easily
             #TODO support cord wheels and chain at back
 
@@ -3181,7 +3184,7 @@ class SimpleClockPlates:
             export_STL(front_detail, "plate_front_detail", name, path, tolerance=self.export_tolerance)
 
 
-        if not self.text_on_standoffs:
+        if not self.text_on_standoffs and self.plaque is None:
             export_STL(self.get_text(for_printing=True), "plate_back_text", name, path)
 
         if self.pillars_separate:
@@ -3720,7 +3723,8 @@ class RoundClockPlates(SimpleClockPlates):
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
-                 leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=False, plaque=None):
+                 leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
+                 front_anchor_holder_part_of_dial = False):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -3757,10 +3761,17 @@ class RoundClockPlates(SimpleClockPlates):
         self.vanity_plate_fixing_positions = []#[(-self.radius,self.hands_position[1]), (self.radius, self.hands_position[1])]
         self.vanity_plate_pillar_r=self.pillar_r
 
-        #front anchor holder will have little arms extended from the front plate
-        anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
-        self.anchor_holder_arc_angle = math.pi * 0.3
-        self.anchor_holder_fixing_points = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
+        #was an experiment, could still be useful
+        self.front_anchor_holder_part_of_dial = front_anchor_holder_part_of_dial
+
+        if self.front_anchor_holder_part_of_dial:
+            #front anchor holder will have little arms extended from the front plate
+            anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
+            anchor_holder_arc_angle = math.pi * 0.3
+        else:
+            anchor_distance = self.radius
+            anchor_holder_arc_angle = self.plate_width*2/self.radius
+        self.anchor_holder_fixing_points = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
 
 
         # centre = self.bearing_positions[self.going_train.powered_wheels][:2]
@@ -3776,7 +3787,7 @@ class RoundClockPlates(SimpleClockPlates):
         
         '''
 
-        if self.dial is not None and self.escapement_on_front:
+        if self.dial is not None and self.escapement_on_front and self.front_anchor_holder_part_of_dial:
             self.dial.add_to_back = self.get_front_anchor_bearing_holder().translate((-self.hands_position[0],-self.hands_position[1], self.dial.thick))
 
 
@@ -3804,7 +3815,7 @@ class RoundClockPlates(SimpleClockPlates):
             if self.style == PlateStyle.RAISED_EDGING:
                 self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
 
-        self.front_anchor_holder_part_of_dial = True
+        # self.front_anchor_holder_part_of_dial = True
 
     def get_moon_holder_info(self):
         if self.moon_complication is None:
@@ -3974,6 +3985,10 @@ class RoundClockPlates(SimpleClockPlates):
         # right_pillar_pos = np_to_set(np.add(centre, polar(second_pillar_angle, self.radius)))
 
         left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
+        if self.going_train.wheels == 3:
+            #mirror the bottom pillars
+            bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
+            left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
 
         #no real need to treat pillars differently, but the base class does so it makes some of the other logic easier
         self.top_pillar_positions = [
@@ -4299,13 +4314,19 @@ class RoundClockPlates(SimpleClockPlates):
         '''
         holder = cq.Workplane("XY")
 
+
+        holder_wide = self.pillar_r * 2
+        if self.style == PlateStyle.RAISED_EDGING:
+            holder_wide = self.plate_width - self.edging_wide*2
+
+
         anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
         anchor_holder_fixing_points = self.anchor_holder_fixing_points
 
         holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing)
 
         top_z = self.get_front_anchor_bearing_holder_total_length()
-        if self.dial is not None:
+        if self.dial is not None and self.front_anchor_holder_part_of_dial:
             #if a dial, butt up exactly to the bottom of the dial so the two peices can be combined
             if self.dial_z > top_z:
                 need_extra = self.dial_z - top_z
@@ -4316,14 +4337,20 @@ class RoundClockPlates(SimpleClockPlates):
 
         
 
-        holder = get_stroke_arc(self.anchor_holder_fixing_points[0], self.anchor_holder_fixing_points[1], anchor_distance, self.pillar_r*2, holder_thick)
+        holder = get_stroke_arc(self.anchor_holder_fixing_points[0], self.anchor_holder_fixing_points[1], anchor_distance, holder_wide, holder_thick)
+        if not self.front_anchor_holder_part_of_dial:
+            #line to the bearing
+            bearing_holder_wide = self.arbors_for_plate[-1].bearing.outer_d + 4
+            holder = holder.union(get_stroke_line([self.bearing_positions[-1][:2], (0, self.radius + self.hands_position[1])], wide = bearing_holder_wide,
+                                                  thick=holder_thick, style=StrokeStyle.SQUARE))
+            holder = holder.union(cq.Workplane("XY").moveTo(self.bearing_positions[-1][0], self.bearing_positions[-1][1]).circle(bearing_holder_wide/2).extrude(holder_thick))
 
         holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=get_bearing_info(self.arbors_for_plate[-1].arbor.arbor_d)).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1])))
         
         # TODO NUTS - embedded or try slot in from the side?
         for pos in self.anchor_holder_fixing_points:
             #don't need to take into account holder thick because wer're unioning with it
-            holder = holder.union(cq.Workplane("XY").circle(self.pillar_r).extrude(top_z).translate(pos))
+            holder = holder.union(cq.Workplane("XY").circle(holder_wide/2).extrude(top_z).translate(pos))
             holder = holder.faces(">Z").workplane().moveTo(pos[0], pos[1]).circle(self.small_fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
             nut_hole_deep = self.small_fixing_screws.get_nut_height()+1
             holder = holder.cut(self.small_fixing_screws.get_nut_cutter(height=nut_hole_deep, with_bridging=True, layer_thick=self.layer_thick).translate((pos[0], pos[1], top_z/2 - nut_hole_deep/2)))
@@ -4500,6 +4527,10 @@ class RoundClockPlates(SimpleClockPlates):
 
             for pillar_pos in self.leg_pillar_positions:
                 pillars = pillars.add(self.get_legs_pillar().translate(pillar_pos))
+
+        # if self.escapement_on_front and not self.front_anchor_holder_part_of_dial:
+        #     plates.add(self.get_front_anchor_bearing_holder())
+
         if one_peice:
             return plates.union(pillars).union(detail)
         return (plates, pillars, detail, standoff_pillars)
