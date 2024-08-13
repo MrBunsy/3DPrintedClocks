@@ -912,7 +912,7 @@ class Dial:
         return detail
 
     def get_lines_detail(self, outer_r, dial_width, from_edge, thick_indicators=False, long_indicators=False, total_lines=60, inner_ring=False, outer_ring=False, only=None,
-                         big_thick=2, small_thick=1):
+                         big_thick=2, small_thick=1, long_line_length_fraction=-1.0, short_line_length_fraction=-1.0):
         '''
         Intended to be used on the congrieve rolling ball clock, where there are separate dials for the hours and seconds
         so if total lines is 48 the long indicator is for the half hours
@@ -931,8 +931,17 @@ class Dial:
         big_line_thick = big_thick
         small_line_thick = small_thick
 
-        short_line_length = line_outer_r - line_inner_r
-        long_line_length = short_line_length * 2
+        # short_line_length = line_outer_r - line_inner_r
+        # #not sure waht I was originally going for with lines that are longer than the dial?
+        # long_line_length = short_line_length * 2
+        max_line_length = line_outer_r - line_inner_r
+        if long_line_length_fraction < 0:
+            long_line_length_fraction = 1
+        long_line_length = max_line_length*long_line_length_fraction
+
+        if short_line_length_fraction < 0:
+            short_line_length_fraction=0.5
+        short_line_length = max_line_length*short_line_length_fraction
 
         detail = cq.Workplane("XY").tag("base")
 
@@ -953,10 +962,10 @@ class Dial:
             line_length = short_line_length
             if i % indicators_on == indicators_offset and long_indicators:
                 line_length = long_line_length
-                if inner_ring:
-                    centre_r = line_inner_r + line_length/2
-                elif outer_ring:
-                    centre_r = line_outer_r - line_length/2
+            if inner_ring:
+                centre_r = line_inner_r + line_length/2
+            elif outer_ring:
+                centre_r = line_outer_r - line_length/2
                 #else leave in centre
 
             angle = math.pi / 2 - i * dA
@@ -1074,6 +1083,9 @@ class Dial:
             return self.get_roman_numerals_detail(outer_r, width, detail_from_edges, with_lines=False)
         elif style == DialStyle.RING:
             return self.get_ring_detail(outer_r, width, detail_from_edges)
+        elif style == DialStyle.LINES_INDUSTRIAL:
+            return self.get_lines_detail(outer_r, width, detail_from_edges, thick_indicators=True, long_indicators=True, outer_ring=True,
+                                         big_thick=width*0.25, small_thick=width*0.1, long_line_length_fraction=1, short_line_length_fraction=0.35)
         else:
             raise ValueError("Unsupported dial type")
 
