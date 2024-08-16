@@ -1995,7 +1995,7 @@ class CordWheel:
         return 21
 
     def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3, cord_thick=2, bearing=None, key_square_bit_height=30,
-                 gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS, cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False):
+                 gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS, cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False, ratchet_diameter=-1):
         '''
         loose_on_rod - if True then the cord/chain/rope section of the wheel (this bit) is loose on the arbour. If true, then that is fixed and the actual gear wheel is loose on the arbour
         for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings
@@ -2103,7 +2103,9 @@ class CordWheel:
                 click_angle = math.pi/2
             else:
                 click_angle = -math.pi/2
-            self.ratchet = TraditionalRatchet(gear_diameter=self.diameter+6.5, thick=ratchet_thick, blocks_clockwise=power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle)
+            if ratchet_diameter < 0:
+                ratchet_diameter = self.diameter+6.5
+            self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle)
         else:
             #inner radius slightly larger than cord diameter so there's space for nuts
             self.ratchet = Ratchet(totalD=self.cap_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, innerRadius=self.diameter / 2 + 2)
@@ -3339,17 +3341,22 @@ class TraditionalRatchet:
         #pawl and gear and built in a position I could visualise, then rotated into requested position. the click is always built in the requested position
         self.rotate_by_deg = rad_to_deg(self.pawl_angle - math.atan2(self.pawl_fixing[1], self.pawl_fixing[0]))
 
+        self.click_fixing_wide=self.fixing_screws.metric_thread*3
+        # 0.9 works for a two-extrusion-wide click, but I think I want something stronger
+        self.click_wide = 1.7  # 0.9
         # inside the little arm of the pawl
         self.click_end_pos = np_to_set(np.add(polar(self.pawl_fixing_angle, self.pawl_fixing_r + self.pawl_diameter / 3), polar(self.pawl_fixing_angle + self.direction * math.pi / 2, self.spring_rest_length * 0.5)))
-        self.click_fixings_r = np.linalg.norm(self.click_end_pos)
+        self.click_spring_r = np.linalg.norm(self.click_end_pos)
+        self.click_fixings_r = self.click_spring_r - self.click_fixing_wide/2 + self.click_wide/2
         click_fixing_centre = polar(self.click_fixing_angle, self.click_fixings_r)
         self.click_fixings_distance = self.fixing_screws.metric_thread*3
-        #0.9 works for a two-extrusion-wide click, but I think I want something stronger
-        self.click_wide = 1.7#0.9
+        click_arc_angle = self.click_fixings_distance/self.click_fixings_r
 
         self.click_fixings = [
-            np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance / 2))),
-            np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle - math.pi / 2, self.click_fixings_distance / 2)))
+            # np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle + math.pi / 2, self.click_fixings_distance / 2))),
+            # np_to_set(np.add(click_fixing_centre, polar(self.click_fixing_angle - math.pi / 2, self.click_fixings_distance / 2)))
+            polar(click_fixing_angle + click_arc_angle/2, self.click_fixings_r),
+            polar(click_fixing_angle - click_arc_angle / 2, self.click_fixings_r)
         ]
 
 
@@ -3509,9 +3516,11 @@ class TraditionalRatchet:
 
         click_end_pos = rotate_vector(click_end_pos, (0,0,1), deg_to_rad(self.rotate_by_deg))
 
-        click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.fixing_screws.metric_thread*3, self.click_fixings_distance + self.fixing_screws.metric_thread*3).extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(self.click_fixing_angle))
+        # click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.click_fixing_wide, self.click_fixings_distance + self.click_fixing_wide).extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(self.click_fixing_angle))
 
-        click_fixing = click_fixing.edges("|Z").fillet(2)
+        click_fixing = get_stroke_arc(self.click_fixings[1], self.click_fixings[0], self.click_fixings_r, wide=self.click_fixing_wide, thick=self.thick)
+
+        # click_fixing = click_fixing.edges("|Z").fillet(2)
 
         # click = click.union(cq.Workplane("XY").circle(self.click_fixings_r + self.click_wide/2).circle(self.click_fixings_r - self.click_wide/2).extrude(self.thick))
 
@@ -3520,7 +3529,7 @@ class TraditionalRatchet:
         click_end_inner_pos = np_to_set(np.subtract(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
         click_end_outer_pos = np_to_set(np.add(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
 
-        click_spring_r = self.click_fixings_r
+        click_spring_r = self.click_spring_r
         click_start_outer = polar(self.click_fixing_angle, self.click_fixings_r + self.click_wide / 2)
         click_start_inner = polar(self.click_fixing_angle, self.click_fixings_r - self.click_wide / 2)
 

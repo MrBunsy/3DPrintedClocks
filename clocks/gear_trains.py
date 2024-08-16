@@ -646,13 +646,13 @@ class GoingTrain:
         if self.huygens_maintaining_power:
             raise ValueError("Cannot use cord wheel with huygens maintaining power")
 
-        if cap_diameter < 0:
-            cap_diameter = ratchet_diameter
+        # if cap_diameter < 0:
+        #     cap_diameter = ratchet_diameter
 
         self.calculate_powered_wheel_info(diameter)
         self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchet_thick, power_clockwise=self.powered_wheel_clockwise,
                                        rod_metric_size=rod_metric_thread, thick=cord_coil_thick, use_key=use_key, cord_thick=cord_thick, style=style, loose_on_rod=loose_on_rod,
-                                       cap_diameter=cap_diameter, traditional_ratchet=traditional_ratchet)
+                                       cap_diameter=cap_diameter, traditional_ratchet=traditional_ratchet, ratchet_diameter=ratchet_diameter)
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small, wheel_min=min_wheel_teeth)  # prefer_large_second_wheel=False,
 
     def gen_rope_wheels(self, ratchetThick=3, arbor_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):

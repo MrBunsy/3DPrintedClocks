@@ -63,12 +63,43 @@ tooth_tip_angle = 5
 tooth_base_angle = 4
 
 lift=3
+drop=2
+lock=2
+# drop =2.5
+# lift =2
+# lock= 2
+
+# drop =1.5
+# lift =2.5
+# lock=1.5
+
+lift=3
 drop=3
 lock=2
+# drop =2.5
+# lift =2
+# lock= 2
 teeth = 30
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=tooth_tip_angle,
-                                    tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
 
-show_object(escapement.get_assembled())
+
+drop =1.5
+lift =2.75
+lock=1.5
+teeth=40
+
+teeth=30
+drop=2.75
+escapement = AnchorEscapement.get_with_45deg_pallets(teeth, drop)
+
+# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=tooth_tip_angle,
+#                                     tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
+
+anchor_angle_deg = -3
+wheel_angle_deg = -1.7
+
+# anchor_angle_deg = 0
+# wheel_angle_deg = -1.25
+
+show_object(escapement.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg))
 #40 teeth distance 73.6593180385267
 print("distance", escapement.anchor_centre_distance)

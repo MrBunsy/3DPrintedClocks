@@ -6,6 +6,7 @@ from .gearing import *
 from .hands import *
 from .types import *
 from .utility import *
+from .gear_trains import *
 
 def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
     demo = cq.Workplane("XY")

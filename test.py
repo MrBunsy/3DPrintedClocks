@@ -810,7 +810,7 @@ if test_cosine_law:
 
     show_object(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(r))
 
-test_ratchet = False
+test_ratchet = True
 if test_ratchet:
 #
     ratchet = TraditionalRatchet(30, blocks_clockwise=True, pawl_angle=-math.pi*0.1, click_fixing_angle=math.pi*0.2)#, click_fixing_angle=-math.pi/4)
@@ -818,8 +818,8 @@ if test_ratchet:
     show_object(ratchet.get_gear())
     show_object(ratchet.get_pawl())
     show_object(ratchet.get_click())
-    show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), deg_to_rad(ratchet.rotate_by_deg))))
-    show_object(ratchet.get_little_plate_for_pawl())
+    # show_object(cq.Workplane("XY").circle(1).extrude(20).translate(rotate_vector(ratchet.click_end_pos, (0,0,1), deg_to_rad(ratchet.rotate_by_deg))))
+    # show_object(ratchet.get_little_plate_for_pawl())
 # #
 # show_object(ratchet.get_assembled())
 # screw = MachineScrew(3)
@@ -838,11 +838,12 @@ if test_ratchet:
 #
 # show_object(spring.get_ratchet_gear_for_arbor())
 #
-key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
-# #
-# show_object(key.get_let_down_adapter())
-show_object(key.get_assembled())
-show_object(key.get_key(for_printing=False))
+if False:
+    key = WindingKey(key_containing_diameter=12,cylinder_length=50,key_hole_deep=20,key_sides=6,handle_length=40, crank=False, print_sideways=True)
+    # #
+    # show_object(key.get_let_down_adapter())
+    show_object(key.get_assembled())
+    show_object(key.get_key(for_printing=False))
 
 # pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #

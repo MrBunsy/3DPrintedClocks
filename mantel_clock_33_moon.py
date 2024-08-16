@@ -61,24 +61,14 @@ if moon:
     gear_style = clock.GearStyle.CIRCLES
 
 #this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
-# lift=2
-# drop=3
-# lock=2
+lift=2
+drop=3
+lock=2
 
-#this was my experimental reprint, but I think it was a lack of power rather than the escapement, so going back to more efficiency
-# lift = 2
-# drop = 4
-# lock = 3
-
-drop =3
-lift =3
-lock= 2#1.25 # why did I have 1.25 lock on paul's clock?
-
-#for 40tooth recoil:
-#note - I think that since the problem was discovered to be dodgy bearings I can go back to deadbeat and see if the improved efficiency increases runtime
-drop =2.5
-lift =2
-lock= 2
+#this was orignially for 40tooth recoil, but I think I printed M33#1 like this! oops. wonder if the runtime is worse than M33#0...
+# drop =2.5
+# lift =2
+# lock= 2
 #42 as then a quarter span results in exactly the same distance as the old 30 tooth
 #going back to 30 teeth, since it was a bearing problem
 teeth = 30 if moon else 36 # 42

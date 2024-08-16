@@ -33,11 +33,11 @@ from cadquery import exporters
 class AnchorEscapement:
 
     @staticmethod
-    def get_with_45deg_pallets(teeth=30, type=EscapementType.DEADBEAT, lift_deg=3):
+    def get_with_45deg_pallets(teeth=30,  drop_deg=2, type=EscapementType.DEADBEAT, lock_deg=2, style=AnchorStyle.CURVED_MATCHING_WHEEL, diameter=100, force_diameter=False,
+                               anchor_thick=12):
         '''
-        Work in progress!
-
-        Generate an anchor with pallets at 45 degrees, based only on the number of teeth
+        Good drops: 3 with 30 teeth, 1.5 with 40 teeth
+        Generate an anchor with pallets at 45 degrees, based only on the number of teeth and desired drop
 
         lift is the angle of pendulum swing, in degrees
 
@@ -47,19 +47,41 @@ class AnchorEscapement:
         Lock "is the distance which the pallet has moved inside of the pitch circle of the escape wheel before being struck by the escape wheel tooth." (The Modern Clock)
         We add lock to the design by changing the position of the pallets
 
-        Plan:
-        Aim to calculate lock based on tooth size (maybe?)
-        Use given lift where possible and report back the drop required to maintain that lift. Then I can decide how much lift to sacrifice to keep the clock reliable
+        WARNING does NOT guarantee that this will not jam - that's up to you to provide enough drop! Merely finds the most efficient anchor for a given drop
+
+        TODO binary search instead? not sure if it's worth it since this is fast
 
         '''
 
-        test_drop = 3
-        test_anchor = AnchorEscapement(teeth=teeth, type=EscapementType.DEADBEAT, lift=lift_deg, drop=test_drop)
-        test_anchor.get_anchor_2d()
-        print(test_anchor.pallet_angles)
-        print(rad_to_deg(test_anchor.pallet_angles[0]), rad_to_deg(test_anchor.pallet_angles[1]))
-        diff = rad_to_deg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
-        print(diff, "degrees")
+        best_average_error = 1000
+        best_lift = -1
+
+        for test_lift in np.linspace(1,6,100):
+            test_anchor = AnchorEscapement(teeth=teeth, type=type, lift=test_lift, drop=drop_deg, lock=lock_deg, diameter=diameter, force_diameter=force_diameter)
+            test_anchor.get_anchor_2d()
+            # print(test_anchor.pallet_angles)
+            # print(rad_to_deg(test_anchor.pallet_angles[0]), rad_to_deg(test_anchor.pallet_angles[1]))
+            diff = rad_to_deg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
+
+            #entry pallet degrees off horizontal
+            entry_error = abs(0 - rad_to_deg(test_anchor.pallet_angles[0]))
+            #exit pallet degrees off vertical
+            exit_error = abs(-90 - rad_to_deg(test_anchor.pallet_angles[1]))
+            right_angle_error = abs(90 - diff)
+
+            average_error = sum([entry_error, exit_error, right_angle_error])/3
+            if average_error < best_average_error:
+                best_average_error = average_error
+                best_lift = test_lift
+            # print(f"lift {test_lift} error {average_error:.2f}")# {rad_to_deg(test_anchor.pallet_angles[0]):.2f} {rad_to_deg(test_anchor.pallet_angles[1]):.2f} diff {diff:.2f}
+
+        if best_lift < 0:
+            raise RuntimeError("Unable to calculate good anchor")
+        best_anchor = AnchorEscapement(teeth=teeth, type=type, lift=best_lift, drop=drop_deg, lock=lock_deg, style=style, diameter=diameter, force_diameter=force_diameter, anchor_thick=anchor_thick)
+        print(f"lift {best_lift:.2f} drop {drop_deg:.2f} teeth {teeth} entry angle {rad_to_deg(best_anchor.pallet_angles[0]):.1f}deg exit angle {-rad_to_deg(best_anchor.pallet_angles[1]):.1f}deg")
+        return best_anchor
+
+
 
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
                  tooth_height_fraction=0.2, tooth_tip_angle=5, tooth_base_angle=4, wheel_thick=3, force_diameter=False, anchor_thick=12,
@@ -653,8 +675,8 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
             thick = self.wheel_thick
         return self.get_wheel_2d().extrude(thick)
 
-    def get_assembled(self):
-        return self.get_anchor().translate((0,self.anchor_centre_distance)).add(self.get_wheel())
+    def get_assembled(self, anchor_angle_deg = 0, wheel_angle_deg=0):
+        return self.get_anchor().rotate((0,0,0),(0,0,1), anchor_angle_deg).translate((0,self.anchor_centre_distance)).add(self.get_wheel().rotate((0,0,0),(0,0,1), wheel_angle_deg))
 
     def get_test_rig(self, holeD=3, tall=4):
         #simple rig to place both parts on and check they actually work

@@ -137,6 +137,8 @@ class GearStyle(Enum):
     DIAMONDS = "diamonds"
     #planned - branching tree structure (not a million miles off snowflake) - probably best for a design with big wheels like grasshopper
     TREE = "tree"
+    BENT_ARMS4 = "bent_arms4" # inspired by disc brakes
+    BENT_ARMS5 = "bent_arms5"
 
 class StrokeStyle(Enum):
     ROUND = "rounded"

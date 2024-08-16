@@ -864,6 +864,9 @@ class SimpleClockPlates:
             front_anchor_from_plate = -1
 
             if self.escapement_on_front:
+                front_anchor_from_plate = 8 + self.endshake - self.going_train.escapement.get_anchor_thick()/2
+                # if self.style in [PlateStyle.RAISED_EDGING]:
+                #     front_anchor_from_plate += self.edging_thick
                 if self.has_vanity_plate:
                     front_anchor_from_plate = self.vanity_plate_base_z + self.vanity_plate_thick + self.endshake + 2
                 if self.going_train.escapement.get_anchor_thick() < 10:

@@ -99,7 +99,33 @@ class Gear:
             return Gear.cutCurvesStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
             return Gear.cut_diamonds_style(gear, outerRadius=outerRadius, innerRadius=max(innerRadius * 1.05, innerRadius + 1))
+        if style == GearStyle.BENT_ARMS4:
+            return Gear.cut_bent_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=4, clockwise = clockwise_from_pinion_side)
+        if style == GearStyle.BENT_ARMS5:
+            return Gear.cut_bent_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=5, clockwise = clockwise_from_pinion_side)
         return gear
+
+    @staticmethod
+    def cut_bent_arms_style(gear, outer_radius, inner_radius, arms=5, straight=True, clockwise=True):
+        cutter_thick = 100
+        cutter = cq.Workplane("XY").circle(outer_radius).circle(inner_radius).extrude(cutter_thick)
+
+        arm_thick = outer_radius * 0.2
+
+        for arm in range(arms):
+            angle = arm*math.pi*2/arms
+            offset = math.pi*2/(arms*2) * (1 if clockwise else -1)
+            start = polar(angle, inner_radius - arm_thick)
+            end = polar(angle+offset, outer_radius + arm_thick)
+
+            if straight:
+                arm_cutter = get_stroke_line([start,end], wide=arm_thick, thick=cutter_thick)
+            else:
+                radius = (outer_radius - inner_radius)* 5 *(1 if clockwise else -1)
+                arm_cutter = get_stroke_arc(start, end, radius, wide=arm_thick, thick=cutter_thick)
+            cutter = cutter.cut(arm_cutter)
+
+        return gear.cut(cutter)
 
     @staticmethod
     def get_thin_arm_thickness(outer_radius, inner_radius):
@@ -1442,7 +1468,7 @@ class ArborForPlate:
         # - I think I'm completely wrong including teh washer thick here, but I do want it extended anyway
         self.front_anchor_from_plate = front_anchor_from_plate
         if self.front_anchor_from_plate < 0:
-            self.front_anchor_from_plate = self.endshake# + 2 - IS THIS WHY THE ANCHOR ARBOR WAS ALWAYS TOO SHORT??
+            self.front_anchor_from_plate = self.endshake + 1# + 2 - IS THIS WHY THE ANCHOR ARBOR WAS ALWAYS TOO SHORT?? (going back to +1 to avoid any potential plate detail and generally be more robust)
         # ============ anchor bits ===============
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
