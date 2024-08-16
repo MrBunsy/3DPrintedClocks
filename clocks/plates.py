@@ -2650,6 +2650,12 @@ class SimpleClockPlates:
             bearing = self.arbors_for_plate[i].bearing
             bearing_on_top = back
 
+            if not back and i == 0:
+                try:
+                    bearing = self.going_train.powered_wheel.key_bearing
+                except:
+                    pass
+
             needs_plain_hole = False
             if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:
                 #if true we just need a hole for the direct arbour to fit through
@@ -2765,6 +2771,24 @@ class SimpleClockPlates:
 
         return plate
 
+    def add_motion_works_arm(self, plate, plate_thick, cut_holes=False):
+        mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
+
+        if self.need_motion_works_holder:
+            # screw would be on top of a bearing, so there's a separate peice to hold it
+            for pos in self.motion_works_fixings_relative_pos:
+                screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
+                if cut_holes:
+                    plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting() / 2).extrude(plate_thick).translate(screw_pos))
+        else:
+            if self.little_arm_to_motion_works:
+                # extra material in case the motion works is at an angle off to one side
+                plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
+            # hole for screw to hold motion works arbour
+            if cut_holes:
+                plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
+        return plate
+
     def front_additions_to_plate(self, plate, plate_thick=-1, moon=False):
         '''
         stuff only needed to be added to the front plate
@@ -2788,20 +2812,9 @@ class SimpleClockPlates:
         #     extraBearingHolder = self.getBearingHolder(self.pendulumSticksOut, False).translate((self.bearingPositions[len(self.bearingPositions) - 1][0], self.bearingPositions[len(self.bearingPositions) - 1][1], plateThick))
         #     plate = plate.add(extraBearingHolder)
 
-
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
-
-        if self.need_motion_works_holder:
-            #screw would be on top of a bearing, so there's a separate peice to hold it
-            for pos in self.motion_works_fixings_relative_pos:
-                screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
-                plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(plate_thick).translate(screw_pos))
-        else:
-            if self.little_arm_to_motion_works:
-                #extra material in case the motion works is at an angle off to one side
-                plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
-            #hole for screw to hold motion works arbour
-            plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
+        
+        plate = self.add_motion_works_arm(plate, plate_thick, cut_holes=True)
 
         if self.motion_works.cannon_pinion_friction_ring:
             for pos in self.cannon_pinion_friction_clip_fixings_pos:
@@ -2848,18 +2861,19 @@ class SimpleClockPlates:
 
 
         # need an extra chunky hole for the big bearing that the key slots through
-        if self.winding_key is not None:
-            powered_wheel = self.going_train.powered_wheel
-
-            if self.front_plate_printed_front_face_down():
-                #can print front-side on the build plate, so the bearing holes are printed on top
-                cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outer_d / 2).extrude(powered_wheel.key_bearing.height)
-            else:
-                cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layer_thick=self.layer_thick)
-
-            cord_bearing_hole = cord_bearing_hole.faces(">Z").workplane().circle(self.key_hole_d / 2).extrude(plate_thick)
-
-            plate = plate.cut(cord_bearing_hole.translate((self.bearing_positions[0][0], self.bearing_positions[0][1], 0)))
+        #should now be done as part of punch_bearing_holes
+        # if self.winding_key is not None:
+        #     powered_wheel = self.going_train.powered_wheel
+        #
+        #     if self.front_plate_printed_front_face_down():
+        #         #can print front-side on the build plate, so the bearing holes are printed on top
+        #         cord_bearing_hole = cq.Workplane("XY").circle(powered_wheel.key_bearing.outer_d / 2).extrude(powered_wheel.key_bearing.height)
+        #     else:
+        #         cord_bearing_hole = get_hole_with_hole(self.key_hole_d, powered_wheel.key_bearing.outer_d, powered_wheel.key_bearing.height, layer_thick=self.layer_thick)
+        #
+        #     cord_bearing_hole = cord_bearing_hole.faces(">Z").workplane().circle(self.key_hole_d / 2).extrude(plate_thick)
+        #
+        #     plate = plate.cut(cord_bearing_hole.translate((self.bearing_positions[0][0], self.bearing_positions[0][1], 0)))
 
         #can't decide where the best place is to do this, currently it lives in the MantelClockPlates
         # if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
@@ -3727,7 +3741,7 @@ class RoundClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
-                 front_anchor_holder_part_of_dial = False):
+                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -3745,12 +3759,15 @@ class RoundClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
-                         pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque)
+                         pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate)
 
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
             #so it's as strong as possible
             self.text_on_standoffs=False
+
+        #overide whatever simple clock plates said, we don't need to worry for the round clock plates as the pillars are placed on the outer circle
+        self.dial_top_above_front_plate = False
 
         #much more noticable on the round plate
         self.export_tolerance = 0.01
@@ -4170,7 +4187,19 @@ class RoundClockPlates(SimpleClockPlates):
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
 
 
+
+
         if just_basic_shape:
+
+            try:
+                #done in punch_bearing holes, but repeated here for the detailing
+                outer_d = self.going_train.powered_wheel.key_bearing.outer_d
+                plate = plate.union(cq.Workplane("XY").moveTo(self.bearing_positions[0][0], self.bearing_positions[0][1]).circle(outer_d / 2 + self.bearing_wall_thick).extrude(plate_thick))
+            except:
+                '''
+                not a key-wound clock
+                '''
+            plate = self.add_motion_works_arm(plate, plate_thick, cut_holes=False)
             return plate
 
         plate = plate.cut(self.get_fixing_screws_cutter())
@@ -4180,10 +4209,14 @@ class RoundClockPlates(SimpleClockPlates):
 
         else:
             if self.need_front_anchor_bearing_holder():
+
                 for pos in self.anchor_holder_fixing_points:
-                    line = Line(centre, anotherPoint=pos)
-                    start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
-                    plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
+                    if self.front_anchor_holder_part_of_dial:
+                        # if not part of dial it should be alined with radius and not need any extensions
+                        # TODO review this
+                        line = Line(centre, anotherPoint=pos)
+                        start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
+                        plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
                     plate = plate.cut(self.small_fixing_screws.get_cutter().translate(pos))
 
             plate = self.front_additions_to_plate(plate, moon=True)
@@ -4839,3 +4872,10 @@ class StrikingClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
                          layer_thick=layer_thick)
+
+class SlideWhistlePlates:
+    '''
+    Think I'll start fresh as there won't be a huge amount in common with the clocks. Probably abstract useful bits from SimpleClockPlates as I go
+    '''
+    def __init__(self):
+        pass

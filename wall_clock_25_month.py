@@ -74,7 +74,7 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 lanterns=[0, 1]
 
 train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[8,5], pinion_thick_extra=5, style=gearStyle,
-                powered_wheel_pinion_thick_multiplier=1.9, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+                powered_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 powered_wheel_module_sizes=powered_modules, lanterns=lanterns)
 train.print_info(weight_kg=5.45)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -91,7 +91,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #same as mantle clock 29
 # dial = clock.Dial(outside_d=190, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.ARABIC_NUMBERS, font="Miriam Mono CLM", inner_edge_style=None,
 #                   outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, pillar_style=clock.PillarStyle.BARLEY_TWIST)
-dial = clock.Dial(outside_d=195, style=clock.DialStyle.LINES_INDUSTRIAL)
+dial = clock.Dial(outside_d=192.5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
 
 plaque = clock.Plaque(text_lines=["M32#1 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "Insert Message Here"])
 
@@ -103,7 +103,7 @@ plaque = clock.Plaque(text_lines=["M32#1 {:.1f}cm L.Wallin 2024".format(train.pe
 #                                  chain_through_pillar_required=False, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360 - 35,
 #                                  allow_bottom_pillar_height_reduction=False, endshake=1.5, second_hand=False, escapement_on_front=True, compact_zigzag=True)
 plates = clock.RoundClockPlates(train, motionWorks, second_hand=False, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST, fully_round=True,
-                                leg_height=0, plaque=plaque, dial=dial, motion_works_angle_deg=180+30, escapement_on_front=True, name="Clock 25")
+                                leg_height=0, plaque=plaque, dial=dial, motion_works_angle_deg=180+30, escapement_on_front=True, name="Clock 25", split_detailed_plate=True)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

@@ -1255,7 +1255,7 @@ class SlideWhistleTrain:
     and maybe some sort of base class for calculating gear trains
     '''
 
-    def __init__(self, powered_wheel, fan, wheels=4):
+    def __init__(self, powered_wheel, fan, wheels=3):
         # going to be a spring to develop this, but might eventually be any other source of power if it ends up in a clock
         #think it's much easier to just provide this in the constructor than the mess in goingtrain
         self.powered_wheel = powered_wheel
@@ -1263,8 +1263,8 @@ class SlideWhistleTrain:
         self.wheels = wheels
         self.trains = []
 
-    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=10, max_wheel_teeth=110, pinion_max_teeth=12, wheel_min_teeth=90,
-                         max_error=10, loud=False, cam_rpm = 1, fan_rpm=100):
+    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=200, pinion_max_teeth=10, wheel_min_teeth=100,
+                         max_error=10, loud=False, cam_rpm = 1, fan_rpm=250):
         all_gear_pair_combos = []
 
         for p in range(min_pinion_teeth, pinion_max_teeth):
@@ -1334,6 +1334,9 @@ class SlideWhistleTrain:
             # favour evenly sized wheels
             wheel_tooth_counts = [pair[0] for pair in all_trains[c]]
             weighting += np.std(wheel_tooth_counts)
+
+            #favour smaller
+            weighting += (sum(wheel_tooth_counts))*0.1
 
             error = abs(desired_ratio - total_ratio)
 
