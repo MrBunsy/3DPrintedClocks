@@ -787,6 +787,9 @@ class GoingTrain:
          Just add this value to the thickness of the previous wheel for each pinion thickness
 
          bodge: chain_wheel_pinion_thick_multiplier will override pinion_thick_extra if chain_wheel_pinion_thick_multiplier is positive
+
+
+         pinion_extensions is indexed from the minute wheel
         '''
 
         if rod_diameters is None:

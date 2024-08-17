@@ -72,10 +72,11 @@ backPlateFromWall=30
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 
 lanterns=[0, 1]
+pinion_extensions = {0:2}
 
 train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[8,5], pinion_thick_extra=5, style=gearStyle,
                 powered_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                powered_wheel_module_sizes=powered_modules, lanterns=lanterns)
+                powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions)
 train.print_info(weight_kg=5.45)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -121,8 +122,8 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley,
 
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock(with_key=False, with_pendulum=True))
-
-assembly.show_clock(show_object, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.LIGHTBLUE],
+#motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.LIGHTBLUE]
+assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.PURPLE], plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
                     hand_colours=[clock.Colour.RED])
 

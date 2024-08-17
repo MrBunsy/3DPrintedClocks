@@ -94,7 +94,6 @@ class Gear:
             return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
             return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius, innerRadius = innerRadius + 2)
-
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
