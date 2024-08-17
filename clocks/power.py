@@ -2515,7 +2515,8 @@ class PocketChainWheel2:
         self.loose_on_rod = loose_on_rod
         self.arbor_d = arbor_d
 
-
+        #TODO update to use better ratchet
+        self.traditional_ratchet = False
 
         self.chain = chain
         self.max_diameter = max_diameter
@@ -3518,7 +3519,7 @@ class TraditionalRatchet:
 
         # click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.click_fixing_wide, self.click_fixings_distance + self.click_fixing_wide).extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(self.click_fixing_angle))
 
-        click_fixing = get_stroke_arc(self.click_fixings[1], self.click_fixings[0], self.click_fixings_r, wide=self.click_fixing_wide, thick=self.thick)
+        click_fixing = get_stroke_arc(self.click_fixings[1], self.click_fixings[0], self.click_fixings_r, wide=self.click_fixing_wide+0.0001, thick=self.thick)
 
         # click_fixing = click_fixing.edges("|Z").fillet(2)
 
@@ -3589,7 +3590,9 @@ class TraditionalRatchet:
 
         clickspring = clickspring.union(cq.Workplane("XY").moveTo(click_end_pos[0], click_end_pos[1]).circle(self.click_wide / 2).extrude(self.thick))
 
+        #this hangs forever sometimes... (added 0.0001 to click fixing radius above seems to fix)
         click = click_fixing.union(clickspring)
+        # click = click_fixing
 
         for screwpos in self.click_fixings:
             click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.thick).translate(screwpos))
