@@ -100,13 +100,15 @@ class Gear:
         if style == GearStyle.DIAMONDS:
             return Gear.cut_diamonds_style(gear, outerRadius=outerRadius, innerRadius=max(innerRadius * 1.05, innerRadius + 1))
         if style == GearStyle.BENT_ARMS4:
-            return Gear.cut_bent_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=4, clockwise = clockwise_from_pinion_side)
+            return Gear.cut_configurable_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=4, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True)
         if style == GearStyle.BENT_ARMS5:
-            return Gear.cut_bent_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=5, clockwise = clockwise_from_pinion_side)
+            return Gear.cut_configurable_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=5, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True, straight=False)
+        if style == GearStyle.ROUNDED_ARMS5:
+            return Gear.cut_configurable_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=5, rounded=True)
         return gear
 
     @staticmethod
-    def cut_bent_arms_style(gear, outer_radius, inner_radius, arms=5, straight=True, clockwise=True):
+    def cut_configurable_arms_style(gear, outer_radius, inner_radius, arms=5, straight=True, clockwise=True, arms_offset=False, rounded=True):
         cutter_thick = 100
         cutter = cq.Workplane("XY").circle(outer_radius).circle(inner_radius).extrude(cutter_thick)
 
@@ -115,15 +117,26 @@ class Gear:
         for arm in range(arms):
             angle = arm*math.pi*2/arms
             offset = math.pi*2/(arms*2) * (1 if clockwise else -1)
+            if not arms_offset:
+                offset = 0
             start = polar(angle, inner_radius - arm_thick)
             end = polar(angle+offset, outer_radius + arm_thick)
 
             if straight:
                 arm_cutter = get_stroke_line([start,end], wide=arm_thick, thick=cutter_thick)
             else:
-                radius = (outer_radius - inner_radius)* 5 *(1 if clockwise else -1)
-                arm_cutter = get_stroke_arc(start, end, radius, wide=arm_thick, thick=cutter_thick)
+                # radius = (outer_radius - inner_radius)* 2 *(1 if clockwise else -1)
+                distance = distance_between_two_points(start, end)
+                radius = distance * 0.6  *(1 if clockwise else -1)
+                arm_cutter = get_stroke_arc(start, end, radius=radius, wide=arm_thick, thick=cutter_thick)
             cutter = cutter.cut(arm_cutter)
+
+        if rounded:
+            roundedness = arm_thick/2
+            try:
+                cutter = cutter.edges("|Z").fillet(roundedness)
+            except:
+                pass
 
         return gear.cut(cutter)
 

@@ -2813,7 +2813,7 @@ class SimpleClockPlates:
         #     plate = plate.add(extraBearingHolder)
 
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
-        
+
         plate = self.add_motion_works_arm(plate, plate_thick, cut_holes=True)
 
         if self.motion_works.cannon_pinion_friction_ring:

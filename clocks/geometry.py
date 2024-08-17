@@ -58,6 +58,12 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
 
     negative radius seems to be broken in some cases? workaround is to adjust order of from and to pos
     '''
+
+    #temp hack
+    if radius < 0:
+        radius *= -1
+        from_pos, to_pos = to_pos, from_pos
+
     line = Line(from_pos, anotherPoint=to_pos)
     midpoint = average_of_two_points(from_pos, to_pos)
     nighty_deg = math.pi/2 * (1 if radius > 0 else -1)

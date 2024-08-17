@@ -139,6 +139,7 @@ class GearStyle(Enum):
     TREE = "tree"
     BENT_ARMS4 = "bent_arms4" # inspired by disc brakes
     BENT_ARMS5 = "bent_arms5"
+    ROUNDED_ARMS5 = "rounded_arms5"
 
 class StrokeStyle(Enum):
     ROUND = "rounded"

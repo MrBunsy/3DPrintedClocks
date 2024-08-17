@@ -49,12 +49,12 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
 
-train = clock.GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
+train = clock.GoingTrain(pendulum_period=2.0, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
                          chain_wheels=2, runtime_hours=32 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
 
 moduleReduction=0.9
 
-train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=10, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True, favour_smallest=True)
+train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=12, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True, favour_smallest=True)
 # train.calculateRatios(max_wheel_teeth=70, min_pinion_teeth=12, wheel_min_teeth=50, pinion_max_teeth=15, max_error=0.1, moduleReduction=moduleReduction, loud=True)
 # train.setRatios( [[72, 10], [75, 9], [60, 27]])
 
@@ -103,7 +103,8 @@ plaque = clock.Plaque(text_lines=["M32#1 {:.1f}cm L.Wallin 2024".format(train.pe
 #                                  chain_through_pillar_required=False, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360 - 35,
 #                                  allow_bottom_pillar_height_reduction=False, endshake=1.5, second_hand=False, escapement_on_front=True, compact_zigzag=True)
 plates = clock.RoundClockPlates(train, motionWorks, second_hand=False, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST, fully_round=True,
-                                leg_height=0, plaque=plaque, dial=dial, motion_works_angle_deg=180+30, escapement_on_front=True, name="Clock 25", split_detailed_plate=True)
+                                leg_height=0, plaque=plaque, dial=dial, motion_works_angle_deg=180+30, escapement_on_front=True, name="Clock 25", split_detailed_plate=True,
+                                plate_thick=10)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
