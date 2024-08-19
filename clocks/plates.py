@@ -3168,7 +3168,10 @@ class SimpleClockPlates:
 
         plate_thick = self.get_plate_thick(back=False)
 
-        main_chunk_thick = (tallest_bearing + 1)
+        min_thick = (tallest_bearing + 1)
+        max_thick = self.get_plate_thick(back=False) - 1
+
+        main_chunk_thick = max(min_thick, max_thick)
         main_chunk_thick = main_chunk_thick - main_chunk_thick % self.layer_thick
 
         front_plate = self.get_plate(back=False, for_printing=True)
@@ -4221,6 +4224,35 @@ class RoundClockPlates(SimpleClockPlates):
 
             plate = self.front_additions_to_plate(plate, moon=True)
 
+        if not back and self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.use_pulley:
+            #bit of a bodge, try just punching a hole so I can tie the cord to that.
+            #plan - we know where teh hole should be in x, find in y so it's just outside the cap but otherwise as close to the centre of teh plate arm as possible
+            # plate = plate.faces(">Z").workplane().moveTo()
+            #[ [(x,y),(x,y) ], [(x,y), (x,y)]  ]
+            cord_wheel = self.going_train.powered_wheel
+            cord_holes = cord_wheel.get_chain_positions_from_top()
+            #for a cord with a key the hole from here is for the weight to drop through, we want the *other* side (and the average of the width)
+            x = self.bearing_positions[0][0] - (cord_holes[0][0][0] + cord_holes[0][1][0])/2
+            # pos = get_point_from_two_points()
+            vertical_line = Line((x,-1000),direction=(0,1))
+            circle_r = cord_wheel.cap_diameter/2
+            circle_centre = self.bearing_positions[0][:2]
+
+            intersections = vertical_line.intersection_with_circle(circle_centre, circle_r)
+
+            #find close to the cap as we can get
+            topmost_pos = intersections[0] if intersections[0][1] < intersections[1][1] else intersections[1]
+            hole_r = cord_wheel.cord_thick*0.75
+            max_y = topmost_pos[1] -hole_r*2
+
+            #compare with centre of the radius
+            intersections = vertical_line.intersection_with_circle(self.hands_position, self.radius)
+            radius_pos = intersections[0] if intersections[0][1] < intersections[1][1] else intersections[1]
+            radius_y = radius_pos[1]
+
+            #use the radius if we can, but if the cap is too low down we have to move out the way
+            hole_pos = (topmost_pos[0],  min(max_y, radius_y))
+            plate = plate.faces(">Z").workplane().moveTo(hole_pos[0], hole_pos[1]).circle(hole_r).cutThruAll()
 
         plate = self.punch_bearing_holes(plate, back)
 
@@ -4326,8 +4358,8 @@ class RoundClockPlates(SimpleClockPlates):
         top_y = self.hands_position[1] + self.radius
         #HACK TODO tidy up screwhole cutting and calculate size in the same place (use newish WoodScrew?)
         screwhole_length =  self.wall_fixing_screw_head_d/2 + 7# + 6/2
-        if top_y - self.bearing_positions[-1][1] < self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 1:
-            top_y = self.bearing_positions[-1][1] + self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 1
+        if top_y - self.bearing_positions[-1][1] < self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 2:
+            top_y = self.bearing_positions[-1][1] + self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 2
 
         # if self.bearing_positions[-1][1] - self.top_pillar_positions[0][1] < 20:
         #     #bearing position is sufficiently above the pillars

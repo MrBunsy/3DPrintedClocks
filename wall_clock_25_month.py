@@ -73,11 +73,14 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 
 lanterns=[0, 1]
 pinion_extensions = {0:2}
+#want to make second powered wheel have chunkier rod, but really struggling to get the rest of the train to fit without a crazy small module.
+#let's see if m3 is enough
+rod_diameters = [4,3,3,3,3,3]
 
 train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[8,5], pinion_thick_extra=5, style=gearStyle,
                 powered_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions)
-train.print_info(weight_kg=5.45)
+                powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters)
+train.print_info(weight_kg=6)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
@@ -94,7 +97,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #                   outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, pillar_style=clock.PillarStyle.BARLEY_TWIST)
 dial = clock.Dial(outside_d=192.5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
 
-plaque = clock.Plaque(text_lines=["M32#1 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "Insert Message Here"])
+plaque = clock.Plaque(text_lines=["M32#1 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
 
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
