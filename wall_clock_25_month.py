@@ -97,7 +97,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #                   outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, pillar_style=clock.PillarStyle.BARLEY_TWIST)
 dial = clock.Dial(outside_d=192.5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
 
-plaque = clock.Plaque(text_lines=["M32#1 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
+plaque = clock.Plaque(text_lines=["M25#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
 
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
