@@ -128,7 +128,7 @@ assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley,
 #motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.LIGHTBLUE]
 assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.PURPLE], plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
-                    hand_colours=[clock.Colour.RED])
+                    hand_colours=[clock.Colour.RED], with_rods=True)
 
 # show_object(plates.getDrillTemplate(6))
 
@@ -136,11 +136,13 @@ if outputSTL:
     #
     #
     # train.output_STLs(clockName,clockOutDir)
+    plaque.output_STLs(clockName, clockOutDir)
     motionWorks.output_STLs(clockName,clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)
     hands.output_STLs(clockName, clockOutDir)
     pulley.output_STLs(clockName, clockOutDir)
     assembly.output_STLs(clockName, clockOutDir)
+
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)
