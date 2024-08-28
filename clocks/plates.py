@@ -3060,7 +3060,7 @@ class SimpleClockPlates:
         #note - do this relative to the hour hand, not the dial, because there may be more space for the hour hand to avoid the second hand
         #TODO remove this for cord wheel
 
-        self.going_train.powered_wheel.key_square_bit_height = key_length
+        self.going_train.powered_wheel.key_square_bit_height = key_length + 1
         #the slightly less hacky way... (although now I think about it, is it actually? we're still reaching into an object to set something)
         self.arbors_for_plate[0].key_length = key_length
 
