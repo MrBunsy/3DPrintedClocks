@@ -305,7 +305,7 @@ class SimpleClockPlates:
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,anchor_distance_fudge_mm=0):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -314,6 +314,7 @@ class SimpleClockPlates:
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         split_detailed_plate - if the detail is raised on the front plate we'd have to print using hole-in-hole supports for the bearing holes. Some filaments this isn't as clean as others
         so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
+        anchor_distance_fudge_mm - add this to the distance between anchor and escape wheel
         '''
 
         self.pillar_style = pillar_style
@@ -321,6 +322,8 @@ class SimpleClockPlates:
         #for raised edging style
         self.edging_wide = 3
         self.edging_thick=LAYER_THICK*2
+
+        self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
 
         self.export_tolerance = 0.1
 
@@ -1143,7 +1146,7 @@ class SimpleClockPlates:
             if self.going_train.wheels > 3 and not (forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre):
                 #stick the escape wheel out too
                 third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour
-                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbour
+                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbour + self.anchor_distance_fudge_mm
                 #third_wheel_to_anchor is a bit tricky to calculate. going to try instead just choosing an angle
                 #TODO could make anchor thinner and then it just needs to avoid the rod
                 third_wheel_to_anchor = self.going_train.get_arbour_with_conventional_naming(-1).get_max_radius() + self.going_train.get_arbor(2).get_max_radius() + self.small_gear_gap
@@ -1168,9 +1171,12 @@ class SimpleClockPlates:
             #aim: have pendulum directly above hands
             positions = [(0,0)]
             for i in range(1, self.going_train.wheels):
-                positions.append(np_to_set(np.add(positions[i - 1], polar(self.angles_from_minute[i - 1], self.going_train.get_arbor(i - 1).distance_to_next_arbour))))
+                distance = self.going_train.get_arbor(i - 1).distance_to_next_arbour
+                if i == self.going_train.wheels:
+                    distance += self.anchor_distance_fudge_mm
+                positions.append(np_to_set(np.add(positions[i - 1], polar(self.angles_from_minute[i - 1], distance))))
 
-            escape_wheel_to_anchor = self.going_train.get_arbor(-2).distance_to_next_arbour
+            escape_wheel_to_anchor = self.going_train.get_arbor(-2).distance_to_next_arbour + self.anchor_distance_fudge_mm
             if escape_wheel_to_anchor < abs(positions[-1][0]):
                 #need to re-think how this works
                 raise ValueError("Cannot put anchor above hands without tweaking")
@@ -1264,6 +1270,7 @@ class SimpleClockPlates:
                 # all the other going wheels up to and including the escape wheel
                 if i == self.going_train.wheels:
                     # the anchor
+                    r+= self.anchor_distance_fudge_mm
                     if self.escapement_on_front:
                         # there is nothing between the plates for this
                         self.arbourThicknesses.append(0)
@@ -3744,7 +3751,7 @@ class RoundClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
-                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False):
+                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -3762,7 +3769,8 @@ class RoundClockPlates(SimpleClockPlates):
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
-                         pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate)
+                         pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
+                         anchor_distance_fudge_mm=anchor_distance_fudge_mm)
 
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging

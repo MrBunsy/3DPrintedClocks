@@ -31,13 +31,15 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_25"
+clockName="wall_clock_25b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.BENT_ARMS5
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 #1.5deg of lock results in a slight recoil as the teeth land on the pallet rather than the inner edge (as first printed). Going back to 2deg
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=2, diameter=45, force_diameter=True, anchor_thick=10)
+#closer inspection shows that actually the anchor is slightly too far away. Is the front anchor holder at an angle?
+#might be worth instead filing the "feet" of it flat or slightly at an angle to get the anchor and escape wheel closer together
+escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
 
 train = clock.GoingTrain(pendulum_period=2.0, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
                          chain_wheels=2, runtime_hours=32 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
@@ -79,10 +81,12 @@ dial = clock.Dial(outside_d=192.5, style=clock.DialStyle.LINES_INDUSTRIAL, pilla
 
 plaque = clock.Plaque(text_lines=["M25#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
 
-
+#anchor_distance_fudge_mm judged by eye tinkering with a modelled escapement to get it to behave like the real one
+#I think that the escape wheel is being angled downwards as the back of the arbor is pressed upwards, and it's hinging aroudn the front plate.
+#this likely affects most clocks with the escapement on the front and a compact gear layout
 plates = clock.RoundClockPlates(train, motionWorks, second_hand=False, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST, fully_round=True,
                                 leg_height=0, plaque=plaque, dial=dial, motion_works_angle_deg=180+30, escapement_on_front=True, name="Clock 25", split_detailed_plate=True,
-                                plate_thick=10)
+                                plate_thick=10, anchor_distance_fudge_mm=-0.5)
 
 hands = clock.Hands(style=clock.HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True, second_length=20, seconds_hand_thick=1.5)

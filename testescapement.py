@@ -89,17 +89,18 @@ teeth=40
 
 teeth=30
 drop=2.75
-escapement = AnchorEscapement.get_with_45deg_pallets(teeth, drop)
-
+# escapement = AnchorEscapement.get_with_45deg_pallets(teeth, drop)
+escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
 # escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=tooth_tip_angle,
 #                                     tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
 
-anchor_angle_deg = -3
+anchor_angle_deg = -1.4
 wheel_angle_deg = -1.7
 
 # anchor_angle_deg = 0
 # wheel_angle_deg = -1.25
 
-show_object(escapement.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg))
+show_object(escapement.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg, distance_fudge_mm=0.5))
+show_object(cq.Workplane("XY").circle(escapement.radius))
 #40 teeth distance 73.6593180385267
 print("distance", escapement.anchor_centre_distance)
