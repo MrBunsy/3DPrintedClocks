@@ -31,7 +31,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_23"
+clockName="wall_clock_23b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -55,7 +55,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 
 #think this is promising for good compromise of size
 #TODO NEXT CLOCK add 1 mm to cord coil thick (so 15mm) so 25mm screws will fit properly!
-train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=29, loose_on_rod=False, prefer_small=True)
+train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=29, loose_on_rod=False, prefer_small=True)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=25, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 # train.genChainWheels2(clock.COUSINS_1_5MM_CHAIN, ratchetThick=6, arbourD=4, loose_on_rod=False, prefer_small=True, preferedDiameter=30, fixing_screws=clock.MachineScrew(3, countersunk=True),ratchetOuterThick=6)
 
@@ -64,7 +64,7 @@ train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_c
 pendulumSticksOut=10
 backPlateFromWall=40
 
-train.gen_gears(module_size=1.1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=2 / 2.4, powered_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
+train.gen_gears(module_size=1.1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=2 / 2.4, powered_wheel_thick=4.5, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing)
 train.print_info(weight_kg=3)
 train.print_info(weight_kg=2.5)
@@ -86,7 +86,7 @@ moon_complication.set_motion_works_sizes(motionWorks)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)
 
-dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.LINES_ARC, pillar_style=clock.PillarStyle.CLASSIC)
+dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.LINES_ARC, pillar_style=clock.PillarStyle.SIMPLE)
 
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.COMPACT,
                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,

@@ -50,8 +50,9 @@ train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=12, wheel_min_teeth
 
 
 #TODO one screw goes straight through the hole used to tie the cord! printed clock is assembled with just three screws
+#also reduced ratchet diameter slightly after initial print as the pawl looks like it can bump into the next pinion
 train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=2, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=35, loose_on_rod=False, prefer_small=True,
-                      min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=35)
+                      min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=33)
 
 train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120)
 

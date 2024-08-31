@@ -21,6 +21,9 @@ class GoingTrain:
 
     I propose instead moving this logic over to the plates and therefore out of Arbor and into ArborForPlate.
     Maybe even going as far as this class not generating any actual geometry? just being ratios?
+
+    TODO just provide a powered wheel to the constructor, like the escapement, and get rid of the myriad of gen_x_wheel methods.
+
     '''
 
     def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
@@ -750,7 +753,7 @@ class GoingTrain:
             # because there are potentially multiple layers of cord on a cordwheel, power lever can vary enough for the clock to be viable when wound and not halfway through its run time!
             # seen this on clock 10!
 
-            (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.powered_wheel.getCordTurningInfo(self.max_weight_drop * (2 if self.use_pulley else 1))
+            (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.powered_wheel.get_cord_turning_info(self.max_weight_drop * (2 if self.use_pulley else 1))
             # cord per rotation divided by chainRatio, gives speed in mm per hour, we want in m/s to calculate power
             effective_weight = weight_kg / (2 if self.use_pulley else 1)
             min_weight_speed = (cordPerRotationPerLayer[0] / power_ratio) / (60 * 60 * 1000)
