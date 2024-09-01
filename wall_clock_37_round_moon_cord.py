@@ -26,14 +26,9 @@ import clocks as clock
 
 '''
 
-This is based on mantel_clock_31, but bigger
+Thought I'd do a quick experiment to see what clock 32 looked like weight driven.
 
-Plan is a circular wall mounted clock with short pendulum and mini moon complication in a mini dial like the second hand 
-
-clock works! few tweaks I think worth doing before making another:
- - change screwhole to be above the top bearing so we can adjust the beat setter more easily (it didn't exist when this was designed)
- - work out where to put a plaque on the back
- - optional plaque on front?
+current answer: can't find a gear ratio that will actually work
 
 '''
 outputSTL = False
@@ -44,7 +39,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_32c"
+clockName="wall_clock_37"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -53,7 +48,7 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
-train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True)
 
 barrel_gear_thick = 5#8
@@ -62,8 +57,9 @@ moduleReduction=0.95#0.85
 
 #wall thick of 9 seemed fine, but I want it to be consistent with the arbor
 #larger barrel wheel actually works out at a smaller plate than having a larger intermediate wheel
-train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
+# train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+#                         wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
+train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=60, loose_on_rod=False, prefer_small=True)
 
 '''
 [[61, 10], [83, 10]]

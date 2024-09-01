@@ -3988,21 +3988,25 @@ class RoundClockPlates(SimpleClockPlates):
 
             if not self.going_train.powered_wheels > 1:
                 raise ValueError("TODO calculate pillar positions for non eight day spring clocks")
-            #assuming spring driven here
-            b = self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1
-            a = self.arbors_for_plate[0].arbor.distance_to_next_arbour
-            c = self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1
-            # cosine law
-            angle = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
-            second_wheel_from_first = np_to_set(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[0][:2]))
-            second_wheel_from_first_angle = math.atan2(second_wheel_from_first[1], second_wheel_from_first[0])
-            final_angle = second_wheel_from_first_angle - angle
-            bottom_pillar_pos = np_to_set(np.add(self.bearing_positions[0][:2], polar(final_angle, b)))
-            self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
-            self.bottom_pillar_positions = [
-                bottom_pillar_pos,
-                (-bottom_pillar_pos[0], bottom_pillar_pos[1]),
-            ]
+                #TODO - put them ALONG THE CIRCLE at the right distance from the cord wheel
+                distance = self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1
+                self.bottom_pillar_positions = [(self.bearing_positions[0][0] - distance, self.bearing_positions[0][1]), (self.bearing_positions[0][0] + distance, self.bearing_positions[0][1])]
+            else:
+                #assuming spring driven here (but works for month cord)
+                b = self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1
+                a = self.arbors_for_plate[0].arbor.distance_to_next_arbour
+                c = self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1
+                # cosine law
+                angle = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
+                second_wheel_from_first = np_to_set(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[0][:2]))
+                second_wheel_from_first_angle = math.atan2(second_wheel_from_first[1], second_wheel_from_first[0])
+                final_angle = second_wheel_from_first_angle - angle
+                bottom_pillar_pos = np_to_set(np.add(self.bearing_positions[0][:2], polar(final_angle, b)))
+                self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
+                self.bottom_pillar_positions = [
+                    bottom_pillar_pos,
+                    (-bottom_pillar_pos[0], bottom_pillar_pos[1]),
+                ]
         else:
 
             self.bottom_pillar_positions = [

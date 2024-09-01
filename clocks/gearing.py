@@ -917,8 +917,10 @@ class Gear:
                     smallCirclePos = polar(angle + big_circle_angle / 2, inner_radius + ring_size * 0.75)
                     cutter = cutter.add(cq.Workplane("XY").moveTo(smallCirclePos[0], smallCirclePos[1]).circle(smallCircleR).extrude(cutter_thick))
 
-
-        gear = gear.cut(cutter)
+        try:
+            gear = gear.cut(cutter)
+        except:
+            print("Failed to cut gear style circles")
 
         return gear
 

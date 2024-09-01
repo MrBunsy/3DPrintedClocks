@@ -1,19 +1,19 @@
 # 3DPrintedClocks
 
-![Clock 12 Render](images/wall_clock_12_small.png "Clock 12 Render")
+[//]: # (![Clock 12 Render]&#40;images/wall_clock_12_small.png "Clock 12 Render"&#41;)
 ![Clock 12 Photo](images/wall_clock_12_small.jpg "Clock 12 Photo")
-![Clock 07 Render](images/wall_clock_07_render_small.png "Clock 07 Render")
+![Clock 32 Photo](images/wall_clock_32_photo.jpg "Clock 12 Photo")
+
+[//]: # (![Clock 07 Render]&#40;images/wall_clock_07_render_small.png "Clock 07 Render"&#41;)
 ![Clock 07 Photo](images/clock_07_photo_small.jpg "Clock 12 Photo")
 
 A sprawling library of python code for 3D printing clocks and accessories. CadQuery is used to produce the 3D models (exported to STL) and numpy is used for much of the vector arithmetic. I use the Cadquery editor (cq-editor) to visualise the clock as I'm developing. 
 
-Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat and grasshopper escapements are complete and functional. There was a (not great) recoil escapement which has since been deprecated and removed.
+Most of the code is part of a library intended for generating complete clocks to be 3D printed. Deadbeat, grasshopper, recoil and brocot escapements are complete and functional.
 
-See the wall_clock_* python scripts in the root directory for examples of generating complete clocks. Clocks 3 and earlier were from when the library was in a state of flux and are unlikely to work without checking out old tags. All later clocks will generate a preview if opened in the CadQuery editor. 
+See the wall_clock_* and mantel_clock* python scripts in the root directory for examples of generating complete clocks. Older clocks may not work without checking out old tags, as I have occasionally broken backwards compatibility. All later clocks will generate a preview if opened in the CadQuery editor. 
 
-Documentation is lacking as this is a hobby project and I'm easily distracted. This readme was mostly written with my future self in mind: it aims to provide a general overview. The code is commented with my intentions throughout so for more information I recommend digging into the relevant class. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading The Modern Clock if you are interested in using it to produce your own clock.
-
-Note: it turns out "arbor", in its horological sense, doesn't have a "u". This change is rolling out slowly throughout the codebase. There are also two styles of code format throughout, where newer and refactored code is attempting to adhere to PEP8 and more conventional python norms. My day job is in C/C++ and it shows.
+Documentation is lacking as this is a hobby project and I'm easily distracted. This readme was mostly written with my future self in mind: it aims to provide a general overview. The code is commented with my intentions throughout so for more information I recommend digging into the relevant class. However a fairly good understanding of how a clock works is assumed, so I'd recommend at least skim-reading [The Modern Clock](https://www.gutenberg.org/ebooks/61494) if you are interested in using it to produce your own clock.
 
 ## Licence
 This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
@@ -34,8 +34,6 @@ This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
 
 My entirely non-lawyerly understanding is that this is like the GPL for hardware design (since the STLs are the output of the software, I cannot use the more conventional GPL to cover them). I don't wish to limit anyone's use of this library, but I do wish to prevent clocks developed using the library becoming closed source. If you distribute (paid or free) STLs for a clock, or a printed clock, you must also provide the source code used to generate those STLs.
 
-
-
 # Acknowledgements
 
 I'm standing on the shoulders of giants and would like to acknowledge the following resources:
@@ -51,6 +49,15 @@ A small amount of source code is from [Dr Rainer Hessmer's gear generator](http:
 An honourary mention to [Brian Law's Wooden Clocks](https://www.woodenclocks.co.uk/). I would like to stress that my designs are my own, but I have taken inspiration and motivation from seeing what Brian has demonstrated to be possible.
 
 I found [an excellent write up on designing deadbeat escapements](https://www.ocf.berkeley.edu/~wwu/cgi-bin/yabb/YaBB.cgi?board=riddles_general;action=display;num=1437253052) _after_ I'd designed mine. If you're starting from scratch, I'd recommend it. This is very similar to the approach I decided on.
+
+# Summary of all clocks
+All the clocks (printable and unfinished) are [summarised here](./Clocks.md)
+
+# Printing Parts
+See [Printing Parts](Printing.md)
+
+# Assembling Clocks
+See [Assembly Instructions](Assembly.md)
 
 # Using the Library
 Below I will go through the main files and give a rough overview of how to use the classes required to design your own clock. Much of the design is in flux, especially the SimpleClockPlates which tend to require more options and refactoring with every new design. I try and ensure comments are sufficient to understand the intent of each class and their major functions.

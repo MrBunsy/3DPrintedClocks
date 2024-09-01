@@ -78,7 +78,8 @@ motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compe
 motionWorks.calculate_size(arbor_distance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
-dial = clock.Dial(outside_d=192.5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
+#toying with making dial wider if I reprint
+dial = clock.Dial(outside_d=192.5+10, dial_width=192.5/10 + 5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
 
 plaque = clock.Plaque(text_lines=["M25#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
 
