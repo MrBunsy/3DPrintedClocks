@@ -47,9 +47,11 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 #after a huge amount of faffing about, the problem was the bearings, not the escapement. So I've used the new auto-calculated efficient escapement for a retrofit.
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
+power = clock.CordWheel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle, use_key=True, diameter=35, loose_on_rod=False)
+
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
-train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True)
+train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False, chain_wheels=2,
+                         runtime_hours=32 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=power)
 
 barrel_gear_thick = 5#8
 
@@ -59,8 +61,10 @@ moduleReduction=0.95#0.85
 #larger barrel wheel actually works out at a smaller plate than having a larger intermediate wheel
 # train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
 #                         wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
-train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=60, loose_on_rod=False, prefer_small=True)
+# train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=60, loose_on_rod=False, prefer_small=True)
 
+train.calculate_powered_weight_wheel_info()
+train.calculate_powered_wheel_ratios(prefer_small=True, wheel_min=20, prefer_large_second_wheel=False)
 '''
 [[61, 10], [83, 10]]
 spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653

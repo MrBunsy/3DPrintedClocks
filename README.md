@@ -1,5 +1,6 @@
 # 3DPrintedClocks
 
+[//]: # (TODO little table of thumbnails with links to bigger images with python script to make the thumbnails?)
 [//]: # (![Clock 12 Render]&#40;images/wall_clock_12_small.png "Clock 12 Render"&#41;)
 ![Clock 12 Photo](images/wall_clock_12_small.jpg "Clock 12 Photo")
 ![Clock 32 Photo](images/wall_clock_32_photo.jpg "Clock 12 Photo")

@@ -122,7 +122,7 @@ Ended up as an eight day cord driven brocot escapement.
 ### Wall Clock 25
 Was originally an experiment to design a gear train which could run for a month.
 
-It was actually printed after clock 32/33, when I'd perfected the new round plates and stronger gears for spring clocks.
+It was actually printed after clocks 32/33, when I'd perfected the new round plates and stronger gears for spring clocks.
 
 32 day cord driven with seconds pendulum.
 

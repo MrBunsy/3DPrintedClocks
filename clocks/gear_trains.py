@@ -27,7 +27,7 @@ class GoingTrain:
     '''
 
     def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
-                 escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio=1, support_second_hand=False):
+                 escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio=1, support_second_hand=False, powered_wheel=None):
         '''
 
         pendulum_period: desired period for the pendulum (full swing, there and back) in seconds
@@ -49,6 +49,7 @@ class GoingTrain:
 
         support_second_hand: if the period and number of teeth on the escape wheel don't result in it rotating once a minute, try and get the next gear down the train to rotate once a minute
 
+        powered_wheel: if provided, use this. if not use the deprecated gen_*wheels() methods
 
         Grand plan: auto generate gear ratios.
         Naming convention seems to be powered (spring/weight) wheel is first wheel, then minute hand wheel is second, etc, until the escapement
@@ -99,7 +100,12 @@ class GoingTrain:
         else:
             self.escape_wheel_pinion_at_front = escape_wheel_pinion_at_front
 
-        self.powered_by = PowerType.NOT_CONFIGURED
+        self.powered_wheel = powered_wheel
+
+        if self.powered_wheel is not None:
+            self.powered_by = self.powered_wheel.type
+        else:
+            self.powered_by = PowerType.NOT_CONFIGURED
 
         # if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
         self.powered_wheels = chain_wheels
@@ -305,109 +311,6 @@ class GoingTrain:
         print(all_times[0])
         return all_times
 
-    # def calculateRatios(self,moduleReduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth = 20, wheel_min_teeth = 50, max_error=0.1, loud=False):
-    #     '''
-    #     Returns and stores a list of possible gear ratios, sorted in order of "best" to worst
-    #     module reduction used to calculate smallest possible wheels - assumes each wheel has a smaller module than the last
-    #     '''
-    #
-    #     pinion_min=min_pinion_teeth
-    #     pinion_max=pinion_max_teeth
-    #     wheel_min=wheel_min_teeth
-    #     wheel_max=max_wheel_teeth
-    #
-    #     '''
-    #     https://needhamia.com/clock-repair-101-making-sense-of-the-time-gears/
-    #     “With an ‘integer ratio’, the same pairs of teeth (gear/pinion) always mesh on each revolution.
-    #      With a non-integer ratio, each pass puts a different pair of teeth in mesh. (Some fractional
-    #      ratios are also called a ‘hunting ratio’ because a given tooth ‘hunts’ [walks around] the other gear.)”
-    #
-    #      "So it seems clock designers prefer non-whole-number gear ratios to even out the wear of the gears’ teeth. "
-    #
-    #      seems reasonable to me
-    #     '''
-    #     allGearPairCombos = []
-    #
-    #     targetTime = 60*60/self.minuteWheelRatio
-    #
-    #     for p in range(pinion_min,pinion_max):
-    #         for w in range(wheel_min, wheel_max):
-    #             allGearPairCombos.append([w,p])
-    #     if loud:
-    #         print("allGearPairCombos", len(allGearPairCombos))
-    #     #[ [[w,p],[w,p],[w,p]] ,  ]
-    #     allTrains = []
-    #
-    #     allTrainsLength = 1
-    #     for i in range(self.wheels):
-    #         allTrainsLength*=len(allGearPairCombos)
-    #
-    #     #this can be made generic for self.wheels, but I can't think of it right now. A stack or recursion will do the job
-    #     #one fewer pairs than wheels
-    #     allcomboCount=len(allGearPairCombos)
-    #     if self.wheels == 2:
-    #         for pair_0 in range(allcomboCount):
-    #             allTrains.append([allGearPairCombos[pair_0]])
-    #     if self.wheels == 3:
-    #         for pair_0 in range(allcomboCount):
-    #             for pair_1 in range(allcomboCount):
-    #                     allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1]])
-    #     elif self.wheels == 4:
-    #         for pair_0 in range(allcomboCount):
-    #             if loud and pair_0 % 10 == 0:
-    #                 print("{:.1f}% of calculating trains".format(100*pair_0/allcomboCount))
-    #             for pair_1 in range(allcomboCount):
-    #                 for pair_2 in range(allcomboCount):
-    #                     allTrains.append([allGearPairCombos[pair_0], allGearPairCombos[pair_1], allGearPairCombos[pair_2]])
-    #     if loud:
-    #         print("allTrains", len(allTrains))
-    #     allTimes=[]
-    #     totalTrains = len(allTrains)
-    #     for c in range(totalTrains):
-    #         if loud and c % 100 == 0:
-    #             print("{:.1f}% of combos".format(100*c/totalTrains))
-    #         totalRatio = 1
-    #         intRatio = False
-    #         totalTeeth = 0
-    #         #trying for small wheels and big pinions
-    #         totalWheelTeeth = 0
-    #         totalPinionTeeth = 0
-    #         weighting = 0
-    #         lastSize=0
-    #         fits=True
-    #         for p in range(len(allTrains[c])):
-    #             ratio = allTrains[c][p][0] / allTrains[c][p][1]
-    #             if ratio == round(ratio):
-    #                 intRatio=True
-    #                 break
-    #             totalRatio*=ratio
-    #             totalTeeth +=  allTrains[c][p][0] + allTrains[c][p][1]
-    #             totalWheelTeeth += allTrains[c][p][0]
-    #             totalPinionTeeth += allTrains[c][p][1]
-    #             #module * number of wheel teeth - proportional to diameter
-    #             size =  math.pow(moduleReduction, p)*allTrains[c][p][0]
-    #             weighting += size
-    #             if p > 0 and size > lastSize*0.9:
-    #                 #this wheel is unlikely to physically fit
-    #                 fits=False
-    #                 break
-    #             lastSize = size
-    #         totalTime = totalRatio*self.escapement_time
-    #         error = targetTime-totalTime
-    #
-    #         train = {"time":totalTime, "train":allTrains[c], "error": abs(error), "ratio": totalRatio, "teeth": totalWheelTeeth, "weighting": weighting }
-    #         if fits and  abs(error) < max_error and not intRatio:
-    #             allTimes.append(train)
-    #
-    #     allTimes.sort(key = lambda x: x["weighting"])
-    #     # print(allTimes)
-    #
-    #     self.trains = allTimes
-    #
-    #     if len(allTimes) == 0:
-    #         raise RuntimeError("Unable to calculate valid going train")
-    #
-    #     return allTimes
 
     def set_ratios(self, gear_pinion_pairs):
         '''
@@ -548,7 +451,7 @@ class GoingTrain:
 
     def set_chain_wheel_ratio(self, pinionPairs):
         '''
-        Note, shouldn't need to use this anymore, and I think it's overriden when generating powered wheels anyway!
+        Instead of autogenerating, manually configure ratios
         '''
         if type(pinionPairs[0]) == int:
             # backwards compatibility with old clocks that assumed only one chain wheel was supported
@@ -569,10 +472,15 @@ class GoingTrain:
 
         return clockwiseFromFront
 
-    def calculate_powered_wheel_info(self, default_powered_wheel_diameter=20):
+    def calculate_powered_weight_wheel_info(self, default_powered_wheel_diameter=20):
         '''
-        Calculate best diameter and direction of ratchet
+        Calculate best diameter and direction of ratchet for weight driven wheels
+        if powered wheel was already provided to going train and there is more than one powered wheel, default_powered_wheel_diameter is ignored
         '''
+
+
+
+
         if self.powered_wheels == 0:
             # no choice but to set diameter to what fits with the drop and hours
             self.powered_wheel_circumference = self.get_cord_usage() / (self.runtime_hours * self.minute_wheel_ratio)
@@ -580,8 +488,10 @@ class GoingTrain:
 
         else:
             # set the diameter to the minimum so the chain wheel gear ratio is as low as possible (TODO - do we always want this?)
-
-            self.powered_wheel_diameter = default_powered_wheel_diameter
+            if self.powered_wheel is not None:
+                self.powered_wheel_diameter = self.powered_wheel.diameter
+            else:
+                self.powered_wheel_diameter = default_powered_wheel_diameter
 
             self.powered_wheel_circumference = self.powered_wheel_diameter * math.pi
 
@@ -598,7 +508,7 @@ class GoingTrain:
         diameter = preferedDiameter
         if diameter < 0:
             diameter = PocketChainWheel2.get_min_diameter()
-        self.calculate_powered_wheel_info(diameter)
+        self.calculate_powered_weight_wheel_info(diameter)
 
         if self.huygens_maintaining_power:
             # there is no ratchet with this setup
@@ -623,7 +533,7 @@ class GoingTrain:
         longer to make it generic than just make it work
         '''
 
-        self.calculate_powered_wheel_info(PocketChainWheel.get_min_diameter())
+        self.calculate_powered_weight_wheel_info(PocketChainWheel.get_min_diameter())
 
         if self.huygens_maintaining_power:
             # there is no ratchet with this setup
@@ -652,7 +562,7 @@ class GoingTrain:
         # if cap_diameter < 0:
         #     cap_diameter = ratchet_diameter
 
-        self.calculate_powered_wheel_info(diameter)
+        self.calculate_powered_weight_wheel_info(diameter)
         self.powered_wheel = CordWheel(self.powered_wheel_diameter, ratchet_thick=ratchet_thick, power_clockwise=self.powered_wheel_clockwise,
                                        rod_metric_size=rod_metric_thread, thick=cord_coil_thick, use_key=use_key, cord_thick=cord_thick, style=style, loose_on_rod=loose_on_rod,
                                        cap_diameter=cap_diameter, traditional_ratchet=traditional_ratchet, ratchet_diameter=ratchet_diameter)
@@ -664,7 +574,7 @@ class GoingTrain:
         if diameter < 0:
             diameter = RopeWheel.get_min_diameter()
 
-        self.calculate_powered_wheel_info(diameter)
+        self.calculate_powered_weight_wheel_info(diameter)
 
         if self.huygens_maintaining_power:
             # there is no ratchet with this setup

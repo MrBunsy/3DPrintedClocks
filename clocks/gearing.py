@@ -1048,7 +1048,10 @@ class Gear:
             #     # if innerRadius < 0:
             #     #     innerRadius = self.
             #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
-            gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
+            try:
+                gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
+            except:
+                print("Failed to cut gear style")
 
         return gear
 

@@ -38,13 +38,16 @@ gear_style=clock.GearStyle.ARCS
 pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 gear_style = clock.GearStyle.ARCS
+#
+# lift=3
+# drop=3
+# lock=2
+# teeth = 30
+# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
+#                                     type=clock.EscapementType.DEADBEAT)
 
-lift=3
-drop=3
-lock=2
-teeth = 30
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
-                                    type=clock.EscapementType.DEADBEAT)
+escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, force_diameter=False, anchor_thick=10)
+
 
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
@@ -66,7 +69,7 @@ back_plate_from_wall=30
 pinion_extensions = {0:1, 1:3, 3:8}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 
-module_sizes = [0.8,0.8,0.8]
+module_sizes = [0.8,0.7,0.7]
 
 print("module_sizes", module_sizes)
 lanterns=[0, 1]
