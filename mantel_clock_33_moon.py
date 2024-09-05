@@ -49,7 +49,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "mantel_clock_33e"
+clock_name= "mantel_clock_33.2"
 # clock_name= "mantel_clock_33_retrofit"
 clock_out_dir= "out"
 gear_style=clock.GearStyle.ARCS
@@ -85,7 +85,7 @@ else:
     module_reduction=0.9#0.85
 #ratios from wall clock 32 but larger wheel for the intermediate wheel as we have a larger minute wheel on this clock
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=8, chain_wheel_ratios=[[61, 10], [61, 10]], extra_barrel_height=1.5, ratchet_thick=8)
+                        style=gear_style, wall_thick=8, chain_wheel_ratios=[[61, 10], [64, 10]], extra_barrel_height=1.5, ratchet_thick=8)
 '''
 0.35:
 [[61, 10], [78, 10]]
@@ -153,7 +153,7 @@ back_plate_from_wall=30
 #this was a mistake, should have been clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2) (but this doesn't fit current design)
 intermediate_wheel_module=1.2
 pinion_extensions = {0:1, 1:3, 3:8} if moon else {0:1, 1:12, 2:5}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), intermediate_wheel_module]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 
 old_train = [[72, 10], [70, 12], [60, 14]]
 old_modules = [1,0.9,0.9]
@@ -211,7 +211,7 @@ if moon:
     motion_works.calculate_size(arbor_distance=30)
     moon_complication.set_motion_works_sizes(motion_works)
 
-plaque = clock.Plaque(text_lines=["M33#1 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "Insert Text Here 2024"])
+plaque = clock.Plaque(text_lines=["M33#2 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
 
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
