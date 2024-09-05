@@ -83,7 +83,7 @@ motionWorks.calculate_size(arbor_distance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 
-dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES)
+dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_ROUNDED)
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", gear_train_layout=clock.GearTrainLayout.COMPACT,

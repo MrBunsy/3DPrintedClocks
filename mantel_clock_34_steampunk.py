@@ -125,7 +125,8 @@ dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=dial_colours,
-                    plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
+                    plate_colours=[clock.Colour.BLACK, clock.Colour.BRASS, clock.Colour.BRASS])
+plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS]
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 

@@ -17,6 +17,8 @@ train = SlideWhistleTrain(power, fan)
 
 train.calculate_ratios(loud=True)
 
+train.generate_gears([2,-1, -1, 3])
+
 # print(train.trains)
 
 show_object(fan.get_assembled())

@@ -1277,3 +1277,40 @@ class SlideWhistleTrain:
         if len(all_times) == 0:
             raise RuntimeError("Unable to calculate valid going train")
         print(all_times[0])
+
+    @staticmethod
+    def tidy_list(thelist, expected_length, default_value, default_reduction=0.9):
+        '''
+        Given a list of modules of thicknesses, tidy up, fill in the gaps, trim.
+        replace -1s with expected values and fatten up list to full expected length
+        '''
+        if thelist is None:
+            #none provided, calculate entirely default train
+            thelist = [1*default_reduction**i for i in range(expected_length)]
+
+        for i,module in enumerate(thelist):
+            #check for any -1s and fill them in
+            if module < 0:
+                if i ==0:
+                    thelist[i] = default_value
+                else:
+                    thelist[i] = thelist[i-1]*default_reduction
+
+
+        if len(thelist) < expected_length:
+            #only some provided, finish the rest
+            for i in range(expected_length - len(thelist)):
+                thelist += [thelist[-1]*default_reduction]
+
+        return thelist[:expected_length]
+
+    def generate_gears(self, modules=None, thicknesses=None, rod_diameters=None):
+        '''
+        modules - list of modules sizes, or -1 for auto. can be shorter than train and rest will be filled in
+        thicknesses - list of thicknesses of gears, as per moduels -1 for auto. can be shorter than train and rest will be filled in
+        '''
+
+        self.modules = self.tidy_list(modules, expected_length=self.wheels, default_value=1, default_reduction=0.9)
+        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.wheels, default_value=5, default_reduction=0.9)
+        if rod_diameters is None:
+            rod_diameters = [3]*self.wheels
