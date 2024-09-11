@@ -214,7 +214,7 @@ if moon:
 plaque = clock.Plaque(text_lines=["M33#2 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
 
 plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
-                                 pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=25,
+                                 pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=21,
                                  standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
                                  plaque=plaque, split_detailed_plate=True)
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
@@ -259,8 +259,11 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 
 mat, mat_detail = plates.get_mat()
 
-show_object(mat.rotate((0,0,0),(1,0,0),90).translate((0,0,0)), options={"color": clock.Colour.DARK_GREEN}, name="Mat")
-show_object(mat_detail.rotate((0,0,0),(1,0,0),90), options={"color": clock.Colour.BRASS}, name="Mat Detail")
+base_of_clock = (0, plates.bottom_pillar_positions[0][1] - plates.bottom_pillar_r,plates.plate_distance/2 + plates.get_plate_thick(back=True))
+
+
+show_object(mat.rotate((0,0,0),(1,0,0),-90).translate((0,-4,0)).translate(base_of_clock), options={"color": clock.Colour.DARK_GREEN}, name="Mat")
+show_object(mat_detail.rotate((0,0,0),(1,0,0),-90).translate((0,-4,0)).translate(base_of_clock), options={"color": clock.Colour.BRASS}, name="Mat Detail")
 
 if output_STL:
 

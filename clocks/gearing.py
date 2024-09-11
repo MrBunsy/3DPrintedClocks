@@ -2219,6 +2219,8 @@ class Arbor:
             return ArborType.ESCAPE_WHEEL
         if self.escapement is not None:
             return ArborType.ANCHOR
+        if self.pinion is not None:
+            return ArborType.LONE_PINION
         return ArborType.UNKNOWN
 
     def get_rod_d(self):

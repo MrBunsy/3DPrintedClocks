@@ -165,6 +165,8 @@ class ArborType(Enum):
     POWERED_WHEEL = "PoweredWheel"
     ESCAPE_WHEEL = "EscapeWheel"
     ANCHOR = "Anchor"
+    #used for special things like fans or flys
+    LONE_PINION = "LonePinion"
     UNKNOWN = "Unknown"
 
 class PowerType(Enum):

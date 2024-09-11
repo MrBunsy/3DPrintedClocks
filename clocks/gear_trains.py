@@ -1281,12 +1281,12 @@ class SlideWhistleTrain:
     @staticmethod
     def tidy_list(thelist, expected_length, default_value, default_reduction=0.9):
         '''
-        Given a list of modules of thicknesses, tidy up, fill in the gaps, trim.
+        Given a list of modules or thicknesses, tidy up, fill in the gaps, trim.
         replace -1s with expected values and fatten up list to full expected length
         '''
         if thelist is None:
             #none provided, calculate entirely default train
-            thelist = [1*default_reduction**i for i in range(expected_length)]
+            thelist = [default_value*default_reduction**i for i in range(expected_length)]
 
         for i,module in enumerate(thelist):
             #check for any -1s and fill them in
@@ -1304,13 +1304,63 @@ class SlideWhistleTrain:
 
         return thelist[:expected_length]
 
-    def generate_gears(self, modules=None, thicknesses=None, rod_diameters=None):
+    def generate_gears(self, modules=None, thicknesses=None, rod_diameters=None, default_reduction=0.9, pinion_thicks=None, lanterns=None, style=None):
         '''
+        The old gen_gears in GoingTrain was becoming unmanagable. I'm trying something more simple here, manually provide everything in a list,
+        but with the option of -1 for auto or just leaving things off the list to be auto calculated
+
         modules - list of modules sizes, or -1 for auto. can be shorter than train and rest will be filled in
         thicknesses - list of thicknesses of gears, as per moduels -1 for auto. can be shorter than train and rest will be filled in
         '''
 
-        self.modules = self.tidy_list(modules, expected_length=self.wheels, default_value=1, default_reduction=0.9)
-        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.wheels, default_value=5, default_reduction=0.9)
-        if rod_diameters is None:
-            rod_diameters = [3]*self.wheels
+        self.modules = self.tidy_list(modules, expected_length=self.wheels, default_value=1, default_reduction=default_reduction)
+        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.wheels, default_value=5, default_reduction=default_reduction)
+        self.rod_diameters = self.tidy_list(rod_diameters, expected_length=self.wheels, default_value=3, default_reduction=1)
+        self.lanterns = lanterns
+        if self.lanterns is None:
+            self.lanterns = []
+
+        self.pinion_thicks = pinion_thicks
+        if self.pinion_thicks is None:
+            self.pinion_thicks = [min(wheel_thick+3, wheel_thick*2) for wheel_thick in self.thicknesses]
+        else:
+            if len(self.pinion_thicks) < self.wheels:
+                self.pinion_thicks += [-1]*(self.wheels - len(self.pinion_thicks))
+            for i, pinion_thick in self.pinion_thicks:
+                if pinion_thick < 0:
+                    wheel_thick = self.thicknesses[i]
+                    pinion_thick = min(wheel_thick+3, wheel_thick*2)
+                    self.pinion_thicks[i] = pinion_thick
+
+        print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}")
+
+        self.pairs = [WheelPinionPair(pair[0], pair[1], self.modules[i], lantern=i in self.lanterns) for i, pair in enumerate(self.trains[0]["train"])]
+
+        self.arbors = []
+        pinion_at_front = True
+        clockwise = True
+
+        for i in range(self.wheels):
+            arbor_d = self.rod_diameters[i]
+            powered_wheel = None
+            if i == 0:
+                powered_wheel = self.powered_wheel
+                arbor_d = self.powered_wheel.arbor_d
+                pinion = None
+                wheel = self.pairs[i].wheel
+                distance_to_next_arbour = self.pairs[i].centre_distance
+            elif i == self.wheels - 1:
+                #the fan
+                wheel = None
+                pinion = self.pairs[i - 1].pinion
+                distance_to_next_arbour = -1
+            else:
+                pinion = self.pairs[i-1].pinion
+                wheel = self.pairs[i].wheel
+                distance_to_next_arbour = self.pairs[i].centre_distance
+
+            clockwise_from_powered_side = clockwise == pinion_at_front
+
+            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, wheel_thick=self.thicknesses[i], arbor_d=arbor_d,
+                                     distance_to_next_arbour=distance_to_next_arbour, style=style, pinion_at_front=pinion_at_front,
+                                     clockwise_from_pinion_side=clockwise_from_powered_side))
