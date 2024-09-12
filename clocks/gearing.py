@@ -1055,7 +1055,7 @@ class Gear:
 
         return gear
 
-    def get_STL_modifier_shape(self, thick, offset_z=0, min_inner_r=1.5):
+    def get_STL_modifier_shape(self, thick, offset_z=0, min_inner_r=1.5, nozzle_size=0.4):
         '''
         return a shape that covers just the teeth to help apply tweaks to the slicing settings
         '''
@@ -1065,7 +1065,8 @@ class Gear:
         #     inner_r = min_inner_r
 
         #two 0.45 traces extra
-        inner_r = self.get_min_radius() - 0.9
+
+        inner_r = self.get_min_radius() - 0.9 * (nozzle_size/0.4)
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
@@ -2333,13 +2334,13 @@ class Arbor:
 
         return arbour
 
-    def get_STL_modifier_pinion_shape(self):
+    def get_STL_modifier_pinion_shape(self, nozzle_size=0.4):
         '''
         return a shape that covers the teeth of the pinions for apply tweaks to the slicing settings
         '''
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
-            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick + self.pinion_extension, min_inner_r=self.arbor_d / 2)
+            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick + self.pinion_extension, min_inner_r=self.arbor_d / 2, nozzle_size=nozzle_size)
 
         return None
 
@@ -3032,9 +3033,9 @@ class MotionWorks:
 
         return pinion
 
-    def get_cannon_pinion_pinion_stl_modifier(self):
+    def get_cannon_pinion_pinion_stl_modifier(self, nozzle_size=0.4):
 
-        return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannon_pinion_pinion_thick, offset_z=self.pinion_cap_thick)
+        return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannon_pinion_pinion_thick, offset_z=self.pinion_cap_thick, nozzle_size=nozzle_size)
 
 
     def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
@@ -3126,8 +3127,8 @@ class MotionWorks:
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
         return Arbor(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
 
-    def get_motion_arbout_pinion_stl_modifier(self):
-        return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinion_thick + self.pinion_cap_thick, offset_z=self.thick)
+    def get_motion_arbout_pinion_stl_modifier(self, nozzle_size=0.4):
+        return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinion_thick + self.pinion_cap_thick, offset_z=self.thick, nozzle_size=nozzle_size)
 
     def get_motion_arbour_shape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
@@ -3216,22 +3217,16 @@ class MotionWorks:
         print("Outputting ", out)
         exporters.export(self.get_motion_arbour_shape(), out)
 
-        out = os.path.join(path, "{}_motion_arbour_pinion_modifier.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_motion_arbour().get_STL_modifier_pinion_shape(), out)
+        for nozzle in [0.25, 0.4]:
+            export_STL(self.get_motion_arbour().get_STL_modifier_pinion_shape(nozzle_size=nozzle), object_name=f"motion_arbour_pinion_modifier_{nozzle}", clock_name=name, path=path)
+            export_STL(self.get_cannon_pinion_pinion_stl_modifier(nozzle_size=nozzle), object_name=f"motion_cannon_pinion_modifier_{nozzle}", clock_name=name, path=path)
+            export_STL(self.get_motion_arbout_pinion_stl_modifier(nozzle_size=nozzle), object_name=f"motion_arbour_pinion_modifier_{nozzle}", clock_name=name, path=path)
 
         #only needed for prototype with centred seconds hand
         out = os.path.join(path, "{}_motion_cannon_pinion_pinion_standalone.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_cannon_pinion_pinion(standalone=True), out)
 
-        out = os.path.join(path, "{}_motion_cannon_pinion_modifier.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_cannon_pinion_pinion_stl_modifier(), out)
-
-        out = os.path.join(path, "{}_motion_arbour_pinion_modifier.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_motion_arbout_pinion_stl_modifier(), out)
 
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)
