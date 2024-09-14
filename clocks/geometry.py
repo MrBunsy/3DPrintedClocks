@@ -222,10 +222,10 @@ def rotate_vector(vector, axis, angle_rad):
     return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
 
 
-def get_point_from_two_points(pos0, distance0, pos1, distance1, anticlockwise_from_0=True):
+def get_point_on_two_circles(pos0, distance0, pos1, distance1, anticlockwise_from_0=True):
     '''
-    needs a better name.
-    Given two positions, a and b, find the position of another point when you know all the distances
+    needs a better name. (done? I've realised it's basically the intersection of two circles)
+    Given two positions, a and b, find the position of another point when you know all the distances, using cosine law
     I've done this all over the place in calculating gear train placement in plates, but let's finally abstract it out so I can re-use it cleanly
     '''
     #putting into standard form for cosine rule

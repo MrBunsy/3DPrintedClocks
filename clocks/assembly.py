@@ -15,7 +15,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None):
+    def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None, with_mat=False):
         self.plates = plates
         self.hands = hands
         self.dial= plates.dial
@@ -42,6 +42,14 @@ class Assembly:
         if self.plaque is not None:
             self.plaque_shape = self.plaque.get_plaque().rotate((0,0,0), (0,0,1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-self.plaque.thick))
             self.plaque_text_shape = self.plaque.get_text().rotate((0,0,0),(1,0,0),180).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos)
+
+        self.with_mat = with_mat
+
+        if self.with_mat:
+            # assume mantel clock
+
+            self.base_of_clock = (0, plates.bottom_pillar_positions[0][1] - plates.bottom_pillar_r, plates.plate_distance / 2 + plates.get_plate_thick(back=True))
+
 
 
         # =============== shared geometry (between clock model and show_clock) ================
@@ -438,7 +446,10 @@ class Assembly:
             if self.key_model is not None:
                 clock = clock.add(self.key_model)
 
-
+        if self.with_mat:
+            mat, mat_detail = self.plates.get_mat()
+            clock = clock.add(mat.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock))
+            clock = clock.add(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock))
 
         if with_pendulum:
             bob = self.pendulum.get_bob(hollow=False)
@@ -588,7 +599,6 @@ class Assembly:
                 show_object(self.plates.get_text(top_standoff=True), options={"color": text_colour}, name="Top Standoff Text")
                 show_object(self.plates.get_text(top_standoff=False), options={"color": text_colour}, name="Bottom Standoff Text")
 
-
         for a, arbor in enumerate(self.plates.arbors_for_plate):
             show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
         # return
@@ -684,6 +694,12 @@ class Assembly:
                 weightShape = self.weights[i].getWeight().rotate((0,0,0), (1,0,0),-90)
 
                 show_object(weightShape.translate(weight_pos), options={"color": weight_colour}, name="Weight_{}".format(i))
+
+        if self.with_mat:
+            mat, mat_detail = self.plates.get_mat()
+
+            show_object(mat.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[0]}, name="Mat")
+            show_object(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[2 % len(plate_colours)]}, name="Mat Detail")
 
         if with_rods:
             #show with diameter slightly smaller so it's clearer on the render what's rod and what's hole

@@ -172,8 +172,8 @@ train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, th
                 powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=lanterns, pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
 # train.powered_wheel_arbors[1].wheel.fake_outer_r = pair.wheel.get_max_radius()
-print("train.powered_wheel_arbors[0].centre_distance, ", train.powered_wheel_arbors[0].distance_to_next_arbour)
-print("train.powered_wheel_arbors[1].centre_distance, ", train.powered_wheel_arbors[1].distance_to_next_arbour)
+print("train.powered_wheel_arbors[0].centre_distance, ", train.powered_wheel_arbors[0].distance_to_next_arbor)
+print("train.powered_wheel_arbors[1].centre_distance, ", train.powered_wheel_arbors[1].distance_to_next_arbor)
 # train.print_info(weight_kg=1.5)
 train.print_info(for_runtime_hours=24*7)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -225,7 +225,7 @@ hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=m
                     second_length=dial.second_hand_mini_dial_d * 0.45 if not moon else 1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
 
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True)
 dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 if moon:
     dial_colours =  [clock.Colour.BLUE, clock.Colour.WHITE]
@@ -256,14 +256,6 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
                     plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
-
-mat, mat_detail = plates.get_mat()
-
-base_of_clock = (0, plates.bottom_pillar_positions[0][1] - plates.bottom_pillar_r,plates.plate_distance/2 + plates.get_plate_thick(back=True))
-
-
-show_object(mat.rotate((0,0,0),(1,0,0),-90).translate((0,-4,0)).translate(base_of_clock), options={"color": clock.Colour.DARK_GREEN}, name="Mat")
-show_object(mat_detail.rotate((0,0,0),(1,0,0),-90).translate((0,-4,0)).translate(base_of_clock), options={"color": clock.Colour.BRASS}, name="Mat Detail")
 
 if output_STL:
 

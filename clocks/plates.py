@@ -329,6 +329,8 @@ class SimpleClockPlates:
 
         self.split_detailed_plate = split_detailed_plate
 
+
+
         #for other clock plates to override
         self.text_on_standoffs = False
         self.standoff_pillars_separate = standoff_pillars_separate
@@ -848,7 +850,7 @@ class SimpleClockPlates:
         for i,bearingPos in enumerate(self.bearing_positions):
             arbour = self.going_train.get_arbour_with_conventional_naming(i)
             if i < self.going_train.wheels + self.going_train.powered_wheels - 2:
-                maxR = arbour.distance_to_next_arbour - self.going_train.get_arbour_with_conventional_naming(i + 1).get_max_radius() - self.small_gear_gap
+                maxR = arbour.distance_to_next_arbor - self.going_train.get_arbour_with_conventional_naming(i + 1).get_max_radius() - self.small_gear_gap
             else:
                 maxR = 0
 
@@ -1040,8 +1042,8 @@ class SimpleClockPlates:
 
 
             if self.going_train.powered_wheels == 2:
-                first_powered_wheel_to_second_powered_wheel = self.going_train.get_arbour_with_conventional_naming(0).distance_to_next_arbour
-                second_powered_wheel_to_minute_wheel = self.going_train.get_arbour_with_conventional_naming(1).distance_to_next_arbour
+                first_powered_wheel_to_second_powered_wheel = self.going_train.get_arbour_with_conventional_naming(0).distance_to_next_arbor
+                second_powered_wheel_to_minute_wheel = self.going_train.get_arbour_with_conventional_naming(1).distance_to_next_arbor
                 first_powered_wheel_to_minute_wheel = self.going_train.get_arbour_with_conventional_naming(0).get_max_radius() + self.going_train.get_arbour_with_conventional_naming(2).pinion.get_max_radius() + self.small_gear_gap
                 b = first_powered_wheel_to_second_powered_wheel
                 c = second_powered_wheel_to_minute_wheel
@@ -1074,8 +1076,8 @@ class SimpleClockPlates:
             #if we're forcing the escapement above the hands and have more than 3 wheels, we don't want to default to this logic as the escape wheel
             #will be off to one side
             #if we do have 3 wheels then the escape wheel is above the hands
-            minute_wheel_to_second_wheel = self.going_train.get_arbor(0).distance_to_next_arbour
-            second_wheel_to_third_wheel = self.going_train.get_arbor(1).distance_to_next_arbour
+            minute_wheel_to_second_wheel = self.going_train.get_arbor(0).distance_to_next_arbor
+            second_wheel_to_third_wheel = self.going_train.get_arbor(1).distance_to_next_arbor
 
             third_wheel_pinion_r = self.going_train.get_arbor(2).pinion.get_max_radius()
             #bit of hackery here, we should really work out exactly where all the pinions and wheels will line up, then we don't need to guess
@@ -1093,8 +1095,8 @@ class SimpleClockPlates:
                 # #MORE HACK TODO REMOVE ME
                 # escape_wheel_arbor_r = 2
                 minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius() + escape_wheel_arbor_r + self.small_gear_gap
-                third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour
-                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbour
+                third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbor
+                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbor
 
                 if forcing_escape_wheel_slightly_off_centre:
                     escape_wheel_angle_from_hands = math.pi/2 - on_side*math.asin((third_wheel_to_escape_wheel/2)/minute_wheel_to_escape_wheel)
@@ -1145,8 +1147,8 @@ class SimpleClockPlates:
             #
             if self.going_train.wheels > 3 and not (forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre):
                 #stick the escape wheel out too
-                third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbour
-                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbour + self.anchor_distance_fudge_mm
+                third_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbor
+                escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbor + self.anchor_distance_fudge_mm
                 #third_wheel_to_anchor is a bit tricky to calculate. going to try instead just choosing an angle
                 #TODO could make anchor thinner and then it just needs to avoid the rod
                 third_wheel_to_anchor = self.going_train.get_arbour_with_conventional_naming(-1).get_max_radius() + self.going_train.get_arbor(2).get_max_radius() + self.small_gear_gap
@@ -1171,12 +1173,12 @@ class SimpleClockPlates:
             #aim: have pendulum directly above hands
             positions = [(0,0)]
             for i in range(1, self.going_train.wheels):
-                distance = self.going_train.get_arbor(i - 1).distance_to_next_arbour
+                distance = self.going_train.get_arbor(i - 1).distance_to_next_arbor
                 if i == self.going_train.wheels:
                     distance += self.anchor_distance_fudge_mm
                 positions.append(np_to_set(np.add(positions[i - 1], polar(self.angles_from_minute[i - 1], distance))))
 
-            escape_wheel_to_anchor = self.going_train.get_arbor(-2).distance_to_next_arbour + self.anchor_distance_fudge_mm
+            escape_wheel_to_anchor = self.going_train.get_arbor(-2).distance_to_next_arbor + self.anchor_distance_fudge_mm
             if escape_wheel_to_anchor < abs(positions[-1][0]):
                 #need to re-think how this works
                 raise ValueError("Cannot put anchor above hands without tweaking")
@@ -1185,7 +1187,7 @@ class SimpleClockPlates:
                 #put chain in the centre. this works (although lots of things assume the bottom bearing is in the centre)
                 #but I'm undecided if I actually want it - if we have two screwholes is that sufficient? the reduction in height is minimal
                 x = self.going_train.powered_wheel.diameter / 2
-                r = self.going_train.get_arbour_with_conventional_naming(0).distance_to_next_arbour
+                r = self.going_train.get_arbour_with_conventional_naming(0).distance_to_next_arbor
                 angle = math.acos(x/r)
                 if self.weight_on_right_side:
                     self.angles_from_chain[0] = math.pi - angle
@@ -1199,7 +1201,7 @@ class SimpleClockPlates:
             # TODO decide if we want the train to go in different directions based on which side the weight is
             self.hands_on_side = -1 if self.going_train.is_weight_on_the_right() else 1
             arbours = [self.going_train.get_arbour_with_conventional_naming(arbour) for arbour in range(self.going_train.wheels + self.going_train.powered_wheels)]
-            distances = [arbour.distance_to_next_arbour for arbour in arbours]
+            distances = [arbour.distance_to_next_arbor for arbour in arbours]
             maxRs = [arbour.get_max_radius() for arbour in arbours]
             arcAngleDeg = 270
 
@@ -1265,7 +1267,7 @@ class SimpleClockPlates:
                 self.arbourThicknesses.append(self.going_train.get_arbor(i).get_total_thickness())
                 # print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
             else:
-                r = self.going_train.get_arbor(i - 1).distance_to_next_arbour
+                r = self.going_train.get_arbor(i - 1).distance_to_next_arbor
                 # print("r", r)
                 # all the other going wheels up to and including the escape wheel
                 if i == self.going_train.wheels:
@@ -2209,6 +2211,10 @@ class SimpleClockPlates:
         bottom_total_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
         tal_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
         top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
+
+        #TODO some mechanism so the mantel clock plates knows the bottom total length doesn't need back_plate_from_wall
+        #or override in in MantelClockPlates? seems like a lot of duplication
+        # if self.
 
         if not self.screws_from_back[0][0] and self.back_plate_from_wall > 0:
             # space to embed the nut in the standoff
@@ -3317,7 +3323,7 @@ class MantelClockPlates(SimpleClockPlates):
         self.foot_fillet_r = 2
         # self.moon_holder_y = -1
         # self.moon_holder_wide = self.plate_width*1.5
-
+        self.mat_thick = 4
         self.little_plate_for_pawl = False
 
         self.little_arm_to_motion_works = False
@@ -3407,7 +3413,7 @@ class MantelClockPlates(SimpleClockPlates):
         b = self.bearing_positions[self.going_train.powered_wheels + 2][:2]
         distance_to_a = self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.top_pillar_r + self.small_gear_gap
         distance_to_b = self.arbors_for_plate[self.going_train.powered_wheels + 2].get_max_radius() + self.top_pillar_r + self.small_gear_gap
-        top_left = get_point_from_two_points(pos0=a, pos1=b, distance0=distance_to_a, distance1=distance_to_b)
+        top_left = get_point_on_two_circles(pos0=a, pos1=b, distance0=distance_to_a, distance1=distance_to_b)
 
         bottom_distance = self.arbors_for_plate[0].get_max_radius() + self.small_gear_gap + self.bottom_pillar_r
         #TODO check this doesn't collide with next wheel
@@ -3696,7 +3702,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         width = abs(self.bottom_pillar_positions[0][0] - self.bottom_pillar_positions[1][0]) + self.plate_width + extra_space
         length = self.plate_distance + self.get_plate_thick(True) + self.get_plate_thick(False) + extra_space
-        thick = 4
+        thick = self.mat_thick
 
         def get_mat_shape(mat_thick):
             return cq.Workplane("XY").rect(width,length).extrude(mat_thick).edges("|Z").fillet(rounded_r)
@@ -3994,7 +4000,7 @@ class RoundClockPlates(SimpleClockPlates):
             else:
                 #assuming spring driven here (but works for month cord)
                 b = self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1
-                a = self.arbors_for_plate[0].arbor.distance_to_next_arbour
+                a = self.arbors_for_plate[0].arbor.distance_to_next_arbor
                 c = self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1
                 # cosine law
                 angle = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
@@ -4921,5 +4927,20 @@ class SlideWhistlePlates:
     '''
     Think I'll start fresh as there won't be a huge amount in common with the clocks. Probably abstract useful bits from SimpleClockPlates as I go
     '''
-    def __init__(self):
-        pass
+    def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45):
+        self.going_train = going_train
+        self.plate_thick = plate_thick
+        self.style = style
+
+        self.first_wheel_angle = deg_to_rad(first_wheel_angle_deg)
+
+        self.bearing_positions = []
+        self.calc_bearing_positions()
+
+    def calc_bearing_positions(self):
+        #centre on the powered wheel
+        positions_2d = [(0,0), polar(self.first_wheel_angle, self.going_train.arbor[0].distance_to_next_arbor)]
+        for i in range(2, self.going_train.wheels):
+            pass
+
+

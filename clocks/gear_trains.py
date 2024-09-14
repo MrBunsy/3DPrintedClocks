@@ -1304,13 +1304,18 @@ class SlideWhistleTrain:
 
         return thelist[:expected_length]
 
-    def generate_gears(self, modules=None, thicknesses=None, rod_diameters=None, default_reduction=0.9, pinion_thicks=None, lanterns=None, style=None):
+    def generate_arbors(self, modules=None, thicknesses=None, rod_diameters=None, default_reduction=0.9, pinion_thicks=None, lanterns=None, style=None, pinions_face_forwards=None):
         '''
+        Take the gear ratios calculated in calculate_ratios and generate a list of Arbors - which can be handed to the plates
+
         The old gen_gears in GoingTrain was becoming unmanagable. I'm trying something more simple here, manually provide everything in a list,
         but with the option of -1 for auto or just leaving things off the list to be auto calculated
 
-        modules - list of modules sizes, or -1 for auto. can be shorter than train and rest will be filled in
-        thicknesses - list of thicknesses of gears, as per moduels -1 for auto. can be shorter than train and rest will be filled in
+        modules - list of modules sizes, or -1 for auto. Can be shorter than train and rest will be filled in
+        thicknesses - list of thicknesses of gears, as per modules -1 for auto. can be shorter than train and rest will be filled in
+        rod diameters - list of diameters for the rods, or -1 for auto. Can be shorter than train and rest will be filled in
+        pinion_thicks - list of sizes of pinion, or -1 for auto. Can be shorter than train and rest will be filled in
+        pinions_face_forwards - list of True, False or None for auto Can be shorter than train and rest will be filled in
         '''
 
         self.modules = self.tidy_list(modules, expected_length=self.wheels, default_value=1, default_reduction=default_reduction)
@@ -1319,6 +1324,18 @@ class SlideWhistleTrain:
         self.lanterns = lanterns
         if self.lanterns is None:
             self.lanterns = []
+
+        #first "pinion" is the side of the powered wheel with the power mechanism, be it barrel or sprocket or anything else
+        #auto filled in will just alternate true and false through the train
+        self.pinions_face_forwards = pinions_face_forwards
+        if self.pinions_face_forwards is None:
+            #Everything I've made so far has the next wheel stack behind the powered wheel, so that's the default here
+            self.pinions_face_forwards = [True, True]
+        if len(self.pinions_face_forwards) < self.wheels:
+            self.pinions_face_forwards += [None] * (self.wheels - len(self.pinions_face_forwards))
+        for i, pinion_face_forward in enumerate(self.pinions_face_forwards):
+            if pinion_face_forward is None:
+                pinions_face_forwards[i] = not pinions_face_forwards[i-1]
 
         self.pinion_thicks = pinion_thicks
         if self.pinion_thicks is None:
@@ -1332,15 +1349,17 @@ class SlideWhistleTrain:
                     pinion_thick = min(wheel_thick+3, wheel_thick*2)
                     self.pinion_thicks[i] = pinion_thick
 
-        print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}")
+        print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}, pinions on front: {self.pinions_face_forwards}")
 
         self.pairs = [WheelPinionPair(pair[0], pair[1], self.modules[i], lantern=i in self.lanterns) for i, pair in enumerate(self.trains[0]["train"])]
 
         self.arbors = []
-        pinion_at_front = True
-        clockwise = True
+
+        #TODO check this works - I'm ignoring chain at back/front like in old going train, just using the first pinion face forward to decide instead.
+        clockwise = self.powered_wheel.is_clockwise() and self.pinions_face_forwards[0]
 
         for i in range(self.wheels):
+            pinion_at_front = self.pinions_face_forwards[i]
             arbor_d = self.rod_diameters[i]
             powered_wheel = None
             if i == 0:

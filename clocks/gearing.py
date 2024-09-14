@@ -132,6 +132,8 @@ class Gear:
 
         if rounded:
             roundedness = arm_thick/2
+            if roundedness > (outer_radius - inner_radius)*0.4:
+                roundedness = (outer_radius - inner_radius)*0.4
             try:
                 cutter = cutter.edges("|Z").fillet(roundedness)
             except:
@@ -2128,7 +2130,7 @@ class Arbor:
         #the pocket chain wheel or cord wheel (needed to calculate full height and a few tweaks)
         self.powered_wheel=powered_wheel
         self.style=style
-        self.distance_to_next_arbour=distance_to_next_arbour
+        self.distance_to_next_arbor=distance_to_next_arbour
         #for the anchor, this is the side with the pendulum
         #for the powered wheel, this is the side with the chain/rope/cord
         self.pinion_at_front=pinion_at_front
@@ -3212,6 +3214,10 @@ class MotionWorks:
         out = os.path.join(path, "{}_motion_cannon_pinion_x1.015.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_cannon_pinion(hand_holder_radius_adjustment=1.015), out)
+
+        out = os.path.join(path, "{}_motion_cannon_pinion_x1.025.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_cannon_pinion(hand_holder_radius_adjustment=1.025), out)
 
         out = os.path.join(path, "{}_motion_arbour.stl".format(name))
         print("Outputting ", out)

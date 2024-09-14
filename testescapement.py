@@ -90,12 +90,13 @@ teeth=40
 teeth=30
 drop=2.75
 # escapement = AnchorEscapement.get_with_45deg_pallets(teeth, drop)
-escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
+# escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
 # escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=tooth_tip_angle,
+escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
 #                                     tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
 
-anchor_angle_deg = -1.4
-wheel_angle_deg = -1.7
+anchor_angle_deg = -2
+wheel_angle_deg = -5.5#-1.7
 
 # anchor_angle_deg = 0
 # wheel_angle_deg = -1.25

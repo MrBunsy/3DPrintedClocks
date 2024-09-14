@@ -34,10 +34,10 @@ if 'show_object' not in globals():
 
 clock_name= "mantel_clock_34"
 clock_out_dir= "out"
-gear_style=clock.GearStyle.ARCS
+
 pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
-gear_style = clock.GearStyle.ARCS
+gear_style = clock.GearStyle.ROUNDED_ARMS5
 #
 # lift=3
 # drop=3
@@ -46,7 +46,7 @@ gear_style = clock.GearStyle.ARCS
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
 #                                     type=clock.EscapementType.DEADBEAT)
 
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, force_diameter=False, anchor_thick=10)
+escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
 
 
 train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
@@ -55,8 +55,12 @@ barrel_gear_thick =5
 
 module_reduction=0.9
 #chain_wheel_ratios=[[61, 10], [62, 10]],
+#, chain_wheel_ratios=[[81, 10], [61, 10]])
+#can't decide between trying smaller spring or higher ratio with standard smiths spring - so slightly more even power and potentially longer total runtime if I
+#don't care about accuracy
+#, spring=clock.MAINSPRING_183535
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=5, ratchet_thick=8, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[64, 10], [62, 10]])#, fraction_of_max_turns=0.5)
+                        style=gear_style, wall_thick=8, ratchet_thick=8, chain_wheel_ratios=[[75, 10], [61, 10]])#fraction_of_max_turns=0.375)# chain_wheel_ratios=[[64, 10], [64, 10]])#,fraction_of_max_turns=0.4)#, chain_wheel_ratios=[[64, 10], [62, 10]])#, fraction_of_max_turns=0.5)
 #, chain_wheel_ratios=[[61, 10], [62, 10]])#
 # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=9, max_wheel_teeth=150, pinion_max_teeth=12, wheel_min_teeth=100, loud=True)
 #2/3s without second hand with 30 teeth
@@ -84,7 +88,8 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 pillar_style=clock.PillarStyle.COLUMN
 
-dial_d=175
+#dial_d=175
+dial_d=200
 dial_width=25
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
@@ -109,13 +114,13 @@ plates = clock.MantelClockPlates(train, motion_works, name="Mantel 34", dial=dia
 plates.little_arm_to_motion_works = False
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
-hand_style = clock.HandStyle.SPADE
+hand_style = clock.HandStyle.SWORD
 hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.outside_d*0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                     second_length=1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
 
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True)
 dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 
 
