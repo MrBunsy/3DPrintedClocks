@@ -4399,6 +4399,11 @@ class RoundClockPlates(SimpleClockPlates):
         if top_y - self.bearing_positions[-1][1] < self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 2:
             top_y = self.bearing_positions[-1][1] + self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 2
 
+        distance_to_anchor = distance_between_two_points(self.bearing_positions[-1][:2], self.hands_position)
+        if distance_to_anchor > self.radius and not self.power_at_bottom:
+            #upside downy!
+            top_y = self.top_pillar_positions[0][1]
+
         # if self.bearing_positions[-1][1] - self.top_pillar_positions[0][1] < 20:
         #     #bearing position is sufficiently above the pillars
         #     top_y = self.top_pillar_positions[0][1]
@@ -4512,73 +4517,85 @@ class RoundClockPlates(SimpleClockPlates):
         the bit that holds the pendulum at the top
         '''
 
-
-        width = self.pillar_r*2
-
-        anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
-
-
-        anchor_holder_fixing_points = self.top_pillar_positions
-
-        # curve_ends = []
-        # for fixing_pos in anchor_holder_fixing_points:
-        #     line_up = Line(fixing_pos, direction=(0,1))
-        #     curve_ends += line_up.intersection_with_circle(circle_centre=self.hands_position, circle_r = anchor_distance)
-
-        # curve_ends = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
-
         plate_thick = self.get_plate_thick(standoff=True)
-        #
-        # standoff = get_stroke_line([anchor_holder_fixing_points[0], curve_ends[0]], wide=width, thick=plate_thick)
-        # standoff = standoff.union(get_stroke_line([anchor_holder_fixing_points[1], curve_ends[1]], wide=width, thick=plate_thick))
-        # standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
+        wall_fixing_pos = self.get_screwhole_positions()[0][:2]
+        distance_to_anchor = distance_between_two_points(self.bearing_positions[-1][:2], self.hands_position)
 
-        #using sagitta to work out radius of curve that links all points
-        l = distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
-        s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
-        r_anchor_bearing = s/2 + (l**2)/(8*s)
+        if distance_to_anchor > self.radius and not self.power_at_bottom:
+            #bit of a special case, anchor is at the bottom
+            cock = get_stroke_line(self.top_pillar_positions, wide=self.pillar_r*2, thick = plate_thick)
+            central_point = get_average_of_points(self.top_pillar_positions)
+            cock = cock.union(get_stroke_line([central_point, self.bearing_positions[-1][:2]], wide=self.pillar_r*2, thick = plate_thick))
+            cock = cock.union(get_stroke_arc(self.top_pillar_positions[0], self.top_pillar_positions[1], self.radius, wide=self.pillar_r*2, thick=plate_thick))
 
-        standoff = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
+        else:
 
+            width = self.pillar_r*2
+
+            anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
+
+
+            anchor_holder_fixing_points = self.top_pillar_positions
+
+            # curve_ends = []
+            # for fixing_pos in anchor_holder_fixing_points:
+            #     line_up = Line(fixing_pos, direction=(0,1))
+            #     curve_ends += line_up.intersection_with_circle(circle_centre=self.hands_position, circle_r = anchor_distance)
+
+            # curve_ends = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
+
+            plate_thick = self.get_plate_thick(standoff=True)
+            #
+            # standoff = get_stroke_line([anchor_holder_fixing_points[0], curve_ends[0]], wide=width, thick=plate_thick)
+            # standoff = standoff.union(get_stroke_line([anchor_holder_fixing_points[1], curve_ends[1]], wide=width, thick=plate_thick))
+            # standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
+
+            #using sagitta to work out radius of curve that links all points
+            l = distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
+            s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
+            r_anchor_bearing = s/2 + (l**2)/(8*s)
+
+            cock = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
+
+
+            if self.wall_mounted:
+                # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
+                # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
+                # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
+
+                # using sagitta to work out radius of curve that links all points (again)
+                s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
+                r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
+
+                cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_wall_fixing, wide=width, thick=plate_thick))
+
+                gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
+                if gap_size < 2:
+                    #don't leave little gaps
+                    cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
 
         if self.wall_mounted:
-            # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
-            # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
-            # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
-            wall_fixing_pos = self.get_screwhole_positions()[0][:2]
-            # using sagitta to work out radius of curve that links all points (again)
-            s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
-            r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
 
-            standoff = standoff.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_wall_fixing, wide=width, thick=plate_thick))
-
-            gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
-            if gap_size < 2:
-                #don't leave little gaps
-                standoff = standoff.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
-
-
-
-            standoff = self.cut_wall_fixing_hole(standoff, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
+            cock = self.cut_wall_fixing_hole(cock, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
 
         if not self.standoff_pillars_separate:
-            standoff = standoff.union(self.get_standoff_pillars(top=True).translate((0,0,self.back_plate_from_wall)))
-        standoff = self.cut_anchor_bearing_in_standoff(standoff)
+            cock = cock.union(self.get_standoff_pillars(top=True).translate((0,0,self.back_plate_from_wall)))
+        cock = self.cut_anchor_bearing_in_standoff(cock)
 
 
 
-        standoff = standoff.translate((0,0,-self.back_plate_from_wall))
+        cock = cock.translate((0,0,-self.back_plate_from_wall))
 
         if self.text_on_standoffs:
-            standoff = standoff.cut(self.get_text(top_standoff=True))
+            cock = cock.cut(self.get_text(top_standoff=True))
 
-        standoff = standoff.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
+        cock = cock.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
 
 
         # if for_printing and self.standoff_pillars_separate:
         #     standoff = standoff.rotate((0,0,0),(1,0,0),180)
 
-        return standoff
+        return cock
 
     def get_rod_lengths(self):
         '''

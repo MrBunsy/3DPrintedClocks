@@ -56,7 +56,7 @@ moduleReduction=0.95#0.85
 #wall thick of 9 seemed fine, but I want it to be consistent with the arbor
 #larger barrel wheel actually works out at a smaller plate than having a larger intermediate wheel
 train.gen_spring_barrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
+                        wall_thick=10, chain_wheel_ratios=[[61, 10], [67, 10]], extra_barrel_height=1.5)
 
 '''
 [[61, 10], [83, 10]]
@@ -113,7 +113,7 @@ plaque = clock.Plaque(text_lines=["M38#0 {:.1f}cm L.Wallin 2024".format(train.pe
 # dial_diameter=205
 dial_diameter=dial_d
 dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
-                  outer_edge_style=clock.DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6-2, seconds_style=clock.DialStyle.LINES_MAJOR_ONLY,
+                  outer_edge_style=clock.DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6, seconds_style=clock.DialStyle.LINES_MAJOR_ONLY,
                   bottom_fixing=False, top_fixing=False, pillar_style=pillar_style)
 plates = clock.RoundClockPlates(train, motion_works, name="Wall 38", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=40, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
