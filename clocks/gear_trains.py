@@ -864,7 +864,7 @@ class GoingTrain:
                 chain_module_multiplier *= 1.01
                 print("Chain wheel module multiplier to {} in order to fit next to minute wheel".format(chain_module_multiplier))
                 if has_lantern:
-                    raise RuntimeError("Trying to change module size for a lantern pinion, will likely not support available steel rods")
+                    raise RuntimeError(f"Trying to change module size for a lantern pinion, will likely not support available steel rods. Minute wheel {minute_wheel_space} last powered wheel {last_chain_wheel_space}")
             else:
                 fits = True
 

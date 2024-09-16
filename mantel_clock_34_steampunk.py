@@ -60,7 +60,7 @@ module_reduction=0.9
 #don't care about accuracy
 #, spring=clock.MAINSPRING_183535
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=8, ratchet_thick=8, chain_wheel_ratios=[[75, 10], [61, 10]])#fraction_of_max_turns=0.375)# chain_wheel_ratios=[[64, 10], [64, 10]])#,fraction_of_max_turns=0.4)#, chain_wheel_ratios=[[64, 10], [62, 10]])#, fraction_of_max_turns=0.5)
+                        style=gear_style, wall_thick=6, ratchet_thick=8, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[75, 10], [61, 10]])#fraction_of_max_turns=0.375)# chain_wheel_ratios=[[64, 10], [64, 10]])#,fraction_of_max_turns=0.4)#, chain_wheel_ratios=[[64, 10], [62, 10]])#, fraction_of_max_turns=0.5)
 #, chain_wheel_ratios=[[61, 10], [62, 10]])#
 # train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=9, max_wheel_teeth=150, pinion_max_teeth=12, wheel_min_teeth=100, loud=True)
 #2/3s without second hand with 30 teeth
@@ -71,7 +71,7 @@ back_plate_from_wall=30
 
 
 pinion_extensions = {0:1, 1:3, 3:8}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 
 module_sizes = [0.8,0.7,0.7]
 
@@ -89,7 +89,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 pillar_style=clock.PillarStyle.COLUMN
 
 #dial_d=175
-dial_d=200
+dial_d=205
 dial_width=25
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
@@ -130,7 +130,7 @@ dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
 
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=dial_colours,
-                    plate_colours=[clock.Colour.BLACK, clock.Colour.BRASS, clock.Colour.BRASS])
+                    plate_colours=[clock.Colour.DARKGREY, clock.Colour.BRASS, clock.Colour.BRASS])
 plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS]
 #plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))

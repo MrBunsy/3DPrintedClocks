@@ -61,7 +61,7 @@ class Assembly:
         self.motion_works_z_offset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.plates.endshake / 2
         self.motion_works_z = self.front_of_clock_z + self.motion_works_z_offset
 
-        self.motion_works_pos = self.plates.hands_position.copy()
+        self.motion_works_pos = self.plates.hands_position[:]
         self.second_hand_pos = None
         # total, not relative, height because that's been taken into accounr with motionworksZOffset
         self.minute_hand_z = self.front_of_clock_z + self.motion_works_z_offset + self.motion_works.get_cannon_pinion_total_height() - self.hands.thick

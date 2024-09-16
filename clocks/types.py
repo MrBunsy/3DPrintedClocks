@@ -238,3 +238,4 @@ class DialStyle(Enum):
     RING = "ring"
     FANCY_WATCH_NUMBERS = "fancy_watch_numbers" #triangle at 12, numbers at 3,6,9 dashes at all other numbers
     LINES_INDUSTRIAL = "lines_industrial" # loosely based on an old siemens clock
+    LINES_MAJOR_ONLY = "lines_major_only"

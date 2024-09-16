@@ -731,7 +731,7 @@ class Dial:
 
         if self.second_hand_relative_pos is not None:
             # add a mini dial for the second hand (NOTE assumes second hand is vertical)
-            self.second_hand_mini_dial_d = ((self.outside_d/2 - self.dial_width + self.dial_detail_from_edges) - self.second_hand_relative_pos[1])*2
+            self.second_hand_mini_dial_d = ((self.outside_d/2 - self.dial_width + self.dial_detail_from_edges) - abs(self.second_hand_relative_pos[1]))*2
 
             if self.seconds_dial_width > self.second_hand_mini_dial_d/2:
                 print("seconds dial too small for default seconds dial width")
@@ -1052,7 +1052,8 @@ class Dial:
 
         top_triangle = cq.Workplane("XY").moveTo(bottom[0], bottom[1]).lineTo(top_left[0], top_left[1]).lineTo(top_right[0], top_right[1]).close().extrude(self.detail_thick)
 
-        lines = self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=12, only=[1,2,4,5,7,8,10,11], small_thick=width*0.2)
+        #short_line_length_fraction of 1 deliberately for this style
+        lines = self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=12, only=[1,2,4,5,7,8,10,11], small_thick=width*0.2, short_line_length_fraction=1)
 
         return numbers.add(top_triangle).add(lines)
     def get_style_for_dial(self, style, outer_r, width, detail_from_edges, inner_ring = False, outer_ring = False):
@@ -1086,6 +1087,10 @@ class Dial:
         elif style == DialStyle.LINES_INDUSTRIAL:
             return self.get_lines_detail(outer_r, width, detail_from_edges, thick_indicators=True, long_indicators=True, outer_ring=True,
                                          big_thick=width*0.25, small_thick=width*0.1, long_line_length_fraction=1, short_line_length_fraction=0.35)
+        elif style == DialStyle.LINES_MAJOR_ONLY:
+            # return self.get_lines_detail(outer_r, width, detail_from_edges, thick_indicators=True, long_indicators=True, outer_ring=outer_ring,
+            #                              big_thick=width * 0.25, small_thick=0, long_line_length_fraction=1, short_line_length_fraction=0.35, only=[m for m in range(0,60,5)])
+            return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, thick_indicators=True, inner_ring=inner_ring, outer_ring=outer_ring, only=[m for m in range(0,60,5)])
         else:
             raise ValueError("Unsupported dial type")
 
@@ -1170,11 +1175,15 @@ class Dial:
 
     def get_seconds_dial_detail(self):
         dial = None
+        outer_r = self.second_hand_mini_dial_d / 2
+        from_edge = self.seconds_dial_detail_from_edges
+        width = self.seconds_dial_width
         if self.seconds_style == DialStyle.LINES_ARC:
-            dial = self.get_arcs_detail(outer_r=self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
+            dial = self.get_arcs_detail(outer_r=outer_r, dial_width=width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
         elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
             dial = self.get_concentric_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
-
+        else:
+            dial = self.get_style_for_dial(style=self.seconds_style, outer_r=outer_r, width=width, detail_from_edges=from_edge)
         if dial is not None:
             dial = dial.translate(self.second_hand_relative_pos)
 

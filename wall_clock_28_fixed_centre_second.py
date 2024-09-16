@@ -80,9 +80,14 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=0.675, bearing=clock.get_bearing_info(3),
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1)
-motionWorks.calculate_size(35)
+motionWorks.calculate_size(35)#was 35, trying reducing size of motion works just a fraction to see
+
+# motionWorks2 = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
+#                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1)
+# motionWorks2.calculate_size(35)#was 35, trying reducing size of motion works just a fraction to see if this is waht's causing the jam
+# motionWorks2.
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=15)
 
@@ -146,6 +151,7 @@ if outputSTL:
     #
     # train.output_STLs(clockName, clockOutDir)
     motionWorks.output_STLs(clockName,clockOutDir)
+    # motionWorks2.output_STLs(clockName+"motion_works_tweak", clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     dial.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)

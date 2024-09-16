@@ -305,7 +305,7 @@ class SimpleClockPlates:
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,anchor_distance_fudge_mm=0):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,anchor_distance_fudge_mm=0, power_at_bottom=True):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -329,6 +329,8 @@ class SimpleClockPlates:
 
         self.split_detailed_plate = split_detailed_plate
 
+        #powered wheel at base of clock.
+        self.power_at_bottom = power_at_bottom
 
 
         #for other clock plates to override
@@ -1369,6 +1371,12 @@ class SimpleClockPlates:
 
         # print(self.bearingPositions)
         self.plate_distance = max(topZs) + self.endshake + extraFront + extraBack
+
+
+        if not self.power_at_bottom:
+            #quick bodge, reverse the y
+            for i in range(len(self.bearing_positions)):
+                self.bearing_positions[i] = [self.bearing_positions[i][0], -self.bearing_positions[i][1], self.bearing_positions[i][2]]
 
     def bottom_of_hour_hand_z(self):
         '''
@@ -3074,6 +3082,9 @@ class SimpleClockPlates:
         self.key_length = key_length - key_within_front_plate
 
         square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
+            #the square bit of the key starts outisde the plate. See extra_in_front in gearing. TODO apply this to the cord wheel as well!
+            square_bit_inside_front_plate_length = 0
         key_hole_deep = key_length - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
 
 
@@ -3757,7 +3768,7 @@ class RoundClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
-                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0):
+                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -3776,7 +3787,7 @@ class RoundClockPlates(SimpleClockPlates):
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
-                         anchor_distance_fudge_mm=anchor_distance_fudge_mm)
+                         anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom)
 
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
@@ -3950,37 +3961,8 @@ class RoundClockPlates(SimpleClockPlates):
         self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
         self.radius = self.bottom_pillar_distance/2
 
-
-
-        # self.radius = barrel_distance + self.arbors_for_plate[0].bearing.outer_d/2 + self.bearing_wall_thick - self.plate_width/2
-
-
-
-
-
         centre = self.bearing_positions[self.going_train.powered_wheels][:2]
-        # lines_to_bearings = [Line(centre, anotherPoint=bearing_pos[:2]) for bearing_pos in self.bearing_positions]
-        #
-        # barrel_angle = self.arbors_for_plate[0].get_max_radius()/self.radius
-        # pillar_angle = (self.pillar_r*2) / self.radius
-        #
-        # # #put the bottom pillar as close as we can (ish cba to calculate this exactly) to the barrel wheel
-        # # bottom_pillar_angle = math.pi*1.5 - barrel_angle - pillar_angle*0.75
-        # #above the second powered wheel
-        # second_pillar_angle = lines_to_bearings[1].get_angle() * 0.5 + lines_to_bearings[5].get_angle() * 0.5
-
-        #find where wheels 3 and 4 meet, then put the pillar in that direction
-        points = get_circle_intersections(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius(),
-                                          self.bearing_positions[4][:2], self.arbors_for_plate[4].get_max_radius())
-        #find furthest point
-        if distance_between_two_points(points[0], centre) > distance_between_two_points(points[1], centre):
-            point = points[0]
-        else:
-            point = points[1]
-        line_to_point = Line(centre, anotherPoint=point)
-
         self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick*2
-
 
         barrel_pos = self.bearing_positions[0]
 
@@ -4007,6 +3989,8 @@ class RoundClockPlates(SimpleClockPlates):
                 second_wheel_from_first = np_to_set(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[0][:2]))
                 second_wheel_from_first_angle = math.atan2(second_wheel_from_first[1], second_wheel_from_first[0])
                 final_angle = second_wheel_from_first_angle - angle
+                if not self.power_at_bottom:
+                    final_angle = second_wheel_from_first_angle + angle
                 bottom_pillar_pos = np_to_set(np.add(self.bearing_positions[0][:2], polar(final_angle, b)))
                 self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
                 self.bottom_pillar_positions = [
@@ -4020,16 +4004,44 @@ class RoundClockPlates(SimpleClockPlates):
                 (barrel_pos[0] + pillar_distance, y),
             ]
 
-
-
-        #just above second power wheel
-        # right_pillar_pos = np_to_set(np.add(centre, polar(second_pillar_angle, self.radius)))
+        #this did work, but in general I think we're better off putting the pillars as a mirror of the bottom pillars (for a 3 wheel train or second hand below)
+        # find where wheels 3 and 4 meet, then put the pillar in that direction
+        points = get_circle_intersections(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius(),
+                                          self.bearing_positions[4][:2], self.arbors_for_plate[4].get_max_radius())
+        # find furthest point
+        if distance_between_two_points(points[0], centre) > distance_between_two_points(points[1], centre):
+            point = points[0]
+        else:
+            point = points[1]
+        line_to_point = Line(centre, anotherPoint=point)
 
         left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
+
         if self.going_train.wheels == 3:
             #mirror the bottom pillars
             bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
             left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
+        elif not self.no_upper_wheel_in_centre:
+            #4 wheels but one is centred, probably need to avoid the escape wheel
+            escape_wheel_pos = self.bearing_positions[-2][:2]
+            escape_wheel_distance = distance_between_two_points(escape_wheel_pos, centre)
+            escape_wheel_from_centre = np_to_set(np.subtract(escape_wheel_pos, centre))
+            escape_wheel_angle_from_centre = math.atan2(escape_wheel_from_centre[1], escape_wheel_from_centre[0])
+            escape_wheel_angle_half_span = (self.arbors_for_plate[-2].get_max_radius() + self.gear_gap + self.top_pillar_r)/escape_wheel_distance
+
+            #trying to be generic here so we end up on the outside of the escape wheel regardless of where the wheel is
+            furthest = 0
+            furthest_pos = None
+            potential_positions = [polar(escape_wheel_angle_from_centre + x*escape_wheel_angle_half_span, self.radius) for x in [-1, 1]]
+            for pos in potential_positions:
+                if abs(pos[0]) > furthest:
+                    furthest = abs(pos[0])
+                    furthest_pos = pos
+            furthest_pos = np_to_set(np.add(centre, furthest_pos))
+
+            if furthest_pos[0] < 0:
+                furthest_pos[0] *= -1
+            left_pillar_pos = furthest_pos
 
         #no real need to treat pillars differently, but the base class does so it makes some of the other logic easier
         self.top_pillar_positions = [
@@ -4186,7 +4198,8 @@ class RoundClockPlates(SimpleClockPlates):
             if i > self.going_train.powered_wheels:
                 line_wide = small_arm_wide
 
-            if distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].bearing.outer_d/2 > self.radius - self.pillar_r:
+            bearing_distance = distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].bearing.outer_d/2
+            if self.radius - self.pillar_r < bearing_distance < self.radius + self.pillar_r:
                 #this bearing will be in the outer circle
                 continue
 
@@ -4199,11 +4212,18 @@ class RoundClockPlates(SimpleClockPlates):
 
             bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].bearing.outer_d
             bearing_from_radius = abs(distance_between_two_points(bearing_pos[:2], centre) - self.radius)
+            if i == len(self.bearing_positions) - 1:
+                if back:
+                    #don't support a hole for the anchor!
+                    continue
+                if not back and not self.escapement_on_front and bearing_from_radius > bearing_in_plate_space:
+                    #the anchor needs something to support it on the front plate
+                    line = Line(centre, anotherPoint=bearing_pos[:2])
+                    end = tuple(np.add(centre, np.multiply(line.dir, self.radius)))
 
-            if i == len(self.bearing_positions) - 1 and not back and not self.escapement_on_front and bearing_from_radius > bearing_in_plate_space:
-                #the anchor needs something to support it on the front plate
-                line = Line(centre, anotherPoint=bearing_pos[:2])
-                end = tuple(np.add(centre, np.multiply(line.dir, self.radius)))
+            #few cases where things might extend outside teh circle
+            if bearing_distance > self.radius:
+                end = bearing_pos[:2]
 
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
 
