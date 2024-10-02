@@ -41,7 +41,7 @@ clockName="wall_clock_38"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
-pillar_style=clock.PillarStyle.BARLEY_TWIST
+pillar_style=clock.PillarStyle.TWISTY
 #after a huge amount of faffing about, the problem was the bearings, not the escapement. So I've used the new auto-calculated efficient escapement for a retrofit.
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=36, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
@@ -79,8 +79,8 @@ pendulumSticksOut=10
 backPlateFromWall=30
 # dial_d = 205
 # dial_width=25
-dial_d = 210
-dial_width=20
+dial_d = 205
+dial_width=20-2.5
 
 pinion_extensions = {0:1, 1:15, 2:10,3:18}
 
@@ -115,8 +115,8 @@ dial_diameter=dial_d
 dial = clock.Dial(dial_diameter, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
                   outer_edge_style=clock.DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6, seconds_style=clock.DialStyle.LINES_MAJOR_ONLY,
                   bottom_fixing=False, top_fixing=False, pillar_style=pillar_style)
-plates = clock.RoundClockPlates(train, motion_works, name="Wall 38", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=40, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
+plates = clock.RoundClockPlates(train, motion_works, name="Wall 38", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=10,
+                                motion_works_angle_deg=33, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, power_at_bottom=False)
 
 print("plate radius: ", plates.radius)

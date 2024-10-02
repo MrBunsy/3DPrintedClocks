@@ -41,6 +41,9 @@ class Gear:
     3D object.
 
     There is some blurring of lines with the lantern pinions, and I'm unsure what the best solution is, so for now it's a bit of a muddle
+
+
+
     '''
 
     @staticmethod
@@ -1270,14 +1273,20 @@ class WheelPinionPair:
         return WheelPinionPair.get_module_size_for_distance(distance, new_wheel_teeth, new_pinion_teeth)
 
     errorLimit=0.000001
-    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, lantern=False):
+    def __init__(self, wheelTeeth, pinionTeeth, module=1.5, looseArbours=False, lantern=False, reduced_jamming=False):
         '''
+            Note - BS 978 part 2 states "For minute to hour reduction trains, winding trains and hand setting trains, involute teeth in accordance with Part 1 of this standard,
+     'Involute spur, helical and cross helical gears,' should be used."
+     So I'm going to try this and see if it fixes the motion works jamming I've seen with large numbers of leaves on the pinions.
 
         :param teeth:
         :param radius:
 
         if loose arbours, then this is probably for hte motion works, where there's a lot of play and
         they don't mesh well
+
+        reduced_jamming - reduce size of teeth if depthing is likely to be innacurate (motion works mainly)
+
         '''
         # self.wheelTeeth = wheelTeeth
         # self.pinionTeeth=pinionTeeth
@@ -1300,12 +1309,16 @@ class WheelPinionPair:
         if looseArbours:
             #extend the addendum a bit
             wheel_addendum_factor*=1.2
-
-        if pinionTeeth > 20 and self.gear_ratio < 3:
+        if pinionTeeth > 22:
+            wheel_addendum_factor *=  0.4
+        elif pinionTeeth > 20 or reduced_jamming:# and self.gear_ratio < 3:
+            #update - I *think* this affects larger motion works, causing them to jam, so I've removed the need for a low gear ratio as well.
             # print("Reducing wheel addendum factor wheel teeth: {}, pinion teeth: {}".format(wheelTeeth, pinionTeeth))
             #bodge - got a clock with a really large pinion on the escape wheel and it keeps binding with the previous wheel
             #TODO investigate this further - it might affect the motion works jamming I had on clock 19 and would be good to understand properly
             wheel_addendum_factor *= 0.7
+
+
 
         # BS 978 via https://www.csparks.com/watchmaking/CycloidalGears/index.jxl says addendum radius factor is 1.4*addendum factor
         #(this is aproximating the real curve, i think?)
@@ -1321,7 +1334,7 @@ class WheelPinionPair:
         pinion_dedendum_factor = wheel_addendum_factor*0.95 + 0.4
 
         if module < 0.9:
-            # another bodge
+            # another bodge (q: 2024 - why did I do this?)
             pinion_dedendum_factor*=1.1
 
         pinion_tooth_factor = 1.25
@@ -1376,6 +1389,19 @@ class WheelPinionPair:
         model = wheel.add(pinion.translate((self.centre_distance,0,0)))
         return model
 
+class WheelPinionInvolutePair:
+    '''
+        Note - BS 978 part 2 states "For minute to hour reduction trains, winding trains and hand setting trains, involute teeth in accordance with Part 1 of this standard,
+     'Involute spur, helical and cross helical gears,' should be used."
+     So I'm going to try this and see if it fixes the motion works jamming I've seen with large numbers of leaves on the pinions.
+
+    This is planned to be a wrapper around cq_gears.spur_gear, making it a (nearly) drop in replacement for WheelPinionPair
+    '''
+
+    def __init__(self, wheel_teeth, pinion_teeth, module=1):
+        self.wheel_teeth = wheel_teeth
+        self.pinion_teeth = pinion_teeth
+        self.module = module
 
 class WheelPinionBeveledPair:
     '''
@@ -2649,7 +2675,7 @@ class MotionWorks:
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
                  moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0,
-                 distance_between_hands=2):
+                 distance_between_hands=2, reduced_jamming=False):
         '''
 
         cannon_pinion_to_hour_holder_gap_size - in mm, how much extra diameter to add to the hour holder to slot over the cannon pinion. Can be a bit filament specific to what works well
@@ -2719,6 +2745,7 @@ class MotionWorks:
 
         self.module = module
         self.compensate_loose_arbour = compensate_loose_arbour
+        self.reduced_jamming = reduced_jamming
 
         self.bearing = bearing
 
@@ -2884,7 +2911,7 @@ class MotionWorks:
                                     min_cannon_pinion_r = self.inset_at_base_r
 
                                 #v.slow
-                                potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensate_loose_arbour)
+                                potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming)
                                 if min_cannon_pinion_r > potential_pair.pinion.get_min_radius() - 0.9:
                                     #not enough space to slot in the bearing
                                     # print("pinion_min_r",pinion_min_r)
@@ -2915,7 +2942,8 @@ class MotionWorks:
                 self.arbor_distance = arbor_distance
         secondModule = 2 * self.arbor_distance / (wheel1_teeth + pinion1_teeth)
         print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, secondModule,wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
-        self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensate_loose_arbour), WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensate_loose_arbour)]
+        self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming),
+                      WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming)]
 
 
         self.calc_bearing_holder_thick()

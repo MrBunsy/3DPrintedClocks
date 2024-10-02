@@ -599,7 +599,7 @@ class Colour:
     DARKBLUE = (0, 0, 55)
     PURPLE = (138, 43, 226)  # (148,0,211)
     LILAC = (210, 175, 255)
-    LIGHTGREY = (211, 211, 211)
+    LIGHTGREY = (200,200,200)#(211, 211, 211)
     SILVER = (169,169,169)#(192, 192, 192)
     DARKGREY = (50, 50, 50)
     BLACK = "black"

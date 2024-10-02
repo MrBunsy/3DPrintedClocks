@@ -18,11 +18,13 @@ if 'show_object' not in globals():
 # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Wingding", font_scale=0.8, font_path="C:\\WINDOWS\\FONTS\\WINGDING.TFF", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
 
 # dial = Dial(180, DialStyle.LINES_MAJOR_ONLY)
-
 dial_diameter=205
-dial = Dial(dial_diameter, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
-                  outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6, seconds_style=DialStyle.LINES_MAJOR_ONLY,
-                  bottom_fixing=False, top_fixing=False)
+dial = Dial(dial_diameter, DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED, dial_width=dial_diameter/6,
+            outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, seconds_style=DialStyle.LINES_RECT)
+
+# dial = Dial(dial_diameter, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
+#                   outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_diameter/6, seconds_style=DialStyle.LINES_MAJOR_ONLY,
+#                   bottom_fixing=False, top_fixing=False)
 
 
 dial.configure_dimensions(support_length=10, support_d=21.7, second_hand_relative_pos=(0,-40))

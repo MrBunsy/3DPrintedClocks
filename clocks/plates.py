@@ -327,6 +327,8 @@ class SimpleClockPlates:
 
         self.export_tolerance = 0.1
 
+        self.motion_works_position_bodge = (0,0)
+
         self.split_detailed_plate = split_detailed_plate
 
         #powered wheel at base of clock.
@@ -1627,9 +1629,9 @@ class SimpleClockPlates:
         holder = cq.Workplane("XY").moveTo(w/2, l/2).radiusArc((-w/2,l/2), -w/2).line(0,-l).radiusArc((w/2, -l/2), -w/2).close().extrude(holder_thick)
 
         #small standoff for motion works arbour
-        holder = holder.faces(">Z").workplane().circle(self.motion_works_screws.metric_thread).extrude(standoff_thick)
+        holder = holder.faces(">Z").workplane().moveTo(self.motion_works_position_bodge[0], self.motion_works_position_bodge[1]).circle(self.motion_works_screws.metric_thread).extrude(standoff_thick)
 
-        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True))
+        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True).translate(self.motion_works_position_bodge))
 
         for pos in self.motion_works_fixings_relative_pos:
             holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
