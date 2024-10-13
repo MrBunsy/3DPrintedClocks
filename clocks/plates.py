@@ -667,6 +667,9 @@ class SimpleClockPlates:
         #calculate position even if it's not applicable to this clock
         friction_clip_dir = np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
         friction_clip_distance = self.motion_works.friction_ring_r*2.5
+        # print("friction_clip_distance", friction_clip_distance)
+        #HACK
+        friction_clip_distance = 30.998806423611125
         self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
         self.cannon_pinion_friction_clip_fixings_pos = [
             np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 5, -self.plate_width /  5))),
