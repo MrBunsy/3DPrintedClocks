@@ -6,7 +6,7 @@ from .cq_svg import exportSVG
 
 from .types import *
 from .utility import *
-
+import string
 
 class Assembly:
     '''
@@ -541,7 +541,7 @@ class Assembly:
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
-                   moon_complication_colour=Colour.BRASS, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45):
+                   moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -570,6 +570,8 @@ class Assembly:
 
         if plate_colours is None:
             plate_colours = [Colour.LIGHTGREY]
+        if moon_complication_colours is None:
+            moon_complication_colours = [Colour.BRASS]
 
         if not isinstance(plate_colours, list):
             #backwards compatibility
@@ -601,12 +603,13 @@ class Assembly:
 
         for a, arbor in enumerate(self.plates.arbors_for_plate):
             show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
-        # return
+
         # return
         # # motionWorksModel = self.motionWorks.get_assembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
         # #
         # # show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":motion_works_colour})
         motion_works_parts = self.motion_works.get_parts_in_situ(motionWorksRelativePos=self.plates.motion_works_relative_pos, minuteAngle=self.minuteAngle)
+
         for i,part in enumerate(motion_works_parts):
             colour = motion_works_colours[i % len(motion_works_colours)]
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
@@ -616,7 +619,12 @@ class Assembly:
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors
-            show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name="Moon Complication", options={"color":moon_complication_colour})
+            # show_object(self.moon_complication.get_assembled().translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name="Moon Complication", options={"color":moon_complication_colour})
+            moon_parts_dict = self.moon_complication.get_parts_in_situ()
+            for i,moon_part in enumerate(moon_parts_dict):
+                friendly_name = string.capwords(moon_part.replace("_"," "))
+                show_object(moon_parts_dict[moon_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name=f"Moon Complication {friendly_name}", options={"color":moon_complication_colours[i%len(moon_complication_colours)]})
+
             moon = self.moon_complication.get_moon_half()
             # moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
             moon_z = self.moon_complication.get_relative_moon_z() + self.front_of_clock_z
@@ -628,7 +636,7 @@ class Assembly:
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i,holder in enumerate(holder_parts):
                 show_object(holder.translate((0, 0, self.front_of_clock_z)), name="moon_holder_part{}".format(i), options={"color":plate_colours[0]})
-
+        # return
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
             detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)

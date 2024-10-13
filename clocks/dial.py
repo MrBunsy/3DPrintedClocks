@@ -370,27 +370,54 @@ class MoonPhaseComplication3D:
 
     def get_assembled(self):
         model = cq.Workplane("XY")
+        # positions = self.get_arbor_positions_relative_to_motion_works()
+        # for i in range(3):
+        #     model = model.add(self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2])))
+        #
+        # #would like the bevel at the top, keeping it further out the way of the motion works and closer to where it can be through a pipe/bearing (to reduce wobble)
+        # #but with the extra gear it'd be spinning the wrong way!
+        #
+        # bevel_angle = math.pi + self.get_bevel_angle()# -math.pi/2 + (math.pi / 2 - self.bevel_angle_from_hands)
+        #
+        # bevel_relative_pos = polar(bevel_angle,self.bevel_pair.get_centre_of_pinion_to_back_of_wheel())
+        # # if not self.on_left:
+        # #     bevel_relative_pos = (-bevel_relative_pos[0], bevel_relative_pos[1])
+        # bevel_pos = np_to_set(np.add(positions[2][:2], bevel_relative_pos))
+        # model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).rotate((0,0,0), (0,0,1), rad_to_deg(bevel_angle + math.pi / 2)).translate(
+        #     (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
+        # ))
+        # # model = model.add(cq.Workplane("XY").circle(1).extrude(40).translate(
+        # #     (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
+        # # ))
+        parts = self.get_parts_in_situ()
+        for part in parts:
+            model = model.add(parts[part])
+
+        return model
+
+    def get_parts_in_situ(self):
+        '''
+        for rendering a preview with colours
+        '''
+        parts = {}
         positions = self.get_arbor_positions_relative_to_motion_works()
         for i in range(3):
-            model = model.add(self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2])))
+            parts[f"arbor_{i}"]=self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
 
-        #would like the bevel at the top, keeping it further out the way of the motion works and closer to where it can be through a pipe/bearing (to reduce wobble)
-        #but with the extra gear it'd be spinning the wrong way!
+        # would like the bevel at the top, keeping it further out the way of the motion works and closer to where it can be through a pipe/bearing (to reduce wobble)
+        # but with the extra gear it'd be spinning the wrong way!
+        # however at the bottom it works really well for the smaller moon phase inside the dial
 
-        bevel_angle = math.pi + self.get_bevel_angle()# -math.pi/2 + (math.pi / 2 - self.bevel_angle_from_hands)
+        bevel_angle = math.pi + self.get_bevel_angle()  # -math.pi/2 + (math.pi / 2 - self.bevel_angle_from_hands)
 
-        bevel_relative_pos = polar(bevel_angle,self.bevel_pair.get_centre_of_pinion_to_back_of_wheel())
+        bevel_relative_pos = polar(bevel_angle, self.bevel_pair.get_centre_of_pinion_to_back_of_wheel())
         # if not self.on_left:
         #     bevel_relative_pos = (-bevel_relative_pos[0], bevel_relative_pos[1])
         bevel_pos = np_to_set(np.add(positions[2][:2], bevel_relative_pos))
-        model = model.add(self.get_arbor_shape(3).rotate((0,0,0),(1,0,0),-90).rotate((0,0,0), (0,0,1), rad_to_deg(bevel_angle + math.pi / 2)).translate(
+        parts["arbor_3"] = self.get_arbor_shape(3).rotate((0, 0, 0), (1, 0, 0), -90).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(bevel_angle + math.pi / 2)).translate(
             (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
-        ))
-        # model = model.add(cq.Workplane("XY").circle(1).extrude(40).translate(
-        #     (bevel_pos[0], bevel_pos[1], self.get_relative_moon_z())
-        # ))
-
-        return model
+        )
+        return parts
 
     def output_STLs(self, name="clock", path="../out", max_wide=250, max_long=210):
 
