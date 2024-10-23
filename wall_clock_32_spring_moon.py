@@ -155,7 +155,7 @@ if not outputSTL or True:
 
 if outputSTL:
 
-    # moon_complication.output_STLs(clockName, clockOutDir)
+    moon_complication.output_STLs(clockName, clockOutDir)
     motion_works.output_STLs(clockName, clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     plates.output_STLs(clockName, clockOutDir)

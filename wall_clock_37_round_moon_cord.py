@@ -30,6 +30,8 @@ Thought I'd do a quick experiment to see what clock 32 looked like weight driven
 
 current answer: struggling to find a good gear ratio that works. can be done with very large barrel and short drop.
 
+will try with a month duration and see how that looks (clock 25 seems relatively successful!)
+
 '''
 outputSTL = False
 
@@ -49,11 +51,13 @@ escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.
 
 power = clock.CordWheel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle, use_key=True, diameter=50, loose_on_rod=False)
 
-# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
-train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=500, use_pulley=True, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=power)
 
-barrel_gear_thick = 5#8
+# train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=500, use_pulley=True, chain_at_back=False, chain_wheels=2,
+#                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=power)
+train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
+                         chain_wheels=2, runtime_hours=32 * 24, support_second_hand=False)
+
+barrel_gear_thick = 8
 
 moduleReduction=0.95#0.85
 
@@ -63,27 +67,24 @@ moduleReduction=0.95#0.85
 #                         wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
 # train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=60, loose_on_rod=False, prefer_small=True)
 
-train.calculate_powered_weight_wheel_info()
-train.calculate_powered_wheel_ratios(prefer_small=True, wheel_min=20, prefer_large_second_wheel=False)
-'''
-[[61, 10], [83, 10]]
-spring_wound_coils: 23.53661753519562 spring unwound coils: 12.838105212872968, max theoretical barrel turns: 10.698512322322653
-Over a runtime of 168.0hours the spring barrel will make 3.3 full rotations which is 31.0% of the maximum number of turns (10.7) and will take 5.0 key turns to wind back up
-'''
+# train.calculate_powered_weight_wheel_info()
+# train.calculate_powered_wheel_ratios(prefer_small=True, wheel_min=20, prefer_large_second_wheel=False)
 
-# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=55, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True)
-#1s period with 36 teeth
-# train.set_ratios([[65, 12], [60, 14], [56, 13]])
-#1s period with 30 teeth
-#[[65, 10], [60, 14], [56, 13]]
+#TODO one screw goes straight through the hole used to tie the cord! printed clock is assembled with just three screws
+#also reduced ratchet diameter slightly after initial print as the pawl looks like it can bump into the next pinion
+train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=2, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=35, loose_on_rod=False, prefer_small=True,
+                      min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=30)
+
+train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120)
+
 train.set_ratios([[65, 14], [60, 13], [56, 10]])
 
 pendulumSticksOut=10
 backPlateFromWall=30
-dial_d = 205
+dial_d = 200
 dial_width=25
 
-pinion_extensions = {0:1, 1:15, 2:10,3:18}
+pinion_extensions = {0:1, 1:15, 2:0,3:5}
 
 #powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
@@ -93,10 +94,15 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 #module_sizes=[1, 0.95, 0.95]
+rod_diameters = [4,3,3,3,3,3,3]
 train.gen_gears(module_sizes=[0.9, 0.85, 0.85], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875, powered_wheel_thicks=[barrel_gear_thick, 4])
-train.print_info(for_runtime_hours=24*7, weight_kg=2.5)
+                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.6,
+                powered_wheel_thicks=[barrel_gear_thick, 4], rod_diameters=rod_diameters)
+# train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[8,5], pinion_thick_extra=5, style=gearStyle,
+#                 powered_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+#                 powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters)
+train.print_info(for_runtime_hours=24*32, weight_kg=4)
 moon_radius=13
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
