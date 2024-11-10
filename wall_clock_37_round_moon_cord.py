@@ -49,13 +49,14 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 #after a huge amount of faffing about, the problem was the bearings, not the escapement. So I've used the new auto-calculated efficient escapement for a retrofit.
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
-power = clock.CordWheel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle, use_key=True, diameter=50, loose_on_rod=False)
+power = clock.CordWheel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle,
+                        use_key=True, diameter=45, loose_on_rod=False, ratchet_diameter=30, traditional_ratchet=True, cap_diameter=65)
 
 
 # train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=500, use_pulley=True, chain_at_back=False, chain_wheels=2,
 #                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=power)
-train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
-                         chain_wheels=2, runtime_hours=32 * 24, support_second_hand=False)
+train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1600, use_pulley=True, chain_at_back=False,
+                         chain_wheels=2, runtime_hours=32 * 24, support_second_hand=False, powered_wheel=power)
 
 barrel_gear_thick = 8
 
@@ -67,21 +68,23 @@ moduleReduction=0.95#0.85
 #                         wall_thick=10, chain_wheel_ratios=[[64, 10], [64, 10]], extra_barrel_height=1.5)
 # train.gen_cord_wheels(ratchet_thick=6, rod_metric_thread=4, cord_thick=1, cord_coil_thick=15, style=gearStyle, use_key=True, prefered_diameter=60, loose_on_rod=False, prefer_small=True)
 
-# train.calculate_powered_weight_wheel_info()
+train.calculate_powered_weight_wheel_info()
 # train.calculate_powered_wheel_ratios(prefer_small=True, wheel_min=20, prefer_large_second_wheel=False)
 
 #TODO one screw goes straight through the hole used to tie the cord! printed clock is assembled with just three screws
 #also reduced ratchet diameter slightly after initial print as the pawl looks like it can bump into the next pinion
-train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=2, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=35, loose_on_rod=False, prefer_small=True,
-                      min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=30)
+# train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=55, loose_on_rod=False, prefer_small=True,
+#                       min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=30)
 
-train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120)
+# train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120, prefer_large_second_wheel=False)
+train.chain_wheel_ratios = [[55, 10], [64, 10]]
+# train.chain_wheel_ratios = [[58,10], [61,10]]
 
 train.set_ratios([[65, 14], [60, 13], [56, 10]])
 
 pendulumSticksOut=10
 backPlateFromWall=30
-dial_d = 200
+dial_d = 205
 dial_width=25
 
 pinion_extensions = {0:1, 1:15, 2:0,3:5}
@@ -111,7 +114,8 @@ moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_ge
 motion_works = clock.MotionWorks(extra_height=22, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
                                  moon_complication=moon_complication, cannon_pinion_to_hour_holder_gap_size=0.6)
 # balance out the moon complication by making the motion works a bit bigger
-motion_works.calculate_size(arbor_distance=30)
+#but smaller than their equivalent on the spring clock because the key is too close on this clock
+motion_works.calculate_size(arbor_distance=28)
 moon_complication.set_motion_works_sizes(motion_works)
 print("motion works widest r: ", motion_works.get_widest_radius())
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
@@ -129,7 +133,12 @@ hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_f
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
 # show_object(plates.get_fixing_screws_cutter())
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
+
+pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
+
+
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley)#weights=[clock.Weight(height=245,diameter=55)]
 
 assembly.get_arbor_rod_lengths()
 plates.get_rod_lengths()

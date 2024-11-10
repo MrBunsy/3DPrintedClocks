@@ -154,7 +154,7 @@ if not outputSTL or True:
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-
+    plaque.output_STLs(clockName, clockOutDir)
     moon_complication.output_STLs(clockName, clockOutDir)
     motion_works.output_STLs(clockName, clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)

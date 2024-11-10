@@ -988,7 +988,9 @@ class Gear:
             self.trundle_r = math.sin(tooth_angle/2)* self.pitch_diameter/2
             print("need trundles of diameter {}mm".format(self.trundle_r*2))
             self.outer_r = self.outer_r + self.trundle_r*3
-            self.inner_r_for_lantern_fixing_slot = self.inner_r + 0.175
+            #this will be a tight fit, but that's good as we don't want it to twist. May well need a vise to squeeze everything together
+            #0.175 worked but I think it resulted in the lantern pinions being at an angle
+            self.inner_r_for_lantern_fixing_slot = self.inner_r + 0.04#0.175
             self.slot_sides = 6
             # https://en.wikipedia.org/wiki/Sagitta_(geometry)
             # assuming hexagon, find how far the flat edge is from the containing diameter
@@ -996,6 +998,7 @@ class Gear:
             l = r
             sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
             self.cutoff_height = sagitta
+            print(f"TEMP inner_r_for_lantern_fixing_slot {self.inner_r_for_lantern_fixing_slot}mm inner_r {self.inner_r}")
 
         '''
         is this a crown gear (may be called a face gear) - a special case of bevel gear that can mesh with a normal spur gear at 90deg
