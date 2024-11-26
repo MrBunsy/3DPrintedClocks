@@ -114,7 +114,7 @@ plaque = clock.Plaque(text_lines=["W32#1 {:.1f}cm L.Wallin 2024".format(train.pe
 
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=clock.PillarStyle.BARLEY_TWIST)
-plates = clock.RoundClockPlates(train, motion_works, name="Wall 32b", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
+plates = clock.RoundClockPlates(train, motion_works, name="Wall Clock 32#1", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST,
                                 moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True)
 

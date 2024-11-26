@@ -1777,7 +1777,7 @@ class RopeWheel:
 
 class WindingKey:
     def __init__(self, key_containing_diameter, cylinder_length, key_hole_deep, key_sides=4, handle_length=-1, crank=True, knob_fixing_screw=None, key_wiggle_room = 0.75,
-                 wall_thick=2.5, handle_thick = 5, print_sideways=False):
+                 wall_thick=2.5, handle_thick = 5, print_sideways=False, handle_separate=True):
         #the square bit the key slots over - what size is it?
         # self.square_side_length = square_side_length
         self.key_containing_diameter = key_containing_diameter
@@ -1795,7 +1795,7 @@ class WindingKey:
         self.print_sideways = print_sideways
 
         # if this works I'm not sure I'll have much reason to go back to the one which needs supports to print
-        self.handle_separate = print_sideways
+        self.handle_separate = handle_separate
 
         self.wall_thick = wall_thick
 

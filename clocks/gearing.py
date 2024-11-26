@@ -2490,7 +2490,7 @@ class Arbor:
         if 0 then the trundle hole goes all the way through (thinner wheels) and we rely on the arbor extensions and glue to hold everything firmly in place
         '''
         # return self.pinion.get_lantern_trundle_offset()
-        if self.wheel_thick < 3:
+        if self.wheel_thick <= 3:
             return 0
         return 1
     def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0, back_collet_from_back=0):
