@@ -3121,11 +3121,11 @@ class SimpleClockPlates:
             sideways = True
 
         self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
-                                      handle_length=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides(), key_wiggle_room=key_wiggle_room, wall_thick=wall_thick,
+                                      max_radius=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides(), key_wiggle_room=key_wiggle_room, wall_thick=wall_thick,
                                       print_sideways=sideways)
 
         if self.key_offset_from_front_plate < 0:
-            self.key_hole_d = self.winding_key.body_wide+1.5
+            self.key_hole_d = self.winding_key.cylinder_outer_diameter + 1.5
 
         print("winding key length {:.1f}mm".format(key_length))
 
