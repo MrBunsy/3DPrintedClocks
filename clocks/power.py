@@ -1777,11 +1777,10 @@ class RopeWheel:
 
 class WindingKeyBase:
     '''
-    I think this might need splitting into two classes - basic key and the crank. They're different enough that I think it's unhelpful to be in the same class
+    Base class for both the crank and spring winding key
     '''
     def __init__(self, key_containing_diameter, cylinder_length, key_hole_deep, key_sides=4, max_radius=-1, key_wiggle_room = 0.75,
                  wall_thick=2.5, handle_thick = 5):
-        # , crank=True, knob_fixing_screw=None, , print_sideways=False, handle_separate=True):
         #the square bit the key slots over - what size is it?
         # self.square_side_length = square_side_length
         self.key_containing_diameter = key_containing_diameter
@@ -1795,14 +1794,7 @@ class WindingKeyBase:
 
         # how deep the hole that slots onto the square bit should be - keep shallow to ensure you can push the key all the way without crashing inot hte front plate or pushing the bearing out
         self.key_hole_deep = key_hole_deep
-        #use a crank handle?
-        # self.crank = crank
-        #
-        # #print on the side for more strength? (hopefully, might just split lengthways instead, would screws alongside the barrel work better?)
-        # self.print_sideways = print_sideways
-        #
-        # # if this works I'm not sure I'll have much reason to go back to the one which needs supports to print
-        # self.handle_separate = handle_separate
+
 
         self.wall_thick = wall_thick
 
@@ -1811,12 +1803,9 @@ class WindingKeyBase:
         #how much wider to make the hole than the square rod
         self.wiggle_room = key_wiggle_room
 
-        # self.body_wide = 2*self.square_side_length / math.sqrt(2) + self.wall_thick * 2
         self.cylinder_outer_diameter = self.key_containing_diameter + self.wall_thick * 2
         if self.key_hole_deep > self.cylinder_length:
             self.key_hole_deep = self.cylinder_length
-        # if self.print_sideways:
-        #     self.body_wide+=5
 
 
     def get_key_hole_cutter(self):
@@ -1838,98 +1827,9 @@ class WindingKeyBase:
 
     def get_key(self, for_printing=True):
         raise NotImplementedError()
-        '''
-        winding key! this is one with a little arm and handle
-
-        handle_length is to the end of the handle, not the middle of the knob (makes calculating the size of the key easier)
-
-        Exact size of the key is based on the bearing and tolerance:
-        key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
-
-        if withKnob, it's like an old longcase key with handle. If not, it's like a mantle key
-
-        '''
-
-        handle_tall = 0
-
-        if self.crank:
-            #base for handle
-            key = cq.Workplane("XY").moveTo(-self.cylinder_outer_diameter / 2, 0).radiusArc((self.cylinder_outer_diameter / 2, 0), -self.cylinder_outer_diameter / 2).lineTo(self.cylinder_outer_diameter / 2, self.max_radius - self.cylinder_outer_diameter / 2).radiusArc((-self.cylinder_outer_diameter / 2, self.max_radius - self.cylinder_outer_diameter / 2), -self.cylinder_outer_diameter / 2).close().extrude(self.handle_thick)
-            # hole to screw in the knob (loose)
-            key = key.faces(">Z").workplane().tag("top").moveTo(0, self.max_radius - self.cylinder_outer_diameter / 2).circle(self.knob_fixing_screw.metric_thread / 2 + 0.2).cutThruAll()
-
-            handle_tall = self.handle_thick
-        else:
-
-            handle_tall = self.key_grip_tall
-
-            key_grip_wide = self.cylinder_outer_diameter * 2.5
-
-
-
-            #I can't remember what shape I was going for, but I've decided to instead go for something more simple
-            # grippyBit = cq.Workplane("XZ").lineTo(key_grip_wide/2,0).lineTo(key_grip_wide/2,key_grip_tall).tangentArcPoint((-r,r*1.25))\
-            #     .tangentArcPoint((0,key_grip_tall),relative=False).mirrorY().extrude(self.handle_thick)
-
-            if self.print_sideways:
-                r = self.key_grip_tall * 0.2
-                small_r = 0.5
-                grippy_bit = (cq.Workplane("XZ").moveTo(0, self.key_grip_tall/2).rect(key_grip_wide, self.key_grip_tall).extrude(self.handle_thick)
-                              .edges("|Y").fillet(r).edges("|Z or |X").fillet(small_r))
-
-                # put holes in it?
-                # hole_r =
-                # grippy_bit = grippy_bit.faces(">Y").workplane().pushPoints()
-            else:
-                r = self.key_grip_tall / 2
-                grippy_bit = cq.Workplane("XZ").lineTo(key_grip_wide / 2, 0).lineTo(key_grip_wide / 2, self.key_grip_tall-r).radiusArc((key_grip_wide/2 - r, self.key_grip_tall), radius=-r) \
-                        .lineTo(0, self.key_grip_tall).mirrorY().extrude(self.handle_thick)
-
-
-            # return grippyBit
-            if self.print_sideways:
-                key = cq.Workplane("XY").polygon(6, self.cylinder_outer_diameter).extrude(self.key_grip_tall)
-            else:
-                key = cq.Workplane("XY").circle(self.cylinder_outer_diameter / 2).extrude(self.key_grip_tall)
-            key = key.union(grippy_bit.translate((0, self.handle_thick / 2, 0)))
-
-
-        #key bit
-        if self.print_sideways:
-            key = key.union(cq.Workplane("XY").polygon(6, self.cylinder_outer_diameter).extrude(self.cylinder_length).translate((0, 0, handle_tall)))
-        else:
-            #just a cylinder
-            key = key.union(cq.Workplane("XY").circle(self.cylinder_outer_diameter / 2 + 0.0001).extrude(self.cylinder_length).translate((0, 0, handle_tall)))
-
-
-
-        #5mm shorter than the key as a bodge to stand off from the front plate
-        key_hole = cq.Workplane("XY").polygon(self.key_sides, self.key_containing_diameter + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, handle_tall + self.cylinder_length - self.key_hole_deep))
-
-        key = key.cut(key_hole)
-
-        if not for_printing:
-            # for the model, standing on end lined up with the internal end of the key on the xy plane
-            # key = key.translate((-self.body_wide / 2, 0))
-            key = (key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0,0,0), (0,0,1),180)
-                   .translate((0, 0, self.get_key_total_height() - self.key_hole_deep)))
-
-            # key = key.add(self.get_knob().translate((0, self.handle_length - self.body_wide / 2, self.cylinder_length + self.handle_thick)))
-
-        return key
-
-
-
 
     def get_assembled(self):
         raise NotImplementedError()
-        key = self.get_key(for_printing=False)
-        if self.crank:
-            key = key.add(self.get_knob().rotate((0,0,0),(1,0,0),180).translate((0, self.max_radius - self.cylinder_outer_diameter / 2, self.get_key_total_height() - self.key_hole_deep + self.knob_length + self.knob_fixing_screw.get_washer_thick())))
-
-
-        # key = key.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_height()))
-        return key
 
     def output_STLs(self, name, path):
         out = os.path.join(path, "{}_winding_key.stl".format(name))
@@ -1939,11 +1839,7 @@ class WindingKeyBase:
         out = os.path.join(path, "{}_winding_key_handle.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_handle(for_printing=True), out)
-            # #proxy for spring barrel
-            # out = os.path.join(path, "{}_let_down_adapter.stl".format(name))
-            # print("Outputting ", out)
-            # exporters.export(self.get_let_down_adapter(), out)
-#
+
 class WindingKey(WindingKeyBase):
     '''
     A simple winding key with a grip, as usually used for winding a spring powered clock
@@ -1998,7 +1894,7 @@ class WindingKey(WindingKeyBase):
         return adapter
 
 
-    def get_handle(self, for_cutting=False, for_printing=True):
+    def get_handle(self, for_cutting=False, for_printing=False):
 
         r = self.key_grip_tall * 0.2
         thick = self.handle_thick
@@ -2037,7 +1933,7 @@ class WindingKey(WindingKeyBase):
 
     def get_assembled(self, in_situ=True):
         key = self.get_key(for_printing=False)
-        key = key.add(self.get_handle(for_cutting=False))
+        key = key.add(self.get_handle(for_cutting=False, for_printing=False))
 
         if in_situ:
             # for the model, standing on end lined up with the internal end of the key on the xy plane
@@ -2065,7 +1961,12 @@ class WindingKey(WindingKeyBase):
         return cutter
 
 
+    def output_STLs(self, name, path):
+        super().output_STLs(name, path)
 
+        out = os.path.join(path, "{}_let_down_adapter.stl".format(name))
+        print("Outputting ", out)
+        exporters.export(self.get_let_down_adapter(), out)
 
 
 class WindingCrank(WindingKeyBase):
@@ -2085,7 +1986,7 @@ class WindingCrank(WindingKeyBase):
 
 
 
-    def get_handle(self, for_cutting=False):
+    def get_handle(self, for_cutting=False, for_printing=False):
         #for_cutting not relevant in this case
         knob = cq.Workplane("XY").circle(self.cylinder_outer_diameter / 2).extrude(self.knob_length)
 
@@ -2097,6 +1998,58 @@ class WindingCrank(WindingKeyBase):
         knob = knob.cut(screw_hole)
 
         return knob
+
+
+    def get_handle_z_length(self):
+        return self.handle_thick
+
+    def get_key(self, for_printing=True):
+        '''
+        winding key! this is one with a little arm and handle
+
+        handle_length is to the end of the handle, not the middle of the knob (makes calculating the size of the key easier)
+
+        Exact size of the key is based on the bearing and tolerance:
+        key = cq.Workplane("XY").polygon(4, self.bearingInnerD - self.bearingWiggleRoom*2).extrude(self.keyKnobHeight)
+
+        if withKnob, it's like an old longcase key with handle. If not, it's like a mantle key
+
+        '''
+
+        handle_tall = 0
+
+
+        #base for handle
+        key = cq.Workplane("XY").moveTo(-self.cylinder_outer_diameter / 2, 0).radiusArc((self.cylinder_outer_diameter / 2, 0), -self.cylinder_outer_diameter / 2).lineTo(self.cylinder_outer_diameter / 2, self.max_radius - self.cylinder_outer_diameter / 2).radiusArc((-self.cylinder_outer_diameter / 2, self.max_radius - self.cylinder_outer_diameter / 2), -self.cylinder_outer_diameter / 2).close().extrude(self.handle_thick)
+        # hole to screw in the knob (loose)
+        key = key.faces(">Z").workplane().tag("top").moveTo(0, self.max_radius - self.cylinder_outer_diameter / 2).circle(self.knob_fixing_screw.metric_thread / 2 + 0.2).cutThruAll()
+
+        handle_tall = self.get_handle_z_length()
+
+        #just a cylinder
+        key = key.union(cq.Workplane("XY").circle(self.cylinder_outer_diameter / 2 + 0.0001).extrude(self.cylinder_length).translate((0, 0, handle_tall)))
+
+
+
+        #5mm shorter than the key as a bodge to stand off from the front plate
+        # key_hole = cq.Workplane("XY").polygon(self.key_sides, self.key_containing_diameter + self.wiggle_room).extrude(self.key_hole_deep).translate((0, 0, handle_tall + self.cylinder_length - self.key_hole_deep))
+
+        key = key.cut(self.get_key_hole_cutter())
+
+        if not for_printing:
+            # for the model, standing on end lined up with the internal end of the key on the xy plane
+            key = (key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0,0,0), (0,0,1),180)
+                   .translate((0, 0, self.get_key_total_height() - self.key_hole_deep)))
+
+        return key
+
+
+
+
+    def get_assembled(self):
+        key = self.get_key(for_printing=False)
+        key = key.add(self.get_handle(for_cutting=False, for_printing=False).rotate((0,0,0),(1,0,0),180).translate((0, self.max_radius - self.cylinder_outer_diameter / 2, self.get_key_total_height() - self.key_hole_deep + self.knob_length + self.knob_fixing_screw.get_washer_thick())))
+        return key
 
 
 class CordWheel:

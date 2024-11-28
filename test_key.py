@@ -22,7 +22,7 @@ diagram.add(cq.Workplane("XY").circle(incircle_radius))
 
 # show_object(diagram)
 #
-key = WindingKey(key_containing_diameter=12, cylinder_length=21, key_hole_deep=20, key_sides=6, max_radius=40)
+key = WindingCrank(key_containing_diameter=12, cylinder_length=21, key_hole_deep=20, key_sides=6, max_radius=40)
 #
 #
 # # #
