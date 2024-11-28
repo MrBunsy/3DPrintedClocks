@@ -1827,7 +1827,7 @@ class WindingKeyBase:
     def get_key_outer_diameter(self):
         return self.cylinder_outer_diameter
 
-    def get_handle(self, for_cutting=False):
+    def get_handle(self, for_cutting=False, for_printing=False):
         raise NotImplementedError()
 
     def get_handle_z_length(self):
@@ -1934,11 +1934,11 @@ class WindingKeyBase:
     def output_STLs(self, name, path):
         out = os.path.join(path, "{}_winding_key.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_key(), out)
+        exporters.export(self.get_key(for_printing=True), out)
 
         out = os.path.join(path, "{}_winding_key_handle.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_handle(), out)
+        exporters.export(self.get_handle(for_printing=True), out)
             # #proxy for spring barrel
             # out = os.path.join(path, "{}_let_down_adapter.stl".format(name))
             # print("Outputting ", out)
@@ -1975,7 +1975,7 @@ class WindingKey(WindingKeyBase):
 
         self.screw_hole_length = get_incircle_for_regular_polygon(key_containing_diameter/2 + wall_thick, key_sides)*2
         spare_space = (self.screw_hole_length) % 2
-        print(f"With a wall_thick of {wall_thick}, needs screws of length {self.screw_hole_length-spare_space}, which leaves a gap of {spare_space}")
+        print(f"Winding Key: With a wall_thick of {wall_thick}, needs screws of length {self.screw_hole_length-spare_space}, which leaves a gap of {spare_space}")
 
         super().__init__(key_containing_diameter, cylinder_length, key_hole_deep, key_sides, max_radius, key_wiggle_room, wall_thick, handle_thick)
 
@@ -1998,7 +1998,7 @@ class WindingKey(WindingKeyBase):
         return adapter
 
 
-    def get_handle(self, for_cutting=False):
+    def get_handle(self, for_cutting=False, for_printing=True):
 
         r = self.key_grip_tall * 0.2
         thick = self.handle_thick
@@ -2012,6 +2012,9 @@ class WindingKey(WindingKeyBase):
 
         if not for_cutting:
             grippy_bit = grippy_bit.cut(self.get_screw_cutter())
+        if for_printing:
+            #put flat on the build plate
+            grippy_bit = grippy_bit.rotate((0,0,0), (0,1,0), 90)
 
         return grippy_bit
 
@@ -2032,10 +2035,17 @@ class WindingKey(WindingKeyBase):
 
         return key
 
-    def get_assembled(self):
+    def get_assembled(self, in_situ=True):
         key = self.get_key(for_printing=False)
-        handle = self.get_handle(for_cutting=False)
-        return key.add(handle)
+        key = key.add(self.get_handle(for_cutting=False))
+
+        if in_situ:
+            # for the model, standing on end lined up with the internal end of the key on the xy plane
+            # so I can see where it would be if I was winding it up to check it won't clash with anything
+            key = (key.rotate((0, 0, 0), (1, 0, 0), 180).rotate((0, 0, 0), (0, 0, 1), 180)
+                   .translate((0, 0, self.get_key_total_height() - self.key_hole_deep)))
+
+        return key
 
     def get_screw_cutter(self):
         '''

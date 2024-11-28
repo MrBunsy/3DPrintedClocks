@@ -3103,7 +3103,7 @@ class SimpleClockPlates:
             handle_length = self.hands_position[1] - self.bearing_positions[0][1] - 6  # 10
 
         crank = self.weight_driven
-        key_wiggle_room = 0.75 # the default
+        # key_wiggle_room = 0.75 # the default
         wall_thick = 2.5 # the default
         sideways = False
         if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and not self.going_train.powered_wheel.ratchet_at_back:
@@ -3118,11 +3118,12 @@ class SimpleClockPlates:
 
         if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
             wall_thick = 5
-            sideways = True
-
-        self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
-                                      max_radius=handle_length, crank=crank, key_sides=powered_wheel.get_key_sides(), key_wiggle_room=key_wiggle_room, wall_thick=wall_thick,
-                                      print_sideways=sideways)
+        if crank:
+            self.winding_key = WindingCrank(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
+                                      max_radius=handle_length,key_sides=powered_wheel.get_key_sides(), wall_thick=wall_thick)
+        else:
+            self.winding_key = WindingKey(key_containing_diameter=powered_wheel.get_key_size(), cylinder_length = cylinder_length, key_hole_deep=key_hole_deep,
+                                      max_radius=handle_length,key_sides=powered_wheel.get_key_sides(), wall_thick=wall_thick)
 
         if self.key_offset_from_front_plate < 0:
             self.key_hole_d = self.winding_key.cylinder_outer_diameter + 1.5
