@@ -3094,8 +3094,8 @@ class SimpleClockPlates:
         if self.dial is not None and not self.key_is_inside_dial() and self.weight_driven:
             # just so the crank (only for weights) doesn't clip the dial (the key is outside the dial)
             cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
-            # reach to the centre of the dial (just miss the hands)
-            handle_length = self.hands_position[1] - (self.dial.outside_d / 2 - self.dial.dial_width / 2) - self.bearing_positions[0][1] - 5
+            # reach to edge of the dial (avoiding the hands)
+            handle_length = self.hands_position[1] - (self.dial.outside_d / 2 ) - self.bearing_positions[0][1]
         else:
             # above the hands (the key is inside the dial)
             cylinder_length = self.top_of_hands_z + 6 - self.key_offset_from_front_plate
