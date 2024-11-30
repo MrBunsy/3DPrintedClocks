@@ -597,6 +597,8 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
     def get_anchor(self):
         '''
         compliant with the new escapement interface (now the grasshopper also exists)
+
+        positioned so it is hinged around (0,0)
         '''
         return self.get_anchor_3d(thick = self.anchor_thick, holeD=self.arbor_d, clockwise=True).translate((0, -self.anchor_centre_distance, 0))
 
