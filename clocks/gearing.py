@@ -2631,7 +2631,8 @@ class Arbor:
 
             if extension_r < self.arbor_d:
                 #this *shouldn't* be possible anymore as the module size of teh chain wheel is recalcualted to ensure there is space
-                raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation. extension_r:{}".format(extension_r))
+                # raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation. extension_r:{}".format(extension_r))
+                print("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation. extension_r:{}".format(extension_r))
             extended_arbour = cq.Workplane("XY").circle(extension_r).extrude(rear_side_extension - bearing_standoff_height).faces(">Z").workplane().circle(bearing_standoff_r).extrude(bearing_standoff_height)
             #add hole for rod!
             extended_arbour = extended_arbour.faces(">Z").circle(self.arbor_d / 2).cutThruAll()
@@ -3179,7 +3180,7 @@ class MotionWorks:
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
         # NEW IDEA - keep the tapered shape, but make it more subtle and also keep the new hard stop at the end
-        holder_r_base = self.hour_hand_holder_d / 2 + 0.1
+        holder_r_base = self.hour_hand_holder_d / 2 + 0.05 # was 0.1
         holder_r_top = self.hour_hand_holder_d / 2 - 0.2
 
         hour = self.pairs[1].wheel.get3D(holeD=self.hole_d, thick=self.thick, style=style, innerRadiusForStyle=bottom_r_for_style, clockwise_from_pinion_side=True)

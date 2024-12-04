@@ -555,6 +555,8 @@ class Assembly:
         if hand_colours is None:
             #main hand, outline, second hand if different
             hand_colours = ["white", "black"]
+
+        #[cannon_pinion, hour holder, arbor]
         if motion_works_colours is None:
             #cannonpinion, hour holder, arbor, time-setting pinion
             motion_works_colours = [gear_colours[self.going_train.wheels]]

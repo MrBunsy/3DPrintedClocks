@@ -117,7 +117,8 @@ cordwheel = train.get_arbour_with_conventional_naming(0)
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
-motionWorks = clock.MotionWorks(extra_height=11, style=gearStyle, thick=3, compensate_loose_arbour=False, bearing=clock.get_bearing_info(3), compact=True, module=1)
+motionWorks = clock.MotionWorks(extra_height=11-3, style=gearStyle, thick=3, compensate_loose_arbour=False, bearing=clock.get_bearing_info(3),
+                                compact=True, module=1, cannon_pinion_friction_ring=True)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, handAvoiderHeight=100)
 
@@ -172,7 +173,7 @@ assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.
 if outputSTL:
     #
     #
-    train.output_STLs(clockName, clockOutDir)
+    # train.output_STLs(clockName, clockOutDir)
     motionWorks.output_STLs(clockName,clockOutDir)
     pendulum.output_STLs(clockName, clockOutDir)
     dial.output_STLs(clockName, clockOutDir)

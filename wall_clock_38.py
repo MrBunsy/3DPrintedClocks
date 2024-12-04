@@ -28,6 +28,8 @@ import clocks as clock
 
 quick experiment as option to replace (currently) unreliably clock 28 if the size reduction in motion works doesn't fix it
 
+sub seconds dial on a spring driven round wall clock, with spring winding at the top
+
 '''
 outputSTL = False
 
