@@ -17,6 +17,11 @@ motionWorks = MotionWorks(extra_height=10, style=GearStyle.DIAMONDS, thick=3, co
 motionWorks.calculate_size(42.01250000000002)
 
 
-show_object(motionWorks.get_assembled())
+# show_object(motionWorks.get_assembled())
+
+parts = motionWorks.get_parts_in_situ()
+
+for part in parts:
+    show_object(parts[part], name=part)
 
 #With a weight of 2.5kg, this results in an average power usage of 47.1uW

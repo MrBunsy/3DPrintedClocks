@@ -59,6 +59,8 @@ class Assembly:
 
         # where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
         self.motion_works_z_offset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.plates.endshake / 2
+        if self.plates.calc_need_motion_works_holder():
+            self.motion_works_z_offset = self.plates.motion_works_holder_thick
         self.motion_works_z = self.front_of_clock_z + self.motion_works_z_offset
 
         self.motion_works_pos = self.plates.hands_position[:]
@@ -615,7 +617,7 @@ class Assembly:
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
 
         if self.motion_works.cannon_pinion_friction_ring:
-            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z)), options={"color":plate_colours[0]}, name="Friction Clip")
+            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z + self.plates.motion_works_holder_thick )), options={"color":plate_colours[0]}, name="Friction Clip")
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors

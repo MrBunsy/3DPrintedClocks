@@ -327,7 +327,7 @@ class SimpleClockPlates:
 
         self.export_tolerance = 0.1
 
-        self.motion_works_position_bodge = (0,0)
+        self.motion_works_position_bodgemotion_works_position_bodge = (0,0)
 
         self.split_detailed_plate = split_detailed_plate
 
@@ -668,13 +668,14 @@ class SimpleClockPlates:
         friction_clip_dir = np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
         friction_clip_distance = self.motion_works.friction_ring_r*2.5
         # print("friction_clip_distance", friction_clip_distance)
-        #HACK
+        #HACK for retrofitted print to clock 28
         friction_clip_distance = 30.998806423611125
         self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
         self.cannon_pinion_friction_clip_fixings_pos = [
             np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 5, -self.plate_width /  5))),
             np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (self.plate_width / 5, self.plate_width / 5)))
         ]
+        self.motion_works_holder_thick = 4
 
         #even if it's not used:
 
@@ -1387,7 +1388,12 @@ class SimpleClockPlates:
         '''
         relative to the front of the front plate
         '''
-        return self.motion_works.get_hand_holder_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base
+        extra = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+
+        if self.calc_need_motion_works_holder():
+            extra = self.motion_works_holder_thick
+
+        return self.motion_works.get_hand_holder_height() + extra - self.motion_works.inset_at_base
 
     def front_of_motion_works_wheels_z(self):
         '''
@@ -1492,36 +1498,40 @@ class SimpleClockPlates:
 
     def calc_need_motion_works_holder(self):
         '''
-        If we've got a centred second hand then there's a chance that the motino works arbour lines up with another arbour, so there's no easy way to hold it in plnace
-        in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
+        part of the experiment for cetnred seconds, hold the motion works on a tube around the second hand arbor
         '''
-
-        if self.gear_train_layout ==GearTrainLayout.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
-            #potentially
-
-            motion_works_arbour_y = self.motion_works_pos[1]
-
-            for i,bearing_pos in enumerate(self.bearing_positions):
-                #just x,y
-                bearing_pos_y = bearing_pos[1]
-                bearing = get_bearing_info(self.going_train.get_arbour_with_conventional_naming(i).arbor_d)
-                screw = MachineScrew(3, countersunk=True)
-                if abs(bearing_pos_y - motion_works_arbour_y) < bearing.outer_d/2 + screw.get_head_diameter()/2:
-                    print("motion works holder would clash with bearing holder for arbour", i)
-                    return True
-
-        return False
+        return self.has_seconds_hand() and self.centred_second_hand
+        '''
+               If we've got a centred second hand then there's a chance that the motino works arbour lines up with another arbour, so there's no easy way to hold it in plnace
+               in this case we have a separate peice that is given a long screw and itself screws onto the front of the front plate
+               '''
+        # if self.gear_train_layout ==GearTrainLayout.VERTICAL and self.has_seconds_hand() and self.centred_second_hand:
+        #     #potentially
+        #
+        #     motion_works_arbour_y = self.motion_works_pos[1]
+        #
+        #     for i,bearing_pos in enumerate(self.bearing_positions):
+        #         #just x,y
+        #         bearing_pos_y = bearing_pos[1]
+        #         bearing = get_bearing_info(self.going_train.get_arbour_with_conventional_naming(i).arbor_d)
+        #         screw = MachineScrew(3, countersunk=True)
+        #         if abs(bearing_pos_y - motion_works_arbour_y) < bearing.outer_d/2 + screw.get_head_diameter()/2:
+        #             print("motion works holder would clash with bearing holder for arbour", i)
+        #             return True
+        #
+        # return False
 
     def get_cannon_pinion_friction_clip(self):
         '''
         holds two "brake pads" - experimental sprung peice that can add a small amount of friction to the cannon pinion so the minute hand
         doesn't have too much slack when the second hand is centred. Without it the minute hand is about 30s fast on the half past and 30s slow on the half to.
         '''
-        centre_z = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.endshake / 2 - self.motion_works.friction_ring_thick/2
+        # centre_z = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.endshake / 2 - self.motion_works.friction_ring_thick/2
 
         #thick here being height as printed
-        clip_thick = self.motion_works.friction_ring_thick/2
-        total_thick = centre_z + clip_thick/2
+        clip_thick = self.motion_works.friction_ring_clip_thick
+        #aim to have the clip in the centre of the ring, which is slightly thicker than the clip.
+        total_thick = self.motion_works.friction_ring_base_thick + (self.motion_works.friction_ring_thick - clip_thick)/2 + clip_thick
 
         clip_holder_r = self.plate_width/2
 
@@ -1544,7 +1554,9 @@ class SimpleClockPlates:
         # brake_pad_offset = 1.5
         # #thick here being width of arm (strength of spring)
         # arm_thick = 1.5 #0.8 seemed a bit weedy
-        brake_pad_offset = 1
+        #with the new tube mounted motino works this (1) seems a bit strong
+        #with the new tube mount, even 0.5 seems a bit strong!
+        brake_pad_offset = 0.25
         arm_thick = 2.4
 
         inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
@@ -1618,11 +1630,57 @@ class SimpleClockPlates:
 
         return clip
 
+    def get_centred_seconds_motion_works_holder(self):
+        '''
+        Experiment: for now to retrofit to clock 28 this will be a standalone peice to attach to the front of the front plate
+        it will provide a tube for the escape arbor to hold the second hand through the centre of the motion works
+        the motion works will be similar to my attempt with bearings over the arbor, but this will mean no extra friction
+        on the escape arbor, and (hopefully) no depthing issues for the motion works
+
+        this will be a bit specific to the retrofit to see if it works, if it does I'll make it more generic
+        '''
+
+        #absolute positions
+        top_screw_positions = self.cannon_pinion_friction_clip_fixings_pos
+        bottom_screw_positions = [np_to_set(np.add(self.motion_works_pos, relative_pos)) for relative_pos in self.motion_works_fixings_relative_pos]
+        # screw_positions =  + self.cannon_pinion_friction_clip_fixings_pos
+        y_positions = [pos[1] for pos in bottom_screw_positions]
+        min_y = min(y_positions)
+        # max_y = max(y_positions) + 8
+        holder_thick = self.motion_works_holder_thick
+
+        # holder = cq.Workplane("XY").rect(self.plate_width, (max_y - min_y)).extrude(holder_thick).translate((0, (min_y + max_y)/2)).edges("|Z").fillet(5)
+        holder = get_stroke_line([(0, min_y), self.cannon_pinion_friction_clip_pos], wide=self.plate_width, thick=holder_thick)
+        for pos in bottom_screw_positions:
+            #with countersunk head
+            holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0,0,0),(0,1,0),180).translate((pos[0],pos[1], holder_thick)))
+        for pos in top_screw_positions:
+            #just plain hole as the "friction clip", now doubling up to hold motion works in place, will screw in from the top
+            holder = holder.faces(">Z").moveTo(pos[0], pos[1]).circle(self.motion_works_screws.get_rod_cutter_r()).cutThruAll()
+
+        #for screw to hold motion arbor
+        holder = holder.cut(self.motion_works_screws.get_cutter().translate(self.hands_position).translate(self.motion_works_relative_pos))
+
+        outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].bearing.outer_d - self.motion_works.cannon_pinion_to_hour_holder_gap_size
+        inner_diameter = outer_diameter - 2
+
+        holder = holder.faces(">Z").workplane().moveTo(self.hands_position[0], self.hands_position[1]).circle(inner_diameter/2).cutThruAll()
+
+        height = self.motion_works.get_cannon_pinion_total_height() + holder_thick
+
+        holder = holder.union(cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(outer_diameter/2).circle(inner_diameter/2).extrude(height))
+
+        return holder
+
     def get_motion_works_holder(self):
+        '''
+        Gets a little plate which can hold a screw for the motion works arbor, used if it would line up with a bearing so can't
+        be screwed in from the back of the plates
+        '''
         if not self.need_motion_works_holder:
             return None
 
-
+        return self.get_centred_seconds_motion_works_holder()
 
         standoff_thick = 1
         holder_thick = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - WASHER_THICK_M3 - standoff_thick
@@ -1632,9 +1690,9 @@ class SimpleClockPlates:
         holder = cq.Workplane("XY").moveTo(w/2, l/2).radiusArc((-w/2,l/2), -w/2).line(0,-l).radiusArc((w/2, -l/2), -w/2).close().extrude(holder_thick)
 
         #small standoff for motion works arbour
-        holder = holder.faces(">Z").workplane().moveTo(self.motion_works_position_bodge[0], self.motion_works_position_bodge[1]).circle(self.motion_works_screws.metric_thread).extrude(standoff_thick)
+        holder = holder.faces(">Z").workplane().circle(self.motion_works_screws.metric_thread).extrude(standoff_thick)
 
-        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True).translate(self.motion_works_position_bodge))
+        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True))
 
         for pos in self.motion_works_fixings_relative_pos:
             holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))
@@ -3174,7 +3232,7 @@ class SimpleClockPlates:
             plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
 
         if self.need_motion_works_holder:
-            plates = plates.add(self.get_motion_works_holder().translate((self.motion_works_pos[0], self.motion_works_pos[1], front_of_clock_z)))
+            plates = plates.add(self.get_motion_works_holder().translate((0, 0, front_of_clock_z)))
 
         detail = None
         if self.style in [PlateStyle.RAISED_EDGING]:

@@ -275,8 +275,8 @@ if output_STL:
     plates.output_STLs(clock_name, clock_out_dir)
     hands.output_STLs(clock_name, clock_out_dir)
     assembly.output_STLs(clock_name, clock_out_dir)
-    clock.export_STL(mat, "mat", clock_name, clock_out_dir)
-    clock.export_STL(mat_detail, "mat_detail", clock_name, clock_out_dir)
+    # clock.export_STL(mat, "mat", clock_name, clock_out_dir)
+    # clock.export_STL(mat_detail, "mat_detail", clock_name, clock_out_dir)
 
 
 
