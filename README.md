@@ -61,7 +61,7 @@ See [Printing Parts](docs/Printing.md)
 See [Assembly Instructions](docs/Assembly.md)
 
 # Setting up a Clock
-See [Setting up your Clock](docs/setup.md)
+See [Setting up your Clock](docs/Setup.md)
 
 # Using the Library
 Below I will go through the main files and give a rough overview of how to use the classes required to design your own clock. Much of the design is in flux, especially the SimpleClockPlates which tend to require more options and refactoring with every new design. I try and ensure comments are sufficient to understand the intent of each class and their major functions.
