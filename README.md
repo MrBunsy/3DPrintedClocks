@@ -52,13 +52,16 @@ An honourary mention to [Brian Law's Wooden Clocks](https://www.woodenclocks.co.
 I found [an excellent write up on designing deadbeat escapements](https://www.ocf.berkeley.edu/~wwu/cgi-bin/yabb/YaBB.cgi?board=riddles_general;action=display;num=1437253052) _after_ I'd designed mine. If you're starting from scratch, I'd recommend it. This is very similar to the approach I decided on.
 
 # Summary of all clocks
-All the clocks (printable and unfinished) are [summarised here](./Clocks.md)
+All the clocks (printable and unfinished) are [summarised here](docs/Clocks.md)
 
 # Printing Parts
-See [Printing Parts](Printing.md)
+See [Printing Parts](docs/Printing.md)
 
 # Assembling Clocks
-See [Assembly Instructions](Assembly.md)
+See [Assembly Instructions](docs/Assembly.md)
+
+# Setting up a Clock
+See [Setting up your Clock](docs/setup.md)
 
 # Using the Library
 Below I will go through the main files and give a rough overview of how to use the classes required to design your own clock. Much of the design is in flux, especially the SimpleClockPlates which tend to require more options and refactoring with every new design. I try and ensure comments are sufficient to understand the intent of each class and their major functions.
