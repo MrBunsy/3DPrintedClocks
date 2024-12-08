@@ -5038,10 +5038,102 @@ class SlideWhistlePlates:
         self.bearing_positions = []
         self.calc_bearing_positions()
 
+    def calc_bearing_vertical_positions(self):
+        '''
+        currently copy-pasted from SimpleClockPlates.calc_bearing_positions.
+        Plan is to make this more generic then refactor SimpleClockPlates to use a shared base class
+        on second thoughts, the differences around escapements and fans might make that tricky?
+
+        '''
+        arbor_thicknesses = []
+
+        # height of the centre of the wheel that will drive the next pinion
+        driving_z = 0
+        for i in range(self.going_train.wheels):
+            # print(str(i))
+            arbor_thicknesses.append(arbourThick)
+            r = self.going_train.get_arbor(i - 1).distance_to_next_arbor
+            if i == self.going_train.wheels-1:
+                # the fan TODO
+                pass
+            else:
+                # any of the other wheels
+                # pinionAtBack = not pinionAtBack
+                # print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
+                pinion_to_wheel = self.going_train.get_arbor(i).get_pinion_to_wheel_z()
+                pinion_z = self.going_train.get_arbor(i).get_pinion_centre_z()
+                base_z = driving_z - pinion_z
+
+                driving_z = driving_z + pinion_to_wheel
+
+                arbourThick = self.going_train.get_arbor(i).get_total_thickness()
+
+
+
+
+        # print(self.bearingPositions)
+
+        topZs = [arbor_thicknesses[i] + self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
+
+        bottomZs = [self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
+
+        bottomZ = min(bottomZs)
+        if bottomZ < 0:
+            # positions are relative (chain at front), so readjust everything
+            topZs = [z - bottomZ for z in topZs]
+            # bottomZs = [z - bottomZ for z in bottomZs]
+            for i in range(len(self.bearing_positions)):
+                self.bearing_positions[i][2] -= bottomZ
+
+        '''
+        something is always pressed up against both the front and back plate. If it's a powered wheel that's designed for that (the chain/rope wheel is designed to use a washer,
+        and the key-wound cord wheel is specially shaped) then that's not a problem.
+
+        However if it's just a pinion (or a wheel - somehow?), or and anchor (although this should be avoided now by choosing where it goes) then that's extra friction
+
+        TODO - I assumed that the chainwheel was alays the frontmost or backmost, but that isn't necessarily true.
+        '''
+        needExtraFront = False
+        needExtraBack = False
+
+        preliminaryPlateDistance = max(topZs)
+        for i in range(len(self.bearing_positions)):
+            # check front plate
+            canIgnoreFront = False
+            canIgnoreBack = False
+            if self.going_train.get_arbour_with_conventional_naming(i).get_type() == ArborType.POWERED_WHEEL:
+                if self.going_train.chain_at_back:
+                    canIgnoreBack = True
+                else:
+                    # this is the part of the chain wheel with a washer, can ignore
+                    canIgnoreFront = True
+            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).getTotalThickness() + self.bearingPositions[i][2]
+            if topZs[i] >= preliminaryPlateDistance - LAYER_THICK * 2 and not canIgnoreFront:
+                # something that matters is pressed up against the top plate
+                # could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
+                needExtraFront = True
+
+            if self.bearing_positions[i][2] == 0 and not canIgnoreBack:
+                needExtraBack = True
+
+        extraFront = 0
+        extraBack = 0
+        if needExtraFront:
+            extraFront = LAYER_THICK * 2
+        if needExtraBack:
+            extraBack = LAYER_THICK * 2
+
+        for i in range(len(self.bearing_positions)):
+            self.bearing_positions[i][2] += extraBack
+
+        # print(self.bearingPositions)
+        self.plate_distance = max(topZs) + self.endshake + extraFront + extraBack
+
     def calc_bearing_positions(self):
         #centre on the powered wheel
+        #TODO make more compact, lazy for now just to get this off the ground
         positions_2d = [(0,0), polar(self.first_wheel_angle, self.going_train.arbor[0].distance_to_next_arbor)]
         for i in range(2, self.going_train.wheels):
-            pass
+            positions_2d.append((np_to_set(np.add(positions_2d[-1], polar(self.first_wheel_angle, self.going_train.arbor[i-1].distance_to_next_arbor)))))
 
 

@@ -14,7 +14,9 @@ You can hang the clock with only one screw, but it's very easy to knock the cloc
 
 Once the clock is on the wall you can hang the pendulum, wind the clock fully, and give the pendulum a gentle push to start the clock ticking.
 
-[photo of hanging pendulum]
+The top of the pendulum slots into the back of the pendulum hanger. It will drop down slightly so the nut is resting in a hole.
+
+![Nut for adjusting rate](../images/hanging_pendulum_480px.jpg)
 
 ## Setting the Beat
 
@@ -24,7 +26,7 @@ Listening to the tick-tock is how I set the beat. If it sounds like a horse gall
 
 Adjusting the thumb nut about half a turn in one direction will be enough to hear a difference. If it sounds worse (more like a gallop) then turn the nut the other way. If it improves, but still isn't in beat then turn it a little bit more. It's easy to turn too far and go out of beat in the other direction. Don't worry, just adjust it back again.
 
-[insert picture here!!]
+![Thumb nut for adjusting beat](../images/beat_adjustment_480px.jpg)
 
 ## Adjusting the Rate
 
@@ -32,7 +34,7 @@ The length of the pendulum sets the rate of the clock and the nut in the centre 
 
 The back of the pendulum has a reminder of which way to turn the nut. Turn towards the 'S' to slow the clock down or the 'F' to speed the clock up.
 
-[insert picture here!!]
+![Nut for adjusting rate](../images/pendulum_bob_480px.jpg)
 
 If the clock gains or loses more than a minute a day it's worth adjusting once a day. Once the clock is keeping roughly the right time, leave it to run for a week after winding up and only adjust after a full week. It doesn't take more than a handful of adjustments to get it keeping good time.
 

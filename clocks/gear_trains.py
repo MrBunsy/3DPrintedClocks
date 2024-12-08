@@ -1167,7 +1167,7 @@ class GoingTrain:
 
 class SlideWhistleTrain:
     '''
-    Going to write this completely independantly of GoingTrain, but with the idea of re-writing GoingTrain later using this to test out neater ways to do it
+    Going to write this completely independently of GoingTrain, but with the idea of re-writing GoingTrain later using this to test out neater ways to do it
     and maybe some sort of base class for calculating gear trains
     '''
 
@@ -1176,8 +1176,11 @@ class SlideWhistleTrain:
         #think it's much easier to just provide this in the constructor than the mess in goingtrain
         self.powered_wheel = powered_wheel
         self.fan = fan
+        # decided that this will be total wheels, not just wheels from the minute wheel this might become a gotcha, or might be worth refactoring the
+        # time going train
         self.wheels = wheels
         self.trains = []
+        self.arbors = []
 
     def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=200, pinion_max_teeth=10, wheel_min_teeth=100,
                          max_error=10, loud=False, cam_rpm = 1, fan_rpm=250):
@@ -1353,7 +1356,7 @@ class SlideWhistleTrain:
 
         self.pairs = [WheelPinionPair(pair[0], pair[1], self.modules[i], lantern=i in self.lanterns) for i, pair in enumerate(self.trains[0]["train"])]
 
-        self.arbors = []
+
 
         #TODO check this works - I'm ignoring chain at back/front like in old going train, just using the first pinion face forward to decide instead.
         clockwise = self.powered_wheel.is_clockwise() and self.pinions_face_forwards[0]
