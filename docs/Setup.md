@@ -42,6 +42,8 @@ If the clock gains or loses more than a minute a day it's worth adjusting once a
 
 If you need to set the time you can simply turn the minute hand in either direction and rotate through the hours required. Don't try and turn the hour hand as it will end up out of alignment with the minute hand. If the hour and minute hand have come out of alignment, don't worry, just set the minute hand to 12 and with a small amount of force turn the hour hand to the 12 as well, make sure that the hour hand is still vertical so it won't crash into the minute hand. Then you can turn the minute hand to set the correct time.
 
+If the clock has a moon complication you can set the moon in the same way. The moon is friction fit so a small nudge will be enough to rotate it. The moon complication models an average lunar month, so it is accurate long term, but on any given day it may be slightly out as the real moon's orbit is not circular.
+
 ## Why has my Clock Stopped?
 
 Common reasons your clock has stopped:
