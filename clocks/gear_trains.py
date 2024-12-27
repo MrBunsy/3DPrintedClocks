@@ -14,6 +14,13 @@ This file is for classes to generate gear trains. currently going a going train.
 There's not much reason to do cadquery work here, this is mostly about calculating gear ratios and power wheels.
 '''
 
+
+class GearTrainBase:
+    '''
+    Plan - the new generate_arbors mechanism used for the slide whistle is so much cleaner to use and maintain than the old gen_gears, so abstract it out
+    and enable it to be shared by multiple types of trains
+    '''
+
 class GoingTrain:
     '''
     This sets which direction the gears are facing and does some work about setting the size of the escape wheel, which is getting increasingly messy
@@ -1171,7 +1178,7 @@ class SlideWhistleTrain:
     and maybe some sort of base class for calculating gear trains
     '''
 
-    def __init__(self, powered_wheel, fan, wheels=3):
+    def __init__(self, powered_wheel, fan, wheels=5):
         # going to be a spring to develop this, but might eventually be any other source of power if it ends up in a clock
         #think it's much easier to just provide this in the constructor than the mess in goingtrain
         self.powered_wheel = powered_wheel
@@ -1182,7 +1189,7 @@ class SlideWhistleTrain:
         self.trains = []
         self.arbors = []
 
-    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=200, pinion_max_teeth=10, wheel_min_teeth=100,
+    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=120, pinion_max_teeth=10, wheel_min_teeth=90,
                          max_error=10, loud=False, cam_rpm = 1, fan_rpm=250):
         all_gear_pair_combos = []
 
@@ -1276,7 +1283,7 @@ class SlideWhistleTrain:
         all_times.sort(key=lambda x: x["error"])
 
         self.trains = all_times
-
+        print(all_times)
         if len(all_times) == 0:
             raise RuntimeError("Unable to calculate valid going train")
         print(all_times[0])
@@ -1338,7 +1345,7 @@ class SlideWhistleTrain:
             self.pinions_face_forwards += [None] * (self.wheels - len(self.pinions_face_forwards))
         for i, pinion_face_forward in enumerate(self.pinions_face_forwards):
             if pinion_face_forward is None:
-                pinions_face_forwards[i] = not pinions_face_forwards[i-1]
+                self.pinions_face_forwards[i] = not self.pinions_face_forwards[i-1]
 
         self.pinion_thicks = pinion_thicks
         if self.pinion_thicks is None:
@@ -1383,6 +1390,6 @@ class SlideWhistleTrain:
 
             clockwise_from_powered_side = clockwise == pinion_at_front
 
-            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, wheel_thick=self.thicknesses[i], arbor_d=arbor_d,
+            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=self.pinion_thicks[i], wheel_thick=self.thicknesses[i], arbor_d=arbor_d,
                                      distance_to_next_arbour=distance_to_next_arbour, style=style, pinion_at_front=pinion_at_front,
                                      clockwise_from_pinion_side=clockwise_from_powered_side))

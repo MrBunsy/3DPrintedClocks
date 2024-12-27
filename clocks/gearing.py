@@ -998,7 +998,7 @@ class Gear:
             l = r
             sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
             self.cutoff_height = sagitta
-            print(f"TEMP inner_r_for_lantern_fixing_slot {self.inner_r_for_lantern_fixing_slot}mm inner_r {self.inner_r}")
+            # print(f"TEMP inner_r_for_lantern_fixing_slot {self.inner_r_for_lantern_fixing_slot}mm inner_r {self.inner_r}")
 
         '''
         is this a crown gear (may be called a face gear) - a special case of bevel gear that can mesh with a normal spur gear at 90deg
@@ -1965,7 +1965,9 @@ class ArborForPlate:
 
                 min_gap_size = fixing_screws.get_head_diameter() * 1.5
                 if max_outer_r < inner_r + min_gap_size:
-                    raise ValueError(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
+                    # raise ValueError(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
+                    #if wanting to print the wheel seperate to the barrel (for ASA, which I've abandoned. not an issue for PETG)
+                    print(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
 
 
                 outer_r = inner_r + min_gap_size #self.arbor.wheel.get_min_radius() - 3
@@ -2465,8 +2467,8 @@ class Arbor:
             if not self.combine_with_powered_wheel:
                 shape = shape.add(self.powered_wheel.get_assembled().translate((0, 0, self.wheel_thick)))
 
-        if self.pinion.lantern:
-            shape = shape.add(self.pinion.get_lantern_cap(self.end_cap_thick, offset=self.get_lantern_trundle_offset()).translate((0,0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
+        if self.pinion is not None and self.pinion.lantern:
+            shape = shape.add(self.pinion.get_lantern_cap(offset=self.get_lantern_trundle_offset()).translate((0,0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
             shape = shape.add(self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick, pinion_height=self.pinion_thick + self.pinion_extension, top_thick=self.end_cap_thick, for_printing=False))
 
         return shape

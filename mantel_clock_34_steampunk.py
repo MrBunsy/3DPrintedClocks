@@ -48,22 +48,16 @@ gear_style = clock.GearStyle.ROUNDED_ARMS5
 
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
 
-
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
-                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False)
 barrel_gear_thick =5
 
+power = clock.SpringBarrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
+                        style=gear_style, wall_thick=6, ratchet_thick=8, spring=clock.MAINSPRING_183535)
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False, powered_wheel=power)
+
+train.set_chain_wheel_ratio([[66, 10], [57, 10]])
 module_reduction=0.9
-#chain_wheel_ratios=[[61, 10], [62, 10]],
-#, chain_wheel_ratios=[[81, 10], [61, 10]])
-#can't decide between trying smaller spring or higher ratio with standard smiths spring - so slightly more even power and potentially longer total runtime if I
-#don't care about accuracy
-#, spring=clock.MAINSPRING_183535
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
-                        style=gear_style, wall_thick=6, ratchet_thick=8, spring=clock.MAINSPRING_183535, chain_wheel_ratios=[[75, 10], [61, 10]])#fraction_of_max_turns=0.375)# chain_wheel_ratios=[[64, 10], [64, 10]])#,fraction_of_max_turns=0.4)#, chain_wheel_ratios=[[64, 10], [62, 10]])#, fraction_of_max_turns=0.5)
-#, chain_wheel_ratios=[[61, 10], [62, 10]])#
-# train.calculate_ratios(module_reduction=module_reduction, min_pinion_teeth=9, max_wheel_teeth=150, pinion_max_teeth=12, wheel_min_teeth=100, loud=True)
-#2/3s without second hand with 30 teeth
+#mantle 33 ratios - 1/3s tick without second hand
 train.set_ratios([[72, 10], [70, 12], [60, 14]])
 
 pendulum_sticks_out=25
@@ -73,7 +67,7 @@ back_plate_from_wall=30
 pinion_extensions = {0:1, 1:3, 3:8}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 
-module_sizes = [0.8,0.7,0.7]
+module_sizes = [0.7,0.65,0.65]
 
 print("module_sizes", module_sizes)
 lanterns=[0, 1]
@@ -88,12 +82,14 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 pillar_style=clock.PillarStyle.COLUMN
 
-#dial_d=175
-dial_d=205
+dial_d=160
+# dial_d=205
 dial_width=25
 
-dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
-              outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
+# dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
+#               outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
+dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.LINES_ARC)
+#               outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
 moon_complication = None
 
 motion_works_height = 10
@@ -137,11 +133,11 @@ plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS]
 
 if output_STL:
 
-    a = clock.polar(0, 100)
-    b = clock.polar(math.pi * 2 / 3, 100)
-    wedge_height = plates.plate_distance / 2 + 2
-    wedge = cq.Workplane("XY").lineTo(a[0], a[1]).lineTo(b[0], b[1]).close().extrude(wedge_height).translate((0, 0, plates.plate_distance - wedge_height))
-    special_pillar = plates.get_pillar(top=True).cut(wedge)
+    # a = clock.polar(0, 100)
+    # b = clock.polar(math.pi * 2 / 3, 100)
+    # wedge_height = plates.plate_distance / 2 + 2
+    # wedge = cq.Workplane("XY").lineTo(a[0], a[1]).lineTo(b[0], b[1]).close().extrude(wedge_height).translate((0, 0, plates.plate_distance - wedge_height))
+    # special_pillar = plates.get_pillar(top=True).cut(wedge)
 
     # clock.export_STL(special_pillar, "special_pillar", clock_name, clock_out_dir)
 

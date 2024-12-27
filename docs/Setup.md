@@ -16,7 +16,10 @@ Once the clock is on the wall you can hang the pendulum, wind the clock fully, a
 
 The top of the pendulum slots into the back of the pendulum hanger. It will drop down slightly so the nut is resting in a hole.
 
-![Nut for adjusting rate](../images/hanging_pendulum_480px.jpg)
+![Labelled Pendulum](../images/pendulum_labelled_small.png)
+- A: Beat adjustment thumb nut
+- B: Pendulum holder slot
+- C: Rate adjustment nut
 
 ## Setting the Beat
 
@@ -26,8 +29,8 @@ Listening to the tick-tock is how I set the beat. If it sounds like a horse gall
 
 Adjusting the thumb nut about half a turn in one direction will be enough to hear a difference. If it sounds worse (more like a gallop) then turn the nut the other way. If it improves, but still isn't in beat then turn it a little bit more. It's easy to turn too far and go out of beat in the other direction. Don't worry, just adjust it back again.
 
-![Thumb nut for adjusting beat](../images/beat_adjustment_480px.jpg)
 
+[//]: # (![Thumb nut for adjusting beat]&#40;../images/beat_adjustment_480px.jpg&#41;)
 ## Adjusting the Rate
 
 The length of the pendulum sets the rate of the clock and the nut in the centre of the pendulum bobs allows adjusting the effective length of the pendulum. The longer the pendulum, the slower the clock. The pendulum bob nut can be adjusted by hand. Only a quarter of a turn is enough to make a difference of half a minute or so over a week, so if the clock is only slightly fast or slow, make very small adjustments!

@@ -54,6 +54,10 @@ class DoubleActionBellows:
     Real world examples I've seen use a spring but I'm wondering about putting them upright and using a weight
 
     Many thanks to melvyn Wright for his double action (organ!) bellows design: http://www.melright.com/busker/jsart119.htm
+
+    I've decided to veer slightly away from the organ double action bellows to the traditional design for the bird whistle
+    I've seen documented in Secrets of Automata because this doesn't require a flexible pipe - the air reservoir is in the main body instead
+    downside is there needs to be an air intake in the side of one of the bellows, but I don't think that'll be an issue with 3D printing
     '''
 
     def __init__(self, width=4, length=8, height=5, thickness=2.4, pipe=None):
@@ -71,7 +75,9 @@ class DoubleActionBellows:
         self.valve_circle_rows=2
 
 class BirdSong:
-
+    '''
+    plates moved to plates.py, not sure if there will be anything here?
+    '''
     def __init__(self, plate_thick=5):
         '''
         Hand-cranked birdsong generator. Will stand upright with handle on one side and all the birdsong mechanism on the other
