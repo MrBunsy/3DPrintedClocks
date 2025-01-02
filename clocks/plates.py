@@ -1075,8 +1075,8 @@ class SimpleClockPlates:
                 second_powered_wheel_pos =  polar(self.angles_from_chain[0], first_powered_wheel_to_second_powered_wheel)
                 minute_wheel_from_second_powered_wheel = np_to_set(np.subtract(minute_wheel_relative_pos, second_powered_wheel_pos))
                 self.angles_from_chain[1] = math.atan2(minute_wheel_from_second_powered_wheel[1], minute_wheel_from_second_powered_wheel[0])
-                if self.compact_zigzag:
-                    on_side *= -1
+            if self.compact_zigzag:
+                on_side *= -1
 
             '''
             4 wheels and escape wheel would not be directly above hands using above logic
@@ -4049,7 +4049,7 @@ class RoundClockPlates(SimpleClockPlates):
         self.top_pillar_r = self.pillar_r
         self.bottom_pillar_r = self.pillar_r
 
-        # self.radius = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)
+        # for the half-round design
         self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
         self.radius = self.bottom_pillar_distance/2
 
@@ -4071,22 +4071,23 @@ class RoundClockPlates(SimpleClockPlates):
                 #TODO - put them ALONG THE CIRCLE at the right distance from the cord wheel?
                 #hacky - for now with only one power wheel the thing furthest away is probably the anchor, so use that
                 self.radius = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
+                if self.going_train.wheels > 3:
+                    top_left_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius() + self.pillar_r + 1,
+                                                                               self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius() + self.pillar_r + 1,
+                                                                               in_direction=(-1,0))
+                    top_left_pillar_distance = distance_between_two_points(self.hands_position, top_left_pillar_pos)
+                    if top_left_pillar_distance > self.radius:
+                        self.radius = top_left_pillar_distance
+
                 # self.bottom_pillar_positions = [(self.bearing_positions[0][0] - distance, self.bearing_positions[0][1]), (self.bearing_positions[0][0] + distance, self.bearing_positions[0][1])]
                 angle = math.pi*0.2
                 self.bottom_pillar_positions = [np_to_set(np.add(polar(angle, self.radius), self.hands_position)) for angle in [-angle, math.pi+angle]]
             else:
-                #assuming spring driven here (but works for month cord)
-                b = self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1
-                a = self.arbors_for_plate[0].arbor.distance_to_next_arbor
-                c = self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1
-                # cosine law
-                angle = math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b))
-                second_wheel_from_first = np_to_set(np.subtract(self.bearing_positions[1][:2], self.bearing_positions[0][:2]))
-                second_wheel_from_first_angle = math.atan2(second_wheel_from_first[1], second_wheel_from_first[0])
-                final_angle = second_wheel_from_first_angle - angle
-                if not self.power_at_bottom:
-                    final_angle = second_wheel_from_first_angle + angle
-                bottom_pillar_pos = np_to_set(np.add(self.bearing_positions[0][:2], polar(final_angle, b)))
+                # two power wheels - probably spring but also month duration cord
+                # put the bottom right pillar so it's between the two power wheels
+                bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
+                                                             self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1,
+                                                             in_direction=(1,0))
                 self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
                 self.bottom_pillar_positions = [
                     bottom_pillar_pos,
@@ -4101,8 +4102,8 @@ class RoundClockPlates(SimpleClockPlates):
 
         #this did work, but in general I think we're better off putting the pillars as a mirror of the bottom pillars (for a 3 wheel train or second hand below)
         # find where wheels 3 and 4 meet, then put the pillar in that direction
-        points = get_circle_intersections(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius(),
-                                          self.bearing_positions[4][:2], self.arbors_for_plate[4].get_max_radius())
+        points = get_circle_intersections(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius(),
+                                          self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius())
         # find furthest point
         if distance_between_two_points(points[0], centre) > distance_between_two_points(points[1], centre):
             point = points[0]
