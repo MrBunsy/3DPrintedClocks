@@ -1119,12 +1119,23 @@ class SimpleClockPlates:
                 escape_wheel_to_anchor = self.going_train.get_arbor(self.going_train.wheels-1).distance_to_next_arbor
 
                 if forcing_escape_wheel_slightly_off_centre:
-                    #escape wheel and wheel before that are the "base" of an isosceles triangle with the point at the minute hand
-                    escape_wheel_angle_from_hands = math.pi/2 - on_side*math.asin((penultimate_wheel_to_escape_wheel/2)/minute_wheel_to_escape_wheel)
-                    positions_relative[escape_wheel_index] = polar(escape_wheel_angle_from_hands, minute_wheel_to_escape_wheel)
-                    #choosing mirror of escape wheel
-                    positions_relative[penultimate_wheel_index] = (-positions_relative[escape_wheel_index][0], positions_relative[escape_wheel_index][1])
+                    if self.going_train.wheels > 3:
+                        #escape wheel and wheel before that are the "base" of an isosceles triangle with the point at the minute hand
+                        escape_wheel_angle_from_hands = math.pi/2 - on_side*math.asin((penultimate_wheel_to_escape_wheel/2)/minute_wheel_to_escape_wheel)
+                        positions_relative[escape_wheel_index] = polar(escape_wheel_angle_from_hands, minute_wheel_to_escape_wheel)
+                        #choosing mirror of escape wheel
+                        positions_relative[penultimate_wheel_index] = (-positions_relative[escape_wheel_index][0], positions_relative[escape_wheel_index][1])
+                    else:
+                        if self.going_train.wheels == 2:
+                            raise ValueError(f"{self.going_train.wheels} wheels not yet supported")
+                        #3 wheels assumed
+                        # the penultimate wheel meshes with the minute wheel, so we don't have free placement of it, aproximate the triangle
+                        minute_wheel_to_penultimate_wheel = self.going_train.get_arbor(0).distance_to_next_arbor
+                        penultimate_wheel_angle_from_hands = math.pi / 2 + on_side * math.asin((penultimate_wheel_to_escape_wheel / 2) / minute_wheel_to_penultimate_wheel)
+                        positions_relative[penultimate_wheel_index] = polar(penultimate_wheel_angle_from_hands, minute_wheel_to_penultimate_wheel)
 
+                        positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[0], minute_wheel_to_escape_wheel, positions_relative[penultimate_wheel_index],
+                                                        penultimate_wheel_to_escape_wheel, in_direction=(-1,0))
                     # self.angles_from_minute[self.going_train.wheels-1] = math.pi - on_side*math.acos(escape_wheel_relative_pos[0]/escape_wheel_to_anchor)
                     positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + math.sqrt(escape_wheel_to_anchor**2 - (penultimate_wheel_to_escape_wheel/2)**2))
 
