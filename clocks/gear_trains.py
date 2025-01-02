@@ -1176,6 +1176,20 @@ class SlideWhistleTrain:
     '''
     Going to write this completely independently of GoingTrain, but with the idea of re-writing GoingTrain later using this to test out neater ways to do it
     and maybe some sort of base class for calculating gear trains
+
+    Current plan:
+     - spring barrel (or other powered wheel)
+     - cam wheel
+     - bellows driving wheel
+     - wheel with pin for stopping mechanism
+     - fly
+
+     was considering reverse worm gear for fly, but I'm not sure how easy that will be to 3D print and this way we can get an extra
+     wheel ready for a stopping mechanism
+
+     this is pretty much the striking train! likely be able to reuse or unify with striking mechanism in future
+
+     how to calculate good gear ratios?
     '''
 
     def __init__(self, powered_wheel, fan, wheels=5):
@@ -1190,7 +1204,7 @@ class SlideWhistleTrain:
         self.arbors = []
 
     def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=120, pinion_max_teeth=10, wheel_min_teeth=90,
-                         max_error=10, loud=False, cam_rpm = 1, fan_rpm=250):
+                         max_error=10, loud=False, cam_rpm = 1, fan_rpm=100):
         all_gear_pair_combos = []
 
         for p in range(min_pinion_teeth, pinion_max_teeth):

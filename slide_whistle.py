@@ -9,6 +9,15 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
+
+# going_train = GoingTrain
+# from wall clock 32 just for playing around
+# train.set_ratios([[65, 14], [60, 13], [56, 10]])
+
+going_train_ratios = [[65, 14], [60, 13], [56, 10]]
+for ratio in going_train_ratios:
+    print(ratio[0]/ratio[1])
+
 fan = CentrifugalFan()
 
 power = SpringBarrel()
