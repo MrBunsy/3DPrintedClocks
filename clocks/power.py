@@ -2184,7 +2184,7 @@ class CordWheel:
                 click_angle = -math.pi/2
             if ratchet_diameter < 0:
                 ratchet_diameter = self.diameter+6.5
-            self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle, pawl_and_click_thick=ratchet_thick-LAYER_THICK)
+            self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle, pawl_and_click_thick=ratchet_thick-0.6)
         else:
             #inner radius slightly larger than cord diameter so there's space for nuts
             self.ratchet = Ratchet(totalD=self.cap_diameter, thick=ratchet_thick, blocks_clockwise=power_clockwise, innerRadius=self.diameter / 2 + 2)

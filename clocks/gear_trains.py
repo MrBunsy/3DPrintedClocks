@@ -626,8 +626,8 @@ class GoingTrain:
 
         print("pendulum length: {}m period: {}s".format(self.pendulum_length_m, self.pendulum_period))
         print("escapement time: {}s teeth: {}".format(self.escapement_time, self.escapement.teeth))
-        if PowerType.is_weight(self.powered_wheel.type):
-            print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
+        # if PowerType.is_weight(self.powered_wheel.type):
+        #     print("Powered wheel diameter: {}".format(self.powered_wheel_diameter))
         # print("cicumference: {}, run time of:{:.1f}hours".format(self.circumference, self.get_run_time()))
         power_ratio = self.minute_wheel_ratio
         power_wheel_ratios = [1]

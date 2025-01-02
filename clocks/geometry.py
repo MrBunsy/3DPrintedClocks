@@ -222,8 +222,11 @@ def rotate_vector(vector, axis, angle_rad):
     return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
 
 
-def get_point_on_two_circles(pos0, distance0, pos1, distance1, anticlockwise_from_0=True):
+def get_point_two_circles_intersect(pos0, distance0, pos1, distance1, anticlockwise_from_0=True, in_direction=None):
     '''
+    Since there are always two points where overlapping circles overlap, we need a way to distinguish.
+    if in_direction is a vector, will find point relative to average circle position which is +ve along in_direction, otherwise we'll use anticlockwise_from_0
+
     needs a better name. (done? I've realised it's basically the intersection of two circles)
     Given two positions, a and b, find the position of another point when you know all the distances, using cosine law
     I've done this all over the place in calculating gear train placement in plates, but let's finally abstract it out so I can re-use it cleanly
@@ -238,11 +241,23 @@ def get_point_on_two_circles(pos0, distance0, pos1, distance1, anticlockwise_fro
 
     a_to_b = np_to_set(np.subtract(pos1, pos0))
     a_to_b_angle = math.atan2(a_to_b[1], a_to_b[0])
+    if in_direction is not None:
+        point_angles = [a_to_b_angle + dir*angle for dir in [-1,1]]
+        test_points = [np_to_set(np.add(pos0, polar(point_angle, distance0))) for point_angle in point_angles]
+        average_centre = average_of_two_points(pos0, pos1)
 
-    dir = 1 if anticlockwise_from_0 else -1
-    point_angle = a_to_b_angle + dir*angle
+        for point in test_points:
+            relative_point = np.subtract(point, average_centre)
+            if np.dot(relative_point, in_direction) >= 0:
+                return point
+        #shouldn't be able to reach here?
+        raise ValueError("unable to find point")
 
-    return np_to_set(np.add(pos0, polar(point_angle, distance0)))
+    else:
+        dir = 1 if anticlockwise_from_0 else -1
+        point_angle = a_to_b_angle + dir*angle
+
+        return np_to_set(np.add(pos0, polar(point_angle, distance0)))
 
 def get_incircle_for_regular_polygon(outer_radius, sides):
     polygon_side_length = 2 * outer_radius * math.sin(math.pi / sides)

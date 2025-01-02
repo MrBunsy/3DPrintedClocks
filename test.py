@@ -806,7 +806,7 @@ if test_cosine_law:
     show_object(cq.Workplane("XY").moveTo(pos1[0], pos1[1]).circle(r1))
 
     r=3
-    pos = get_point_on_two_circles(pos0=pos0, pos1=pos1, distance0=r0 + r, distance1=r1 + r, anticlockwise_from_0=True)
+    pos = get_point_two_circles_intersect(pos0=pos0, pos1=pos1, distance0=r0 + r, distance1=r1 + r, anticlockwise_from_0=True)
 
     show_object(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(r))
 
