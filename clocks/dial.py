@@ -638,14 +638,17 @@ class Dial:
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
-                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2):
+                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2, raised_detail=False):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
         if just a style is provided, that's all that's used.
         Alternatively a style an inner and/or outer edge style can be provided. Intention: numbers with a ring around the outside.
 
+        raised_detail - if true then there is no in-layer colour change (should result in less smudging, at the cost of needed to glue pillars)
+
         '''
+        self.raised_detail = raised_detail
         #used to be 3 before made configurable
         self.hand_space_z = hand_space_z
         self.style = style
@@ -667,8 +670,12 @@ class Dial:
         #for a style which isn't just a ring, how big a hole for the hands to fit through?
         self.hand_hole_d = hand_hole_d
         self.detail_thick = detail_thick
+        self.nib_thick = detail_thick - LAYER_THICK
+        self.nib_hole_deep = detail_thick + LAYER_THICK
         #bit of a bodge, for tony the detail is in yellow so I need it thicker (my yellow is really translucent)
         self.extras_thick = extras_thick
+
+
 
         #for clocks without all hands on the same dial, or without sub-seconds dial?
         #the default assumption is this dial has a minute and hour hand and a sub-seconds hand.
@@ -732,6 +739,11 @@ class Dial:
         Bit of a bodge, but the obvious alternative is to pass all the dial settings into clocks plates (or a new class for dial config?)
         '''
         self.support_length = support_length# + 1 #why was the +1 here? was this left over from a retrofit?
+
+        #for raised detail we have small circles on teh back for the tops of the pillars (supports) to slot into to be glued in place
+        self.support_slot_r = 2.5
+        if self.support_slot_r > support_d/2:
+            self.support_slot_r = support_d/2 - 1
 
         self.support_d = support_d
         if outside_d > 0:
@@ -811,6 +823,8 @@ class Dial:
             [(fixing_x, fixing_y), (fixing_x, fixing_y)]
         ]
         For some dials we might want more choice over where to put the fixings (eg Tony, which is fully filled in)
+
+        this is if the dial is face-down (as that was the only way the dial could be before raised_detail)
         '''
         self.fixing_positions = fixing_positions
 
@@ -1256,6 +1270,15 @@ class Dial:
         detail = detail.add(mouth)
 
         return detail
+    def get_support_positions(self):
+        '''
+        get position of the centres of the supports, as what is stored is the positions of the screws.
+        '''
+        support_positions = []
+        for fixing_pos_set in self.get_fixing_positions():
+            support_positions.append((sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set]) / len(fixing_pos_set), self.thick))
+
+        return support_positions
 
     def get_dial(self):
         r = self.outside_d / 2
@@ -1278,28 +1301,38 @@ class Dial:
             #     dial = dial.union(support.translate((0,r - self.dial_width/2, self.thick)))
             # if self.bottom_fixing:
             #     dial = dial.union(support.translate((0, -(r - self.dial_width / 2), self.thick)))
+            if not self.raised_detail:
+                support_positions = self.get_support_positions()
+                for i,fixing_pos_set in enumerate(self.get_fixing_positions()):
+                    support_pos = support_positions[i]#(sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
 
-            for fixing_pos_set in self.get_fixing_positions():
-                support_pos = (sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
+                    cutter = cq.Workplane("XY").moveTo(support_pos[0], support_pos[1]).circle(self.support_slot_r).extrude(self.thick).rotate((0,0,0),(0,1,0), 180).translate((0,0,self.detail_thick))
+                    dial = dial.cut(cutter)
+                    if self.pillar_style == PillarStyle.SIMPLE:
+                        support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
+                    else:
+                        support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
 
-                if self.pillar_style == PillarStyle.SIMPLE:
-                    support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
-                else:
-                    support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
-
-                dial = dial.union(support.translate(support_pos))
-                for fixing_pos in fixing_pos_set:
-                    # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
-                    dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
-
+                    dial = dial.union(support.translate(support_pos))
+                    for fixing_pos in fixing_pos_set:
+                        # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
+                        dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
+            else:
+                #raised detail, slots in back to glue supports
+                cutter = cq.Workplane("XY").pushPoints([pos[:2] for pos in self.get_support_positions()]).circle(self.support_slot_r).extrude(self.nib_hole_deep).translate((0,0,self.thick-self.nib_hole_deep))#.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.detail_thick)
+                # return cutter
+                dial = dial.cut(cutter)
         if self.second_hand_mini_dial_d > 0:
             dial = dial.union(cq.Workplane("XY").circle(self.second_hand_mini_dial_d/2).circle(self.second_hand_mini_dial_d/2-self.seconds_dial_width).extrude(self.thick).translate(self.second_hand_relative_pos))
-            seconds_detail = self.get_seconds_dial_detail()
-            if seconds_detail is not None:
-                dial = dial.cut(seconds_detail)
+            if not self.raised_detail:
+                seconds_detail = self.get_seconds_dial_detail()
+                if seconds_detail is not None:
+                    dial = dial.cut(seconds_detail)
 
-        #cut main detail after potential seconds dial in case of some overlap
-        dial = dial.cut(self.get_main_dial_detail())
+
+        if not self.raised_detail:
+            #cut main detail after potential seconds dial in case of some overlap
+            dial = dial.cut(self.get_main_dial_detail())
 
         if self.style == DialStyle.TONY_THE_CLOCK:
             # cut holes for eyes
@@ -1380,8 +1413,41 @@ class Dial:
         detail = self.get_main_dial_detail()
         if self.second_hand_mini_dial_d > 0:
             detail = detail.add(self.get_seconds_dial_detail())
-
+        if self.raised_detail:
+            detail = detail.translate((0,0,-self.detail_thick))
         return detail
+
+    def get_supports(self):
+        '''
+        if detail is raised on top, supports must be separate
+        '''
+        supports = cq.Workplane("XY")
+        screwhole_length = self.support_length
+        z_offset = self.thick
+        if self.raised_detail:
+            screwhole_length = max(0, self.support_length-5)
+            z_offset = self.thick + (self.support_length - screwhole_length)
+        support_positions = self.get_support_positions()
+        for i, fixing_pos_set in enumerate(self.get_fixing_positions()):
+            support_pos = support_positions[i]
+            support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
+            if self.raised_detail:
+                #little nib on the end
+                nib = cq.Workplane("XY").circle(self.support_slot_r - 0.1).extrude(self.nib_thick).translate((0, 0, -self.nib_thick))
+
+                support = support.union(nib)
+                # return support
+
+            supports = supports.union(support.translate(support_pos))
+            for fixing_pos in fixing_pos_set:
+                # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
+                supports = supports.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread / 2).extrude(screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
+        # support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=clockwise, style=self.pillar_style)
+        #
+        # support = support.union(cq.Workplane("XY").circle(self.support_slot_r-0.1).extrude(self.detail_thick).translate((0,0,self.support_length)))
+        # if self.raised_detail:
+        #     supports = supports.rotate((0,0,0),(0,1,0),180)
+        return supports
 
     def get_eye(self):
         '''
@@ -1521,3 +1587,6 @@ class Dial:
             out = os.path.join(path, "{}_dial_{}.stl".format(name, extra))
             print("Outputting ", out)
             exporters.export(extras[extra], out)
+
+        if self.raised_detail:
+            export_STL(self.get_supports(),"dial_supports", name, path)

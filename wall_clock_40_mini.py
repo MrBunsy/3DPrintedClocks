@@ -74,7 +74,8 @@ motion_works = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compe
 
 pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
-dial = clock.Dial(outside_d=160, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL, seconds_style=clock.DialStyle.LINES_ARC, pillar_style=pillar_style)
+dial = clock.Dial(outside_d=160, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL,
+                  seconds_style=clock.DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True)
 
 # plates = clock.SimpleClockPlates(train, motion_works, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.COMPACT,
 #                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,

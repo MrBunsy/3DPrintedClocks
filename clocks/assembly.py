@@ -587,9 +587,9 @@ class Assembly:
             plaque_colours = [Colour.GOLD, Colour.BLACK]
 
         plates, pillars, plate_detail, standoff_pillars = self.plates.get_assembled(one_peice=False)
-
+        pillar_colour = plate_colours[1 % len(plate_colours)]
         show_object(plates, options={"color":plate_colours[0]}, name= "Plates")
-        show_object(pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Pillars")
+        show_object(pillars, options={"color": pillar_colour}, name="Pillars")
         show_object(standoff_pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Standoff Pillars")
 
         if plate_detail is not None:
@@ -644,6 +644,10 @@ class Assembly:
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
             detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
+
+            if self.dial.raised_detail:
+                dial_pillars = self.dial.get_supports().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
+                show_object(dial_pillars, options={"color": pillar_colour}, name="Dial Supports")
 
             show_object(dial, options={"color": dial_colours[0]}, name="Dial")
             show_object(detail, options={"color": dial_colours[1]}, name="Dial Detail")

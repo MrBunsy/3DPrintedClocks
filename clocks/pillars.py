@@ -8,6 +8,8 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base
     '''
     base_fillet_r if +ve then the base is flat with rounded edges
     '''
+    if style == PillarStyle.SIMPLE:
+        return cq.Workplane("XY").circle(r).extrude(length)
     if style == PillarStyle.BARLEY_TWIST:
         return fancy_pillar_barley_twist(r, length, clockwise)
     elif style == PillarStyle.BLOBS:
