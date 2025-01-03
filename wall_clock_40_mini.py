@@ -42,8 +42,9 @@ drop =1.5
 lift =3
 lock=1.5
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(30, drop_deg=2.75)
+#downside of configuring power outside going train - need to give going train a mechanism to set power direction!
 powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
-                                loose_on_rod=False, traditional_ratchet=True)
+                                loose_on_rod=False, traditional_ratchet=True, power_clockwise=False)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          chain_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel)
 
@@ -93,8 +94,8 @@ hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
-assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BROWN, clock.Colour.BLACK],
-                    dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.DARKGREY],
+assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BLACK, clock.Colour.BLACK],
+                    dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.BROWN],
                     gear_colours=[clock.Colour.ORANGE, clock.Colour.GREEN], motion_works_colours=[clock.Colour.DARK_GREEN])
 
 assembly.get_arbor_rod_lengths()

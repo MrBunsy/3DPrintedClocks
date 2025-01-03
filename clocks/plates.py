@@ -4378,7 +4378,7 @@ class RoundClockPlates(SimpleClockPlates):
 
             #find close to the cap as we can get
             topmost_pos = intersections[0] if intersections[0][1] < intersections[1][1] else intersections[1]
-            hole_r = cord_wheel.cord_thick*0.75
+            hole_r = max(cord_wheel.cord_thick*0.75, 1.5)
             max_y = topmost_pos[1] -hole_r*2
 
             #compare with centre of the radius
