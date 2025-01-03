@@ -201,6 +201,7 @@ class PillarStyle(Enum):
     #*love* this one but it doesn't fit with the old-fashioned style of RAISED_EDGING, need to think of a good plate design for it
     TWISTY = "twisty"
     CLASSIC = "classic"
+    PLAIN = "modern" #simplified classic pillar
 
 
 class DialStyle(Enum):

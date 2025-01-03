@@ -3860,10 +3860,12 @@ class RoundClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
-                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=True):
+                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=True,
+                 screwhole_above_anchor=False):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
+        screwhole_above_anchor - put the wall fixing above or below the anchor?
         '''
         self.leg_height = leg_height
         #review this later, but for now at least its a different variable

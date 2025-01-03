@@ -14,13 +14,15 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base
         return fancy_pillar_blobs(r, length, clockwise)
     elif style == PillarStyle.COLUMN:
         return fancy_pillar_column(r, length, clockwise)
+    elif style == PillarStyle.PLAIN:
+        return fancy_pillar_column(r, length, clockwise, with_divots=False)
     elif style == PillarStyle.TWISTY:
         return fancy_pillar_twisty(r, length, clockwise)
     elif style == PillarStyle.CLASSIC:
         return fancy_pillar_classic(r, length, clockwise=clockwise, base_fillet_r=base_fillet_r)
     else:
         raise NotImplementedError("Pillar style {} not yet implemented".format(style))
-def fancy_pillar_column(r, length, clockwise=True):
+def fancy_pillar_column(r, length, clockwise=True, with_divots=True):
     '''
     the top and bottom bit copy-pasted from barley twist, could probably consider abstracting out
     '''
@@ -39,22 +41,22 @@ def fancy_pillar_column(r, length, clockwise=True):
     centre_length = length - 2*(base_thick + next_bulge_thick)
 
     centre = cq.Workplane("XY").circle(inner_r).extrude(centre_length).translate((0,0,base_thick + next_bulge_thick))
-
-    cut_gap_thick = base_thick/2
-    cut_length = centre_length - cut_gap_thick*2
-    cuts = 12
-    circumference = math.pi*r*2
-    cut_r = circumference / (cuts*3)
-    cutter= cq.Workplane("XY")
-    for cut in range(cuts):
-        pole = cq.Workplane("XY").circle(cut_r).extrude(cut_length - cut_r*2).translate((0,0,cut_gap_thick + cut_r))
-        pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_r)))
-        pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_length - cut_r)))
-        angle = cut * math.pi*2/cuts
-        pos_2d = polar(angle, inner_r + cut_r*0.4)
-        cutter = cutter.union(pole.translate((pos_2d[0], pos_2d[1], base_thick + next_bulge_thick)))
-    # return cutter
-    centre = centre.cut(cutter)
+    if with_divots:
+        cut_gap_thick = base_thick/2
+        cut_length = centre_length - cut_gap_thick*2
+        cuts = 12
+        circumference = math.pi*r*2
+        cut_r = circumference / (cuts*3)
+        cutter= cq.Workplane("XY")
+        for cut in range(cuts):
+            pole = cq.Workplane("XY").circle(cut_r).extrude(cut_length - cut_r*2).translate((0,0,cut_gap_thick + cut_r))
+            pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_r)))
+            pole = pole.union(cq.Workplane("XY").sphere(cut_r).translate((0,0, cut_gap_thick + cut_length - cut_r)))
+            angle = cut * math.pi*2/cuts
+            pos_2d = polar(angle, inner_r + cut_r*0.4)
+            cutter = cutter.union(pole.translate((pos_2d[0], pos_2d[1], base_thick + next_bulge_thick)))
+        # return cutter
+        centre = centre.cut(cutter)
     pillar = base.union(centre).union(base.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length)))
 
     return pillar

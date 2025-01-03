@@ -397,8 +397,8 @@ class Assembly:
 
         clock = self.plates.get_assembled()
 
-        for a,arbour in enumerate(self.plates.arbors_for_plate):
-            clock = clock.add(arbour.get_assembled())
+        for a,arbor in enumerate(self.plates.arbors_for_plate):
+            clock = clock.add(arbor.get_assembled())
 
 
         time_min = self.time_mins

@@ -2076,7 +2076,8 @@ class CordWheel:
     def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3, cord_thick=2, bearing=None, key_square_bit_height=30,
                  gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS, cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False, ratchet_diameter=-1):
         '''
-        loose_on_rod - if True then the cord/chain/rope section of the wheel (this bit) is loose on the arbour. If true, then that is fixed and the actual gear wheel is loose on the arbour
+        loose_on_rod - if True (DEPRECATED) then the cord/chain/rope section of the wheel (this bit) is loose on the arbour .
+         If false, then that is fixed and the actual gear wheel is loose on the arbour with a steel tube (PREFERRED)
         for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings
 
         '''
