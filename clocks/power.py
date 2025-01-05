@@ -435,8 +435,8 @@ class LightweightPulley:
                 screw_cutter = screw_cutter.add(self.screws.get_nut_cutter(nyloc=True, with_bridging=True))
 
             holder = holder.cut(screw_cutter.translate(pos))
-
-            upright = not upright
+            #used to alternate sides with nuts and screwheads, but I think I prefer just screwheads visible
+            # upright = not upright
 
         return holder
 
@@ -2073,8 +2073,10 @@ class CordWheel:
         '''
         return 21
 
-    def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3, cord_thick=2, bearing=None, key_square_bit_height=30,
-                 gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS, cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False, ratchet_diameter=-1):
+    def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3,
+                 cord_thick=2, bearing=None, key_square_bit_height=30,gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS,
+                 cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=False, ratchet_diameter=-1,
+                 use_steel_tube=True):
         '''
         loose_on_rod - if True (DEPRECATED) then the cord/chain/rope section of the wheel (this bit) is loose on the arbour .
          If false, then that is fixed and the actual gear wheel is loose on the arbour with a steel tube (PREFERRED)
@@ -2082,7 +2084,9 @@ class CordWheel:
 
         '''
         self.type = PowerType.CORD
-
+        #if not loose_on_rod then we use a steel tube to slot over the threaded rod on teh wheel, leaving the cord barrel glued to the rod
+        #however, to save on parts and faff, make the tube optional and allow plastic to just slide over the rod
+        self.use_steel_tube =use_steel_tube
         self.diameter=diameter
         #thickness of one segment (the bit where the cord coils up)
         self.thick=thick
@@ -2125,6 +2129,7 @@ class CordWheel:
         self.rod_metric_size = rod_metric_size
         self.arbor_d = rod_metric_size
         self.holeD = rod_metric_size
+        #refers to the cord barrel, not the wheel
         self.loose_on_rod = loose_on_rod
 
         if self.loose_on_rod:
@@ -3604,7 +3609,7 @@ class TraditionalRatchet:
 
         # click_fixing = cq.Workplane("XY").moveTo(self.click_fixings_r,0).rect(self.click_fixing_wide, self.click_fixings_distance + self.click_fixing_wide).extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(self.click_fixing_angle))
 
-        click_fixing = get_stroke_arc(self.click_fixings[1], self.click_fixings[0], self.click_fixings_r, wide=self.click_fixing_wide+0.0001, thick=self.thick)
+        click_fixing = get_stroke_arc(self.click_fixings[1], self.click_fixings[0], self.click_fixings_r, wide=self.click_fixing_wide+0.0001, thick=self.pawl_and_click_thick)
 
         # click_fixing = click_fixing.edges("|Z").fillet(2)
 

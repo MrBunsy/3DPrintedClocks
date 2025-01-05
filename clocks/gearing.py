@@ -2190,8 +2190,7 @@ class Arbor:
 
         self.hole_d = arbor_d
         if self.loose_on_rod:
-            if self.arbor_d == 4:
-                # assume steel pipe (currently only have pipe with a 4mm internal diameter)
+            if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.CORD and self.powered_wheel.use_steel_tube:
                 #6.2 squeezes on and holds tight!
                 self.hole_d = STEEL_TUBE_DIAMETER
             else:

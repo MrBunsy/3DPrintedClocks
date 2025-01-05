@@ -1829,7 +1829,7 @@ class SimpleClockPlates:
 
         width = minWidth + border*2
 
-        template = cq.Workplane("XY").moveTo(minX + minWidth/2, minY + minHeight/2).rect(width, minHeight + border*2).extrude(thick)
+        template = cq.Workplane("XY").moveTo(minX + minWidth/2, minY + minHeight/2).rect(width, minHeight + border*2).extrude(thick).edges("|Z").fillet(drillHoleD)
 
         for hole in screwHoles:
             template = template.faces(">Z").workplane().moveTo(hole[0], hole[1]).circle(drillHoleD/2).cutThruAll()
@@ -4627,11 +4627,8 @@ class RoundClockPlates(SimpleClockPlates):
             cock = cock.union(get_stroke_arc(self.top_pillar_positions[0], self.top_pillar_positions[1], self.radius, wide=self.pillar_r*2, thick=plate_thick))
 
         else:
-
+            #anchor is at the top or within the radius
             width = self.pillar_r*2
-
-            anchor_distance = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
-
 
             anchor_holder_fixing_points = self.top_pillar_positions
 
@@ -4660,17 +4657,24 @@ class RoundClockPlates(SimpleClockPlates):
                 # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
                 # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
                 # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
+                if distance_between_two_points(wall_fixing_pos, self.hands_position) > self.radius +5:
+                    #the screwhole sticks out the top of the clock, just jut out a little bit
+                    holdy_bit_wide=self.plate_width*1.2
+                    cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], wall_fixing_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
+                    cock = cock.union(cq.Workplane("XY").moveTo(wall_fixing_pos[0],wall_fixing_pos[1]).circle(holdy_bit_wide/2).extrude(plate_thick))
 
-                # using sagitta to work out radius of curve that links all points (again)
-                s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
-                r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
+                else:
+                    #arc to join up the screw hole
+                    # using sagitta to work out radius of curve that links all points (again)
+                    s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
+                    r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
 
-                cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_wall_fixing, wide=width, thick=plate_thick))
+                    cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_wall_fixing, wide=width, thick=plate_thick))
 
-                gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
-                if gap_size < 2:
-                    #don't leave little gaps
-                    cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
+                    gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
+                    if gap_size < 2:
+                        #don't leave little gaps
+                        cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
 
         if self.wall_mounted:
 

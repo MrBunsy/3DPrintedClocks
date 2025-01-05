@@ -44,9 +44,9 @@ lock=1.5
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(30, drop_deg=2.75)
 #downside of configuring power outside going train - need to give going train a mechanism to set power direction!
 powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
-                                loose_on_rod=False, traditional_ratchet=True, power_clockwise=False)
+                                loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
-                         chain_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel)
+                         chain_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
 pillar_style = clock.PillarStyle.PLAIN
@@ -59,7 +59,7 @@ train.calculate_powered_wheel_ratios()
 pendulumSticksOut=10
 backPlateFromWall=40
 # pinion_extensions={1:3, 2:6}
-pinion_extensions={1:6, 3:6}
+pinion_extensions={1:16, 3:10}
 powered_modules=[clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
 train.gen_gears(module_sizes=[1, 0.95, 0.95], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, lanterns=[0],
@@ -76,7 +76,7 @@ pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
 dial = clock.Dial(outside_d=160, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL,
                   seconds_style=clock.DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True)
-
+plaque = clock.Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 # plates = clock.SimpleClockPlates(train, motion_works, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.COMPACT,
 #                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
 #                                  back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
@@ -85,15 +85,16 @@ dial = clock.Dial(outside_d=160, bottom_fixing=True, top_fixing=False, style=clo
 
 plates = clock.RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=360-40, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=False, standoff_pillars_separate=True, plaque=None)
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True)
 
-pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
-print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
+# pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+pulley = clock.LightweightPulley(diameter=train.powered_wheel.diameter, rope_diameter=2, use_steel_rod=False)
+# print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
 
 hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley)
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
 assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BLACK, clock.Colour.BLACK],
                     dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.BROWN],
