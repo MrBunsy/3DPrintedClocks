@@ -2065,7 +2065,7 @@ class ArborForPlate:
         bearings = 2
         #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
         if self.arbor.get_type() == ArborType.POWERED_WHEEL:
-            bom = combine_BOMs(bom, self.arbor.powered_wheel.get_BOM(wheel_thick=self.arbor.wheel_thick))
+            bom.add_subcomponent(self.arbor.powered_wheel.get_BOM(wheel_thick=self.arbor.wheel_thick))
             try:
                 # the key bearing is included in the wheel BOM, if this power doens't have a key_bearing catch the exception and do nothing
                 key_bearing = self.arbor.powered_wheel.key_bearing
@@ -2073,9 +2073,9 @@ class ArborForPlate:
             except:
                 pass
         elif self.arbor.get_type() == ArborType.ANCHOR:
-            bom = combine_BOMs(bom, self.beat_setting_pendulum_bits.get_BOM())
+            bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
 
-        bom[f"{self.bearing}"] = bearings
+        bom.add_item(BillOfMaterials.Item(f"{self.bearing}", quantity=bearings, purpose="Plate bearings"))
 
         return bom
     def get_shapes(self):
@@ -2428,7 +2428,7 @@ class Arbor:
         return ArborType.UNKNOWN
 
     def get_BOM(self):
-        bom = {}
+        bom = BillOfMaterials(self.get_type().value)
         if self.pinion is not None and self.pinion.lantern:
             diameter = self.pinion.trundle_r * 2
             min_length = self.pinion_thick + self.pinion_extension
@@ -2436,7 +2436,7 @@ class Arbor:
             print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
             trundle_length = max_length - (max_length%2)
 
-            bom[f"Steel dowel {diameter:.2f}x{trundle_length:0f}"] = self.pinion.teeth
+            bom.add_item(BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}", quantity= self.pinion.teeth, purpose="Lantern pinion trundles"))
 
         return bom
 

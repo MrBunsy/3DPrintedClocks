@@ -2240,6 +2240,19 @@ class Pendulum:
         #self.bobLidNutPositions=[(self.gapWidth/3, self.bobR*0.55), (-self.gapWidth/3, self.bobR*0.55)]
 
         self.bob_lid_nut_positions = [(self.gap_width / 3, self.bob_r * 0.75), (-self.gap_width / 3, self.bob_r * 0.75)]
+        #TODO use this properly, just for BOM at the moment
+        self.bob_lid_screws = MachineScrew(self.threaded_rod_m, countersunk=False)
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Pendulum")
+        lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
+        bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))
+        bom.add_item(BillOfMaterials.Item("Steel shot", purpose="Add weight to pendulum"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Bob nut friction"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Top of pendulum rod"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} half nut", purpose="Top of pendulum rod"))
+
+        return bom
 
     def hand_avoider_is_circle(self):
         return self.hand_avoider_height == self.hand_avoider_inner_d

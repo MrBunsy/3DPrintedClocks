@@ -1383,25 +1383,80 @@ def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, 
 class BillOfMaterials:
 
     class Item:
-        def __init__(self,  name, quantity=1, object=None):
+        def __init__(self,  name, quantity=1, object=None, purpose=""):
             self.name = name
             self.quantity = quantity
             # if there is an object which represents this item (like MachineScrew)
             self.object = object
+            #human readable description of what this is for
+            self.purpose = purpose
 
-    def __init__(self, part_name):
-        self.part_name = part_name
-        self.items = {}
+        def __str__(self):
+            return f"{self.quantity} x {self.name} ({self.purpose})"
+
+    def __init__(self, name):
+        self.name = name
+        self.items = []
+        self.subcomponents = []
+
+    def add_subcomponent(self, bom):
+        '''
+        add a whole BOM for a sub component
+        '''
+        self.subcomponents.append(bom)
 
 
     def add_item(self, item):
         '''
         add an item to this BOM
         '''
-        if item.name in self.items:
-            self.items[item.name].quantity += item.quantity
+        found = False
+        for i,lookup_item in enumerate(self.items):
+            #unlikely to hit this often
+            if item.name == lookup_item.name and item.purpose == lookup_item.purpose:
+                found = True
+                self.items[i].quantity += item.quantity
+        if not found:
+            self.items.append(item)
+
+    def add_items(self, items):
+        for item in items:
+            self.add_item(item)
+
+    def __str__(self):
+        items_string = "\n".join([str(item) for item in self.items])
+        subcomponents_string = "\n".join([str(subcomponent) for subcomponent in self.subcomponents])
+        return f'''{self.name} BOM: 
+{items_string}
+Subcomponents:
+{subcomponents_string}
+'''
+    def to_json(self):
+        json = {
+            "name": self.name,
+            "items": [str(item) for item in self.items],
+            "subcomponents": [component.to_json() for component in self.subcomponents]
+        }
+        return json
 
 
+    def get_items(self):
+        items = self.items
+        for subcomponent in self.subcomponents:
+            items += subcomponent.get_items()
+        return items
+
+    def get_consolidated_items(self):
+        '''
+        Get a single list of items for all subcomponents
+        '''
+        unique_items = {}
+        for item in self.get_items():
+            if item.name in unique_items:
+                unique_items[item.name] += item.quantity
+            else:
+                unique_items[item.name] = item.quantity
+        return unique_items
 
 def combine_BOMs(bom_a, bom_b):
     bom_c = {}

@@ -396,14 +396,14 @@ class LightweightPulley:
 
     def get_BOM(self):
         screw_length = self.get_total_thickness()
-        bom = {
-            "Cuckoo hook 1mm thick": 1,
-            f"{self.screws} {screw_length:.0f}mm": 2,
-            f"M{self.screws.metric_thread} washer": 2
-               }
+        bom = BillOfMaterials("Lightweight pulley")
+
+        bom.add_item(BillOfMaterials.Item("Cuckoo hook 1mm thick"))
+        bom.add_item(BillOfMaterials.Item(f"{self.screws} {screw_length:.0f}mm", quantity=2, purpose="Fixing screws"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.screws.metric_thread} washer",quantity= 2, purpose="Padding washers"))
 
         if self.use_steel_rod:
-            bom[f"Steel tube {STEEL_TUBE_DIAMETER}x{self.screws.metric_thread} {self.wheel_thick:.1f}mm"] = 1
+            bom.add_item(BillOfMaterials.Item(f"Steel tube {STEEL_TUBE_DIAMETER}x{self.screws.metric_thread} {self.wheel_thick:.1f}mm", purpose="Tube insert for pulley wheel"))
 
         return bom
 
@@ -2295,16 +2295,16 @@ class CordWheel:
         print(f"Cord wheel needs {self.fixing_screw} less than {fixing_screw_length:.1f}mm")
         fixing_screw_length = get_nearest_machine_screw_length(fixing_screw_length, self.fixing_screw)
         bom = BillOfMaterials("Cord wheel")
-        bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw))
-        bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing))
-        bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity= self.cord_length))
+        bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
+        bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))
+        bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity= self.cord_length, purpose="Cord for weight"))
 
         if wheel_thick > 0 and self.traditional_ratchet:
             #we know how thick the wheel is so we can calculate the lenght of screws needed to hold the pawl and click
             click_screw_length = get_nearest_machine_screw_length(wheel_thick + self.pawl_thick, self.ratchet.fixing_screws)
             pawl_screw_length = get_nearest_machine_screw_length(wheel_thick + self.ratchet_thick, self.ratchet.fixing_screws)
-            bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws))
-            bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws))
+            bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
+            bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
         if not self.traditional_ratchet:
             raise NotImplementedError("TODO fixing screws for non-traditional ratchet")
         #steel tube dimensions only known in arbor for plate

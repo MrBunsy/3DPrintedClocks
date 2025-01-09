@@ -133,13 +133,13 @@ class ColletFixingPendulumWithBeatSetting:
         adjusting_screw_length = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws)
         fixing_screw_length = get_nearest_machine_screw_length(self.pendulum_holder_thick, self.fixing_screws)
         bom = BillOfMaterials("Pendulum Holder")
-        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {adjusting_screw_length:.0f}mm", object=self.fixing_screws))
-        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", object=self.fixing_screws))
-        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws} Thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws))
-        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws} Crinkle washer"))
-        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws} Nut"))
-        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws} 5mm", self.collet_screws))# think 5mm did the job?
-        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws} half nut"))
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {adjusting_screw_length:.0f}mm", object=self.fixing_screws, purpose="Beat adjusting screw"))
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", object=self.fixing_screws, purpose="Fixing screw"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws, purpose="Beat setter"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Crinkle washer", purpose="Friction for beat setter"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Nut", purpose="Hold beat adjusting screw in place"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws.metric_thread} 5mm", object=self.collet_screws, purpose="Fix collet to anchor"))# think 5mm did the job?
+        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws.metric_thread} half nut", purpose="Fix collet to anchor"))
 
         return bom
 

@@ -206,6 +206,27 @@ class Assembly:
         return a dict of the Bill Of Materials
         '''
         bom = BillOfMaterials(self.name)
+        bom.add_subcomponent(self.plates.get_BOM())
+        bom.add_subcomponent(self.pendulum.get_BOM())
+        if self.pulley is not None:
+            bom.add_subcomponent(self.pulley.get_BOM())
+
+        rod_lengths, rod_zs = self.get_arbor_rod_lengths()
+
+        #I'd like this to eventually make its way into ArborsForPlate, but at the moment we only have all the info to calculate it here
+        for i, arbor in enumerate(self.plates.arbors_for_plate):
+            arbor_bom = arbor.get_BOM()
+            arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} threaded rod {rod_lengths[i]:.1f}mm"))
+            if i == self.going_train.powered_wheels:
+                #the minute wheel
+                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} half nut", quantity=2, purpose="Locked together under motion works"))
+                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} washer", quantity=2, purpose="Either side of spring washer"))
+                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} Spring washer", quantity=2, purpose="Clutch"))
+                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} nut", quantity=2, purpose="On top of hands"))
+                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} dome nut", quantity=2, purpose="Locked to nut on top of hands"))
+            arbor_bom.name =f"Arbor {i} ({arbor_bom.name})"
+            bom.add_subcomponent(arbor_bom)
+        #TODO centred seconds hand
 
         return bom
 

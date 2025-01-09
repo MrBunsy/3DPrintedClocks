@@ -813,11 +813,20 @@ class SimpleClockPlates:
             self.calc_plaque_config()
 
     def get_BOM(self):
-        bom = {}
+        bom = BillOfMaterials("Plates")
         motion_works_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + self.bottom_of_hour_hand_z(), self.motion_works_screws)
-        bom[f"{self.motion_works_screws} {motion_works_screw_length:.0f}mm"] = 1
-        #fixing screws
-        self.fi
+        bom.add_item(BillOfMaterials.Item(f"{self.motion_works_screws} {motion_works_screw_length:.0f}mm", purpose="Motion works fixing", object=self.motion_works_screws))
+        bom.add_item(BillOfMaterials.Item(f"M{self.motion_works_screws.metric_thread} nut", purpose="Motion works backstop", quantity=2))
+        #fixing screws + nuts
+        bom.add_items(self.get_fixings_for_BOM())
+        if self.moon_complication is not None:
+            raise NotImplementedError("TODO BOM for moon complication")
+        if self.dial is not None:
+            dial_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + 10, self.dial.fixing_screws)
+            bom.add_item(BillOfMaterials.Item(f"{self.dial.fixing_screws} {dial_screw_length:.0f}mm", purpose="Dial screws", quantity=len(self.dial.fixing_positions)))
+
+        if self.plaque is not None:
+            bom.add_item(BillOfMaterials.Item(f"{self.plaque.screws} {self.plaque.screws.length:.0f}mm", purpose="Plaque fixing screws", quantity=len(self.plaque.get_screw_positions())))
 
         return bom
 
@@ -840,7 +849,7 @@ class SimpleClockPlates:
 
     def get_rod_lengths(self):
         '''
-        TODO
+        TODO tidy up the mess of some plates using the nuts at back/front and screws and others using rods
         returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
         '''
         return ([], [])
@@ -2373,6 +2382,16 @@ class SimpleClockPlates:
             bottom_nut_hole_height = (bottom_total_length - bottom_screw_length) + self.fixing_screws.get_nut_height() + 5
 
         return (bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height)
+
+    def get_fixings_for_BOM(self):
+        '''
+        Since the current fixing screws and nuts is a bit of a mess with too many options, bypass it and use this
+        until the older designs get refactored
+        long term plan is probably to switch to cut threaded rod for basically everything
+        '''
+        fixings = []
+
+        return fixings
 
     def get_spring_ratchet_screws_cutter(self, back_plate=True):
         plate_thick = self.get_plate_thick(back=back_plate)
@@ -4715,6 +4734,24 @@ class RoundClockPlates(SimpleClockPlates):
 
         return cock
 
+    def get_fixings_for_BOM(self):
+        '''
+        Since the current fixing screws and nuts is a bit of a mess with too many options, bypass it and use this
+        until the older designs get refactored
+        long term plan is probably to switch to cut threaded rod for basically everything
+        '''
+        fixings = []
+
+        rod_lengths, rod_zs = self.get_rod_lengths()
+
+        for rod_length in rod_lengths:
+            fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} rod {rod_length:.1f}mm (+ top fixing nut)", purpose="Plate fixing rod"))
+
+        fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} nut", quantity=len(rod_lengths), purpose="Plate fixing rear nut"))
+        fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} washer", quantity=len(rod_lengths), purpose="Front plate fixing"))
+        fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} dome nut", quantity=len(rod_lengths), purpose="Front plate fixing"))
+
+        return fixings
     def get_rod_lengths(self):
         '''
         returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])

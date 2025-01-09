@@ -18,7 +18,7 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import clocks as clock
-
+import json
 '''
 Eight day wall clock, weight driven, small enough to print on an 18x18cm build plate
 
@@ -90,11 +90,15 @@ plates = clock.RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, 
 # pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 pulley = clock.LightweightPulley(diameter=train.powered_wheel.diameter, rope_diameter=2, use_steel_rod=False)
 # print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
-print(pulley.get_BOM())
+# print(pulley.get_BOM())
 hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
 assembly = clock.Assembly(plates, name=clockName, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley)
+# print(assembly.get_BOM())
+# print(assembly.get_BOM().get_consolidated_items())
+print(json.dumps(assembly.get_BOM().get_consolidated_items(), sort_keys=True, indent=4))
+print(json.dumps(assembly.get_BOM().to_json(), sort_keys=True, indent=4, default=str))
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
 assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BLACK, clock.Colour.BLACK],
                     dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.ORANGE],
