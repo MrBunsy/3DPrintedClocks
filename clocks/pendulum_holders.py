@@ -98,7 +98,7 @@ class ColletFixingPendulumWithBeatSetting:
 
         self.collet_screws = collet_screws
         if self.collet_screws is None:
-            self.collet_screws = MachineScrew(2, countersunk=True)
+            self.collet_screws = MachineScrew(2, countersunk=False)
 
         self.arm_width = collet_size * 1.5
         if self.arm_width < 12:
@@ -110,6 +110,12 @@ class ColletFixingPendulumWithBeatSetting:
         self.width = length * 0.55
         self.pendulum_holder_thick = pendulum_holder_thick
         self.threadholder_arm_width = self.arm_width * 0.75
+
+        nearest_screw = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws, prefer_longer=True)
+        extra_width = nearest_screw - self.get_thread_screw_length()
+        print(f"Making pendulum holder {extra_width} wider to better fit available machine screws")
+        self.width += extra_width
+
         self.hinge_distance = self.collet_radius + self.arm_width / 2 + 1  # self.arm_width*1.5
         self.hinge_point = (0, - self.hinge_distance)
 
@@ -122,6 +128,20 @@ class ColletFixingPendulumWithBeatSetting:
         self.top_of_pendulum_holder_hole_y = -self.length - self.nut_hole_height / 2 - 1.5
 
         print("beat setter needs {} of length {:.1f}".format(self.fixing_screws, self.get_thread_screw_length()))
+
+    def get_BOM(self):
+        adjusting_screw_length = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws)
+        fixing_screw_length = get_nearest_machine_screw_length(self.pendulum_holder_thick, self.fixing_screws)
+        bom = BillOfMaterials("Pendulum Holder")
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {adjusting_screw_length:.0f}mm", object=self.fixing_screws))
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", object=self.fixing_screws))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws} Thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws} Crinkle washer"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws} Nut"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws} 5mm", self.collet_screws))# think 5mm did the job?
+        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws} half nut"))
+
+        return bom
 
     def get_thread_cutter(self):
         thick = self.pendulum_holder_thick
@@ -198,7 +218,8 @@ class ColletFixingPendulumWithBeatSetting:
         # plus extra because we'll be at an angle
         # nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
         # 0.5 for space to squash a crinkle washer to add friction that will hopefully prevent this turning by itself
-        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.9  # +1 worked, but think there was a tiny bit of slack +0.8 worked but was really tough to get the washer in
+        #-0.74 because it turned out taht thumb=true was being ignored! this adjusts for that
+        nut_hole_centre_width = self.fixing_screws.get_nut_height(thumb=True) + 0.9 - 0.74  # +1 worked, but think there was a tiny bit of slack +0.8 worked but was really tough to get the washer in
         nut_hole_centre_height = self.fixing_screws.metric_thread
         nut_hole_width = self.arm_width * 0.5
 

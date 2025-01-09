@@ -75,7 +75,7 @@ teeth = 30 if moon else 36 # 42
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
                                     type=clock.EscapementType.DEADBEAT)
 
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=not moon, escape_wheel_pinion_at_front=False)
 barrel_gear_thick =5# 8
 if moon:

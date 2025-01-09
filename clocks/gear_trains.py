@@ -30,10 +30,11 @@ class GoingTrain:
     Maybe even going as far as this class not generating any actual geometry? just being ratios?
 
     TODO just provide a powered wheel to the constructor, like the escapement, and get rid of the myriad of gen_x_wheel methods.
+    (partially done, with support for cord and spring barrel)
 
     '''
 
-    def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, chain_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
+    def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, powered_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
                  escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio=1, support_second_hand=False, powered_wheel=None):
         '''
 
@@ -108,14 +109,18 @@ class GoingTrain:
             self.escape_wheel_pinion_at_front = escape_wheel_pinion_at_front
 
         self.powered_wheel = powered_wheel
+        # if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
+        self.powered_wheels = powered_wheels
 
         if self.powered_wheel is not None:
             self.powered_by = self.powered_wheel.type
+            self.powered_wheel.configure_direction(power_clockwise=self.powered_wheels % 2 == 0)
+            if PowerType.is_weight(self.powered_by):
+                self.powered_wheel.configure_weight_drop(weight_drop_mm=max_weight_drop, pulleys = 1 if use_pulley else 0)
         else:
             self.powered_by = PowerType.NOT_CONFIGURED
 
-        # if zero, the minute hand is directly driven by the chain, otherwise, how many gears from minute hand to chain wheel
-        self.powered_wheels = chain_wheels
+
         # to calculate sizes of the powered wheels and ratios later
         self.runtime_hours = runtime_hours
         self.max_weight_drop = max_weight_drop
@@ -509,6 +514,8 @@ class GoingTrain:
             anticlockwise = not anticlockwise
 
         self.powered_wheel_clockwise = not anticlockwise
+        if self.powered_wheel is not None:
+            self.powered_wheel.configure_direction(self.powered_wheel_clockwise)
 
     def gen_chain_wheels2(self, chain, ratchetThick=7.5, arbourD=3, loose_on_rod=True, prefer_small=False, preferedDiameter=-1, fixing_screws=None, ratchetOuterThick=5):
 
@@ -588,7 +595,7 @@ class GoingTrain:
             ratchetThick = 0
 
         if use_steel_tube:
-            hole_d = STEEL_TUBE_DIAMETER
+            hole_d = STEEL_TUBE_DIAMETER_CUTTER
         else:
             hole_d = arbor_d + LOOSE_FIT_ON_ROD
 

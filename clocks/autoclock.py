@@ -47,7 +47,7 @@ DEFAULT_SVG_EXPORT_OPTIONS = {"width": 300, "height": 300, "showAxes": False, "s
 
 def gen_gear_previews(out_path="autoclock", module=1):
     #lots copy pasted from gearDemo
-    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1200, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)
+    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1200, use_pulley=True, chain_at_back=False, powered_wheels=1, runtime_hours=7.5 * 24)
 
     moduleReduction = 0.9
 
@@ -346,7 +346,7 @@ class AutoWallClock:
 
 
         self.train = GoingTrain(pendulum_period=self.pendulum_period_s, fourth_wheel=False, escapement=self.escapement, max_weight_drop=self.weight_drop,
-                                use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=self.hours, huygens_maintaining_power=self.huygens)
+                                use_pulley=True, chain_at_back=False, powered_wheels=1, runtime_hours=self.hours, huygens_maintaining_power=self.huygens)
 
         self.moduleReduction = 0.85
         self.train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=self.moduleReduction)

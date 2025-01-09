@@ -232,7 +232,7 @@ class MoonHolder:
             cutter = cutter.union(self.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.plates.layer_thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((screw_pos[0], screw_pos[1], moon_z + lid_thick)))
 
         #the steel tube
-        cutter = cutter.add(cq.Workplane("XY").circle(STEEL_TUBE_DIAMETER/2).extrude(1000).translate((0,0,-500)).rotate((0,0,0),(1,0,0), 90).translate((0,0,moon_z)))
+        cutter = cutter.add(cq.Workplane("XY").circle(STEEL_TUBE_DIAMETER_CUTTER / 2).extrude(1000).translate((0, 0, -500)).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, 0, moon_z)))
 
         # space_d = self.fixing_screws.get_washer_diameter()+1
         space_d = max(self.fixing_screws.get_nut_containing_diameter(), self.fixing_screws.get_washer_diameter()) + 1
@@ -811,6 +811,15 @@ class SimpleClockPlates:
 
         if self.plaque is not None:
             self.calc_plaque_config()
+
+    def get_BOM(self):
+        bom = {}
+        motion_works_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + self.bottom_of_hour_hand_z(), self.motion_works_screws)
+        bom[f"{self.motion_works_screws} {motion_works_screw_length:.0f}mm"] = 1
+        #fixing screws
+        self.fi
+
+        return bom
 
     def get_moon_holder_info(self):
         '''
@@ -2307,6 +2316,10 @@ class SimpleClockPlates:
         return plate
 
     def get_fixing_screw_length_info(self):
+        '''
+        TODO this really needs tidying up across the different types of plate, I think there are some major advantages to the round plates style
+        of just cut rod with dome nuts on the front
+        '''
         bottom_total_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
         tal_length = self.back_plate_from_wall + self.get_plate_thick(back=True) + self.plate_distance + self.get_plate_thick(back=False)
         top_total_length = bottom_total_length + self.get_front_anchor_bearing_holder_total_length()
@@ -3997,6 +4010,9 @@ class RoundClockPlates(SimpleClockPlates):
 
     def get_plate_shape(self):
         return PlateShape.ROUND
+
+    # def get_fixing_screw_length_info(self):
+    #
 
     def get_pillar(self, top=True, flat=False):
         '''

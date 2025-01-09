@@ -44,7 +44,7 @@ lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4,
                                     style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
 
-train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1, runtime_hours=7.5 * 24)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 

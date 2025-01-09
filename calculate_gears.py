@@ -4,7 +4,7 @@ import clocks as clock
 
 '''
 
-train=clock.GoingTrain(pendulum_period=1, fourth_wheel=True, escapement_teeth=30, max_weight_drop=1800, chain_at_back=False, chain_wheels=1, runtime_hours=180)
+train=clock.GoingTrain(pendulum_period=1, fourth_wheel=True, escapement_teeth=30, max_weight_drop=1800, chain_at_back=False, powered_wheels=1, runtime_hours=180)
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, loud=True, module_reduction=0.9)
 

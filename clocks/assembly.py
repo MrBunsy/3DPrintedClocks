@@ -15,7 +15,7 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None, with_mat=False):
+    def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None, with_mat=False, name="clock"):
         self.plates = plates
         self.hands = hands
         self.dial= plates.dial
@@ -30,6 +30,7 @@ class Assembly:
         self.pulley=pulley
         self.moon_complication = self.plates.moon_complication
         self.plaque = self.plates.plaque
+        self.name = name
         #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)
         self.weights=weights
         if self.weights is None:
@@ -190,12 +191,23 @@ class Assembly:
             self.vanity_plate = self.plates.get_vanity_plate(for_printing=False).translate((self.hands_pos[0], self.hands_pos[1], self.front_of_clock_z))
 
 
-    def printInfo(self):
+    def print_info(self):
+        '''
+        I can't remember waht I was trying to achieve here
+        '''
 
         for holeInfo in self.going_train.powered_wheel.get_chain_positions_from_top():
             #TODO improve this a bit for cordwheels which have a slot rather than just a hole
             z = self.plates.bearing_positions[0][2] + self.plates.get_plate_thick(back=True) + self.going_train.powered_wheel.get_height() + self.plates.endshake / 2 + holeInfo[0][1]
             print("{} hole from wall = {}mm".format(self.going_train.powered_wheel.type.value, z))
+
+    def get_BOM(self):
+        '''
+        return a dict of the Bill Of Materials
+        '''
+        bom = BillOfMaterials(self.name)
+
+        return bom
 
     def get_arbor_rod_lengths(self):
         '''
@@ -746,12 +758,16 @@ class Assembly:
         if self.pulley is not None:
             show_object(self.pulley_model, options={"color": pulley_colour}, name="Pulley")
 
-    def output_STLs(self, name="clock", path="../out"):
+    def output_STLs(self, name=None, path="../out"):
+        if name is None:
+            name = self.name
         out = os.path.join(path, "{}.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_clock(), out)
 
-    def outputSVG(self, name="clock", path="../out"):
+    def outputSVG(self, name=None, path="../out"):
+        if name is None:
+            name = self.name
         out = os.path.join(path, "{}.svg".format(name))
         print("Outputting ", out)
         exportSVG(self.get_clock(), out, opts={"width":720, "height":1280})

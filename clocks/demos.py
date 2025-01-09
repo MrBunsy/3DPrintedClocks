@@ -104,7 +104,7 @@ def get_ratchet_demo():
 def get_gear_demo(module=1, just_style=None, one_gear=False):
     demo = cq.Workplane("XY")
 
-    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24)
+    train = GoingTrain(pendulum_period=2, fourth_wheel=False, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1, runtime_hours=7.5 * 24)
 
     moduleReduction = 0.9
 

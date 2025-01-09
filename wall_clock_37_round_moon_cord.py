@@ -56,7 +56,7 @@ power = clock.CordWheel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=
 # train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=500, use_pulley=True, chain_at_back=False, chain_wheels=2,
 #                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=power)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1600, use_pulley=True, chain_at_back=False,
-                         chain_wheels=2, runtime_hours=32 * 24, support_second_hand=False, powered_wheel=power)
+                         powered_wheels=2, runtime_hours=32 * 24, support_second_hand=False, powered_wheel=power)
 
 barrel_gear_thick = 8
 

@@ -47,7 +47,7 @@ escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_t
 moduleReduction=1
 
 #minute wheel ratio so we can use a pinion of 10 teeth to turn the standard motion works arbour and keep the cannon pinion rotating once an hour
-train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1000, chain_at_back=False, chain_wheels=0, runtime_hours=30,
+train=GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1000, chain_at_back=False, powered_wheels=0, runtime_hours=30,
                  use_pulley=True, huygens_maintaining_power=False, escape_wheel_pinion_at_front=True)#, minuteWheelRatio=10/12)
 
 train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=10, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
@@ -84,7 +84,7 @@ hands = Hands(style=HandStyle.SIMPLE_ROUND, second_length=40, minute_fixing_d1=m
 
 assembly = Assembly(plates, hands=hands, time_seconds=15, pulley=pulley_no_pipe, pendulum=pendulum)
 
-assembly.printInfo()
+assembly.print_info()
 
 weight = Weight(height=100, diameter=35)
 weight.printInfo()

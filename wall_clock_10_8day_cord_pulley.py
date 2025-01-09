@@ -45,7 +45,7 @@ drop=2
 lock=2
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
 
-train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, chain_wheels=1, runtime_hours=180, use_pulley=True)
+train = clock.GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, chain_at_back=False, powered_wheels=1, runtime_hours=180, use_pulley=True)
 
 moduleReduction=0.875
 
@@ -122,7 +122,7 @@ pulley = clock.BearingPulley(diameter=26, bearing=clock.get_bearing_info(4))
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
 assembly = clock.Assembly(plates, hands=hands, time_mins=0, time_seconds=30, pulley = pulley, pendulum=pendulum)
-assembly.printInfo()
+assembly.print_info()
 # show_object(plates.getPlate(back=True))
 # show_object(assembly.getClock())
 

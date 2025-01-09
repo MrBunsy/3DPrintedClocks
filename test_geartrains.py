@@ -7,7 +7,7 @@ pendulum_period=2.0
 escapement = AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock)
 barrel_gear_thick = 8
 
-train = GoingTrain(pendulum_period=pendulum_period, wheels=4, escapement=escapement, max_weight_drop=104*25.4/2, use_pulley=True, chain_at_back=False, chain_wheels=2, runtime_hours=8 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
+train = GoingTrain(pendulum_period=pendulum_period, wheels=4, escapement=escapement, max_weight_drop=104*25.4/2, use_pulley=True, chain_at_back=False, powered_wheels=2, runtime_hours=8 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 

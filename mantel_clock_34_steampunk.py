@@ -52,7 +52,7 @@ barrel_gear_thick =5
 
 power = clock.SpringBarrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
                         style=gear_style, wall_thick=6, ratchet_thick=8, spring=clock.MAINSPRING_183535)
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False, powered_wheel=power)
 
 train.set_chain_wheel_ratio([[66, 10], [57, 10]])

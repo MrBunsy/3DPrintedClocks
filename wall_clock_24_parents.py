@@ -55,7 +55,7 @@ escapement = clock.BrocotEscapment(drop=drop, lift=lift, teeth=30, lock=lock, di
 # show_object(escapement.get_wheel_2d())
 #
 #
-train = clock.GoingTrain(pendulum_period=pendulum_period, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, chain_wheels=1, runtime_hours=7.5 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
+train = clock.GoingTrain(pendulum_period=pendulum_period, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1, runtime_hours=7.5 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
 
 moduleReduction=0.85
 

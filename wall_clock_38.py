@@ -48,7 +48,7 @@ pillar_style=clock.PillarStyle.TWISTY
 escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=36, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=2,
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=True, escape_wheel_pinion_at_front=True)
 
 barrel_gear_thick = 5#8

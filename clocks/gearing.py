@@ -1539,14 +1539,15 @@ class ArborForPlate:
         self.crutch_holder_slack_space = 2
         self.crutch_thick = crutch_space - self.crutch_holder_slack_space
 
-        self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
-        self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
-        # beat_setter_length = 35
-        # if self.pendulum_length < 20:
-        #     #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
-        #accidentally had pendulum_length in metres so this was always the case. I think I prefer the smaller version so I'm sticking with it
-        beat_setter_length = 30
-        self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=self.square_side_length + self.pendulum_fixing_extra_space, length=beat_setter_length)
+        if self.type == ArborType.ANCHOR:
+            self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
+            self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
+            # beat_setter_length = 35
+            # if self.pendulum_length < 20:
+            #     #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
+            #accidentally had pendulum_length in metres so this was always the case. I think I prefer the smaller version so I'm sticking with it
+            beat_setter_length = 30
+            self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=self.square_side_length + self.pendulum_fixing_extra_space, length=beat_setter_length)
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1913,8 +1914,170 @@ class ArborForPlate:
             assembly = assembly.add(self.get_arbour_extension(front = False).rotate((0,0,0),(1,0,0),180).translate(self.bearing_position).translate((0,0,self.endshake/2 + self.back_plate_thick)))
 
         return assembly
+    #
+    # def get_arbor_rod_info(self):
+    #     '''
+    #     Calculate the lengths to cut the steel rods - stop me just guessing wrong all the time!
+    #     was originally in Assembly calculating lengths of all rods at once, but moving here to make generating the BOM easier
+    #     '''
+    #
+    #     total_plate_thick = self.plates.plate_distance + self.plates.get_plate_thick(True) + self.plates.get_plate_thick(False)
+    #     plate_distance =self.plates.plate_distance
+    #     front_plate_thick = self.plates.get_plate_thick(back=False)
+    #     back_plate_thick = self.plates.get_plate_thick(back=True)
+    #
+    #
+    #
+    #     #how much extra to extend out the bearing
+    #     #used to be 3mm, but when using thinner plates this isn't ideal.
+    #     spare_rod_length_rear=self.plates.endshake*1.5
+    #     #extra length out the front of hands, or front-mounted escapements
+    #     spare_rod_length_in_front=2
+    #     rod_lengths = []
+    #     rod_zs = []
+    #     #for measuring where to put the arbour on the rod, how much empty rod should behind the back of the arbour?
+    #     beyond_back_of_arbours = []
+    #
+    #     # for i in range(self.arbour_count):
+    #     i = self.plates.arbors_for_plate.index(self)
+    #
+    #     rod_length = -1
+    #
+    #     arbor_for_plate = self.plates.arbors_for_plate[i]
+    #     arbor = arbor_for_plate.arbor
+    #     bearing = arbor_for_plate.bearing
+    #     bearing_thick = bearing.height
+    #
+    #     rod_in_front_of_hands = WASHER_THICK_M3 + get_nut_height(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
+    #
+    #     length_up_to_inside_front_plate = spare_rod_length_rear + bearing_thick + plate_distance
+    #
+    #     plain_rod_rear_length = spare_rod_length_rear + bearing_thick# + self.plates.endshake
+    #     #true for nearly all of it
+    #     rod_z = back_plate_thick - (bearing_thick + spare_rod_length_rear)
+    #
+    #     #"normal" arbour that does not extend out the front or back
+    #     simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_rear
+    #     # hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT + self.plates.motionWorks.get_cannon_pinion_effective_height() + getNutHeight(arbour.arbourD) * 2 + spare_rod_length_in_front
+    #     hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + rod_in_front_of_hands
+    #
+    #     #trying to arrange all the additions from back to front to make it easy to check
+    #     if arbor.type == ArborType.POWERED_WHEEL:
+    #         powered_wheel = arbor.powered_wheel
+    #         if powered_wheel.type == PowerType.CORD:
+    #             if powered_wheel.use_key:
+    #                 square_bit_out_front = powered_wheel.key_square_bit_height - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
+    #                 rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
+    #         elif powered_wheel.type == PowerType.SPRING_BARREL:
+    #             rod_length=-1
+    #         else:
+    #             #assume all other types of powered wheel lack a key and thus are just inside the plates
+    #             rod_length = simple_arbour_length
+    #
+    #
+    #     elif self.plates.second_hand and ((arbor.type == ArborType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (
+    #             i == self.going_train.wheels + self.going_train.powered_wheels - 2 and self.plates.going_train.has_second_hand_on_last_wheel())):
+    #         #this has a second hand on it
+    #         if self.plates.escapement_on_front:
+    #             raise ValueError("TODO calculate rod lengths for escapement on front")
+    #         elif self.plates.centred_second_hand:
+    #             #safe to assume mutually exclusive with escapement on front?
+    #             rod_length = hand_arbor_length + self.hands.second_fixing_thick + CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT
+    #         else:
+    #             if self.dial is not None and self.dial.has_seconds_sub_dial():
+    #                 #if the rod doesn't go all the way through the second hand
+    #                 hand_thick_accounting = self.hands.second_thick - self.hands.second_rod_end_thick
+    #                 if self.hands.seconds_hand_through_hole:
+    #                     hand_thick_accounting = self.hands.second_thick
+    #                 #rod_length = length_up_to_inside_front_plate + front_plate_thick + self.dial.support_length + self.dial.thick + self.hands.secondFixing_thick + hand_thick_accounting
+    #                 rod_length = length_up_to_inside_front_plate + front_plate_thick + (self.second_hand_pos[2] - total_plate_thick )+ hand_thick_accounting
+    #             else:
+    #                 #little seconds hand just in front of the plate
+    #                 rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.second_fixing_thick + self.hands.second_thick
+    #     elif arbor.type == ArborType.WHEEL_AND_PINION:
+    #         if i == self.going_train.powered_wheels:
+    #             #minute wheel
+    #             if self.plates.centred_second_hand:
+    #                 #only goes up to the canon pinion with hand turner
+    #                 minimum_rod_length = (length_up_to_inside_front_plate + front_plate_thick + self.plates.endshake / 2 + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT +
+    #                                       self.plates.motion_works.get_cannon_pinion_pinion_thick() + rod_in_front_of_hands)
+    #                                       # + WASHER_THICK_M3 + getNutHeight(arbour.arbor_d, halfHeight=True) * 2)
+    #                 # if self.plates.dial is not None:
+    #                 #     #small as possible as it might need to fit behind the dial (...not sure what I was talking about here??)
+    #                 #     rod_length = minimum_rod_length + 1.5
+    #                 # else:
+    #                 #     rod_length = minimum_rod_length + spare_rod_length_in_front
+    #                 rod_length = minimum_rod_length
+    #             else:
+    #                 rod_length = hand_arbor_length
+    #         else:
+    #             # "normal" arbour
+    #             rod_length = simple_arbour_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+    #
+    #     elif arbor.type == ArborType.ESCAPE_WHEEL:
+    #         if self.plates.escapement_on_front:
+    #             rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.bearing.inner_d)) + 1
+    #         else:
+    #             #"normal" arbour
+    #             rod_length = simple_arbour_length
+    #     elif arbor.type == ArborType.ANCHOR:
+    #         if self.plates.escapement_on_front:
+    #             holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].bearing)
+    #             out_front = self.plates.get_front_anchor_bearing_holder_total_length() - holder_thick
+    #             out_back = self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)
+    #             extra = spare_rod_length_rear
+    #             if self.plates.dial is not None:
+    #                 #make smaller since there's not much space on the front
+    #                 extra = self.plates.endshake
+    #             rod_length = out_back + total_plate_thick + out_front + self.plates.arbors_for_plate[-1].bearing.height*2 + extra*2
+    #             rod_z = -out_back - self.plates.arbors_for_plate[-1].bearing.height - extra
+    #         elif self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
+    #             rod_length_to_back_of_front_plate = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + self.plates.get_plate_thick(back=True) + plate_distance
+    #
+    #             if self.dial is not None and self.dial.has_eyes():
+    #                 rod_length = rod_length_to_back_of_front_plate + front_plate_thick + self.plates.endshake + 1 + self.dial.get_wire_to_arbor_fixer_thick() + 5
+    #             else:
+    #                 rod_length = rod_length_to_back_of_front_plate + bearing_thick + spare_rod_length_rear
+    #             rod_z = -self.plates.back_plate_from_wall + (self.plates.get_plate_thick(standoff=True) - bearing_thick - spare_rod_length_rear)
+    #         else:
+    #             raise ValueError("TODO calculate rod lengths for pendulum on front")
+    #     rod_lengths.append(rod_length)
+    #     rod_zs.append(rod_z)
+    #     beyond_back_of_arbours.append(plain_rod_rear_length)
+    #     if rod_length > 0:
+    #         print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
+    #     if arbor.pinion is not None and arbor.pinion.lantern:
+    #         diameter = arbor.pinion.trundle_r * 2
+    #         min_length = arbor.pinion_thick + arbor.pinion_extension
+    #         max_lenth = arbor.pinion_thick  + arbor.pinion_extension + (arbor.end_cap_thick - arbor.get_lantern_trundle_offset()) + (arbor.wheel_thick - arbor.get_lantern_trundle_offset())
+    #         print("Arbor {} has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i,  diameter, min_length, max_lenth))
+    #
+    #
+    #     return rod_lengths, rod_zs
 
+    def get_BOM(self):
+        '''
+        TODO (maybe, long term aspiration) calculate arbor lengths here. At the moment it's in Assembly which pulls in lots of info from all over the place
+        so until then this BOM includes everything except the actual rod for the arbor
+        also doesn't include anything to hold the cannon pinion as we don't know which arbor we are exactly
+        '''
+        bom = self.arbor.get_BOM()
+        bearings = 2
+        #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
+        if self.arbor.get_type() == ArborType.POWERED_WHEEL:
+            bom = combine_BOMs(bom, self.arbor.powered_wheel.get_BOM(wheel_thick=self.arbor.wheel_thick))
+            try:
+                # the key bearing is included in the wheel BOM, if this power doens't have a key_bearing catch the exception and do nothing
+                key_bearing = self.arbor.powered_wheel.key_bearing
+                bearings =1
+            except:
+                pass
+        elif self.arbor.get_type() == ArborType.ANCHOR:
+            bom = combine_BOMs(bom, self.beat_setting_pendulum_bits.get_BOM())
 
+        bom[f"{self.bearing}"] = bearings
+
+        return bom
     def get_shapes(self):
         '''
         return a dict of name:shape for all the components needed for this arbour
@@ -2192,7 +2355,7 @@ class Arbor:
         if self.loose_on_rod:
             if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.CORD and self.powered_wheel.use_steel_tube:
                 #6.2 squeezes on and holds tight!
-                self.hole_d = STEEL_TUBE_DIAMETER
+                self.hole_d = STEEL_TUBE_DIAMETER_CUTTER
             else:
                 self.hole_d = self.arbor_d + LOOSE_FIT_ON_ROD
 
@@ -2263,6 +2426,19 @@ class Arbor:
         if self.pinion is not None:
             return ArborType.LONE_PINION
         return ArborType.UNKNOWN
+
+    def get_BOM(self):
+        bom = {}
+        if self.pinion is not None and self.pinion.lantern:
+            diameter = self.pinion.trundle_r * 2
+            min_length = self.pinion_thick + self.pinion_extension
+            max_length = self.pinion_thick + self.pinion_extension + (self.end_cap_thick - self.get_lantern_trundle_offset()) + (self.wheel_thick - self.get_lantern_trundle_offset())
+            print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
+            trundle_length = max_length - (max_length%2)
+
+            bom[f"Steel dowel {diameter:.2f}x{trundle_length:0f}"] = self.pinion.teeth
+
+        return bom
 
     def get_rod_d(self):
         return self.arbor_d

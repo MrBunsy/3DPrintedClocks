@@ -42,7 +42,7 @@ lift =3
 lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
 
-train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1900, chain_at_back=False, chain_wheels=0, runtime_hours=28)
+train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1900, chain_at_back=False, powered_wheels=0, runtime_hours=28)
 
 #, toothHeightFraction=0.2, toothTipAngle=5, toothBaseAngle=4
 # train.setEscapementDetails(drop=1.5, lift=3, lock=1.5)
@@ -82,7 +82,7 @@ hands = clock.Hands(style=clock.HandStyle.CUCKOO, second_length=40, minute_fixin
 
 assembly = clock.Assembly(plates, hands=hands, pendulum=pendulum)
 
-assembly.printInfo()
+assembly.print_info()
 
 weight = clock.Weight(height=130, diameter=35)
 weight.printInfo()

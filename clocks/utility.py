@@ -55,7 +55,10 @@ WASHER_THICK_M3 = 0.5
 SMALL_WASHER_THICK_M3 = 1.1
 
 # external diameter for 3 and 4mm internal diameter
-STEEL_TUBE_DIAMETER = 6.2
+#size used to make hole to slot it into
+STEEL_TUBE_DIAMETER_CUTTER = 6.2
+#actual size
+STEEL_TUBE_DIAMETER = 6
 
 # extra diameter to add to the nut space if you want to be able to drop one in rather than force it in
 NUT_WIGGLE_ROOM = 0.2
@@ -141,7 +144,7 @@ def get_nut_height(metric_thread, nyloc=False, half_height=False, thumb=False):
         if nyloc:
             return 3.9
         if thumb:
-            return 2.85#3.0
+            return 3.05#2.85#3.0
 
     if metric_thread == 4:
         if nyloc:
@@ -372,7 +375,7 @@ class MachineScrew:
         return screw
 
     def get_nut_height(self, nyloc=False, half=False, thumb=False):
-        return get_nut_height(self.metric_thread, nyloc=nyloc, half_height=half, thumb=False)
+        return get_nut_height(self.metric_thread, nyloc=nyloc, half_height=half, thumb=thumb)
 
     def get_nut_cutter(self, height=-1, nyloc=False, half=False, with_screw_length=0, with_bridging=False, layer_thick=LAYER_THICK, wiggle=-1, rod_loose=False):
         '''
@@ -397,7 +400,7 @@ class MachineScrew:
         return nut
 
     def get_string(self):
-        return "M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
+        return "Machine screw M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
 
     def __str__(self):
         return self.get_string()
@@ -1125,7 +1128,7 @@ class BearingInfo:
         flange_string = ""
         if self.flange_diameter > 0:
             flange_string = " (flange {}x{})".format(self.flange_diameter, self.flange_thick)
-        return "{inner}x{outer}x{thick}{flange_string}".format(inner=self.inner_d, outer=self.outer_d, thick=self.height, flange_string=flange_string)
+        return "Bearing {inner}x{outer}x{thick}{flange_string}".format(inner=self.inner_d, outer=self.outer_d, thick=self.height, flange_string=flange_string)
 
     def __str__(self):
         return self.get_string()
@@ -1340,3 +1343,73 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
     out = os.path.join(path, "{}_{}.stl".format(clock_name, object_name))
     print("Exporting ", out)
     exporters.export(object, out, tolerance=tolerance, angularTolerance=tolerance)
+
+machine_screw_lengths={3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60]}
+
+def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, prefer_longer=False):
+    '''
+    Given a size, find the nearest machine screw that is easily purchasable
+    '''
+
+    if not allow_longer and prefer_longer:
+        #shortcut, allow just specifying prefer_longer
+        allow_longer = True
+
+    available_lengths = machine_screw_lengths[machine_screw.metric_thread]
+
+    just_below = -1
+
+    for test_length in available_lengths:
+        if test_length <= length:
+            just_below = test_length
+
+    if not allow_longer:
+        return just_below
+
+    #if we can be bigger as well
+    below_index = available_lengths.index(just_below)
+    if below_index < len(available_lengths)-1:
+        just_above = available_lengths[below_index+1]
+
+    if prefer_longer:
+        return just_above
+
+    if abs(length - just_below) < abs(length - just_above):
+        return just_below
+    else:
+        return just_above
+
+
+class BillOfMaterials:
+
+    class Item:
+        def __init__(self,  name, quantity=1, object=None):
+            self.name = name
+            self.quantity = quantity
+            # if there is an object which represents this item (like MachineScrew)
+            self.object = object
+
+    def __init__(self, part_name):
+        self.part_name = part_name
+        self.items = {}
+
+
+    def add_item(self, item):
+        '''
+        add an item to this BOM
+        '''
+        if item.name in self.items:
+            self.items[item.name].quantity += item.quantity
+
+
+
+def combine_BOMs(bom_a, bom_b):
+    bom_c = {}
+    for key in bom_a:
+        bom_c[key] = bom_a[key]
+    for key in bom_b:
+        if key in bom_c:
+            bom_c[key] += bom_b[key]
+        else:
+            bom_c[key] = bom_b[key]
+    return bom_c
