@@ -2062,20 +2062,13 @@ class ArborForPlate:
         also doesn't include anything to hold the cannon pinion as we don't know which arbor we are exactly
         '''
         bom = self.arbor.get_BOM()
-        bearings = 2
+        #bearings are included in the plate subcomponent
         #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
         if self.arbor.get_type() == ArborType.POWERED_WHEEL:
             bom.add_subcomponent(self.arbor.powered_wheel.get_BOM(wheel_thick=self.arbor.wheel_thick))
-            try:
-                # the key bearing is included in the wheel BOM, if this power doens't have a key_bearing catch the exception and do nothing
-                key_bearing = self.arbor.powered_wheel.key_bearing
-                bearings =1
-            except:
-                pass
         elif self.arbor.get_type() == ArborType.ANCHOR:
             bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
 
-        bom.add_item(BillOfMaterials.Item(f"{self.bearing}", quantity=bearings, purpose="Plate bearings"))
 
         return bom
     def get_shapes(self):

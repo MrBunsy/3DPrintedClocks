@@ -138,8 +138,11 @@ class ColletFixingPendulumWithBeatSetting:
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws, purpose="Beat setter"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Crinkle washer", purpose="Friction for beat setter"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Nut", purpose="Hold beat adjusting screw in place"))
-        bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws.metric_thread} 5mm", object=self.collet_screws, purpose="Fix collet to anchor"))# think 5mm did the job?
+        #think 4/5mm is fine, choosing 6 because it's in line with the plaque screws
+        bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} 6mm", object=self.collet_screws, purpose="Fix collet to anchor"))# think 5mm did the job?
         bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws.metric_thread} half nut", purpose="Fix collet to anchor"))
+
+        bom.add_printed_parts(self.get_printed_parts())
 
         return bom
 
@@ -272,6 +275,12 @@ class ColletFixingPendulumWithBeatSetting:
         # holder = holder.rotate((0,-self.hinge_distance,0),(0,-self.hinge_distance,1),12)
 
         return holder
+
+    def get_printed_parts(self):
+        return [
+            BillOfMaterials.PrintedPart("pendulum_holder_collet", self.get_collet(), purpose="Slots over back of anchor"),
+            BillOfMaterials.PrintedPart("pendulum_holder", self.get_pendulum_holder(), purpose="Holds pendulum"),
+        ]
 
     def get_assembled(self):
         assembly = self.get_collet()

@@ -24,6 +24,7 @@ import numpy as np
 from math import sin, cos, pi, floor
 import cadquery as cq
 from cadquery import exporters
+from .cq_svg import exportSVG
 
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
 IMAGEMAGICK_CONVERT_PATH = "C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
@@ -1383,60 +1384,146 @@ def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, 
 class BillOfMaterials:
 
     class Item:
-        def __init__(self,  name, quantity=1, object=None, purpose=""):
+        def __init__(self,  name, quantity=1, object=None, purpose=""):#, printed=False, printing_instructions="", tolerance=0.1):
             self.name = name
             self.quantity = quantity
             # if there is an object which represents this item (like MachineScrew)
             self.object = object
             #human readable description of what this is for
             self.purpose = purpose
-
+            self.parent_BOM = None
+        #     self.printed = printed
+        #     self.printing_instructions = printing_instructions
+        #     #for exporting to STL
+        #     self.tolerance = tolerance
+        #
         def __str__(self):
             return f"{self.quantity} x {self.name} ({self.purpose})"
+        #
+        # # TODO decide how to get hold of the clock name properly
+        # def to_json(self, clock_name):
+        #     return {
+        #         "file": f"{clock_name}_{self.name}.stl",
+        #         "quantity": self.quantity,
+        #         # "blurb": self.blurb
+        #     }
+        #
+        # def export_STL(self, clock_name, path):
+        #     export_STL(object=self.object, object_name=self.name, clock_name=clock_name, path=path, tolerance=self.tolerance)
+        #
+        # def export_SVG(self, clock_name, path):
+        #     exportSVG(self.object, os.path.join(path, f"{clock_name}_{self.name}.svg"))
+
+    class PrintedPart:
+        def __init__(self, name, object, tolerance=0.1, printing_instructions="", quantity=1, purpose=""):
+            self.name = name
+            #CQ object
+            self.object = object
+            self.tolerance = tolerance
+            #TODO how to store specific info about printing?
+            self.printing_instructions = printing_instructions
+            # human readable description of what this is for
+            self.purpose = purpose
+            self.quantity = quantity
+            self.parent_BOM = None
+
+        def get_root_name(self):
+            return self.parent_BOM.get_root_name()
+
+        def get_filename(self):
+            return f"{self.get_root_name()}_{self.name}.stl"
+        #TODO decide how to get hold of the clock name properly
+        def to_json(self):
+            return {
+                "file": self.get_filename(),
+                "quantity": self.quantity,
+                # "blurb": self.blurb
+            }
+        def __str__(self):
+            blurb_string = ""
+            inner_strings = []
+            if len(self.purpose):
+                inner_strings.append(self.purpose)
+            if len(self.printing_instructions):
+                inner_strings.append(self.printing_instructions)
+
+            if len(inner_strings) > 0:
+                blurb_string = f" ({':'.join(inner_strings)})"
+
+            return f"{self.quantity} x {self.get_filename()}{blurb_string}"
+
+        def export_STL(self, clock_name, path):
+            export_STL(object=self.object,object_name=self.name, clock_name=clock_name, path=path, tolerance=self.tolerance)
+
+        def export_SVG(self, clock_name, path):
+            exportSVG(self.object,os.path.join(path,f"{clock_name}_{self.name}.svg"))
 
     def __init__(self, name):
         self.name = name
+        self.parent = None
         self.items = []
         self.subcomponents = []
+        self.printed_parts=[]
+
+    def set_parent(self, parent_bom):
+        self.parent = parent_bom
 
     def add_subcomponent(self, bom):
         '''
         add a whole BOM for a sub component
         '''
+        bom.set_parent(self)
         self.subcomponents.append(bom)
 
+    def get_root_name(self):
+        if self.parent is None:
+            return self.name
+        return self.parent.get_root_name()
+    def add_thing(self, thing, list):
+        found = False
+        thing.parent_BOM = self
+        for i, lookup_item in enumerate(list):
+            # unlikely to hit this often
+            if thing.name == lookup_item.name and thing.purpose == lookup_item.purpose:
+                found = True
+                list[i].quantity += thing.quantity
+        if not found:
+            list.append(thing)
 
     def add_item(self, item):
         '''
         add an item to this BOM
         '''
-        found = False
-        for i,lookup_item in enumerate(self.items):
-            #unlikely to hit this often
-            if item.name == lookup_item.name and item.purpose == lookup_item.purpose:
-                found = True
-                self.items[i].quantity += item.quantity
-        if not found:
-            self.items.append(item)
+        self.add_thing(item, self.items)
 
+    def add_printed_part(self, part):
+        self.add_thing(part, self.printed_parts)
+
+    def add_printed_parts(self, printed_parts):
+        for part in printed_parts:
+            self.add_printed_part(part)
     def add_items(self, items):
         for item in items:
             self.add_item(item)
 
-    def __str__(self):
-        items_string = "\n".join([str(item) for item in self.items])
-        subcomponents_string = "\n".join([str(subcomponent) for subcomponent in self.subcomponents])
-        return f'''{self.name} BOM: 
-{items_string}
-Subcomponents:
-{subcomponents_string}
-'''
+#     def __str__(self):
+#         items_string = "\n".join([str(item) for item in self.items])
+#         subcomponents_string = "\n".join([str(subcomponent) for subcomponent in self.subcomponents])
+#         return f'''{self.name} BOM:
+# {items_string}
+# Subcomponents:
+# {subcomponents_string}
+# '''
     def to_json(self):
         json = {
             "name": self.name,
-            "items": [str(item) for item in self.items],
-            "subcomponents": [component.to_json() for component in self.subcomponents]
         }
+        if len(self.items) > 0:
+            json["items"]= [str(item) for item in self.items]
+        if len(self.printed_parts) > 0:
+            json["printed_parts"] = [str(printed_part) for printed_part in self.printed_parts]
+        if len(self.subcomponents) > 0:
+            json["subcomponents"]= [component.to_json() for component in self.subcomponents]
         return json
 
 

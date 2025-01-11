@@ -828,6 +828,20 @@ class SimpleClockPlates:
         if self.plaque is not None:
             bom.add_item(BillOfMaterials.Item(f"{self.plaque.screws} {self.plaque.screws.length:.0f}mm", purpose="Plaque fixing screws", quantity=len(self.plaque.get_screw_positions())))
 
+        #decided that it makes more sense if the bearings are part of the plate subcomponent
+        for arbor in self.arbors_for_plate:
+            bearings = 2
+
+            if arbor.arbor.get_type() == ArborType.POWERED_WHEEL:
+                try:
+                    # the key bearing is included in the wheel BOM, if this power doens't have a key_bearing catch the exception and do nothing
+                    key_bearing = arbor.arbor.powered_wheel.key_bearing
+                    bom.add_item(BillOfMaterials.Item(f"{key_bearing}", object=key_bearing, purpose="Bearing for winding key"))
+                    bearings = 1
+                except:
+                    pass
+            bom.add_item(BillOfMaterials.Item(f"{arbor.bearing}", quantity=bearings, purpose="Arbor bearings"))
+
         return bom
 
     def get_moon_holder_info(self):

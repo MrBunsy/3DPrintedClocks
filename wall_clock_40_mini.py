@@ -47,7 +47,7 @@ powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,
                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
-print(powered_wheel.get_BOM(wheel_thick=6))
+# print(powered_wheel.get_BOM(wheel_thick=6))
 moduleReduction=0.85
 pillar_style = clock.PillarStyle.PLAIN
 # train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=10, wheel_min_teeth=60, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
@@ -98,7 +98,7 @@ assembly = clock.Assembly(plates, name=clockName, hands=hands, time_seconds=30, 
 # print(assembly.get_BOM())
 # print(assembly.get_BOM().get_consolidated_items())
 print(json.dumps(assembly.get_BOM().get_consolidated_items(), sort_keys=True, indent=4))
-print(json.dumps(assembly.get_BOM().to_json(), sort_keys=True, indent=4, default=str))
+print(json.dumps(assembly.get_BOM().to_json(), indent=4, default=str))
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
 assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BLACK, clock.Colour.BLACK],
                     dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.ORANGE],

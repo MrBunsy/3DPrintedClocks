@@ -405,6 +405,8 @@ class LightweightPulley:
         if self.use_steel_rod:
             bom.add_item(BillOfMaterials.Item(f"Steel tube {STEEL_TUBE_DIAMETER}x{self.screws.metric_thread} {self.wheel_thick:.1f}mm", purpose="Tube insert for pulley wheel"))
 
+        bom.add_printed_parts(self.get_printed_parts())
+
         return bom
 
     def get_wheel(self):
@@ -475,6 +477,13 @@ class LightweightPulley:
         pulley = wheel.add(self.get_holder_half(True)).add(self.get_holder_half(False).rotate((0,0,0), (0,1,0), 180).translate((0,0,self.get_total_thickness())))
 
         return pulley
+
+    def get_printed_parts(self):
+        return [
+            BillOfMaterials.PrintedPart("lightweight_pulley_wheel", self.get_wheel(), printing_instructions="Print alone with small layer height for reliable overhang"),
+            BillOfMaterials.PrintedPart("lightweight_pulley_holder_a", self.get_holder_half(True)),
+            BillOfMaterials.PrintedPart("lightweight_pulley_holder_b", self.get_holder_half(False)),
+        ]
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_lightweight_pulley_wheel.stl".format(name))
@@ -1884,6 +1893,7 @@ class WindingKey(WindingKeyBase):
             raise ValueError("Polygon for key must have an even number of sides so screws can be used to secure handle")
         # adjust the wall thickness so that a screw can fit cleanly, with a small gap at the end, through the key. Assumes an even number of sides
         screw_length = get_incircle_for_regular_polygon(key_containing_diameter/2 + wall_thick, key_sides)*2
+        #get_nearest_machine_screw_length() wasn't written when I did this. leaving it alone as it's fine though
         spare_space = (screw_length)%2
         # print(f"screws of length {screw_length - spare_space} needed, with a gap of {spare_space}")
         #gap between 0.3 and 0.6 should be fine
@@ -1913,6 +1923,13 @@ class WindingKey(WindingKeyBase):
                 self.key_grip_wide = self.max_radius*2
 
         self.screw = MachineScrew(3, countersunk=True)
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Winding key")
+        bom.add_item(BillOfMaterials.Item(f"{self.screw} {get_nearest_machine_screw_length(self.screw_hole_length, self.screw)}mm", quantity=2, purpose="Handle fixing screws", object=self.screw))
+        bom.add_item(BillOfMaterials.Item(f"M{self.screw.metric_thread} half nut", quantity=2, purpose="Handle fixing nuts"))
+
+        return bom
 
     def get_let_down_adapter(self):
 
@@ -2030,6 +2047,12 @@ class WindingCrank(WindingKeyBase):
 
         return knob
 
+    def get_BOM(self):
+        bom = BillOfMaterials("Winding Crank")
+        bom.add_item(BillOfMaterials.Item(f"{self.knob_fixing_screw} {self.knob_fixing_screw.length}mm", purpose="Knob fixing screw"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} nyloc nut", purpose="Knob fixing nut"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} washer", purpose="Knob fixing washer"))
+        return bom
 
     def get_handle_z_length(self):
         return self.handle_thick
@@ -2294,9 +2317,10 @@ class CordWheel:
             raise NotImplementedError("TODO BOM screw length for non-key cord wheel")
         print(f"Cord wheel needs {self.fixing_screw} less than {fixing_screw_length:.1f}mm")
         fixing_screw_length = get_nearest_machine_screw_length(fixing_screw_length, self.fixing_screw)
-        bom = BillOfMaterials("Cord wheel")
+        bom = BillOfMaterials("Cord barrel")
         bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
-        bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))
+        #keeping bearings with the plates as that makes more sense for assembling
+        # bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))
         bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity= self.cord_length, purpose="Cord for weight"))
 
         if wheel_thick > 0 and self.traditional_ratchet:
@@ -2308,6 +2332,8 @@ class CordWheel:
         if not self.traditional_ratchet:
             raise NotImplementedError("TODO fixing screws for non-traditional ratchet")
         #steel tube dimensions only known in arbor for plate
+
+        bom.add_printed_parts(self.get_printed_parts())
 
         return bom
 
@@ -2617,6 +2643,19 @@ class CordWheel:
             return self.ratchet.thick + self.click_wheel_standoff_height + self.before_bearing_extra_height + self.cap_thick + self.top_cap_thick + self.thick
 
         return self.ratchet.thick + self.click_wheel_standoff_height + self.cap_thick * 2 + self.top_cap_thick + self.thick * 2 + WASHER_THICK_M3
+
+    def get_printed_parts(self):
+        parts = [
+            #previously "cordwheel_bottom_segment"
+            BillOfMaterials.PrintedPart("cordwheel_barrel",self.get_segment(False), purpose="Cord wraps around this"),
+            BillOfMaterials.PrintedPart("cordwheel_top_cap", self.get_cap(top=True), purpose="Top of cord barrel"),
+            BillOfMaterials.PrintedPart("cordwheel_ratchet_wheel", self.get_ratchet_wheel_for_cord(), purpose="Fixed to base to form part of ratchet")
+        ]
+        if not self.use_key:
+            # extra bits where the other cord coils up
+            parts.append(BillOfMaterials.PrintedPart("cordwheel_cap",self.get_cap(), purpose="Separates the two cord barrels"))
+
+        return parts
 
     def output_STLs(self, name="clock", path="../out"):
 

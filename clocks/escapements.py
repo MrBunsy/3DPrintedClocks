@@ -2196,7 +2196,8 @@ class Pendulum:
 
     now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
-    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=100, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None, detail_thick=LAYER_THICK, font=None):
+    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=100, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None,
+                 detail_thick=LAYER_THICK, font=None):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
         self.hand_avoider_height=hand_avoider_height
         if self.hand_avoider_height < 0:
@@ -2251,6 +2252,9 @@ class Pendulum:
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Bob nut friction"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Top of pendulum rod"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} half nut", purpose="Top of pendulum rod"))
+
+        #note this does not know the length of the pendulum, nor the lengths of different bits of rods if there is a ring in the pendulum
+        #so that will be done in Assembly
 
         return bom
 
