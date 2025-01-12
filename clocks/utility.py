@@ -1415,7 +1415,7 @@ class BillOfMaterials:
         #     exportSVG(self.object, os.path.join(path, f"{clock_name}_{self.name}.svg"))
 
     class PrintedPart:
-        def __init__(self, name, object, tolerance=0.1, printing_instructions="", quantity=1, purpose=""):
+        def __init__(self, name, object, tolerance=0.1, printing_instructions="", quantity=1, purpose="", modifier_objects=None):
             self.name = name
             #CQ object
             self.object = object
@@ -1426,6 +1426,10 @@ class BillOfMaterials:
             self.purpose = purpose
             self.quantity = quantity
             self.parent_BOM = None
+            #if a modifier is useful for slicing, these are it
+            self.modifier_objects = modifier_objects
+            if self.modifier_objects is None:
+                self.modifier_objects = []
 
         def get_root_name(self):
             return self.parent_BOM.get_root_name()

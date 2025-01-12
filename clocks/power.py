@@ -1880,6 +1880,11 @@ class WindingKeyBase:
         print("Outputting ", out)
         exporters.export(self.get_handle(for_printing=True), out)
 
+    def get_printed_parts(self):
+        return [
+            BillOfMaterials.PrintedPart("winding_key", self.get_key(for_printing=True)),
+            BillOfMaterials.PrintedPart("winding_key_handle", self.get_handle(for_printing=True)),
+        ]
 class WindingKey(WindingKeyBase):
     '''
     A simple winding key with a grip, as usually used for winding a spring powered clock
@@ -1928,6 +1933,8 @@ class WindingKey(WindingKeyBase):
         bom = BillOfMaterials("Winding key")
         bom.add_item(BillOfMaterials.Item(f"{self.screw} {get_nearest_machine_screw_length(self.screw_hole_length, self.screw)}mm", quantity=2, purpose="Handle fixing screws", object=self.screw))
         bom.add_item(BillOfMaterials.Item(f"M{self.screw.metric_thread} half nut", quantity=2, purpose="Handle fixing nuts"))
+
+        bom.add_printed_parts(self.get_printed_parts())
 
         return bom
 
@@ -2052,6 +2059,7 @@ class WindingCrank(WindingKeyBase):
         bom.add_item(BillOfMaterials.Item(f"{self.knob_fixing_screw} {self.knob_fixing_screw.length}mm", purpose="Knob fixing screw"))
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} nyloc nut", purpose="Knob fixing nut"))
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} washer", purpose="Knob fixing washer"))
+        bom.add_printed_parts(self.get_printed_parts())
         return bom
 
     def get_handle_z_length(self):
@@ -2488,6 +2496,11 @@ class CordWheel:
     def get_cap(self, top=False, extraThick=0):
         capThick = self.top_cap_thick if top else self.cap_thick
         cap = cq.Workplane("XY").circle(self.cap_diameter / 2).extrude(capThick + extraThick)
+
+        if top:
+            #chamfer the inside edge - hoping this helps avoid the cord getting caught when winding on the round plates clock
+            #where the tied end is in front of the barrel
+            cap = cap.edges("<Z").chamfer((capThick + extraThick)*0.4)
 
         holeR = self.holeD / 2
         if self.use_key and top:

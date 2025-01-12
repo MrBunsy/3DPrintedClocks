@@ -2071,12 +2071,90 @@ class ArborForPlate:
 
 
         return bom
+
+    # def get_spring_barrel_split(self):
+    #     if self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
+    #         '''
+    #         experiment for ASA which warps badly, split powered wheel into two parts, outer ring with teeth
+    #         few assumptions here, 0.2 layer height and that the screws will fit
+    #         update: ASA seemed to wear really badly! going back to PETG
+    #         '''
+    #
+    #         fixing_screws = MachineScrew(2, countersunk=True)
+    #         spring_barrel = self.arbor.powered_wheel
+    #         inner_r = spring_barrel.get_outer_diameter() / 2
+    #         max_outer_r = self.arbor.wheel.get_min_radius() - 1
+    #
+    #         min_gap_size = fixing_screws.get_head_diameter() * 1.5
+    #         if max_outer_r < inner_r + min_gap_size:
+    #             # raise ValueError(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
+    #             #if wanting to print the wheel seperate to the barrel (for ASA, which I've abandoned. not an issue for PETG)
+    #             print(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
+    #
+    #
+    #         outer_r = inner_r + min_gap_size #self.arbor.wheel.get_min_radius() - 3
+    #
+    #         gap_size = outer_r - inner_r
+    #         screw_distance_r = inner_r  + gap_size/2
+    #
+    #         # if gap_size < min_gap_size:
+    #         #     raise ValueError(f"Not enough space to split wheel into two: {gap_size} {min_gap_size}")
+    #
+    #         wheel_thick = self.arbor.wheel_thick
+    #         bottom_thick = wheel_thick/2
+    #         top_thick = wheel_thick/2
+    #
+    #         layer_thick = LAYER_THICK
+    #
+    #
+    #         #ensure that layer height is taken into account, make bottom thicker and top thinner if it doesn't match up
+    #         bottom_above_layer_thick = bottom_thick % layer_thick
+    #         if bottom_above_layer_thick > 0.01:
+    #             bottom_thick += layer_thick - bottom_above_layer_thick
+    #             top_thick -= bottom_above_layer_thick
+    #
+    #         #0.05 was doable but hard, even 0.1 was still a squeeze. Trying 0.15
+    #         wiggle = 0.15#0.1#0.05
+    #         #putting wiggle into the outer bit so we don't cut into the spring barrel wall. will that eat into space for the screw head?
+    #         inner_keep = cq.Workplane("XY").circle(outer_r - wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r).extrude(100)
+    #
+    #         outer_cut = cq.Workplane("XY").circle(outer_r + wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r + wiggle).extrude(100)
+    #
+    #         screw_cutter = cq.Workplane("XY")
+    #         screws = 4
+    #         for screw in range(screws):
+    #             pos = polar(screw * math.pi*2/screws, screw_distance_r)
+    #             screw_cutter = screw_cutter.add(fixing_screws.get_cutter(with_bridging=True).translate(pos))
+    #
+    #         #want the outside to be solid for this to work
+    #         wheel_without_outer_style = self.arbor.get_powered_wheel(rear_side_extension=self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius, cut_style_in_outer_section=False)
+    #
+    #         wheel_with_screw_holes = wheel_without_outer_style.cut(screw_cutter)
+    #
+    #         inner_wheel = wheel_with_screw_holes.intersect(inner_keep)
+    #         outer_wheel = wheel_with_screw_holes.cut(outer_cut)
+    #         shapes["wheel_parts_inner"] = inner_wheel
+    #         shapes["wheel_parts_outer"] = outer_wheel
+
+    def get_printed_parts(self):
+        parts = []
+
+
+
+        return parts
+
     def get_shapes(self):
         '''
         return a dict of name:shape for all the components needed for this arbour
         always for printing, they will be arranged for the model in get_assembled()
         '''
         shapes = {}
+
+        try:
+            #anything with a pinion can get the modified
+            shapes["pinion_STL_modifier"] = self.arbor.get_STL_modifier_pinion_shape()
+        except:
+            pass
 
         extras = self.arbor.get_extras(rear_side_extension=self.distance_from_back + self.endshake + self.back_plate_thick,
                                        front_side_extension=self.endshake / 2 + self.front_plate_thick, key_length=self.key_length,
@@ -2088,7 +2166,7 @@ class ArborForPlate:
             shapes = self.get_anchor_shapes()
         elif self.arbor.get_type() == ArborType.ESCAPE_WHEEL:
             shapes = self.get_escape_wheel_shapes()
-            shapes["pinion_STL_modifier"] = self.arbor.get_STL_modifier_pinion_shape()
+
         elif self.arbor.get_type() == ArborType.WHEEL_AND_PINION:
 
             wheel = self.arbor.get_shape()
@@ -2098,9 +2176,6 @@ class ArborForPlate:
                 wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinion_at_front).translate((0, 0, self.total_thickness)))
 
             shapes["wheel"] = wheel
-
-
-            shapes["pinion_STL_modifier"]=self.arbor.get_STL_modifier_pinion_shape()
         elif self.arbor.get_type() == ArborType.POWERED_WHEEL:
             #TODO support chain at front?
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
@@ -2108,67 +2183,7 @@ class ArborForPlate:
             #rear side extended full endshake so we could go plain bushing if needed
 
 
-            if self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
-                '''
-                experiment for ASA which warps badly, split powered wheel into two parts, outer ring with teeth
-                few assumptions here, 0.2 layer height and that the screws will fit
-                '''
 
-                fixing_screws = MachineScrew(2, countersunk=True)
-                spring_barrel = self.arbor.powered_wheel
-                inner_r = spring_barrel.get_outer_diameter() / 2
-                max_outer_r = self.arbor.wheel.get_min_radius() - 1
-
-                min_gap_size = fixing_screws.get_head_diameter() * 1.5
-                if max_outer_r < inner_r + min_gap_size:
-                    # raise ValueError(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
-                    #if wanting to print the wheel seperate to the barrel (for ASA, which I've abandoned. not an issue for PETG)
-                    print(f"Not enough space to split wheel into two: {max_outer_r - inner_r} {min_gap_size}")
-
-
-                outer_r = inner_r + min_gap_size #self.arbor.wheel.get_min_radius() - 3
-
-                gap_size = outer_r - inner_r
-                screw_distance_r = inner_r  + gap_size/2
-
-                # if gap_size < min_gap_size:
-                #     raise ValueError(f"Not enough space to split wheel into two: {gap_size} {min_gap_size}")
-
-                wheel_thick = self.arbor.wheel_thick
-                bottom_thick = wheel_thick/2
-                top_thick = wheel_thick/2
-
-                layer_thick = LAYER_THICK
-
-
-                #ensure that layer height is taken into account, make bottom thicker and top thinner if it doesn't match up
-                bottom_above_layer_thick = bottom_thick % layer_thick
-                if bottom_above_layer_thick > 0.01:
-                    bottom_thick += layer_thick - bottom_above_layer_thick
-                    top_thick -= bottom_above_layer_thick
-
-                #0.05 was doable but hard, even 0.1 was still a squeeze. Trying 0.15
-                wiggle = 0.15#0.1#0.05
-                #putting wiggle into the outer bit so we don't cut into the spring barrel wall. will that eat into space for the screw head?
-                inner_keep = cq.Workplane("XY").circle(outer_r - wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r).extrude(100)
-
-                outer_cut = cq.Workplane("XY").circle(outer_r + wiggle/2).extrude(bottom_thick).faces(">Z").workplane().circle(inner_r + wiggle).extrude(100)
-
-                screw_cutter = cq.Workplane("XY")
-                screws = 4
-                for screw in range(screws):
-                    pos = polar(screw * math.pi*2/screws, screw_distance_r)
-                    screw_cutter = screw_cutter.add(fixing_screws.get_cutter(with_bridging=True).translate(pos))
-
-                #want the outside to be solid for this to work
-                wheel_without_outer_style = self.arbor.get_powered_wheel(rear_side_extension=self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius, cut_style_in_outer_section=False)
-
-                wheel_with_screw_holes = wheel_without_outer_style.cut(screw_cutter)
-
-                inner_wheel = wheel_with_screw_holes.intersect(inner_keep)
-                outer_wheel = wheel_with_screw_holes.cut(outer_cut)
-                shapes["wheel_parts_inner"] = inner_wheel
-                shapes["wheel_parts_outer"] = outer_wheel
 
 
 

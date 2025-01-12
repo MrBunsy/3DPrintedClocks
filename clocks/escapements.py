@@ -2196,7 +2196,7 @@ class Pendulum:
 
     now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
-    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=100, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None,
+    def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=-1, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None,
                  detail_thick=LAYER_THICK, font=None):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
         self.hand_avoider_height=hand_avoider_height
@@ -2255,7 +2255,7 @@ class Pendulum:
 
         #note this does not know the length of the pendulum, nor the lengths of different bits of rods if there is a ring in the pendulum
         #so that will be done in Assembly
-
+        bom.add_printed_parts(self.get_printed_parts())
         return bom
 
     def hand_avoider_is_circle(self):
@@ -2265,6 +2265,10 @@ class Pendulum:
         '''
         Get a circular part which attaches inline with pendulum rod, so it can go over the hands (for a front-pendulum)
         '''
+
+        if self.hand_avoider_inner_d < 0:
+            return None
+
         extra_r=self.hand_avoider_wide
         if self.hand_avoider_is_circle():
             avoider = cq.Workplane("XY").circle(self.hand_avoider_inner_d / 2).circle(self.hand_avoider_inner_d / 2 + extra_r).extrude(self.hand_avoider_thick)
@@ -2445,10 +2449,23 @@ class Pendulum:
         nut = nut.cut(nutSpace)
         return nut
 
+    def get_printed_parts(self):
+        parts = [
+            BillOfMaterials.PrintedPart("pendulum_bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy"),
+            BillOfMaterials.PrintedPart("pendulum_bob_solid", self.get_bob(hollow=False), purpose="Solid pendulum bob alternative"),
+            BillOfMaterials.PrintedPart("pendulum_bob_nut", self.get_bob_nut(), purpose="Nut to adjust rate of clock"),
+            BillOfMaterials.PrintedPart("pendulum_bob_lid", self.get_bob(), purpose="Lid for back of hollow bob to keep heavy filling inside"),
+        ]
+        if self.hand_avoider_inner_d > 0:
+            parts.append(BillOfMaterials.PrintedPart("pendulum_ring", self.get_hand_avoider(), purpose="Ring for pendulum to slot over hands or plate pillar"))
+
+        return parts
+
     def output_STLs(self, name="clock", path="../out"):
-        out = os.path.join(path, "{}_pendulum_hand_avoider.stl".format(name))
-        print("Outputting ", out)
-        exporters.export(self.get_hand_avoider(), out)
+        if self.hand_avoider_inner_d > 0:
+            out = os.path.join(path, "{}_pendulum_hand_avoider.stl".format(name))
+            print("Outputting ", out)
+            exporters.export(self.get_hand_avoider(), out)
 
         out = os.path.join(path, "{}_bob.stl".format(name))
         print("Outputting ", out)
