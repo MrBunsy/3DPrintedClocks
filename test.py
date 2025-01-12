@@ -184,7 +184,7 @@ if 'show_object' not in globals():
 # show_object(pulley.get_assembled())
 #
 #
-# print(pulley.getTotalThick())
+# print(pulley.get_total_thick())
 
 # #clock 12
 # wheelPinionPair = WheelPinionPair(wheelTeeth=87, pinionTeeth=9, module=1.0495300312000941)

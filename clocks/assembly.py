@@ -162,17 +162,17 @@ class Assembly:
             chainZ = chainWheelTopZ + self.going_train.powered_wheel.get_chain_positions_from_top()[0][0][1]
 
             # TODO for two bottom pillars
-            pulleyY = self.plates.bottom_pillar_positions[0][1] - self.plates.bottom_pillar_r - self.pulley.diameter
+            pulleyY = self.plates.bearing_positions[0][1] -  self.plates.bottom_pillar_r *2 - self.pulley.diameter - self.plates.arbors_for_plate[0].get_max_radius() - 20#self.plates.bottom_pillar_positions[0][1] - self.plates.bottom_pillar_r - self.pulley.diameter
 
             if self.plates.huygens_maintaining_power:
-                pulley = self.pulley.get_assembled().translate((0, 0, -self.pulley.getTotalThick() / 2)).rotate((0, 0, 0), (0, 1, 0), 90)
+                pulley = self.pulley.get_assembled().translate((0, 0, -self.pulley.get_total_thick() / 2)).rotate((0, 0, 0), (0, 1, 0), 90)
                 self.pulley_model = pulley.translate((self.going_train.powered_wheel.diameter / 2, pulleyY, chainZ + self.going_train.powered_wheel.diameter / 2))
                 if self.going_train.powered_wheel.type == PowerType.ROPE:
                     # second pulley for the counterweight
                     self.pulley_model = self.pulley_model.add(pulley.translate((-self.going_train.powered_wheel.diameter / 2, pulleyY, chainZ + self.going_train.powered_wheel.diameter / 2)))
             else:
 
-                self.pulley_model = self.pulley.get_assembled().rotate((0, 0, 0), (0, 0, 1), 90).translate((0, pulleyY, chainZ - self.pulley.getTotalThick() / 2))
+                self.pulley_model = self.pulley.get_assembled().translate((0, pulleyY, chainZ - self.pulley.get_total_thick() / 2))
 
 
         key = self.plates.get_winding_key()
@@ -238,6 +238,9 @@ class Assembly:
         key = self.plates.get_winding_key()
         if key is not None:
             bom.add_subcomponent(key.get_BOM())
+
+        if self.dial is not None:
+            bom.add_subcomponent(self.dial.get_BOM())
 
         return bom
 

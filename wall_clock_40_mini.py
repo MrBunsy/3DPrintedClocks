@@ -69,12 +69,29 @@ train.gen_gears(module_sizes=[1, 0.95, 0.95], thick=3, thickness_reduction=2 / 2
 # train.print_info(weight_kg=1)
 train.print_info(weight_kg=2)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
+dial_d=160
+dial_width = dial_d*0.1
+moon_radius=10
+# motion_works = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)
+# moon_complication = None
+# motion_works_angle_deg=360-40
 
-motion_works = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)
+moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.0, module=0.8, moon_radius=moon_radius,
+                                                  bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 3, moon_inside_dial=True,
+                                                  lone_bevel_min_height=13)
+#no need to make inset, we've got lots of space here with the moon complication
+motion_works = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compact=True, moon_complication=moon_complication)
+# balance out the moon complication by making the motion works a bit bigger
+#but smaller than their equivalent on the spring clock because the key is too close on this clock
+# motion_works.calculate_size(arbor_distance=28)
+moon_complication.set_motion_works_sizes(motion_works)
+motion_works_angle_deg=180+40
+
+
 
 pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
-dial = clock.Dial(outside_d=160, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL,
+dial = clock.Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL,
                   seconds_style=clock.DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True)
 plaque = clock.Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 # plates = clock.SimpleClockPlates(train, motion_works, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.COMPACT,
@@ -84,12 +101,12 @@ plaque = clock.Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulu
 #                                  second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225, endshake=1.75)#, screws_from_back=[True, False])
 
 plates = clock.RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=360-40, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True)
+                                motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication)
 
 # pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 pulley = clock.LightweightPulley(diameter=train.powered_wheel.diameter, rope_diameter=2, use_steel_rod=False)
-# print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.getTotalThick(), pulley.hook_screws, pulley.getHookTotalThick()))
+# print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.getHookTotalThick()))
 # print(pulley.get_BOM())
 hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
@@ -97,8 +114,8 @@ hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_
 assembly = clock.Assembly(plates, name=clockName, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley)
 # print(assembly.get_BOM())
 # print(assembly.get_BOM().get_consolidated_items())
-print(json.dumps(assembly.get_BOM().get_consolidated_items(), sort_keys=True, indent=4))
-print(json.dumps(assembly.get_BOM().to_json(), indent=4, default=str))
+# print(json.dumps(assembly.get_BOM().get_consolidated_items(), sort_keys=True, indent=4))
+# print(json.dumps(assembly.get_BOM().to_json(), indent=4, default=str))
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
 assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BLACK, clock.Colour.BLACK],
                     dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.ORANGE],

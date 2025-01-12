@@ -897,7 +897,7 @@ class SimpleClockPlates:
                 maxR = 0
 
             #deprecated way of doing it - passing loads of info to the Arbour class. still used only for the chain wheel
-            # arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.getTotalThickness(),
+            # arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.get_total_thickness(),
             #                     frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
             #                     plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
 
@@ -1416,7 +1416,7 @@ class SimpleClockPlates:
                 else:
                     # this is the part of the chain wheel with a washer, can ignore
                     canIgnoreFront = True
-            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).getTotalThickness() + self.bearingPositions[i][2]
+            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).get_total_thickness() + self.bearingPositions[i][2]
             if topZs[i] >= preliminaryPlateDistance - LAYER_THICK * 2 and not canIgnoreFront:
                 # something that matters is pressed up against the top plate
                 # could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
@@ -2930,6 +2930,24 @@ class SimpleClockPlates:
 
         return plate
 
+    def add_moon_complication_arms(self, plate, plate_thick, cut_holes=False):
+        mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
+        if self.moon_complication is not None:
+
+            #screw holes for the moon complication arbors
+            for i, pos in enumerate(self.get_moon_complication_fixings_absolute()):
+                # extra bits of plate to hold the screw holes for extra arbors
+
+                #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates (old very specific logic...)
+                if i != 1 or (self.gear_train_layout != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
+
+                    plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
+
+                if cut_holes:
+                    plate = plate.cut(self.moon_complication.screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
+
+        return plate
+
     def add_motion_works_arm(self, plate, plate_thick, cut_holes=False):
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
 
@@ -3006,17 +3024,7 @@ class SimpleClockPlates:
 
         if self.moon_complication is not None and moon:
 
-            #screw holes for the moon complication arbors
-            for i, pos in enumerate(self.get_moon_complication_fixings_absolute()):
-                # extra bits of plate to hold the screw holes for extra arbors
-
-                #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates (old very specific logic...)
-                if i != 1 or (self.gear_train_layout != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
-
-                    plate = plate.union(get_stroke_line([self.hands_position, pos], wide=mini_arm_width, thick=plate_thick))
-
-
-                plate = plate.cut(self.moon_complication.screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(pos))
+            plate = self.add_moon_complication_arms(plate, plate_thick, cut_holes=True)
 
 
         # need an extra chunky hole for the big bearing that the key slots through
@@ -4388,7 +4396,10 @@ class RoundClockPlates(SimpleClockPlates):
                 '''
                 not a key-wound clock
                 '''
+
+            #add these arms here so they're included in the detailing
             plate = self.add_motion_works_arm(plate, plate_thick, cut_holes=False)
+            plate = self.add_moon_complication_arms(plate, plate_thick, cut_holes=False)
             return plate
 
         plate = plate.cut(self.get_fixing_screws_cutter())

@@ -2611,7 +2611,7 @@ class Arbor:
         if not for_printing and not self.pinion_at_front and (self.get_type() in [ArborType.WHEEL_AND_PINION]):
             #make it the right way around for placing in a model
             #rotate not mirror! otherwise the escape wheels end up backwards
-            # shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.getTotalThickness()))
+            # shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_total_thickness()))
             shape = shape.mirror("YZ", (0, 0, 0))
 
 

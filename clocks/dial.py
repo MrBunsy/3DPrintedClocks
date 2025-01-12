@@ -81,7 +81,7 @@ class MoonPhaseComplication3D:
     module of 0.9 on first experiment
     '''
     def __init__(self, pinion_teeth_on_hour_wheel=16, module=0.9, gear_thick=2.4, gear_style=GearStyle.ARCS, moon_radius=30, first_gear_angle_deg=180,
-                 on_left=True, bevel_module=-1, moon_inside_dial = False, bevel_angle_from_hands_deg=90, moon_from_hands=40):
+                 on_left=True, bevel_module=-1, moon_inside_dial = False, bevel_angle_from_hands_deg=90, moon_from_hands=40, lone_bevel_min_height=15):
         self.lunar_month_hours = 29.53059 * 24.0
         self.ratio = 12 / self.lunar_month_hours
         self.module = module
@@ -132,7 +132,7 @@ class MoonPhaseComplication3D:
         self.arbor_d = 3
         self.screws = MachineScrew(self.arbor_d, countersunk=True)
         self.arbor_loose_d = self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS
-        self.lone_bevel_min_height = 15
+        self.lone_bevel_min_height = lone_bevel_min_height
 
         self.bevel_module = bevel_module
         if self.bevel_module < 0:
@@ -711,6 +711,29 @@ class Dial:
         self.subtract_from_supports = None
         # also a bit hacky, plates might want to add somethign to this dial (like front anchor holder)
         self.add_to_back = None
+
+    def get_printed_parts(self):
+        parts = [
+            BillOfMaterials.PrintedPart("dial", self.get_dial()),
+            BillOfMaterials.PrintedPart("dial_detail", self.get_dial(),
+                                        purpose="Markings on dial, printed in different colour for dial",
+                                        printing_instructions="Combine with dial for a multicolour print")
+        ]
+        if self.raised_detail:
+            parts.append(BillOfMaterials.PrintedPart("dial_supports", self.get_supports(), purpose="Pillars to hold dial from front of plate",
+                                        printing_instructions="May need to split into objects and relocate in slicer"))
+
+
+        return parts
+
+    def get_BOM(self):
+        instructions = None
+        if self.raised_detail:
+            instructions = "Fix pillars to front plate with screws, then glue dial onto the top of the pillars"
+        bom = BillOfMaterials("Dial", instructions)
+        #leave screws with plates as that knows what size they need to be
+        bom.add_printed_parts(self.get_printed_parts())
+        return bom
 
     def get_hand_space_z(self):
         #how much space between the front of the dial and the hands should there be?

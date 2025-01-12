@@ -1452,7 +1452,7 @@ class BillOfMaterials:
                 inner_strings.append(self.printing_instructions)
 
             if len(inner_strings) > 0:
-                blurb_string = f" ({':'.join(inner_strings)})"
+                blurb_string = f" ({': '.join(inner_strings)})"
 
             return f"{self.quantity} x {self.get_filename()}{blurb_string}"
 
@@ -1462,12 +1462,13 @@ class BillOfMaterials:
         def export_SVG(self, clock_name, path):
             exportSVG(self.object,os.path.join(path,f"{clock_name}_{self.name}.svg"))
 
-    def __init__(self, name):
+    def __init__(self, name, assembly_instructions=None):
         self.name = name
         self.parent = None
         self.items = []
         self.subcomponents = []
         self.printed_parts=[]
+        self.assembly_instructions=assembly_instructions
 
     def set_parent(self, parent_bom):
         self.parent = parent_bom
@@ -1519,9 +1520,14 @@ class BillOfMaterials:
 # {subcomponents_string}
 # '''
     def to_json(self):
+        '''
+        Using the json stringify as a crude way of formatting the entire BOM neatly
+        '''
         json = {
             "name": self.name,
         }
+        if self.assembly_instructions is not None:
+            json["assembly_instructions"] = self.assembly_instructions
         if len(self.items) > 0:
             json["items"]= [str(item) for item in self.items]
         if len(self.printed_parts) > 0:

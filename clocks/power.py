@@ -465,7 +465,7 @@ class LightweightPulley:
     def get_total_thickness(self):
         return self.holder_thick*2 + self.gap_size*2 + self.wheel_thick
 
-    def getTotalThick(self):
+    def get_total_thick(self):
         return self.get_total_thickness()
 
     def get_assembled(self):
@@ -546,7 +546,7 @@ class BearingPulley:
 
         if bearing is not None:
             #see if we can adjust our total thickness to be the same as the bearing
-            total_thick = self.getTotalThick()
+            total_thick = self.get_total_thick()
             bearing_wiggle_height=0.4
             if total_thick < bearing.height + self.bearing_holder_thick*2 +bearing_wiggle_height:
                 #too narrow
@@ -555,7 +555,7 @@ class BearingPulley:
                 self.taper_thick+= extra_thick_needed / 4
             else :
                 print("Can't fit bearing neatly inside pulley")
-        total_thick = self.getTotalThick()
+        total_thick = self.get_total_thick()
         if total_thick < self.screws.get_total_length():
             print("Not thick ({}) enough to fit screw of length {}".format(total_thick, self.screws.get_total_length()))
             #make it thick enough to fit the screw in, with a little bit of spare
@@ -572,7 +572,7 @@ class BearingPulley:
         self.cuckoo_hook_outer_d=14#13.2
         self.cuckoo_hook_thick = 1.2#0.9
 
-    def getTotalThick(self):
+    def get_total_thick(self):
         '''
         thickness of just the pulley wheel
         '''
@@ -641,7 +641,7 @@ class BearingPulley:
         return pulley
 
     def getHookTotalThick(self):
-        return self.getTotalThick() + self.hook_side_gap*2 + self.hook_thick*2
+        return self.get_total_thick() + self.hook_side_gap*2 + self.hook_thick*2
 
     def getHookHalf(self):
         '''
@@ -661,14 +661,14 @@ class BearingPulley:
 
         #make a large block of a nice shape and cut out space for a pulley wheel
         r = self.hook_wide / 2#*0.75
-        pulleyHoleWide = self.getTotalThick() + self.hook_side_gap * 2
+        pulleyHoleWide = self.get_total_thick() + self.hook_side_gap * 2
 
         hook = cq.Workplane("XY").lineTo(axleHeight + extraHeight, 0).radiusArc((axleHeight + extraHeight, self.hook_wide), -r).lineTo(0, self.hook_wide).radiusArc((0, 0), -r).close().extrude(length / 2)
 
         holeR = self.getMaxRadius() + self.hook_bottom_gap
 
         #leave two sticky out bits on the hook that will press right up to the inside of the bearing
-        pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.getTotalThick() - self.bearing_holder_thick)\
+        pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.get_total_thick() - self.bearing_holder_thick)\
              .faces("<Z").workplane().circle(holeR).circle(self.bearing.inner_safe_d / 2).extrude(self.hook_side_gap + self.bearing_holder_thick)
 
         #            .faces(">Z").workplane().circle(holeR).circle(self.bearing.innerSafeD).extrude(self.hookSideGap)\
@@ -704,19 +704,21 @@ class BearingPulley:
         return hook
 
     def get_assembled(self):
-        pulley = self.getHalf(top=False).add(self.getHalf(top=True).rotate((0,0,self.getTotalThick()/2),(1,0,self.getTotalThick()/2),180))
+        pulley = self.getHalf(top=False).add(self.getHalf(top=True).rotate((0,0,self.get_total_thick()/2),(1,0,self.get_total_thick()/2),180))
 
         if self.bearing is not None:
             # hook = self.getHookHalf()
-            # pulley = hook.add(pulley.translate((0,0,-self.getTotalThick()/2)).rotate((0,0,0),(0,1,0),90))
+            # pulley = hook.add(pulley.translate((0,0,-self.get_total_thick()/2)).rotate((0,0,0),(0,1,0),90))
 
             hook = self.getHookHalf().add(self.getHookHalf().rotate((0,0,self.getHookTotalThick()/2),(1,0,self.getHookTotalThick()/2),180))
-            pulley = hook.add(pulley.translate((0,0,self.getHookTotalThick()/2-self.getTotalThick()/2)))
+            pulley = hook.add(pulley.translate((0,0,self.getHookTotalThick()/2-self.get_total_thick()/2)))
+
+        pulley = pulley.rotate((0,0,0), (0,0,1), 90)
 
         return pulley
 
     def printInfo(self):
-        print("pulley needs screws {} {}mm and {} {}mm".format(self.screws, self.getTotalThick(), self.hook_screws, self.getHookTotalThick()))
+        print("pulley needs screws {} {}mm and {} {}mm".format(self.screws, self.get_total_thick(), self.hook_screws, self.getHookTotalThick()))
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pulley_wheel_top.stl".format(name))
