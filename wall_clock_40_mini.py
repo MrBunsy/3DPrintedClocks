@@ -72,20 +72,24 @@ train.get_arbour_with_conventional_naming(0).print_screw_length()
 dial_d=160
 dial_width = dial_d*0.1
 moon_radius=10
-# motion_works = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)
-# moon_complication = None
-# motion_works_angle_deg=360-40
 
-moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.0, module=0.8, moon_radius=moon_radius,
-                                                  bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 3, moon_inside_dial=True,
-                                                  lone_bevel_min_height=13)
-#no need to make inset, we've got lots of space here with the moon complication
-motion_works = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compact=True, moon_complication=moon_complication)
-# balance out the moon complication by making the motion works a bit bigger
-#but smaller than their equivalent on the spring clock because the key is too close on this clock
-# motion_works.calculate_size(arbor_distance=28)
-moon_complication.set_motion_works_sizes(motion_works)
-motion_works_angle_deg=180+40
+moon = False
+
+if not moon:
+    motion_works = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)
+    moon_complication = None
+    motion_works_angle_deg=360-40
+else:
+    moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.0, module=0.8, moon_radius=moon_radius,
+                                                      bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 3, moon_inside_dial=True,
+                                                      lone_bevel_min_height=13)
+    #no need to make inset, we've got lots of space here with the moon complication
+    motion_works = clock.MotionWorks(extra_height=20, style=gearStyle, thick=3, compact=True, moon_complication=moon_complication)
+    # balance out the moon complication by making the motion works a bit bigger
+    #but smaller than their equivalent on the spring clock because the key is too close on this clock
+    # motion_works.calculate_size(arbor_distance=28)
+    moon_complication.set_motion_works_sizes(motion_works)
+    motion_works_angle_deg=180+40
 
 
 
@@ -117,9 +121,11 @@ assembly = clock.Assembly(plates, name=clockName, hands=hands, time_seconds=30, 
 # print(json.dumps(assembly.get_BOM().get_consolidated_items(), sort_keys=True, indent=4))
 # print(json.dumps(assembly.get_BOM().to_json(), indent=4, default=str))
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
-assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKGREY, clock.Colour.BLACK, clock.Colour.BLACK],
-                    dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.ORANGE],
-                    gear_colours=[clock.Colour.ORANGE, clock.Colour.GREEN], motion_works_colours=[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN], pulley_colour=clock.Colour.GREEN)
+assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKER_GREY, clock.Colour.DARKER_GREY, clock.Colour.BLACK],
+                    dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.BRIGHT_ORANGE],
+                    gear_colours=[clock.Colour.BRIGHT_ORANGE, clock.Colour.LIME_GREEN],
+                    motion_works_colours=[clock.Colour.BRIGHT_ORANGE, clock.Colour.BRIGHT_ORANGE, clock.Colour.LIME_GREEN],
+                    pulley_colour=clock.Colour.LIME_GREEN, plaque_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
 
 assembly.get_arbor_rod_lengths()
 if outputSTL:

@@ -595,8 +595,10 @@ class Colour:
     BRASS = (71, 65, 26)
     RED = "red"
     ORANGE = (255, 102, 0)
+    BRIGHT_ORANGE = (255, 120, 0)
     YELLOW = "yellow"
     GREEN = "green"
+    LIME_GREEN = (100, 255, 0)
     DARK_GREEN = (0, 25, 13)
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
@@ -606,6 +608,7 @@ class Colour:
     LIGHTGREY = (200,200,200)#(211, 211, 211)
     SILVER = (169,169,169)#(192, 192, 192)
     DARKGREY = (50, 50, 50)
+    DARKER_GREY = (30, 30, 30)
     BLACK = "black"
     BROWN = (66, 40, 14)  # (139,69,19)
 
