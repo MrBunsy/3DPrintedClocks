@@ -19,6 +19,9 @@ source.
 '''
 import math
 import os
+import re
+import pathlib
+import json
 
 import numpy as np
 from math import sin, cos, pi, floor
@@ -1348,6 +1351,8 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
     print("Exporting ", out)
     exporters.export(object, out, tolerance=tolerance, angularTolerance=tolerance)
 
+
+
 machine_screw_lengths={3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60]}
 
 def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, prefer_longer=False):
@@ -1434,11 +1439,22 @@ class BillOfMaterials:
             if self.modifier_objects is None:
                 self.modifier_objects = []
 
+            self.svg_options = {}
+
         def get_root_name(self):
+            '''
+            get the name of just the top of the BOM
+            '''
             return self.parent_BOM.get_root_name()
 
+        def get_full_name(self):
+            '''
+            get the full path name of this item (eg clock_x_arbor_y)
+            '''
+            return self.parent_BOM.get_full_name()
+
         def get_filename(self):
-            return f"{self.get_root_name()}_{self.name}.stl"
+            return f"{self.get_full_name()}_{self.name}.stl"
         #TODO decide how to get hold of the clock name properly
         def to_json(self):
             return {
@@ -1459,11 +1475,17 @@ class BillOfMaterials:
 
             return f"{self.quantity} x {self.get_filename()}{blurb_string}"
 
-        def export_STL(self, clock_name, path):
-            export_STL(object=self.object,object_name=self.name, clock_name=clock_name, path=path, tolerance=self.tolerance)
+        def export(self, path):
+            self.export_STL(path)
+            self.export_SVG(path)
 
-        def export_SVG(self, clock_name, path):
-            exportSVG(self.object,os.path.join(path,f"{clock_name}_{self.name}.svg"))
+        def export_STL(self, path):
+            export_STL(object=self.object,object_name=self.name, clock_name=self.get_full_name(), path=path, tolerance=self.tolerance)
+            for i,modifier in enumerate(self.modifier_objects):
+                export_STL(object=modifier, object_name=self.name+f"_modifier_{i}", clock_name=self.get_full_name(), path=path, tolerance=self.tolerance)
+
+        def export_SVG(self, path):
+            exportSVG(self.object,os.path.join(path,f"{self.get_full_name()}_{self.name}.svg"), opts=self.svg_options)
 
     def __init__(self, name, assembly_instructions=None):
         self.name = name
@@ -1472,9 +1494,16 @@ class BillOfMaterials:
         self.subcomponents = []
         self.printed_parts=[]
         self.assembly_instructions=assembly_instructions
+        self.assembled_model = None
 
     def set_parent(self, parent_bom):
         self.parent = parent_bom
+
+    def set_model(self, model_object, svg_preview_options = None):
+        self.assembled_model = BillOfMaterials.PrintedPart(f"model", model_object, printing_instructions="Assembled model, not for printing")
+        self.assembled_model.parent_BOM = self
+        if svg_preview_options is not None:
+            self.assembled_model.svg_options = svg_preview_options
 
     def add_subcomponent(self, bom):
         '''
@@ -1487,6 +1516,16 @@ class BillOfMaterials:
         if self.parent is None:
             return self.name
         return self.parent.get_root_name()
+
+    def tidy_name(self):
+        #https://stackoverflow.com/a/71199182 adding in stripping for ( and )
+        return re.sub(r"[/\\?%*\(*\)*:|\"<>\x7F\x00-\x1F]", "", self.name.replace(" ", "_").lower())
+        # return self.name.replace(" ", "_").replace(")","").replace("(","").lower()
+
+    def get_full_name(self):
+        if self.parent is None:
+            return self.tidy_name()
+        return f"{self.parent.get_full_name()}_{self.tidy_name()}"
     def add_thing(self, thing, list):
         found = False
         thing.parent_BOM = self
@@ -1557,6 +1596,29 @@ class BillOfMaterials:
             else:
                 unique_items[item.name] = item.quantity
         return unique_items
+
+    def export(self, out_path="out"):
+
+        if self.parent is None:
+            out_path = os.path.join(out_path, self.tidy_name())
+
+        # make if it doesn't exist
+        pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
+
+        if self.parent is None:
+            with open(os.path.join(out_path,'bom.json'), 'w', encoding='utf-8') as f:
+                json.dump(self.to_json(), f, ensure_ascii=False, indent=4)
+
+        for printable in self.printed_parts:
+            printable.export(out_path)
+
+        for component in self.subcomponents:
+            component.export(out_path)
+
+        if self.assembled_model is not None:
+            self.assembled_model.export(out_path)
+
+
 
 def combine_BOMs(bom_a, bom_b):
     bom_c = {}

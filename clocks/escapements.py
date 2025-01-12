@@ -2451,13 +2451,13 @@ class Pendulum:
 
     def get_printed_parts(self):
         parts = [
-            BillOfMaterials.PrintedPart("pendulum_bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy"),
-            BillOfMaterials.PrintedPart("pendulum_bob_solid", self.get_bob(hollow=False), purpose="Solid pendulum bob alternative"),
-            BillOfMaterials.PrintedPart("pendulum_bob_nut", self.get_bob_nut(), purpose="Nut to adjust rate of clock"),
-            BillOfMaterials.PrintedPart("pendulum_bob_lid", self.get_bob(), purpose="Lid for back of hollow bob to keep heavy filling inside"),
+            BillOfMaterials.PrintedPart("bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy"),
+            BillOfMaterials.PrintedPart("bob_solid", self.get_bob(hollow=False), purpose="Solid pendulum bob alternative"),
+            BillOfMaterials.PrintedPart("bob_nut", self.get_bob_nut(), purpose="Nut to adjust rate of clock"),
+            BillOfMaterials.PrintedPart("bob_lid", self.get_bob(), purpose="Lid for back of hollow bob to keep heavy filling inside"),
         ]
         if self.hand_avoider_inner_d > 0:
-            parts.append(BillOfMaterials.PrintedPart("pendulum_ring", self.get_hand_avoider(), purpose="Ring for pendulum to slot over hands or plate pillar"))
+            parts.append(BillOfMaterials.PrintedPart("ring", self.get_hand_avoider(), purpose="Ring for pendulum to slot over hands or plate pillar"))
 
         return parts
 

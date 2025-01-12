@@ -242,6 +242,8 @@ class Assembly:
         if self.dial is not None:
             bom.add_subcomponent(self.dial.get_BOM())
 
+        bom.set_model(self.get_clock(), svg_preview_options={"width":720, "height":1280})
+
         return bom
 
     def get_arbor_rod_lengths(self):

@@ -480,9 +480,9 @@ class LightweightPulley:
 
     def get_printed_parts(self):
         return [
-            BillOfMaterials.PrintedPart("lightweight_pulley_wheel", self.get_wheel(), printing_instructions="Print alone with small layer height for reliable overhang"),
-            BillOfMaterials.PrintedPart("lightweight_pulley_holder_a", self.get_holder_half(True)),
-            BillOfMaterials.PrintedPart("lightweight_pulley_holder_b", self.get_holder_half(False)),
+            BillOfMaterials.PrintedPart("wheel", self.get_wheel(), printing_instructions="Print alone with small layer height for reliable overhang"),
+            BillOfMaterials.PrintedPart("holder_a", self.get_holder_half(True)),
+            BillOfMaterials.PrintedPart("holder_b", self.get_holder_half(False)),
         ]
 
     def output_STLs(self, name="clock", path="../out"):
@@ -1884,8 +1884,8 @@ class WindingKeyBase:
 
     def get_printed_parts(self):
         return [
-            BillOfMaterials.PrintedPart("winding_key", self.get_key(for_printing=True)),
-            BillOfMaterials.PrintedPart("winding_key_handle", self.get_handle(for_printing=True)),
+            BillOfMaterials.PrintedPart("key", self.get_key(for_printing=True)),
+            BillOfMaterials.PrintedPart("handle", self.get_handle(for_printing=True)),
         ]
 class WindingKey(WindingKeyBase):
     '''
@@ -2662,13 +2662,13 @@ class CordWheel:
     def get_printed_parts(self):
         parts = [
             #previously "cordwheel_bottom_segment"
-            BillOfMaterials.PrintedPart("cordwheel_barrel",self.get_segment(False), purpose="Cord wraps around this"),
-            BillOfMaterials.PrintedPart("cordwheel_top_cap", self.get_cap(top=True), purpose="Top of cord barrel", printing_instructions="Print with extra elephant's foot to avoid lip on inside edge"),
-            BillOfMaterials.PrintedPart("cordwheel_ratchet_wheel", self.get_ratchet_wheel_for_cord(), purpose="Fixed to base to form part of ratchet")
+            BillOfMaterials.PrintedPart("barrel",self.get_segment(False), purpose="Cord wraps around this"),
+            BillOfMaterials.PrintedPart("top_cap", self.get_cap(top=True), purpose="Top of cord barrel", printing_instructions="Print with extra elephant's foot to avoid lip on inside edge"),
+            BillOfMaterials.PrintedPart("ratchet_wheel", self.get_ratchet_wheel_for_cord(), purpose="Fixed to base to form part of ratchet")
         ]
         if not self.use_key:
             # extra bits where the other cord coils up
-            parts.append(BillOfMaterials.PrintedPart("cordwheel_centre_cap",self.get_cap(), purpose="Separates the two cord barrels"))
+            parts.append(BillOfMaterials.PrintedPart("centre_cap",self.get_cap(), purpose="Separates the two cord barrels"))
 
         return parts
 

@@ -1737,10 +1737,10 @@ class ArborForPlate:
             #no need to support direct arbour with large bearings
 
 
-            if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
-                shapes["pendulum_holder"]=self.get_pendulum_holder_collet()
-                shapes["pendulum_holder_for_beat_setter"] = self.beat_setting_pendulum_bits.get_pendulum_holder()
-                shapes["pendulum_collet_for_beat_setter"] = self.beat_setting_pendulum_bits.get_collet()
+            # if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
+            #     shapes["pendulum_holder"]=self.get_pendulum_holder_collet()
+            #     shapes["pendulum_holder_for_beat_setter"] = self.beat_setting_pendulum_bits.get_pendulum_holder()
+            #     shapes["pendulum_collet_for_beat_setter"] = self.beat_setting_pendulum_bits.get_collet()
                 #else TODO suspension spring holder
 
             if not self.pendulum_at_front:
@@ -1775,7 +1775,8 @@ class ArborForPlate:
                     else:
                         #cylinder up to the back of the back plate
                         cylinder_length = self.back_plate_thick + self.endshake + self.bearing_position[2]
-                    shapes["arbour_extension"] = self.get_arbour_extension(front=True)
+                    #all arbor extensinos are added elsewhere
+                    # shapes["arbour_extension"] = self.get_arbour_extension(front=True)
 
 
 
@@ -2069,6 +2070,7 @@ class ArborForPlate:
         elif self.arbor.get_type() == ArborType.ANCHOR:
             bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
 
+        bom.add_printed_parts(self.get_printed_parts())
 
         return bom
 
@@ -2138,6 +2140,21 @@ class ArborForPlate:
 
     def get_printed_parts(self):
         parts = []
+        shapes = self.get_shapes()
+
+        pinion_modifiers = []
+        try:
+            #anything with a pinion can get the modified
+            pinion_modifiers.append(self.arbor.get_STL_modifier_pinion_shape())
+        except:
+            pass
+
+        for shape in shapes:
+            if not shape.endswith("_modifier"):
+                if shape == "wheel":
+                    parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape], modifier_objects=pinion_modifiers))
+                else:
+                    parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape]))
 
 
 

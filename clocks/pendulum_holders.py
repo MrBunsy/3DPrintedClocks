@@ -155,7 +155,7 @@ class ColletFixingPendulumWithBeatSetting:
     def get_thread_screw_length(self):
         return self.width + self.threadholder_arm_width * 2
 
-    def get_collet(self):
+    def get_collet(self, for_printing=True):
         '''
         centred on centre of rod that goes through the collet
         '''
@@ -213,6 +213,9 @@ class ColletFixingPendulumWithBeatSetting:
         # collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.collet_size / 2, self.pendulum_holder_thick/4)))
         collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.collet_size / 2 - screw_length, 0, self.pendulum_holder_thick / 4)))
         collet = collet.cut(self.collet_screws.get_nut_cutter(height=nut_thick).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.collet_size / 2, 0, self.pendulum_holder_thick / 4)))
+
+        if for_printing:
+            collet = collet.rotate((0,0,0), (0,1,0), 180)
 
         return collet
 
@@ -274,16 +277,18 @@ class ColletFixingPendulumWithBeatSetting:
 
         # holder = holder.rotate((0,-self.hinge_distance,0),(0,-self.hinge_distance,1),12)
 
+
+
         return holder
 
     def get_printed_parts(self):
         return [
-            BillOfMaterials.PrintedPart("pendulum_holder_collet", self.get_collet(), purpose="Slots over back of anchor"),
-            BillOfMaterials.PrintedPart("pendulum_holder", self.get_pendulum_holder(), purpose="Holds pendulum"),
+            BillOfMaterials.PrintedPart("collet", self.get_collet(), purpose="Slots over back of anchor"),
+            BillOfMaterials.PrintedPart("holder", self.get_pendulum_holder(), purpose="Holds pendulum"),
         ]
 
     def get_assembled(self):
-        assembly = self.get_collet()
+        assembly = self.get_collet(for_printing=False)
         assembly = assembly.add(self.get_pendulum_holder(for_printing=False))
 
         return assembly

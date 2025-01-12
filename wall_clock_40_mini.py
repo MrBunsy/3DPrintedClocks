@@ -129,10 +129,11 @@ assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DAR
 
 assembly.get_arbor_rod_lengths()
 if outputSTL:
-    plaque.output_STLs(clockName, clockOutDir)
-    pulley.output_STLs(clockName, clockOutDir)
-    motion_works.output_STLs(clockName, clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+    assembly.get_BOM().export(clockOutDir)
+    # plaque.output_STLs(clockName, clockOutDir)
+    # pulley.output_STLs(clockName, clockOutDir)
+    # motion_works.output_STLs(clockName, clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
