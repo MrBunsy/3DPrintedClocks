@@ -2661,12 +2661,12 @@ class CordWheel:
         parts = [
             #previously "cordwheel_bottom_segment"
             BillOfMaterials.PrintedPart("cordwheel_barrel",self.get_segment(False), purpose="Cord wraps around this"),
-            BillOfMaterials.PrintedPart("cordwheel_top_cap", self.get_cap(top=True), purpose="Top of cord barrel"),
+            BillOfMaterials.PrintedPart("cordwheel_top_cap", self.get_cap(top=True), purpose="Top of cord barrel", printing_instructions="Print with extra elephant's foot to avoid lip on inside edge"),
             BillOfMaterials.PrintedPart("cordwheel_ratchet_wheel", self.get_ratchet_wheel_for_cord(), purpose="Fixed to base to form part of ratchet")
         ]
         if not self.use_key:
             # extra bits where the other cord coils up
-            parts.append(BillOfMaterials.PrintedPart("cordwheel_cap",self.get_cap(), purpose="Separates the two cord barrels"))
+            parts.append(BillOfMaterials.PrintedPart("cordwheel_centre_cap",self.get_cap(), purpose="Separates the two cord barrels"))
 
         return parts
 

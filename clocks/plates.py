@@ -1616,7 +1616,8 @@ class SimpleClockPlates:
         # arm_thick = 1.5 #0.8 seemed a bit weedy
         #with the new tube mounted motino works this (1) seems a bit strong
         #with the new tube mount, even 0.5 seems a bit strong!
-        brake_pad_offset = 0.25
+        # 0.25 was a bit too weak - I've seen the minute hand suddenly drop a few times
+        brake_pad_offset = 0.4
         arm_thick = 2.4
 
         inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
