@@ -2072,6 +2072,8 @@ class ArborForPlate:
 
         bom.add_printed_parts(self.get_printed_parts())
 
+        bom.set_model(self.get_assembled())
+
         return bom
 
     # def get_spring_barrel_split(self):
@@ -2453,6 +2455,9 @@ class Arbor:
         return ArborType.UNKNOWN
 
     def get_BOM(self):
+
+        #add spaces in camel case https://stackoverflow.com/a/199075
+        # pretty_name = re.sub(r"(\w)([A-Z])", r"\1 \2", self.get_type().value)
         bom = BillOfMaterials(self.get_type().value)
         if self.pinion is not None and self.pinion.lantern:
             diameter = self.pinion.trundle_r * 2
@@ -2461,7 +2466,7 @@ class Arbor:
             print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
             trundle_length = max_length - (max_length%2)
 
-            bom.add_item(BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}", quantity= self.pinion.teeth, purpose="Lantern pinion trundles"))
+            bom.add_item(BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity= self.pinion.teeth, purpose="Lantern pinion trundles"))
 
         return bom
 

@@ -89,7 +89,7 @@ pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), us
 
 hands = Hands(style=HandStyle.SIMPLE_ROUND, second_length=40, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(),
               hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=dial.outside_d / 2 - 10, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False,
-              second_hand_centred=True, second_fixing_d=get_diameter_for_die_cutting(3), outline_on_seconds=1, seconds_hand_thick=2.5)
+              second_hand_centred=True, second_fixing_d=get_diameter_for_die_cutting(3), outline_on_seconds=1, seconds_hand_thick=2.5, include_seconds_hand=True)
 
 assembly = Assembly(plates, hands=hands, time_seconds=15, pulley=pulley_no_pipe, pendulum=pendulum)
 

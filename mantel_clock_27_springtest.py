@@ -107,7 +107,7 @@ plates = clock.MantelClockPlates(train, motionWorks, name="Mantel 27", dial=dial
 #would like sword, need to fix second hand outline for it
 hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.outside_d*0.45, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-                    second_length=dial.second_hand_mini_dial_d * 0.45, seconds_hand_thick=1.5, outline_on_seconds=1)
+                    second_length=dial.second_hand_mini_dial_d * 0.45, seconds_hand_thick=1.5, outline_on_seconds=1, include_seconds_hand=True)
 # hands = clock.Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
 
 

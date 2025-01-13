@@ -161,12 +161,12 @@ ideas for new styles:
 '''
 
 class ArborType(Enum):
-    WHEEL_AND_PINION = "WheelAndPinion"
-    POWERED_WHEEL = "PoweredWheel"
-    ESCAPE_WHEEL = "EscapeWheel"
+    WHEEL_AND_PINION = "Wheel And Pinion"
+    POWERED_WHEEL = "Powered Wheel"
+    ESCAPE_WHEEL = "Escape Wheel"
     ANCHOR = "Anchor"
     #used for special things like fans or flys
-    LONE_PINION = "LonePinion"
+    LONE_PINION = "Lone Pinion"
     UNKNOWN = "Unknown"
 
 class PowerType(Enum):

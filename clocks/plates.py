@@ -842,6 +842,16 @@ class SimpleClockPlates:
                     pass
             bom.add_item(BillOfMaterials.Item(f"{arbor.bearing}", quantity=bearings, purpose="Arbor bearings"))
 
+        if self.huygens_maintaining_power:
+            #TODO
+            bom.add_subcomponent(self.huygens_wheel.get_BOM())
+
+        if self.moon_holder is not None:
+            #TODO
+            bom.add_subcomponent(self.moon_holder.get_BOM())
+
+        bom.add_printed_parts(self.get_printable_parts())
+
         return bom
 
     def get_moon_holder_info(self):
@@ -1581,7 +1591,7 @@ class SimpleClockPlates:
         #
         # return False
 
-    def get_cannon_pinion_friction_clip(self):
+    def get_cannon_pinion_friction_clip(self, for_printing=True):
         '''
         holds two "brake pads" - experimental sprung peice that can add a small amount of friction to the cannon pinion so the minute hand
         doesn't have too much slack when the second hand is centred. Without it the minute hand is about 30s fast on the half past and 30s slow on the half to.
@@ -1688,6 +1698,9 @@ class SimpleClockPlates:
         for pos in self.cannon_pinion_friction_clip_fixings_pos:
             relative_pos = np_to_set(np.subtract(pos, self.cannon_pinion_friction_clip_pos))
             clip = clip.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((relative_pos[0], relative_pos[1], total_thick)))
+
+        if for_printing:
+            clip = clip.rotate((0,0,0), (0,1,0),180)
 
         return clip
 
@@ -3323,7 +3336,7 @@ class SimpleClockPlates:
                                                                                   .translate((0,0,self.get_plate_thick(back=True) + self.plate_distance)))
 
         if one_peice:
-            whole =  plates.union(pillars)
+            whole =  plates.union(pillars).union(standoff_pillars)
             if detail is not None:
                 whole= whole.union(detail)
             return whole
@@ -3355,6 +3368,77 @@ class SimpleClockPlates:
 
         return base, top, detail
 
+    def get_printable_parts(self):
+        parts = []
+
+        parts.append(BillOfMaterials.PrintedPart("back", self.get_plate(True, for_printing=True), tolerance=self.export_tolerance,
+                                                 printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+
+        if self.split_detailed_plate:
+            front_plate_main, front_plate_top, front_plate_detail = self.get_front_plate_in_parts()
+            parts.append(BillOfMaterials.PrintedPart("front_main", front_plate_main, tolerance=self.export_tolerance,
+                                                     purpose="Bottom section of split front plate", printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+            parts.append(BillOfMaterials.PrintedPart("front_top", front_plate_top, tolerance=self.export_tolerance, purpose="Top section of split front plate"))
+            if front_plate_detail is not None:
+                parts.append(BillOfMaterials.PrintedPart("front_detail", front_plate_detail, tolerance=self.export_tolerance,
+                                            purpose="Detail to be combined with top of front plate", printing_instructions="Combine with front top for multicoloured print"))
+        else:
+            parts.append(BillOfMaterials.PrintedPart("front", self.get_plate(False, for_printing=True), tolerance=self.export_tolerance))
+            parts.append(BillOfMaterials.PrintedPart("front_detail", self.get_plate_detail(back=False, for_printing=True), tolerance=self.export_tolerance))
+
+
+        if not self.text_on_standoffs and self.plaque is None:
+            parts.append(BillOfMaterials.PrintedPart("back_text", self.get_text(for_printing=True), purpose="Text visible on back",
+                                        printing_instructions="Combine with back plate for multicoloured print"))
+
+        if self.pillars_separate:
+            parts.append(BillOfMaterials.PrintedPart("pillar_bottom", self.get_pillar(top=False), quantity=self.bottom_pillars, tolerance=0.05, purpose="Link between front and back plates",
+                                                     printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+            parts.append(BillOfMaterials.PrintedPart("pillar_top", self.get_pillar(top=True), quantity=self.top_pillars, tolerance=0.05, purpose="Link between front and back plates",
+                                                     printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+
+        if self.motion_works.cannon_pinion_friction_ring:
+            parts.append(BillOfMaterials.PrintedPart("friction_clip", self.get_cannon_pinion_friction_clip(),
+                                        purpose="Clip around cannon pinion to remove slack from minute hand and keep in place"))
+
+        if len(self.get_screwhole_positions()) > 1:
+            #need a template to help drill the screwholes!
+            parts.append(BillOfMaterials.PrintedPart("drill_template_6mm", self.get_drill_template(6, layer_thick=0.4),
+                                                     purpose="Guide for drilling holes in wall to hang clock"))
+
+        if self.back_plate_from_wall > 0:
+            parts.append(BillOfMaterials.PrintedPart("wall_standoff_top", self.get_wall_standoff(top=True), purpose="Top wall fixing",
+                                                     printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+
+            bottom_standoff = self.get_wall_standoff(top=False)
+            if bottom_standoff is not None:
+                parts.append(BillOfMaterials.PrintedPart("wall_standoff_bottom", bottom_standoff, purpose="Bottom wall fixing",
+                                                     printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+
+            if self.text_on_standoffs:
+                parts.append(BillOfMaterials.PrintedPart("wall_standoff_top_text", self.get_text(top_standoff=True, for_printing=True),
+                                                         printing_instructions="combine with top wall standoff for multicoloured print"))
+                parts.append(BillOfMaterials.PrintedPart("wall_standoff_bottom_text", self.get_text(top_standoff=False, for_printing=True),
+                                                         printing_instructions="combine with bottom wall standoff for multicoloured print"))
+
+            if self.standoff_pillars_separate:
+                for left in [True, False]:
+                    for top in [True, False]:
+                        pillar_name = "back_pillar_{}_{}".format("left" if left else "right", "top" if top else "bottom")
+                        parts.append(BillOfMaterials.PrintedPart(pillar_name, self.get_standoff_pillar(top=top, left=left), tolerance=0.05,
+                                                                 purpose="Link between back plate and wall fixings",
+                                                                 printing_instructions="Add extra perimeters, top and bottom layers, for strength"))
+
+
+        if self.need_motion_works_holder:
+            parts.append(BillOfMaterials.PrintedPart("motion_works_holder", self.get_motion_works_holder(),
+                                                     purpose="Screws to front plate to hold motion works where a bearing would otherwise be in the way"))
+
+        if self.need_front_anchor_bearing_holder():
+            parts.append(BillOfMaterials.PrintedPart("anchor_front_bearing_holder", self.get_front_anchor_bearing_holder(),
+                                                     purpose="Screw to front plate to hold anchor for an exposed escapement"))
+
+        return parts
 
     def output_STLs(self, name="clock", path="../out"):
 
@@ -4836,10 +4920,23 @@ class RoundClockPlates(SimpleClockPlates):
         #     plates.add(self.get_front_anchor_bearing_holder())
 
         if one_peice:
-            plates = plates.union(pillars)
+            plates = plates.union(pillars).union(standoff_pillars)
             if detail is not None:
                 return plates.union(detail)
         return (plates, pillars, detail, standoff_pillars)
+
+    def get_printable_parts(self):
+        parts = super().get_printable_parts()
+        if not self.wall_mounted:
+            parts.append(BillOfMaterials.PrintedPart("legs_back",self.get_legs(back=True), purpose="Rear set of legs"))
+            parts.append(BillOfMaterials.PrintedPart("legs_front", self.get_legs(back=False), purpose="Front set of legs"))
+            parts.append(BillOfMaterials.PrintedPart("legs_pillar", self.get_legs_pillar(), quantity=2, purpose="Fix both sets of legs together at the base"))
+            #is this not already exported as the wall fixing? TODO
+            # export_STL(self.get_back_cock(), "back_cock", name, path)
+
+        if self.has_vanity_plate:
+            parts.append(BillOfMaterials.PrintedPart("vanity_plate", self.get_vanity_plate(), purpose="Fixed to front plate behind dial"))
+        return parts
 
     def output_STLs(self, name="clock", path="../out"):
         super().output_STLs(name, path)

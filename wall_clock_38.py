@@ -124,7 +124,7 @@ plates = clock.RoundClockPlates(train, motion_works, name="Wall 38", dial=dial, 
 print("plate radius: ", plates.radius)
 hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True,
-                    outline_on_seconds=0, second_hand_centred=False)
+                    outline_on_seconds=0, second_hand_centred=False, include_seconds_hand=True)
 # show_object(plates.get_fixing_screws_cutter())
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
 

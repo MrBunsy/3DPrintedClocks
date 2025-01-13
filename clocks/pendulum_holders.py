@@ -135,9 +135,9 @@ class ColletFixingPendulumWithBeatSetting:
         bom = BillOfMaterials("Pendulum Holder")
         bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {adjusting_screw_length:.0f}mm", object=self.fixing_screws, purpose="Beat adjusting screw"))
         bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", object=self.fixing_screws, purpose="Fixing screw"))
-        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws, purpose="Beat setter"))
-        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Crinkle washer", purpose="Friction for beat setter"))
-        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} Nut", purpose="Hold beat adjusting screw in place"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws, purpose="Beat setter"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} crinkle washer", purpose="Friction for beat setter"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} nut", purpose="Hold beat adjusting screw in place"))
         #think 4/5mm is fine, choosing 6 because it's in line with the plaque screws
         bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} 6mm", object=self.collet_screws, purpose="Fix collet to anchor"))# think 5mm did the job?
         bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws.metric_thread} half nut", purpose="Fix collet to anchor"))

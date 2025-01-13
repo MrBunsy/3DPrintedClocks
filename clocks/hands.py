@@ -571,7 +571,7 @@ class Hands:
     def __init__(self, style=HandStyle.SIMPLE, minute_fixing="rectangle", hourFixing="circle", second_fixing="rod", minute_fixing_d1=1.5, minute_fixing_d2=2.5,
                  hourfixing_d=3, second_fixing_d=3, length=25, second_length=30, thick=1.6, fixing_offset_deg=0, outline=0, outline_same_as_body=True,
                  chunky = False, second_hand_centred=False, outline_on_seconds=-1, seconds_hand_thick=-1, second_style_override=None, hour_style_override=None, outline_colour=None,
-                 second_fixing_thick=-1, outline_thick=LAYER_THICK * 2):
+                 second_fixing_thick=-1, outline_thick=LAYER_THICK * 2, include_seconds_hand = False):
         '''
         chunky applies to some styles that can be made more or less chunky - idea is that some defaults might look good with a dial, but look a bit odd without a dial
 
@@ -585,6 +585,7 @@ class Hands:
         #something with shells or outline doesn't behave how I'd expect with thin and narrow hands, ends up with a layer inside the hand for the outline
         #recommend using thicker seconds hands if using an outline
         self.second_thick= seconds_hand_thick
+        self.include_seconds_hand = include_seconds_hand
         if self.second_thick < 0:
             self.second_thick = self.thick
         #usually I print multicolour stuff with two layers, but given it's entirely perimeter I think it will look okay with just one
@@ -1644,12 +1645,43 @@ class Hands:
         else:
             secondHand = secondHand.translate((0, self.length * 0.5, 0))
 
-        all = minuteHand.union(hourHand)
+        #add, not union, so we keep the detail visible
+        all = minuteHand.add(hourHand)
 
         if include_seconds:
-            all = all.union(secondHand)
+            all = all.add(secondHand)
 
         return all
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Hands", assembly_instructions="Most hands are multicolour prints with multiple STLs per hand")
+        #could split this further into different hands as subcomponents, but I don't think there's any actual advantage other than pretty previews
+        bom.set_model(self.get_assembled(include_seconds=self.include_seconds_hand))
+
+        bom.add_printed_parts(self.get_printed_parts())
+
+        return bom
+
+    def get_printed_parts(self):
+        parts = []
+        colours = self.get_extra_colours()
+
+        for colour in colours:
+            colour_string = "_" + colour if colour is not None else ""
+
+            parts.append(BillOfMaterials.PrintedPart(f"hand_hour{colour_string}", self.get_hand(hand_type=HandType.HOUR, colour=colour)))
+            parts.append(BillOfMaterials.PrintedPart(f"hand_minute{colour_string}", self.get_hand(hand_type=HandType.MINUTE, colour=colour)))
+            if self.include_seconds_hand:
+                parts.append(BillOfMaterials.PrintedPart(f"hand_second{colour_string}", self.get_hand(hand_type=HandType.SECOND, colour=colour)))
+
+        if self.outline > 0:
+            parts.append(BillOfMaterials.PrintedPart("hand_hour_outline", self.get_hand(hand_type=HandType.HOUR, generate_outline=True)))
+            parts.append(BillOfMaterials.PrintedPart("hand_minute_outline", self.get_hand(hand_type=HandType.MINUTE, generate_outline=True)))
+            if self.include_seconds_hand:
+                secondoutline = self.get_hand(hand_type=HandType.SECOND, generate_outline=True)
+                if secondoutline is not None:
+                    parts.append(BillOfMaterials.PrintedPart("hand_second_outline", secondoutline))
+        return parts
 
     def output_STLs(self, name="clock", path="../out"):
 

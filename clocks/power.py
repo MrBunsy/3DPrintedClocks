@@ -1937,7 +1937,7 @@ class WindingKey(WindingKeyBase):
         bom.add_item(BillOfMaterials.Item(f"M{self.screw.metric_thread} half nut", quantity=2, purpose="Handle fixing nuts"))
 
         bom.add_printed_parts(self.get_printed_parts())
-
+        bom.set_model(self.get_assembled())
         return bom
 
     def get_let_down_adapter(self):
@@ -2062,6 +2062,7 @@ class WindingCrank(WindingKeyBase):
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} nyloc nut", purpose="Knob fixing nut"))
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} washer", purpose="Knob fixing washer"))
         bom.add_printed_parts(self.get_printed_parts())
+        bom.set_model(self.get_assembled())
         return bom
 
     def get_handle_z_length(self):

@@ -1415,10 +1415,13 @@ class Dial:
         opposite way around to the rest of the dial - facing UPWARDS (in the +ve z direction)
         '''
 
-        dial = self.get_dial().rotate((0,0,0),(0,1,0),180)
-        extras = self.get_extras()
+        dial = self.get_dial().add(self.get_all_detail())
+        if self.raised_detail:
+            dial = dial.add(self.get_supports())
+        dial = dial.rotate((0, 0, 0), (0, 1, 0), 180)
 
         if self.style == DialStyle.TONY_THE_CLOCK:
+            extras = self.get_extras()
             dial = dial.add(extras["outer_ring"].rotate((0,0,0),(0,1,0),180).translate((0,0,self.thick)))
             eye = extras["eye_white"].add(extras["eye_black"])
             for x in [-1,1]:

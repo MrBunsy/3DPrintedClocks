@@ -1576,6 +1576,9 @@ class BillOfMaterials:
             json["printed_parts"] = [str(printed_part) for printed_part in self.printed_parts]
         if len(self.subcomponents) > 0:
             json["subcomponents"]= [component.to_json() for component in self.subcomponents]
+
+        if self.parent is None:
+            json["full_item_list"] = self.get_consolidated_items()
         return json
 
 
@@ -1595,7 +1598,9 @@ class BillOfMaterials:
                 unique_items[item.name] += item.quantity
             else:
                 unique_items[item.name] = item.quantity
-        return unique_items
+        #https://stackoverflow.com/questions/9001509/how-do-i-sort-a-dictionary-by-key#comment89671526_9001529
+        sorted_unique_items = dict(sorted(unique_items.items()))
+        return sorted_unique_items
 
     def export(self, out_path="out"):
 

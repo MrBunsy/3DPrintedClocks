@@ -121,11 +121,12 @@ assembly = clock.Assembly(plates, name=clockName, hands=hands, time_seconds=30, 
 # print(json.dumps(assembly.get_BOM().get_consolidated_items(), sort_keys=True, indent=4))
 # print(json.dumps(assembly.get_BOM().to_json(), indent=4, default=str))
 #[clock.Colour.ORANGE, clock.Colour.ORANGE, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.DARK_GREEN]
-assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKER_GREY, clock.Colour.DARKER_GREY, clock.Colour.BLACK],
-                    dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.BRIGHT_ORANGE],
-                    gear_colours=[clock.Colour.BRIGHT_ORANGE, clock.Colour.LIME_GREEN],
-                    motion_works_colours=[clock.Colour.BRIGHT_ORANGE, clock.Colour.BRIGHT_ORANGE, clock.Colour.LIME_GREEN],
-                    pulley_colour=clock.Colour.LIME_GREEN, plaque_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
+if not outputSTL:
+    assembly.show_clock(show_object, with_rods=True, plate_colours=[clock.Colour.DARKER_GREY, clock.Colour.DARKER_GREY, clock.Colour.BLACK],
+                        dial_colours=[clock.Colour.WHITE, clock.Colour.BLACK], bob_colours=[clock.Colour.BRIGHT_ORANGE],
+                        gear_colours=[clock.Colour.BRIGHT_ORANGE, clock.Colour.LIME_GREEN],
+                        motion_works_colours=[clock.Colour.BRIGHT_ORANGE, clock.Colour.BRIGHT_ORANGE, clock.Colour.LIME_GREEN],
+                        pulley_colour=clock.Colour.LIME_GREEN, plaque_colours=[clock.Colour.WHITE, clock.Colour.BLACK])
 
 assembly.get_arbor_rod_lengths()
 if outputSTL:

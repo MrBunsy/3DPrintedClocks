@@ -232,6 +232,7 @@ class Assembly:
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} nut", quantity=2, purpose="On top of hands"))
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} dome nut", quantity=2, purpose="Locked to nut on top of hands"))
             arbor_bom.name =f"Arbor {i} ({arbor_bom.name})"
+
             bom.add_subcomponent(arbor_bom)
         #TODO centred seconds hand
 
@@ -241,6 +242,8 @@ class Assembly:
 
         if self.dial is not None:
             bom.add_subcomponent(self.dial.get_BOM())
+
+        bom.add_subcomponent(self.hands.get_BOM())
 
         bom.set_model(self.get_clock(), svg_preview_options={"width":720, "height":1280})
 
@@ -669,7 +672,7 @@ class Assembly:
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
 
         if self.motion_works.cannon_pinion_friction_ring:
-            show_object(self.plates.get_cannon_pinion_friction_clip().translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z + self.plates.motion_works_holder_thick )), options={"color":plate_colours[0]}, name="Friction Clip")
+            show_object(self.plates.get_cannon_pinion_friction_clip(for_printing=False).translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z + self.plates.motion_works_holder_thick )), options={"color":plate_colours[0]}, name="Friction Clip")
 
         if self.moon_complication is not None:
             #TODO colours of moon complication arbors

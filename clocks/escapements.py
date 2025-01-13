@@ -2253,6 +2253,11 @@ class Pendulum:
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Top of pendulum rod"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} half nut", purpose="Top of pendulum rod"))
 
+        if self.hand_avoider_inner_d > 0:
+            #there is a ring in the pendulum, need some nuts!
+            bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", quantity=2, purpose="Insert into top and bottom of ring"))
+            bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} half nut", quantity=2, purpose="Screw onto thread and lock against ring to stop ring twisting"))
+
         #note this does not know the length of the pendulum, nor the lengths of different bits of rods if there is a ring in the pendulum
         #so that will be done in Assembly
         bom.add_printed_parts(self.get_printed_parts())
