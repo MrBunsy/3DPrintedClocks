@@ -29,6 +29,8 @@ import cadquery as cq
 from cadquery import exporters
 from .cq_svg import exportSVG
 
+from string import Template
+
 # INKSCAPE_PATH="C:\Program Files\Inkscape\inkscape.exe"
 IMAGEMAGICK_CONVERT_PATH = "C:\\Users\\Luke\\Documents\\Clocks\\3DPrintedClocks\\ImageMagick-7.1.0-portable-Q16-x64\\convert.exe"
 
@@ -1455,6 +1457,9 @@ class BillOfMaterials:
 
         def get_filename(self):
             return f"{self.get_full_name()}_{self.name}.stl"
+
+        def get_preview_filename(self):
+            return f"{self.get_full_name()}_{self.name}.svg"
         #TODO decide how to get hold of the clock name properly
         def to_json(self):
             return {
@@ -1487,7 +1492,7 @@ class BillOfMaterials:
         def export_SVG(self, path):
             exportSVG(self.object,os.path.join(path,f"{self.get_full_name()}_{self.name}.svg"), opts=self.svg_options)
 
-    def __init__(self, name, assembly_instructions=None):
+    def __init__(self, name, assembly_instructions=None, template_path='docs/templates'):
         self.name = name
         self.parent = None
         self.items = []
@@ -1495,6 +1500,7 @@ class BillOfMaterials:
         self.printed_parts=[]
         self.assembly_instructions=assembly_instructions
         self.assembled_model = None
+        self.template_path = template_path
 
     def set_parent(self, parent_bom):
         self.parent = parent_bom
@@ -1602,6 +1608,65 @@ class BillOfMaterials:
         sorted_unique_items = dict(sorted(unique_items.items()))
         return sorted_unique_items
 
+    def get_instructions(self, heading_level=1):
+        '''
+        get text for a markdown set of instructions
+
+        TODO more generic instructions - but I think this will need to be done from Assembly. This will just output a pretty summary of the BOM
+        '''
+
+        # duration = "an eight day"
+        #
+        # subs = {"title": self.name,
+        #         "duration": duration,
+        #         }
+        # with open(os.path.join(self.template_path, "pendulum_clock_intro.md"),'r', encoding="utf8") as f:
+        #     intro_src = Template(f.read())
+        #     intro = intro_src.substitute(subs)
+        #
+        # instructions = f"""
+        # {intro}
+        # """
+        heading = "".join(["#" for i in range(heading_level)])
+        #supposardly meant to be 4 spaces, but everything i've used (VS code + github) wants 2
+        #only need this for sublists, not lists in sub-headings!
+        list_spacing = "  "#"".join([" " for i in range(heading_level*2)])
+        assembly_instructions = self.assembly_instructions if self.assembly_instructions is not None else ""
+        instructions = f"""{heading} {self.name}
+{assembly_instructions}
+"""
+        consolidated_items = self.get_consolidated_items()
+        parts_strings = [f"{list_spacing}- {consolidated_items[item]} x {item}" for item in consolidated_items]
+        parts_title = "Full Parts List" if self.parent is None else "Parts List"
+        if len(parts_strings) > 0:
+            parts = "\n".join(parts_strings)
+            instructions+= f"""{heading}# {parts_title}
+{parts}
+"""
+        if len(self.printed_parts) > 0:
+            printed_parts_string = ""
+            for part in self.printed_parts:
+                stl_string = f"{part.quantity} x {part.get_filename()}"
+                printed_parts_string +=f"\n{list_spacing} - {stl_string}"
+                sublist = []
+                if len(part.purpose) > 0:
+                    sublist.append(part.purpose)
+                if len(part.printing_instructions) > 0:
+                    sublist.append(part.printing_instructions)
+                if len(sublist) > 0:
+                    for subitem in sublist:
+                        printed_parts_string+=f"\n{list_spacing}{list_spacing} - {subitem}"
+            # printed_parts_strings = [f"{list_spacing}- {part.quantity} x {part.get_filename()}" for part in self.printed_parts]
+            # printed_parts_string = '\n'.join(printed_parts_strings)
+            instructions += f"""{heading}# Printed Parts
+{printed_parts_string}
+"""
+
+        for component in self.subcomponents:
+            instructions+= f"{component.get_instructions(heading_level+1)}"
+
+        return instructions
+
     def export(self, out_path="out"):
 
         if self.parent is None:
@@ -1613,6 +1678,8 @@ class BillOfMaterials:
         if self.parent is None:
             with open(os.path.join(out_path,'bom.json'), 'w', encoding='utf-8') as f:
                 json.dump(self.to_json(), f, ensure_ascii=False, indent=4)
+            with open(os.path.join(out_path,f'{self.tidy_name()}.md'), 'w', encoding='utf-8') as f:
+                f.write(self.get_instructions())
 
         for printable in self.printed_parts:
             printable.export(out_path)

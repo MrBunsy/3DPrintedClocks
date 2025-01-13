@@ -406,7 +406,7 @@ class LightweightPulley:
             bom.add_item(BillOfMaterials.Item(f"Steel tube {STEEL_TUBE_DIAMETER}x{self.screws.metric_thread} {self.wheel_thick:.1f}mm", purpose="Tube insert for pulley wheel"))
 
         bom.add_printed_parts(self.get_printed_parts())
-
+        bom.set_model(self.get_assembled())
         return bom
 
     def get_wheel(self):
@@ -481,8 +481,8 @@ class LightweightPulley:
     def get_printed_parts(self):
         return [
             BillOfMaterials.PrintedPart("wheel", self.get_wheel(), printing_instructions="Print alone with small layer height for reliable overhang"),
-            BillOfMaterials.PrintedPart("holder_a", self.get_holder_half(True)),
-            BillOfMaterials.PrintedPart("holder_b", self.get_holder_half(False)),
+            BillOfMaterials.PrintedPart("holder_back", self.get_holder_half(True)),
+            BillOfMaterials.PrintedPart("holder_front", self.get_holder_half(False)),
         ]
 
     def output_STLs(self, name="clock", path="../out"):

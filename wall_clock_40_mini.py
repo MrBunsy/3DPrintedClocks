@@ -31,7 +31,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_40"
+clockName="Wall Clock 40"
 clockOutDir="out"
 gearStyle=clock.GearStyle.HONEYCOMB_CHUNKY
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
