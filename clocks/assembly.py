@@ -228,7 +228,7 @@ class Assembly:
                 #the minute wheel
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} half nut", quantity=2, purpose="Locked together behind clutch"))
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} washer", quantity=2, purpose="Clutch"))
-                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} Spring washer", quantity=2, purpose="Clutch"))
+                arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} spring washer", quantity=1, purpose="Clutch"))
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} nut", quantity=2, purpose="On top of hands"))
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} dome nut", quantity=2, purpose="Locked to nut on top of hands"))
             arbor_bom.name =f"Arbor {i} ({arbor_bom.name})"
@@ -245,7 +245,8 @@ class Assembly:
 
         bom.add_subcomponent(self.hands.get_BOM())
 
-        bom.set_model(self.get_clock(), svg_preview_options={"width":720, "height":1280})
+        #trying to get this to fit onto the first page of the exported PDF
+        bom.set_model(self.get_clock(), svg_preview_options={"width":675, "height":675})
 
         return bom
 

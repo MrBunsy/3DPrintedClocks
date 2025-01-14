@@ -714,10 +714,10 @@ class Dial:
 
     def get_printed_parts(self):
         parts = [
-            BillOfMaterials.PrintedPart("dial", self.get_dial()),
-            BillOfMaterials.PrintedPart("dial_detail", self.get_dial(),
-                                        purpose="Markings on dial, printed in different colour for dial",
-                                        printing_instructions="Combine with dial for a multicolour print")
+            BillOfMaterials.PrintedPart("chapter_ring", self.get_dial()),
+            BillOfMaterials.PrintedPart("markings_detail", self.get_dial(),
+                                        purpose="Markings on dial, printed in different colour to be visible",
+                                        printing_instructions="Combine with chapter ring for a multicolour print")
         ]
         if self.raised_detail:
             parts.append(BillOfMaterials.PrintedPart("dial_supports", self.get_supports(), purpose="Pillars to hold dial from front of plate",
@@ -1327,10 +1327,8 @@ class Dial:
             if not self.raised_detail:
                 support_positions = self.get_support_positions()
                 for i,fixing_pos_set in enumerate(self.get_fixing_positions()):
-                    support_pos = support_positions[i]#(sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
+                    support_pos = (sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
 
-                    cutter = cq.Workplane("XY").moveTo(support_pos[0], support_pos[1]).circle(self.support_slot_r).extrude(self.thick).rotate((0,0,0),(0,1,0), 180).translate((0,0,self.detail_thick))
-                    dial = dial.cut(cutter)
                     if self.pillar_style == PillarStyle.SIMPLE:
                         support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
                     else:

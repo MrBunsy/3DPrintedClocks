@@ -28,6 +28,10 @@ from math import sin, cos, pi, floor
 import cadquery as cq
 from cadquery import exporters
 from .cq_svg import exportSVG
+try:
+    from markdown_pdf import MarkdownPdf, Section
+except:
+    pass
 
 from string import Template
 
@@ -1589,9 +1593,9 @@ class BillOfMaterials:
 
 
     def get_items(self):
-        items = self.items
+        items = self.items[:]
         for subcomponent in self.subcomponents:
-            items += subcomponent.get_items()
+            items += subcomponent.get_items()[:]
         return items
 
     def get_consolidated_items(self):
@@ -1604,6 +1608,7 @@ class BillOfMaterials:
                 unique_items[item.name] += item.quantity
             else:
                 unique_items[item.name] = item.quantity
+        # return unique_items
         #https://stackoverflow.com/questions/9001509/how-do-i-sort-a-dictionary-by-key#comment89671526_9001529
         sorted_unique_items = dict(sorted(unique_items.items()))
         return sorted_unique_items
@@ -1631,21 +1636,43 @@ class BillOfMaterials:
         #supposardly meant to be 4 spaces, but everything i've used (VS code + github) wants 2
         #only need this for sublists, not lists in sub-headings!
         list_spacing = "  "#"".join([" " for i in range(heading_level*2)])
+        preview = ""
+        if self.assembled_model is not None:
+            preview = f"![{self.name} Render](./{self.assembled_model.get_preview_filename()} \"{self.name}\")"
         assembly_instructions = self.assembly_instructions if self.assembly_instructions is not None else ""
         instructions = f"""{heading} {self.name}
+{preview}
+
 {assembly_instructions}
 """
-        consolidated_items = self.get_consolidated_items()
-        parts_strings = [f"{list_spacing}- {consolidated_items[item]} x {item}" for item in consolidated_items]
-        parts_title = "Full Parts List" if self.parent is None else "Parts List"
-        if len(parts_strings) > 0:
-            parts = "\n".join(parts_strings)
-            instructions+= f"""{heading}# {parts_title}
+        if self.parent is None:
+            consolidated_items = self.get_consolidated_items()
+            parts_strings = [f"{list_spacing}- {consolidated_items[item]} x {item}" for item in consolidated_items]
+            if len(parts_strings) > 0:
+                parts = "\n".join(parts_strings)
+                instructions+= f"""{heading}# Full Parts List
 {parts}
 """
+        else:
+            if len(self.items) > 0:
+                items = self.get_items()
+                items.sort(key = lambda x: x.name)
+                parts_strings = []
+                for item in items:
+                    parts_string = f"{list_spacing}- {item.quantity} x {item.name}"
+                    if len(item.purpose) > 0:
+                        parts_string += f": {item.purpose}"
+                    parts_strings.append(parts_string)
+                parts = "\n".join(parts_strings)
+                instructions += f"""{heading}# Parts
+{parts}
+"""
+
         if len(self.printed_parts) > 0:
+            printed_parts = self.printed_parts
+            printed_parts.sort(key = lambda x : x.get_filename())
             printed_parts_string = ""
-            for part in self.printed_parts:
+            for part in printed_parts:
                 stl_string = f"{part.quantity} x {part.get_filename()}"
                 printed_parts_string +=f"\n{list_spacing} - {stl_string}"
                 sublist = []
@@ -1663,6 +1690,7 @@ class BillOfMaterials:
 """
 
         for component in self.subcomponents:
+            # instructions+="\n<div style=\"page-break-after: always;\"></div>\n"
             instructions+= f"{component.get_instructions(heading_level+1)}"
 
         return instructions
@@ -1675,12 +1703,6 @@ class BillOfMaterials:
         # make if it doesn't exist
         pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
 
-        if self.parent is None:
-            with open(os.path.join(out_path,'bom.json'), 'w', encoding='utf-8') as f:
-                json.dump(self.to_json(), f, ensure_ascii=False, indent=4)
-            with open(os.path.join(out_path,f'{self.tidy_name()}.md'), 'w', encoding='utf-8') as f:
-                f.write(self.get_instructions())
-
         for printable in self.printed_parts:
             printable.export(out_path)
 
@@ -1689,6 +1711,20 @@ class BillOfMaterials:
 
         if self.assembled_model is not None:
             self.assembled_model.export(out_path)
+
+        #export all the subcomponents and models first so the SVG files exist for the PDF generation below
+        if self.parent is None:
+            with open(os.path.join(out_path,'bom.json'), 'w', encoding='utf-8') as f:
+                json.dump(self.to_json(), f, ensure_ascii=False, indent=4)
+
+            markdown_instructions = self.get_instructions()
+            with open(os.path.join(out_path,f'{self.tidy_name()}.md'), 'w', encoding='utf-8') as f:
+                f.write(markdown_instructions)
+            pdf = MarkdownPdf()
+            pdf.add_section(Section(markdown_instructions, root=out_path))
+            pdf.save(os.path.join(out_path,f'{self.tidy_name()}.pdf'))
+
+
 
 
 

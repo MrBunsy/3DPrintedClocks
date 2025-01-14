@@ -851,6 +851,7 @@ class SimpleClockPlates:
             bom.add_subcomponent(self.moon_holder.get_BOM())
 
         bom.add_printed_parts(self.get_printable_parts())
+        bom.set_model(self.get_assembled(one_peice=True))
 
         return bom
 
@@ -4924,6 +4925,37 @@ class RoundClockPlates(SimpleClockPlates):
             if detail is not None:
                 return plates.union(detail)
         return (plates, pillars, detail, standoff_pillars)
+
+    def get_BOM(self):
+        bom = super().get_BOM()
+
+        rod_lengths, rod_zs = self.get_rod_lengths()
+        rod_length = rod_lengths[0]
+        bom.assembly_instructions = f"""
+The plate fixing rods should be cut to length such that there is a dome nut firmly on one end, and the length after the dome nut and a washer is ({rod_length:.1f}mm).
+
+The rear fixing nuts need to be pushed into the top and bottom wall standoffs, they don't need to be in fully as they'll be pulled in tightly when doing up the dome nuts later.
+
+All bearings need firmly pushing into their slots, a bench vice can help with this. Alternatively, putting a metal ruler on a table and pushing down on the plate can help seat the bearing.
+
+Depending on the filament used, I recommend you use a {self.fixing_screws.metric_thread}mm drill bit to clean out all the fixing holes in the pillars and plates. The threaded rods should be able to easily slide in and out to make assembling the clock easier. 
+
+"""
+        if self.split_detailed_plate:
+            bom.assembly_instructions+=f"\n\nThe front plate is split into two parts to make it easier to print. The front of the front plate needs to be placed in the right position for now, and as things are fixed to the front place it will firmly fixed in place. "
+        bom.assembly_instructions+="\n\nThe motion works fixing screw needs to be screwed into the front plate from its back. The two motion works backstop nuts can be screwed onto it from the front, but don't worry about exact positioning just yet. These will be locked against each other later to prevent part of the motion works being able to drop out of alignment"
+
+        if self.plaque is not None:
+            bom.assembly_instructions+="\n\nThere is a little plaque with information about the clock which can be screwed to the back of the back plate with 4 panhead screws. This is easiest to do before the rest of the clock has been assembled."
+        if self.dial is not None:
+            if self.dial.raised_detail:
+                bom.assembly_instructions+="\n\nScrew in all of the dial pillars to the front plate, then you can glue the chapter ring onto the pillars later."
+            else:
+                bom.assembly_instructions += "\n\nScrew the dial to the front plate before assembling the rest of the clock."
+
+        # bom.assembly_instructions += "\n\nSee the main instructions for how to fully assemble the clock"
+
+        return bom
 
     def get_printable_parts(self):
         parts = super().get_printable_parts()

@@ -2244,14 +2244,29 @@ class Pendulum:
         #TODO use this properly, just for BOM at the moment
         self.bob_lid_screws = MachineScrew(self.threaded_rod_m, countersunk=False)
 
+    def get_assembly_instructions(self):
+        return f"""
+Check that the pendulum rod can freely move through the centre of the bob, and if it can't use a {self.threaded_rod_m}mm drill bit to clean up the hole.
+        
+The pendulum bob needs to be relatively heavy so I use steel shot to fill the hollow bob. Anything relatively cheap and dense should work fine so long as it can be poured inside easily. I use a funnel to help.
+        
+Once the bob is full, screw the lid onto the back with the two fixing screws.
+        
+Insert the nyloc nut into the bottom of the bob nut. If you insert it threaded side first it will be easier to screw the nut onto the threaded rod later.
+
+Slot the nut into the hole in the centre of the bob and insert the pendulum rod through the top of the bob and thread the nut onto the rod.
+"""
+
     def get_BOM(self):
-        bom = BillOfMaterials("Pendulum")
+        bom = BillOfMaterials("Pendulum", assembly_instructions=self.get_assembly_instructions())
         lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))
         bom.add_item(BillOfMaterials.Item("Steel shot", purpose="Add weight to pendulum"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Bob nut friction"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Top of pendulum rod"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} half nut", purpose="Top of pendulum rod"))
+
+        #note that the pendulum rod itself is added later by the Assembly, which knows its length
 
         if self.hand_avoider_inner_d > 0:
             #there is a ring in the pendulum, need some nuts!

@@ -2056,6 +2056,11 @@ class ArborForPlate:
     #
     #     return rod_lengths, rod_zs
 
+    def get_assembly_instructions(self):
+        instructions = f"""
+"""
+        return instructions
+
     def get_BOM(self):
         '''
         TODO (maybe, long term aspiration) calculate arbor lengths here. At the moment it's in Assembly which pulls in lots of info from all over the place
@@ -2073,6 +2078,7 @@ class ArborForPlate:
         bom.add_printed_parts(self.get_printed_parts())
 
         bom.set_model(self.get_assembled())
+        bom.assembly_instructions = self.get_assembly_instructions()
 
         return bom
 
