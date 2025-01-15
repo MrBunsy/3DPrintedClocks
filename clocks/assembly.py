@@ -666,7 +666,7 @@ class Assembly:
         # # motionWorksModel = self.motionWorks.get_assembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
         # #
         # # show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":motion_works_colour})
-        motion_works_parts = self.motion_works.get_parts_in_situ(motionWorksRelativePos=self.plates.motion_works_relative_pos, minuteAngle=self.minuteAngle)
+        motion_works_parts = self.motion_works.get_parts_in_situ(motion_works_relative_pos=self.plates.motion_works_relative_pos, minuteAngle=self.minuteAngle, time_setter_relative_pos=self.plates.time_setter_relative_pos)
 
         for i,part in enumerate(motion_works_parts):
             colour = motion_works_colours[i % len(motion_works_colours)]

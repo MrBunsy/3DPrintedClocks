@@ -83,7 +83,7 @@ pinion_extensions={1:16, 3:10}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1, leaves=train.chain_wheel_ratios[0][1])]
 train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, lanterns=[0],
-                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=True)
+                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False)
 # train.print_info(for_runtime_hours=24*7)
 
 # train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -103,7 +103,7 @@ pillar_style=clock.PillarStyle.SIMPLE
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
 
 plates = clock.RoundClockPlates(train, motion_works, name="Wall Clock 39#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.SIMPLE, pillar_style=pillar_style,
+                                motion_works_angle_deg=40, leg_height=0, fully_round=True, style=clock.PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, centred_second_hand=True)
 
 # print("plate radius: ", plates.radius)

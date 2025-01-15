@@ -3158,19 +3158,19 @@ class MotionWorks:
 
         return model
 
-    def get_parts_in_situ(self, motionWorksRelativePos=None,minuteAngle=10):
-        if motionWorksRelativePos is None:
-            motionWorksRelativePos = [0, -self.get_arbor_distance()]
+    def get_parts_in_situ(self, motion_works_relative_pos=None, minuteAngle=10, time_setter_relative_pos=None):
+        if motion_works_relative_pos is None:
+            motion_works_relative_pos = [0, -self.get_arbor_distance()]
         parts = {}
         parts["cannon_pinion"] = self.get_cannon_pinion().rotate((0, 0, 0), (0, 0, 1), minuteAngle)
         parts["hour_holder"] = self.get_hour_holder().translate((0, 0, self.get_cannon_pinion_base_thick()))
-        parts["arbor"] = self.get_motion_arbour_shape().translate((motionWorksRelativePos[0], motionWorksRelativePos[1], self.get_cannon_pinion_base_thick()  - self.thick))
+        parts["arbor"] = self.get_motion_arbour_shape().translate((motion_works_relative_pos[0], motion_works_relative_pos[1], self.get_cannon_pinion_base_thick() - self.thick))
 
         if self.centred_second_hand:
             # relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
-            #is this general purpose?
-            relative_pos = np_to_set(np.add(motionWorksRelativePos, (-motionWorksRelativePos[0], motionWorksRelativePos[1])))
-            parts["time_setter_pinion"] = self.get_cannon_pinion_pinion(standalone=True).translate(relative_pos).translate((0,0, self.friction_ring_base_thick + self.friction_ring_thick))
+            #is this general purpose? (answer: no it assumed the minute wheel was below the seconds wheel)
+            # relative_pos = np_to_set(np.add(motion_works_relative_pos, (-motion_works_relative_pos[0], motion_works_relative_pos[1])))
+            parts["time_setter_pinion"] = self.get_cannon_pinion_pinion(standalone=True).translate(time_setter_relative_pos).translate((0,0, self.friction_ring_base_thick + self.friction_ring_thick))
 
         return parts
 

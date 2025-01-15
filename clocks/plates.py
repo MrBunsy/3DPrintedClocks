@@ -408,13 +408,14 @@ class SimpleClockPlates:
 
         self.little_arm_to_motion_works = True
 
-        if self.motion_works_angle < 0:
-            # is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable (deprecated - motion_works_angle is more flexible)
-            if motion_works_above:
-                self.motion_works_angle = math.pi/2
-            else:
-                #below
-                self.motion_works_angle = math.pi*1.5
+        #DEPRECATED, this will break some old clockst hat still used motion_works_above, but will now allow negative motino works angles
+        # if self.motion_works_angle < 0:
+        #     # is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable (deprecated - motion_works_angle is more flexible)
+        #     if motion_works_above:
+        #         self.motion_works_angle = math.pi/2
+        #     else:
+        #         #below
+        #         self.motion_works_angle = math.pi*1.5
 
         #escapement is on top of the front plate
         self.escapement_on_front = escapement_on_front
@@ -546,14 +547,26 @@ class SimpleClockPlates:
             minute_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
 
             #adjust motion works size
-            minute_wheel_to_hands = np_to_set(np.subtract(minute_wheel_pos, self.hands_position))
+            minute_wheel_to_hands = np_to_set(np.subtract(self.hands_position, minute_wheel_pos))
 
             minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
             minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
 
             arbor_distance = minute_wheel_to_hands_distance / 2
 
-            if not self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and abs(self.motion_works_angle - minute_wheel_to_hands_angle) - math.pi > 0.01:
+            if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+                #will need to offset motion works
+                #line from minute wheel to hands
+                print(f"minute_wheel_to_hands_angle: {minute_wheel_to_hands_angle} = {rad_to_deg(minute_wheel_to_hands_angle)}deg,"
+                      f" self.motion_works_angle: {self.motion_works_angle} = {rad_to_deg(self.motion_works_angle)}deg arbor_distance/math.cos(self.motion_works_angle): {arbor_distance/math.cos(self.motion_works_angle)}"
+                      f" arbor_distance: {arbor_distance}")
+                #using self.motion_works_angle to mean angle deviating from the line betwen minute and seconds wheels
+                # line_to_motion_arbor = Line(self.bearing_positions[self.going_train.powered_wheels], angle = minute_wheel_to_hands_angle + self.motion_works_angle)
+                arbor_distance = (minute_wheel_to_hands_distance / 2)/math.cos(self.motion_works_angle)
+                self.motion_works_relative_pos = polar(minute_wheel_to_hands_angle + math.pi + self.motion_works_angle, arbor_distance)
+                # mid_line = Line(average_of_two_points(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi / 2)
+
+            elif abs(self.motion_works_angle - minute_wheel_to_hands_angle) - math.pi > 0.01:
                 #motion works arbor is offset from the line between minute wheel and seconds wheel
 
                 line_from_hands = Line(self.hands_position, angle=self.motion_works_angle)
@@ -634,13 +647,17 @@ class SimpleClockPlates:
             #note - new idea, allow this to function like the compact design of the plates
             # self.motion_works_angle = math.pi/2 if not self.pendulum_at_top else math.pi * 1.5
 
-
-
-
-
+        #where the time setting knob is on centred seconds hands
+        self.time_setter_relative_pos = self.hands_position
         motionWorksDistance = self.motion_works.get_arbor_distance()
         # get position of motion works relative to the minute wheel
-        if gear_train_layout == GearTrainLayout.ROUND:
+        if gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and self.centred_second_hand:
+            '''
+            already calculated motion_works_relative_pos, which is relative to the hands_position
+            '''
+            self.motion_works_pos = np_to_set(np.add(self.hands_position, self.motion_works_relative_pos))
+            self.time_setter_relative_pos = np_to_set(np.subtract(self.bearing_positions[self.going_train.powered_wheels][:2], self.hands_position))
+        elif gear_train_layout == GearTrainLayout.ROUND:
             # place the motion works on the same circle as the rest of the bearings
             angle = self.hands_on_side*2 * math.asin(motionWorksDistance / (2 * self.compact_radius))
             compactCentre = (0, self.compact_radius)
@@ -669,7 +686,7 @@ class SimpleClockPlates:
         friction_clip_distance = self.motion_works.friction_ring_r*2.5
         # print("friction_clip_distance", friction_clip_distance)
         #HACK for retrofitted print to clock 28
-        friction_clip_distance = 30.998806423611125
+        # friction_clip_distance = 30.998806423611125
         self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
         self.cannon_pinion_friction_clip_fixings_pos = [
             np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 5, -self.plate_width /  5))),
@@ -1125,14 +1142,21 @@ class SimpleClockPlates:
                                                                  previous_pos, distance_to_previous_wheel, in_direction=(1,0))
 
             if self.going_train.wheels > 3:
-                #got the escape wheel to deal with
-                seconds_to_anchor = seconds_pinion_radius + arbors[anchor_index].get_max_radius() + self.gear_gap
-                #directly above hands
-                positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + seconds_to_anchor)
-                #on the left hand side
-                positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[anchor_index], arbors[escape_wheel_index].distance_to_next_arbor,
+                offset_escape_wheel = False
+                if offset_escape_wheel:
+                    #got the escape wheel to deal with
+                    seconds_to_anchor = seconds_pinion_radius + arbors[anchor_index].get_max_radius() + self.gear_gap
+                    #directly above hands
+                    positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + seconds_to_anchor)
+                    #on the left hand side
+                    positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[anchor_index], arbors[escape_wheel_index].distance_to_next_arbor,
                                                                                          positions_relative[second_hand_index], arbors[second_hand_index].distance_to_next_arbor,
                                                                                          in_direction=(-1,0))
+                else:
+                    #actually found that we didn't need to be that compact, so trying stacking vertically instead
+                    #okay this ends upw ith the pendulum between the pillars, might have to go back to more compact
+                    positions_relative[escape_wheel_index] = (0, positions_relative[second_hand_index][1] + arbors[second_hand_index].distance_to_next_arbor)
+                    positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
             else:
                 #seconds wheel is escape wheel, put anchor directly above
                 positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
