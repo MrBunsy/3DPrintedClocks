@@ -539,7 +539,32 @@ class SimpleClockPlates:
         self.weight_on_right_side = self.going_train.is_weight_on_the_right()
 
         self.calc_bearing_positions()
-        self.hands_position = self.bearing_positions[self.going_train.powered_wheels][:2]
+        self.hands_position = self.get_hands_position()
+
+        if self.centred_second_hand:
+
+            minute_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
+
+            #adjust motion works size
+            minute_wheel_to_hands = np_to_set(np.subtract(minute_wheel_pos, self.hands_position))
+
+            minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
+            minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
+
+            arbor_distance = minute_wheel_to_hands_distance / 2
+
+            if not self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and abs(self.motion_works_angle - minute_wheel_to_hands_angle) - math.pi > 0.01:
+                #motion works arbor is offset from the line between minute wheel and seconds wheel
+
+                line_from_hands = Line(self.hands_position, angle=self.motion_works_angle)
+                mid_line = Line(average_of_two_points(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi / 2)
+
+                mid_arbor_pos = line_from_hands.intersection(mid_line)
+                arbor_distance = np.linalg.norm(np.subtract(mid_arbor_pos, minute_wheel_pos))
+
+
+            self.motion_works.calculate_size(arbor_distance=arbor_distance)
+
         self.generate_arbours_for_plate()
 
         if PowerType.is_weight(self.going_train.powered_wheel.type):
@@ -603,34 +628,7 @@ class SimpleClockPlates:
 
 
 
-        if self.centred_second_hand:
 
-            seconds_arbor = -2
-            if self.going_train.has_second_hand_on_last_wheel():
-                seconds_arbor = -3
-
-            self.hands_position = [self.bearing_positions[seconds_arbor][0], self.bearing_positions[seconds_arbor][1]]
-            minute_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
-
-            #adjust motion works size
-            minute_wheel_to_hands = np_to_set(np.subtract(minute_wheel_pos, self.hands_position))
-
-            minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
-            minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
-
-            arbor_distance = minute_wheel_to_hands_distance / 2
-
-            if abs(self.motion_works_angle - minute_wheel_to_hands_angle) - math.pi > 0.01:
-                #motion works angle will offset the centre arbor
-
-                line_from_hands = Line(self.hands_position, angle=self.motion_works_angle)
-                mid_line = Line(average_of_two_points(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi / 2)
-
-                mid_arbor_pos = line_from_hands.intersection(mid_line)
-                arbor_distance = np.linalg.norm(np.subtract(mid_arbor_pos, minute_wheel_pos))
-
-
-            self.motion_works.calculate_size(arbor_distance=arbor_distance)
 
             #override motion works position
             #note - new idea, allow this to function like the compact design of the plates
@@ -812,6 +810,17 @@ class SimpleClockPlates:
         if self.plaque is not None:
             self.calc_plaque_config()
 
+    def get_hands_position(self):
+        hands_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
+
+        if self.centred_second_hand:
+
+            seconds_arbor = -2
+            if self.going_train.has_second_hand_on_last_wheel():
+                seconds_arbor = -3
+
+            hands_pos = [self.bearing_positions[seconds_arbor][0], self.bearing_positions[seconds_arbor][1]]
+        return hands_pos
     def get_BOM(self):
         bom = BillOfMaterials("Plates")
         motion_works_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + self.bottom_of_hour_hand_z(), self.motion_works_screws)
@@ -1072,8 +1081,78 @@ class SimpleClockPlates:
             angle = math.pi / 2 if self.pendulum_at_top else -math.pi / 2
 
             self.angles_from_chain = [angle for i in range(self.going_train.powered_wheels)]
+        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+            '''
+            Arranging the entire train around the seconds hand, intended to marry well with round clock plate but potentially re-usable for any layout
+            some duplication of effort here with COMPACT layout and might be worth abstracting further in the future
+            '''
+            all_arbors_count = self.going_train.wheels + self.going_train.powered_wheels + 1
+            positions_relative = [(0, 0) for i in range(all_arbors_count)]
+            anchor_index = -1
+            escape_wheel_index = -2
+            penultimate_wheel_index = -3
+            if self.going_train.has_seconds_hand_on_escape_wheel():
+                second_hand_index = escape_wheel_index
 
-        if self.gear_train_layout == GearTrainLayout.COMPACT:
+            if self.going_train.has_second_hand_on_last_wheel():
+                second_hand_index = penultimate_wheel_index
+
+            #ignoring differences between powered wheels and wheels after the minute wheel for this
+            arbors = [self.going_train.get_arbour_with_conventional_naming(i) for i in range(all_arbors_count)]
+
+            # seconds_wheel_radius = arbors[second_hand_index].get_max_radius() + self.gear_gap
+            seconds_pinion_radius =  arbors[second_hand_index].pinion.get_max_radius() + self.gear_gap
+
+            #place seconds directly above powered wheel
+            positions_relative[second_hand_index] = (0, seconds_pinion_radius + arbors[0].get_max_radius())
+
+            for i,arbor in enumerate(arbors):
+                if i ==0:
+                    #powered wheel at (0,0)
+                    continue
+                if i == all_arbors_count+second_hand_index:
+                    #reached the seconds wheel, bail out
+                    break
+                previous_pos = positions_relative[i-1][:]
+                previous_arbor = arbors[i-1]
+                distance_to_previous_wheel = previous_arbor.distance_to_next_arbor
+                distance_to_seconds_wheel = arbor.get_max_radius() + seconds_pinion_radius
+                if i == all_arbors_count+second_hand_index - 1:
+                    #this wheel will mesh with teh seconds pinion
+                    distance_to_seconds_wheel = arbor.distance_to_next_arbor
+                #going round the right hand side
+                positions_relative[i] = get_point_two_circles_intersect(positions_relative[second_hand_index], distance_to_seconds_wheel,
+                                                                 previous_pos, distance_to_previous_wheel, in_direction=(1,0))
+
+            if self.going_train.wheels > 3:
+                #got the escape wheel to deal with
+                seconds_to_anchor = seconds_pinion_radius + arbors[anchor_index].get_max_radius() + self.gear_gap
+                #directly above hands
+                positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + seconds_to_anchor)
+                #on the left hand side
+                positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[anchor_index], arbors[escape_wheel_index].distance_to_next_arbor,
+                                                                                         positions_relative[second_hand_index], arbors[second_hand_index].distance_to_next_arbor,
+                                                                                         in_direction=(-1,0))
+            else:
+                #seconds wheel is escape wheel, put anchor directly above
+                positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
+
+            distances = [arbor.distance_to_next_arbor for arbor in arbors]
+            distances2 = [ distance_between_two_points(positions_relative[i], positions_relative[i+1]) for i in range(len(arbors)-1)]
+
+            # calculate angles_from_minute until it's removed
+            for i in range(all_arbors_count-1):
+
+                relative_to_next_pos = np_to_set(np.subtract(positions_relative[i + 1], positions_relative[i]))
+                distanced_calced = distance_between_two_points(positions_relative[i + 1], positions_relative[i])
+                distanced_shuold = arbors[i].distance_to_next_arbor
+                if i < self.going_train.powered_wheels:
+                    self.angles_from_chain[i] = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
+                else:
+
+                    self.angles_from_minute[i - self.going_train.powered_wheels] = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
+
+        elif self.gear_train_layout == GearTrainLayout.COMPACT:
             #relative to minute wheel
             positions_relative = [(0,0) for i in range(self.going_train.wheels + 1)]
             anchor_index = -1
@@ -1246,8 +1325,8 @@ class SimpleClockPlates:
             #and calculate angles_from_minute until it's removed entirely
             for i in range(self.going_train.wheels):
 
-                relative_from_previous_pos =  np_to_set(np.subtract(positions_relative[i+1], positions_relative[i]))
-                self.angles_from_minute[i] = math.atan2(relative_from_previous_pos[1], relative_from_previous_pos[0])
+                relative_to_next_pos =  np_to_set(np.subtract(positions_relative[i+1], positions_relative[i]))
+                self.angles_from_minute[i] = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
 
             # #aim: have pendulum directly above hands
             # positions = [(0,0)]
@@ -1275,7 +1354,7 @@ class SimpleClockPlates:
 
 
 
-        if self.gear_train_layout == GearTrainLayout.ROUND:
+        elif self.gear_train_layout == GearTrainLayout.ROUND:
 
             # TODO decide if we want the train to go in different directions based on which side the weight is
             self.hands_on_side = -1 if self.going_train.is_weight_on_the_right() else 1
@@ -4011,10 +4090,13 @@ class RoundClockPlates(SimpleClockPlates):
         #review this later, but for now at least its a different variable
         self.wall_mounted = leg_height == 0
         self.fully_round = fully_round
+        gear_train_layout = GearTrainLayout.COMPACT
+        if centred_second_hand:
+            gear_train_layout = GearTrainLayout.COMPACT_CENTRE_SECONDS
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         #was force_escapement_above_hands because the gear train looks better on a circular plate that way ( now got forcing_escape_wheel_slightly_off_centre in bearing placement)
-        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
@@ -4098,6 +4180,8 @@ class RoundClockPlates(SimpleClockPlates):
                 self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
 
         # self.front_anchor_holder_part_of_dial = True
+
+
 
     def get_moon_holder_info(self):
         if self.moon_complication is None:
@@ -4193,108 +4277,120 @@ class RoundClockPlates(SimpleClockPlates):
         # various shared bits expect these
         self.top_pillar_r = self.pillar_r
         self.bottom_pillar_r = self.pillar_r
+        self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick * 2
 
-        # for the half-round design
-        self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
-        self.radius = self.bottom_pillar_distance/2
+        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+            #assume between first two wheels is further point
+            #assume this is on the right hand side
+            bottom_right_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius()+ 1 + self.bottom_pillar_r,
+                                                                      self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius()+ 1 + self.bottom_pillar_r,
+                                                                      in_direction=(1,0))
+            self.radius = distance_between_two_points(bottom_right_pillar_pos, self.hands_position)
 
-        centre = self.bearing_positions[self.going_train.powered_wheels][:2]
-        self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick*2
+            self.bottom_pillar_positions = [(-bottom_right_pillar_pos[0], bottom_right_pillar_pos[1]), bottom_right_pillar_pos]
+            self.top_pillar_positions = [np_to_set(np.add(self.hands_position, pillar_pos)) for pillar_pos in [polar(math.pi/4, self.radius), polar(math.pi*3/4, self.radius)]]
+        else:
+            # for the half-round design
+            self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
+            self.radius = self.bottom_pillar_distance/2
 
-        barrel_pos = self.bearing_positions[0]
+            centre = self.bearing_positions[self.going_train.powered_wheels][:2]
 
-        y = barrel_pos[1] - self.bottom_arm_wide/2 + self.pillar_r
-        pillar_distance = self.radius
 
-        if self.fully_round:
-            #pillars inline with the powered wheel
-            y = barrel_pos[1]
-            pillar_distance = self.bottom_pillar_distance/2
+            barrel_pos = self.bearing_positions[0]
 
-            if not self.going_train.powered_wheels > 1:
-                # raise ValueError("TODO calculate pillar positions for non eight day spring clocks")
-                #TODO - put them ALONG THE CIRCLE at the right distance from the cord wheel?
-                #hacky - for now with only one power wheel the thing furthest away is probably the anchor, so use that
-                self.radius = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
-                if self.going_train.wheels > 3:
-                    top_left_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius() + self.pillar_r + 1,
-                                                                               self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius() + self.pillar_r + 1,
-                                                                               in_direction=(-1,0))
-                    top_left_pillar_distance = distance_between_two_points(self.hands_position, top_left_pillar_pos)
-                    if top_left_pillar_distance > self.radius:
-                        self.radius = top_left_pillar_distance
+            y = barrel_pos[1] - self.bottom_arm_wide/2 + self.pillar_r
+            pillar_distance = self.radius
 
-                # self.bottom_pillar_positions = [(self.bearing_positions[0][0] - distance, self.bearing_positions[0][1]), (self.bearing_positions[0][0] + distance, self.bearing_positions[0][1])]
-                angle = math.pi*0.2
-                self.bottom_pillar_positions = [np_to_set(np.add(polar(angle, self.radius), self.hands_position)) for angle in [-angle, math.pi+angle]]
+            if self.fully_round:
+                #pillars inline with the powered wheel
+                y = barrel_pos[1]
+                pillar_distance = self.bottom_pillar_distance/2
+
+                if not self.going_train.powered_wheels > 1:
+                    # raise ValueError("TODO calculate pillar positions for non eight day spring clocks")
+                    #TODO - put them ALONG THE CIRCLE at the right distance from the cord wheel?
+                    #hacky - for now with only one power wheel the thing furthest away is probably the anchor, so use that
+                    self.radius = distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
+                    if self.going_train.wheels > 3:
+                        top_left_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius() + self.pillar_r + 1,
+                                                                                   self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius() + self.pillar_r + 1,
+                                                                                   in_direction=(-1,0))
+                        top_left_pillar_distance = distance_between_two_points(self.hands_position, top_left_pillar_pos)
+                        if top_left_pillar_distance > self.radius:
+                            self.radius = top_left_pillar_distance
+
+                    # self.bottom_pillar_positions = [(self.bearing_positions[0][0] - distance, self.bearing_positions[0][1]), (self.bearing_positions[0][0] + distance, self.bearing_positions[0][1])]
+                    angle = math.pi*0.2
+                    self.bottom_pillar_positions = [np_to_set(np.add(polar(angle, self.radius), self.hands_position)) for angle in [-angle, math.pi+angle]]
+                else:
+                    # two power wheels - probably spring but also month duration cord
+                    # put the bottom right pillar so it's between the two power wheels
+                    bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
+                                                                 self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1,
+                                                                 in_direction=(1,0))
+                    self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
+                    self.bottom_pillar_positions = [
+                        bottom_pillar_pos,
+                        (-bottom_pillar_pos[0], bottom_pillar_pos[1]),
+                    ]
             else:
-                # two power wheels - probably spring but also month duration cord
-                # put the bottom right pillar so it's between the two power wheels
-                bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
-                                                             self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1,
-                                                             in_direction=(1,0))
-                self.radius = distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
+
                 self.bottom_pillar_positions = [
-                    bottom_pillar_pos,
-                    (-bottom_pillar_pos[0], bottom_pillar_pos[1]),
+                    (barrel_pos[0] - pillar_distance, y),
+                    (barrel_pos[0] + pillar_distance, y),
                 ]
-        else:
 
-            self.bottom_pillar_positions = [
-                (barrel_pos[0] - pillar_distance, y),
-                (barrel_pos[0] + pillar_distance, y),
+            #this did work, but in general I think we're better off putting the pillars as a mirror of the bottom pillars (for a 3 wheel train or second hand below)
+            # find where wheels 3 and 4 meet, then put the pillar in that direction
+            points = get_circle_intersections(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius(),
+                                              self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius())
+            # find furthest point
+            if distance_between_two_points(points[0], centre) > distance_between_two_points(points[1], centre):
+                point = points[0]
+            else:
+                point = points[1]
+            line_to_point = Line(centre, anotherPoint=point)
+
+            left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
+
+            if self.going_train.wheels == 3:
+                #mirror the bottom pillars
+                bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
+                left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
+            elif not self.no_upper_wheel_in_centre:
+                #4 wheels but one is centred, probably need to avoid the escape wheel
+                escape_wheel_pos = self.bearing_positions[-2][:2]
+                escape_wheel_distance = distance_between_two_points(escape_wheel_pos, centre)
+                escape_wheel_from_centre = np_to_set(np.subtract(escape_wheel_pos, centre))
+                escape_wheel_angle_from_centre = math.atan2(escape_wheel_from_centre[1], escape_wheel_from_centre[0])
+                escape_wheel_angle_half_span = (self.arbors_for_plate[-2].get_max_radius() + self.gear_gap + self.top_pillar_r)/escape_wheel_distance
+
+                #trying to be generic here so we end up on the outside of the escape wheel regardless of where the wheel is
+                furthest = 0
+                furthest_pos = None
+                potential_positions = [polar(escape_wheel_angle_from_centre + x*escape_wheel_angle_half_span, self.radius) for x in [-1, 1]]
+                for pos in potential_positions:
+                    if abs(pos[0]) > furthest:
+                        furthest = abs(pos[0])
+                        furthest_pos = pos
+                furthest_pos = np_to_set(np.add(centre, furthest_pos))
+
+                if furthest_pos[0] < 0:
+                    furthest_pos[0] *= -1
+                left_pillar_pos = furthest_pos
+
+            #no real need to treat pillars differently, but the base class does so it makes some of the other logic easier
+            self.top_pillar_positions = [
+                #top two first because the anchor arbor holder assumes two top pillars
+                #just above (ish) the second power wheel
+                # try making them symetric instead
+                (-left_pillar_pos[0], left_pillar_pos[1]),
+                left_pillar_pos,
+
+
+                # np_to_set(np.add(centre, polar(bottom_pillar_angle, self.radius))),
             ]
-
-        #this did work, but in general I think we're better off putting the pillars as a mirror of the bottom pillars (for a 3 wheel train or second hand below)
-        # find where wheels 3 and 4 meet, then put the pillar in that direction
-        points = get_circle_intersections(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius(),
-                                          self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius())
-        # find furthest point
-        if distance_between_two_points(points[0], centre) > distance_between_two_points(points[1], centre):
-            point = points[0]
-        else:
-            point = points[1]
-        line_to_point = Line(centre, anotherPoint=point)
-
-        left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
-
-        if self.going_train.wheels == 3:
-            #mirror the bottom pillars
-            bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
-            left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
-        elif not self.no_upper_wheel_in_centre:
-            #4 wheels but one is centred, probably need to avoid the escape wheel
-            escape_wheel_pos = self.bearing_positions[-2][:2]
-            escape_wheel_distance = distance_between_two_points(escape_wheel_pos, centre)
-            escape_wheel_from_centre = np_to_set(np.subtract(escape_wheel_pos, centre))
-            escape_wheel_angle_from_centre = math.atan2(escape_wheel_from_centre[1], escape_wheel_from_centre[0])
-            escape_wheel_angle_half_span = (self.arbors_for_plate[-2].get_max_radius() + self.gear_gap + self.top_pillar_r)/escape_wheel_distance
-
-            #trying to be generic here so we end up on the outside of the escape wheel regardless of where the wheel is
-            furthest = 0
-            furthest_pos = None
-            potential_positions = [polar(escape_wheel_angle_from_centre + x*escape_wheel_angle_half_span, self.radius) for x in [-1, 1]]
-            for pos in potential_positions:
-                if abs(pos[0]) > furthest:
-                    furthest = abs(pos[0])
-                    furthest_pos = pos
-            furthest_pos = np_to_set(np.add(centre, furthest_pos))
-
-            if furthest_pos[0] < 0:
-                furthest_pos[0] *= -1
-            left_pillar_pos = furthest_pos
-
-        #no real need to treat pillars differently, but the base class does so it makes some of the other logic easier
-        self.top_pillar_positions = [
-            #top two first because the anchor arbor holder assumes two top pillars
-            #just above (ish) the second power wheel
-            # try making them symetric instead
-            (-left_pillar_pos[0], left_pillar_pos[1]),
-            left_pillar_pos,
-
-
-            # np_to_set(np.add(centre, polar(bottom_pillar_angle, self.radius))),
-        ]
 
 
         self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
@@ -4398,7 +4494,7 @@ class RoundClockPlates(SimpleClockPlates):
         if thick_override > 0:
             plate_thick = thick_override
 
-        centre = self.bearing_positions[self.going_train.powered_wheels][:2]
+        centre = self.hands_position#self.bearing_positions[self.going_train.powered_wheels][:2]
 
         main_arm_wide = self.plate_width
         medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
@@ -4433,8 +4529,14 @@ class RoundClockPlates(SimpleClockPlates):
         line_wide = medium_arm_wide
 
         for i, bearing_pos in enumerate(self.bearing_positions):
-            if i == self.going_train.powered_wheels:
+            if i == self.going_train.powered_wheels and not self.centred_second_hand:
                 #the minute wheel, in the centre
+                continue
+            if i == len(self.bearing_positions) - 3 and self.centred_second_hand and self.going_train.has_second_hand_on_last_wheel():
+                #the centred seconds wheel
+                continue
+            if i == len(self.bearing_positions) - 2 and self.centred_second_hand and self.going_train.has_seconds_hand_on_escape_wheel():
+                #the centred seconds wheel
                 continue
             if i > self.going_train.powered_wheels:
                 line_wide = small_arm_wide

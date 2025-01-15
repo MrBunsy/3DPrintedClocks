@@ -49,17 +49,24 @@ gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 #after a huge amount of faffing about, the problem was the bearings, not the escapement. So I've used the new auto-calculated efficient escapement for a retrofit.
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
+# escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
+#mantel clock 30
+lift=2
+drop=3
+lock=2
+# escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, tooth_tip_angle=3,
+#                                     tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
+escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=36, drop_deg=2, lock_deg=1.5, wheel_thick=2.5)
 barrel_gear_thick = 5
-power = clock.SpringBarrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
-                        wall_thick=10, extra_barrel_height=1.5)
-
+# power = clock.SpringBarrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+#                         wall_thick=10, extra_barrel_height=1.5)
+powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
+                                loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
-                         runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=power)
-#from wall clock 32
-train.set_chain_wheel_ratio([[64, 10], [64, 10]])
+train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1,
+                         runtime_hours=7.5 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=powered_wheel)
+train.calculate_powered_wheel_ratios()
 #from mantel clock 29
 train.set_ratios([[75, 9], [72, 10], [55, 22]])
 
@@ -70,26 +77,24 @@ backPlateFromWall=30
 dial_d = 205
 dial_width=35
 
-pinion_extensions = {0:1, 1:15, 2:10,3:18}
+# pinion_extensions = {0:1, 1:15, 2:10,3:18}
+pinion_extensions={1:16, 3:10}
 
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
-                    # 1.2
-                    clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)
-                   ]
-train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, style=gearStyle,
-                powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875, powered_wheel_thicks=[barrel_gear_thick, 4])
-train.print_info(for_runtime_hours=24*7)
+powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1, leaves=train.chain_wheel_ratios[0][1])]
+train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, lanterns=[0],
+                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=True)
+# train.print_info(for_runtime_hours=24*7)
 
-train.get_arbour_with_conventional_naming(0).print_screw_length()
+# train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 motion_works = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
-                                 cannon_pinion_friction_ring=True, minute_hand_thick=2)
+                                 cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=clock.get_bearing_info(3))
 
 # motion_works.calculate_size(arbor_distance=30)
 
 print("motion works widest r: ", motion_works.get_widest_radius())
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
+pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
 plaque = clock.Plaque(text_lines=["W39#0 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
 
@@ -98,8 +103,8 @@ pillar_style=clock.PillarStyle.SIMPLE
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
 
 plates = clock.RoundClockPlates(train, motion_works, name="Wall Clock 39#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True)
+                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=clock.PlateStyle.SIMPLE, pillar_style=pillar_style,
+                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, centred_second_hand=True)
 
 # print("plate radius: ", plates.radius)
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minute_fixing="circle", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),

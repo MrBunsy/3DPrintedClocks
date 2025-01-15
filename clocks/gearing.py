@@ -2338,7 +2338,7 @@ class ArborForPlate:
 
 class Arbor:
     def __init__(self, arbor_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
-                 distance_to_next_arbour=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True):
+                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
@@ -2365,7 +2365,7 @@ class Arbor:
         #the pocket chain wheel or cord wheel (needed to calculate full height and a few tweaks)
         self.powered_wheel=powered_wheel
         self.style=style
-        self.distance_to_next_arbor=distance_to_next_arbour
+        self.distance_to_next_arbor=distance_to_next_arbor
         #for the anchor, this is the side with the pendulum
         #for the powered wheel, this is the side with the chain/rope/cord
         self.pinion_at_front=pinion_at_front

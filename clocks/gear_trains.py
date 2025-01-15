@@ -890,7 +890,7 @@ class GoingTrain:
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 # the powered wheel
                 self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=powered_wheel_thicks[i], arbor_d=self.powered_wheel.arbor_d,
-                                                       distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
+                                                       distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
                                                        use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
             else:
                 # just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
@@ -904,7 +904,7 @@ class GoingTrain:
                     cap_thick = wheel_thick
                 self.powered_wheel_arbors.append(Arbor(wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
                                                        pinion_thick=pinion_thick, end_cap_thick=cap_thick,
-                                                       distance_to_next_arbour=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
+                                                       distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
                                                        clockwise_from_pinion_side=clockwise_from_pinion_side))
                 if i == 1:
                     # negate flipping the direction of the pinion
@@ -923,7 +923,7 @@ class GoingTrain:
                 # == minute wheel ==
                 if self.powered_wheels == 0:
                     # the minute wheel also has the chain with ratchet
-                    arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=powered_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbour=pairs[i].centre_distance,
+                    arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=powered_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbor=pairs[i].centre_distance,
                                    style=style, pinion_at_front=not self.chain_at_back, ratchet_screws=ratchet_screws, use_ratchet=not self.huygens_maintaining_power,
                                    clockwise_from_pinion_side=not self.chain_at_back)
                 else:
@@ -941,7 +941,7 @@ class GoingTrain:
 
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
                     arbour = Arbor(wheel=pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
-                                   distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension)
+                                   distance_to_next_arbor=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension)
 
                 arbours.append(arbour)
                 if stack_away_from_powered_wheel:
@@ -965,7 +965,7 @@ class GoingTrain:
                 # no need to worry about front and back as they can just be turned around
                 arbours.append(Arbor(wheel=pairs[i].wheel, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick * (thickness_reduction ** i),
                                      pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinion_extension,
-                                     distance_to_next_arbour=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
+                                     distance_to_next_arbor=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
             else:
                 # == escape wheel ==
                 # Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
@@ -978,7 +978,7 @@ class GoingTrain:
                 # last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 # escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
                 arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
-                                     distance_to_next_arbour=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
+                                     distance_to_next_arbor=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
                                      pinion_extension=pinion_extension))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
@@ -1412,5 +1412,5 @@ class SlideWhistleTrain:
             clockwise_from_powered_side = clockwise == pinion_at_front
 
             self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=self.pinion_thicks[i], wheel_thick=self.thicknesses[i], arbor_d=arbor_d,
-                                     distance_to_next_arbour=distance_to_next_arbour, style=style, pinion_at_front=pinion_at_front,
+                                     distance_to_next_arbor=distance_to_next_arbour, style=style, pinion_at_front=pinion_at_front,
                                      clockwise_from_pinion_side=clockwise_from_powered_side))

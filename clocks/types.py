@@ -69,6 +69,9 @@ class GearTrainLayout(Enum):
     ROUND = "round"
     #gear train approximately vertical but zigzagged to reduce height
     COMPACT = "compact"
+    #new design that attemps to put the seconds wheel in the centre and doesn't care where the minute wheel goes
+    #designed with round clock plates in mind
+    COMPACT_CENTRE_SECONDS = "compact centre seconds"
 
 class PlateStyle(Enum):
     '''
