@@ -33,11 +33,12 @@ from cadquery import exporters
 class AnchorEscapement:
 
     @staticmethod
-    def get_with_45deg_pallets(teeth=30,  drop_deg=2, type=EscapementType.DEADBEAT, lock_deg=2, style=AnchorStyle.CURVED_MATCHING_WHEEL, diameter=100, force_diameter=False,
-                               anchor_thick=12, wheel_thick=3):
+    def get_with_optimal_pallets(teeth=30, drop_deg=2, type=EscapementType.DEADBEAT, lock_deg=2, style=AnchorStyle.CURVED_MATCHING_WHEEL, diameter=100, force_diameter=False,
+                                 anchor_thick=12, wheel_thick=3, anchor_teeth=None):
         '''
         Good drops: 3 with 30 teeth, 1.5 with 40 teeth
         Generate an anchor with pallets at 45 degrees, based only on the number of teeth and desired drop
+        anchor_teeth - number of teeth the anchor spans, default a quarter
 
         lift is the angle of pendulum swing, in degrees
 
@@ -52,21 +53,30 @@ class AnchorEscapement:
         TODO binary search instead? not sure if it's worth it since this is fast
 
         '''
+        # if anchor_teeth is None:
+        #     anchor_teeth = floor(teeth / 4) + 0.5
 
         best_average_error = 1000
         best_lift = -1
+        example_anchor = AnchorEscapement(teeth=teeth, anchor_teeth=anchor_teeth)
+        anchor_span_angle = example_anchor.wheel_angle
+        #the most efficient angles - at 45 degree to direction of travel of tooth at intersection
+        entry_ideal_angle_deg = rad_to_deg(anchor_span_angle/2) - 45
+        exit_ideal_angle_deg = rad_to_deg(anchor_span_angle / 2) + 45
+
+        print(f"entry_ideal_angle_deg: {entry_ideal_angle_deg} exit_ideal_angle_deg:{exit_ideal_angle_deg}")
 
         for test_lift in np.linspace(1,6,100):
-            test_anchor = AnchorEscapement(teeth=teeth, type=type, lift=test_lift, drop=drop_deg, lock=lock_deg, diameter=diameter, force_diameter=force_diameter)
+            test_anchor = AnchorEscapement(teeth=teeth, type=type, lift=test_lift, drop=drop_deg, lock=lock_deg, diameter=diameter, force_diameter=force_diameter, anchor_teeth=anchor_teeth)
             test_anchor.get_anchor_2d()
             # print(test_anchor.pallet_angles)
             # print(rad_to_deg(test_anchor.pallet_angles[0]), rad_to_deg(test_anchor.pallet_angles[1]))
             diff = rad_to_deg(test_anchor.pallet_angles[0] - test_anchor.pallet_angles[1])
 
             #entry pallet degrees off horizontal
-            entry_error = abs(0 - rad_to_deg(test_anchor.pallet_angles[0]))
+            entry_error = abs(entry_ideal_angle_deg - rad_to_deg(test_anchor.pallet_angles[0]))
             #exit pallet degrees off vertical
-            exit_error = abs(-90 - rad_to_deg(test_anchor.pallet_angles[1]))
+            exit_error = abs(-exit_ideal_angle_deg - rad_to_deg(test_anchor.pallet_angles[1]))
             right_angle_error = abs(90 - diff)
 
             average_error = sum([entry_error, exit_error, right_angle_error])/3
@@ -78,7 +88,7 @@ class AnchorEscapement:
         if best_lift < 0:
             raise RuntimeError("Unable to calculate good anchor")
         best_anchor = AnchorEscapement(teeth=teeth, type=type, lift=best_lift, drop=drop_deg, lock=lock_deg, style=style, diameter=diameter, force_diameter=force_diameter,
-                                       anchor_thick=anchor_thick, wheel_thick=wheel_thick)
+                                       anchor_thick=anchor_thick, wheel_thick=wheel_thick, anchor_teeth=anchor_teeth)
         print(f"lift {best_lift:.2f} drop {drop_deg:.2f} teeth {teeth} entry angle {rad_to_deg(best_anchor.pallet_angles[0]):.1f}deg exit angle {-rad_to_deg(best_anchor.pallet_angles[1]):.1f}deg")
         return best_anchor
 
@@ -563,15 +573,16 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         return anchor
 
-    def get_anchor_3d(self, thick=15, holeD=2, clockwise=True):
+    def get_anchor_3d(self, thick=15, hole_d=2, clockwise=True):
 
         anchor = self.get_anchor_2d()
 
         # cylinder around the rod
         cylinder = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(thick)
 
-        #cut out anything from that cylinder that might go inside the anchor
-        cylinder = cylinder.cut(cq.Workplane("XY").circle(self.bottom_arm_r).extrude(thick))
+        if self.anchor_centre_distance > self.bottom_arm_r + hole_d/2 + 1:
+            #cut out anything from that cylinder that might go inside the anchor (if there's enough material available for the hole - not true for small tooth spans)
+            cylinder = cylinder.cut(cq.Workplane("XY").circle(self.bottom_arm_r).extrude(thick))
 
         anchor = anchor.union(cylinder)
         
@@ -590,7 +601,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         if not clockwise:
             anchor = anchor.mirror("YZ", (0,0,0))
 
-        anchor = anchor.faces(">Z").workplane().moveTo(0,self.anchor_centre_distance).circle(holeD/2).cutThruAll()
+        anchor = anchor.faces(">Z").workplane().moveTo(0,self.anchor_centre_distance).circle(hole_d / 2).cutThruAll()
 
         return anchor
 
@@ -600,7 +611,7 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         positioned so it is hinged around (0,0)
         '''
-        return self.get_anchor_3d(thick = self.anchor_thick, holeD=self.arbor_d, clockwise=True).translate((0, -self.anchor_centre_distance, 0))
+        return self.get_anchor_3d(thick = self.anchor_thick, hole_d=self.arbor_d, clockwise=True).translate((0, -self.anchor_centre_distance, 0))
 
     def get_anchor_max_r(self):
         '''
@@ -617,10 +628,10 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         Return a 2D version of the wheel, assuming clockwise rotation.
         '''
 
-        diameterForPrinting = self.diameter# + (self.printed_tooth_height - self.tooth_height) * 2
+        self.diameter = self.diameter# + (self.printed_tooth_height - self.tooth_height) * 2
 
         dA = -math.pi*2/self.teeth
-        toothTipArcAngle = self.tooth_tip_width / diameterForPrinting
+        tooth_tip_arc_angle = self.tooth_tip_width / self.diameter
 
         if self.type == EscapementType.RECOIL:
             #based on the angle of the tooth being 20deg, but I want to calculate everyting in angles from the cetnre of the wheel
@@ -628,23 +639,23 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
             # toothAngle = math.pi*20/180
             # toothTipAngle = 0
             # toothBaseAngle = -math.atan(math.tan(toothAngle) * self.tooth_height / self.inner_radius)
-            toothTipAngle = self.tooth_tip_angle
-            toothBaseAngle = self.tooth_base_angle
+            tooth_tip_angle = self.tooth_tip_angle
+            tooth_base_angle = self.tooth_base_angle
             dA*=-1
         elif self.type in [EscapementType.DEADBEAT]:
             #done entirely by eye rather than working out the maths to adapt the book's geometry.
-            toothTipAngle = -self.tooth_tip_angle#-math.pi*0.05
-            toothBaseAngle = -self.tooth_base_angle#-math.pi*0.03
-            toothTipArcAngle*=-1
+            tooth_tip_angle = -self.tooth_tip_angle#-math.pi*0.05
+            tooth_base_angle = -self.tooth_base_angle#-math.pi*0.03
+            tooth_tip_arc_angle*=-1
         elif self.type in [EscapementType.BROCOT]:
             '''
             This needs a little explaination - I want the "front" edge of the tooth to be exactly radial (if that's the word for sticking straight out) from the wheel
             but since this needs the tooth tip taking into account for the current code, I'm doing it internally here and so the BrocotEscapement class only needs
             to set tooth_tip_angle
             '''
-            toothTipAngle = - self.tooth_tip_angle
-            toothBaseAngle = -self.tooth_tip_angle - toothTipArcAngle
-            toothTipArcAngle *= -1
+            tooth_tip_angle = - self.tooth_tip_angle
+            tooth_base_angle = -self.tooth_tip_angle - tooth_tip_arc_angle
+            tooth_tip_arc_angle *= -1
 
         # print("tooth tip angle: {} tooth base angle: {}".format(radToDeg(toothTipAngle), radToDeg(toothBaseAngle)))
 
@@ -652,22 +663,22 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
 
         for i in range(self.teeth):
             angle = dA*i
-            tipPosStart = (math.cos(angle+toothTipAngle)*diameterForPrinting/2, math.sin(angle+toothTipAngle)*diameterForPrinting/2)
-            tipPosEnd = (math.cos(angle + toothTipAngle + toothTipArcAngle) * diameterForPrinting / 2, math.sin(angle + toothTipAngle + toothTipArcAngle) * diameterForPrinting / 2)
-            nextbasePos = (math.cos(angle+dA) * self.inner_radius, math.sin(angle + dA) * self.inner_radius)
-            endPos = (math.cos(angle+toothBaseAngle) * self.inner_radius, math.sin(angle + toothBaseAngle) * self.inner_radius)
+            tip_pos_start = (math.cos(angle+tooth_tip_angle)*self.diameter/2, math.sin(angle+tooth_tip_angle)*self.diameter/2)
+            tip_pos_end = (math.cos(angle + tooth_tip_angle + tooth_tip_arc_angle) * self.diameter / 2, math.sin(angle + tooth_tip_angle + tooth_tip_arc_angle) * self.diameter / 2)
+            nextbase_pos = (math.cos(angle+dA) * self.inner_radius, math.sin(angle + dA) * self.inner_radius)
+            end_pos = (math.cos(angle+tooth_base_angle) * self.inner_radius, math.sin(angle + tooth_base_angle) * self.inner_radius)
             # print(tipPos)
             # wheel = wheel.lineTo(0,tipPos[1])
             r = self.inner_diameter/2
             if dA > 0:
                 r*=-1
-            wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).lineTo(endPos[0],endPos[1]).radiusArc(nextbasePos, r)
+            wheel = wheel.lineTo(tip_pos_start[0], tip_pos_start[1]).lineTo(tip_pos_end[0], tip_pos_end[1]).lineTo(end_pos[0],end_pos[1]).radiusArc(nextbase_pos, r)
             # wheel = wheel.lineTo(tipPosStart[0], tipPosStart[1]).lineTo(tipPosEnd[0], tipPosEnd[1]).radiusArc(nextbasePos, -self.toothHeight)
 
         wheel = wheel.close()
 
         #rotate so a tooth is at 0deg on the edge of the entry pallet (makes animations of the escapement easier)
-        wheel = wheel.rotate((0,0,0), (0,0,1), rad_to_deg(-toothTipAngle - toothTipArcAngle))
+        wheel = wheel.rotate((0,0,0), (0,0,1), rad_to_deg(-tooth_tip_angle - tooth_tip_arc_angle))
 
         return wheel
     def get_wheel_max_r(self):

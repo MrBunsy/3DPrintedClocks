@@ -34,7 +34,7 @@ class AnchorDemo:
 
         if self.escapement is None:
             #exagerating lock slightly, as printing the anchor with a 0.6 nozzle rounds the corners a bit too much
-            self.escapement = AnchorEscapement.get_with_45deg_pallets(diameter=diameter, anchor_thick=anchor_thick, wheel_thick=wheel_thick, type=type, lock_deg=4)
+            self.escapement = AnchorEscapement.get_with_optimal_pallets(diameter=diameter, anchor_thick=anchor_thick, wheel_thick=wheel_thick, type=type, lock_deg=4)
 
         #make sure it pritns with the right dimensions with a 0.6mm nozzle
         self.escapement.tooth_tip_width=1.5

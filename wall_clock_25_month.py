@@ -39,7 +39,7 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 #1.5deg of lock results in a slight recoil as the teeth land on the pallet rather than the inner edge (as first printed). Going back to 2deg
 #closer inspection shows that actually the anchor is slightly too far away. Is the front anchor holder at an angle?
 #might be worth instead filing the "feet" of it flat or slightly at an angle to get the anchor and escape wheel closer together
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
+escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
 
 train = clock.GoingTrain(pendulum_period=2.0, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
                          powered_wheels=2, runtime_hours=32 * 24, support_second_hand=False)#, huygensMaintainingPower=True)

@@ -41,7 +41,7 @@ second_hand_centred = False
 drop =1.5
 lift =3
 lock=1.5
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(30, drop_deg=1.75)
+escapement = clock.AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75)
 #downside of configuring power outside going train - need to give going train a mechanism to set power direction!
 powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)

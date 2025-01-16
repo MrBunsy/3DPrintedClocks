@@ -46,7 +46,7 @@ gear_style = clock.GearStyle.ROUNDED_ARMS5
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
 #                                     type=clock.EscapementType.DEADBEAT)
 
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
+escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
 
 barrel_gear_thick =5
 

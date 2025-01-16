@@ -57,7 +57,7 @@ drop=3
 lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, tooth_tip_angle=3,
 #                                     tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
-escapement = clock.AnchorEscapement.get_with_45deg_pallets(teeth=36, drop_deg=2, lock_deg=1.5, wheel_thick=2.5)
+escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=36, drop_deg=2, lock_deg=1.5, wheel_thick=2.5)
 barrel_gear_thick = 5
 # power = clock.SpringBarrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
 #                         wall_thick=10, extra_barrel_height=1.5)
