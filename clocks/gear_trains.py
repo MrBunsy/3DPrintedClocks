@@ -689,12 +689,17 @@ class GoingTrain:
     def gen_gears(self, module_size=1.5, rod_diameters=None, module_reduction=0.5, thick=6, powered_wheel_thick=-1, escape_wheel_max_d=-1,
                   powered_wheel_module_increase=None, pinion_thick_multiplier=2.5, style="HAC", powered_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes=None, stack_away_from_powered_wheel=False, pinion_extensions=None,
-                  powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1, powered_wheel_thicks = None):
+                  powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1, powered_wheel_thicks = None, escapement_split=False):
         '''
+
+        TODO this has been overhauled for the bird whistle and should be backported here
+
         What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up. Might be worth breaking some backwards compatibility to do so
         Also this assumes a *lot* about the layout, which really should be in the control of the plates
         Might even be worth making it entirely user-configurable which way the gears stack as layouts get more complicated, rather than assume we can calculate the best
 
+
+        escapement_split - escapement is on the front or back, so the escape wheel isn't attached to its driving pinion (affects some of the calculations this class performs)
 
         escapeWheelMaxD - if <0 (default) escape wheel will be as big as can fit
         if > 1 escape wheel will be as big as can fit, or escapeWheelMaxD big, if that is smaller
@@ -940,8 +945,9 @@ class GoingTrain:
                     # pinion_thick += pinion_extension
 
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
-                    arbour = Arbor(wheel=pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,
-                                   distance_to_next_arbor=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension)
+                    arbour = Arbor(wheel=pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i + self.powered_wheels],
+                                   wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,distance_to_next_arbor=pairs[i].centre_distance,
+                                   style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension)
 
                 arbours.append(arbour)
                 if stack_away_from_powered_wheel:
@@ -976,10 +982,10 @@ class GoingTrain:
                 if pinion_thick_extra > 0:
                     pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 # last pinion + escape wheel, the escapment itself knows which way the wheel will turn
-                # escape wheel has its thickness controlled by the escapement, but we control the arbour diameter
+                # escape wheel has its thickness controlled by the escapement, but we control the arbor diameter
                 arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
                                      distance_to_next_arbor=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
-                                     pinion_extension=pinion_extension))
+                                     pinion_extension=pinion_extension, escapement_split=escapement_split))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
 

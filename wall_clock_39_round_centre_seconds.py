@@ -57,23 +57,28 @@ drop=3
 lock=2
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=36, lock=lock, tooth_tip_angle=3,
 #                                     tooth_base_angle=3, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
-escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=36, drop_deg=2, lock_deg=1.5, wheel_thick=2.5)
+# escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=36, drop_deg=2, lock_deg=1.5, wheel_thick=2.5)
+#use this to get best lift
+escapement = clock.AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
+#but we want to reconfigure the diameter and tooth size
+big_escapement = clock.AnchorEscapement(60, diameter=132, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=9.5, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, tooth_height_fraction=0.1,
+                                  tooth_tip_angle=5/2, tooth_base_angle=4/2, force_diameter=True)
 barrel_gear_thick = 5
 # power = clock.SpringBarrel(spring=clock.SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
 #                         wall_thick=10, extra_barrel_height=1.5)
 powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
 # escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=30, lock=lock,style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2.5, type=clock.EscapementType.DEADBEAT, tooth_tip_angle=6, tooth_base_angle=4)
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1,
+train = clock.GoingTrain(pendulum_period=1.0, wheels=3, escapement=big_escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1,
                          runtime_hours=7.5 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=powered_wheel)
+# train.calculate_ratios()
 train.calculate_powered_wheel_ratios()
 #from mantel clock 29
-train.set_ratios([[75, 9], [72, 10], [55, 22]])
 
+train.set_ratios([[75, 9], [72, 10]])
+# train.set_ratios([[75, 9], [72, 10], [55, 22]])
 moduleReduction=0.95
 
-pendulumSticksOut=10
-backPlateFromWall=30
 dial_d = 205
 dial_width=35
 
@@ -83,7 +88,7 @@ pinion_extensions={1:16, 3:10}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1, leaves=train.chain_wheel_ratios[0][1])]
 train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, lanterns=[0],
-                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False)
+                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False, escapement_split=True)
 # train.print_info(for_runtime_hours=24*7)
 
 # train.get_arbour_with_conventional_naming(0).print_screw_length()
@@ -102,16 +107,16 @@ pillar_style=clock.PillarStyle.SIMPLE
 
 dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
 
-plates = clock.RoundClockPlates(train, motion_works, name="Wall Clock 39#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
+plates = clock.RoundClockPlates(train, motion_works, name="Wall Clock 39#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
                                 motion_works_angle_deg=40, leg_height=0, fully_round=True, style=clock.PlateStyle.SIMPLE, pillar_style=pillar_style,
-                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, centred_second_hand=True)
+                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, centred_second_hand=True, escapement_on_back=True)
 
 # print("plate radius: ", plates.radius)
 hands = clock.Hands(style=clock.HandStyle.SIMPLE_ROUND, minute_fixing="circle", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,
                     second_length=dial.get_hand_length(clock.HandType.SECOND), second_fixing_thick=3, include_seconds_hand=True)
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 39")
 
 assembly.get_arbor_rod_lengths()
 plates.get_rod_lengths()
@@ -130,10 +135,11 @@ if not outputSTL or True:
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
-    plaque.output_STLs(clockName, clockOutDir)
-    motion_works.output_STLs(clockName, clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+    assembly.get_BOM().export(clockOutDir)
+    # plaque.output_STLs(clockName, clockOutDir)
+    # motion_works.output_STLs(clockName, clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
 

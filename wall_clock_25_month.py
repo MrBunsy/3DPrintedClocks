@@ -69,7 +69,7 @@ rod_diameters = [4,3,3,3,3,3]
 
 train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[8,5], pinion_thick_extra=5, style=gearStyle,
                 powered_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters)
+                powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters, escapement_split=True)
 train.print_info(weight_kg=6)
 train.get_arbour_with_conventional_naming(0).print_screw_length()
 
@@ -88,7 +88,7 @@ plaque = clock.Plaque(text_lines=["M25#0 {:.1f}cm".format(train.pendulum_length_
 #this likely affects most clocks with the escapement on the front and a compact gear layout
 plates = clock.RoundClockPlates(train, motionWorks, second_hand=False, style=clock.PlateStyle.RAISED_EDGING, pillar_style=clock.PillarStyle.BARLEY_TWIST, fully_round=True,
                                 leg_height=0, plaque=plaque, dial=dial, motion_works_angle_deg=180+30, escapement_on_front=True, name="Clock 25", split_detailed_plate=True,
-                                plate_thick=10, anchor_distance_fudge_mm=-0.5)
+                                plate_thick=10, anchor_distance_fudge_mm=-0.5, off_centre_escape_wheel=False)
 
 hands = clock.Hands(style=clock.HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True, second_length=20, seconds_hand_thick=1.5)

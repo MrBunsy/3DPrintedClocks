@@ -2273,7 +2273,8 @@ class CordWheel:
                 click_angle = math.pi/2
             else:
                 click_angle = -math.pi/2
-            if self.ratchet_diameter < 0:
+            ratchet_diameter = self.ratchet_diameter
+            if ratchet_diameter < 0:
                 ratchet_diameter = self.diameter+6.5
             self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=self.ratchet_thick, blocks_clockwise=self.power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle, pawl_and_click_thick=self.pawl_thick)
         else:

@@ -101,11 +101,12 @@ print("wheel angle ",rad_to_deg(escapement.wheel_angle))
 
 drop = escapement.drop_deg
 lift = escapement.lift_deg#+0.5
-big_escapement = AnchorEscapement(60, diameter=120, drop=drop, lift=lift, anchor_teeth=9.5, style=AnchorStyle.CURVED_MATCHING_WHEEL, tooth_height_fraction=0.1,
+escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
+big_escapement = AnchorEscapement(60, diameter=125, drop=drop, lift=lift, anchor_teeth=9.5, style=AnchorStyle.CURVED_MATCHING_WHEEL, tooth_height_fraction=0.1,
                                   tooth_tip_angle=5/2, tooth_base_angle=4/2)
 
-anchor_angle_deg = 0#-2.5
-wheel_angle_deg = 0#-5.25#-1.7
+anchor_angle_deg =2#-2.5
+wheel_angle_deg = -0.6#-5.25#-1.7
 
 # anchor_angle_deg = 0
 # wheel_angle_deg = -1.25

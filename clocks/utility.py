@@ -1494,6 +1494,9 @@ class BillOfMaterials:
                 export_STL(object=modifier, object_name=self.name+f"_modifier_{i}", clock_name=self.get_full_name(), path=path, tolerance=self.tolerance)
 
         def export_SVG(self, path):
+            if self.object is None:
+                print(f"Cannot export {self.get_full_name()}_{self.name}.svg as object is None")
+                return
             exportSVG(self.object,os.path.join(path,f"{self.get_full_name()}_{self.name}.svg"), opts=self.svg_options)
 
     def __init__(self, name, assembly_instructions=None, template_path='docs/templates'):

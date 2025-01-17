@@ -300,7 +300,7 @@ class SimpleClockPlates:
 
     def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
-                 pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, chain_through_pillar_required=True,
+                 pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False,escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
@@ -311,6 +311,7 @@ class SimpleClockPlates:
         No idea if it will work nicely!
 
         escapement_on_front: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
+        escapement_on_back: if true, escapement is on the back of the clock!
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         split_detailed_plate - if the detail is raised on the front plate we'd have to print using hole-in-hole supports for the bearing holes. Some filaments this isn't as clean as others
         so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
@@ -419,6 +420,7 @@ class SimpleClockPlates:
 
         #escapement is on top of the front plate
         self.escapement_on_front = escapement_on_front
+        self.escapement_on_back = escapement_on_back
         self.front_anchor_holder_part_of_dial = False
 
         #many designs have thet escapement above the hands anyway, but do we force it? currently I think this is a 1:1 mapping with escapement_on_front
@@ -964,7 +966,7 @@ class SimpleClockPlates:
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, escapement_on_front=self.escapement_on_front, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
-                                           pendulum_length=self.going_train.pendulum_length_m*1000)
+                                           pendulum_length=self.going_train.pendulum_length_m*1000, escapement_on_back=self.escapement_on_back)
             self.arbors_for_plate.append(arbourForPlate)
 
 
@@ -1118,7 +1120,9 @@ class SimpleClockPlates:
             arbors = [self.going_train.get_arbour_with_conventional_naming(i) for i in range(all_arbors_count)]
 
             # seconds_wheel_radius = arbors[second_hand_index].get_max_radius() + self.gear_gap
-            seconds_pinion_radius =  arbors[second_hand_index].pinion.get_max_radius() + self.gear_gap
+            # seconds_pinion_radius =  arbors[second_hand_index].pinion.get_max_radius() + self.gear_gap
+            #actually let's assume we only need to avoid the arbor extensions
+            seconds_pinion_radius = arbors[second_hand_index].arbor_d + self.small_gear_gap
 
             #place seconds directly above powered wheel
             positions_relative[second_hand_index] = (0, seconds_pinion_radius + arbors[0].get_max_radius())
@@ -1234,7 +1238,7 @@ class SimpleClockPlates:
             basically rotate the third wheel and escape wheel around slightly to the right so they're both equidistant from the line above the hands
             this will be useful for the moon escapement (so the fixing doesn't clash with a bearing) and I think will result in an even more compact design
             '''
-            forcing_escape_wheel_above_hands = self.going_train.wheels > 3 and self.force_escapement_above_hands
+            forcing_escape_wheel_above_hands = self.force_escapement_above_hands
             forcing_escape_wheel_slightly_off_centre = self.no_upper_wheel_in_centre#self.going_train.wheels > 3 and not self.second_hand
 
 
@@ -1252,6 +1256,8 @@ class SimpleClockPlates:
                 third_wheel_pinion_r = self.going_train.get_arbor(2).arbor_d
 
             minute_wheel_to_penultimate_wheel = self.going_train.get_arbor(0).get_max_radius() + third_wheel_pinion_r + self.small_gear_gap
+            if self.going_train.wheels == 3:
+                minute_wheel_to_penultimate_wheel = self.going_train.get_arbor(0).distance_to_next_arbor
             positions_relative[0] = minute_wheel_pos = (0, 0)
             if forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre:
                 minute_wheel_r = self.going_train.get_arbor(0).get_max_radius()
@@ -1260,7 +1266,7 @@ class SimpleClockPlates:
                 # escape_wheel_arbor_r = self.going_train.get_arbor(3).get_rod_d()
                 # #MORE HACK TODO REMOVE ME
                 # escape_wheel_arbor_r = 2
-                minute_wheel_to_escape_wheel = self.going_train.get_arbor(0).get_max_radius() + escape_wheel_arbor_r + self.small_gear_gap
+                minute_wheel_to_escape_wheel = minute_wheel_r + escape_wheel_arbor_r + self.small_gear_gap
                 penultimate_wheel_to_escape_wheel = self.going_train.get_arbor(self.going_train.wheels-2).distance_to_next_arbor
                 escape_wheel_to_anchor = self.going_train.get_arbor(self.going_train.wheels-1).distance_to_next_arbor
 
@@ -1287,10 +1293,12 @@ class SimpleClockPlates:
 
                 else:
 
-
+                    #escape wheel directly above hands
                     positions_relative[escape_wheel_index] = (0, minute_wheel_to_escape_wheel)
 
-                    positions_relative[penultimate_wheel_index] = ( -on_side*penultimate_wheel_to_escape_wheel, minute_wheel_to_escape_wheel)
+                    positions_relative[penultimate_wheel_index] = get_point_two_circles_intersect(positions_relative[0], minute_wheel_to_penultimate_wheel,
+                                                                                                  positions_relative[escape_wheel_index], penultimate_wheel_to_escape_wheel,
+                                                                                                  in_direction=(-1,0))#( -on_side*penultimate_wheel_to_escape_wheel, minute_wheel_to_escape_wheel)
                     # anchor is directly above escape wheel
                     positions_relative[anchor_index] = (positions_relative[escape_wheel_index][0], positions_relative[escape_wheel_index][1] + escape_wheel_to_anchor)
 
@@ -1345,12 +1353,15 @@ class SimpleClockPlates:
                 # self.angles_from_minute[3] = math.pi/2 - on_side*angle
 
 
-            last_pos = None
             #and calculate angles_from_minute until it's removed entirely
             for i in range(self.going_train.wheels):
 
                 relative_to_next_pos =  np_to_set(np.subtract(positions_relative[i+1], positions_relative[i]))
+                distance_to_next_pos = distance_between_two_points(positions_relative[i], positions_relative[i+1])
+                print(f"i: {i} distance_to_next_pos: {distance_to_next_pos}")
                 self.angles_from_minute[i] = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
+
+            print(f"positions_relative: {positions_relative}: self.angles_from_minute deg: {[rad_to_deg(angle) for angle in self.angles_from_minute]}")
 
             # #aim: have pendulum directly above hands
             # positions = [(0,0)]
@@ -1432,7 +1443,7 @@ class SimpleClockPlates:
         self.bearing_positions = []
         # TODO consider putting the anchor on a bushing
         # self.bushingPositions=[]
-        self.arbourThicknesses = []
+        self.arbor_thicknesses = []
 
         # height of the centre of the wheel that will drive the next pinion
         drivingZ = 0
@@ -1446,38 +1457,40 @@ class SimpleClockPlates:
                 self.bearing_positions.append(pos)
                 # note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
                 drivingZ = self.going_train.get_arbor(i).get_wheel_centre_z()
-                self.arbourThicknesses.append(self.going_train.get_arbor(i).get_total_thickness())
+                self.arbor_thicknesses.append(self.going_train.get_arbor(i).get_total_thickness())
                 # print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
             else:
                 r = self.going_train.get_arbor(i - 1).distance_to_next_arbor
+                print(f"i: {i} distance_to_next_pos: {r}")
                 # print("r", r)
                 # all the other going wheels up to and including the escape wheel
                 if i == self.going_train.wheels:
                     # the anchor
                     r+= self.anchor_distance_fudge_mm
-                    if self.escapement_on_front:
+                    if self.escapement_on_front or self.escapement_on_back:
                         # there is nothing between the plates for this
-                        self.arbourThicknesses.append(0)
+                        self.arbor_thicknesses.append(0)
                         # don't do anything else
                     else:
                         escapement = self.going_train.get_arbor(i).escapement
                         baseZ = drivingZ - self.going_train.get_arbor(i - 1).wheel_thick / 2 + escapement.get_wheel_base_to_anchor_base_z()
-                        self.arbourThicknesses.append(escapement.get_anchor_thick())
+                        self.arbor_thicknesses.append(escapement.get_anchor_thick())
                     # print("is anchor")
                 else:
                     # any of the other wheels
                     # pinionAtBack = not pinionAtBack
                     # print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
+
+                    # massive bodge here, the arbor doesn't know about the escapement being on the front yet
+                    # just_pinion = i == self.going_train.wheels - 1 and (self.escapement_on_back or self.escapement_on_front)
                     pinionToWheel = self.going_train.get_arbor(i).get_pinion_to_wheel_z()
                     pinionZ = self.going_train.get_arbor(i).get_pinion_centre_z()
                     baseZ = drivingZ - pinionZ
 
                     drivingZ = drivingZ + pinionToWheel
-                    # massive bodge here, the arbour doesn't know about the escapement being on the front yet
-                    self.going_train.get_arbor(i).escapement_on_front = self.escapement_on_front
-                    arbourThick = self.going_train.get_arbor(i).get_total_thickness()
 
-                    self.arbourThicknesses.append(arbourThick)
+                    arbor_thick = self.going_train.get_arbor(i).get_total_thickness()
+                    self.arbor_thicknesses.append(arbor_thick)
 
                 if i <= 0:
                     angle = self.angles_from_chain[i - 1 + self.going_train.powered_wheels]
@@ -1486,7 +1499,8 @@ class SimpleClockPlates:
                 v = polar(angle, r)
                 # v = [v[0], v[1], baseZ]
                 lastPos = self.bearing_positions[-1]
-                # pos = list(np.add(self.bearingPositions[i-1],v))
+                # pos = list(np.add(self.bearing_positions[i-1][:2],polar(angle, r)))
+                # pos.append(baseZ)
                 pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
                 # if i < self.goingTrain.wheels:
                 #     print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
@@ -1496,7 +1510,7 @@ class SimpleClockPlates:
 
         # print(self.bearingPositions)
 
-        topZs = [self.arbourThicknesses[i] + self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
+        topZs = [self.arbor_thicknesses[i] + self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
 
         bottomZs = [self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
 
@@ -2947,6 +2961,15 @@ class SimpleClockPlates:
                 if not self.pendulum_at_front and back:
                     needs_plain_hole = True
 
+                if self.escapement_on_back:
+                    #no hole at all on the front plate
+                    if not back:
+                        continue
+                    #bearing is on the back of the back plate
+                    if back:
+                        bearing_on_top=False
+                        needs_plain_hole=False
+
 
             outer_d =  bearing.outer_d
             if needs_plain_hole:
@@ -2964,6 +2987,9 @@ class SimpleClockPlates:
             else:
                 bridging = False
                 if not back and not self.front_plate_printed_front_face_down():
+                    bridging = True
+                if back and not bearing_on_top:
+                    #so far only the bearing on the back plate for an escapement on the back
                     bridging = True
                 plate = plate.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(back=back),bearing=bearing, bearing_on_top=bearing_on_top, with_support=bridging)
                                   .translate((pos[0], pos[1], 0)))
@@ -4104,7 +4130,7 @@ class RoundClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=True,
-                 screwhole_above_anchor=False):
+                 screwhole_above_anchor=False, escapement_on_back=False):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4127,7 +4153,7 @@ class RoundClockPlates(SimpleClockPlates):
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
-                         anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel)
+                         anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel, escapement_on_back=escapement_on_back)
 
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
@@ -4518,7 +4544,7 @@ class RoundClockPlates(SimpleClockPlates):
         if thick_override > 0:
             plate_thick = thick_override
 
-        centre = self.hands_position#self.bearing_positions[self.going_train.powered_wheels][:2]
+        centre = self.hands_position
 
         main_arm_wide = self.plate_width
         medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
@@ -4554,13 +4580,16 @@ class RoundClockPlates(SimpleClockPlates):
 
         for i, bearing_pos in enumerate(self.bearing_positions):
             if i == self.going_train.powered_wheels and not self.centred_second_hand:
-                #the minute wheel, in the centre
+                #the minute wheel, in the centre (usually)
                 continue
             if i == len(self.bearing_positions) - 3 and self.centred_second_hand and self.going_train.has_second_hand_on_last_wheel():
                 #the centred seconds wheel
                 continue
             if i == len(self.bearing_positions) - 2 and self.centred_second_hand and self.going_train.has_seconds_hand_on_escape_wheel():
-                #the centred seconds wheel
+                #the centred escape wheel
+                continue
+            if i == len(self.bearing_positions) -1 and self.escapement_on_back and not back:
+                #anchor is only between back plate and wall
                 continue
             if i > self.going_train.powered_wheels:
                 line_wide = small_arm_wide
@@ -4570,7 +4599,7 @@ class RoundClockPlates(SimpleClockPlates):
                 #this bearing will be in the outer circle
                 continue
 
-            if back and i == len(self.bearing_positions) - 1 and self.no_upper_wheel_in_centre:
+            if back and i == len(self.bearing_positions) - 1 and self.no_upper_wheel_in_centre and not self.escapement_on_back:
                 #don't need a bit of plate to support just a hole for the anchor
                 continue
 
@@ -4580,10 +4609,10 @@ class RoundClockPlates(SimpleClockPlates):
             bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].bearing.outer_d
             bearing_from_radius = abs(distance_between_two_points(bearing_pos[:2], centre) - self.radius)
             if i == len(self.bearing_positions) - 1:
-                if back:
+                if back and not self.escapement_on_back:
                     #don't support a hole for the anchor!
                     continue
-                if not back and not self.escapement_on_front and bearing_from_radius > bearing_in_plate_space:
+                if  not self.escapement_on_front and bearing_from_radius > bearing_in_plate_space:
                     #the anchor needs something to support it on the front plate
                     line = Line(centre, anotherPoint=bearing_pos[:2])
                     end = tuple(np.add(centre, np.multiply(line.dir, self.radius)))
@@ -4902,7 +4931,11 @@ class RoundClockPlates(SimpleClockPlates):
             #anchor is at the top or within the radius
             width = self.pillar_r*2
 
-            anchor_holder_fixing_points = self.top_pillar_positions
+            anchor_holder_fixing_points = self.top_pillar_positions[:]
+
+            if anchor_holder_fixing_points[0][0] < anchor_holder_fixing_points[1][0]:
+                #swap pillars around to make arc work in right direction
+                anchor_holder_fixing_points = [anchor_holder_fixing_points[1], anchor_holder_fixing_points[0]]
 
             # curve_ends = []
             # for fixing_pos in anchor_holder_fixing_points:
@@ -4926,6 +4959,7 @@ class RoundClockPlates(SimpleClockPlates):
 
 
             if self.wall_mounted:
+                #TODO case where anchor is below pillars!
                 # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
                 # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
                 # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
@@ -5049,7 +5083,8 @@ class RoundClockPlates(SimpleClockPlates):
         if one_peice:
             plates = plates.union(pillars).union(standoff_pillars)
             if detail is not None:
-                return plates.union(detail)
+                plates = plates.union(detail)
+            return plates
         return (plates, pillars, detail, standoff_pillars)
 
     def get_BOM(self):
