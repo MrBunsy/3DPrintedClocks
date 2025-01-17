@@ -597,7 +597,7 @@ class Assembly:
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
-                   moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45):
+                   moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45, hand_colours_overrides=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -609,6 +609,9 @@ class Assembly:
         if hand_colours is None:
             #main hand, outline, second hand if different
             hand_colours = ["white", "black"]
+        if hand_colours_overrides is None:
+            #for hands with specific colours (as opposed to an outline) allow overriding the preview of those colours
+            hand_colours_overrides = {}
 
         #[cannon_pinion, hour holder, arbor]
         if motion_works_colours is None:
@@ -725,7 +728,7 @@ class Assembly:
         #mirror them so the outline is visible (consistent with second hand)
         hands_position = (self.plates.hands_position[0], self.plates.hands_position[1], self.minute_hand_z - self.motion_works.hour_hand_slot_height)
         self.hands.show_hands(show_object, hand_colours=hand_colours, position=hands_position, second_hand_pos=self.second_hand_pos, hour_hand_slot_height=self.motion_works.hour_hand_slot_height,
-                              time_hours=self.time_hours, time_minutes=self.time_mins, time_seconds=self.time_seconds, show_second_hand=self.plates.has_seconds_hand())
+                              time_hours=self.time_hours, time_minutes=self.time_mins, time_seconds=self.time_seconds, show_second_hand=self.plates.has_seconds_hand(), hand_colours_overrides=hand_colours_overrides)
 
         if self.has_ring:
 

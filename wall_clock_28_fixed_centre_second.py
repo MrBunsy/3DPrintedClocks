@@ -119,7 +119,7 @@ print("bottom_of_hour_hand_z", plates.bottom_of_hour_hand_z())
 #note - want with outline_thick=0.6, but this breaks the preview and I haven't investigated why yet.
 hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,
-                    second_length=dial.get_hand_length(clock.HandType.SECOND), second_fixing_thick=3, include_seconds_hand=True)#, outline_thick=0.6)
+                    second_length=dial.get_hand_length(clock.HandType.SECOND), second_fixing_thick=3, include_seconds_hand=True)
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 

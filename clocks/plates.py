@@ -4624,6 +4624,11 @@ class RoundClockPlates(SimpleClockPlates):
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
 
 
+        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and self.going_train.wheels == 3:
+            #want some extra arms on the top left
+            top_left_pillar = self.top_pillar_positions[0] if self.top_pillar_positions[0][0] < self.top_pillar_positions[1][0] else self.top_pillar_positions[1]
+            plate = plate.union(get_stroke_line([centre, top_left_pillar], small_arm_wide, plate_thick))
+
 
 
         if just_basic_shape:

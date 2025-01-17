@@ -611,6 +611,7 @@ class Colour:
     DARK_GREEN = (0, 25, 13)
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
+    BLUE_PASTLE = (	167, 199, 231)
     DARKBLUE = (0, 0, 55)
     PURPLE = (138, 43, 226)  # (148,0,211)
     LILAC = (210, 175, 255)

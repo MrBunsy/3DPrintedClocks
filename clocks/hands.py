@@ -530,13 +530,16 @@ class Hands:
 
 
     def show_hands(self, show_object, hand_colours=None, position=None, second_hand_pos=None, hour_hand_slot_height=6,
-                   time_hours=10, time_minutes=10, time_seconds=0, show_second_hand=True):
+                   time_hours=10, time_minutes=10, time_seconds=0, show_second_hand=True, hand_colours_overrides=None):
 
         if hand_colours is None:
             #main hand, outline, second hand if different
             hand_colours = ["white", "black"]
             if self.second_hand_centred:
                 hand_colours += ["red"]
+        if hand_colours_overrides is None:
+            #for hands with named colours, allow overriding for the preview
+            hand_colours_overrides = {}
         if position is None:
             position = (0,0,0)
         if second_hand_pos is None:
@@ -557,7 +560,8 @@ class Hands:
                         show_colour = hand_colours[2 % len(hand_colours)]
                 if show_colour == "outline":
                     show_colour = hand_colours[1 % len(hand_colours)]
-
+                if show_colour in hand_colours_overrides:
+                    show_colour = hand_colours_overrides[show_colour]
                 show_colour = Colour.colour_tidier(show_colour)
 
                 if type != HandType.SECOND:

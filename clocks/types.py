@@ -46,6 +46,7 @@ class HandStyle(Enum):
     INDUSTRIAL = "industrial"#based on a Siemens slave clock
     FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
     TWIRLY = "twirly"
+    THIN_DIAMOND = "thin_diamond"
 
 class HandType(Enum):
     HOUR = "hour"

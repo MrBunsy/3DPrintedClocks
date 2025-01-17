@@ -313,7 +313,7 @@ class GoingTrain:
         if loud:
             print("")
 
-        all_times.sort(key=lambda x: x["error"])
+        all_times.sort(key=lambda x: x["weighting"])
         # print(allTimes)
 
         self.trains = all_times
