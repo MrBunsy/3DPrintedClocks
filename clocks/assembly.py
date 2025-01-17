@@ -246,7 +246,8 @@ class Assembly:
         bom.add_subcomponent(self.hands.get_BOM())
 
         #trying to get this to fit onto the first page of the exported PDF
-        bom.set_model(self.get_clock(), svg_preview_options={"width":675, "height":675})
+        with_pendulum = self.going_train.pendulum_length_m < 0.5
+        bom.set_model(self.get_clock(with_pendulum=with_pendulum), svg_preview_options={"width":675, "height":675})
 
         return bom
 

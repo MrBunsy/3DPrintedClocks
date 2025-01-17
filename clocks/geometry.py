@@ -224,6 +224,11 @@ def rotate_vector(vector, axis, angle_rad):
         rotate_vector += [0]
     return np_to_set(np.dot(rotation_matrix(axis, angle_rad), rotate_vector))
 
+def backwards_vector(vector):
+    '''
+    get 2D vector pointing in opposite direction
+    '''
+    return (-vector[0], -vector[1])
 
 def get_point_two_circles_intersect(pos0, distance0, pos1, distance1, anticlockwise_from_0=True, in_direction=None):
     '''

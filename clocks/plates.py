@@ -302,7 +302,7 @@ class SimpleClockPlates:
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False,escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=-1, endshake=1,
+                 bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
                  standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=False):
@@ -403,6 +403,12 @@ class SimpleClockPlates:
         # I've been using 1mm for ages, but clock 12 seemed to have gears binding, but wondering if actually it was gears wedged between the bearings (keeping an eye on it)
         # after the plates flexed over time - new technique of m4 bolts all the way through the pillars may help, but maybe a bit more endshake too?
         self.endshake = endshake
+
+        if motion_works_angle_deg is None:
+            if motion_works_above:
+                motion_works_angle_deg = 90
+            else:
+                motion_works_angle_deg = -90
 
         # override default position of the motion works (for example if it would be in the way of a keywind and it can't go above because there's a moon complication)
         self.motion_works_angle = deg_to_rad(motion_works_angle_deg)
@@ -649,9 +655,11 @@ class SimpleClockPlates:
             #note - new idea, allow this to function like the compact design of the plates
             # self.motion_works_angle = math.pi/2 if not self.pendulum_at_top else math.pi * 1.5
 
-        #where the time setting knob is on centred seconds hands
-        self.time_setter_relative_pos = self.hands_position
-        motionWorksDistance = self.motion_works.get_arbor_distance()
+
+
+        motion_works_distance = self.motion_works.get_arbor_distance()
+        # where the time setting knob is on centred seconds hands
+        self.time_setter_relative_pos = (0, -motion_works_distance*2)
         # get position of motion works relative to the minute wheel
         if gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and self.centred_second_hand:
             '''
@@ -661,7 +669,7 @@ class SimpleClockPlates:
             self.time_setter_relative_pos = np_to_set(np.subtract(self.bearing_positions[self.going_train.powered_wheels][:2], self.hands_position))
         elif gear_train_layout == GearTrainLayout.ROUND:
             # place the motion works on the same circle as the rest of the bearings
-            angle = self.hands_on_side*2 * math.asin(motionWorksDistance / (2 * self.compact_radius))
+            angle = self.hands_on_side*2 * math.asin(motion_works_distance / (2 * self.compact_radius))
             compactCentre = (0, self.compact_radius)
             minuteAngle = math.atan2(self.bearing_positions[self.going_train.powered_wheels][1] - compactCentre[1], self.bearing_positions[self.going_train.powered_wheels][0] - compactCentre[0])
             motionWorksPos = polar(minuteAngle - angle, self.compact_radius)
@@ -676,25 +684,29 @@ class SimpleClockPlates:
             #make unit vector
             direction = np.multiply(direction, 1/np.linalg.norm(direction))
 
-            self.motion_works_relative_pos = np_to_set(np.multiply(direction, motionWorksDistance))
+            self.motion_works_relative_pos = np_to_set(np.multiply(direction, motion_works_distance))
         else:
             # motion works is directly below the minute rod by default, or whatever angle has been set
-            self.motion_works_relative_pos = polar(self.motion_works_angle, motionWorksDistance)
+            self.motion_works_relative_pos = polar(self.motion_works_angle, motion_works_distance)
 
         self.motion_works_pos = np_to_set(np.add(self.hands_position, self.motion_works_relative_pos))
 
         #calculate position even if it's not applicable to this clock
-        friction_clip_dir = np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
+        friction_clip_dir = self.get_friction_clip_direction()
         friction_clip_distance = self.motion_works.friction_ring_r*2.5
         # print("friction_clip_distance", friction_clip_distance)
         #HACK for retrofitted print to clock 28
         # friction_clip_distance = 30.998806423611125
         self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
+        screw_distance = math.sqrt(2*(self.plate_width / 5)**2)
+        friction_clip_angle = math.atan2(friction_clip_dir[1], friction_clip_dir[0])
         self.cannon_pinion_friction_clip_fixings_pos = [
-            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (-self.plate_width / 5, -self.plate_width /  5))),
-            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, (self.plate_width / 5, self.plate_width / 5)))
+            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, polar(friction_clip_angle+math.pi*3/4, screw_distance))),#(-self.plate_width / 5, -self.plate_width /  5)
+            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, polar(friction_clip_angle-math.pi/4, screw_distance)))
         ]
         self.motion_works_holder_thick = 4
+        #if true then the only screws holding it in palce are the screws which also hold the friction clip
+        self.motion_works_holder_short = False
 
         #even if it's not used:
 
@@ -829,6 +841,8 @@ class SimpleClockPlates:
         if self.plaque is not None:
             self.calc_plaque_config()
 
+    def get_friction_clip_direction(self):
+        return np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
     def get_hands_position(self):
         hands_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
 
@@ -1751,7 +1765,7 @@ class SimpleClockPlates:
         inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
         outer_r = inner_r + brake_pad_thick
 
-        for angles in angle_pairs:
+        for i,angles in enumerate(angle_pairs):
 
             '''
             new plan:
@@ -1786,14 +1800,20 @@ class SimpleClockPlates:
             half_arm_length = np.linalg.norm(np.subtract(arm_centre, arm_start))
 
 
-            relative_angle = rationalise_angle(angles[2]) - rationalise_angle(angle_to_cannon_pinion)
-            quad = get_quadrant(relative_angle)
+            # relative_angle = rationalise_angle(angles[2]) - rationalise_angle(angle_to_cannon_pinion)
+            # to_pad = Line(start=self.cannon_pinion_friction_clip_pos, anotherPoint=arm_start).dir
+            # to_cannon_pinion = from_holder_to_cannon_pinion.dir
+            # pad_to_cannon_pinion = Line(arm_start, anotherPoint=self.)
+            # quad = get_quadrant(relative_angle)
 
             bend_angle = brake_pad_offset/half_arm_length
 
             # if quad[0] > 0:
-            if relative_angle > 0:
+            #np.cross(to_pad, to_cannon_pinion) >
+            if i== 0:
                 #which direction to rotate?
+                #crude version - just rely on which of the brake pads we are
+                #*should* get vector from pad to cannon pinion location and then cross that with fixing to cannon pinion to find out which side it is
                 bend_angle *= -1
 
             arm_start_bent = np_to_set(np.add(arm_start, polar(angles[2]+math.pi, brake_pad_offset)))
@@ -1841,8 +1861,13 @@ class SimpleClockPlates:
         # max_y = max(y_positions) + 8
         holder_thick = self.motion_works_holder_thick
 
+        bottom_pos = (0, min_y)
+        if self.motion_works_holder_short:
+            bottom_pos = self.hands_position
+            bottom_screw_positions=[]
+
         # holder = cq.Workplane("XY").rect(self.plate_width, (max_y - min_y)).extrude(holder_thick).translate((0, (min_y + max_y)/2)).edges("|Z").fillet(5)
-        holder = get_stroke_line([(0, min_y), self.cannon_pinion_friction_clip_pos], wide=self.plate_width, thick=holder_thick)
+        holder = get_stroke_line([bottom_pos, self.cannon_pinion_friction_clip_pos], wide=self.plate_width, thick=holder_thick)
         for pos in bottom_screw_positions:
             #with countersunk head
             holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0,0,0),(0,1,0),180).translate((pos[0],pos[1], holder_thick)))
@@ -3094,7 +3119,7 @@ class SimpleClockPlates:
     def add_motion_works_arm(self, plate, plate_thick, cut_holes=False):
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
 
-        if self.need_motion_works_holder:
+        if self.need_motion_works_holder and not self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
             # screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
@@ -4155,6 +4180,9 @@ class RoundClockPlates(SimpleClockPlates):
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
                          anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel, escapement_on_back=escapement_on_back)
 
+        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+            self.motion_works_holder_short = True
+
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
             #so it's as strong as possible
@@ -4231,7 +4259,15 @@ class RoundClockPlates(SimpleClockPlates):
 
         # self.front_anchor_holder_part_of_dial = True
 
-
+    def get_friction_clip_direction(self):
+        # return np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
+        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+            #use the spare arm
+            #should really abstract out the left/right pillar positions properly
+            top_left_pillar = self.top_pillar_positions[0] if self.top_pillar_positions[0][0] < self.top_pillar_positions[1][0] else self.top_pillar_positions[1]
+            line = Line(self.hands_position,anotherPoint=top_left_pillar)
+            return line.dir
+        return super().get_friction_clip_direction()
 
     def get_moon_holder_info(self):
         if self.moon_complication is None:

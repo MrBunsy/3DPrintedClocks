@@ -68,7 +68,7 @@ train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2
                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False, escapement_split=True)
 train.print_info(weight_kg=2.0)
 
-motion_works = clock.MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
+motion_works = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
                                  cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=clock.get_bearing_info(3))
 
 
@@ -92,9 +92,14 @@ hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", m
 
 pulley = clock.LightweightPulley(diameter=train.powered_wheel.diameter+powered_wheel.cord_thick*2, rope_diameter=2, use_steel_rod=False)
 
+# show_object(plates.get_cannon_pinion_friction_clip(for_printing=False))
+
+
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 39", pulley=pulley)
 
-if not outputSTL:
+if outputSTL:
+    assembly.get_BOM().export(clock_out_dir)
+else:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
                         motion_works_colours=[clock.Colour.WHITE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
                         bob_colours=[clock.Colour.BLUE], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
@@ -102,7 +107,6 @@ if not outputSTL:
                         plate_colours=[clock.Colour.LIGHTGREY, clock.Colour.DARKGREY, clock.Colour.BLACK],
                         hand_colours_overrides={"black":clock.Colour.SILVER})
 
-if outputSTL:
-    assembly.get_BOM().export(clock_out_dir)
+
 
 
