@@ -176,6 +176,10 @@ class Gear:
         centre_gap = outerRadius - innerRadius
         ratio = innerRadius/outerRadius
 
+        if centre_gap < 2:
+            #don't bother trying to cut diamonds in a tiny space
+            return gear
+
         narrow_gap = False
 
         if ratio > 0.6:

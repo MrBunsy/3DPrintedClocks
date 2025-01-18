@@ -46,6 +46,7 @@ if 'show_object' not in globals():
 clock_name= "wall_clock_39"
 clock_out_dir= "out"
 gear_style=clock.GearStyle.DIAMONDS
+pillar_style=clock.PillarStyle.TWISTY
 
 #use this to get best lift
 escapement = clock.AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
@@ -63,7 +64,7 @@ dial_d = 175
 pinion_extensions={1:18, 3:10}
 
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1, leaves=train.chain_wheel_ratios[0][1])]
-train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gear_style,
+train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=4.5, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, lanterns=[0],
                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False, escapement_split=True)
 train.print_info(weight_kg=2.0)
@@ -75,8 +76,6 @@ motion_works = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, com
 pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
 plaque = clock.Plaque(text_lines=["W39#0 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
-
-pillar_style=clock.PillarStyle.SIMPLE
 
 dial = clock.Dial(dial_d, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2", font_scale=1.5, font_path="../fonts/Eurostile_Extended_2_Bold.otf",
                   outer_edge_style=clock.DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_d/6, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES,
@@ -105,7 +104,7 @@ else:
                         bob_colours=[clock.Colour.BLUE], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD,
                         dial_colours=[clock.Colour.BLACK, clock.Colour.WHITE], key_colour=clock.Colour.DARKBLUE,
                         plate_colours=[clock.Colour.LIGHTGREY, clock.Colour.DARKGREY, clock.Colour.BLACK],
-                        hand_colours_overrides={"black":clock.Colour.SILVER})
+                        hand_colours_overrides={"black":clock.Colour.DARKGREY})
 
 
 

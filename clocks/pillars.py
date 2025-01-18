@@ -22,8 +22,13 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base
         return fancy_pillar_twisty(r, length, clockwise)
     elif style == PillarStyle.CLASSIC:
         return fancy_pillar_classic(r, length, clockwise=clockwise, base_fillet_r=base_fillet_r)
+    elif style == PillarStyle.SIMPLE_HEX:
+        return poly_cylinder(r, length, sides=6)
     else:
         raise NotImplementedError("Pillar style {} not yet implemented".format(style))
+
+def poly_cylinder(radius, length, sides=6):
+    return cq.Workplane("XY").polygon(sides, radius*2).extrude(length)
 def fancy_pillar_column(r, length, clockwise=True, with_divots=True):
     '''
     the top and bottom bit copy-pasted from barley twist, could probably consider abstracting out
