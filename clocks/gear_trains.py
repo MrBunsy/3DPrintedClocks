@@ -294,6 +294,8 @@ class GoingTrain:
                 # avoid if we can
                 weighting += 100
 
+            #ensure we don't choose a slightly dodgy one over a better one
+            weighting += 100* abs(error)
 
 
             train = {"time": total_time, "train": all_trains[c], "error": abs(error), "ratio": total_ratio, "teeth": total_wheel_teeth, "weighting": weighting}

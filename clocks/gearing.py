@@ -2184,6 +2184,7 @@ class ArborForPlate:
             pass
 
         for shape in shapes:
+
             if not shape.endswith("_modifier"):
                 if shape == "wheel":
                     parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape], modifier_objects=pinion_modifiers))
@@ -2758,7 +2759,8 @@ class Arbor:
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
             traditional_ratchet = True
-            extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
+            #skipping this here because now it's in the BOM for the powered wheel itself, so doesn't need to be duplicated here
+            # extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
             #back_collet_from_back only used if the ratchet is at the back (and barrel at front, still assumed for now)
@@ -2775,8 +2777,8 @@ class Arbor:
         if traditional_ratchet:
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
             extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
-            #not needed on all designs
-            extras['ratchet_pawl_supporter'] = self.powered_wheel.ratchet.get_little_plate_for_pawl()
+            #not needed on all designs (note - not needed on any new designs? we beef up the plate for the pawl screw now)
+            # extras['ratchet_pawl_supporter'] = self.powered_wheel.ratchet.get_little_plate_for_pawl()
 
         return extras
     def get_extra_ratchet(self, for_printing=True):
