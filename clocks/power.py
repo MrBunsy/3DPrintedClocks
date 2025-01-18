@@ -2329,7 +2329,12 @@ class CordWheel:
             raise NotImplementedError("TODO BOM screw length for non-key cord wheel")
         print(f"Cord wheel needs {self.fixing_screw} less than {fixing_screw_length:.1f}mm")
         fixing_screw_length = get_nearest_machine_screw_length(fixing_screw_length, self.fixing_screw)
-        bom = BillOfMaterials("Cord barrel")
+        instructions =f"""
+Insert the fixing nuts into the ratchet wheel, then slot the top cap over the cord barrel. Use the fixing screws through the top cap and barrel to fix the ratchet wheel onto the bottom of the barrel and hold the entire assembly together.
+
+Ue the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https://www.animatedknots.com/gnat-hitch-knot) as it tightens itself after you tie it.
+"""
+        bom = BillOfMaterials("Cord barrel", assembly_instructions=instructions)
         bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
         #keeping bearings with the plates as that makes more sense for assembling
         # bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))

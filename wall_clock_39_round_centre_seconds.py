@@ -97,7 +97,15 @@ pulley = clock.LightweightPulley(diameter=train.powered_wheel.diameter+powered_w
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 39", pulley=pulley)
 
 if outputSTL:
-    assembly.get_BOM().export(clock_out_dir)
+    bom = assembly.get_BOM()
+    #clock specific instructions:
+    bom.assembly_instructions = f"""{clock.BillOfMaterials.GENERIC_INSTRUCTIONS_INTRO}
+   
+ - The cord wheel and its top cap are best printed with Arachne perimeter generation and the seam chosen to avoid the narrow section in the diamond cut outs.
+ - The pinion of arbor 3 must be printed with a 0.25mm nozzle as 0.4 is too big to print the teeth in a continuous perimeter
+ - The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)
+"""
+    bom.export(clock_out_dir)
 else:
     assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
                         motion_works_colours=[clock.Colour.WHITE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],

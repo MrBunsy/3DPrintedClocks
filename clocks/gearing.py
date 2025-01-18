@@ -1659,6 +1659,23 @@ class ArborForPlate:
 
         return standalone_pinion
 
+    def get_escape_wheel_extension_length(self):
+        '''
+        for escape wheels on the front or back of the clock, how long is the little extra support?
+        relevant for calculating length of rod if it's out the back
+        used to be configurable for front or back, but I can't see a use case for the extension out the front any more
+        '''
+        extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake - 1
+        if extra_arbour_length > 10:
+            extra_arbour_length = 10
+
+        if self.escapement_on_back and self.arbor.escapement.diameter > 80:
+            #bit of a bodge for a specific clock in mind, but for large escape wheels make it a bit longer so it's more likely to
+            #be a good right angle
+            extra_arbour_length=10
+
+        return extra_arbour_length
+
     def get_escape_wheel(self, for_printing=True):
         '''
         if escapement_on_front this is a standalone escape wheel, otherwise it's a fairly standard abor
@@ -1667,20 +1684,11 @@ class ArborForPlate:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
-            extra_arbour_length = self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake - 1
-            if extra_arbour_length > 10:
-                extra_arbour_length = 10
+            extra_arbour_length = self.get_escape_wheel_extension_length()
 
-
-
-            extend_out_front = self.plates.extra_support_for_escape_wheel
+            #deprecated for now
+            extend_out_front = False#self.plates.extra_support_for_escape_wheel
             arbourThreadedRod = MachineScrew(metric_thread=self.arbor_d)
-
-            if self.escapement_on_back and self.arbor.escapement.diameter > 80:
-                #bit of a bodge for a specific clock in mind, but for large escape wheels make it a bit longer so it's more likely to
-                #be a good right angle
-                extra_arbour_length=10
-                extend_out_front=False
 
             #using a half height nut so we get more rigidity on the rod, and we're clamping this in with a nut on the front anyway
             nut_height = arbourThreadedRod.get_nut_height(half=True)
@@ -2176,10 +2184,10 @@ class ArborForPlate:
         parts = []
         shapes = self.get_shapes()
 
-        pinion_modifiers = []
+        pinion_modifiers = {}
         try:
             #anything with a pinion can get the modified
-            pinion_modifiers.append(self.arbor.get_STL_modifier_pinion_shape())
+            pinion_modifiers["pinion_teeth"] =self.arbor.get_STL_modifier_pinion_shape()
         except:
             pass
 
@@ -2189,7 +2197,11 @@ class ArborForPlate:
                 if shape == "wheel":
                     parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape], modifier_objects=pinion_modifiers))
                 else:
-                    parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape]))
+                    instructions=""
+                    if "click" in shape:
+                        instructions="Make sure the clickspring does not have a seam on the spring part (this could weaken it) - you probably need to manually set the seam somewhere on the end fixing"
+
+                    parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape], printing_instructions=instructions))
 
 
 
@@ -2625,17 +2637,21 @@ class Arbor:
         '''
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
-            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick + self.pinion_extension, min_inner_r=self.arbor_d / 2, nozzle_size=nozzle_size)
+            offset_z = self.wheel_thick + self.pinion_extension
+            if self.escapement_split and self.get_type() == ArborType.ESCAPE_WHEEL:
+                #lone pinion
+                offset_z = self.end_cap_thick
+            return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=offset_z, min_inner_r=self.arbor_d / 2, nozzle_size=nozzle_size)
 
         return None
 
-    def get_STL_modifier_wheel_shape(self):
+    def get_STL_modifier_wheel_shape(self, nozzle_size=0.4):
         '''
         return a shape that covers the teeth of the pinions for apply tweaks to the slicing settings
         '''
 
         if self.get_type() == ArborType.WHEEL_AND_PINION:
-            return self.wheel.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2)
+            return self.wheel.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=self.wheel_thick, min_inner_r=self.arbor_d / 2, nozzle_size=nozzle_size)
 
         return None
 
@@ -3195,16 +3211,16 @@ class MotionWorks:
     def get_parts_in_situ(self, motion_works_relative_pos=None, minute_angle=10, time_setter_relative_pos=None):
         if motion_works_relative_pos is None:
             motion_works_relative_pos = [0, -self.get_arbor_distance()]
+
         parts = {}
         parts["cannon_pinion"] = self.get_cannon_pinion().rotate((0, 0, 0), (0, 0, 1), minute_angle)
         parts["hour_holder"] = self.get_hour_holder().translate((0, 0, self.get_cannon_pinion_base_thick()))
         parts["arbor"] = self.get_motion_arbour_shape().translate((motion_works_relative_pos[0], motion_works_relative_pos[1], self.get_cannon_pinion_base_thick() - self.thick))
 
         if self.centred_second_hand:
-            # relative_pos = npToSet(np.multiply(motionWorksRelativePos, 2))
-            #is this general purpose? (answer: no it assumed the minute wheel was below the seconds wheel)
-            # relative_pos = np_to_set(np.add(motion_works_relative_pos, (-motion_works_relative_pos[0], motion_works_relative_pos[1])))
-            parts["time_setter_pinion"] = self.get_cannon_pinion_pinion(standalone=True).translate(time_setter_relative_pos).translate((0,0, self.friction_ring_base_thick + self.friction_ring_thick))
+            if time_setter_relative_pos is None:
+                time_setter_relative_pos = np_to_set(np.multiply(motion_works_relative_pos, 2))
+            parts["time_setter_pinion"] = self.get_cannon_pinion_pinion(standalone=True, for_printing=False).translate(time_setter_relative_pos).translate((0,0, self.friction_ring_base_thick + self.friction_ring_thick))
 
         return parts
 
@@ -3300,7 +3316,8 @@ class MotionWorks:
                 #hack, copy-pasted from initial setting of inset_at_base_r before that was hijacked for the bearing slot
                 inner_r = (get_washer_diameter(self.arbor_d) + 1) / 2
                 pinion = pinion.cut(cq.Workplane("XY").circle(inner_r).extrude(self.lone_pinion_inset_at_base))
-
+            if for_printing:
+                pinion = pinion.rotate((0,0,0),(1,0,0),180)
 
 
         return pinion
@@ -3469,6 +3486,44 @@ class MotionWorks:
 
 
         return hour
+
+    def get_printed_parts(self):
+        parts = []
+
+        cannon_pinon_part = BillOfMaterials.PrintedPart("cannon_pinion", self.get_cannon_pinion(), purpose="Holds the minute hand")
+        parts.append(BillOfMaterials.PrintedPart("cannon_pinion_x1.015", self.get_cannon_pinion(hand_holder_radius_adjustment=1.015), purpose="1.5% larger hand fixing for some filaments which print smaller than expected"))
+        parts.append(BillOfMaterials.PrintedPart("cannon_pinion_x1.025", self.get_cannon_pinion(hand_holder_radius_adjustment=1.025), purpose="2.5% larger hand fixing for some filaments which print smaller than expected"))
+
+        motion_arbor_part = BillOfMaterials.PrintedPart("motion_arbour", self.get_motion_arbour_shape(), purpose="Technically the \"minute wheel\" but I have avoided calling as I have inadvertently used that term to describe the wheel which rotates once an hour (and therefore hold the minute hand). This is the intermediate gear between the hour and minute hands.")
+        motion_arbor_part.modifier_objects
+        for nozzle in [0.25, 0.4]:
+            motion_arbor_part.modifier_objects[f"pinion_teeth_nozzle_{nozzle}"] = self.get_motion_arbour().get_STL_modifier_pinion_shape(nozzle_size=nozzle)
+            motion_arbor_part.modifier_objects[f"wheel_teeth_nozzle_{nozzle}"] = self.get_motion_arbour().get_STL_modifier_wheel_shape(nozzle_size=nozzle)
+            cannon_pinon_part.modifier_objects[f"pinion_teeth_nozzle_{nozzle}"] = self.get_cannon_pinion_pinion_stl_modifier(nozzle_size=nozzle)
+
+        parts.append(motion_arbor_part)
+        parts.append(cannon_pinon_part)
+        if self.centred_second_hand:
+            parts.append(BillOfMaterials.PrintedPart("cannon_pinion_time_setter", self.get_cannon_pinion_pinion(standalone=True, for_printing=True), purpose="Duplicate pinion of the cannon pinion used to drive the minute hand and set time on clocks with a centred second hand"))
+
+        parts.append(BillOfMaterials.PrintedPart("hour_holder", self.get_hour_holder(), purpose="Holds the hour hand"))
+        return parts
+
+    def get_BOM(self):
+        instructions = """The motion works hold the minute and hour hands and gear down from once an hour to once every 12 hours.
+        
+The cannon pinion (which holds the minute hand) slots inside the hour holder
+"""
+        if self.centred_second_hand:
+            instructions+="""
+The cannon pinion slots over the motion works holder so the second hand can go through the centre of the entire motion works. The cannon pinion is then held in place with the friction clip, which is screwed into the front plate.
+"""
+        bom = BillOfMaterials("Motion Works", assembly_instructions=instructions)
+
+        bom.add_printed_parts(self.get_printed_parts())
+        bom.set_model(self.get_assembled())
+
+        return bom
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_motion_cannon_pinion.stl".format(name))

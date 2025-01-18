@@ -720,8 +720,12 @@ class Dial:
                                         printing_instructions="Combine with chapter ring for a multicolour print")
         ]
         if self.raised_detail:
-            parts.append(BillOfMaterials.PrintedPart("dial_supports", self.get_supports(), purpose="Pillars to hold dial from front of plate",
-                                        printing_instructions="May need to split into objects and relocate in slicer"))
+            # parts.append(BillOfMaterials.PrintedPart("dial_supports", self.get_supports(), purpose="Pillars to hold dial from front of plate",
+            #                             printing_instructions="May need to split into objects and relocate in slicer"))
+            for i in range(len(self.get_support_positions())):
+                parts.append(BillOfMaterials.PrintedPart(f"dial_support_{i}", self.get_supports(index=i)))
+
+
 
 
         return parts
@@ -731,6 +735,7 @@ class Dial:
         if self.raised_detail:
             instructions = "Fix pillars to front plate with screws, then glue dial onto the top of the pillars"
         bom = BillOfMaterials("Dial", instructions)
+        bom.set_model(self.get_assembled())
         #leave screws with plates as that knows what size they need to be
         bom.add_printed_parts(self.get_printed_parts())
         return bom
@@ -1441,9 +1446,12 @@ class Dial:
             detail = detail.translate((0,0,-self.detail_thick))
         return detail
 
-    def get_supports(self):
+    def get_support(self, clockwise=True):
+        return fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=clockwise, style=self.pillar_style)
+    def get_supports(self, index = -1):
         '''
         if detail is raised on top, supports must be separate
+        also can return just one support (for generating STLs) if index is provided
         '''
         supports = cq.Workplane("XY")
         screwhole_length = self.support_length
@@ -1453,8 +1461,13 @@ class Dial:
             z_offset = self.thick + (self.support_length - screwhole_length)
         support_positions = self.get_support_positions()
         for i, fixing_pos_set in enumerate(self.get_fixing_positions()):
+
+            if index > -1:
+                if not i == index:
+                    continue
+
             support_pos = support_positions[i]
-            support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
+            support = self.get_support(clockwise=support_pos[0] < 0)
             if self.raised_detail:
                 #little nib on the end
                 nib = cq.Workplane("XY").circle(self.support_slot_r - 0.1).extrude(self.nib_thick).translate((0, 0, -self.nib_thick))
@@ -1466,6 +1479,11 @@ class Dial:
             for fixing_pos in fixing_pos_set:
                 # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
                 supports = supports.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread / 2).extrude(screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
+
+            if index > -1:
+                #put back in the centre and upright
+                supports = supports.translate((-support_pos[0], -support_pos[1])).rotate((0,0,0),(1,0,0),180)
+
         # support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=clockwise, style=self.pillar_style)
         #
         # support = support.union(cq.Workplane("XY").circle(self.support_slot_r-0.1).extrude(self.detail_thick).translate((0,0,self.support_length)))
