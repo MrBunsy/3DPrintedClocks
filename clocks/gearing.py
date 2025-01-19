@@ -1971,7 +1971,7 @@ class ArborForPlate:
     #     rod_lengths = []
     #     rod_zs = []
     #     #for measuring where to put the arbour on the rod, how much empty rod should behind the back of the arbour?
-    #     beyond_back_of_arbours = []
+    #     beyond_back_of_arbors = []
     #
     #     # for i in range(self.arbour_count):
     #     i = self.plates.arbors_for_plate.index(self)
@@ -2078,7 +2078,7 @@ class ArborForPlate:
     #             raise ValueError("TODO calculate rod lengths for pendulum on front")
     #     rod_lengths.append(rod_length)
     #     rod_zs.append(rod_z)
-    #     beyond_back_of_arbours.append(plain_rod_rear_length)
+    #     beyond_back_of_arbors.append(plain_rod_rear_length)
     #     if rod_length > 0:
     #         print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
     #     if arbor.pinion is not None and arbor.pinion.lantern:

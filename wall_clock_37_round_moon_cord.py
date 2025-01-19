@@ -49,8 +49,8 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 #after a huge amount of faffing about, the problem was the bearings, not the escapement. So I've used the new auto-calculated efficient escapement for a retrofit.
 escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
-power = clock.CordWheel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle,
-                        use_key=True, diameter=45, loose_on_rod=False, ratchet_diameter=30, traditional_ratchet=True, cap_diameter=65)
+power = clock.CordBarrel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle,
+                         use_key=True, diameter=45, loose_on_rod=False, ratchet_diameter=30, traditional_ratchet=True, cap_diameter=65)
 
 
 # train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=500, use_pulley=True, chain_at_back=False, chain_wheels=2,

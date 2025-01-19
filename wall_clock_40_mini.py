@@ -43,8 +43,8 @@ lift =3
 lock=1.5
 escapement = clock.AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75)
 #downside of configuring power outside going train - need to give going train a mechanism to set power direction!
-powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4,screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
-                                loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
+powered_wheel = clock.CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gearStyle, use_key=True,
+                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
 train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 # print(powered_wheel.get_BOM(wheel_thick=6))

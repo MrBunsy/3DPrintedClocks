@@ -670,8 +670,8 @@ class Dial:
         #for a style which isn't just a ring, how big a hole for the hands to fit through?
         self.hand_hole_d = hand_hole_d
         self.detail_thick = detail_thick
-        self.nib_thick = detail_thick - LAYER_THICK
-        self.nib_hole_deep = detail_thick + LAYER_THICK
+        self.nib_thick = detail_thick
+        self.nib_hole_deep = detail_thick + LAYER_THICK*2
         #bit of a bodge, for tony the detail is in yellow so I need it thicker (my yellow is really translucent)
         self.extras_thick = extras_thick
 
@@ -714,8 +714,8 @@ class Dial:
 
     def get_printed_parts(self):
         parts = [
-            BillOfMaterials.PrintedPart("chapter_ring", self.get_dial()),
-            BillOfMaterials.PrintedPart("markings_detail", self.get_dial(),
+            BillOfMaterials.PrintedPart("chapter_ring", self.get_dial(for_printing=True)),
+            BillOfMaterials.PrintedPart("chapter_ring_detail", self.get_all_detail(for_printing=True),
                                         purpose="Markings on dial, printed in different colour to be visible",
                                         printing_instructions="Combine with chapter ring for a multicolour print")
         ]
@@ -1308,7 +1308,7 @@ class Dial:
 
         return support_positions
 
-    def get_dial(self):
+    def get_dial(self, for_printing=False):
         r = self.outside_d / 2
 
         if self.style == DialStyle.TONY_THE_CLOCK:
@@ -1370,6 +1370,9 @@ class Dial:
 
         if self.add_to_back is not None:
             dial = dial.union(self.add_to_back)
+
+        if for_printing and self.raised_detail:
+            dial = dial.rotate((0,0,0),(0,1,0),180).translate((0,0,self.thick))
 
         return dial
 
@@ -1435,7 +1438,7 @@ class Dial:
 
 
 
-    def get_all_detail(self):
+    def get_all_detail(self, for_printing=False):
         '''
         all detail printed in the same colour
         '''
@@ -1444,6 +1447,9 @@ class Dial:
             detail = detail.add(self.get_seconds_dial_detail())
         if self.raised_detail:
             detail = detail.translate((0,0,-self.detail_thick))
+
+        if for_printing and self.raised_detail:
+            detail = detail.rotate((0,0,0),(0,1,0),180).translate((0,0,self.thick))
         return detail
 
     def get_support(self, clockwise=True):

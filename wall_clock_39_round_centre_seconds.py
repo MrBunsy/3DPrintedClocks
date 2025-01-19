@@ -53,8 +53,8 @@ escapement = clock.AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, 
 #but we want to reconfigure the diameter and tooth size
 big_escapement = clock.AnchorEscapement(60, diameter=132, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=9.5, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, tooth_height_fraction=0.1,
                                   tooth_tip_angle=5/2, tooth_base_angle=4/2, force_diameter=True)
-powered_wheel = clock.CordWheel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
+powered_wheel = clock.CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
+                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
 train = clock.GoingTrain(pendulum_period=1.0, wheels=3, escapement=big_escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1,
                          runtime_hours=7.5 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=powered_wheel)
 train.calculate_ratios(min_pinion_teeth=9, loud=True, max_error=0.001, max_wheel_teeth=80)

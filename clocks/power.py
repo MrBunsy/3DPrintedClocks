@@ -2117,8 +2117,11 @@ class WindingCrank(WindingKeyBase):
         return key
 
 
-class CordWheel:
+class CordBarrel:
     '''
+
+    previous Cord Wheel, but I think barrel is more accurate and avoids confusion with the geared wheel itself
+
     This will be a replacement for the chainwheel, instead of using a chain this will be a coiled up clock cord.
     One end will be tied to the wheel and then the wheel wound up.
 
@@ -2332,10 +2335,13 @@ class CordWheel:
         instructions =f"""
 Insert the fixing nuts into the ratchet wheel, then slot the top cap over the cord barrel. Use the fixing screws through the top cap and barrel to fix the ratchet wheel onto the bottom of the barrel and hold the entire assembly together.
 
+Thread the pivot rod through the centre of the cord barrel assembly, so the end of the rod ends up flush with the front of the key (the square bit). If the cord barrel is loose on the threaded rod I recommend a small amount of superglue to keep it in place. If the rod is able to rotate too easily then the barrel will come off the rod when winding the clock.# add rod item to the power mechanism sub component itself
+
 Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https://www.animatedknots.com/gnat-hitch-knot) as it tightens itself after you tie it.
 """
         bom = BillOfMaterials("Cord barrel", assembly_instructions=instructions)
         bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screw.metric_thread} nut", quantity=4, purpose="Insert into ratchet gear to fix to bottom of cord barrel"))
         #keeping bearings with the plates as that makes more sense for assembling
         # bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))
         bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity= self.cord_length, purpose="Cord for weight"))
@@ -2357,7 +2363,7 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
 
     def get_parts_for_arbor(self, wheel_thick=0):
         '''
-        get the bits which attach to the arbor rather than the cord wheel
+        get the bits which attach to the arbor rather than the cord barrel
         '''
         parts = []
         if self.traditional_ratchet:
@@ -2368,6 +2374,17 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
             parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
             parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
         return parts
+
+    def get_instructions_for_arbor(self):
+        '''
+        get assembly instructinos for teh arbor, rathe than the cord barrel
+        the threaded rod in the cord wheel is here because only the arbor knows its length (currently)
+        '''
+        assembly_instructions = f"""Attach the click to the front of the wheel with the two click screws. 
+        
+Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position."""
+
+        return assembly_instructions
 
     def get_chain_hole_diameter(self):
         (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info()

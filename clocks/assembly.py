@@ -218,7 +218,7 @@ class Assembly:
         if self.pulley is not None:
             bom.add_subcomponent(self.pulley.get_BOM())
 
-        rod_lengths, rod_zs = self.get_arbor_rod_lengths()
+        rod_lengths, rod_zs, beyond_back_of_arbors = self.get_arbor_rod_lengths()
         arbor_assembly_instructions="""The arbors (horological term for what is basically an axle) are assembled by threading two or more parts onto a length of threaded rod.
         
 Threaded rod can be easily purchased in varying lengths, I buy it by the metre and cut it into the lengths required. I cut it with a hacksaw then use a file to clean up the ends. If you file a small chamfer around the end then it is still possible to thread nuts onto the rod.
@@ -257,8 +257,15 @@ To fix this there are modifier STLs which can be used to change the settings for
 
         #I'd like this to eventually make its way into ArborsForPlate, but at the moment we only have all the info to calculate it here
         for i, arbor in enumerate(self.plates.arbors_for_plate):
+            rod_item = None
+            if rod_lengths[i] > 0:
+                rod_item = BillOfMaterials.Item(f"M{arbor.arbor_d} threaded rod {rod_lengths[i]:.1f}mm", purpose="Pivot rod")
+
+
             arbor_bom = arbor.get_BOM()
-            arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} threaded rod {rod_lengths[i]:.1f}mm", purpose="Pivot rod"))
+
+            arbor_bom.assembly_instructions+=f"\n\nThread the pivot rod through the centre of the arbor leaving {beyond_back_of_arbors[i]:.1f}mm of plain rod behind the arbor"
+
             if i == self.going_train.powered_wheels:
                 #the minute wheel
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} half nut", quantity=2, purpose="Locked together behind clutch"))
@@ -268,11 +275,20 @@ To fix this there are modifier STLs which can be used to change the settings for
                 arbor_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} dome nut", quantity=2, purpose="Locked to nut on top of hands"))
             arbor_bom.name =f"Arbor {i} ({arbor_bom.name})"
             if i == self.going_train.powered_wheels:
-                arbor_bom.assembly_instructions += "This arbor must be firmly fixed to the rod (I recommend superglue). If the printed parts are able to rotate then this arbor will slowly come apart when setting the time."
+                arbor_bom.assembly_instructions += "\n\nThis arbor must be firmly fixed to the rod (I recommend superglue). If the printed parts are able to rotate then this arbor will slowly come apart when setting the time."
             if i == 0:
                 # arbor_bom.assembly_instructions += "Make sure the clickspring does not have a seam on the spring part - you probably need to manually set the seam somewhere on the end fixing\n\n"
-                if self.going_train.powered_wheel.type == PowerType.CORD:
-                    arbor_bom.assembly_instructions += "If the cord barrel is loose on the threaded rod I recommend a small amount of superglue to keep it in place. If the rod is able to rotate too easily then the barrel will come off the rod when winding the clock."
+                arbor_bom.assembly_instructions += self.going_train.powered_wheel.get_instructions_for_arbor()
+
+                if rod_item is not None:
+                    # add rod item to the power mechanism sub component itself
+                    # MAJOR HACK, assume first subcomponent is the power mechanism
+                    arbor_bom.subcomponents[0].add_item(rod_item)
+            else:
+                if rod_item is not None:
+                    #threaded rod length needed in this arbor
+                    arbor_bom.add_item(rod_item)
+
 
 
             all_arbors_bom.add_subcomponent(arbor_bom)
@@ -314,7 +330,7 @@ To fix this there are modifier STLs which can be used to change the settings for
         rod_lengths = []
         rod_zs = []
         #for measuring where to put the arbour on the rod, how much empty rod should behind the back of the arbour?
-        beyond_back_of_arbours = []
+        beyond_back_of_arbors = []
 
 
 
@@ -372,6 +388,7 @@ To fix this there are modifier STLs which can be used to change the settings for
                         escape_wheel_extension = arbor_for_plate.get_escape_wheel_extension_length()
                         rod_length += back_plate_thick + out_back + escape_wheel_extension
                         rod_z = - out_back - escape_wheel_extension
+                        plain_rod_rear_length = self.plates.endshake + back_plate_thick + out_back + escape_wheel_extension
 
                 else:
                     if self.dial is not None and self.dial.has_seconds_sub_dial():
@@ -433,7 +450,7 @@ To fix this there are modifier STLs which can be used to change the settings for
                     raise ValueError("TODO calculate rod lengths for pendulum on front")
             rod_lengths.append(rod_length)
             rod_zs.append(rod_z)
-            beyond_back_of_arbours.append(plain_rod_rear_length)
+            beyond_back_of_arbors.append(plain_rod_rear_length)
             if rod_length > 0:
                 print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
             if arbor.pinion is not None and arbor.pinion.lantern:
@@ -443,7 +460,7 @@ To fix this there are modifier STLs which can be used to change the settings for
                 print("Arbor {} has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i,  diameter, min_length, max_lenth))
 
 
-        return rod_lengths, rod_zs
+        return rod_lengths, rod_zs, beyond_back_of_arbors
 
     def get_pendulum_rod_lengths(self):
         '''
@@ -628,7 +645,7 @@ To fix this there are modifier STLs which can be used to change the settings for
         #TODO weight?
 
         if with_rods:
-            rod_lengths, rod_zs = self.get_arbor_rod_lengths()
+            rod_lengths, rod_zs, beyond_back_of_arbors = self.get_arbor_rod_lengths()
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
@@ -821,7 +838,7 @@ To fix this there are modifier STLs which can be used to change the settings for
         if with_rods:
             #show with diameter slightly smaller so it's clearer on the render what's rod and what's hole
             rod_colour = Colour.SILVER
-            rod_lengths, rod_zs = self.get_arbor_rod_lengths()
+            rod_lengths, rod_zs, beyond_back_of_arbors = self.get_arbor_rod_lengths()
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
