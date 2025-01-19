@@ -2322,7 +2322,7 @@ class CordWheel:
             #I think this might assume caps all the same thickness? which is true when not using a key
             print("cord wheel screw (m{}) length between".format(self.screw_thread_metric), minScrewLength + get_nut_height(self.screw_thread_metric), minScrewLength + self.thick / 2 + self.cap_thick)
 
-    def get_BOM(self, wheel_thick=-1):
+    def get_BOM(self):
         if self.use_key:
             fixing_screw_length = self.ratchet.thick + self.cap_thick + self.thick + self.top_cap_thick
         else:
@@ -2332,7 +2332,7 @@ class CordWheel:
         instructions =f"""
 Insert the fixing nuts into the ratchet wheel, then slot the top cap over the cord barrel. Use the fixing screws through the top cap and barrel to fix the ratchet wheel onto the bottom of the barrel and hold the entire assembly together.
 
-Ue the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https://www.animatedknots.com/gnat-hitch-knot) as it tightens itself after you tie it.
+Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https://www.animatedknots.com/gnat-hitch-knot) as it tightens itself after you tie it.
 """
         bom = BillOfMaterials("Cord barrel", assembly_instructions=instructions)
         bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
@@ -2340,12 +2340,13 @@ Ue the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https
         # bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))
         bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity= self.cord_length, purpose="Cord for weight"))
 
-        if wheel_thick > 0 and self.traditional_ratchet:
-            #we know how thick the wheel is so we can calculate the lenght of screws needed to hold the pawl and click
-            click_screw_length = get_nearest_machine_screw_length(wheel_thick + self.pawl_thick, self.ratchet.fixing_screws)
-            pawl_screw_length = get_nearest_machine_screw_length(wheel_thick + self.ratchet_thick, self.ratchet.fixing_screws)
-            bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
-            bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
+        #moving to the arbor as that's where these are screwed in
+        # if self.traditional_ratchet:
+        #     #we know how thick the wheel is so we can calculate the lenght of screws needed to hold the pawl and click
+        #     click_screw_length = get_nearest_machine_screw_length(wheel_thick + self.pawl_thick, self.ratchet.fixing_screws)
+        #     pawl_screw_length = get_nearest_machine_screw_length(wheel_thick + self.ratchet_thick, self.ratchet.fixing_screws)
+        #     bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
+        #     bom.add_item(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
         if not self.traditional_ratchet:
             raise NotImplementedError("TODO fixing screws for non-traditional ratchet")
         #steel tube dimensions only known in arbor for plate
@@ -2353,6 +2354,20 @@ Ue the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https
         bom.add_printed_parts(self.get_printed_parts())
 
         return bom
+
+    def get_parts_for_arbor(self, wheel_thick=0):
+        '''
+        get the bits which attach to the arbor rather than the cord wheel
+        '''
+        parts = []
+        if self.traditional_ratchet:
+
+            #we know how thick the wheel is so we can calculate the lenght of screws needed to hold the pawl and click
+            click_screw_length = get_nearest_machine_screw_length(wheel_thick + self.pawl_thick, self.ratchet.fixing_screws)
+            pawl_screw_length = get_nearest_machine_screw_length(wheel_thick + self.ratchet_thick, self.ratchet.fixing_screws)
+            parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
+            parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
+        return parts
 
     def get_chain_hole_diameter(self):
         (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info()

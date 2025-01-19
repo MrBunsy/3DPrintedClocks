@@ -2104,9 +2104,7 @@ class ArborForPlate:
         bom = self.arbor.get_BOM()
         #bearings are included in the plate subcomponent
         #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
-        if self.arbor.get_type() == ArborType.POWERED_WHEEL:
-            bom.add_subcomponent(self.arbor.powered_wheel.get_BOM(wheel_thick=self.arbor.wheel_thick))
-        elif self.arbor.get_type() == ArborType.ANCHOR:
+        if self.arbor.get_type() == ArborType.ANCHOR:
             bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
 
         bom.add_printed_parts(self.get_printed_parts())
@@ -2518,6 +2516,11 @@ class Arbor:
             trundle_length = max_length - (max_length%2)
 
             bom.add_item(BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity= self.pinion.teeth, purpose="Lantern pinion trundles"))
+
+        if self.type == ArborType.POWERED_WHEEL:
+            bom.add_subcomponent(self.powered_wheel.get_BOM())
+            bom.add_items(self.powered_wheel.get_parts_for_arbor(wheel_thick=self.wheel_thick))
+
 
         return bom
 
