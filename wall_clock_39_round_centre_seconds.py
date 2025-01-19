@@ -70,8 +70,10 @@ train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2
 train.print_info(weight_kg=2.0)
 
 motion_works = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
-                                 cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=clock.get_bearing_info(3))
+                                 cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=clock.get_bearing_info(3))#, reduced_jamming=True)
 
+# retrofit_motion_works_test = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
+#                                  cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=clock.get_bearing_info(3))#, reduced_jamming=True)
 
 pendulum = clock.Pendulum(bob_d=60, bob_thick=10)
 
@@ -84,6 +86,12 @@ dial = clock.Dial(dial_d, clock.DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile E
 plates = clock.RoundClockPlates(train, motion_works, name="Wall Clock 39#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
                                 motion_works_angle_deg=45, leg_height=0, fully_round=True, style=clock.PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, centred_second_hand=True, escapement_on_back=True)
+
+#BODGE wnat to retrofit just one gear reprinted with reduced jamming
+#this may have been unecessary - I think the friction clip was catching on the cannon pinion seam. I've filed the seam and it seems promising.
+#but I also fitted a reprinted motion arbor with reduced jamming
+#next iteration - set this true at the beginning anyway?
+motion_works.override(reduced_jamming=True)
 
 hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,

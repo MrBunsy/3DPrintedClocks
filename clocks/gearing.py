@@ -3106,6 +3106,31 @@ class MotionWorks:
         '''
         return self.get_cannon_pinion_base_thick()
 
+    def override(self, module=-1, wheel0_teeth=-1, pinion0_teeth=-1, wheel1_teeth=-1, pinion1_teeth=-1, reduced_jamming=None):
+        if module > 0:
+            self.module = module
+        if reduced_jamming is not None:
+            self.reduced_jamming=reduced_jamming
+
+        if wheel0_teeth < 0:
+            wheel0_teeth = self.pairs[0].wheel.teeth
+        if pinion0_teeth < 0:
+            pinion0_teeth = self.pairs[0].pinion.teeth
+
+        if wheel1_teeth < 0:
+            wheel1_teeth = self.pairs[1].wheel.teeth
+        if pinion1_teeth < 0:
+            pinion1_teeth = self.pairs[1].pinion.teeth
+
+        self.arbor_distance = self.module * (wheel0_teeth + pinion0_teeth) / 2
+        secondModule = 2 * self.arbor_distance / (wheel1_teeth + pinion1_teeth)
+        print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, secondModule, wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
+        self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming),
+                      WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming)]
+
+        self.friction_ring_r = self.pairs[0].pinion.get_max_radius()
+        self.friction_ring_base_r = self.friction_ring_r + 2
+
     def calculate_size(self, arbor_distance=-1):
         '''
         If no arbour distance, use module size to calculate arbour distance, and set it.
@@ -3520,6 +3545,8 @@ The cannon pinion (which holds the minute hand) slots inside the hour holder
         if self.centred_second_hand:
             instructions+="""
 The cannon pinion slots over the motion works holder so the second hand can go through the centre of the entire motion works. The cannon pinion is then held in place with the friction clip, which is screwed into the front plate.
+
+It's important that the motion works can rotate freely after the friction clip has been attached, so it may be necessary to file the seam smooth. If the clock is stopping and the motion works appear to be jammed, this is the likely cause!
 """
         bom = BillOfMaterials("Motion Works", assembly_instructions=instructions)
 
