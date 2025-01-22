@@ -81,7 +81,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 #toying with making dial wider if I reprint
 dial = clock.Dial(outside_d=192.5+10, dial_width=192.5/10 + 5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
 
-plaque = clock.Plaque(text_lines=["M25#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
+plaque = clock.Plaque(text_lines=["W25#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
 
 #anchor_distance_fudge_mm judged by eye tinkering with a modelled escapement to get it to behave like the real one
 #I think that the escape wheel is being angled downwards as the back of the arbor is pressed upwards, and it's hinging aroudn the front plate.

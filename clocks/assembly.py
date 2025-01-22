@@ -376,6 +376,7 @@ To fix this there are modifier STLs which can be used to change the settings for
                     raise ValueError("TODO calculate rod lengths for escapement on front")
                 elif self.plates.centred_second_hand:
                     #safe to assume mutually exclusive with escapement on front?
+                    #TODO this works, but is actually wrong since the new centred motion works with the tube
                     rod_length = hand_arbor_length + self.hands.second_fixing_thick + CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT
 
                     if self.plates.escapement_on_back:

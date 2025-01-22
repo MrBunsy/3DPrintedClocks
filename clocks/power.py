@@ -612,7 +612,7 @@ class BearingPulley:
         # if self.rodMetricSize > 0:
         #     shape = shape.faces(">Z").workplane().circle((self.rodMetricSize+LOOSE_FIT_ON_ROD)/2).cutThruAll()
 
-        pulley = Gear.cutStyle(pulley, outerRadius=self.diameter / 2 - self.cord_diameter / 2, innerRadius=holeD / 2, style=self.style)
+        pulley = Gear.cutStyle(pulley, outer_radius=self.diameter / 2 - self.cord_diameter / 2, inner_radius=holeD / 2, style=self.style)
 
 
 
@@ -1268,7 +1268,7 @@ class SpringBarrel:
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
 
-        barrel = Gear.cutStyle(barrel, outerRadius=self.radius_for_style, innerRadius=self.key_bearing.outer_d / 2 + self.wall_thick / 3, style=self.style,
+        barrel = Gear.cutStyle(barrel, outer_radius=self.radius_for_style, inner_radius=self.key_bearing.outer_d / 2 + self.wall_thick / 3, style=self.style,
                                clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
@@ -1294,7 +1294,7 @@ class SpringBarrel:
         # lid = lid.cut()
         lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
 
-        lid = Gear.cutStyle(lid, outerRadius=self.radius_for_style, innerRadius=self.key_bearing.outer_d/2 + self.wall_thick/2, style=self.style,
+        lid = Gear.cutStyle(lid, outer_radius=self.radius_for_style, inner_radius=self.key_bearing.outer_d / 2 + self.wall_thick / 2, style=self.style,
                             clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         if for_printing:
@@ -1438,9 +1438,7 @@ class SpringBarrel:
 
 class WeightPoweredWheel:
     '''
-    Python doesn't have interfaces, but this is the interface for the powered wheel classes (for weights! I forgot entirely about springs when I wrote this)
-
-    TODO probably should refactor so this is a base class and then can re-use code between the different weight powered wheels.
+    Base class with shared code for the weight power mechanisms like chain and cord
     '''
 
     @staticmethod
@@ -1449,6 +1447,27 @@ class WeightPoweredWheel:
         Return smallest sensible diameter, so the chain wheel ratio calculation can have something to work with
         '''
         return 30
+
+    def __init__(self, diameter=30, arbor_d=3, loose_on_rod=True, power_clockwise=True, use_key=False, ratchet_thick=5, ratchet_diameter=30):
+        #diameter/circumference for the path the rope or chain takes. For the cord, this is the minimum diameter for the first layer of coils
+        self.diameter=diameter
+        self.circumference=math.pi * self.diameter
+        self.ratchet = Ratchet()
+        self.type = PowerType.NOT_CONFIGURED
+        #if false, the powered wheel is fixed to the rod and the gear wheel is loose.
+        self.loose_on_rod = loose_on_rod
+        self.arbor_d = arbor_d
+        self.power_clockwise = power_clockwise
+        self.use_key = use_key
+        self.ratchet_thick = ratchet_thick
+        self.ratchet_diameter = ratchet_diameter
+        self.pawl_thick = ratchet_thick - 0.6
+        #TODO deprecated this and let it become the only type of ratchet
+        self.traditional_ratchet = True
+        self.pawl_screwed_from_front = False
+        #TODO deprecate PowerType.is_weight and just use this instead on the base classes
+        self.weight_powered = True
+        self.configure_ratchet()
 
     def get_model(self):
         '''
@@ -1462,40 +1481,65 @@ class WeightPoweredWheel:
         '''
         return 30
 
-    def __init__(self, diameter=30, arbor_d=3, loose_on_rod=True):
-        #diameter/circumference for the path the rope or chain takes. For the cord, this is the minimum diameter for the first layer of coils
-        self.diameter=diameter
-        self.circumference=math.pi * self.diameter
-        self.ratchet = Ratchet()
-        self.type = PowerType.NOT_CONFIGURED
-        #if false, the powered wheel is fixed to the rod and the gear wheel is loose.
-        self.loose_on_rod = loose_on_rod
-        self.arbor_d = arbor_d
+    def get_parts_for_arbor(self, wheel_thick=0):
+        '''
+        get the bits which attach to the arbor rather than the cord barrel
+        '''
+        raise NotImplementedError("TODO in child class")
+
+    def get_instructions_for_arbor(self):
+        '''
+        get assembly instructinos for teh arbor, rathe than the cord barrel
+        the threaded rod in the cord wheel is here because only the arbor knows its length (currently)
+        '''
+        raise NotImplementedError("TODO in child class")
+
+    def configure_direction(self, power_clockwise=True):
+        self.power_clockwise = power_clockwise
+        # regenerate the ratchet
+        self.configure_ratchet()
+
+    def configure_ratchet(self):
+        if self.ratchet_thick <=0:
+            raise ValueError("Cannot make cord wheel without a ratchet")
+        pawl_angle = 0
+        if self.power_clockwise:
+            click_angle = math.pi/2
+        else:
+            click_angle = -math.pi/2
+        ratchet_diameter = self.ratchet_diameter
+        if ratchet_diameter < 0:
+            ratchet_diameter = self.diameter+6.5
+        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=self.ratchet_thick, blocks_clockwise=self.power_clockwise,
+                                          pawl_angle=pawl_angle, click_fixing_angle=click_angle, pawl_and_click_thick=self.pawl_thick,
+                                          pawl_screwed_from_front=self.pawl_screwed_from_front)
 
     def get_chain_hole_diameter(self):
         '''
         Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
         '''
+        raise NotImplementedError("TODO in child class")
 
     def is_clockwise(self):
         '''
         return true if this wheel is powered to rotate clockwise
         '''
+        return self.power_clockwise
 
     def get_assembled(self):
         '''
         return 3D model of fully assembled wheel with ratchet (for the model, not printing)
         '''
+        raise NotImplementedError("TODO in child class")
 
     def get_height(self):
         '''
         returns total thickness of the assembled wheel, with ratchet. If it needs a washer, this is included in the height
         '''
+        raise NotImplementedError("TODO in child class")
 
-    def output_STLs(self, name="clock", path="../out"):
-        '''
-        save STL files to disc for all the objects required to print this wheel
-        '''
+    def get_BOM(self):
+        raise NotImplementedError("TODO in child class")
 
     def get_chain_positions_from_top(self):
         '''
@@ -1509,6 +1553,7 @@ class WeightPoweredWheel:
 
 
         '''
+        raise NotImplementedError("TODO in child class")
 
     def get_screw_positions(self):
         '''
@@ -1516,23 +1561,26 @@ class WeightPoweredWheel:
         Only really relevant for ones in two halves, like chain and rope
         Used when we're not using a ratchet so the screwholes can line up with holes in the wheel
         '''
+        raise NotImplementedError("TODO in child class")
 
     def get_turns(self, cord_usage=0):
         '''
         Given a chain drop, return number of rotations of this wheel.
         this is trivial for rope or chain, but not so much for the cord
         '''
+        raise NotImplementedError("TODO in child class")
 
     def get_run_time(self, minuteRatio=1, cordLength=2000):
         '''
         print information about runtime based on the info provided
         '''
+        raise NotImplementedError("TODO in child class")
 
-    def print_screw_length(self):
+    def get_encasing_radius(self):
         '''
-        print to console information on screws required to assemble
+        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
         '''
-
+        return self.ratchet.get_max_radius()
     def get_rod_radius(self):
         '''
         get space behind* the powered wheel space so the gear train can fit the minute wheel
@@ -2117,7 +2165,7 @@ class WindingCrank(WindingKeyBase):
         return key
 
 
-class CordBarrel:
+class CordBarrel(WeightPoweredWheel):
     '''
 
     previous Cord Wheel, but I think barrel is more accurate and avoids confusion with the geared wheel itself
@@ -2153,15 +2201,16 @@ class CordBarrel:
         for now assume that is this is loose, it's just bare PETG on threaded rod, but if the wheel is loose it's a steel tube on the threaded rod. Also to consider are smaller diameter of bearings
 
         '''
+        super().__init__(diameter=diameter, arbor_d=rod_metric_size, loose_on_rod=loose_on_rod, power_clockwise=power_clockwise, use_key=use_key,ratchet_thick=ratchet_thick, ratchet_diameter=ratchet_diameter)
         self.type = PowerType.CORD
         #if not loose_on_rod then we use a steel tube to slot over the threaded rod on teh wheel, leaving the cord barrel glued to the rod
         #however, to save on parts and faff, make the tube optional and allow plastic to just slide over the rod
         self.use_steel_tube =use_steel_tube
-        self.diameter=diameter
+        # self.diameter=diameter
         #thickness of one segment (the bit where the cord coils up)
         self.thick=thick
         #if true, a key can be used to wind this cord wheel (if false, there are two cord winding segements)
-        self.use_key=use_key
+        # self.use_key=use_key
         #1mm felt too flimsy
         #2mm was fine, but I'm trying to reduce depth as much as possible
         #note - if the clock is leaning forwards even slightly, then the cord can put a lot of weight on the top cap, bending it and forcing it against the front plate
@@ -2197,7 +2246,7 @@ class CordBarrel:
         else:
             self.cap_diameter = cap_diameter
         self.rod_metric_size = rod_metric_size
-        self.arbor_d = rod_metric_size
+        # self.arbor_d = rod_metric_size
         self.holeD = rod_metric_size
         #refers to the cord barrel, not the wheel
         self.loose_on_rod = loose_on_rod
@@ -2259,56 +2308,56 @@ class CordBarrel:
 
 
 
-    def configure_direction(self, power_clockwise=True):
-        self.power_clockwise = power_clockwise
-        #regenerate the ratchet
-        self.configure_ratchet()
+    # def configure_direction(self, power_clockwise=True):
+    #     self.power_clockwise = power_clockwise
+    #     #regenerate the ratchet
+    #     self.configure_ratchet()
 
     def configure_weight_drop(self, weight_drop_mm, pulleys=1):
         self.cord_length = weight_drop_mm * (pulleys+1)
 
-    def configure_ratchet(self):
-        if self.ratchet_thick <=0:
-            raise ValueError("Cannot make cord wheel without a ratchet")
-        if self.traditional_ratchet:
-            pawl_angle = 0
-            if self.power_clockwise:
-                click_angle = math.pi/2
-            else:
-                click_angle = -math.pi/2
-            ratchet_diameter = self.ratchet_diameter
-            if ratchet_diameter < 0:
-                ratchet_diameter = self.diameter+6.5
-            self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=self.ratchet_thick, blocks_clockwise=self.power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle, pawl_and_click_thick=self.pawl_thick)
-        else:
-            #inner radius slightly larger than cord diameter so there's space for nuts
-            self.ratchet = Ratchet(totalD=self.cap_diameter, thick=self.ratchet_thick, blocks_clockwise=self.power_clockwise, innerRadius=self.diameter / 2 + 2)
+    # def configure_ratchet(self):
+    #     if self.ratchet_thick <=0:
+    #         raise ValueError("Cannot make cord wheel without a ratchet")
+    #     if self.traditional_ratchet:
+    #         pawl_angle = 0
+    #         if self.power_clockwise:
+    #             click_angle = math.pi/2
+    #         else:
+    #             click_angle = -math.pi/2
+    #         ratchet_diameter = self.ratchet_diameter
+    #         if ratchet_diameter < 0:
+    #             ratchet_diameter = self.diameter+6.5
+    #         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_diameter, thick=self.ratchet_thick, blocks_clockwise=self.power_clockwise, pawl_angle=pawl_angle, click_fixing_angle=click_angle, pawl_and_click_thick=self.pawl_thick)
+    #     else:
+    #         #inner radius slightly larger than cord diameter so there's space for nuts
+    #         self.ratchet = Ratchet(totalD=self.cap_diameter, thick=self.ratchet_thick, blocks_clockwise=self.power_clockwise, innerRadius=self.diameter / 2 + 2)
 
-    def get_rod_radius(self):
-        '''
-        get space behind* the powered wheel space so the gear train can fit the minute wheel
+    # def get_rod_radius(self):
+    #     '''
+    #     get space behind* the powered wheel space so the gear train can fit the minute wheel
+    #
+    #     *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
+    #     '''
+    #     # max_r = 10
+    #     # if self.loose_on_rod:
+    #     #     max_r = 12.5
+    #     # return max_r
+    #
+    #     #this is the smallest the thickened bit out the back can be
+    #     return self.arbor_d
 
-        *TODO power at rear and ordering of gears etc etc, for now assume power at hte front and minute wheel behind
-        '''
-        # max_r = 10
-        # if self.loose_on_rod:
-        #     max_r = 12.5
-        # return max_r
-
-        #this is the smallest the thickened bit out the back can be
-        return self.arbor_d
-
-    def is_clockwise(self):
-        '''
-        return true if this wheel is powered to rotate clockwise
-        '''
-        return self.power_clockwise
-
-    def get_encasing_radius(self):
-        '''
-        return the largest diameter of any part of this wheel - so other components can tell if they'll clash
-        '''
-        return self.ratchet.get_max_radius()
+    # def is_clockwise(self):
+    #     '''
+    #     return true if this wheel is powered to rotate clockwise
+    #     '''
+    #     return self.power_clockwise
+    #
+    # def get_encasing_radius(self):
+    #     '''
+    #     return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+    #     '''
+    #     return self.ratchet.get_max_radius()
 
     def get_screw_positions(self):
         return self.fixing_points
@@ -2370,6 +2419,7 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
 
             #we know how thick the wheel is so we can calculate the lenght of screws needed to hold the pawl and click
             click_screw_length = get_nearest_machine_screw_length(wheel_thick + self.pawl_thick, self.ratchet.fixing_screws)
+            #want this as long as possible so it's loose and strong
             pawl_screw_length = get_nearest_machine_screw_length(wheel_thick + self.ratchet_thick, self.ratchet.fixing_screws)
             parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
             parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
@@ -2563,7 +2613,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixing_points).circle(self.screw_thread_metric / 2).cutThruAll()
-        cap = Gear.cutStyle(cap, self.cap_diameter / 2 - self.holeD * 0.75, innerRadius=self.diameter / 2 + self.cord_thick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
+        cap = Gear.cutStyle(cap, self.cap_diameter / 2 - self.holeD * 0.75, inner_radius=self.diameter / 2 + self.cord_thick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
         return cap
 
     def get_ratchet_wheel_for_cord(self, for_printing=True):
@@ -2743,7 +2793,7 @@ class SprocketChainWheel(WeightPoweredWheel):
     def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, wall_thick=2):
         self.ratchet = ratchet
 
-class PocketChainWheel2:
+class PocketChainWheel2(WeightPoweredWheel):
     '''
     The PocketChainWheel was one of the first classes I wrote for the clocks, it's a mess and also the chain wheel doesn't cope well with heavy weights
     So this is an attempt to produce an improved pocket chain wheel and a tidier class
@@ -2759,15 +2809,14 @@ class PocketChainWheel2:
     Worth trying on a 30 hour clock if I ever make one again?
     '''
 
-    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchetOuterD=-1, ratchetOuterThick=5, wall_thick=2):
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchet_outer_d=-1, ratchet_outer_thick=5, wall_thick=2):
 
+        super().__init__(diameter=max_diameter, arbor_d=arbor_d, power_clockwise=power_clockwise, ratchet_thick=ratchet_thick, loose_on_rod=loose_on_rod)
+        #no end cap on this one to stop the pawl escaping.
+        self.pawl_screwed_from_front = True
         self.type = PowerType.CHAIN2
         # if false, the powered wheel is fixed to the rod and the gear wheel is loose.
-        self.loose_on_rod = loose_on_rod
         self.arbor_d = arbor_d
-
-        #TODO update to use better ratchet
-        self.traditional_ratchet = False
 
         self.chain = chain
         self.max_diameter = max_diameter
@@ -2811,15 +2860,21 @@ class PocketChainWheel2:
         self.wall_thick=wall_thick
         self.wheel_thick = self.pocket_wide + self.wall_thick*2
 
-        if ratchetOuterD < 0:
-            ratchetOuterD = self.diameter * 1.6 + ratchetOuterThick
-
-        if ratchet_thick > 0:
-            self.ratchet = Ratchet(totalD=ratchetOuterD, innerRadius=self.outer_radius*0.9999, thick=ratchet_thick, blocks_clockwise=power_clockwise, outer_thick=ratchetOuterThick)
-        else:
-            self.ratchet = None
-
         self.pocket_cutter_cache = None
+        self.chain_length = -1
+
+    def get_BOM(self):
+        return BillOfMaterials("Chain Pocket Wheel")
+
+    def get_parts_for_arbor(self, wheel_thick):
+        return []
+
+    def configure_weight_drop(self, weight_drop_mm, pulleys=1):
+        #we only really need to know this for the BOM
+        self.chain_length = weight_drop_mm * (pulleys+1)
+
+    def get_instructions_for_arbor(self):
+        return ""
 
     def get_pocket_cutter(self):
 
@@ -2925,9 +2980,10 @@ class PocketChainWheel2:
     def get_encasing_radius(self):
         '''
         return the largest diameter of any part of this wheel - so other components can tell if they'll clash
+        we might not have a ratchet if hygens maintaining power is being used
         '''
         if self.ratchet is not None:
-            return self.ratchet.outsideDiameter / 2
+            return self.ratchet.get_max_radius()
         else:
             return self.outer_radius
 
@@ -2936,12 +2992,6 @@ class PocketChainWheel2:
         Returns diameter of hole for the rope/chain/cord to pass through. It needs a hole to prevent winding the weight up too far
         '''
         return self.chain.width + 2
-
-    def is_clockwise(self):
-        '''
-        return true if this wheel is powered to rotate clockwise
-        '''
-        return self.power_clockwise
 
     def get_assembled(self):
         '''
@@ -2952,8 +3002,12 @@ class PocketChainWheel2:
         bottom_thick = self.wheel_thick/2
         if self.ratchet is not None:
             bottom_thick += self.ratchet.thick
-        wheel = wheel.add(top.translate((0,0,bottom_thick)))
-        return wheel
+        model = wheel.add(top.translate((0,0,bottom_thick)))
+
+        if self.traditional_ratchet:
+            model = model.add(self.ratchet.get_pawl()).add(self.ratchet.get_click())
+
+        return model
 
     def get_model(self):
         return self.get_assembled()
@@ -3543,7 +3597,7 @@ class TraditionalRatchet:
 
     '''
 
-    def __init__(self, gear_diameter, thick=5, blocks_clockwise=True, fixing_screws=None, pawl_angle=math.pi / 2, click_fixing_angle =-math.pi /2, pawl_and_click_thick=-1):
+    def __init__(self, gear_diameter, thick=5, blocks_clockwise=True, fixing_screws=None, pawl_angle=math.pi / 2, click_fixing_angle =-math.pi /2, pawl_and_click_thick=-1, pawl_screwed_from_front=False):
         self.gear_diameter = gear_diameter
         self.thick = thick
         # for the cord wheel (and probably other weight driven wheels) it's useful to have the pawl and clickspring slightly less thick so they don't get wedged under the cord wheel base
@@ -3558,11 +3612,11 @@ class TraditionalRatchet:
         self.click_fixing_angle = click_fixing_angle
 
         self.fixing_screws = fixing_screws
-
         if self.fixing_screws is None:
             self.fixing_screws = MachineScrew(3, countersunk=True)
 
-
+        #if true then the head of the screw is in front of the pawl, so on a powered wheel it can't fall off
+        self.pawl_screwed_from_front = pawl_screwed_from_front
 
         self.tooth_deep=3
         self.teeth = floor(self.gear_diameter / 2)
@@ -3717,7 +3771,11 @@ class TraditionalRatchet:
                           .radiusArc(spring_rest_bottom_end, -self.direction *1.001* self.pawl_diameter/4)
                           .lineTo(self.pawl_fixing[0], self.pawl_fixing[1])
                           .close().extrude(self.pawl_and_click_thick))
-        pawl = pawl.faces(">Z").workplane().moveTo(self.pawl_fixing[0], self.pawl_fixing[1]).circle((self.fixing_screws.metric_thread + LOOSE_FIT_ON_ROD) / 2).cutThruAll()
+        if self.pawl_screwed_from_front:
+            pawl = pawl.cut(self.fixing_screws.get_cutter(loose=True).rotate((0,0,0),(1,0,0),180).translate((self.pawl_fixing[0], self.pawl_fixing[1], self.pawl_and_click_thick)))
+        else:
+            #plain hole for pawl
+            pawl = pawl.faces(">Z").workplane().moveTo(self.pawl_fixing[0], self.pawl_fixing[1]).circle((self.fixing_screws.metric_thread + LOOSE_FIT_ON_ROD) / 2).cutThruAll()
         # return pawl
 
         return pawl.rotate((0,0,0),(0,0,1), self.rotate_by_deg)
@@ -3850,7 +3908,10 @@ class TraditionalRatchet:
         # click = click_fixing
 
         for screwpos in self.click_fixings:
-            click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pawl_and_click_thick).translate(screwpos))
+            if self.pawl_screwed_from_front:
+                click = click.cut(self.fixing_screws.get_cutter().rotate((0,0,0),(1,0,0),180).translate((screwpos[0], screwpos[1], self.pawl_and_click_thick)))
+            else:
+                click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pawl_and_click_thick).translate(screwpos))
 
         return click
 

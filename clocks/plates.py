@@ -638,7 +638,7 @@ class SimpleClockPlates:
                                                       tolerance=self.going_train.powered_wheel.tolerance, ratchetOuterD=self.bottom_pillar_r * 2, ratchetOuterThick=ratchetOuterThick)
             elif self.going_train.powered_wheel.type == PowerType.CHAIN2:
                 self.huygens_wheel = PocketChainWheel2(ratchet_thick=5, max_diameter=max_diameter, chain=self.going_train.powered_wheel.chain, loose_on_rod=True,
-                                                       ratchetOuterD=ratchetOuterD, ratchetOuterThick=ratchetOuterThick, arbor_d=self.going_train.powered_wheel.arbor_d)
+                                                       ratchet_outer_d=ratchetOuterD, ratchet_outer_thick=ratchetOuterThick, arbor_d=self.going_train.powered_wheel.arbor_d)
             elif self.going_train.powered_wheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
                 print("Huygens wheel diameter",huygens_diameter)
@@ -717,6 +717,10 @@ class SimpleClockPlates:
                                                   (self.plate_width / 4, -(self.motion_works_holder_length / 2))]
 
         self.top_of_hands_z = self.motion_works.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+
+        if self.centred_second_hand:
+            #somewhat wrong logic, needs tidying up but will work for now
+            self.top_of_hands_z +=CENTRED_SECOND_HAND_BOTTOM_FIXING_HEIGHT + 2
 
         self.dial_top_above_front_plate = False
         self.dial_fixing_positions = []
@@ -1770,6 +1774,10 @@ class SimpleClockPlates:
         # 0.25 was a bit too weak - I've seen the minute hand suddenly drop a few times on clock 29
         #0.4 is way way too strong on the new design with the shorter clip! (but is running fine on clock 29)
         #might need to make this configurable for bodge purposes
+        #okay, but was it only too strong because of the seam?
+        #no, at 0.4 the hand just doens't turn, the clock only runs because the clutch slips.
+        #trying 0.25 again
+        #clock still has 0.2 at the moment and is not currently reliable, leaving this alone
         brake_pad_offset = 0.2
         arm_thick = 2.4
 
@@ -1807,6 +1815,10 @@ class SimpleClockPlates:
 
             brake_pad = (cq.Workplane("XY").moveTo(start_inner[0], start_inner[1]).radiusArc(end_inner, -self.motion_works.friction_ring_r).lineTo(end_outer[0], end_outer[1])
                      .radiusArc(start_outer, outer_radius_arc).close().extrude(clip_thick))
+
+            #round the edges to see if it helps with the seam (even after filing it)
+            fillet_r = (outer_r - inner_r)*0.3
+            brake_pad = brake_pad.edges("|Z").fillet(fillet_r)
 
             half_arm_length = np.linalg.norm(np.subtract(arm_centre, arm_start))
 
@@ -3274,7 +3286,8 @@ class SimpleClockPlates:
 
         if (self.going_train.powered_wheel.type in [PowerType.CHAIN2, PowerType.CHAIN] and not self.escapement_on_front
                 and not self.huygens_maintaining_power and not self.pendulum_at_front and self.bottom_pillars > 1
-                and not self.going_train.chain_at_back):
+                and not self.going_train.chain_at_back) and False:
+            #TODO bring this back for round clock plates
             #add a semicircular bit under the chain wheel (like on huygens) to stop chain from being able to fall off easily
             #TODO support cord wheels and chain at back
 
@@ -3289,13 +3302,14 @@ class SimpleClockPlates:
             thick = 3
 
 
-            outer_r = powered_wheel.ratchet.outsideDiameter / 2 + self.gear_gap + thick
+            # outer_r = powered_wheel.ratchet.outsideDiameter / 2 + self.gear_gap + thick
+            outer_r = powered_wheel.get_encasing_radius() + self.gear_gap
             deep = powered_wheel.get_height()-powered_wheel.ratchet.thick/2
 
             extra_plate = cq.Workplane("XY").circle(outer_r).extrude(plate_thick)
             extra_plate = extra_plate.union(cq.Workplane("XY").circle(outer_r).circle(outer_r - thick).extrude(deep).translate((0,0,-deep)))
 
-            extra_plate = extra_plate.intersect(cq.Workplane("XY").moveTo(0,-outer_r - self.bottom_pillar_height/2).rect(outer_r*2, outer_r*2).extrude(self.plate_distance + plate_thick).translate((0, 0, -self.plate_distance)))
+            extra_plate = extra_plate.intersect(cq.Workplane("XY").moveTo(0,-outer_r - self.plate_distance/2).rect(outer_r*2, outer_r*2).extrude(self.plate_distance + plate_thick).translate((0, 0, -self.plate_distance)))
             cutter = cq.Workplane("XY")
             for holePosition in relevantChainHoles:
                 #chainholes are relative to the assumed height of the chainwheel, which includes a washer

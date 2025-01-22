@@ -46,7 +46,7 @@ clockOutDir="out"
 #faithfull chains look promising but are too large for this clock
 # new_chainwheel = PocketChainWheel2(chain=FAITHFULL_1_6MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=30, power_clockwise=False, loose_on_rod=True, arbor_d=3, fixings=2)
 
-new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchetOuterD=46, ratchetOuterThick=4.6, max_diameter=25, power_clockwise=False, loose_on_rod=True, arbor_d=3, fixings=2, wall_thick=1.5)
+new_chainwheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=5, ratchet_outer_d=46, ratchet_outer_thick=4.6, max_diameter=25, power_clockwise=False, loose_on_rod=True, arbor_d=3, fixings=2, wall_thick=1.5)
 
 new_chainwheel.ratchet.ratchetTeeth=16
 new_chainwheel.ratchet.clicks=8

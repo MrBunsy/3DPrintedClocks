@@ -47,8 +47,10 @@ class Gear:
     '''
 
     @staticmethod
-    def cutStyle(gear, outerRadius, innerRadius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1):
+    def cutStyle(gear, outer_radius, inner_radius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1, lightweight=False):
         '''
+        rim_thick: override default rim to leave around the outside of the gear. Need some for strength, but want less to make gears lighter
+        lightweight: cut out more if possible (up to each style) to make the gear lighter. Primarily for large escape wheels
         Could still do with a little more tidying up, outerRadius should be a few mm shy of the edge of teh gear to give a solid rim,
         but innerRadius should be at the edge of whatever can't be cut into
 
@@ -57,56 +59,57 @@ class Gear:
         clockwise - assume this wheel is turning clockwise from the perspective of the side with the pinion
         '''
         #TODO - why did I used to pass this through to all the cutters?
-        if innerRadius < 0:
-            innerRadius = 3
+        if inner_radius < 0:
+            inner_radius = 3
         #thought - some things (caps for cord wheel?) don't need a thick rim
         #rimThick = max(outerRadius * 0.175, 3)
         if rim_thick < 0:
-            rim_thick = max(outerRadius * 0.15, 2.5)
-        outerRadius -= rim_thick
+            rim_thick = Gear.get_thick_arm_thickness(outer_radius, inner_radius, lightweight)
+            # rim_thick = max(outer_radius * 0.15, 2.5)
+        outer_radius -= rim_thick
         # lots of old designs used a literal string "HAC"
         if style == GearStyle.ARCS or style == GearStyle.ARCS.value:
-            if innerRadius < outerRadius*0.5:
-                innerRadius=outerRadius*0.5
-            return Gear.cutHACStyle(gear, outer_r=outerRadius, inner_r=innerRadius)
+            if inner_radius < outer_radius*0.5:
+                inner_radius= outer_radius * 0.5
+            return Gear.cutHACStyle(gear, outer_r=outer_radius, inner_r=inner_radius)
         if style == GearStyle.ARCS2:
-            return Gear.cutArcsStyle(gear, outer_r=outerRadius, inner_r=innerRadius+2)
+            return Gear.cutArcsStyle(gear, outer_r=outer_radius, inner_r=inner_radius + 2)
         if style == GearStyle.CIRCLES:
-            return Gear.cut_circles_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, hollow=False)
+            return Gear.cut_circles_style(gear, outer_radius=outer_radius, inner_radius=inner_radius, hollow=False)
         if style == GearStyle.MOONS:
-            return Gear.cut_circles_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, moons=True)
+            return Gear.cut_circles_style(gear, outer_radius=outer_radius, inner_radius=inner_radius, moons=True)
         if style == GearStyle.CIRCLES_HOLLOW:
-            return Gear.cut_circles_style(gear, outer_radius=outerRadius, inner_radius=innerRadius + 2, hollow=True)
+            return Gear.cut_circles_style(gear, outer_radius=outer_radius, inner_radius=inner_radius + 2, hollow=True)
         if style == GearStyle.SIMPLE4:
-            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, arms=4)
+            return Gear.cutSimpleStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, arms=4)
         if style == GearStyle.SIMPLE5:
-            return Gear.cutSimpleStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, arms=5)
+            return Gear.cutSimpleStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, arms=5)
         if style == GearStyle.SPOKES:
-            return Gear.cutSpokesStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2)
+            return Gear.cutSpokesStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2)
         if style == GearStyle.STEAMTRAIN:
-            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2)
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2)
         if style == GearStyle.CARTWHEEL:
-            return Gear.cutSteamTrainStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius+2, withWeight=False)
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, withWeight=False)
         if style == GearStyle.FLOWER:
-            return Gear.cutFlowerStyle2(gear, outerRadius=outerRadius, innerRadius=innerRadius)
+            return Gear.cutFlowerStyle2(gear, outerRadius=outer_radius, innerRadius=inner_radius)
         if style == GearStyle.HONEYCOMB:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2, big=False)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False)
         if style == GearStyle.HONEYCOMB_CHUNKY:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outerRadius, innerRadius=innerRadius + 2, big=False, chunky=True)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
-            return Gear.cutSnowflakeStyle(gear, outerRadius= outerRadius, innerRadius = innerRadius + 2)
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius, innerRadius =inner_radius + 2)
         if style == GearStyle.CURVES:
-            return Gear.cutCurvesStyle(gear, outerRadius=outerRadius, innerRadius=max(innerRadius*1.05, innerRadius+1), clockwise=clockwise_from_pinion_side)
+            return Gear.cutCurvesStyle(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
-            return Gear.cut_diamonds_style(gear, outerRadius=outerRadius, innerRadius=max(innerRadius * 1.05, innerRadius + 1))
+            return Gear.cut_diamonds_style(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), lightweight=lightweight)
         if style == GearStyle.BENT_ARMS4:
-            return Gear.cut_configurable_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=4, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True)
+            return Gear.cut_configurable_arms_style(gear, outer_radius=outer_radius, inner_radius=inner_radius, arms=4, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True)
         if style == GearStyle.BENT_ARMS5:
-            return Gear.cut_configurable_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=5, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True, straight=False)
+            return Gear.cut_configurable_arms_style(gear, outer_radius=outer_radius, inner_radius=inner_radius, arms=5, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True, straight=False)
         if style == GearStyle.ROUNDED_ARMS5:
-            return Gear.cut_configurable_arms_style(gear, outer_radius=outerRadius, inner_radius=innerRadius, arms=5, rounded=True)
+            return Gear.cut_configurable_arms_style(gear, outer_radius=outer_radius, inner_radius=inner_radius, arms=5, rounded=True)
         return gear
 
     @staticmethod
@@ -157,19 +160,26 @@ class Gear:
         return arm_thick
 
     @staticmethod
-    def get_thick_arm_thickness(outer_radius, inner_radius):
+    def get_thick_arm_thickness(outer_radius, inner_radius, lightweight=False):
         arm_thick = max(outer_radius * 0.1, 1.8)  # 1.8 is the size of the honeycomb walls
         # print("arm_thick", arm_thick)
         if arm_thick < 3:
             return 2.7
 
+        if lightweight:
+            if arm_thick > 3.5:
+                return 3.5
+
         return arm_thick
 
     @staticmethod
-    def cut_diamonds_style(gear, outerRadius, innerRadius):
-        arm_thick = Gear.get_thick_arm_thickness(outerRadius, innerRadius)
+    def cut_diamonds_style(gear, outerRadius, innerRadius, lightweight=False):
+        arm_thick = Gear.get_thick_arm_thickness(outerRadius, innerRadius, lightweight)
         # arm_thick=2.7
         diamonds = 7
+
+        # if lightweight:
+        #     diamonds=9
 
         centre_r = (outerRadius + innerRadius)/2
 
@@ -1061,7 +1071,7 @@ class Gear:
             #     #     innerRadius = self.
             #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
             try:
-                gear = Gear.cutStyle(gear, outerRadius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, innerRadius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
+                gear = Gear.cutStyle(gear, outer_radius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, inner_radius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
             except:
                 print("Failed to cut gear style")
 
@@ -2605,7 +2615,7 @@ class Arbor:
 
 
         wheel = wheel.extrude(self.wheel_thick)
-        wheel = Gear.cutStyle(wheel, outerRadius=self.escapement.get_wheel_inner_r(), innerRadius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise)
+        wheel = Gear.cutStyle(wheel, outer_radius=self.escapement.get_wheel_inner_r(), inner_radius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise, lightweight=True)
 
         if standalone:
             return wheel
@@ -2879,8 +2889,9 @@ class Arbor:
             #rear side extension - chunky bit out the back to help provide stability on the threaded rod
             #limit to r of 1cm
             max_r = 10
-            if self.loose_on_rod:
-                max_r = 12.5
+            #this seemed excessively large
+            # if self.loose_on_rod:
+            #     max_r = 12.5
             extension_r = min(max_r, arbour_extension_max_radius)
 
 
@@ -2917,7 +2928,13 @@ class Arbor:
                 gear_wheel = gear_wheel.cut(cutter)
         if self.use_ratchet and self.powered_wheel.traditional_ratchet:
             for hole_pos in self.bolt_positions:
-                gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(for_tap_die=True).translate(hole_pos))
+                if self.powered_wheel.ratchet.pawl_screwed_from_front:
+                    #TODO fetch teh screwcutter from the ratchet?
+                    #just a hole
+                    gear_wheel = gear_wheel.cut(cq.Workplane("XY").circle(self.ratchet_screws.get_rod_cutter_r(for_tap_die=True)).extrude(self.wheel_thick).translate(hole_pos))
+                else:
+                    #countersunk hole for machine screw
+                    gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(for_tap_die=True).translate(hole_pos))
 
 
         if for_printing and not self.combine_with_powered_wheel:
@@ -3519,6 +3536,10 @@ class MotionWorks:
         parts = []
 
         cannon_pinon_part = BillOfMaterials.PrintedPart("cannon_pinion", self.get_cannon_pinion(), purpose="Holds the minute hand")
+
+        if self.centred_second_hand:
+            cannon_pinon_part.printing_instructions = "You may need to file or sand away the seam on the ring. The ring and base need to be very smooth to avoid jamming against the friction clip."
+
         parts.append(BillOfMaterials.PrintedPart("cannon_pinion_x1.015", self.get_cannon_pinion(hand_holder_radius_adjustment=1.015), purpose="1.5% larger hand fixing for some filaments which print smaller than expected"))
         parts.append(BillOfMaterials.PrintedPart("cannon_pinion_x1.025", self.get_cannon_pinion(hand_holder_radius_adjustment=1.025), purpose="2.5% larger hand fixing for some filaments which print smaller than expected"))
 
@@ -3532,7 +3553,8 @@ class MotionWorks:
         parts.append(motion_arbor_part)
         parts.append(cannon_pinon_part)
         if self.centred_second_hand:
-            parts.append(BillOfMaterials.PrintedPart("cannon_pinion_time_setter", self.get_cannon_pinion_pinion(standalone=True, for_printing=True), purpose="Duplicate pinion of the cannon pinion used to drive the minute hand and set time on clocks with a centred second hand"))
+            parts.append(BillOfMaterials.PrintedPart("cannon_pinion_time_setter", self.get_cannon_pinion_pinion(standalone=True, for_printing=True),
+                                                     purpose="Duplicate pinion of the cannon pinion used to drive the minute hand and set time on clocks with a centred second hand"))
 
         parts.append(BillOfMaterials.PrintedPart("hour_holder", self.get_hour_holder(), purpose="Holds the hour hand"))
         return parts

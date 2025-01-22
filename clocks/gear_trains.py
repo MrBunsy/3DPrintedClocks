@@ -532,7 +532,7 @@ class GoingTrain:
             # TODO check holeD?
 
         self.powered_wheel = PocketChainWheel2(ratchet_thick=ratchetThick, arbor_d=arbourD, loose_on_rod=loose_on_rod,
-                                               power_clockwise=self.powered_wheel_clockwise, chain=chain, max_diameter=self.powered_wheel_diameter, fixing_screws=fixing_screws, ratchetOuterThick=ratchetOuterThick)
+                                               power_clockwise=self.powered_wheel_clockwise, chain=chain, max_diameter=self.powered_wheel_diameter, fixing_screws=fixing_screws, ratchet_outer_thick=ratchetOuterThick)
 
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
