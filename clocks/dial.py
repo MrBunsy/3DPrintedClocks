@@ -419,6 +419,18 @@ class MoonPhaseComplication3D:
         )
         return parts
 
+    def get_printed_parts(self):
+        parts = [BillOfMaterials.PrintedPart(f"Arbor {i}", self.get_arbor_shape(i)) for i in range(len(self.train))]
+        parts.append(BillOfMaterials.PrintedPart("Moon half", self.get_moon_half(), tolerance=0.01, printing_instructions="Print one in grey and one in black, then hot glue together", quantity=2))
+        return parts
+
+    def get_BOM(self):
+        bom = BillOfMaterials("3D Moon Complication")
+        bom.set_model(self.get_assembled())
+        bom.add_printed_parts(self.get_printed_parts())
+        #TODO screw lengths - have a function whcih can return them relative to the front? then add plate thickenss in assembly
+        return bom
+
     def output_STLs(self, name="clock", path="../out", max_wide=250, max_long=210):
 
         for i in range(4):

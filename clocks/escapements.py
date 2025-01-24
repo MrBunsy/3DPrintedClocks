@@ -2269,7 +2269,8 @@ Slot the nut into the hole in the centre of the bob and insert the pendulum rod 
 """
 
     def get_BOM(self):
-        bom = BillOfMaterials("Pendulum", assembly_instructions=self.get_assembly_instructions())
+        bom = BillOfMaterials("Pendulum Bob", assembly_instructions=self.get_assembly_instructions())
+        bom.set_model(self.get_bob_assembled())
         lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))
         bom.add_item(BillOfMaterials.Item("Steel shot", purpose="Add weight to pendulum"))
@@ -2288,6 +2289,19 @@ Slot the nut into the hole in the centre of the bob and insert the pendulum rod 
         #so that will be done in Assembly
         bom.add_printed_parts(self.get_printed_parts())
         return bom
+
+    def get_bob_assembled(self, hollow=True):
+        '''
+        properly centred on 0,0,0 so it can be translated into place for a model
+        '''
+        bob = self.get_bob(hollow=hollow).rotate((0, 0, self.bob_thick / 2), (0, 1, self.bob_thick / 2), 180).translate((0,0,-self.bob_thick/2))
+
+        bob = bob.add(self.get_bob_nut().translate((0, 0, -self.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90))
+
+        if hollow:
+            bob = bob.add(self.get_bob_lid().translate((0,0,-self.bob_thick/2)))
+
+        return bob
 
     def hand_avoider_is_circle(self):
         return self.hand_avoider_height == self.hand_avoider_inner_d

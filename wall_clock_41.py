@@ -45,16 +45,17 @@ pillar_style = PillarStyle.CLASSIC
 chain = True
 
 # use this to get best lift
-escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
+# escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
+escapement = AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=1.75, diameter=77.5, force_diameter=True)
 # but we want to reconfigure the diameter and tooth size
-big_escapement = AnchorEscapement(60, diameter=132, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=9.5, style=AnchorStyle.CURVED_MATCHING_WHEEL, tooth_height_fraction=0.1,
-                                       tooth_tip_angle=5 / 2, tooth_base_angle=4 / 2, force_diameter=True, wheel_thick=2)
+# big_escapement = AnchorEscapement(60, diameter=132, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=9.5, style=AnchorStyle.CURVED_MATCHING_WHEEL, tooth_height_fraction=0.1,
+#                                        tooth_tip_angle=5 / 2, tooth_base_angle=4 / 2, force_diameter=True, wheel_thick=2)
 
 powered_wheel = PocketChainWheel2(ratchet_thick=6, chain=COUSINS_1_5MM_CHAIN, max_diameter=25)
 
 max_weight_drop = 1400
 
-train = GoingTrain(pendulum_period=1.0, wheels=3, escapement=big_escapement, max_weight_drop=max_weight_drop, use_pulley=not chain, chain_at_back=False, powered_wheels=1,
+train = GoingTrain(pendulum_period=2.0, wheels=3, escapement=escapement, max_weight_drop=max_weight_drop, use_pulley=not chain, chain_at_back=False, powered_wheels=1,
                          runtime_hours=7.5 * 24, support_second_hand=False, escape_wheel_pinion_at_front=True, powered_wheel=powered_wheel)
 train.calculate_ratios(min_pinion_teeth=9, loud=True, max_error=0.001, max_wheel_teeth=80)
 train.calculate_powered_wheel_ratios()

@@ -147,6 +147,45 @@ class MoonHolder:
             bottom_fixing_y = self.centre_y - self.height / 2 + 8
         return [(-self.plates.plate_width / 3, top_fixing_y), (self.plates.plate_width / 3, bottom_fixing_y)]
 
+    def get_BOM(self):
+        instructions = f"""The moon is held by friction between two pairs of nuts, a split washer
+"""
+        bom = BillOfMaterials("Moon Holder")
+        bom.add_printed_parts(self.get_printed_parts())
+        steel_pipe_long = 0
+        if self.moon_inside_dial:
+            base_of_pipe = self.moon_y + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT*2
+            top_of_pipe = self.get_outer_radius()
+            steel_pipe_long = top_of_pipe - base_of_pipe
+        else:
+            raise NotImplementedError("TODO calculate length of steel pipe for moon holder on top of clock")
+
+        bom.add_item(BillOfMaterials.Item(f"Steel pipe {STEEL_TUBE_DIAMETER}ODx{self.fixing_screws.metric_thread}ID {steel_pipe_long:.1f}mm",
+                                          purpose="Clamped between the spoon and the cap, to provide a way to hold the moon and the bevel gear upright"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} washer", quantity=1, purpose="Below the moon and above the split washer, to provide the friction clutch to allow setting the moon phase"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} half nut", quantity=4, purpose="Two pairs of locked together half nuts, above and below the moon."))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} half nut", quantity=4, purpose="Two pairs of locked together half nuts, above and below the moon."))
+        return bom
+
+    def get_printed_parts(self):
+        parts = self.get_moon_holder_parts()
+
+        return [
+            BillOfMaterials.PrintedPart("Spoon", parts[0], purpose="Cup around the back of the moon to make it easier to read the current phase"),
+            BillOfMaterials.PrintedPart("Cap", parts[1], purpose="Screws into the front of the spoon to hold it together with the steel pipe")
+        ]
+
+    def get_outer_radius(self):
+        '''
+        only valid for mantel and round plates
+        '''
+        if not (self.moon_inside_dial and self.plates.get_plate_shape() in [PlateShape.ROUND, PlateShape.MANTEL]):
+            raise NotImplementedError("Outer radius currently meaningless if not round or mantel plates")
+        outer_radius = self.centre_y - self.plates.hands_position[1] + self.height / 2
+        if self.plates.get_plate_shape() == PlateShape.ROUND:
+            outer_radius = self.plates.radius + self.height / 2
+        return outer_radius
+
     def get_moon_holder_parts(self, for_printing=True):
         '''
         piece screwed onto the front of the front plate with a steel tube slotted into it to take the moon on a threaded rod
@@ -176,9 +215,7 @@ class MoonHolder:
             #extend this class for each plate type maybe?
             fillet_r=self.fillet_r
             # width = moon_r*2
-            outer_radius = self.centre_y - self.plates.hands_position[1] + self.height/2
-            if self.plates.get_plate_shape() == PlateShape.ROUND:
-                outer_radius = self.plates.radius + self.height/2
+            outer_radius = self.get_outer_radius()
 
             inner_radius = outer_radius - self.height
 
@@ -866,13 +903,13 @@ class SimpleClockPlates:
         #fixing screws + nuts
         bom.add_items(self.get_fixings_for_BOM())
         if self.moon_complication is not None:
-            raise NotImplementedError("TODO BOM for moon complication")
+            bom.add_subcomponent(self.moon_complication.get_BOM())
         if self.dial is not None:
             dial_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + 10, self.dial.fixing_screws)
             bom.add_item(BillOfMaterials.Item(f"{self.dial.fixing_screws} {dial_screw_length:.0f}mm", purpose="Dial screws", quantity=len(self.dial.fixing_positions)))
 
         if self.plaque is not None:
-            bom.add_item(BillOfMaterials.Item(f"{self.plaque.screws} {self.plaque.screws.length:.0f}mm", purpose="Plaque fixing screws", quantity=len(self.plaque.get_screw_positions())))
+            bom.add_subcomponent(self.plaque.get_BOM())
 
         #decided that it makes more sense if the bearings are part of the plate subcomponent
         for arbor in self.arbors_for_plate:
@@ -4336,6 +4373,31 @@ class RoundClockPlates(SimpleClockPlates):
         self.plaque_pos = long_centre
         self.plaque_angle = long_angle
 
+    def get_diameter_for_pulley(self):
+        '''
+        for a weight driven cord movement with a pulley, the end of the cord is tied around the front clock plate, so it's slightly diagonal to the cord barrel
+        therefore the pulley needs to be slightly larger so that the cord winds evenly across the barrel
+        '''
+        if self.going_train.powered_wheel.type == PowerType.CORD and self.going_train.use_pulley:
+            #find distance between centre of cord wheel when partly wound, and the tie point. This way when winding the pulley should try and direct the cord to the
+            #centre of the barrel
+
+            cord_wheel = self.going_train.powered_wheel
+            cord_holes = cord_wheel.get_chain_positions_from_top()
+            cord_average_x = (cord_holes[0][0][0] + cord_holes[0][1][0]) / 2
+            barrel_x = self.bearing_positions[0][0] - cord_average_x
+            barrel_z = self.bearing_positions[0][2] + self.arbors_for_plate[0].total_thickness + (cord_holes[0][0][1] + cord_holes[0][1][1]) / 2
+
+            tie_point_x = self.bearing_positions[0][0] + cord_average_x
+            tie_point_z = self.plate_distance + self.get_plate_thick(back = False)/2
+
+            return distance_between_two_points((barrel_x, barrel_z), (tie_point_x, tie_point_z))
+
+
+
+        else:
+            return super().get_diameter_for_pulley()
+
     def get_plate_shape(self):
         return PlateShape.ROUND
 
@@ -5088,7 +5150,7 @@ class RoundClockPlates(SimpleClockPlates):
         rod_lengths, rod_zs = self.get_rod_lengths()
 
         for rod_length in rod_lengths:
-            fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} rod {rod_length:.1f}mm (+ top fixing nut)", purpose="Plate fixing rod"))
+            fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} rod {rod_length:.1f} (+ top fixing nut)mm ", purpose="Plate fixing rod. Length is in addition to the space of a nut and washer are fixed to one end"))
 
         fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} nut", quantity=len(rod_lengths), purpose="Plate fixing rear nut"))
         fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} washer", quantity=len(rod_lengths), purpose="Front plate fixing"))
@@ -5171,7 +5233,7 @@ The rear fixing nuts need to be pushed into the top and bottom wall standoffs, t
 
 All bearings need firmly pushing into their slots, a bench vice can help with this. Alternatively, putting a metal ruler on a table and pushing down on the plate can help seat the bearing.
 
-Depending on the filament used, I recommend you use a {self.fixing_screws.metric_thread}mm drill bit to clean out all the fixing holes in the pillars and plates. The threaded rods should be able to easily slide in and out to make assembling the clock easier. 
+I recommend you use a {self.fixing_screws.metric_thread}mm drill bit to clean out all the fixing holes in the pillars and plates. The threaded rods should be able to easily slide in and out to make assembling the clock easier. 
 
 """
         if self.split_detailed_plate:

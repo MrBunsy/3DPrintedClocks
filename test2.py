@@ -55,9 +55,9 @@ if 'show_object' not in globals():
 # show_object(pendulum.get_bob())
 
 # show_object(fancy_pillar(30, 100))
-
-show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
-
+#
+# show_object(fancy_pillar(30, 100, style=PillarStyle.CLASSIC))
+#
 
 # show_object(get_stroke_arc((50,0), (-50,0), 150, wide=10, thick=5 , style=StrokeStyle.ROUND, fill_in=True))
 
@@ -79,3 +79,7 @@ if False:
     # export_STL(pendulum_holder.get_pendulum_holder(), "test_pendulum_holder", path="out/")
 
 # cone = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=15, radius2=0,height=15,pnt=(0,0,15), dir=(0,0,-1)))
+
+pendulum = Pendulum()
+
+show_object(pendulum.get_bob_assembled())

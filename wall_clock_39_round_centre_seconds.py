@@ -110,7 +110,7 @@ hands = clock.Hands(style=clock.HandStyle.FANCY_WATCH, minute_fixing="circle", m
 
 if not chain:
 
-    pulley = clock.LightweightPulley(diameter=train.powered_wheel.diameter+powered_wheel.cord_thick*2, rope_diameter=2, use_steel_rod=False)
+    pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 else:
     pulley = None
 # show_object(plates.get_cannon_pinion_friction_clip(for_printing=False))

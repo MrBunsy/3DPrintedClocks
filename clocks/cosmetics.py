@@ -426,6 +426,22 @@ class Plaque:
 
         return text
 
+    def get_assembled(self):
+        return self.get_plaque().add(self.get_text())
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Plaque", assembly_instructions="Screw to the back of the back plate")
+        bom.set_model(self.get_assembled())
+        bom.add_printed_parts(self.get_printed_parts())
+        bom.add_item(BillOfMaterials.Item(f"{self.screws} {self.screws.length:.0f}mm", purpose="Plaque fixing screws", quantity=len(self.get_screw_positions())))
+        return bom
+
+    def get_printed_parts(self):
+        return [
+            BillOfMaterials.PrintedPart("base", self.get_plaque(), printing_instructions="Print with text as multicolour print"),
+            BillOfMaterials.PrintedPart("text", self.get_text(), printing_instructions="Print with base as multicolour print")
+        ]
+
     def output_STLs(self, name="clock", path="../out"):
         export_STL(self.get_plaque(), "plaque_base", clock_name=name, path=path)
         export_STL(self.get_text(), "plaque_text", clock_name=name, path=path)

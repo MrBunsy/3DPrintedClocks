@@ -343,10 +343,11 @@ class LightweightPulley:
     TODO deliberately match up design with screw lengths
     '''
 
-    def __init__(self, diameter,rope_diameter=4, screws = None, use_steel_rod=True):
+    def __init__(self, diameter,rope_diameter=4, screws = None, use_steel_rod=True, style=None):
         self.diameter=diameter
         self.rope_diameter=rope_diameter
         self.screws = screws
+        self.style = style
 
         if self.screws is None:
             self.screws = MachineScrew(3, countersunk=True)
@@ -400,6 +401,7 @@ class LightweightPulley:
 
         bom.add_item(BillOfMaterials.Item("Cuckoo hook 1mm thick"))
         bom.add_item(BillOfMaterials.Item(f"{self.screws} {screw_length:.0f}mm", quantity=2, purpose="Fixing screws"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.screws.metric_thread} nyloc nut", quantity=2, purpose="Fixing nuts"))
         bom.add_item(BillOfMaterials.Item(f"M{self.screws.metric_thread} washer",quantity= 2, purpose="Padding washers"))
 
         if self.use_steel_rod:
@@ -429,6 +431,8 @@ class LightweightPulley:
         wheel = wheel_outline.sweep(circle)
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d/2).extrude(self.wheel_thick))
+
+        wheel = Gear.cutStyle(wheel, outer_radius= self.diameter/2 - self.rope_diameter/2, inner_radius=self.hole_d, style=self.style, rim_thick=2)
 
         return wheel
 
@@ -1469,6 +1473,12 @@ class WeightPoweredWheel:
         self.weight_powered = True
         self.configure_ratchet()
 
+    def get_average_diameter(self):
+        '''
+        for the cord wheel the diameter can vary, hence "average", for most other types its consistent
+        '''
+        return self.diameter
+
     def get_model(self):
         '''
         get an assembled model that can be combined with the arbor for previews
@@ -2442,6 +2452,14 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         #assume that the cord is going to squish a bit, so don't need to make this too excessive
         return self.cord_thick * layers
 
+    def get_average_diameter(self):
+        '''
+        for the cord wheel the diameter can vary, hence "average", for most other types its consistent
+        '''
+        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info(cordLength=self.cord_length)
+
+        return 2*(self.diameter / 2 + self.cord_thick * layers * 0.4)
+
     def get_chain_positions_from_top(self):
         '''
         Returns list of lists.  Each list is up to two coordinates. Only one coordinate if a round hole is needed
@@ -2455,10 +2473,8 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
         '''
 
-        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info(cordLength=self.cord_length)
-
         #not in the centre of hte layers, assuming that the cord will be fairly squashed, so offset slightly towards the wheel
-        chainX = (self.diameter / 2 + self.cord_thick * layers * 0.4)
+        chainX = self.get_average_diameter()/2
 
         if self.use_key:
             #one hole only
