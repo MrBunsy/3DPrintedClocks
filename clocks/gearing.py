@@ -64,7 +64,7 @@ class Gear:
         #thought - some things (caps for cord wheel?) don't need a thick rim
         #rimThick = max(outerRadius * 0.175, 3)
         if rim_thick < 0:
-            rim_thick = Gear.get_thick_arm_thickness(outer_radius, inner_radius, lightweight)
+            rim_thick = Gear.get_rim_thickness(outer_radius, inner_radius, lightweight)
             # rim_thick = max(outer_radius * 0.15, 2.5)
         outer_radius -= rim_thick
         # lots of old designs used a literal string "HAC"
@@ -171,6 +171,19 @@ class Gear:
                 return 3.5
 
         return arm_thick
+
+    @staticmethod
+    def get_rim_thickness(outer_radius, inner_radius, lightweight=False):
+        rim_thick = max(outer_radius * 0.15, 1.8)  # 1.8 is the size of the honeycomb walls
+        # print("arm_thick", arm_thick)
+        if rim_thick < 3:
+            return 2.7
+
+        if lightweight:
+            if rim_thick > 3.5:
+                return 3.5
+
+        return rim_thick
 
     @staticmethod
     def cut_diamonds_style(gear, outerRadius, innerRadius, lightweight=False):
@@ -2116,10 +2129,13 @@ class ArborForPlate:
         #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
         if self.arbor.get_type() == ArborType.ANCHOR:
             bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
+            if self.arbor.escapement_split:
+                bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the flat part of the anchor and the bearing in the clock plate to prevent anything rubbing."))
 
         bom.add_printed_parts(self.get_printed_parts())
-
-        bom.set_model(self.get_assembled())
+        model = self.get_assembled()
+        bom.add_model(model)
+        bom.add_model(model, svg_preview_options = BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
         bom.assembly_instructions = self.get_assembly_instructions()
 
         return bom
@@ -2204,6 +2220,8 @@ class ArborForPlate:
             if not shape.endswith("_modifier"):
                 if shape == "wheel":
                     parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape], modifier_objects=pinion_modifiers))
+                elif shape == "anchor":
+                    parts.append(BillOfMaterials.PrintedPart(shape, shapes[shape], tolerance=0.01))
                 else:
                     instructions=""
                     if "click" in shape:
@@ -2524,12 +2542,22 @@ class Arbor:
             max_length = self.pinion_thick + self.pinion_extension + (self.end_cap_thick - self.get_lantern_trundle_offset()) + (self.wheel_thick - self.get_lantern_trundle_offset())
             print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
             trundle_length = max_length - (max_length%2)
+            trundle_item = BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity=self.pinion.teeth, purpose="Lantern pinion trundles")
+            bom.assembly_instructions+=f"""This arbor has a lantern pinion, which means it uses steel rods ({trundle_item.name} x {trundle_item.quantity}) instead of plastic leaves (teeth).
+            
+Three parts must be slotted together with the steel rods between them: 
+ - The wheel 
+ - The pinion fixing (hex rod)
+ - The pinion cap 
+ 
+Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit. 
+"""
 
-            bom.add_item(BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity= self.pinion.teeth, purpose="Lantern pinion trundles"))
+            bom.add_item(trundle_item)
 
         if self.type == ArborType.POWERED_WHEEL:
             bom.add_subcomponent(self.powered_wheel.get_BOM())
-            bom.add_items(self.powered_wheel.get_parts_for_arbor(wheel_thick=self.wheel_thick))
+            bom.combine(self.powered_wheel.get_BOM_for_combining_with_arbor(wheel_thick=self.wheel_thick))
 
 
         return bom
@@ -3573,7 +3601,7 @@ It's important that the motion works can rotate freely after the friction clip h
         bom = BillOfMaterials("Motion Works", assembly_instructions=instructions)
 
         bom.add_printed_parts(self.get_printed_parts())
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
 
         return bom
 

@@ -408,7 +408,7 @@ class LightweightPulley:
             bom.add_item(BillOfMaterials.Item(f"Steel tube {STEEL_TUBE_DIAMETER}x{self.screws.metric_thread} {self.wheel_thick:.1f}mm", purpose="Tube insert for pulley wheel"))
 
         bom.add_printed_parts(self.get_printed_parts())
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
         return bom
 
     def get_wheel(self):
@@ -1427,6 +1427,35 @@ class SpringBarrel:
 
         return gear
 
+    def get_BOM(self):
+        return None
+        # instructions="""I recommend using a mainspring winder to put the mainspring in the barrel. It's possible by hand, but with a risk of harming yourself or the spring."""
+
+
+    def get_printed_parts(self):
+        return [
+            # BillOfMaterials.PrintedPart("spring_barrel", self.get_barrel())
+        ]
+
+    def get_BOM_for_combining_with_arbor(self, wheel_thick=-1):
+        instructions = """I recommend using a mainspring winder to put the mainspring in the barrel. It's possible by hand, but with a risk of harming yourself or the spring.
+Screw the lid onto the barrel after putting the bearings, mainspring, and arbor into the barrel
+"""
+        bom = BillOfMaterials("Spring Barrel", assembly_instructions=instructions)
+
+        bom.add_printed_part(BillOfMaterials.PrintedPart("lid", self.get_lid()))
+        bom.add_item(BillOfMaterials.Item(f"{self.lid_fixing_screws} {self.lid_fixing_screws.length}mm", quantity=self.lid_fixing_screws_count))
+
+        return bom
+
+    def get_parts_for_arbor(self, wheel_thick=-1):
+        '''
+        The only part that's not combined with ArborForPlate is the lid
+        TODO lid screws?
+        '''
+        return []
+
+
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path,"{}_spring_barrel.stl".format(name))
         print("Outputting ", out)
@@ -1491,19 +1520,6 @@ class WeightPoweredWheel:
         '''
         return 30
 
-    def get_parts_for_arbor(self, wheel_thick=0):
-        '''
-        get the bits which attach to the arbor rather than the cord barrel
-        '''
-        raise NotImplementedError("TODO in child class")
-
-    def get_instructions_for_arbor(self):
-        '''
-        get assembly instructinos for teh arbor, rathe than the cord barrel
-        the threaded rod in the cord wheel is here because only the arbor knows its length (currently)
-        '''
-        raise NotImplementedError("TODO in child class")
-
     def configure_direction(self, power_clockwise=True):
         self.power_clockwise = power_clockwise
         # regenerate the ratchet
@@ -1549,7 +1565,17 @@ class WeightPoweredWheel:
         raise NotImplementedError("TODO in child class")
 
     def get_BOM(self):
-        raise NotImplementedError("TODO in child class")
+        '''
+        return a BOM (or None) that will be added as a subcomponent to the arbor
+        '''
+        return None
+
+    def get_BOM_for_combining_with_arbor(self, wheel_thick=-1):
+        '''
+         return a BOM (or None) that will have all its bits added to the parent BOM - useful for the parts only the power mechanism knows about but need to be included
+        inthe arbor
+        '''
+        return None
 
     def get_chain_positions_from_top(self):
         '''
@@ -1995,7 +2021,7 @@ class WindingKey(WindingKeyBase):
         bom.add_item(BillOfMaterials.Item(f"M{self.screw.metric_thread} half nut", quantity=2, purpose="Handle fixing nuts"))
 
         bom.add_printed_parts(self.get_printed_parts())
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
         return bom
 
     def get_let_down_adapter(self):
@@ -2120,7 +2146,7 @@ class WindingCrank(WindingKeyBase):
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} nyloc nut", purpose="Knob fixing nut"))
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} washer", purpose="Knob fixing washer"))
         bom.add_printed_parts(self.get_printed_parts())
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
         return bom
 
     def get_handle_z_length(self):
@@ -2420,7 +2446,7 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
 
         return bom
 
-    def get_parts_for_arbor(self, wheel_thick=0):
+    def get_BOM_for_combining_with_arbor(self, wheel_thick=0):
         '''
         get the bits which attach to the arbor rather than the cord barrel
         '''
@@ -2433,18 +2459,15 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
             pawl_screw_length = get_nearest_machine_screw_length(wheel_thick + self.ratchet_thick, self.ratchet.fixing_screws)
             parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {click_screw_length}mm", 2, object=self.ratchet.fixing_screws, purpose="Click screw"))
             parts.append(BillOfMaterials.Item(f"{self.ratchet.fixing_screws} {pawl_screw_length}mm", object=self.ratchet.fixing_screws, purpose="Pawl screw"))
-        return parts
 
-    def get_instructions_for_arbor(self):
-        '''
-        get assembly instructinos for teh arbor, rathe than the cord barrel
-        the threaded rod in the cord wheel is here because only the arbor knows its length (currently)
-        '''
         assembly_instructions = f"""Attach the click to the front of the wheel with the two click screws. 
-        
-Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position."""
 
-        return assembly_instructions
+        Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position."""
+
+        bom = BillOfMaterials("Ratchet bits for arbor", assembly_instructions=assembly_instructions)
+        bom.add_items(parts)
+        return bom
+
 
     def get_chain_hole_diameter(self):
         (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info()
@@ -2888,9 +2911,6 @@ class PocketChainWheel2(WeightPoweredWheel):
     def configure_weight_drop(self, weight_drop_mm, pulleys=1):
         #we only really need to know this for the BOM
         self.chain_length = weight_drop_mm * (pulleys+1)
-
-    def get_instructions_for_arbor(self):
-        return ""
 
     def get_pocket_cutter(self):
 

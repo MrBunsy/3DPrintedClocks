@@ -1660,7 +1660,7 @@ class Hands:
     def get_BOM(self):
         bom = BillOfMaterials("Hands", assembly_instructions="Most hands are multicolour prints with multiple STLs per hand")
         #could split this further into different hands as subcomponents, but I don't think there's any actual advantage other than pretty previews
-        bom.set_model(self.get_assembled(include_seconds=self.include_seconds_hand))
+        bom.add_model(self.get_assembled(include_seconds=self.include_seconds_hand))
 
         bom.add_printed_parts(self.get_printed_parts())
 

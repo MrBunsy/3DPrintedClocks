@@ -174,6 +174,9 @@ def getSVG(shape, opts=None):
         "strokeColor": (0, 0, 0),  # RGB 0-255
         "hiddenColor": (160, 160, 160),  # RGB 0-255
         "showHidden": True,
+        #for sideways views, ensure we can rotate the image how we'd expect. must be orthogonal to projectionDir
+        "xDirection": None,
+        "yDirection": None,
     }
 
     if opts:
@@ -197,7 +200,16 @@ def getSVG(shape, opts=None):
     hlr = HLRBRep_Algo()
     hlr.Add(shape.wrapped)
 
-    projector = HLRAlgo_Projector(gp_Ax2(gp_Pnt(), gp_Dir(*projectionDir)))
+    ax2 = gp_Ax2(gp_Pnt(), gp_Dir(*projectionDir))
+    if d["xDirection"] is not None:
+        xDir = tuple(d["xDirection"])
+        ax2.SetXDirection(gp_Dir(*xDir))
+
+    if d["yDirection"] is not None:
+        yDir = tuple(d["yDirection"])
+        ax2.SetYDirection(gp_Dir(*yDir))
+
+    projector = HLRAlgo_Projector(ax2)
 
     hlr.Projector(projector)
     hlr.Update()
@@ -314,6 +326,7 @@ def exportSVG(shape, fileName: str = None, opts=None):
 
     luke TODO: support multicolour, should be able to tweak toCompound to support a colour per shape, or accept a list of shapes
     """
+    print(f"Exporting {fileName}")
     # print(type(shape))
     if isinstance(shape, Workplane):
         shape = toCompound(shape)

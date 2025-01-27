@@ -431,7 +431,7 @@ class Plaque:
 
     def get_BOM(self):
         bom = BillOfMaterials("Plaque", assembly_instructions="Screw to the back of the back plate")
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
         bom.add_printed_parts(self.get_printed_parts())
         bom.add_item(BillOfMaterials.Item(f"{self.screws} {self.screws.length:.0f}mm", purpose="Plaque fixing screws", quantity=len(self.get_screw_positions())))
         return bom

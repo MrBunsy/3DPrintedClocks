@@ -148,9 +148,12 @@ class MoonHolder:
         return [(-self.plates.plate_width / 3, top_fixing_y), (self.plates.plate_width / 3, bottom_fixing_y)]
 
     def get_BOM(self):
-        instructions = f"""The moon is held by friction between two pairs of nuts, a split washer
+        instructions = f"""The moon is held by friction between two pairs of nuts, a split washer and a normal washer.
+The split washer should be slightly squashed, providing enough friction that the clock can turn the moon, but not so much friction that the moon can't be adjusted by hand.
+
+The moon on its threaded rod slots through a steel tube.
 """
-        bom = BillOfMaterials("Moon Holder")
+        bom = BillOfMaterials("Moon Holder", assembly_instructions=instructions)
         bom.add_printed_parts(self.get_printed_parts())
         steel_pipe_long = 0
         if self.moon_inside_dial:
@@ -943,7 +946,7 @@ class SimpleClockPlates:
             bom.add_item(BillOfMaterials.Item(f"{self.motion_works_screws} {screw_length:.0f}mm", quantity=2, purpose="Motion works friction clip fixing screws"))
 
         bom.add_printed_parts(self.get_printable_parts())
-        bom.set_model(self.get_assembled(one_peice=True))
+        bom.add_model(self.get_assembled(one_peice=True))
 
         return bom
 

@@ -426,7 +426,7 @@ class MoonPhaseComplication3D:
 
     def get_BOM(self):
         bom = BillOfMaterials("3D Moon Complication")
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
         bom.add_printed_parts(self.get_printed_parts())
         #TODO screw lengths - have a function whcih can return them relative to the front? then add plate thickenss in assembly
         return bom
@@ -743,11 +743,11 @@ class Dial:
         return parts
 
     def get_BOM(self):
-        instructions = None
+        instructions = ""
         if self.raised_detail:
             instructions = "Fix pillars to front plate with screws, then glue dial onto the top of the pillars"
         bom = BillOfMaterials("Dial", instructions)
-        bom.set_model(self.get_assembled())
+        bom.add_model(self.get_assembled())
         #leave screws with plates as that knows what size they need to be
         bom.add_printed_parts(self.get_printed_parts())
         return bom

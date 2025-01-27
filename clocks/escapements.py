@@ -580,9 +580,10 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         # cylinder around the rod
         cylinder = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(thick)
 
-        if self.anchor_centre_distance > self.bottom_arm_r + hole_d/2 + 1:
-            #cut out anything from that cylinder that might go inside the anchor (if there's enough material available for the hole - not true for small tooth spans)
-            cylinder = cylinder.cut(cq.Workplane("XY").circle(self.bottom_arm_r).extrude(thick))
+        if self.style == AnchorStyle.CURVED_MATCHING_WHEEL:
+            if self.anchor_centre_distance > self.bottom_arm_r + hole_d/2 + 1:
+                #cut out anything from that cylinder that might go inside the anchor (if there's enough material available for the hole - not true for small tooth spans)
+                cylinder = cylinder.cut(cq.Workplane("XY").circle(self.bottom_arm_r).extrude(thick))
 
         anchor = anchor.union(cylinder)
         
@@ -2270,7 +2271,7 @@ Slot the nut into the hole in the centre of the bob and insert the pendulum rod 
 
     def get_BOM(self):
         bom = BillOfMaterials("Pendulum Bob", assembly_instructions=self.get_assembly_instructions())
-        bom.set_model(self.get_bob_assembled())
+        bom.add_model(self.get_bob_assembled())
         lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))
         bom.add_item(BillOfMaterials.Item("Steel shot", purpose="Add weight to pendulum"))
