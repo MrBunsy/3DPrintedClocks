@@ -326,7 +326,7 @@ def exportSVG(shape, fileName: str = None, opts=None):
 
     luke TODO: support multicolour, should be able to tweak toCompound to support a colour per shape, or accept a list of shapes
     """
-    print(f"Exporting {fileName}")
+    print(f"Exporting SVG {fileName}")
     # print(type(shape))
     if isinstance(shape, Workplane):
         shape = toCompound(shape)

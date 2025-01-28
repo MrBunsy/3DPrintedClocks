@@ -288,15 +288,7 @@ To fix this there are modifier STLs which can be used to change the settings for
 
             if i == self.going_train.powered_wheels:
                 #the minute wheel
-                #TODO I think these instructions might be better somewhere else
-                clutch_instructions ="""The clutch mechanism means that it's possible to set the time manually with a small amount of effort to overcome the friction.
-
-Once the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
-
- - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
- - Use two spanners to lock these nuts against each other so they cannot come loose
- - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwhiched between two flat washers.
-"""
+                clutch_instructions ="""The clutch mechanism means that it's possible to set the time manually with a small amount of effort to overcome the friction. The instructions on how to assemble this are later, but these are the parts you will need to do so."""
                 clutch_bom = BillOfMaterials("Clutch for hands", clutch_instructions)
                 #TODO should these parts be with the hands and motion works instead?
                 clutch_bom.add_item(BillOfMaterials.Item(f"M{arbor.arbor_d} half nut", quantity=2, purpose="Locked together behind clutch"))
@@ -340,6 +332,13 @@ Once the arbors are fully assembled and the plates fixed together, you can assem
         bom.add_model(self.get_clock(with_pendulum=with_pendulum), svg_preview_options={"width":675, "height":675})
 
         bom.add_subcomponent(self.motion_works.get_BOM())
+
+        '''Once the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
+
+         - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
+         - Use two spanners to lock these nuts against each other so they cannot come loose
+         - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwiched between two flat washers.
+         '''
 
         return bom
 

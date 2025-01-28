@@ -1356,7 +1356,7 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
         print("Not exporting {} as object is None".format(object_name))
         return
     out = os.path.join(path, "{}_{}.stl".format(clock_name, object_name))
-    print("Exporting ", out)
+    print(f"Exporting STL {out}")
     exporters.export(object, out, tolerance=tolerance, angularTolerance=tolerance)
 
 

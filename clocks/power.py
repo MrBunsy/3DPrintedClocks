@@ -409,6 +409,7 @@ class LightweightPulley:
 
         bom.add_printed_parts(self.get_printed_parts())
         bom.add_model(self.get_assembled())
+        bom.add_model(self.get_assembled(), svg_preview_options=BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
         return bom
 
     def get_wheel(self):
@@ -2332,11 +2333,11 @@ class CordBarrel(WeightPoweredWheel):
         self.cord_thick=cord_thick
 
         #distance to keep the springs of the clickwheel from the cap, so they don't snag
-        self.click_wheel_standoff_height=LAYER_THICK
+        self.click_wheel_standoff_height= 0.6
 
         self.ratchet_thick=ratchet_thick
         #so that the cord barrel base isn't rubbing up against the click and pawl (and they can move freely)
-        self.pawl_thick = ratchet_thick - 0.6
+        self.pawl_thick = ratchet_thick - self.click_wheel_standoff_height
         self.ratchet_diameter = ratchet_diameter
         self.traditional_ratchet=traditional_ratchet
         self.power_clockwise = power_clockwise
@@ -2425,6 +2426,9 @@ Thread the pivot rod through the centre of the cord barrel assembly, so the end 
 Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https://www.animatedknots.com/gnat-hitch-knot) as it tightens itself after you tie it.
 """
         bom = BillOfMaterials("Cord barrel", assembly_instructions=instructions)
+        model = self.get_assembled()
+        bom.add_model(model)
+        bom.add_model(model, svg_preview_options=BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
         bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screw.metric_thread} nut", quantity=4, purpose="Insert into ratchet gear to fix to bottom of cord barrel"))
         #keeping bearings with the plates as that makes more sense for assembling
@@ -2462,7 +2466,7 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
 
         assembly_instructions = f"""Attach the click to the front of the wheel with the two click screws. 
 
-        Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position."""
+Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position."""
 
         bom = BillOfMaterials("Ratchet bits for arbor", assembly_instructions=assembly_instructions)
         bom.add_items(parts)
@@ -2757,8 +2761,8 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
         '''
         model = self.get_ratchet_wheel_for_cord(for_printing=False)
 
-        if self.traditional_ratchet:
-            model = model.add(self.ratchet.get_pawl()).add(self.ratchet.get_click())
+        # if self.traditional_ratchet and not just_barrel:
+        #     model = model.add(self.ratchet.get_pawl()).add(self.ratchet.get_click())
 
         if self.use_key:
             model = model.add(self.get_segment(False).translate((0, 0, self.ratchet.thick + self.click_wheel_standoff_height)))

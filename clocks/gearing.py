@@ -1867,7 +1867,7 @@ class ArborForPlate:
 
         return shapes
 
-    def get_assembled(self):
+    def get_assembled(self, with_power=True):
         '''
         Get a model that is relative to the back of the back plate of the clock and already in position (so you should just be able to add it straight to the model)
 
@@ -1928,10 +1928,13 @@ class ArborForPlate:
         elif self.type == ArborType.POWERED_WHEEL:
 
             if "ratchet" in shapes:
-                # already in the right place
+                # OLD ratchet type already in the right place
                 assembly = assembly.add(shapes["ratchet"])
+            for shape in ["ratchet_pawl", "ratchet_click"]:
+                if shape in shapes:
+                    assembly = assembly.add(shapes[shape].translate((0, 0, self.arbor.wheel_thick)))
 
-            if not self.arbor.combine_with_powered_wheel:
+            if not self.arbor.combine_with_powered_wheel and with_power:
                 assembly = assembly.add(self.arbor.powered_wheel.get_model().translate((0, 0, self.arbor.wheel_thick)))
 
             wheel = shapes["wheel"]
@@ -2133,10 +2136,10 @@ class ArborForPlate:
                 bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the flat part of the anchor and the bearing in the clock plate to prevent anything rubbing."))
 
         bom.add_printed_parts(self.get_printed_parts())
-        model = self.get_assembled()
+        model = self.get_assembled(with_power=False)
         bom.add_model(model)
         bom.add_model(model, svg_preview_options = BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
-        bom.assembly_instructions = self.get_assembly_instructions()
+        bom.assembly_instructions += self.get_assembly_instructions()
 
         return bom
 
@@ -2271,14 +2274,6 @@ class ArborForPlate:
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbour_extension_max_radius=self.arbour_extension_max_radius)
             shapes["wheel"] = wheel
             #rear side extended full endshake so we could go plain bushing if needed
-
-
-
-
-
-
-
-
         if self.need_separate_arbor_extension(front=False):
             shapes['arbour_extension_rear'] = self.get_arbour_extension(front=False)
         if self.need_separate_arbor_extension(front=True):
@@ -2543,6 +2538,10 @@ class Arbor:
             print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
             trundle_length = max_length - (max_length%2)
             trundle_item = BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity=self.pinion.teeth, purpose="Lantern pinion trundles")
+
+            wheel_pos = "rear" if self.pinion_at_front else "front"
+            pinion_pos = "front" if self.pinion_at_front else "rear"
+
             bom.assembly_instructions+=f"""This arbor has a lantern pinion, which means it uses steel rods ({trundle_item.name} x {trundle_item.quantity}) instead of plastic leaves (teeth).
             
 Three parts must be slotted together with the steel rods between them: 
@@ -2550,7 +2549,9 @@ Three parts must be slotted together with the steel rods between them:
  - The pinion fixing (hex rod)
  - The pinion cap 
  
-Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit. 
+Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit.
+
+To keep this assembly together, use a small amount of superglue between the wheel and {wheel_pos} extension, and pinion cap and {pinion_pos} extension after everything has been threaded onto the rod.
 """
 
             bom.add_item(trundle_item)
@@ -2868,11 +2869,11 @@ Make sure the pinion cap is rotated so that the rods are parallel with the arbor
         return ratchet_wheel
 
     def print_screw_length(self):
-        if self.get_extra_ratchet() is not None:
-            length = self.wheel_thick + self.ratchet.thick
-            if not self.ratchet_screws.countersunk:
-                length -= self.ratchet_screws.get_head_height()
-            print("Ratchet needs {} screws of length {}mm".format(self.ratchet_screws.get_string(), length))
+
+        length = self.wheel_thick + self.ratchet.thick
+        if not self.ratchet_screws.countersunk:
+            length -= self.ratchet_screws.get_head_height()
+        print("Ratchet needs {} screws of length {}mm".format(self.ratchet_screws.get_string(), length))
 
     def get_powered_wheel(self, for_printing=True, rear_side_extension=0, arbour_extension_max_radius=0, cut_style_in_outer_section=True):
         '''
