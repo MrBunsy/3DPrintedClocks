@@ -409,7 +409,7 @@ class LightweightPulley:
 
         bom.add_printed_parts(self.get_printed_parts())
         bom.add_model(self.get_assembled())
-        bom.add_model(self.get_assembled(), svg_preview_options=BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
+        bom.add_model(self.get_assembled(), svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
         return bom
 
     def get_wheel(self):
@@ -2428,7 +2428,7 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
         bom = BillOfMaterials("Cord barrel", assembly_instructions=instructions)
         model = self.get_assembled()
         bom.add_model(model)
-        bom.add_model(model, svg_preview_options=BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
+        bom.add_model(model, svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
         bom.add_item(BillOfMaterials.Item( f"{self.fixing_screw} {fixing_screw_length:.0f}mm", quantity=self.fixing_screws, object=self.fixing_screw, purpose="Cord barrel fixing"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screw.metric_thread} nut", quantity=4, purpose="Insert into ratchet gear to fix to bottom of cord barrel"))
         #keeping bearings with the plates as that makes more sense for assembling

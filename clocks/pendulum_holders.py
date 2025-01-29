@@ -132,7 +132,20 @@ class ColletFixingPendulumWithBeatSetting:
     def get_BOM(self):
         adjusting_screw_length = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws)
         fixing_screw_length = get_nearest_machine_screw_length(self.pendulum_holder_thick, self.fixing_screws)
-        bom = BillOfMaterials("Pendulum Holder")
+        instructions = """This mechanism both holds the top of the pendulum and allows setting the beat of the pendulum by adjusting a thumb nut (see the Setting up a Pendulum Clock document for more info on setting the beat). It can be a little fiddly to assemble.
+
+First use the fixing screw to hold the two parts together. It needs to be relatively tight, so that you can twist the two parts, but they are not loose.
+
+Then, push the nut into the side of the pendulum holder (inside one of the round arms). Then screw the beat adjusting screw in (from the ouside of the same round arm), screw it in all the way and tighten it a little bit to pull the nut firmly into the hole. Be careful not to over tighten or you can easily crack the plastic. Once the nut is firmly in the hole, unscrew this screw so the hole in the centre of the pendulum holder is free.
+
+Then you need to thread a crinkle washer and the thumb nut onto the screw. This takes a bit of patience and pair of tweezers. My techique is to have the screw poking into the hole just enough to slot the crinkle washer over the end, then push the thumb nut in next to it, hold it central and finish screwing the screw through the nut.
+
+Then screw the screw in all the way - again not over tightening. Adjusting the thumb nut should now adjust the relative angle of the two printed parts.
+
+Finally, in the collet there is a hole for a nut on the inside of the square hole. Using a pair of tweezers hold the half nut in the hole (I find it easy to wedge the tweezers in the hole), then screw the pan head screw in from the outside fully, so it pulls the nut firmly into its hole. Finally unscrew the screw so there is no obstruction in the hole. This screw is used to firmly hold this mechanism on the anchor arbor, so it can't slip and doesn't have any slop when the pendulum is swinging. 
+ 
+"""
+        bom = BillOfMaterials("Pendulum Holder", instructions)
         bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {adjusting_screw_length:.0f}mm", object=self.fixing_screws, purpose="Beat adjusting screw"))
         bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", object=self.fixing_screws, purpose="Fixing screw"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws, purpose="Beat setter"))
@@ -143,6 +156,10 @@ class ColletFixingPendulumWithBeatSetting:
         bom.add_item(BillOfMaterials.Item(f"M{self.collet_screws.metric_thread} half nut", purpose="Fix collet to anchor"))
 
         bom.add_printed_parts(self.get_printed_parts())
+        model = self.get_assembled()
+        bom.add_model(model)
+        bom.add_model(model, svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
+        bom.add_model(model, svg_preview_options=BillOfMaterials.SVG_OPTS_BACK_PROJECTION)
 
         return bom
 
@@ -292,6 +309,13 @@ class ColletFixingPendulumWithBeatSetting:
         assembly = assembly.add(self.get_pendulum_holder(for_printing=False))
 
         return assembly
+
+    # def get_exploded_diagram(self):
+    #     diagram = self.get_collet(for_printing=False)
+    #
+    #
+    #
+    #     return diagram
 
 
 class SuspensionSpringPendulumBits:

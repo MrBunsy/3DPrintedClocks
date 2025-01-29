@@ -946,7 +946,9 @@ class SimpleClockPlates:
             bom.add_item(BillOfMaterials.Item(f"{self.motion_works_screws} {screw_length:.0f}mm", quantity=2, purpose="Motion works friction clip fixing screws"))
 
         bom.add_printed_parts(self.get_printable_parts())
-        bom.add_model(self.get_assembled(one_peice=True))
+        model = self.get_assembled(one_peice=True)
+        bom.add_model(model)
+        bom.add_model(model, BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
 
         return bom
 
@@ -5232,15 +5234,17 @@ class RoundClockPlates(SimpleClockPlates):
         bom.assembly_instructions = f"""
 The plate fixing rods should be cut to length such that there is a dome nut firmly on one end, and the length after the dome nut and a washer is ({rod_length:.1f}mm).
 
+I recommend you use a {self.fixing_screws.metric_thread}mm drill bit to clean out all the fixing holes in the pillars and plates. The threaded rods should be able to easily slide in and out to make assembling the clock easier.
+
 The rear fixing nuts need to be pushed into the top and bottom wall standoffs, they don't need to be in fully as they'll be pulled in tightly when doing up the dome nuts later.
 
 All bearings need firmly pushing into their slots, a bench vice can help with this. Alternatively, putting a metal ruler on a table and pushing down on the plate can help seat the bearing.
 
-I recommend you use a {self.fixing_screws.metric_thread}mm drill bit to clean out all the fixing holes in the pillars and plates. The threaded rods should be able to easily slide in and out to make assembling the clock easier. 
+ 
 
 """
         if self.split_detailed_plate:
-            bom.assembly_instructions+=f"\n\nThe front plate is split into two parts to make it easier to print. The front of the front plate needs to be placed in the right position for now, and as things are fixed to the front place it will firmly fixed in place. "
+            bom.assembly_instructions+=f"\n\nThe front plate is split into two parts to make it easier to print. The front of the front plate is just in place and as things are fixed to the front place it will firmly fixed in place."
         bom.assembly_instructions+="\n\nThe motion works fixing screw needs to be screwed into the front plate from its back. The two motion works backstop nuts can be screwed onto it from the front, but don't worry about exact positioning just yet. These will be locked against each other later to prevent part of the motion works being able to drop out of alignment"
 
         if self.plaque is not None:

@@ -2267,6 +2267,8 @@ Once the bob is full, screw the lid onto the back with the two fixing screws.
 Insert the nyloc nut into the bottom of the bob nut. If you insert it threaded side first it will be easier to screw the nut onto the threaded rod later.
 
 Slot the nut into the hole in the centre of the bob and insert the pendulum rod through the top of the bob and thread the nut onto the rod.
+
+At the top of the threaded pendulum rod first thread a nyloc nut, then thread the half nut. Use two spanners (or pliers) to lock these two nuts together. These nuts need to be very firmly locked together so they won't rotate when you adjust the rate of the pendulum with the 3D printed nut in the centre of the bob.
 """
 
     def get_BOM(self):

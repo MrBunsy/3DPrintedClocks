@@ -1867,8 +1867,9 @@ class ArborForPlate:
 
         return shapes
 
-    def get_assembled(self, with_power=True):
+    def get_assembled(self, with_extras=True):
         '''
+        with_extras - if true include: power mechanism (if detached from wheel), pendulum hanger
         Get a model that is relative to the back of the back plate of the clock and already in position (so you should just be able to add it straight to the model)
 
         This is slowly refactoring the complex logic from the Arbour class to here. the ultimate aim is for the arbour class to be unaware of the plates
@@ -1899,7 +1900,7 @@ class ArborForPlate:
             # if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR and self.escapement_on_front and not self.pendulum_at_front:
             #     collet = shapes["collet"]
             #     assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
-            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD]:
+            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD] and with_extras:
                 pendulum_z = -self.pendulum_sticks_out
 
                 if self.pendulum_at_front:
@@ -1934,7 +1935,7 @@ class ArborForPlate:
                 if shape in shapes:
                     assembly = assembly.add(shapes[shape].translate((0, 0, self.arbor.wheel_thick)))
 
-            if not self.arbor.combine_with_powered_wheel and with_power:
+            if not self.arbor.combine_with_powered_wheel and with_extras:
                 assembly = assembly.add(self.arbor.powered_wheel.get_model().translate((0, 0, self.arbor.wheel_thick)))
 
             wheel = shapes["wheel"]
@@ -2136,9 +2137,9 @@ class ArborForPlate:
                 bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the flat part of the anchor and the bearing in the clock plate to prevent anything rubbing."))
 
         bom.add_printed_parts(self.get_printed_parts())
-        model = self.get_assembled(with_power=False)
+        model = self.get_assembled(with_extras=False)
         bom.add_model(model)
-        bom.add_model(model, svg_preview_options = BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
+        bom.add_model(model, svg_preview_options = BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
         bom.assembly_instructions += self.get_assembly_instructions()
 
         return bom

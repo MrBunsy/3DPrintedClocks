@@ -1403,7 +1403,8 @@ class BillOfMaterials:
     PRINTABLES_PATH = "STL"
     IMAGES_PATH = "images"
 
-    SIDE_PROJECTION_SVG_OPTS = {"projectionDir": (-1, 0, 0), "xDirection": (0,0,1)}
+    SVG_OPTS_SIDE_PROJECTION = {"projectionDir": (-1, 0, 0), "xDirection": (0, 0, 1)}
+    SVG_OPTS_BACK_PROJECTION = {"projectionDir": (0, 0, -1)}
 
     class Item:
         def __init__(self,  name, quantity=1, object=None, purpose=""):#, printed=False, printing_instructions="", tolerance=0.1):
@@ -1679,7 +1680,7 @@ class BillOfMaterials:
             parts_strings = [f"{list_spacing}- {consolidated_items[item]} x {item}" for item in consolidated_items]
             if len(parts_strings) > 0:
                 parts = "\n".join(parts_strings)
-                instructions+= f"""{heading}# Full Parts List
+                instructions+= f"""{heading}# Full (non-printed) Parts List
 {parts}
 """
         else:

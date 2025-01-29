@@ -272,7 +272,7 @@ To fix this there are modifier STLs which can be used to change the settings for
             all_arbors_assembled = all_arbors_assembled.add(arbor.get_assembled())
 
         all_arbors_bom.add_model(all_arbors_assembled)
-        all_arbors_bom.add_model(all_arbors_assembled, svg_preview_options=BillOfMaterials.SIDE_PROJECTION_SVG_OPTS)
+        all_arbors_bom.add_model(all_arbors_assembled, svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
 
         #I'd like this to eventually make its way into ArborsForPlate, but at the moment we only have all the info to calculate it here
         for i, arbor in enumerate(self.plates.arbors_for_plate):

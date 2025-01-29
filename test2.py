@@ -80,6 +80,10 @@ if False:
 
 # cone = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=15, radius2=0,height=15,pnt=(0,0,15), dir=(0,0,-1)))
 
-pendulum = Pendulum()
+# pendulum = Pendulum()
+#
+# show_object(pendulum.get_bob_assembled())
 
-show_object(pendulum.get_bob_assembled())
+holder = ColletFixingPendulumWithBeatSetting(6)
+
+show_object(holder.get_assembled())
