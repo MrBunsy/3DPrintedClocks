@@ -3592,7 +3592,7 @@ class MotionWorks:
     def get_BOM(self):
         instructions = """The motion works hold the minute and hour hands and gear down from once an hour to once every 12 hours.
         
-The cannon pinion (which holds the minute hand) slots inside the hour holder
+The cannon pinion (which holds the minute hand) slots inside the hour holder.
 """
         if self.centred_second_hand:
             instructions+="""
@@ -3600,6 +3600,9 @@ The cannon pinion slots over the motion works holder so the second hand can go t
 
 It's important that the motion works can rotate freely after the friction clip has been attached, so it may be necessary to file the seam smooth. If the clock is stopping and the motion works appear to be jammed, this is the likely cause!
 """
+
+        # instructions+="\n\n The motion works won't be added to the clock until it has been nearly fully assembled."
+
         bom = BillOfMaterials("Motion Works", assembly_instructions=instructions)
 
         bom.add_printed_parts(self.get_printed_parts())

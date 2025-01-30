@@ -397,7 +397,12 @@ class LightweightPulley:
 
     def get_BOM(self):
         screw_length = self.get_total_thickness()
-        bom = BillOfMaterials("Lightweight pulley")
+
+        instructions="""Push the two nyloc nuts into their slots in the back of the back holder.
+        
+"""
+
+        bom = BillOfMaterials("Lightweight pulley", instructions)
 
         bom.add_item(BillOfMaterials.Item("Cuckoo hook 1mm thick"))
         bom.add_item(BillOfMaterials.Item(f"{self.screws} {screw_length:.0f}mm", quantity=2, purpose="Fixing screws"))
@@ -2424,8 +2429,11 @@ Insert the fixing nuts into the ratchet wheel, then slot the top cap over the co
 Thread the pivot rod through the centre of the cord barrel assembly, so the end of the rod ends up flush with the front of the key (the square bit). If the cord barrel is loose on the threaded rod I recommend a small amount of superglue to keep it in place. If the rod is able to rotate too easily then the barrel will come off the rod when winding the clock.# add rod item to the power mechanism sub component itself
 
 Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](https://www.animatedknots.com/gnat-hitch-knot) as it tightens itself after you tie it.
+
+![Example cord barrel](./cord_barrel.jpg \"Example cord barrel\")
 """
         bom = BillOfMaterials("Cord barrel", assembly_instructions=instructions)
+        bom.add_image("cord_barrel.jpg")
         model = self.get_assembled()
         bom.add_model(model)
         bom.add_model(model, svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
@@ -2466,9 +2474,13 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
 
         assembly_instructions = f"""Attach the click to the front of the wheel with the two click screws. 
 
-Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position."""
+Screw the pawl screw into the wheel by itself, the pawl will sit loose on this screw and isn't held in until the clock is fully assembled and the cord barrel is in position.
+
+![Example cord wheel](./cord_wheel.jpg \"Example cord wheel\")
+"""
 
         bom = BillOfMaterials("Ratchet bits for arbor", assembly_instructions=assembly_instructions)
+        bom.add_image("cord_wheel.jpg")
         bom.add_items(parts)
         return bom
 

@@ -29,11 +29,13 @@ from clocks import *
 Inspired by the round moon clock (wall 32) and the recent success at retrofitting a better centred seconds hand to clocks 12 and 28.
 
 This is an attempt to make a round wall clock with centred second hand. Idea is at first glance it looks like a boring quartz clock,
-and only looking again do you realise it's a 3D printed mechanical clock
+and only looking again do you realise it's a 3D printed mechanical clock (ended up with a longer pendulum so it's fairly obviously not)
 
-Spring barrel and powered wheel ratios from wall clock 32, but might take going train from mantel clock 29 (a previous centre seconds which has proven reliable)
+with the smaller escape wheel and usual span of anchor this seems to work.
 
-TODO re-arrange gear train so that the second to last wheel is in the centre. Might need to move the spring barrel from the bottom?
+TODO for future: change arrangement of top pillars so you can view the new wider anchor more easily
+also consider something to auto-calcualte size of escape wheel so the anchor is exactly in the radius of the round clock plates
+
 '''
 outputSTL = False
 
