@@ -71,8 +71,6 @@ train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, 
                 powered_wheel_pinion_thick_multiplier=1.5, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters, escapement_split=True)
 train.print_info(weight_kg=6)
-train.get_arbour_with_conventional_naming(0).print_screw_length()
-
 
 motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True)
 motionWorks.calculate_size(arbor_distance=30)

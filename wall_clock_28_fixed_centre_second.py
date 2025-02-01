@@ -75,7 +75,6 @@ train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thic
                 powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, override_powered_wheel_distance=44.5, powered_wheel_module_sizes=[1.1725786449236986])
 train.print_info(weight_kg=3)
 print("powered wheel distance: {}".format(train.arbors[0].distance_to_next_arbor))
-train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 
 #extra height so that any future dial matches up with the dial height currently printed from the old (wrong) calculations,

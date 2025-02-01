@@ -291,6 +291,7 @@ To fix this there are modifier STLs which can be used to change the settings for
         all_arbors_bom.add_model(all_arbors_assembled, svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
 
         #I'd like this to eventually make its way into ArborsForPlate, but at the moment we only have all the info to calculate it here
+        # I considered providing rod length to the BOM creation, but then we also need to provide rod Z and I'm not sure it's worth it
         for i, arbor in enumerate(self.plates.arbors_for_plate):
             rod_item = None
             if rod_lengths[i] > 0:
@@ -308,12 +309,21 @@ To fix this there are modifier STLs which can be used to change the settings for
             if i == 0:
                 if rod_item is not None:
                     # add rod item to the power mechanism sub component itself
-                    # MAJOR HACK, assume first subcomponent is the power mechanism
-                    arbor_bom.subcomponents[0].add_item(rod_item)
+                    # MAJOR HACK, assume first subcomponent is the power mechanism and assume side on model is second in list
+                    power_mechanism_bom = arbor_bom.subcomponents[0]
+                    power_mechanism_bom.add_item(rod_item)
+                    #putting model in place it would be if in fully assembled model
+                    power_mechanism_bom.assembled_models[-1].object = (power_mechanism_bom.assembled_models[-1].object.translate(self.plates.bearing_positions[i]).
+                                                                       translate((0,0,self.plates.back_plate_thick + self.plates.endshake/2 + arbor.arbor.wheel_thick)).add(cq.Workplane("XY").circle(arbor.arbor_d/2).extrude(rod_lengths[i]).
+                                                                                                                    translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))))
+
             else:
                 if rod_item is not None:
                     #threaded rod length needed in this arbor
                     arbor_bom.add_item(rod_item)
+                    # z = rod_zs[i] - (self.plates.bearing_positions[i][2])
+                    arbor_bom.assembled_models[-1].object = arbor_bom.assembled_models[-1].object.add(cq.Workplane("XY").circle(arbor.arbor_d / 2).extrude(rod_lengths[i])
+                                                                                                      .translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i])))
 
 
 

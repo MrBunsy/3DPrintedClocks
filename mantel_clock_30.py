@@ -88,8 +88,6 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=3 + 2)
-# train.print_info(weight_kg=1.5)
-train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
 motionWorks = clock.MotionWorks(extra_height=0, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, bearing=clock.get_bearing_info(3))#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)

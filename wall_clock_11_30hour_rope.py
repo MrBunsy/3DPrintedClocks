@@ -68,7 +68,6 @@ pendulumSticksOut=8+15
 #module size of 0.85 looks printable without stringing!
 train.gen_gears(module_size=0.85, module_reduction=moduleReduction, thick=2, thickness_reduction=0.9, powered_wheel_thick=2, pinion_thick_multiplier=3, powered_wheel_pinion_thick_multiplier=3, style=gearStyle, ratchet_screws=clock.MachineScrew(2, countersunk=True))
 
-train.get_arbour_with_conventional_naming(0).print_screw_length()
 motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle)
 
 

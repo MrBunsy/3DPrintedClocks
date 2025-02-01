@@ -64,11 +64,9 @@ powered_modules=[WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter
 train.gen_gears(module_sizes=[1, 0.95, 0.95], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulum_fixing, lanterns=[0],
                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=True)
-# train.print_info(weight_kg=3)
-# train.print_info(weight_kg=2.5)
-# train.print_info(weight_kg=1)
+
 train.print_info(weight_kg=2)
-train.get_arbour_with_conventional_naming(0).print_screw_length()
+
 dial_d=160
 dial_width = dial_d*0.1
 moon_radius=10

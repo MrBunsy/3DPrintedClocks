@@ -669,12 +669,6 @@ class GoingTrain:
         print("runtime: {:.1f}hours using {:.1f}m of cord/chain for a weight drop of {}. Chain wheel multiplier: {:.1f} ({})".format(runtime_hours, self.get_cord_usage() / 1000, self.max_weight_drop, power_ratio, power_wheel_ratios))
         print("With a weight of {}kg, this results in an average power usage of {:.1f}uW".format(weight_kg, power_uW))
 
-        if len(self.arbors) > 0:
-            self.get_arbour_with_conventional_naming(0).print_screw_length()
-            self.get_arbour_with_conventional_naming(0).powered_wheel.print_screw_length()
-        else:
-            print("Generate gears to get screw information")
-
         if self.powered_wheel.type == PowerType.CORD:
             # because there are potentially multiple layers of cord on a cordwheel, power lever can vary enough for the clock to be viable when wound and not halfway through its run time!
             # seen this on clock 10!

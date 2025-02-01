@@ -100,8 +100,6 @@ train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thic
                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
 
 
-train.get_arbour_with_conventional_naming(0).print_screw_length()
-
 plates = RollingBallClockPlates(train, name="Congreve 32")
 
 

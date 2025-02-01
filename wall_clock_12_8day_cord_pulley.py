@@ -108,7 +108,6 @@ Ratchet needs M2 (CS) screws of length 8mm
 cord wheel screw (m3) length between 20.6 22.6
 Cordwheel power varies from 42.2μW to 47.8μW
 '''
-train.get_arbour_with_conventional_naming(0).print_screw_length()
 
 cordwheel = train.get_arbour_with_conventional_naming(0)
 
