@@ -240,7 +240,7 @@ class Assembly:
         """
 
         bom = BillOfMaterials(self.name, assembly_instructions)
-        bom.add_subcomponent(self.plates.get_BOM())
+
 
         pendulum_bom = self.pendulum.get_BOM()
         pendulum_rod_info = self.get_pendulum_rod_lengths()
@@ -351,12 +351,25 @@ To fix this there are modifier STLs which can be used to change the settings for
 
 
 
-        '''Once the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
-
-         - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
-         - Use two spanners to lock these nuts against each other so they cannot come loose
-         - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwiched between two flat washers.
+        '''
          '''
+
+        bom.add_subcomponent(self.plates.get_BOM())
+
+        final_assembly_instructions=f"""
+
+
+
+Once the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
+
+ - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
+ - Use two spanners to lock these nuts against each other so they cannot come loose
+ - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwiched between two flat washers.
+
+"""
+        final_assembly_bom = BillOfMaterials("Final Assembly", final_assembly_instructions)
+
+        bom.add_subcomponent(final_assembly_bom)
 
         return bom
 

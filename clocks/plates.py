@@ -950,6 +950,9 @@ class SimpleClockPlates:
         bom.add_model(model)
         bom.add_model(model, BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
 
+        if len(self.get_screwhole_positions()) > 1:
+            bom.add_model(self.get_drill_template())
+
         return bom
 
     def get_moon_holder_info(self):

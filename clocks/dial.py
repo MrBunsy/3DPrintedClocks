@@ -745,7 +745,7 @@ class Dial:
     def get_BOM(self):
         instructions = ""
         if self.raised_detail:
-            instructions = "Fix pillars to front plate with screws, then glue dial onto the top of the pillars"
+            instructions = "Fix pillars to front plate with screws, then glue dial onto the top of the pillars. Hot glue and superglue both work for this, hot glue is more forgiving."
         bom = BillOfMaterials("Dial", instructions)
         bom.add_model(self.get_assembled())
         #leave screws with plates as that knows what size they need to be

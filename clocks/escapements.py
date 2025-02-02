@@ -2256,8 +2256,11 @@ class Pendulum:
         #TODO use this properly, just for BOM at the moment
         self.bob_lid_screws = MachineScrew(self.threaded_rod_m, countersunk=False)
 
-    def get_assembly_instructions(self):
-        return f"""
+
+    def get_BOM(self):
+
+        instructions = f"""![Bob example](./bob.jpg \"Bob example\")
+
 Check that the pendulum rod can freely move through the centre of the bob, and if it can't use a {self.threaded_rod_m}mm drill bit to clean up the hole.
         
 The pendulum bob needs to be relatively heavy so I use steel shot to fill the hollow bob. Anything relatively cheap and dense should work fine so long as it can be poured inside easily. I use a funnel to help.
@@ -2269,10 +2272,13 @@ Insert the nyloc nut into the bottom of the bob nut. If you insert it threaded s
 Slot the nut into the hole in the centre of the bob and insert the pendulum rod through the top of the bob and thread the nut onto the rod.
 
 At the top of the threaded pendulum rod first thread a nyloc nut, then thread the half nut. Use two spanners (or pliers) to lock these two nuts together. These nuts need to be very firmly locked together so they won't rotate when you adjust the rate of the pendulum with the 3D printed nut in the centre of the bob.
+
+![Pendulum top example](./pendulum_top.jpg \"Pendulum top example\")
 """
 
-    def get_BOM(self):
-        bom = BillOfMaterials("Pendulum Bob", assembly_instructions=self.get_assembly_instructions())
+        bom = BillOfMaterials("Pendulum Bob", assembly_instructions=instructions)
+        bom.add_image("bob.jpg")
+        bom.add_image("pendulum_top.jpg")
         bom.add_model(self.get_bob_assembled())
         lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))

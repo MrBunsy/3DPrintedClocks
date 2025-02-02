@@ -2136,7 +2136,8 @@ class WindingCrank(WindingKeyBase):
         if self.knob_fixing_screw is None:
             self.knob_fixing_screw = MachineScrew(3, length=30)
 
-        self.knob_length = self.knob_fixing_screw.length - self.handle_thick
+        #only half the washer thick so the screw doesn't accidentally stick out the end
+        self.knob_length = self.knob_fixing_screw.length - self.handle_thick - self.knob_fixing_screw.get_washer_thick()/2
 
 
 
@@ -2155,7 +2156,13 @@ class WindingCrank(WindingKeyBase):
         return knob
 
     def get_BOM(self):
-        bom = BillOfMaterials("Winding Crank")
+
+        instructions = """Insert a nyloc nut into the base of the handle. Then screw the fixing screw through the crank, put a washer on the end and screw into the other end of the handle.
+
+When assembled, the handle should be able to spin freely, but not wobble from side to side.
+"""
+
+        bom = BillOfMaterials("Winding Crank", instructions)
         bom.add_item(BillOfMaterials.Item(f"{self.knob_fixing_screw} {self.knob_fixing_screw.length}mm", purpose="Knob fixing screw"))
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} nyloc nut", purpose="Knob fixing nut"))
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} washer", purpose="Knob fixing washer"))
@@ -2211,7 +2218,7 @@ class WindingCrank(WindingKeyBase):
 
     def get_assembled(self):
         key = self.get_key(for_printing=False)
-        key = key.add(self.get_handle(for_cutting=False, for_printing=False).rotate((0,0,0),(1,0,0),180).translate((0, self.max_radius - self.cylinder_outer_diameter / 2, self.get_key_total_height() - self.key_hole_deep + self.knob_length + self.knob_fixing_screw.get_washer_thick())))
+        key = key.add(self.get_handle(for_cutting=False, for_printing=False).translate((0, self.max_radius - self.cylinder_outer_diameter / 2, self.get_key_total_height() - self.key_hole_deep  + self.knob_fixing_screw.get_washer_thick())))
         return key
 
 

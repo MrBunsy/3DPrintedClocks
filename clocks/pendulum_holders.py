@@ -132,7 +132,9 @@ class ColletFixingPendulumWithBeatSetting:
     def get_BOM(self):
         adjusting_screw_length = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws)
         fixing_screw_length = get_nearest_machine_screw_length(self.pendulum_holder_thick, self.fixing_screws)
-        instructions = """This mechanism both holds the top of the pendulum and allows setting the beat of the pendulum by adjusting a thumb nut (see the Setting up a Pendulum Clock document for more info on setting the beat). It can be a little fiddly to assemble.
+        instructions = """![Pendulum holder example](./pendulum_holder.jpg \"Pendulum holder example\")
+        
+This mechanism both holds the top of the pendulum and allows setting the beat of the pendulum by adjusting a thumb nut (see the Setting up a Pendulum Clock document for more info on setting the beat). It can be a little fiddly to assemble.
 
 First use the fixing screw to hold the two parts together. It needs to be relatively tight, so that you can twist the two parts, but they are not loose.
 
@@ -143,9 +145,12 @@ Then you need to thread a crinkle washer and the thumb nut onto the screw. This 
 Then screw the screw in all the way - again not over tightening. Adjusting the thumb nut should now adjust the relative angle of the two printed parts.
 
 Finally, in the collet there is a hole for a nut on the inside of the square hole. Using a pair of tweezers hold the half nut in the hole (I find it easy to wedge the tweezers in the hole), then screw the pan head screw in from the outside fully, so it pulls the nut firmly into its hole. Finally unscrew the screw so there is no obstruction in the hole. This screw is used to firmly hold this mechanism on the anchor arbor, so it can't slip and doesn't have any slop when the pendulum is swinging. 
- 
+
+![Pendulum holder assembly](./pendulum_holder_tweezer_demo.jpg \"Pendulum holder assembly\")
 """
         bom = BillOfMaterials("Pendulum Holder", instructions)
+        bom.add_image("pendulum_holder.jpg")
+        bom.add_image("pendulum_holder_tweezer_demo.jpg")
         bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {adjusting_screw_length:.0f}mm", object=self.fixing_screws, purpose="Beat adjusting screw"))
         bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", object=self.fixing_screws, purpose="Fixing screw"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} thumb nut ({self.fixing_screws.get_nut_height(thumb=True):.1f}mm thick)", object=self.fixing_screws, purpose="Beat setter"))

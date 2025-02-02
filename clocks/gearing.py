@@ -2543,6 +2543,13 @@ class Arbor:
             wheel_pos = "rear" if self.pinion_at_front else "front"
             pinion_pos = "front" if self.pinion_at_front else "rear"
 
+            lantern_pinion_type = "thin" if self.get_lantern_trundle_offset() == 0 else "thick"
+            image = f"{lantern_pinion_type}_lantern_pinion.jpg"
+            bom.add_image(image)
+
+            bom.assembly_instructions+=f"![Lantern pinion example](./{image} \"Lantern pinion example\")\n\n"
+
+
             bom.assembly_instructions+=f"""This arbor has a lantern pinion, which means it uses steel rods ({trundle_item.name} x {trundle_item.quantity}) instead of plastic leaves (teeth).
             
 Three parts must be slotted together with the steel rods between them: 
