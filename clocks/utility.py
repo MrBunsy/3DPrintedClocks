@@ -1405,6 +1405,9 @@ class BillOfMaterials:
 
     SVG_OPTS_SIDE_PROJECTION = {"projectionDir": (-1, 0, 0), "xDirection": (0, 0, 1)}
     SVG_OPTS_BACK_PROJECTION = {"projectionDir": (0, 0, -1)}
+    #as if lying on a table looking down at them
+    SVG_OPTS_TABLE_FRONT_PROJECTION = {"width":500, "height":500, "projectionDir": (0, -1, 1), "xDirection":(1, 0, 0), "yDirection":(0, 0, 1), "showHidden":False}
+    SVG_OPTS_TABLE_BACK_PROJECTION = {"width":500, "height":500, "projectionDir": (0, 1, 1), "xDirection": (1, 0, 0), "yDirection": (0, 0, 1), "showHidden": False}
 
     class Item:
         def __init__(self,  name, quantity=1, object=None, purpose=""):#, printed=False, printing_instructions="", tolerance=0.1):
@@ -1505,8 +1508,11 @@ class BillOfMaterials:
         self.subcomponents = []
         self.printed_parts=[]
         self.assembly_instructions=assembly_instructions
+        # list of PrintedParts automatically rendered and put before the assembly instructions
         self.assembled_models = []
-        #images to copy from the images dir into the clock output for including in markdown and pdf
+        # list of PrintedParts available to place wherever wanted inside the assembly instructions using {render_[int]}
+        self.renders = []
+        # images to copy from the images dir into the clock output for including in markdown and pdf
         self.images = []
         self.template_path = template_path
 
@@ -1524,6 +1530,11 @@ class BillOfMaterials:
         model = BillOfMaterials.PrintedPart(f"model_{len(self.assembled_models)}", model_object, printing_instructions="Assembled model, not for printing", svg_options=svg_preview_options)
         model.parent_BOM = self
         self.assembled_models.append(model)
+
+    def add_render(self, render_object, svg_preview_options = None):
+        render = BillOfMaterials.PrintedPart(f"render_{len(self.renders)}", render_object, printing_instructions="Model to be rendered to provide image for instructions", svg_options=svg_preview_options)
+        render.parent_BOM = self
+        self.renders.append(render)
 
     def add_subcomponent(self, bom):
         '''
@@ -1549,9 +1560,8 @@ class BillOfMaterials:
         self.assembly_instructions += "\n\n"+bom.assembly_instructions
         self.add_subcomponents(bom.subcomponents)
         self.add_images(bom.images)
-        for model in bom.assembled_models:
-            self.add_model(model)
-
+        self.renders += bom.renders
+        self.assembled_models += bom.assembled_models
     def get_root_name(self):
         if self.parent is None:
             return self.name
@@ -1668,12 +1678,20 @@ class BillOfMaterials:
         #only need this for sublists, not lists in sub-headings!
         list_spacing = "  "#"".join([" " for i in range(heading_level*2)])
         preview = ""
+        assembly_instructions = self.assembly_instructions
+        if len(self.renders) > 0:
+            render_subs = {}
+            for i, render_part in enumerate(self.renders):
+                render_subs[f"render{i}"] =f"![{self.name} Render](./{os.path.join(BillOfMaterials.MODEL_PATH, BillOfMaterials.IMAGES_PATH, render_part.get_preview_filename())} \"{self.name} Render\")"
+            assembly_instructions = Template(assembly_instructions).substitute(render_subs)
+
+
         for model in self.assembled_models:
             preview += f"![{self.name} Render](./{os.path.join(BillOfMaterials.MODEL_PATH, BillOfMaterials.IMAGES_PATH, model.get_preview_filename())} \"{self.name}\")"
         instructions = f"""{heading} {self.name}
 {preview}
 
-{self.assembly_instructions}
+{assembly_instructions}
 """
         if self.parent is None:
             consolidated_items = self.get_consolidated_items()
@@ -1748,7 +1766,7 @@ class BillOfMaterials:
         for image in self.images:
             shutil.copyfile(os.path.join(image_path, image), os.path.join(out_path, image))
 
-        for model in self.assembled_models:
+        for model in self.assembled_models + self.renders:
             model.export(os.path.join(out_path, BillOfMaterials.MODEL_PATH))
 
         #export all the subcomponents and models first so the SVG files exist for the PDF generation below

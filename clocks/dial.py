@@ -745,7 +745,9 @@ class Dial:
     def get_BOM(self):
         instructions = ""
         if self.raised_detail:
-            instructions = "Fix pillars to front plate with screws, then glue dial onto the top of the pillars. Hot glue and superglue both work for this, hot glue is more forgiving."
+            instructions = "Fix pillars to front plate with screws, then later in the assembly process glue dial onto the top of the pillars. Hot glue and superglue both work for this, hot glue is more forgiving."
+        # else:
+        #TODO - best leave this to final assembly? over here in teh dial we don't know the best order to assemble
         bom = BillOfMaterials("Dial", instructions)
         bom.add_model(self.get_assembled())
         #leave screws with plates as that knows what size they need to be

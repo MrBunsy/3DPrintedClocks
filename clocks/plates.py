@@ -3515,58 +3515,83 @@ class SimpleClockPlates:
     def get_winding_key(self):
         return self.winding_key
 
+    def get_parts_in_situ(self):
+        shapes = {}
 
-    def get_assembled(self, one_peice = True):
-        '''
-        3D model of teh assembled plates
-        '''
         bottom_plate = self.get_plate(True, for_printing=False)
-        top_plate = self.get_plate(False, for_printing=False)
+        shapes["back_plate"] = bottom_plate
+        top_plate = self.get_plate(False, for_printing=False).translate((0, 0, self.plate_distance + self.get_plate_thick(back=True)))
+        shapes["front_plate"] = top_plate
         front_of_clock_z = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance
 
-        plates = bottom_plate.add(top_plate.translate((0, 0, self.plate_distance + self.get_plate_thick(back=True))))
+        plates = cq.Workplane("XY").add(bottom_plate).add(top_plate)
 
         pillars = cq.Workplane("XY")
-        standoff_pillars = cq.Workplane("XY")
+        standoff_pillars = None
         if self.pillars_separate:
             for bottom_pillar_pos in self.bottom_pillar_positions:
                 pillars = pillars.add(self.get_pillar(top=False).translate(bottom_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
             for top_pillar_pos in self.top_pillar_positions:
                 pillars = pillars.add(self.get_pillar(top=True).translate(top_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
+        shapes["pillars"] = pillars
 
-
-
+        standoffs = None
         if self.back_plate_from_wall > 0:
+            standoffs = cq.Workplane("XY")
+            standoff_pillars = cq.Workplane("XY")
             # need wall standoffs
             top_standoff = self.get_wall_standoff(top=True, for_printing=False)
             if top_standoff is not None:
-                plates = plates.add(top_standoff)
+                standoffs = standoffs.add(top_standoff)
             bottom_standoff = self.get_wall_standoff(top=False, for_printing=False)
             if bottom_standoff is not None:
-                plates = plates.add(bottom_standoff)
+                standoffs = standoffs.add(bottom_standoff)
             if self.standoff_pillars_separate:
                 standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=True))
                 if bottom_standoff is not None:
                     standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=False))
 
+            shapes["standoffs"] = standoffs
+            shapes["standoff_pillars"] = standoff_pillars
+            shapes["top_standoff"] = top_standoff
+            shapes["bottom_standoff"] = bottom_standoff
+
         if self.need_front_anchor_bearing_holder() and not self.front_anchor_holder_part_of_dial:
-            plates = plates.add(self.get_front_anchor_bearing_holder(for_printing=False))
+            front_bearing_holder = self.get_front_anchor_bearing_holder(for_printing=False)
+            plates = plates.add(front_bearing_holder)
+            shapes["front_anchor_holder"] = front_bearing_holder
 
         if self.need_motion_works_holder:
-            plates = plates.add(self.get_motion_works_holder().translate((0, 0, front_of_clock_z)))
+            motion_works_holder = self.get_motion_works_holder().translate((0, 0, front_of_clock_z))
+            plates = plates.add(motion_works_holder)
+            shapes["motion_works_holder"] = motion_works_holder
 
         detail = None
         if self.style in [PlateStyle.RAISED_EDGING]:
             detail = self.apply_style_to_plate(cq.Workplane("XY"), back=True, addition_allowed=True).add(self.apply_style_to_plate(cq.Workplane("XY"), back=False, addition_allowed=True)
-                                                                                  .translate((0,0,self.get_plate_thick(back=True) + self.plate_distance)))
+                                                                                                         .translate((0, 0, self.get_plate_thick(back=True) + self.plate_distance)))
+            shapes["detail"] = detail
+
+        shapes["plates"] = plates
+        return shapes
+
+    def get_assembled(self, one_peice = True):
+        '''
+        3D model of teh assembled plates
+        '''
+        shapes = self.get_parts_in_situ()
 
         if one_peice:
-            whole =  plates.union(pillars).union(standoff_pillars)
-            if detail is not None:
-                whole= whole.union(detail)
+            whole =  shapes["plates"].union(shapes["pillars"])
+            if "standoff_pillars" in shapes:
+                whole = whole.union(shapes["standoff_pillars"])
+            if "detail" in shapes:
+                whole= whole.union(shapes["detail"])
+            if "standoffs" in shapes:
+                whole = whole.union(shapes["standoffs"])
             return whole
-
-        return (plates, pillars, detail, standoff_pillars)
+        #maintain backwards compatibility for now
+        return (shapes["plates"], shapes["pillars"], shapes["detail"], shapes["standoff_pillars"], shapes["standoffs"])
 
 
     def get_front_plate_in_parts(self):
@@ -5209,7 +5234,10 @@ class RoundClockPlates(SimpleClockPlates):
 
 
     def get_assembled(self, one_peice=True):
-        plates, pillars, detail, standoff_pillars = super().get_assembled(one_peice=False)
+        '''
+        TODO switch over to using get_parts_in_situ() properly
+        '''
+        plates, pillars, detail, standoff_pillars, standoffs = super().get_assembled(one_peice=False)
 
         if not self.wall_mounted:
             plates = plates.add(self.get_legs(back=True).translate((0,0,-self.plate_thick)))
@@ -5227,7 +5255,7 @@ class RoundClockPlates(SimpleClockPlates):
             if detail is not None:
                 plates = plates.union(detail)
             return plates
-        return (plates, pillars, detail, standoff_pillars)
+        return (plates, pillars, detail, standoff_pillars, standoffs)
 
     def get_BOM(self):
         bom = super().get_BOM()
