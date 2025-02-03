@@ -3580,8 +3580,10 @@ class MotionWorks:
         parts.append(BillOfMaterials.PrintedPart("cannon_pinion_x1.015", self.get_cannon_pinion(hand_holder_radius_adjustment=1.015), purpose="1.5% larger hand fixing for some filaments which print smaller than expected"))
         parts.append(BillOfMaterials.PrintedPart("cannon_pinion_x1.025", self.get_cannon_pinion(hand_holder_radius_adjustment=1.025), purpose="2.5% larger hand fixing for some filaments which print smaller than expected"))
 
-        motion_arbor_part = BillOfMaterials.PrintedPart("motion_arbour", self.get_motion_arbour_shape(), purpose="Technically the \"minute wheel\" but I have avoided calling as I have inadvertently used that term to describe the wheel which rotates once an hour (and therefore hold the minute hand). This is the intermediate gear between the hour and minute hands.")
-        motion_arbor_part.modifier_objects
+        #note that in older bits of code I've used "minute wheel" to refer to the centre wheel (which rotates once an hour and holds the minute hand). This is technically wrong, so
+        #I'm trying to use the correct terminology but there will be some confusion as I switch everything over
+        motion_arbor_part = BillOfMaterials.PrintedPart("minute_wheel", self.get_motion_arbour_shape(), purpose="The \"minute wheel\" is the intermediate gear between the hour and minute hands.")
+
         for nozzle in [0.25, 0.4]:
             motion_arbor_part.modifier_objects[f"pinion_teeth_nozzle_{nozzle}"] = self.get_motion_arbour().get_STL_modifier_pinion_shape(nozzle_size=nozzle)
             motion_arbor_part.modifier_objects[f"wheel_teeth_nozzle_{nozzle}"] = self.get_motion_arbour().get_STL_modifier_wheel_shape(nozzle_size=nozzle)
@@ -3599,7 +3601,7 @@ class MotionWorks:
     def get_BOM(self):
         instructions = """The motion works hold the minute and hour hands and gear down from once an hour to once every 12 hours.
         
-The cannon pinion (which holds the minute hand) slots inside the hour holder.
+The cannon pinion (which holds the minute hand) slots inside the hour holder. The minute wheel provides the gearing between them.
 """
         if self.centred_second_hand:
             instructions+="""

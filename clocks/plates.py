@@ -5274,7 +5274,7 @@ Firmly push all bearings into their slots, a bench vice can help with this. Alte
 """
         if self.split_detailed_plate:
             bom.assembly_instructions+=f"\n\nThe front plate is split into two parts to make it easier to print. The front of the front plate is just in place and as things are fixed to the front place it will firmly fixed in place."
-        bom.assembly_instructions+="\n\nScrew the motion works fixing screw needs into the front plate from its back. Screw the two motion works backstop nuts onto it from the front, but don't worry about exact positioning just yet. These will be locked against each other later to prevent part of the motion works being able to drop out of alignment"
+        bom.assembly_instructions+="\n\nScrew the motion works fixing screw needs into the front plate from its back. Screw the two motion works backstop nuts onto it from the front, but don't worry about exact positioning just yet. These will be locked against each other later to prevent the minute wheel (part of the motion works) being able to drop out of alignment"
 
         if self.plaque is not None:
             bom.assembly_instructions+="\n\nThere is a little plaque with information about the clock. Screw this to the back of the back plate with 4 panhead screws. This is easiest to do before the rest of the clock has been assembled."

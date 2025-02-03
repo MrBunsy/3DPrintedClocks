@@ -140,4 +140,4 @@ print("distance", escapement.anchor_centre_distance)
 #(-1.75, 1.1, 5)
 
 #"projectionDir": (-1, 0, 0), "xDirection": (0,0,1)
-exportSVG(model, "out/test_model.svg", opts={"width":400, "height":400, "projectionDir": (0, 1, 1), "xDirection": (1, 0, 0), "yDirection": (0, 0, 1), "showHidden": False})
+exportSVG(model, "out/test_model.svg", opts={"width":400, "height":400, "projectionDir": (1, -1, 1), "xDirection": (-1, -1, 0), "yDirection": (0, 0, 1), "showHidden": False})

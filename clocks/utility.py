@@ -1408,6 +1408,9 @@ class BillOfMaterials:
     #as if lying on a table looking down at them
     SVG_OPTS_TABLE_FRONT_PROJECTION = {"width":500, "height":500, "projectionDir": (0, -1, 1), "xDirection":(1, 0, 0), "yDirection":(0, 0, 1), "showHidden":False}
     SVG_OPTS_TABLE_BACK_PROJECTION = {"width":500, "height":500, "projectionDir": (0, 1, 1), "xDirection": (1, 0, 0), "yDirection": (0, 0, 1), "showHidden": False}
+    SVG_OPTS_ISOMETRIC_SOLID = {"width":400, "height":400, "projectionDir": (1, -1, 1), "xDirection": (-1, -1, 0), "yDirection": (0, 0, 1), "showHidden": False}
+    SVG_OPTS_ISOMETRIC_HIDDEN = {"width":400, "height":400, "projectionDir": (1, -1, 1), "xDirection": (-1, -1, 0), "yDirection": (0, 0, 1), "showHidden": True}
+
 
     class Item:
         def __init__(self,  name, quantity=1, object=None, purpose=""):#, printed=False, printing_instructions="", tolerance=0.1):
@@ -1535,6 +1538,7 @@ class BillOfMaterials:
         render = BillOfMaterials.PrintedPart(f"render_{len(self.renders)}", render_object, printing_instructions="Model to be rendered to provide image for instructions", svg_options=svg_preview_options)
         render.parent_BOM = self
         self.renders.append(render)
+        return len(self.renders) - 1
 
     def add_subcomponent(self, bom):
         '''
@@ -1777,7 +1781,23 @@ class BillOfMaterials:
             markdown_instructions = self.get_instructions()
             with open(os.path.join(out_path,f'{self.tidy_name()}.md'), 'w', encoding='utf-8') as f:
                 f.write(markdown_instructions)
+
+            # import typing
+            # import fitz
+            # def override_save_func(self, file_name: typing.Union[str, pathlib.Path]) -> None:
+            #     """Save pdf to file."""
+            #     self.writer.close()
+            #     doc = fitz.open("pdf", self.out_file)
+            #     doc.set_metadata(self.meta)
+            #     if self.toc_level > 0:
+            #         doc.set_toc(self.toc)
+            #     #see if clean prevents SVGs being rasterised (didn't work)
+            #     doc.save(file_name, clean=1, pretty=1)
+            #     doc.close()
+            # setattr(MarkdownPdf, 'save2', override_save_func)
+
             pdf = MarkdownPdf()
             pdf.add_section(Section(markdown_instructions, root=out_path))
-            pdf.save(os.path.join(out_path,f'{self.tidy_name()}.pdf'))
 
+            # pdf.save2(os.path.join(out_path,f'{self.tidy_name()}.pdf'))
+            pdf.save(os.path.join(out_path, f'{self.tidy_name()}.pdf'))
