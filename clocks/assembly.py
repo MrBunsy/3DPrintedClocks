@@ -391,33 +391,33 @@ To fix this there are modifier STLs which can be used to change the settings for
         arbor_rod_models = self.get_arbor_rod_models_in_situ()
 
         if self.plates.get_plate_shape() == PlateShape.ROUND:
-            standoffs_and_rods = plate_parts["standoffs"]
+            render_standoffs_and_rods = plate_parts["standoffs"]
             for rod in self.rod_models:
-                standoffs_and_rods = standoffs_and_rods.add(rod)
+                render_standoffs_and_rods = render_standoffs_and_rods.add(rod)
 
-            final_assembly_bom.add_render(standoffs_and_rods, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_standoffs_and_rods_id = final_assembly_bom.add_render(render_standoffs_and_rods, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
             # I'm at a loss as to why this seemd to be overwriting standoffs_and_rods, I thought that cadquery objects were immutable and .add() returned a new shape?
             # standoffs_and_rods_and_standoff_pillars = standoffs_and_rods.add(standoff_pillars)
-            standoffs_and_rods_and_standoff_pillars = cq.Workplane("XY").add(standoffs_and_rods).add(plate_parts["standoff_pillars"])
-            final_assembly_bom.add_render(standoffs_and_rods_and_standoff_pillars, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_standoffs_and_rods_and_standoff_pillars = cq.Workplane("XY").add(render_standoffs_and_rods).add(plate_parts["standoff_pillars"])
+            render_standoffs_and_rods_and_standoff_pillars_id = final_assembly_bom.add_render(render_standoffs_and_rods_and_standoff_pillars, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
-            up_to_rear_plate = cq.Workplane("XY").add(standoffs_and_rods_and_standoff_pillars).add(plate_parts["back_plate"]).add(plate_parts["pillars"])
-            final_assembly_bom.add_render(up_to_rear_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_up_to_rear_plate = cq.Workplane("XY").add(render_standoffs_and_rods_and_standoff_pillars).add(plate_parts["back_plate"]).add(plate_parts["pillars"])
+            render_up_to_rear_plate_id = final_assembly_bom.add_render(render_up_to_rear_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
 
 
             final_assembly_bom.assembly_instructions+=f"""Place the two rear standoffs down with the nuts on the bottom side. Thread in the four M4{self.plates.fixing_screws.metric_thread} rods partially (so they're just into the nuts, but not all the way).
             
-$render0
+$render{render_standoffs_and_rods_id}
 
 Slot the four standoff pillars onto the rods (note that this is much easier if the holes have been cleaned out with a drill bit first)
 
-$render1
+$render{render_standoffs_and_rods_and_standoff_pillars_id}
 
 Slot the rear plate (which should have had all its bearings inserted by this point) and the pillars onto the rods.
 
-$render2
+$render{render_up_to_rear_plate_id}
 
 The next stage is harder to describe. Slot all the arbors into the bearings so they mesh correctly with each other.
 
@@ -427,63 +427,63 @@ The next stage is harder to describe. Slot all the arbors into the bearings so t
             #from centre up to and NOT including anchor
             other_arbors_ints = [str(i) for i in range(0, centre_arbor)] + [str(i) for i in range(centre_arbor+1, len(self.plates.arbors_for_plate)-1)]
             other_arbors=", ".join(other_arbors_ints)
-            with_arbors_render = cq.Workplane("XY").add(up_to_rear_plate).add(self.plates.arbors_for_plate[centre_arbor].get_assembled(with_extras=True)).add(arbor_rod_models[centre_arbor])
-            final_assembly_bom.add_render(with_arbors_render, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_with_centre_arbor = cq.Workplane("XY").add(render_up_to_rear_plate).add(self.plates.arbors_for_plate[centre_arbor].get_assembled(with_extras=True)).add(arbor_rod_models[centre_arbor])
+            render_with_centre_arbor_id = final_assembly_bom.add_render(render_with_centre_arbor, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
-            with_more_arbors_render = cq.Workplane("XY").add(up_to_rear_plate)
+            render_with_more_arbors = cq.Workplane("XY").add(render_up_to_rear_plate)
             for i in range(len(self.plates.arbors_for_plate)-1):
-                with_more_arbors_render = with_more_arbors_render.add(self.plates.arbors_for_plate[i].get_assembled(with_extras=True)).add(arbor_rod_models[i])
+                render_with_more_arbors = render_with_more_arbors.add(self.plates.arbors_for_plate[i].get_assembled(with_extras=True)).add(arbor_rod_models[i])
 
-            final_assembly_bom.add_render(with_more_arbors_render, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_with_more_arbors_id = final_assembly_bom.add_render(render_with_more_arbors, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
-            with_all_arbors_render = cq.Workplane("XY").add(with_more_arbors_render).add(self.plates.arbors_for_plate[-1].get_assembled(with_extras=True)).add(arbor_rod_models[-1])
+            render_with_all_arbors = cq.Workplane("XY").add(render_with_more_arbors).add(self.plates.arbors_for_plate[-1].get_assembled(with_extras=True)).add(arbor_rod_models[-1])
             # Viewed from the top:
-            final_assembly_bom.add_render(with_all_arbors_render, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_with_all_arbors_id = final_assembly_bom.add_render(render_with_all_arbors, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
             final_assembly_bom.assembly_instructions+= f"""Start with the centre arbor (arbor {centre_arbor}).
             
-$render3
+$render{render_with_centre_arbor_id}
 
 Then the other arbors ({other_arbors}, not the anchor) should slot around it relatively easily. Make sure that the wheels (big gears) are slotted into the pinions (little gears).
 
-$render4
+$render{render_with_more_arbors_id}
 
 Slot the anchor (arbor {len(self.plates.arbors_for_plate)-1}) through the hole at the top. Put the pendulum holder on the arbor so it slots over the square section and is behind the back plate.
 
-
-$render5
+$render{render_with_all_arbors_id}
 
 """
-            up_to_front_plate = cq.Workplane("XY").add(with_all_arbors_render).add(plate_parts["front_plate"])
+            render_up_to_front_plate = cq.Workplane("XY").add(render_with_all_arbors).add(plate_parts["front_plate"])
             if self.dial.raised_detail:
                 # dial pillars are already attached to front plate
                 dial_pillars = self.dial.get_supports().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
-                up_to_front_plate = up_to_front_plate.add(dial_pillars)
+                render_up_to_front_plate = render_up_to_front_plate.add(dial_pillars)
             else:
                 raise NotImplementedError("TODO instructions and renders for non-raised detail dial")
 
-            final_assembly_bom.add_render(up_to_front_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_up_to_front_plate_id = final_assembly_bom.add_render(render_up_to_front_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
             dial = self.dial.get_dial().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
             dial_detail = self.dial.get_all_detail().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
 
-            with_dial_render = cq.Workplane("XY").add(up_to_front_plate).add(dial).add(dial_detail)
-            final_assembly_bom.add_render(with_dial_render, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_with_dial = cq.Workplane("XY").add(render_up_to_front_plate).add(dial).add(dial_detail)
+            render_with_dial_id = final_assembly_bom.add_render(render_with_dial, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
             final_assembly_bom.assembly_instructions += f"""This is easier said than done, but next slot the front plate over the top. Be patient and gentle, lining up one arbor at a time. A pair of tweezers can be very useful to lining up arbors with bearings.
             
-$render6
+$render{render_up_to_front_plate_id}
 
 Once the front plate is on, with all the arbors in place, put an M{self.plates.fixing_screws.metric_thread} washer and dome nut on each of the plate fixing rods. Using a spanner tighten these nuts to hold the plates together. If the rod lengths have been cut currently, they should not stick out the back. If they do stick out the back: undo the dome nut, unscrew the rod from the front and make sure the dome nut is fully screwed into the top of the rod before trying again.
 
 Now is a good time to glue the chapter ring to the dial pillars.
 
-$render7
+$render{render_with_dial_id}
+
 """
         else:
             raise NotImplementedError("TODO instructions for non-round plates")
 
-        render_with_motion_works = cq.Workplane("XY").add(with_dial_render)
+        render_with_motion_works = cq.Workplane("XY").add(render_with_dial)
 
         motion_works_parts = self.motion_works.get_parts_in_situ(motion_works_relative_pos=self.plates.motion_works_relative_pos, minute_angle=self.minuteAngle, time_setter_relative_pos=self.plates.time_setter_relative_pos)
 
@@ -491,16 +491,18 @@ $render7
             render_with_motion_works = render_with_motion_works.add(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)))
 
         render_with_motion_works_id = final_assembly_bom.add_render(render_with_motion_works, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
-
+        final_assembly_bom.add_image("back_of_clutch_assembly.jpg")
+        final_assembly_bom.add_image("back_of_clutch_assembly2.jpg")
+        final_assembly_bom.add_image("back_of_clutch_assembly3.jpg")
         final_assembly_bom.assembly_instructions+=f"""
-
 Now the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
 
  - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
  - Use two spanners to lock these nuts against each other so they cannot come loose
+   - ![Back of clutch](./back_of_clutch_assembly.jpg \"Back of clutch\")
  - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwiched between two flat washers.
-
-TODO insert photos for these steps
+   - ![Back of clutch 2](./back_of_clutch_assembly2.jpg \"Back of clutch 2\")
+   - ![Back of clutch 3](./back_of_clutch_assembly3.jpg \"Back of clutch 3\")
 
 Next slot the cannon pinion over the centre arbor, then the minute wheel over the screw which sticks out the front plate and finally the hour holder over the top.
 
@@ -522,16 +524,25 @@ There should be two nuts on the motion works screw, behind the minute wheel. Now
             
 Then slot the minute hand onto the top of the cannon pinion ({minute_hand_fixing} fixing). Line both the hands up so they point at 12. You may need to re-adjust the hour hand slightly.
 
-Next thread an M{hand_metric_size} half nut onto this rod. Tighten it so that the split washer in the clutch is compressed but not completely flat. The hands should be held tightly enough that they will rotate with the clock, but loose enough that you can set the time easily.
+Next thread an M{hand_metric_size} washer and nut onto this rod. Tighten it so that the split washer in the clutch is compressed but not completely flat. The hands should be held tightly enough that they will rotate with the clock, but loose enough that you can set the time easily.
+
+![Partially assembled clutch and motion works](./top_of_hands.jpg \"Partially assembled clutch and motion works\")
 
 Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this to the half nut. If the isn't enough, or is too much, threaded rod left to achieve this, undo the two half nuts under the clutch and re-align them to give you the correct amount of spare rod.
 
+![Assembled clutch and motion works](./assembled_motion_works_and_clutch.jpg \"Assembled clutch and motion works\")
+
 """
+
+        final_assembly_bom.add_image("assembled_motion_works_and_clutch.jpg")
+        final_assembly_bom.add_image("top_of_hands.jpg")
 
         final_assembly_bom.assembly_instructions+= f"$render{render_with_hands_id}\n\n"
 
         if self.going_train.powered_wheel.type == PowerType.CORD:
-            final_assembly_bom.assembly_instructions += f""
+            final_assembly_bom.assembly_instructions += f"Now feed the free end of the cord through the pulley and tie it to the hole in the bottom of the front plate. Again I recommend a gnat's hitch knot.\n\n"
+
+        final_assembly_bom.assembly_instructions += f"Your clock should now be fully assembled! See Setting Up Your Clock for advice on getting it ticking reliably."
 
         bom.add_subcomponent(final_assembly_bom)
 

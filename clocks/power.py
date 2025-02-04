@@ -2157,7 +2157,9 @@ class WindingCrank(WindingKeyBase):
 
     def get_BOM(self):
 
-        instructions = """Insert a nyloc nut into the base of the handle. Then screw the fixing screw through the crank, put a washer on the end and screw into the other end of the handle.
+        instructions = """![Example Winding Crank](./winding_crank.jpg \"Example Winding Crank\")
+
+Insert a nyloc nut into the base of the handle. Then screw the fixing screw through the crank, put a washer on the end and screw into the other end of the handle.
 
 When assembled, the handle should be able to spin freely, but not wobble from side to side.
 """
@@ -2168,6 +2170,8 @@ When assembled, the handle should be able to spin freely, but not wobble from si
         bom.add_item(BillOfMaterials.Item(f"M{self.knob_fixing_screw.metric_thread} washer", purpose="Knob fixing washer"))
         bom.add_printed_parts(self.get_printed_parts())
         bom.add_model(self.get_assembled())
+
+        bom.add_image("winding_crank.jpg")
         return bom
 
     def get_handle_z_length(self):
@@ -2336,7 +2340,9 @@ class CordBarrel(WeightPoweredWheel):
         #TODO switch over to new WindingKey and containing diameter
         self.key_containing_diameter = self.key_bearing.inner_d - self.bearing_wiggle_room
         #default length, in mm
-        self.cord_length=cord_length
+        self.cord_length_mm=cord_length
+        #just for BOM
+        self.weight_drop_mm = -1
 
         self.style = style
         # slowly switch over to using this
@@ -2364,7 +2370,8 @@ class CordBarrel(WeightPoweredWheel):
 
 
     def configure_weight_drop(self, weight_drop_mm, pulleys=1):
-        self.cord_length = weight_drop_mm * (pulleys+1)
+        self.cord_length_mm = weight_drop_mm * (pulleys + 1)
+        self.weight_drop_mm = weight_drop_mm
 
 
     def get_screw_positions(self):
@@ -2396,7 +2403,7 @@ Use the hole in the barrel to tie the cord, I recommend a [gnat hitch knot](http
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screw.metric_thread} nut", quantity=4, purpose="Insert into ratchet gear to fix to bottom of cord barrel"))
         #keeping bearings with the plates as that makes more sense for assembling
         # bom.add_item(BillOfMaterials.Item(f"{self.key_bearing}", object=self.key_bearing, purpose="Bearing for key"))
-        bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity= self.cord_length, purpose="Cord for weight"))
+        bom.add_item(BillOfMaterials.Item(f"Cord {self.cord_thick:.1f}mm thick", quantity=self.cord_length_mm + 150, purpose=f"Cord for weight. The weight needs to drop {self.weight_drop_mm / 1000:.2f}m so the cord length includes a little extra to account for the pulley and knots."))
 
         #moving to the arbor as that's where these are screwed in
         # if self.traditional_ratchet:
@@ -2450,7 +2457,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         '''
         for the cord wheel the diameter can vary, hence "average", for most other types its consistent
         '''
-        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info(cordLength=self.cord_length)
+        (rotations, layers, cordPerRotationPerLayer, cordPerLayer) = self.get_cord_turning_info(cordLength=self.cord_length_mm)
 
         return 2*(self.diameter / 2 + self.cord_thick * layers * 0.4)
 
@@ -2683,7 +2690,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         '''
 
         if cordLength < 0:
-            cordLength = self.cord_length
+            cordLength = self.cord_length_mm
 
         lengthSoFar = 0
         rotationsSoFar = 0
