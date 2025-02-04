@@ -3580,6 +3580,8 @@ class SimpleClockPlates:
         3D model of teh assembled plates
         '''
         shapes = self.get_parts_in_situ()
+        if "detail" not in shapes:
+            shapes["detail"] = None
 
         if one_peice:
             whole =  shapes["plates"].union(shapes["pillars"])

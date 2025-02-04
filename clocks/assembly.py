@@ -369,7 +369,7 @@ To fix this there are modifier STLs which can be used to change the settings for
 
         #trying to get this to fit onto the first page of the exported PDF
         with_pendulum = self.going_train.pendulum_length_m < 0.5
-        bom.add_model(self.get_clock(with_pendulum=with_pendulum), svg_preview_options={"width":675, "height":675})
+        bom.add_model(self.get_clock(with_pendulum=with_pendulum), svg_preview_options={"width":675, "height":675, "showHidden":False})
 
         motion_works_bom = self.motion_works.get_BOM()
         motion_works_bom.add_subcomponent(self.get_clutch_BOM())
@@ -474,6 +474,8 @@ $render{render_with_all_arbors_id}
 $render{render_up_to_front_plate_id}
 
 Once the front plate is on, with all the arbors in place, put an M{self.plates.fixing_screws.metric_thread} washer and dome nut on each of the plate fixing rods. Using a spanner tighten these nuts to hold the plates together. If the rod lengths have been cut currently, they should not stick out the back. If they do stick out the back: undo the dome nut, unscrew the rod from the front and make sure the dome nut is fully screwed into the top of the rod before trying again.
+
+The pendulum holder is still loose on the back of the anchor arbor - line it up so it's roughly central between the back plate and the wall standoffs then (gently) tighten the small screw in the side to lock it in place. Don't over-tighten as this will easily crack the printed parts! It's just to hold it in place.
 
 Now is a good time to glue the chapter ring to the dial pillars.
 
@@ -809,7 +811,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             if self.pretty_bob is not None:
                 bob = self.pretty_bob.get_model()
 
-            clock = clock.add(bob.rotate((0, 0, self.pendulum.bob_thick / 2), (0, 1, self.pendulum.bob_thick / 2), 180).translate(self.pendulum_bob_centre_pos))
+            clock = clock.add(bob.rotate((0,0,0),(0,1,0),180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos))
 
             clock = clock.add(self.pendulum.get_bob_nut().translate((0, 0, -self.pendulum.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90).translate(self.pendulum_bob_centre_pos))
 
