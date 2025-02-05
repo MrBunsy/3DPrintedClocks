@@ -1796,8 +1796,13 @@ class BillOfMaterials:
             #     doc.close()
             # setattr(MarkdownPdf, 'save2', override_save_func)
 
+            setting_up_instructions = ""
+            with open(os.path.join("docs", "Setup.md"), 'r') as setupdocfile:
+                setting_up_instructions = setupdocfile.read()
+
             pdf = MarkdownPdf()
             pdf.add_section(Section(markdown_instructions, root=out_path))
+            pdf.add_section(Section(setting_up_instructions, root='docs'))
 
             # pdf.save2(os.path.join(out_path,f'{self.tidy_name()}.pdf'))
             pdf.save(os.path.join(out_path, f'{self.tidy_name()}.pdf'))

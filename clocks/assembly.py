@@ -544,7 +544,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         if self.going_train.powered_wheel.type == PowerType.CORD:
             final_assembly_bom.assembly_instructions += f"Now feed the free end of the cord through the pulley and tie it to the hole in the bottom of the front plate. Again I recommend a gnat's hitch knot.\n\n"
 
-        final_assembly_bom.assembly_instructions += f"Your clock should now be fully assembled! See Setting Up Your Clock for advice on getting it ticking reliably."
+        final_assembly_bom.assembly_instructions += f"Your clock should now be fully assembled! See Setting Up A Pendulum Clock for advice on getting it ticking reliably."
 
         bom.add_subcomponent(final_assembly_bom)
 
@@ -941,17 +941,19 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         if plaque_colours is None:
             plaque_colours = [Colour.GOLD, Colour.BLACK]
 
-        plates, pillars, plate_detail, standoff_pillars, standoffs = self.plates.get_assembled(one_peice=False)
+        plate_parts = self.plates.get_parts_in_situ()#plates, pillars, plate_detail, standoff_pillars, standoffs = self.plates.get_assembled(one_peice=False)
         pillar_colour = plate_colours[1 % len(plate_colours)]
-        show_object(plates, options={"color":plate_colours[0]}, name= "Plates")
-        if standoffs is not None:
-            show_object(standoffs, options={"color": plate_colours[0]}, name="Standoffs")
-        show_object(pillars, options={"color": pillar_colour}, name="Pillars")
-        if standoff_pillars is not None:
-            show_object(standoff_pillars, options={"color": plate_colours[1 % len(plate_colours)]}, name="Standoff Pillars")
+        show_object(plate_parts["plates"], options={"color":plate_colours[0]}, name= "Plates")
 
-        if plate_detail is not None:
-            show_object(plate_detail, options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
+        if "standoffs" in plate_parts:
+            show_object(plate_parts["standoffs"], options={"color": plate_colours[0]}, name="Standoffs")
+        if "pillars" in plate_parts:
+            show_object(plate_parts["pillars"], options={"color": pillar_colour}, name="Pillars")
+        if "standoff_pillars" in plate_parts:
+            show_object(plate_parts["standoff_pillars"], options={"color": plate_colours[1 % len(plate_colours)]}, name="Standoff Pillars")
+
+        if "plate_detail" in plate_parts:
+            show_object(plate_parts["plate_detail"], options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
 
         if self.plaque is not None:
             show_object(self.plaque_shape, options={"color": plaque_colours[0]}, name="Back Plaque")
@@ -998,7 +1000,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i,holder in enumerate(holder_parts):
                 show_object(holder.translate((0, 0, self.front_of_clock_z)), name="moon_holder_part{}".format(i), options={"color":plate_colours[0]})
-        # return
+
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
             detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
@@ -1030,11 +1032,13 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         hands_position = (self.plates.hands_position[0], self.plates.hands_position[1], self.minute_hand_z - self.motion_works.hour_hand_slot_height)
         self.hands.show_hands(show_object, hand_colours=hand_colours, position=hands_position, second_hand_pos=self.second_hand_pos, hour_hand_slot_height=self.motion_works.hour_hand_slot_height,
                               time_hours=self.time_hours, time_minutes=self.time_mins, time_seconds=self.time_seconds, show_second_hand=self.plates.has_seconds_hand(), hand_colours_overrides=hand_colours_overrides)
-
         if self.has_ring:
-
-            show_object(self.pendulum.get_hand_avoider().translate(self.ring_pos), options={"color": ring_colour}, name="Pendulum Ring")
-
+            # show_object(self.pendulum.get_hand_avoider())
+            # ring_colour
+            # print("ring_colour:", ring_colour, "purple: ", Colour.PURPLE )
+            #why does ring colour not work?
+            show_object(self.pendulum.get_hand_avoider().translate(self.ring_pos), options={"color": Colour.PURPLE }, name="Pendulum Ring")
+        # return
         if self.plates.huygens_maintaining_power:
             #assumes one pillar
             show_object(self.plates.huygens_wheel.get_assembled().translate(self.plates.bottom_pillar_positions[0]).

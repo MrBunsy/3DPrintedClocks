@@ -3302,7 +3302,7 @@ class SimpleClockPlates:
             #make a fancy bit that sticks out the bottom with holes for the chain - this makes it hard for the chain to detatch from the wheel
 
             extraHeight = relevantChainHoles[0][1] + self.huygens_wheel.get_height() - self.huygens_wheel.ratchet.thick + chainholeD / 2 + minThickAroundChainHole
-            ratchetD = self.huygens_wheel.ratchet.outsideDiameter
+            ratchetD = self.huygens_wheel.ratchet.get_max_radius()*2
             # ratchet for the chainwheel on the front of the clock
             ratchet = self.huygens_wheel.ratchet.getOuterWheel(extraThick=WASHER_THICK_M3)
 
@@ -3526,19 +3526,20 @@ class SimpleClockPlates:
 
         plates = cq.Workplane("XY").add(bottom_plate).add(top_plate)
 
-        pillars = cq.Workplane("XY")
+
         standoff_pillars = None
         if self.pillars_separate:
+            pillars = cq.Workplane("XY")
             for bottom_pillar_pos in self.bottom_pillar_positions:
                 pillars = pillars.add(self.get_pillar(top=False).translate(bottom_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
             for top_pillar_pos in self.top_pillar_positions:
                 pillars = pillars.add(self.get_pillar(top=True).translate(top_pillar_pos).translate((0, 0, self.get_plate_thick(back=True))))
-        shapes["pillars"] = pillars
+            shapes["pillars"] = pillars
 
         standoffs = None
         if self.back_plate_from_wall > 0:
             standoffs = cq.Workplane("XY")
-            standoff_pillars = cq.Workplane("XY")
+
             # need wall standoffs
             top_standoff = self.get_wall_standoff(top=True, for_printing=False)
             if top_standoff is not None:
@@ -3547,12 +3548,14 @@ class SimpleClockPlates:
             if bottom_standoff is not None:
                 standoffs = standoffs.add(bottom_standoff)
             if self.standoff_pillars_separate:
+                standoff_pillars = cq.Workplane("XY")
                 standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=True))
                 if bottom_standoff is not None:
                     standoff_pillars = standoff_pillars.add(self.get_standoff_pillars(top=False))
 
+                shapes["standoff_pillars"] = standoff_pillars
+
             shapes["standoffs"] = standoffs
-            shapes["standoff_pillars"] = standoff_pillars
             shapes["top_standoff"] = top_standoff
             shapes["bottom_standoff"] = bottom_standoff
 
@@ -5256,6 +5259,8 @@ class RoundClockPlates(SimpleClockPlates):
             plates = plates.union(pillars).union(standoff_pillars)
             if detail is not None:
                 plates = plates.union(detail)
+            if standoffs is not None:
+                plates = plates.union(standoffs)
             return plates
         return (plates, pillars, detail, standoff_pillars, standoffs)
 

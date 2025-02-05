@@ -1713,9 +1713,11 @@ class Hands:
             out = os.path.join(path, "{}_hand_minute_outline.stl".format(name))
             print("Outputting ", out)
             exporters.export(self.get_hand(hand_type=HandType.MINUTE, generate_outline=True), out)
-
-            secondoutline = self.get_hand(hand_type=HandType.SECOND, generate_outline=True)
-            if secondoutline is not None:
-                out = os.path.join(path, "{}_hand_second_outline.stl".format(name))
-                print("Outputting ", out)
-                exporters.export(secondoutline, out)
+            try:
+                secondoutline = self.get_hand(hand_type=HandType.SECOND, generate_outline=True)
+                if secondoutline is not None:
+                    out = os.path.join(path, "{}_hand_second_outline.stl".format(name))
+                    print("Outputting ", out)
+                    exporters.export(secondoutline, out)
+            except:
+                print("Unable to export second hand outline")

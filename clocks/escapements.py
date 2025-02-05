@@ -2349,7 +2349,6 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         # avoider = avoider.faces(">Y").workplane().moveTo(0,self.handAvoiderThick/2).circle(self.threadedRodM/2).cutThruAll()
         avoider = avoider.cut(cq.Workplane("XZ").circle(self.threaded_rod_m / 2).extrude(self.hand_avoider_height * 4).translate((0, self.hand_avoider_height, self.hand_avoider_thick / 2)))
-
         return avoider
 
     def get_bob_text(self):
