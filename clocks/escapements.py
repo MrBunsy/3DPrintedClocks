@@ -194,6 +194,11 @@ class AnchorEscapement:
 
         # calculates things like tooth height from diameter, also recalculates the maths
         self.set_diameter(diameter, force=True)
+    def get_BOM_for_combining_with_arbor(self):
+        '''
+        returns a BOM which will be combined with the arbor BOM, instead of a subcomponent
+        '''
+        return BillOfMaterials("Anchor")
 
     def calc_geometry(self):
         '''
@@ -741,6 +746,14 @@ class BrocotEscapment(AnchorEscapement):
                          tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=3,
                          style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=arbor_d)
 
+    def get_BOM_for_combining_with_arbor(self):
+        bom = super().get_BOM_for_combining_with_arbor()
+
+        bom.add_item(BillOfMaterials.Item(f"Ruby semi-circular pallet stone {self.pallet_r*2:.2f}mm diameter", quantity=2))
+
+        bom.assembly_instructions +="Push the ruby stones into the holes TODO how to line them up!"
+
+        return bom
 
     def get_wheel_base_to_anchor_base_z(self):
         #TODO
@@ -2209,7 +2222,7 @@ class Pendulum:
     now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
     def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=-1, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None,
-                 detail_thick=LAYER_THICK, font=None):
+                 detail_thick=LAYER_THICK, font=None, style=BobStyle.SIMPLE):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
         self.hand_avoider_height=hand_avoider_height
         if self.hand_avoider_height < 0:
@@ -2219,6 +2232,8 @@ class Pendulum:
         self.threaded_rod_m=threaded_rod_m
 
         self.hand_avoider_inner_d=hand_avoider_inner_d
+
+        self.style = style
 
         self.hand_avoider_wide = 5
 
@@ -2377,6 +2392,17 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
             text = text.add(text_space.get_text_shape())
 
         return text
+
+    def get_basic_bob_shape(self):
+        if self.style == BobStyle.SIMPLE:
+            circle = cq.Workplane("XY").circle(self.bob_r)
+            # nice rounded edge
+            bob = cq.Workplane("XZ").lineTo(self.bob_r, 0).radiusArc((self.bob_r, self.bob_thick), -self.bob_thick * 0.9).lineTo(0, self.bob_thick).close().sweep(circle)
+        # elif self.style == BobStyle.ANSONIA:
+            
+
+        return bob
+
 
     def get_bob(self, hollow=True):
 

@@ -1027,10 +1027,10 @@ class SimpleClockPlates:
                 #     front_anchor_from_plate += self.edging_thick
                 if self.has_vanity_plate:
                     front_anchor_from_plate = self.vanity_plate_base_z + self.vanity_plate_thick + self.endshake + 2
-                if self.going_train.escapement.get_anchor_thick() < 10:
+                if front_anchor_from_plate + self.going_train.escapement.get_wheel_base_to_anchor_base_z() + self.going_train.escapement.wheel_thick < 5:
                     #this won't be thick enough for the escape wheel to have much of a cylinder to grip the rod - so it might be wonky.
-                    #so stick the esacpement out a bit further#
-                    front_anchor_from_plate = 10
+                    #so stick the escapement out a bit further
+                    front_anchor_from_plate = 5 - self.going_train.escapement.get_wheel_base_to_anchor_base_z() - self.going_train.escapement.wheel_thick
 
 
             #new way of doing it, new class for combining all this logic in once place

@@ -57,7 +57,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.setRatios([[108, 10], [80, 9]])
 # train.setChainWheelRatio([74, 11])
 
-train.set_chain_wheel_ratio([93, 10])
+train.set_powered_wheel_ratios([93, 10])
 
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain
@@ -87,7 +87,7 @@ With a weight of 4kg, this results in an average power usage of 76.1μW
 Generate gears to get screw information
 Cordwheel power varies from 62.6μW to 92.1μW
 '''
-train.set_chain_wheel_ratio([93, 10])
+train.set_powered_wheel_ratios([93, 10])
 # train.calculateChainWheelRatios()
 
 train.print_info(weight_kg=3.5)

@@ -40,9 +40,11 @@ dial = Dial(dial_d, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2",
                   outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=dial_d/6, seconds_style=DialStyle.CONCENTRIC_CIRCLES,
                   bottom_fixing=False, top_fixing=False, raised_detail=True)
 
+dial = Dial(210, DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
+            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=40)
 
-show_object(dial.get_dial().rotate((0,0,0), (0,1,0), 180), options={"color": Colour.BLACK}, name="Dial")
-show_object(dial.get_all_detail().rotate((0,0,0), (0,1,0), 180), options={"color": Colour.WHITE}, name="Detail")
+# show_object(dial.get_dial().rotate((0,0,0), (0,1,0), 180), options={"color": Colour.BLACK}, name="Dial")
+# show_object(dial.get_all_detail().rotate((0,0,0), (0,1,0), 180), options={"color": Colour.WHITE}, name="Detail")
 
 motion_works = MotionWorks(compensate_loose_arbour=True, compact=True, bearing=get_bearing_info(3), cannon_pinion_friction_ring=True, minute_hand_thick=2.1)
 

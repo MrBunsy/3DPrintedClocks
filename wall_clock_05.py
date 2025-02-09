@@ -49,7 +49,7 @@ train=clock.GoingTrain(pendulum_period=1, fourth_wheel=True, escapement_teeth=30
 train.set_ratios([[64, 12], [63, 12], [60, 14]])
 # train.setRatios([[81, 12], [80, 9]])
 # train.setRatios([[108, 10], [80, 9]])
-train.set_chain_wheel_ratio([74, 11])
+train.set_powered_wheel_ratios([74, 11])
 
 #chain size seems about right, trying reducing tolerance
 #the 1.2mm 47links/ft regula chain

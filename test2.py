@@ -83,7 +83,11 @@ if False:
 # pendulum = Pendulum()
 #
 # show_object(pendulum.get_bob_assembled())
+#
+# holder = ColletFixingPendulumWithBeatSetting(6)
+#
+# show_object(holder.get_assembled())
 
-holder = ColletFixingPendulumWithBeatSetting(6)
+pendulum = Pendulum(style=BobStyle.ANSONIA)
 
-show_object(holder.get_assembled())
+show_object(pendulum.get_bob_assembled(hollow=True))

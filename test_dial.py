@@ -17,7 +17,10 @@ if 'show_object' not in globals():
 # dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8, font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=None)
 # dial = Dial(155, DialStyle.ARABIC_NUMBERS, font="Wingding", font_scale=0.8, font_path="C:\\WINDOWS\\FONTS\\WINGDING.TFF", inner_edge_style=DialStyle.LINES_ARC, outer_edge_style=None)
 
-dial = Dial(180, DialStyle.LINES_INDUSTRIAL, raised_detail=False)
+dial = Dial(210, DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
+            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=40)
+
+# dial = Dial(180, DialStyle.LINES_INDUSTRIAL, raised_detail=False)
 dial_diameter=205
 # dial = Dial(dial_diameter, DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED, dial_width=dial_diameter/6,
 #             outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, seconds_style=DialStyle.LINES_RECT)
@@ -27,7 +30,7 @@ dial_diameter=205
 #                   bottom_fixing=False, top_fixing=False)
 
 
-dial.configure_dimensions(support_length=10, support_d=21.7, second_hand_relative_pos=(0,-40))
+dial.configure_dimensions(support_length=10, support_d=21.7)#, second_hand_relative_pos=(0,-40))
 # dial = Dial(200, DialStyle.ARABIC_NUMBERS, font="Miriam CLM", outer_edge_style=DialStyle.RING, inner_edge_style=DialStyle.DOTS)
 # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font="Times New Roman", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None)
 # dial = Dial(200, DialStyle.ROMAN_NUMERALS, font=None, outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=DialStyle.RING)
@@ -38,7 +41,7 @@ dial.override_fixing_positions([[polar(math.pi/4 + i*math.pi/2,dial.outside_d/2-
 # show_object(dial.get_main_dial_detail().rotate((0, 0, 0), (0, 1, 0), 180), options={"color": Colour.BRASS})
 # seconds_detail = dial.get_seconds_dial_detail()
 show_object(dial.get_dial(), options={"color": "white"}, name="Dial")
-show_object(dial.get_all_detail(), options={"color": Colour.BRASS}, name="Detail")
+show_object(dial.get_all_detail(), options={"color": Colour.BLACK}, name="Detail")
 # if seconds_detail is not None:
 #     show_object(seconds_detail.rotate((0, 0, 0), (0, 1, 0), 180), options={"color": Colour.BRASS})
 

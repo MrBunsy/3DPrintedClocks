@@ -87,7 +87,7 @@ train.gen_cord_wheels(ratchet_thick=4+1, rod_metric_thread=4, cord_thick=1, cord
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
 
-train.set_chain_wheel_ratio([67, 11])
+train.set_powered_wheel_ratios([67, 11])
 
 
 pendulumSticksOut=20

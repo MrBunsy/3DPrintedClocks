@@ -1931,9 +1931,10 @@ class ArborForPlate:
             if "ratchet" in shapes:
                 # OLD ratchet type already in the right place
                 assembly = assembly.add(shapes["ratchet"])
-            for shape in ["ratchet_pawl", "ratchet_click"]:
-                if shape in shapes:
-                    assembly = assembly.add(shapes[shape].translate((0, 0, self.arbor.wheel_thick)))
+            if  not (self.arbor.powered_wheel.type in [PowerType.SPRING_BARREL]):
+                for shape in ["ratchet_pawl", "ratchet_click"]:
+                    if shape in shapes:
+                        assembly = assembly.add(shapes[shape].translate((0, 0, self.arbor.wheel_thick)))
 
             if not self.arbor.combine_with_powered_wheel and with_extras:
                 assembly = assembly.add(self.arbor.powered_wheel.get_model().translate((0, 0, self.arbor.wheel_thick)))
@@ -2567,7 +2568,8 @@ To keep this assembly together, use a small amount of superglue between the whee
         if self.type == ArborType.POWERED_WHEEL:
             bom.add_subcomponent(self.powered_wheel.get_BOM())
             bom.combine(self.powered_wheel.get_BOM_for_combining_with_arbor(wheel_thick=self.wheel_thick))
-
+        elif self.type == ArborType.ANCHOR:
+            bom.combine(self.escapement.get_BOM_for_combining_with_arbor())
 
         return bom
 

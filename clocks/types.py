@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-from enum import Enum
+from enum import Enum#, Enum
 
 '''
 This is in a separate file to avoid circular dependencies
@@ -47,6 +47,11 @@ class HandStyle(Enum):
     FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
     TWIRLY = "twirly"
     THIN_DIAMOND = "thin_diamond"
+    FANCY_CLOCK = "fancy clock" # inspired by an ebay clock
+
+class BobStyle(Enum):
+    SIMPLE = "Simple"
+    ANSONIA = "Ansonia"
 
 class HandType(Enum):
     HOUR = "hour"

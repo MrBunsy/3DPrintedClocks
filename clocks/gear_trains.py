@@ -463,7 +463,7 @@ class GoingTrain:
             print("chosen powered wheels: ", self.chain_wheel_ratios)
             print("")
 
-    def set_chain_wheel_ratio(self, pinionPairs):
+    def set_powered_wheel_ratios(self, pinionPairs):
         '''
         Instead of autogenerating, manually configure ratios
         '''
