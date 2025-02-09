@@ -2222,7 +2222,7 @@ class Pendulum:
     now it generates the pendulum bob and the hand avoider ring (although this is often now used as a pillar avoider)
     '''
     def __init__(self, threaded_rod_m=3, hand_avoider_inner_d=-1, bob_d=100, bob_thick=15, hand_avoider_height=-1, bob_text=None,
-                 detail_thick=LAYER_THICK, font=None, style=BobStyle.SIMPLE):
+                 detail_thick=LAYER_THICK, font=None, bob_nut_d=-1, support_hollow=True, bob_nut_thick=-1):
         #if this is teh default (-1), then the hand avoider is round, if this is provided then it's a round ended rectangle
         self.hand_avoider_height=hand_avoider_height
         if self.hand_avoider_height < 0:
@@ -2233,16 +2233,22 @@ class Pendulum:
 
         self.hand_avoider_inner_d=hand_avoider_inner_d
 
-        self.style = style
+        self.style = BobStyle.SIMPLE
+
+        self.support_hollow = support_hollow
 
         self.hand_avoider_wide = 5
 
         self.rod_screws = MachineScrew(threaded_rod_m)
 
-        self.bob_nut_d = bob_d * 0.3
+        self.bob_nut_d = bob_nut_d
+        if self.bob_nut_d < 0:
+            self.bob_nut_d = bob_d * 0.3
         if self.bob_nut_d > 25:
             self.bob_nut_d = 25
-        self.bob_nut_thick= bob_thick * 2 / 3
+        self.bob_nut_thick= bob_nut_thick
+        if self.bob_nut_thick < 0:
+            self.bob_nut_thick = bob_thick * 2 / 3
         self.bob_r= bob_d / 2
         self.bob_thick = bob_thick
 
@@ -2295,9 +2301,10 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         bom.add_image("bob.jpg")
         bom.add_image("pendulum_top.jpg")
         bom.add_model(self.get_bob_assembled())
-        lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
-        bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))
-        bom.add_item(BillOfMaterials.Item("Steel shot", purpose="Add weight to pendulum"))
+        if self.support_hollow:
+            lid_screws_length = get_nearest_machine_screw_length(self.bob_thick - self.wall_thick, self.bob_lid_screws)
+            bom.add_item(BillOfMaterials.Item(f"{self.bob_lid_screws} {lid_screws_length:.0f}mm", quantity=2, purpose="Bob lid fixing screws"))
+            bom.add_item(BillOfMaterials.Item("Steel shot", purpose="Add weight to pendulum"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Bob nut friction"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} nyloc nut", purpose="Top of pendulum rod"))
         bom.add_item(BillOfMaterials.Item(f"M{self.threaded_rod_m} half nut", purpose="Top of pendulum rod"))
@@ -2318,6 +2325,9 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         '''
         properly centred on 0,0,0 so it can be translated into place for a model
         '''
+        if not self.support_hollow:
+            hollow = False
+
         bob = self.get_bob(hollow=hollow).rotate((0, 0, self.bob_thick / 2), (0, 1, self.bob_thick / 2), 180).translate((0,0,-self.bob_thick/2))
 
         bob = bob.add(self.get_bob_nut().translate((0, 0, -self.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90))
@@ -2392,16 +2402,6 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
             text = text.add(text_space.get_text_shape())
 
         return text
-
-    def get_basic_bob_shape(self):
-        if self.style == BobStyle.SIMPLE:
-            circle = cq.Workplane("XY").circle(self.bob_r)
-            # nice rounded edge
-            bob = cq.Workplane("XZ").lineTo(self.bob_r, 0).radiusArc((self.bob_r, self.bob_thick), -self.bob_thick * 0.9).lineTo(0, self.bob_thick).close().sweep(circle)
-        # elif self.style == BobStyle.ANSONIA:
-            
-
-        return bob
 
 
     def get_bob(self, hollow=True):
@@ -2530,11 +2530,16 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
     def get_printed_parts(self):
         parts = [
-            BillOfMaterials.PrintedPart("bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy"),
             BillOfMaterials.PrintedPart("bob_solid", self.get_bob(hollow=False), purpose="Solid pendulum bob alternative"),
-            BillOfMaterials.PrintedPart("bob_nut", self.get_bob_nut(), purpose="Nut to adjust rate of clock"),
-            BillOfMaterials.PrintedPart("bob_lid", self.get_bob_lid(), purpose="Lid for back of hollow bob to keep heavy filling inside"),
         ]
+
+        if self.support_hollow:
+            parts += [
+                BillOfMaterials.PrintedPart("bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy"),
+                BillOfMaterials.PrintedPart("bob_nut", self.get_bob_nut(), purpose="Nut to adjust rate of clock"),
+                BillOfMaterials.PrintedPart("bob_lid", self.get_bob_lid(), purpose="Lid for back of hollow bob to keep heavy filling inside"),
+            ]
+
         if self.hand_avoider_inner_d > 0:
             parts.append(BillOfMaterials.PrintedPart("ring", self.get_hand_avoider(), purpose="Ring for pendulum to slot over hands or plate pillar"))
 
@@ -2567,7 +2572,31 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         print("Outputting ", out)
         exporters.export(self.get_bob_lid(), out)
 
+class FancyPendulum(Pendulum):
+    def __init__(self, bob_d=80, bob_thick=20):
+        bob_nut_thick=bob_thick*0.25
 
+        min_thick = MachineScrew(3).get_nut_height(nyloc=True)+1
+        if bob_nut_thick < min_thick:
+            bob_nut_thick = min_thick
+
+        super().__init__(bob_d=bob_d, bob_thick=bob_thick, bob_nut_d=bob_thick*1.2, support_hollow=False, bob_nut_thick=bob_nut_thick)
+
+    def get_bob(self, hollow=False):
+        bob = cq.Workplane("XY").circle(self.bob_r).extrude(self.bob_thick)
+
+        fillet_r = self.bob_thick * 0.1
+
+        #just round the centre edges, not either face
+        bob = bob.edges().chamfer(self.bob_thick/2 - fillet_r/2).edges("(not>Z) and (not<Z)").fillet(fillet_r)
+
+        cone = cq.Solid.makeCone(radius2=self.gap_height/2, radius1=self.bob_r*0.45, height=self.bob_thick*0.2)
+
+        bob = bob.cut(cone).cut(cone.rotate((0,0,0), (1,0,0),180).translate((0,0, self.bob_thick)))
+
+        bob = bob.cut(cq.Workplane("XY").rect(self.gap_width, self.gap_height).extrude(self.bob_thick))
+
+        return bob
 
 def animateEscapement(escapement, frames=100, path="out", name="escapement_animation", overswing_deg=2, period=1.5):
     '''
