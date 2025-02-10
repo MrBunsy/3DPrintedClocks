@@ -115,35 +115,50 @@ class Gear:
     @staticmethod
     def cut_configurable_arms_style(gear, outer_radius, inner_radius, arms=5, straight=True, clockwise=True, arms_offset=False, rounded=True):
         cutter_thick = 100
-        cutter = cq.Workplane("XY").circle(outer_radius).circle(inner_radius).extrude(cutter_thick)
 
-        arm_thick = outer_radius * 0.2
 
-        for arm in range(arms):
-            angle = arm*math.pi*2/arms
-            offset = math.pi*2/(arms*2) * (1 if clockwise else -1)
-            if not arms_offset:
-                offset = 0
-            start = polar(angle, inner_radius - arm_thick)
-            end = polar(angle+offset, outer_radius + arm_thick)
+        original_inner_radius = inner_radius
+        success = False
+        count = 0
 
-            if straight:
-                arm_cutter = get_stroke_line([start,end], wide=arm_thick, thick=cutter_thick)
-            else:
-                # radius = (outer_radius - inner_radius)* 2 *(1 if clockwise else -1)
-                distance = distance_between_two_points(start, end)
-                radius = distance * 0.6  *(1 if clockwise else -1)
-                arm_cutter = get_stroke_arc(start, end, radius=radius, wide=arm_thick, thick=cutter_thick)
-            cutter = cutter.cut(arm_cutter)
+        #if the roundedness (fillet) can't be cut, it's likely the inner radius is too small so there isn't space. increase it until there is space, if we can
+        while not success and count < 100:
 
-        if rounded:
-            roundedness = arm_thick/2
-            if roundedness > (outer_radius - inner_radius)*0.4:
-                roundedness = (outer_radius - inner_radius)*0.4
-            try:
-                cutter = cutter.edges("|Z").fillet(roundedness)
-            except:
-                pass
+            cutter = cq.Workplane("XY").circle(outer_radius).circle(inner_radius).extrude(cutter_thick)
+
+            arm_thick = outer_radius * 0.2
+
+            for arm in range(arms):
+                angle = arm*math.pi*2/arms
+                offset = math.pi*2/(arms*2) * (1 if clockwise else -1)
+                if not arms_offset:
+                    offset = 0
+                start = polar(angle, inner_radius - arm_thick)
+                end = polar(angle+offset, outer_radius + arm_thick)
+
+                if straight:
+                    arm_cutter = get_stroke_line([start,end], wide=arm_thick, thick=cutter_thick)
+                else:
+                    # radius = (outer_radius - inner_radius)* 2 *(1 if clockwise else -1)
+                    distance = distance_between_two_points(start, end)
+                    radius = distance * 0.6  *(1 if clockwise else -1)
+                    arm_cutter = get_stroke_arc(start, end, radius=radius, wide=arm_thick, thick=cutter_thick)
+                cutter = cutter.cut(arm_cutter)
+
+            if rounded:
+                roundedness = arm_thick/2
+                if roundedness > (outer_radius - inner_radius)*0.4:
+                    roundedness = (outer_radius - inner_radius)*0.4
+                try:
+                    cutter = cutter.edges("|Z").fillet(roundedness)
+                    success = True
+                except:
+                    count+=1
+                    print("couldn't cut gear, trying again, inner_radius:", inner_radius, "count", count)
+                    #increase inner radius until cutter can be filleted
+                    step = (outer_radius - original_inner_radius)/100
+                    inner_radius += step
+                    pass
 
         return gear.cut(cutter)
 
@@ -2973,7 +2988,7 @@ To keep this assembly together, use a small amount of superglue between the whee
                     gear_wheel = gear_wheel.cut(cq.Workplane("XY").circle(self.ratchet_screws.get_rod_cutter_r(for_tap_die=True)).extrude(self.wheel_thick).translate(hole_pos))
                 else:
                     #countersunk hole for machine screw
-                    gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(for_tap_die=True).translate(hole_pos))
+                    gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True).translate(hole_pos))
 
 
         if for_printing and not self.combine_with_powered_wheel:

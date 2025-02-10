@@ -90,6 +90,8 @@ if False:
 
 pendulum = FancyPendulum(bob_d=60)
 
-show_object(pendulum.get_bob_assembled(hollow=True))
+# show_object(pendulum.get_bob_assembled(hollow=True))
 
-# show_object(pendulum.get_bob())
+show_object(pendulum.get_bob())
+
+show_object(pendulum.get_bob_lid())

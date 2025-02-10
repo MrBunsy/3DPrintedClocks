@@ -229,7 +229,7 @@ class WindowVent:
 
         holder = get_stroke_line([(-length/2, 0), (length/2, 0)], wide=self.handle_wide, thick = self.handle_holder_thick)
 
-        holder = holder.cut(self.fixing_screws.get_cutter(for_tap_die=True))
+        holder = holder.cut(self.fixing_screws.get_cutter(self_tapping=True))
 
         return holder
 

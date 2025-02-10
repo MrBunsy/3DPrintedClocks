@@ -341,7 +341,7 @@ class MachineScrew:
 
         return r
 
-    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, for_tap_die=False, sideways=False, space_for_pan_head=False):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -349,6 +349,8 @@ class MachineScrew:
 
         previously pan heads provided a cutter to fit the head into. but I don't think I ever actually used this and now this does not happen
         only countersunk screws have a space for the head included in the cutter
+        for_tap_die - DEPRECATED - intended to be able to cut a thread with a real tap die. didn't really work at m3
+        self_tapping: using an idea from a youtube video, add three nubs so the thread has something to bite and form a strong join without being too hard to screw
         '''
 
         if length < 0:
@@ -359,26 +361,34 @@ class MachineScrew:
                 # use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
 
-        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose, for_tap_die=for_tap_die, sideways=sideways)
+        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose, for_tap_die=False, sideways=sideways)
 
-        screw = cq.Workplane("XY")  # .circle(self.metric_thread/2).extrude(length)
+        screw = cq.Workplane("XY").circle(r).extrude(length)
+
+        if self_tapping:
+            #cut out three nubs from teh cutter so the hole has three bits for the screw to bite into
+            inner_r = self.get_rod_cutter_r(for_tap_die=True)
+            nubs = 3
+            angles = [-math.pi/2 + nub*(math.pi*2/nubs) for nub in range(nubs)]
+            overlap = r - inner_r
+            for angle in angles:
+                pos = polar(angle, r + inner_r - overlap)
+                screw = screw.cut(cq.Workplane("XY").circle(inner_r).extrude(length).translate(pos))
 
         if self.countersunk:
             #countersink angle for ANSI metric machine screws is 90deg, so this means edges sloping at 45deg. Therefore cut a code of height same as radius
             screw = screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=0,
                                         height=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL))
-            # countersunk screw lengths seem to include the head
-            screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
+            # # countersunk screw lengths seem to include the head
+            # screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
         else:
             if space_for_pan_head:
+                length += self.get_head_height()
                 # pan head screw lengths do not include the head
                 if not with_bridging:
-                    screw = screw.circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
+                    screw = screw.union(cq.Workplane("XY").circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height()))
                 else:
-                    screw = screw.add(get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layer_thick=layer_thick))
-                screw = screw.faces(">Z").workplane().circle(r).extrude(length)
-            else:
-                screw = cq.Workplane("XY").circle(r).extrude(length)
+                    screw = screw.union(get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layer_thick=layer_thick))
         # extend out from the headbackwards too
         if head_space_length > 0:
             screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)

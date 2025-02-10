@@ -1977,7 +1977,7 @@ class SimpleClockPlates:
         #small standoff for motion works arbour
         holder = holder.faces(">Z").workplane().circle(self.motion_works_screws.metric_thread).extrude(standoff_thick)
 
-        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, for_tap_die=True))
+        holder = holder.cut(self.motion_works_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick, self_tapping=True))
 
         for pos in self.motion_works_fixings_relative_pos:
             holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0, 0, 0), (0, 1, 0), 180).translate((pos[0], pos[1], holder_thick)))

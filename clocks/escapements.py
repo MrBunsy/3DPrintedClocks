@@ -2231,6 +2231,9 @@ class Pendulum:
         self.hand_avoider_thick = get_nut_containing_diameter(threaded_rod_m) + 2
         self.threaded_rod_m=threaded_rod_m
 
+        # was 0.5, which is plenty of space, but can slowly rotate. 0.1 seems to be a tight fit that help stop it rotate over time
+        self.rod_hole_r = self.threaded_rod_m/2 + 0.1
+
         self.hand_avoider_inner_d=hand_avoider_inner_d
 
         self.style = BobStyle.SIMPLE
@@ -2238,6 +2241,8 @@ class Pendulum:
         self.support_hollow = support_hollow
 
         self.hand_avoider_wide = 5
+
+        self.tolerance = 0.1
 
         self.rod_screws = MachineScrew(threaded_rod_m)
 
@@ -2403,6 +2408,15 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         return text
 
+    def get_nut_hole_cutter(self):
+        return cq.Workplane("XY").rect(self.gap_width, self.gap_height).extrude(self.bob_thick * 2)
+
+    def get_rod_and_nut_cutter(self):
+        # rectangle for the nut, with space for the threaded rod up and down
+        cut = self.get_nut_hole_cutter().faces(">Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.rod_hole_r).extrude(self.bob_r * 2). \
+            faces("<Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.rod_hole_r).extrude(self.bob_r * 2)
+
+        return cut
 
     def get_bob(self, hollow=True):
 
@@ -2413,15 +2427,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         #nice rounded edge
         bob = cq.Workplane("XZ").lineTo(self.bob_r, 0).radiusArc((self.bob_r, self.bob_thick), -self.bob_thick * 0.9).lineTo(0, self.bob_thick).close().sweep(circle)
 
-        #was 0.5, which is plenty of space, but can slowly rotate. 0.1 seems to be a tight fit that help stop it rotate over time
-        extraR=0.1
-
-
-
-        #rectangle for the nut, with space for the threaded rod up and down
-        cut = cq.Workplane("XY").rect(self.gap_width, self.gap_height).extrude(self.bob_thick * 2).faces(">Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.threaded_rod_m / 2 + extraR).extrude(self.bob_r * 2).\
-            faces("<Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.threaded_rod_m / 2 + extraR).extrude(self.bob_r * 2)
-        bob=bob.cut(cut)
+        bob=bob.cut(self.get_rod_and_nut_cutter())
 
 
         if hollow:
@@ -2530,12 +2536,12 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
     def get_printed_parts(self):
         parts = [
-            BillOfMaterials.PrintedPart("bob_solid", self.get_bob(hollow=False), purpose="Solid pendulum bob alternative"),
+            BillOfMaterials.PrintedPart("bob_solid", self.get_bob(hollow=False), purpose="Solid pendulum bob alternative", tolerance=self.tolerance),
         ]
 
         if self.support_hollow:
             parts += [
-                BillOfMaterials.PrintedPart("bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy"),
+                BillOfMaterials.PrintedPart("bob_hollow", self.get_bob(), purpose="Hollow pendulum bob for filling with something heavy", tolerance=self.tolerance),
                 BillOfMaterials.PrintedPart("bob_nut", self.get_bob_nut(), purpose="Nut to adjust rate of clock"),
                 BillOfMaterials.PrintedPart("bob_lid", self.get_bob_lid(), purpose="Lid for back of hollow bob to keep heavy filling inside"),
             ]
@@ -2573,28 +2579,106 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         exporters.export(self.get_bob_lid(), out)
 
 class FancyPendulum(Pendulum):
-    def __init__(self, bob_d=80, bob_thick=20):
+    '''
+
+    Trying an idea: filling with shot after the nut and rod are in place, so I don't have to put plastic around the hole through the centre.
+    the shot is too big to get through the gaps and shouldn't foul up the nut
+
+    '''
+    def __init__(self, bob_d=80, bob_thick=20, lid_fixing_screws = None):
         bob_nut_thick=bob_thick*0.25
 
         min_thick = MachineScrew(3).get_nut_height(nyloc=True)+1
         if bob_nut_thick < min_thick:
             bob_nut_thick = min_thick
 
-        super().__init__(bob_d=bob_d, bob_thick=bob_thick, bob_nut_d=bob_thick*1.2, support_hollow=False, bob_nut_thick=bob_nut_thick)
+        super().__init__(bob_d=bob_d, bob_thick=bob_thick, bob_nut_d=bob_thick*1.2, support_hollow=True, bob_nut_thick=bob_nut_thick)
+        self.tolerance = 0.02
+        self.wall_thick = 2
+        self.fillet_r = self.bob_thick * 0.1
+        self.side_chamfer = self.bob_thick / 2 - self.fillet_r  / 2
+        self.front_chamfer = self.side_chamfer * 0.75
+        self.cone_start_r = self.bob_r*0.45
+        self.centre_r = ((self.bob_r - self.front_chamfer) + self.cone_start_r)/2
+        angle_span = deg_to_rad(40)
+        angles = [math.pi / 2 - angle_span / 2, math.pi / 2 + angle_span / 2]
+        self.lid_fixing_positions = [polar(angle, self.centre_r) for angle in angles]
 
-    def get_bob(self, hollow=False):
+        self.bob_lid_screws = lid_fixing_screws
+        if self.bob_lid_screws is None:
+            self.bob_lid_screws = MachineScrew(3, countersunk=True)
+            length = get_nearest_machine_screw_length(self.bob_thick / 2, self.bob_lid_screws)
+            self.bob_lid_screws.length = length
+
+    def get_BOM(self):
+        bom = super().get_BOM()
+        bom.assembly_instructions = "Assemble this bob with nut and rod before filling! There are holes filling may fall through until the rod is in place.\n\n" + bom.assembly_instructions
+
+        return bom
+
+    def get_bob_lid(self, for_cutting=False):
+
+
+        lid_wide = (self.bob_r - self.front_chamfer - self.cone_start_r)*0.75
+        thick = self.wall_thick
+        if for_cutting:
+            lid_wide += 0.1
+
+
+
+        lid = get_stroke_arc(self.lid_fixing_positions[0], self.lid_fixing_positions[1], self.centre_r, wide=lid_wide, thick=thick)
+
+        if not for_cutting:
+            for pos in self.lid_fixing_positions:
+                lid = lid.cut(self.bob_lid_screws.get_cutter().translate(pos))
+
+        return lid
+
+    def get_bob(self, hollow=True):
         bob = cq.Workplane("XY").circle(self.bob_r).extrude(self.bob_thick)
 
-        fillet_r = self.bob_thick * 0.1
 
         #just round the centre edges, not either face
-        bob = bob.edges().chamfer(self.bob_thick/2 - fillet_r/2).edges("(not>Z) and (not<Z)").fillet(fillet_r)
+        bob = bob.edges().chamfer(self.side_chamfer, self.front_chamfer).edges("(not>Z) and (not<Z)").fillet(self.fillet_r)
 
-        cone = cq.Solid.makeCone(radius2=self.gap_height/2, radius1=self.bob_r*0.45, height=self.bob_thick*0.2)
+        cone = cq.Solid.makeCone(radius2=self.gap_height/2, radius1=self.cone_start_r, height=self.bob_thick*0.2)
 
         bob = bob.cut(cone).cut(cone.rotate((0,0,0), (1,0,0),180).translate((0,0, self.bob_thick)))
 
-        bob = bob.cut(cq.Workplane("XY").rect(self.gap_width, self.gap_height).extrude(self.bob_thick))
+        bob = bob.cut(self.get_nut_hole_cutter())
+
+        if hollow:
+            bob = bob.shell(-self.wall_thick)
+            bob = bob.cut(self.get_bob_lid(for_cutting=True))
+
+            for pos in self.lid_fixing_positions:
+                bob = bob.union(cq.Workplane("XY").circle(self.bob_lid_screws.metric_thread/2 + 1.5).extrude(self.bob_thick-self.wall_thick).translate(pos).translate((0,0,self.wall_thick)))
+                bob = bob.cut(self.bob_lid_screws.get_cutter(self_tapping=True).translate(pos))
+
+        bob = bob.cut(self.get_rod_and_nut_cutter())
+        text_width = self.bob_r - self.front_chamfer - self.cone_start_r
+        text_x = self.centre_r
+        text_height = text_width
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", text_height, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((text_x, 0, 0)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", text_height, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((-text_x, 0, 0)))
+
+
+        return bob
+
+    def get_bob_assembled(self, hollow=True):
+        '''
+        base class built bob upside down and rotated, FancyPendulum builds it in the right orentation
+        properly centred on 0,0,0 so it can be translated into place for a model
+        '''
+        if not self.support_hollow:
+            hollow = False
+
+        bob = self.get_bob(hollow=hollow).translate((0,0,-self.bob_thick/2))
+
+        bob = bob.add(self.get_bob_nut().translate((0, 0, -self.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90))
+
+        if hollow:
+            bob = bob.add(self.get_bob_lid().translate((0,0,-self.bob_thick/2)))
 
         return bob
 
