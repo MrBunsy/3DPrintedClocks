@@ -2600,7 +2600,7 @@ class FancyPendulum(Pendulum):
         self.front_chamfer = self.side_chamfer * 0.75
         self.cone_start_r = self.bob_r * 0.45
         self.centre_r = ((self.bob_r - self.front_chamfer) + self.cone_start_r)/2
-        angle_span = deg_to_rad(40)
+        angle_span = deg_to_rad(50)
         angles = [math.pi / 2 - angle_span / 2, math.pi / 2 + angle_span / 2]
         self.lid_fixing_positions = [polar(angle, self.centre_r) for angle in angles]
 
@@ -2608,16 +2608,10 @@ class FancyPendulum(Pendulum):
 
         self.bob_lid_screws = lid_fixing_screws
         if self.bob_lid_screws is None:
-            self.bob_lid_screws = MachineScrew(3, countersunk=True)
+            self.bob_lid_screws = MachineScrew(2, countersunk=True)
             # length = get_nearest_machine_screw_length(self.bob_thick / 2, self.bob_lid_screws)
             length = get_nearest_machine_screw_length(self.wall_thick + 8, self.bob_lid_screws)
             self.bob_lid_screws.length = length
-
-    def get_BOM(self):
-        bom = super().get_BOM()
-        bom.assembly_instructions = "Assemble this bob with nut and rod before filling! There are holes filling may fall through until the rod is in place.\n\n" + bom.assembly_instructions
-
-        return bom
 
     def get_bob_lid(self, for_cutting=False, for_printing=True):
 
@@ -2655,8 +2649,15 @@ class FancyPendulum(Pendulum):
         bob = bob.cut(self.get_nut_hole_cutter())
 
         if hollow:
+            rod_case = cq.Workplane("XY").polygon(6, diameter=self.threaded_rod_m * 2).extrude(self.bob_r * 4).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.bob_r * 2, self.bob_thick / 2))
+            rod_case = rod_case.intersect(bob)
+
             bob = bob.shell(-self.wall_thick)
             bob = bob.cut(self.get_bob_lid(for_cutting=True))
+
+            #encase the rod hole so we can fill with shot without a rod
+
+            bob = bob.union(rod_case)
 
             for pos in self.lid_fixing_positions:
                 pillar_r = self.bob_lid_screws.metric_thread/2 + 1.5

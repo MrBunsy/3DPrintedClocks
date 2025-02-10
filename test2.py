@@ -88,7 +88,7 @@ if False:
 #
 # show_object(holder.get_assembled())
 
-pendulum = FancyPendulum(bob_d=50)
+pendulum = FancyPendulum(bob_d=50, lid_fixing_screws=MachineScrew(2, countersunk=True, length=10))
 
 show_object(pendulum.get_bob_assembled(hollow=True))
 #

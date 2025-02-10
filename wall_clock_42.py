@@ -66,7 +66,7 @@ train.gen_gears(module_sizes=[0.675, 0.675], thick=3, thickness_reduction=2 / 2.
                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=True, escapement_split=True)
 
 dial_d=210
-dial_width = dial_d*0.125
+dial_width = dial_d*0.15
 
 
 
@@ -77,8 +77,11 @@ motion_works_angle_deg=360-40
 
 pendulum = FancyPendulum(bob_d=50)
 
-dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
-                  seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
+            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
+
+# dial = Dial(210, DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
+#             outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=40)
 plaque = Plaque(text_lines=["W42#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2025"])
 
 plates = RoundClockPlates(train, motion_works, name="Wall 42", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,

@@ -1371,7 +1371,10 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
 
 
 
-machine_screw_lengths={3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60]}
+machine_screw_lengths={
+    3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60],
+    2: [x for x in range(4, 10, 2) ]
+}
 
 def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, prefer_longer=False):
     '''
