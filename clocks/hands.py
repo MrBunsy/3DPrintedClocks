@@ -19,6 +19,7 @@ source.
 '''
 import math
 
+from .geometry import get_stroke_line
 from .utility import *
 import cadquery as cq
 import os
@@ -57,7 +58,7 @@ class HandGenerator:
     def minute_hand(self, colour = None, thick_override=-1):
         raise NotImplemented()
 
-    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False):
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, fixing_thick=-1):
         raise NotImplemented()
 
 
@@ -516,6 +517,70 @@ class BaroqueHands(HandGenerator):
         self.second_hand_cache = hand
         return hand
 
+class FancyClockHands(HandGenerator):
+    def __init__(self, base_r, length, thick):
+        super().__init__(base_r, length, thick)
+        self.diamond_width = self.length*0.08
+        self.diamond_thick = self.diamond_width*0.4
+        self.basic_width = self.length*0.025
+
+        self.tip_r = self.basic_width*0.25
+        self.rear_length = self.length*0.3
+
+    def diamond(self):
+        #little  horizontal stretched diamond which appears in multiple places
+        return cq.Workplane("XY").sketch().polygon([(-self.diamond_width/2,0), (0, self.diamond_thick/2), (self.diamond_width/2, 0), (0, -self.diamond_thick/2)]).finalize().extrude(self.thick)
+        # return cq.Workplane("XY").polyline([(-self.diamond_width/2,0), (0, self.diamond_thick/2), (self.diamond_width/2, 0), (0, -self.diamond_thick/2)]).close().extrude(self.thick)
+    def minute_hand(self, colour = None, thick_override=-1):
+        hand = cq.Workplane("XY").tag("base")
+
+        diamond_distances = [-self.base_r - self.diamond_thick, self.base_r + self.diamond_thick, self.length * 0.45]
+
+        #first bar from centre to first diamond
+        hand = hand.union(get_stroke_line([(0,0), (0, diamond_distances[1])], wide=self.basic_width, thick=self.thick))
+
+        curve_base = diamond_distances[1] + self.diamond_thick*0.25
+        curve_centre_width = self.basic_width*1.2
+        curve_length = diamond_distances[2] - curve_base
+        curve_centre = curve_base + curve_length/2
+        #curvey bit after first diamond
+        curvey_bit = (cq.Workplane("XY").spline([(0,curve_base), (-curve_centre_width/2, curve_centre), (-self.basic_width/2, diamond_distances[2])], [(-1,0.2),(0.075,1), (0,1)]).lineTo(0, diamond_distances[2])
+                      .close().mirrorY().extrude(self.thick))
+        hand = hand.union(curvey_bit)
+        #.spline([(0, self.length)], tangents=[None, (1,0)], includeCurrent=True)
+        end_bit = (cq.Workplane("XY").moveTo(0, diamond_distances[2]).lineTo(-self.basic_width/2, diamond_distances[2]).lineTo(-self.tip_r, self.length-self.tip_r)
+                   .tangentArcPoint((0,self.length), relative=False).lineTo(0, diamond_distances[2]).close().mirrorY().extrude(self.thick))
+
+        hand = hand.union(end_bit)
+
+        #and backwards
+        hand = hand.union(get_stroke_line([(0,0), (0, diamond_distances[0])], wide=self.basic_width, thick=self.thick))
+
+        #.tangentArcPoint((0,-self.rear_length), relative=False)
+
+        rear_curve_base = diamond_distances[0] - self.diamond_thick*0.25
+        rear_curve_centre_width = self.basic_width*0.8
+        rear_curve_centre = (-self.rear_length+self.tip_r + rear_curve_base)/2
+        rear_curve = (cq.Workplane("XY").moveTo(0, rear_curve_base).spline([(0, rear_curve_base), (-rear_curve_centre_width/2, rear_curve_centre), (-self.tip_r, -self.rear_length+self.tip_r)], tangents=[(-1, 0), (0, -1)])
+                      .radiusArc((0,-self.rear_length), -self.tip_r).mirrorY().extrude(self.thick*10))
+
+        hand = hand.union(rear_curve)
+
+        for distance in diamond_distances:
+            hand = hand.union(self.diamond().translate((0, distance)))
+
+        return hand
+
+    def hour_hand(self, colour = None, thick_override=-1):
+        hand = cq.Workplane("XY").tag("base")
+
+        return hand
+
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False, fixing_thick=-1):
+        hand = cq.Workplane("XY").tag("base")
+
+        return hand
+
 class Hands:
     '''
     this class generates most of the hands entirely internally - but can now use a "hand generator" class like BaroqueHands.
@@ -666,6 +731,8 @@ class Hands:
         if self.style == HandStyle.FANCY_WATCH:
             #TODO base_r properly?
             self.generator = FancyWatchHands(base_r=self.length*0.1, thick = self.thick, total_length= self.length, outline= self.outline, detail_thick=self.outline_thick)
+        if self.style == HandStyle.FANCY_CLOCK:
+            self.generator = FancyClockHands(base_r=self.length*0.1, thick = self.thick, length= self.length)
 
         #was attempting to use a cache, but so many edge cases that I've given up
         self.hand_shapes = {}
