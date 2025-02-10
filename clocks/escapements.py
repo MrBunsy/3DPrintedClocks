@@ -2604,6 +2604,8 @@ class FancyPendulum(Pendulum):
         angles = [math.pi / 2 - angle_span / 2, math.pi / 2 + angle_span / 2]
         self.lid_fixing_positions = [polar(angle, self.centre_r) for angle in angles]
 
+        self.lid_wide = (self.bob_r - self.front_chamfer - self.cone_start_r) - self.wall_thick#*0.75
+
         self.bob_lid_screws = lid_fixing_screws
         if self.bob_lid_screws is None:
             self.bob_lid_screws = MachineScrew(3, countersunk=True)
@@ -2618,8 +2620,8 @@ class FancyPendulum(Pendulum):
 
     def get_bob_lid(self, for_cutting=False):
 
+        lid_wide = self.lid_wide
 
-        lid_wide = (self.bob_r - self.front_chamfer - self.cone_start_r)*0.75
         thick = self.wall_thick
         if for_cutting:
             lid_wide += 0.1
@@ -2627,6 +2629,7 @@ class FancyPendulum(Pendulum):
 
 
         lid = get_stroke_arc(self.lid_fixing_positions[0], self.lid_fixing_positions[1], self.centre_r, wide=lid_wide, thick=thick)
+        # lid = get_stroke_line(self.lid_fixing_positions, wide=lid_wide, thick=thick)
 
         if not for_cutting:
             for pos in self.lid_fixing_positions:
@@ -2652,7 +2655,21 @@ class FancyPendulum(Pendulum):
             bob = bob.cut(self.get_bob_lid(for_cutting=True))
 
             for pos in self.lid_fixing_positions:
-                bob = bob.union(cq.Workplane("XY").circle(self.bob_lid_screws.metric_thread/2 + 1.5).extrude(self.bob_thick-self.wall_thick).translate(pos).translate((0,0,self.wall_thick)))
+                pillar_r = self.bob_lid_screws.metric_thread/2 + 1.5
+                pillar_top_r = self.lid_wide/2 + 1
+                pillar_top_height = pillar_top_r - pillar_r
+                bob = bob.union(cq.Workplane("XY").circle(pillar_r).extrude(self.bob_thick-self.wall_thick).translate(pos).translate((0,0,self.wall_thick)))
+                #tops of pillars so that the top surface (printed as overhang) has something to rest on. could do this a few ways, but this is lazy and easy
+                pillar_top = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=pillar_top_r, radius2=pillar_r, height=pillar_top_height)).translate(pos).translate((0,0, self.wall_thick))
+
+                #chop out the uneeded bits
+                line_to_screw = Line((0,0), anotherPoint=pos)
+                top_outer = np_to_set(np.multiply(line_to_screw.dir, self.bob_r))
+                top = (0, self.bob_r)
+                pillar_top_cutter = cq.Workplane("XY").lineTo(top_outer[0], top_outer[1]).lineTo(top[0], top[1]).close().extrude(pillar_top_height).translate((0,0,self.wall_thick))
+
+                pillar_top = pillar_top.cut(pillar_top_cutter)
+                bob = bob.union(pillar_top)
                 bob = bob.cut(self.bob_lid_screws.get_cutter(self_tapping=True).translate(pos))
 
         bob = bob.cut(self.get_rod_and_nut_cutter())
