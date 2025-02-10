@@ -75,7 +75,7 @@ motion_works_angle_deg=360-40
 
 
 
-pendulum = FancyPendulum(bob_d=60)
+pendulum = FancyPendulum(bob_d=50)
 
 dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)

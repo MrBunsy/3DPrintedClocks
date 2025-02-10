@@ -2418,7 +2418,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         return cut
 
-    def get_bob(self, hollow=True):
+    def get_bob(self, hollow=True, for_printing=True):
 
 
 
@@ -2462,7 +2462,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         return bob
 
-    def get_bob_lid(self, for_cutting=False):
+    def get_bob_lid(self, for_cutting=False, for_printing=True):
         '''
         extraslot size for the slot, but not for the lid itself
 
@@ -2499,7 +2499,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         return lid
 
-    def get_bob_nut(self):
+    def get_bob_nut(self, for_printing=True):
         '''
         note - replaceable now by HandTurnableNut
         '''
@@ -2585,31 +2585,32 @@ class FancyPendulum(Pendulum):
     the shot is too big to get through the gaps and shouldn't foul up the nut
 
     '''
-    def __init__(self, bob_d=80, bob_thick=20, lid_fixing_screws = None):
+    def __init__(self, bob_d=50, bob_thick=20, lid_fixing_screws = None):
         bob_nut_thick=bob_thick*0.25
 
         min_thick = MachineScrew(3).get_nut_height(nyloc=True)+1
         if bob_nut_thick < min_thick:
             bob_nut_thick = min_thick
 
-        super().__init__(bob_d=bob_d, bob_thick=bob_thick, bob_nut_d=bob_thick*1.2, support_hollow=True, bob_nut_thick=bob_nut_thick)
+        super().__init__(bob_d=bob_d, bob_thick=bob_thick, bob_nut_d=bob_d * 0.4, support_hollow=True, bob_nut_thick=bob_nut_thick)
         self.tolerance = 0.02
         self.wall_thick = 2
         self.fillet_r = self.bob_thick * 0.1
         self.side_chamfer = self.bob_thick / 2 - self.fillet_r  / 2
         self.front_chamfer = self.side_chamfer * 0.75
-        self.cone_start_r = self.bob_r*0.45
+        self.cone_start_r = self.bob_r * 0.45
         self.centre_r = ((self.bob_r - self.front_chamfer) + self.cone_start_r)/2
         angle_span = deg_to_rad(40)
         angles = [math.pi / 2 - angle_span / 2, math.pi / 2 + angle_span / 2]
         self.lid_fixing_positions = [polar(angle, self.centre_r) for angle in angles]
 
-        self.lid_wide = (self.bob_r - self.front_chamfer - self.cone_start_r) - self.wall_thick#*0.75
+        self.lid_wide = (self.bob_r - self.front_chamfer - self.cone_start_r) - self.wall_thick/2#*0.75
 
         self.bob_lid_screws = lid_fixing_screws
         if self.bob_lid_screws is None:
             self.bob_lid_screws = MachineScrew(3, countersunk=True)
-            length = get_nearest_machine_screw_length(self.bob_thick / 2, self.bob_lid_screws)
+            # length = get_nearest_machine_screw_length(self.bob_thick / 2, self.bob_lid_screws)
+            length = get_nearest_machine_screw_length(self.wall_thick + 8, self.bob_lid_screws)
             self.bob_lid_screws.length = length
 
     def get_BOM(self):
@@ -2618,7 +2619,7 @@ class FancyPendulum(Pendulum):
 
         return bom
 
-    def get_bob_lid(self, for_cutting=False):
+    def get_bob_lid(self, for_cutting=False, for_printing=True):
 
         lid_wide = self.lid_wide
 
@@ -2635,16 +2636,19 @@ class FancyPendulum(Pendulum):
             for pos in self.lid_fixing_positions:
                 lid = lid.cut(self.bob_lid_screws.get_cutter().translate(pos))
 
+        if for_printing:
+            lid = lid.rotate((0,0,0), (0,1,0),180).translate((0,0, thick))
+
         return lid
 
-    def get_bob(self, hollow=True):
+    def get_bob(self, hollow=True, for_printing=True):
         bob = cq.Workplane("XY").circle(self.bob_r).extrude(self.bob_thick)
 
 
         #just round the centre edges, not either face
         bob = bob.edges().chamfer(self.side_chamfer, self.front_chamfer).edges("(not>Z) and (not<Z)").fillet(self.fillet_r)
 
-        cone = cq.Solid.makeCone(radius2=self.gap_height/2, radius1=self.cone_start_r, height=self.bob_thick*0.2)
+        cone = cq.Solid.makeCone(radius2=self.gap_height/2, radius1=self.cone_start_r, height=self.bob_thick*0.3)
 
         bob = bob.cut(cone).cut(cone.rotate((0,0,0), (1,0,0),180).translate((0,0, self.bob_thick)))
 
@@ -2679,6 +2683,8 @@ class FancyPendulum(Pendulum):
         bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", text_height, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((text_x, 0, 0)))
         bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", text_height, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((-text_x, 0, 0)))
 
+        if for_printing:
+            bob = bob.rotate((0,0,0), (0,1,0),180).translate((0,0,self.bob_thick))
 
         return bob
 
@@ -2690,12 +2696,12 @@ class FancyPendulum(Pendulum):
         if not self.support_hollow:
             hollow = False
 
-        bob = self.get_bob(hollow=hollow).translate((0,0,-self.bob_thick/2))
+        bob = self.get_bob(hollow=hollow, for_printing=False).translate((0,0,-self.bob_thick/2))
 
-        bob = bob.add(self.get_bob_nut().translate((0, 0, -self.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90))
+        bob = bob.add(self.get_bob_nut(for_printing=False).translate((0, 0, -self.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90))
 
         if hollow:
-            bob = bob.add(self.get_bob_lid().translate((0,0,-self.bob_thick/2)))
+            bob = bob.add(self.get_bob_lid(for_printing=False).translate((0,0,-self.bob_thick/2)))
 
         return bob
 

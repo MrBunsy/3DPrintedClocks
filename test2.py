@@ -88,10 +88,10 @@ if False:
 #
 # show_object(holder.get_assembled())
 
-pendulum = FancyPendulum(bob_d=60)
+pendulum = FancyPendulum(bob_d=50)
 
-# show_object(pendulum.get_bob_assembled(hollow=True))
-
-show_object(pendulum.get_bob())
-
-show_object(pendulum.get_bob_lid())
+show_object(pendulum.get_bob_assembled(hollow=True))
+#
+# show_object(pendulum.get_bob())
+#
+# show_object(pendulum.get_bob_lid())
