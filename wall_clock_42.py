@@ -89,8 +89,8 @@ plates = RoundClockPlates(train, motion_works, name="Wall 42", dial=dial, plate_
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=True,
                                 off_centre_escape_wheel=False)
 
-hands = Hands(style=HandStyle.BAROQUE, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)
+hands = Hands(style=HandStyle.FANCY_CLOCK, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                    length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0)
 
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",

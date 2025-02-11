@@ -520,51 +520,68 @@ class BaroqueHands(HandGenerator):
 class FancyClockHands(HandGenerator):
     def __init__(self, base_r, length, thick):
         super().__init__(base_r, length, thick)
-        self.diamond_width = self.length*0.08
+        self.diamond_width = self.length*0.15
         self.diamond_thick = self.diamond_width*0.4
-        self.basic_width = self.length*0.025
+        self.basic_width = self.length*0.04
 
         self.tip_r = self.basic_width*0.25
         self.rear_length = self.length*0.3
 
+        self.hour_length = self.length * 0.7
+
     def diamond(self):
         #little  horizontal stretched diamond which appears in multiple places
-        return cq.Workplane("XY").sketch().polygon([(-self.diamond_width/2,0), (0, self.diamond_thick/2), (self.diamond_width/2, 0), (0, -self.diamond_thick/2)]).finalize().extrude(self.thick)
+        fillet_r = self.diamond_thick*0.05
+        return cq.Workplane("XY").sketch().polygon([(-self.diamond_width/2,0), (0, self.diamond_thick/2), (self.diamond_width/2, 0), (0, -self.diamond_thick/2)]).finalize().extrude(self.thick).edges("|Z").fillet(fillet_r)
         # return cq.Workplane("XY").polyline([(-self.diamond_width/2,0), (0, self.diamond_thick/2), (self.diamond_width/2, 0), (0, -self.diamond_thick/2)]).close().extrude(self.thick)
+
+    def rear_extension(self):
+        diamond_distance = -self.base_r - self.diamond_thick
+        rear_hand = get_stroke_line([(0,0), (0, diamond_distance)], wide=self.basic_width, thick=self.thick)
+
+
+
+        rear_curve_base = diamond_distance - self.diamond_thick * 0.25
+        rear_curve_centre_width = self.basic_width * 0.8
+        rear_curve_centre = (-self.rear_length + self.tip_r + rear_curve_base) / 2
+        rear_curve = (cq.Workplane("XY").moveTo(0, rear_curve_base).spline([(0, rear_curve_base), (-rear_curve_centre_width / 2, rear_curve_centre), (-self.tip_r, -self.rear_length + self.tip_r)], tangents=[(-1, 0), (0, -1)])
+                      .radiusArc((0, -self.rear_length), -self.tip_r).mirrorY().extrude(self.thick))
+
+        rear_hand = rear_hand.union(rear_curve)
+        rear_hand = rear_hand.union(self.diamond().translate((0, diamond_distance)))
+
+        return rear_hand
     def minute_hand(self, colour = None, thick_override=-1):
         hand = cq.Workplane("XY").tag("base")
 
-        diamond_distances = [-self.base_r - self.diamond_thick, self.base_r + self.diamond_thick, self.length * 0.45]
+        diamond_distances = [self.base_r + self.diamond_thick, self.length * 0.45]
 
         #first bar from centre to first diamond
-        hand = hand.union(get_stroke_line([(0,0), (0, diamond_distances[1])], wide=self.basic_width, thick=self.thick))
+        hand = hand.union(get_stroke_line([(0,0), (0, diamond_distances[0])], wide=self.basic_width, thick=self.thick))
 
-        curve_base = diamond_distances[1] + self.diamond_thick*0.25
+        curve_base = diamond_distances[0] + self.diamond_thick*0.25
         curve_centre_width = self.basic_width*1.2
-        curve_length = diamond_distances[2] - curve_base
+        curve_length = diamond_distances[1] - curve_base
         curve_centre = curve_base + curve_length/2
         #curvey bit after first diamond
-        curvey_bit = (cq.Workplane("XY").spline([(0,curve_base), (-curve_centre_width/2, curve_centre), (-self.basic_width/2, diamond_distances[2])], [(-1,0.2),(0.075,1), (0,1)]).lineTo(0, diamond_distances[2])
+        curvey_bit = (cq.Workplane("XY").spline([(0,curve_base), (-curve_centre_width/2, curve_centre), (-self.basic_width/2, diamond_distances[1])], [(-1,0.2),(0.075,1), (0,1)]).lineTo(0, diamond_distances[1])
                       .close().mirrorY().extrude(self.thick))
         hand = hand.union(curvey_bit)
         #.spline([(0, self.length)], tangents=[None, (1,0)], includeCurrent=True)
-        end_bit = (cq.Workplane("XY").moveTo(0, diamond_distances[2]).lineTo(-self.basic_width/2, diamond_distances[2]).lineTo(-self.tip_r, self.length-self.tip_r)
-                   .tangentArcPoint((0,self.length), relative=False).lineTo(0, diamond_distances[2]).close().mirrorY().extrude(self.thick))
+        end_bit = (cq.Workplane("XY").moveTo(0, diamond_distances[1]).lineTo(-self.basic_width/2, diamond_distances[1]).lineTo(-self.tip_r, self.length-self.tip_r)
+                   .tangentArcPoint((0,self.length), relative=False).lineTo(0, diamond_distances[1]).close().mirrorY().extrude(self.thick))
+
 
         hand = hand.union(end_bit)
 
         #and backwards
-        hand = hand.union(get_stroke_line([(0,0), (0, diamond_distances[0])], wide=self.basic_width, thick=self.thick))
+
 
         #.tangentArcPoint((0,-self.rear_length), relative=False)
 
-        rear_curve_base = diamond_distances[0] - self.diamond_thick*0.25
-        rear_curve_centre_width = self.basic_width*0.8
-        rear_curve_centre = (-self.rear_length+self.tip_r + rear_curve_base)/2
-        rear_curve = (cq.Workplane("XY").moveTo(0, rear_curve_base).spline([(0, rear_curve_base), (-rear_curve_centre_width/2, rear_curve_centre), (-self.tip_r, -self.rear_length+self.tip_r)], tangents=[(-1, 0), (0, -1)])
-                      .radiusArc((0,-self.rear_length), -self.tip_r).mirrorY().extrude(self.thick*10))
 
-        hand = hand.union(rear_curve)
+
+        hand = hand.union(self.rear_extension())
 
         for distance in diamond_distances:
             hand = hand.union(self.diamond().translate((0, distance)))
@@ -574,6 +591,54 @@ class FancyClockHands(HandGenerator):
     def hour_hand(self, colour = None, thick_override=-1):
         hand = cq.Workplane("XY").tag("base")
 
+        diamond_distances = [self.base_r + self.diamond_thick/2, self.hour_length*0.45]
+
+        # first bar from centre to first diamond
+        hand = hand.union(get_stroke_line([(0, 0), (0, diamond_distances[0])], wide=self.basic_width, thick=self.thick))
+
+        curve_base = diamond_distances[0] + self.diamond_thick * 0.25
+        curve_centre_width = self.basic_width * 1.4
+        curve_length = diamond_distances[1] - curve_base
+        curve_centre = curve_base + curve_length / 2
+        # curvey bit after first diamond
+        curvey_bit = (cq.Workplane("XY").spline([(0, curve_base), (-curve_centre_width / 2, curve_centre), (-self.basic_width / 2, diamond_distances[1])],
+                                                [(-1, 0), None, (0, 1)]).lineTo(0, diamond_distances[1])
+                      .close().mirrorY().extrude(self.thick))
+        hand = hand.union(curvey_bit)
+
+        apple_wall_thick = self.basic_width
+        circle_positions = [(-self.hour_length * 0.1, diamond_distances[1] + self.hour_length*0.15), (-self.hour_length * 0.1, diamond_distances[1] + self.hour_length*0.2)]
+
+        circle_distance = circle_positions[1][1] - circle_positions[0][1]
+        circle_radii = [self.hour_length*0.06, self.hour_length*0.09]
+
+        second_circle_cutter_pos = np_to_set(np.add(circle_positions[1], polar(math.pi*3/4, apple_wall_thick*1.1)))
+
+        apple_bit = cq.Workplane("XY").moveTo(circle_positions[0][0], circle_positions[0][1]).circle(circle_radii[0] + apple_wall_thick).mirrorY().extrude(self.thick)
+
+        apple_bit = apple_bit.union(cq.Workplane("XY").moveTo(circle_positions[1][0], circle_positions[1][1]).circle(circle_radii[1] + apple_wall_thick).mirrorY().extrude(self.thick))
+
+        apple_cutter = cq.Workplane("XY").moveTo(second_circle_cutter_pos[0], second_circle_cutter_pos[1]).circle(circle_radii[1]).mirrorY().extrude(self.thick)
+        apple_cutter = apple_cutter.union(cq.Workplane("XY").moveTo(circle_positions[0][0], circle_positions[0][1]).circle(circle_radii[0]).mirrorY().extrude(self.thick))
+
+        apple_bit = apple_bit.cut(apple_cutter)
+
+        hand = hand.union(apple_bit)
+
+        apple_end_distance = circle_positions[1][1] + circle_radii[1]
+
+        hand = hand.union(get_stroke_line([(0, diamond_distances[1]), (0, apple_end_distance)], wide=self.basic_width, thick=self.thick))
+
+        end_bit = (cq.Workplane("XY").spline([(-self.basic_width/2, apple_end_distance), (-self.tip_r, self.hour_length - self.tip_r), (0, self.hour_length)], tangents=[(-0.2,1), (0.3,0.8), (1,0)]).lineTo(0, apple_end_distance)
+                   .close().mirrorY().extrude(self.thick))
+
+        hand = hand.union(end_bit)
+
+        hand = hand.union(self.rear_extension())
+
+
+        for distance in diamond_distances:
+            hand = hand.union(self.diamond().translate((0, distance)))
         return hand
 
     def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False, fixing_thick=-1):
