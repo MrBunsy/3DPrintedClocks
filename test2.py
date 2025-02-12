@@ -88,10 +88,14 @@ if False:
 #
 # show_object(holder.get_assembled())
 
-pendulum = FancyPendulum(bob_d=40)#, lid_fixing_screws=MachineScrew(2, countersunk=True, length=10))
+# pendulum = FancyPendulum(bob_d=40)#, lid_fixing_screws=MachineScrew(2, countersunk=True, length=10))
+#
+# # show_object(pendulum.get_bob_assembled(hollow=True))
+# #
+# show_object(pendulum.get_bob())
+# #
+# show_object(pendulum.get_bob_lid())
 
-# show_object(pendulum.get_bob_assembled(hollow=True))
-#
-show_object(pendulum.get_bob())
-#
-show_object(pendulum.get_bob_lid())
+numbers = FancyFrenchArabicNumbers(30)
+show_object(numbers.get_digit('4'))
+show_object(cq.Workplane("XY").rect(numbers.width, numbers.height))

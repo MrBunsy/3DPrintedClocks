@@ -616,6 +616,53 @@ class RomanNumerals:
 
         return number_shape
 
+class FancyFrenchArabicNumbers:
+    def __init__(self,height, thick=LAYER_THICK*2):
+        self.height = height
+        self.thick = thick
+        self.width = self.height/1.36
+
+        self.thick_line_width = self.height*0.125
+        self.thin_line_width = self.height*0.025
+        self.diamond_width = self.thick_line_width*1.75
+
+    def get_diamond(self):
+        return cq.Workplane("XY").moveTo(-self.diamond_width/2,0).lineTo(0, self.diamond_width/2).lineTo(self.diamond_width/2, 0).lineTo(0, -self.diamond_width/2).close().extrude(self.thick)
+
+    def get_digit(self, digit):
+        '''
+        0-9 single digits
+        '''
+
+
+        digit = int(digit)
+        if digit == 1:
+            long = self.height - self.diamond_width
+            one = cq.Workplane("XY").rect(self.thick_line_width, long).extrude(self.thick).union(self.get_diamond().translate((0, long/2))).union(self.get_diamond().translate((0, -long/2)))
+
+            return one
+        if digit == 4:
+            centre = (self.thick_line_width/2, -self.height*0.17)
+            #vertical line with diamond at bottom
+            four = cq.Workplane("XY").moveTo(centre[0],self.diamond_width/4).rect(self.thick_line_width, self.height - self.diamond_width/2).extrude(self.thick).union(self.get_diamond().translate((centre[0], -self.height/2 + self.diamond_width/2)))
+            horizonal_line = cq.Workplane("XY").moveTo(-self.diamond_width/4, centre[1]).rect(self.width - self.diamond_width/2, self.thick_line_width).extrude(self.thick).union(self.get_diamond().translate((self.width/2 - self.diamond_width/2, centre[1])))
+
+            top_pos = (0, self.height/2)
+            bottom_pos = (-self.width/2, centre[1] - self.thick_line_width/2)
+            centre_y = (top_pos[1] + bottom_pos[1])/2
+
+            joining_line = get_stroke_line([top_pos, bottom_pos], wide=self.thin_line_width*2, thick=self.thick, style=StrokeStyle.SQUARE).intersect(cq.Workplane("XY").rect(self.width, top_pos[1] - bottom_pos[1]).extrude(self.thick).translate((0,centre_y)))
+
+            choppy = cq.Workplane("XY").moveTo(bottom_pos[0], bottom_pos[1]).lineTo(top_pos[0], top_pos[1]).lineTo(-self.width/2, self.height/2).close().extrude(self.thick)
+
+
+            four = four.union(joining_line)
+            four = four.union(horizonal_line)
+            four = four.cut(choppy)
+
+
+
+            return four
 class DialPillar:
     def __init__(self, position, screws_absolute_positions, radius, length, embedded_nuts=False, screws=None):
         #pillar position relative to the centre of the dial
