@@ -27,4 +27,6 @@ hands = Hands(style=HandStyle.FANCY_CLOCK, minute_fixing="square", minute_fixing
 
 
 
-hands.show_hands(show_object=show_object, show_second_hand=False)
+# hands.show_hands(show_object=show_object, show_second_hand=False)
+
+show_object(hands.get_hand(HandType.HOUR).rotate((0,0,0),(0,0,1),90))

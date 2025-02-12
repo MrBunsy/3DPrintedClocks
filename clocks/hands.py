@@ -623,6 +623,40 @@ class FancyClockHands(HandGenerator):
 
         apple_bit = apple_bit.cut(apple_cutter)
 
+        #sticky out bits on the "apple"
+        start_angle = math.pi + math.pi*0.25
+        start_pos = np_to_set(np.add(polar(start_angle, circle_radii[0] + apple_wall_thick), circle_positions[0]))
+        start_angle90 = start_angle - math.pi/2
+        start_dir = polar(start_angle90)
+
+        #doesn't want to slice nicely otherwise
+        tiny_tip_r = 0.2
+        tip_pos0 = (-self.hour_length*0.35, diamond_distances[1] + self.diamond_thick/2)
+        tip_pos0b = (-self.hour_length * 0.35 - tiny_tip_r*2, diamond_distances[1] + self.diamond_thick / 2)
+
+        inner_pos0 = (-self.hour_length*0.25, circle_positions[0][1] + circle_radii[0]*0.1)
+        tip_pos1 = (-self.hour_length*0.3, circle_positions[0][1] + circle_radii[0])
+
+
+
+        inner_pos1 = np_to_set(np.add(polar(math.pi + math.pi*0.25, circle_radii[1]+apple_wall_thick*0.1), circle_positions[1]))
+
+        #.spline([tip_pos0, inner_pos0], tangents=[(-0.1,1), (1,1)])
+        sticky_out = (cq.Workplane("XY").spline([start_pos, tip_pos0], tangents=[start_dir, (-0.1,-1)]).radiusArc(tip_pos0b,tiny_tip_r).spline([tip_pos0b, inner_pos0], tangents=[(-0.2,1), (1,0.5)])
+                      .spline([tip_pos1], includeCurrent=True, tangents=[(-1,0), (-1,0.25)]).spline([inner_pos1], includeCurrent=True, tangents=[(1,0.2), (1,0)]).close().mirrorY().extrude(self.thick))
+
+        apple_bit = apple_bit.union(sticky_out)
+
+        start_pos = (second_circle_cutter_pos[0], second_circle_cutter_pos[1] + circle_radii[1])
+
+        end_circle_cutter_avoider_pos = np_to_set(np.add(second_circle_cutter_pos, polar(math.pi*0.4, circle_radii[1]+apple_wall_thick*0.1)))
+
+        end_sticky_out = (cq.Workplane("XY").moveTo(start_pos[0], start_pos[1]).lineTo(start_pos[0], start_pos[1] + apple_wall_thick*0.25)
+                          .spline([(0, start_pos[1]-apple_wall_thick)], includeCurrent=True, tangents=[(1,0), (0,-1)])
+                          .lineTo(end_circle_cutter_avoider_pos[0], end_circle_cutter_avoider_pos[1]).close().mirrorY().extrude(self.thick))
+        # apple_bit = apple_bit.union(end_sticky_out)
+
+        # apple_bit = apple_bit.union(cq.Workplane("XY").circle(0.5).extrude(10).translate(start_pos))
         hand = hand.union(apple_bit)
 
         apple_end_distance = circle_positions[1][1] + circle_radii[1]

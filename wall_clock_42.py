@@ -75,7 +75,7 @@ motion_works_angle_deg=360-40
 
 
 
-pendulum = FancyPendulum(bob_d=50)
+pendulum = FancyPendulum(bob_d=40)
 
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
             outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
@@ -104,7 +104,8 @@ if not outputSTL:
                         gear_colours=[Colour.GOLD],
                         motion_works_colours=[Colour.GOLD],
                         plaque_colours=[Colour.WHITE, Colour.BLACK],
-                        ratchet_colour=Colour.GOLD)
+                        ratchet_colour=Colour.GOLD,
+                        hand_colours=[Colour.BRASS])
 
 if outputSTL:
     assembly.get_BOM().export(clock_out_dir)

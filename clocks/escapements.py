@@ -2597,7 +2597,11 @@ class FancyPendulum(Pendulum):
         self.wall_thick = 2
         self.fillet_r = self.bob_thick * 0.1
         self.side_chamfer = self.bob_thick / 2 - self.fillet_r  / 2
-        self.front_chamfer = self.side_chamfer * 0.75
+        if self.bob_r < 25:
+            #shell was failing, quick workaround
+            self.front_chamfer = self.bob_r*0.3
+        else:
+            self.front_chamfer = self.side_chamfer * 0.75
         self.cone_start_r = self.bob_r * 0.45
         self.centre_r = ((self.bob_r - self.front_chamfer) + self.cone_start_r)/2
         angle_span = deg_to_rad(50)
@@ -2605,6 +2609,9 @@ class FancyPendulum(Pendulum):
         self.lid_fixing_positions = [polar(angle, self.centre_r) for angle in angles]
 
         self.lid_wide = (self.bob_r - self.front_chamfer - self.cone_start_r) - self.wall_thick/2#*0.75
+        if self.lid_wide < 4.5:
+            #bit of a bodge, but otherwise really can't fit a funnel or shot in!
+            self.lid_wide = 4.5
 
         self.bob_lid_screws = lid_fixing_screws
         if self.bob_lid_screws is None:
@@ -2649,14 +2656,15 @@ class FancyPendulum(Pendulum):
         bob = bob.cut(self.get_nut_hole_cutter())
 
         if hollow:
+            #hexagon shell around the rod so shot won't escape
             rod_case = cq.Workplane("XY").polygon(6, diameter=self.threaded_rod_m * 2).extrude(self.bob_r * 4).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.bob_r * 2, self.bob_thick / 2))
             rod_case = rod_case.intersect(bob)
 
             bob = bob.shell(-self.wall_thick)
+
             bob = bob.cut(self.get_bob_lid(for_cutting=True))
 
             #encase the rod hole so we can fill with shot without a rod
-
             bob = bob.union(rod_case)
 
             for pos in self.lid_fixing_positions:
