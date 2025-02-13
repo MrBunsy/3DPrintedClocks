@@ -74,6 +74,10 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
 
     #sagitta to work out where the centre should be
     l = distance_between_two_points(from_pos, to_pos)
+    # if radius**2 - 0.25*l**2 < 0:
+    #     #assume aproximately zero and that this is a quarter of a circle (bold assumption)
+    #     s = radius
+    # else:
     s = radius - math.sqrt(radius**2 - 0.25*l**2)
     
     centre = np_to_set(np.add(midpoint, polar(from_midpoint_to_centre_angle, radius-s)))
@@ -120,6 +124,60 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
 
         # for pos in [from_pos, to_pos]:
         #     arc = arc.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(wide/2).extrude(thick))
+
+class ArithmeticSpiral:
+    def __init__(self, r, start_pos=None, x_scale=1, y_scale=1, start_angle=0, power=1):
+        self.r = r
+        self.start_pos = start_pos
+        if self.start_pos is None:
+            self.start_pos = (0,0)
+        self.x_scale = x_scale
+        self.y_scale = y_scale
+        self.start_angle = start_angle
+        self.power = power
+    def get_pos(self, angle):
+
+        angle += self.start_angle
+
+        r = self.r * math.pow(angle, self.power)/(math.pi*2)
+        pos = polar(angle, r)
+
+        return (pos[0]*self.x_scale + self.start_pos[0], pos[1] * self.y_scale + self.start_pos[1])
+
+    def get_tangent(self, angle):
+        pre_pos = self.get_pos(angle - 0.01)
+        post_pos = self.get_pos(angle + 0.01)
+        line = Line(pre_pos, anotherPoint=post_pos)
+        return line.dir
+
+
+def get_stroke_curve(start, end, start_dir, end_dir, wide, thick, style=StrokeStyle.SQUARE):
+    '''
+    this doesn't actually work in many cases :(
+    '''
+    if style == StrokeStyle.ROUND:
+        raise NotImplementedError("TODO round ends for get_stroke_curve (easy to do but lazy)")
+    
+    start_line = Line(start, direction=start_dir)
+    
+    start_clockwise_dir = start_line.get_perpendicular_direction(clockwise=True)
+    start_anticlockwise_dir = start_line.get_perpendicular_direction(clockwise=False)
+    
+    start_clockwise_pos = np_to_set(np.add(start, np.multiply(start_clockwise_dir, wide/2)))
+    start_anticlockwise_pos = np_to_set(np.add(start, np.multiply(start_anticlockwise_dir, wide / 2)))
+
+    end_line = Line(end, direction=end_dir)
+
+    end_clockwise_dir = end_line.get_perpendicular_direction(clockwise=True)
+    end_anticlockwise_dir = end_line.get_perpendicular_direction(clockwise=False)
+
+    end_clockwise_pos = np_to_set(np.add(end, np.multiply(end_clockwise_dir, wide / 2)))
+    end_anticlockwise_pos = np_to_set(np.add(end, np.multiply(end_anticlockwise_dir, wide / 2)))
+
+    curve = cq.Workplane("XY").spline([start_clockwise_pos, end_clockwise_pos], tangents=[start_dir, end_dir]).lineTo(end_anticlockwise_pos[0], end_anticlockwise_pos[1]).spline([end_anticlockwise_pos, start_anticlockwise_pos], tangents=[backwards_vector(end_dir), backwards_vector(start_dir)]).close().extrude(thick)
+    
+    return curve
+    
 
 def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=False):
 

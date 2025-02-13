@@ -648,6 +648,14 @@ class Colour:
         '''
         return string
 
+def get_perpendicular_direction(dir, clockwise=True):
+    '''
+    return a line which is perpendicular to this line
+    '''
+
+    z = 1 if clockwise else -1
+
+    return np.cross(dir, [0, 0, z])[:-1]
 
 class Line:
     def __init__(self, start, angle=None, direction=None, anotherPoint=None):

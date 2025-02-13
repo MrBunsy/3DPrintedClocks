@@ -620,40 +620,168 @@ class FancyFrenchArabicNumbers:
     def __init__(self,height, thick=LAYER_THICK*2):
         self.height = height
         self.thick = thick
-        self.width = self.height/1.36
+        # self.width = self.height/1.36
 
         self.thick_line_width = self.height*0.125
-        self.thin_line_width = self.height*0.025
+        self.thin_line_width = self.height*0.01
         self.diamond_width = self.thick_line_width*1.75
 
-    def get_diamond(self):
+    def get_square_diamond(self):
         return cq.Workplane("XY").moveTo(-self.diamond_width/2,0).lineTo(0, self.diamond_width/2).lineTo(self.diamond_width/2, 0).lineTo(0, -self.diamond_width/2).close().extrude(self.thick)
 
+    def get_twirly_bit(self, width, height, top=True, clockwise=True, big_diamond_offset_angle=0):
+        '''
+        Get fancy spiral with two diamons on eitehr side. Draw the top of a 2 first and re-arrange the rest accordingly
+
+        designed by tracing a drawing in inkscape, don't look for much logic here
+
+        returns dict:
+        {
+        'shape': cq object,
+        'inner_pos': (x,y), #inner tip of big diamond
+        'outer_pos': (x,y) #outer tip of big diamond
+        'spiral': spiral object,
+        }
+        '''
+        # blob_r = width*0.035
+        blob_r = width * 0.05
+
+        start_pos = (-width * 0.08, -height * 0.07)
+
+        spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=1.25, start_angle=math.pi , x_scale=-1)
+
+        spiral_points = []
+        spiral_directions = []
+        # spirals = 1.75
+        spirals = 2 + big_diamond_offset_angle/(math.pi*2)
+        points_per_spiral = 12
+        twirly = cq.Workplane("XY")
+
+        tadpole = cq.Workplane("XY")
+        tadpole_end_index = -1
+
+        # spiral_offset_angle = math.pi
+        spiral_offset_angle = 0
+
+        for i in range(math.ceil(points_per_spiral*spirals) + 1):
+            angle =spiral_offset_angle+ i*math.pi*2/points_per_spiral
+            pos = spiral.get_pos(angle)
+            dir = spiral.get_tangent(angle)
+            spiral_points.append(pos)
+            spiral_directions.append(dir)
+
+            if i>0 and i < points_per_spiral/3:
+                tadpole = tadpole.spline([spiral_points[-2], pos], tangents=[spiral_directions[-2], dir])
+                tadpole_end_index = i
+
+        # tadpole_end_index+=1
+
+            # twirly = twirly.union(cq.Workplane("XY").circle(0.1).extrude(10).translate(spiral.get_pos(angle)))
+
+        centre_blob_pos = (spiral_points[0][0]-blob_r + self.thin_line_width/2, spiral_points[0][1])
+
+        def get_edge_of_spiral(pos, tangent, inside=True):
+            return np_to_set(np.add(pos, np.multiply(get_perpendicular_direction(tangent, clockwise=inside), self.thin_line_width / 2)))
+
+        diamond_offset_angle = spiral_offset_angle
+        small_diamond_span_angle = math.pi*0.6
+        small_diamond_centre_angle = diamond_offset_angle + math.pi*2 + math.pi*1.05
+        small_diamond_base_angle = small_diamond_centre_angle - small_diamond_span_angle/2
+        small_diamond_top_angle = small_diamond_centre_angle + small_diamond_span_angle / 2
+        small_diamond_centre_pos = spiral.get_pos(small_diamond_centre_angle)
+        small_diamond_base_pos = spiral.get_pos(small_diamond_base_angle)
+        small_diamond_top_pos = spiral.get_pos(small_diamond_top_angle)
+
+        small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - self.thin_line_width*2
+        # small_diamond_wide = 3
+        small_diamond_line = Line(spiral.start_pos, anotherPoint=small_diamond_centre_pos)
+        #makes a wonky diamond
+        # small_diamond_outer_pos = np_to_set(np.add(small_diamond_centre_pos, np.multiply(small_diamond_line.dir, small_diamond_wide/2)))
+        # small_diamond_inner_pos = np_to_set(np.add(small_diamond_centre_pos, np.multiply(small_diamond_line.dir, -small_diamond_wide / 2)))
+        small_diamond_outer_pos = (-width/2, small_diamond_centre_pos[1])
+        small_diamond_inner_pos = (small_diamond_centre_pos[0] + small_diamond_inner_wide, small_diamond_centre_pos[1])
+
+        small_diamond_top_inner_pos = get_edge_of_spiral(small_diamond_top_pos, spiral.get_tangent(small_diamond_top_angle), inside=True)
+
+        #not perfect as the diamond ends are in the centre of the thin line, not along the edges. But I think it's good enough ?
+        small_diamond = (cq.Workplane("XY").spline([get_edge_of_spiral(small_diamond_base_pos, spiral.get_tangent(small_diamond_base_angle), inside=False), small_diamond_outer_pos], tangents=[spiral.get_tangent(small_diamond_base_angle), (-1,1)])
+                         .spline([small_diamond_outer_pos, get_edge_of_spiral(small_diamond_top_pos, spiral.get_tangent(small_diamond_top_angle), inside=False)], tangents=[(1,1), spiral.get_tangent(small_diamond_top_angle)])
+                         .lineTo(small_diamond_top_inner_pos[0], small_diamond_top_inner_pos[1])
+                         .spline([small_diamond_top_inner_pos, small_diamond_inner_pos], tangents=[backwards_vector(spiral.get_tangent(small_diamond_top_angle)), (1,-1)])
+                         .spline([small_diamond_inner_pos, get_edge_of_spiral(small_diamond_base_pos, spiral.get_tangent(small_diamond_base_angle), inside=True)], tangents=[(-1,-1), backwards_vector(spiral.get_tangent(small_diamond_base_angle))]).close().extrude(self.thick))
+        twirly = cq.Workplane("XY").moveTo(centre_blob_pos[0], centre_blob_pos[1]).circle(blob_r).extrude(self.thick)
+
+        twirly = twirly.union(small_diamond)
+
+
+
+        tadpole_end_pos = spiral_points[tadpole_end_index]
+        # tadpole_end_pos_inner = np_to_set(np.add(tadpole_end_pos, np.multiply(get_perpendicular_direction(spiral_directions[tadpole_end_index], clockwise=True), self.thin_line_width/2)))
+        tadpole_end_pos_inner = get_edge_of_spiral(tadpole_end_pos, spiral_directions[tadpole_end_index], inside=True)
+        tadpole = tadpole.lineTo(tadpole_end_pos_inner[0], tadpole_end_pos_inner[1]).spline([tadpole_end_pos_inner, (centre_blob_pos[0] - blob_r, centre_blob_pos[1])], tangents=[backwards_vector(spiral_directions[tadpole_end_index]), (0,1)]).close().extrude(self.thick)
+        twirly = twirly.union(tadpole)
+
+
+
+        big_diamond_centre_pos = spiral_points[-1]
+        # big_diamond_inner
+
+        # twirly = twirly.union(get_stroke_curve(spiral_points[0], spiral_points[1], (0,-2), (0,2), self.thin_line_width, self.thick*2))
+        # twirly = twirly.union(get_stroke_line(spiral_points, self.thin_line_width, self.thick))
+        # twirly = twirly.union(get_stroke_arc(sp))
+        for i in range(len(spiral_points)-1):
+            #assume all points are a quarter circle NOT TRUE
+            from_pos = spiral_points[i]
+            from_dir = spiral_directions[i ]
+            to_pos = spiral_points[i + 1]
+            to_dir = spiral_directions[(i+1)]
+            # r = abs(from_pos[0] - to_pos[0])
+            # twirly = twirly.union(get_stroke_arc(from_pos=from_pos, to_pos=to_pos, radius=-r, wide=self.thin_line_width, thick=self.thick))
+            twirly = twirly.union(get_stroke_curve(from_pos, to_pos, from_dir, to_dir, self.thin_line_width, self.thick))
+
+        return twirly
+
+    def get_width(self, digit):
+        if digit in [1]:
+            return self.diamond_width
+        if digit in [2]:
+            return self.height/1.65
+        if digit in [3]:
+            return self.height/1.5
+        if digit in [4]:
+            return self.height/1.36
+    
     def get_digit(self, digit):
         '''
         0-9 single digits
         '''
 
-
         digit = int(digit)
+
+        width = self.get_width(digit)
+
         if digit == 1:
             long = self.height - self.diamond_width
-            one = cq.Workplane("XY").rect(self.thick_line_width, long).extrude(self.thick).union(self.get_diamond().translate((0, long/2))).union(self.get_diamond().translate((0, -long/2)))
+            one = cq.Workplane("XY").rect(self.thick_line_width, long).extrude(self.thick).union(self.get_square_diamond().translate((0, long / 2))).union(self.get_square_diamond().translate((0, -long / 2)))
 
             return one
+        if digit == 2:
+            two = self.get_twirly_bit(width, self.height/2).translate((0,self.height/4))
+
+            return two
         if digit == 4:
             centre = (self.thick_line_width/2, -self.height*0.17)
             #vertical line with diamond at bottom
-            four = cq.Workplane("XY").moveTo(centre[0],self.diamond_width/4).rect(self.thick_line_width, self.height - self.diamond_width/2).extrude(self.thick).union(self.get_diamond().translate((centre[0], -self.height/2 + self.diamond_width/2)))
-            horizonal_line = cq.Workplane("XY").moveTo(-self.diamond_width/4, centre[1]).rect(self.width - self.diamond_width/2, self.thick_line_width).extrude(self.thick).union(self.get_diamond().translate((self.width/2 - self.diamond_width/2, centre[1])))
+            four = cq.Workplane("XY").moveTo(centre[0],self.diamond_width/4).rect(self.thick_line_width, self.height - self.diamond_width/2).extrude(self.thick).union(self.get_square_diamond().translate((centre[0], -self.height / 2 + self.diamond_width / 2)))
+            horizonal_line = cq.Workplane("XY").moveTo(-self.diamond_width/4, centre[1]).rect(width - self.diamond_width/2, self.thick_line_width).extrude(self.thick).union(self.get_square_diamond().translate((width / 2 - self.diamond_width / 2, centre[1])))
 
             top_pos = (0, self.height/2)
-            bottom_pos = (-self.width/2, centre[1] - self.thick_line_width/2)
+            bottom_pos = (-width/2, centre[1] - self.thick_line_width/2)
             centre_y = (top_pos[1] + bottom_pos[1])/2
 
-            joining_line = get_stroke_line([top_pos, bottom_pos], wide=self.thin_line_width*2, thick=self.thick, style=StrokeStyle.SQUARE).intersect(cq.Workplane("XY").rect(self.width, top_pos[1] - bottom_pos[1]).extrude(self.thick).translate((0,centre_y)))
+            joining_line = get_stroke_line([top_pos, bottom_pos], wide=self.thin_line_width*2, thick=self.thick, style=StrokeStyle.SQUARE).intersect(cq.Workplane("XY").rect(width, top_pos[1] - bottom_pos[1]).extrude(self.thick).translate((0,centre_y)))
 
-            choppy = cq.Workplane("XY").moveTo(bottom_pos[0], bottom_pos[1]).lineTo(top_pos[0], top_pos[1]).lineTo(-self.width/2, self.height/2).close().extrude(self.thick)
+            choppy = cq.Workplane("XY").moveTo(bottom_pos[0], bottom_pos[1]).lineTo(top_pos[0], top_pos[1]).lineTo(-width/2, self.height/2).close().extrude(self.thick)
 
 
             four = four.union(joining_line)

@@ -97,5 +97,8 @@ if False:
 # show_object(pendulum.get_bob_lid())
 
 numbers = FancyFrenchArabicNumbers(30)
-show_object(numbers.get_digit('4'))
-show_object(cq.Workplane("XY").rect(numbers.width, numbers.height))
+digit = 2
+# show_object(numbers.get_digit(digit))
+# show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
+show_object(numbers.get_twirly_bit(numbers.get_width(digit), numbers.height/2))
+show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height/2))
