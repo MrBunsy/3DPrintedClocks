@@ -136,10 +136,8 @@ class ArithmeticSpiral:
         self.start_angle = start_angle
         self.power = power
     def get_pos(self, angle):
-
-        angle += self.start_angle
-
-        r = self.r * math.pow(angle, self.power)/(math.pi*2)
+        r = self.r * (angle + self.start_angle)/(math.pi*2)
+        r = r ** self.power
         pos = polar(angle, r)
 
         return (pos[0]*self.x_scale + self.start_pos[0], pos[1] * self.y_scale + self.start_pos[1])

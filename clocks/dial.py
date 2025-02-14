@@ -648,13 +648,13 @@ class FancyFrenchArabicNumbers:
 
         start_pos = (-width * 0.08, -height * 0.07)
 
-        spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=1.25, start_angle=math.pi , x_scale=-1)
+        spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=1.25, start_angle=0, x_scale=-1)
 
         spiral_points = []
         spiral_directions = []
         # spirals = 1.75
-        spirals = 2 + big_diamond_offset_angle/(math.pi*2)
-        points_per_spiral = 12
+        spirals = 2.5 + big_diamond_offset_angle/(math.pi*2)
+        points_per_spiral = 15
         twirly = cq.Workplane("XY")
 
         tadpole = cq.Workplane("XY")
@@ -663,16 +663,25 @@ class FancyFrenchArabicNumbers:
         # spiral_offset_angle = math.pi
         spiral_offset_angle = 0
 
+        def get_edge_of_spiral(pos, tangent, inside=True):
+            return np_to_set(np.add(pos, np.multiply(get_perpendicular_direction(tangent, clockwise=inside), self.thin_line_width / 2)))
+
+        last_outer_pos=None
+        last_dir = None
+
         for i in range(math.ceil(points_per_spiral*spirals) + 1):
             angle =spiral_offset_angle+ i*math.pi*2/points_per_spiral
             pos = spiral.get_pos(angle)
             dir = spiral.get_tangent(angle)
             spiral_points.append(pos)
             spiral_directions.append(dir)
+            outer_pos = get_edge_of_spiral(pos, dir, inside=False)
 
-            if i>0 and i < points_per_spiral/3:
-                tadpole = tadpole.spline([spiral_points[-2], pos], tangents=[spiral_directions[-2], dir])
+            if i> 0 and  i < points_per_spiral*1.0:
+                tadpole = tadpole.spline([last_outer_pos, outer_pos], tangents=[last_dir, dir])
                 tadpole_end_index = i
+            last_outer_pos = outer_pos
+            last_dir = dir
 
         # tadpole_end_index+=1
 
@@ -680,15 +689,16 @@ class FancyFrenchArabicNumbers:
 
         centre_blob_pos = (spiral_points[0][0]-blob_r + self.thin_line_width/2, spiral_points[0][1])
 
-        def get_edge_of_spiral(pos, tangent, inside=True):
-            return np_to_set(np.add(pos, np.multiply(get_perpendicular_direction(tangent, clockwise=inside), self.thin_line_width / 2)))
 
-        diamond_offset_angle = spiral_offset_angle
+
         small_diamond_span_angle = math.pi*0.6
-        small_diamond_centre_angle = diamond_offset_angle + math.pi*2 + math.pi*1.05
+        small_diamond_centre_angle = math.pi*4 + math.pi*0.05
         small_diamond_base_angle = small_diamond_centre_angle - small_diamond_span_angle/2
         small_diamond_top_angle = small_diamond_centre_angle + small_diamond_span_angle / 2
         small_diamond_centre_pos = spiral.get_pos(small_diamond_centre_angle)
+
+        # twirly = cq.Workplane("XY").circle(0.01).extrude(100).translate(small_diamond_centre_pos)
+
         small_diamond_base_pos = spiral.get_pos(small_diamond_base_angle)
         small_diamond_top_pos = spiral.get_pos(small_diamond_top_angle)
 
@@ -709,16 +719,25 @@ class FancyFrenchArabicNumbers:
                          .lineTo(small_diamond_top_inner_pos[0], small_diamond_top_inner_pos[1])
                          .spline([small_diamond_top_inner_pos, small_diamond_inner_pos], tangents=[backwards_vector(spiral.get_tangent(small_diamond_top_angle)), (1,-1)])
                          .spline([small_diamond_inner_pos, get_edge_of_spiral(small_diamond_base_pos, spiral.get_tangent(small_diamond_base_angle), inside=True)], tangents=[(-1,-1), backwards_vector(spiral.get_tangent(small_diamond_base_angle))]).close().extrude(self.thick))
-        twirly = cq.Workplane("XY").moveTo(centre_blob_pos[0], centre_blob_pos[1]).circle(blob_r).extrude(self.thick)
 
+        # twirly = cq.Workplane("XY").moveTo(centre_blob_pos[0], centre_blob_pos[1]).circle(blob_r).extrude(self.thick)
+        #
+        twirly = cq.Workplane("XY")
+        # twirly = cq.Workplane("XY").moveTo(spiral.start_pos[0], spiral.start_pos[1]).circle(0.01).extrude(10)
+        # return small_diamond
         twirly = twirly.union(small_diamond)
 
 
 
         tadpole_end_pos = spiral_points[tadpole_end_index]
+        tadpole_start_index = floor(points_per_spiral*0.1)
+        tadpole_start_pos = spiral_points[tadpole_start_index]
+        tadpole_start_outer = get_edge_of_spiral(tadpole_start_pos, spiral_directions[tadpole_start_index], inside=False)
+
         # tadpole_end_pos_inner = np_to_set(np.add(tadpole_end_pos, np.multiply(get_perpendicular_direction(spiral_directions[tadpole_end_index], clockwise=True), self.thin_line_width/2)))
         tadpole_end_pos_inner = get_edge_of_spiral(tadpole_end_pos, spiral_directions[tadpole_end_index], inside=True)
-        tadpole = tadpole.lineTo(tadpole_end_pos_inner[0], tadpole_end_pos_inner[1]).spline([tadpole_end_pos_inner, (centre_blob_pos[0] - blob_r, centre_blob_pos[1])], tangents=[backwards_vector(spiral_directions[tadpole_end_index]), (0,1)]).close().extrude(self.thick)
+        tadpole = tadpole.lineTo(tadpole_end_pos_inner[0], tadpole_end_pos_inner[1]).spline([tadpole_end_pos_inner, tadpole_start_outer], tangents=[backwards_vector(spiral_directions[tadpole_end_index]), spiral_directions[tadpole_start_index]]).close().extrude(self.thick)
+        # return tadpole
         twirly = twirly.union(tadpole)
 
 
