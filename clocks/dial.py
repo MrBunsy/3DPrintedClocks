@@ -876,6 +876,8 @@ class FancyFrenchArabicNumbers:
             twirly = twirly.mirror(mirrorPlane="XZ", basePointVector=(0,0,0))
             big_diamond_inner_pos = (big_diamond_inner_pos[0], -big_diamond_inner_pos[1])
             big_diamond_outer_pos = (big_diamond_outer_pos[0], -big_diamond_outer_pos[1])
+            spiral.y_scale*=-1
+            spiral.start_pos = (spiral.start_pos[0], -spiral.start_pos[1])
             # big_diamond_centre_angle = (big_diamond_centre_angle[0], -big_diamond_centre_angle[1])
 
         if not small_diamond_on_left:
@@ -883,6 +885,8 @@ class FancyFrenchArabicNumbers:
             twirly = twirly.mirror(mirrorPlane="YZ", basePointVector=(0,0,0))
             big_diamond_inner_pos = (-big_diamond_inner_pos[0], big_diamond_inner_pos[1])
             big_diamond_outer_pos = (-big_diamond_outer_pos[0], big_diamond_outer_pos[1])
+            spiral.x_scale *= -1
+            spiral.start_pos = (-spiral.start_pos[0], spiral.start_pos[1])
             # big_diamond_centre_angle = (-big_diamond_centre_angle[0], big_diamond_centre_angle[1])
         
         
@@ -899,7 +903,7 @@ class FancyFrenchArabicNumbers:
             return self.diamond_width
         if digit in [2]:
             return self.height/1.65
-        if digit in [3]:
+        if digit in [3, 5]:
             return self.height/1.5
         if digit in [4]:
             return self.height/1.36
@@ -1006,9 +1010,70 @@ class FancyFrenchArabicNumbers:
             four = four.union(horizonal_line)
             four = four.cut(choppy)
 
-
-
             return four
+        
+        if digit == 5:
+
+
+            five = cq.Workplane("XY")
+
+            twirly_height = self.height *0.4
+            twirly = self.get_twirly_bit(width, twirly_height, top=False, y_scale=1)
+
+            y_offset = twirly_height/2 - self.height/2 + self.height*0.02
+
+            def correctify(pos):
+                return (pos[0], pos[1] + y_offset)
+
+            base_of_diamond_angle = twirly["angle"] + math.pi * 0.45
+            # all relative to the twirly bit
+            diamond_tip_pos = twirly["spiral"].get_pos(base_of_diamond_angle)
+            diamond_tip_dir = twirly["spiral"].get_tangent(base_of_diamond_angle)
+            diamond_tip_pos = correctify(diamond_tip_pos)
+
+
+            # r = self.height/4
+            diamond_tip_angle = math.pi/4
+            # diamond_tip_pos = np.add((0, -self.height/4), polar(diamond_tip_angle, r))
+            # diamond_tip_dir = polar(diamond_tip_angle + math.pi / 2)
+
+            #the inside and outside is only true for the non-inverted spiral, oops
+            diamond_tip_inner = self.get_edge_of_spiral(diamond_tip_pos, diamond_tip_dir, inside=False)
+            diamond_tip_outer = self.get_edge_of_spiral(diamond_tip_pos, diamond_tip_dir, inside=True)
+
+
+
+            diamond = (cq.Workplane("XY").spline([correctify(twirly["inner_pos"]), diamond_tip_inner], tangents=[(1,1), diamond_tip_dir])
+                       .lineTo(diamond_tip_outer[0], diamond_tip_outer[1])
+                       .spline([diamond_tip_outer, correctify(twirly["outer_pos"])], tangents=[backwards_vector(diamond_tip_dir), (1,-1)]).close().extrude(self.thick))
+
+            five = five.union(diamond)
+
+            spiral_end_angle = twirly["angle"] + math.pi*0.75
+
+            spiral_end_pos = twirly["spiral"].get_pos(spiral_end_angle)
+            spiral_end_dir = twirly["spiral"].get_tangent(spiral_end_angle)
+            spiral_end_pos = correctify(spiral_end_pos)
+
+            five = five.union(get_stroke_curve(diamond_tip_pos, spiral_end_pos, diamond_tip_dir, spiral_end_dir, self.thin_line_width, self.thick))
+
+
+            five = five.union(twirly["shape"].translate((0,y_offset)))
+
+
+            flag_top_left = (spiral_end_pos[0] + width*0.05, self.height/2)
+            flag_wide = width * 0.7
+            flag_right = (flag_top_left[0] + flag_wide, flag_top_left[1])
+            flag_cut_wide = flag_wide*0.75
+
+            five = five.union(get_stroke_line([spiral_end_pos, (flag_top_left[0], flag_top_left[1] - self.thin_line_width/2)], self.thin_line_width, self.thick))
+
+            flag = (cq.Workplane("XY").moveTo(flag_top_left[0], flag_top_left[1]).radiusArc(flag_right, -flag_wide/2).line(-self.thin_line_width, 0).radiusArc((flag_right[0] - flag_cut_wide - self.thin_line_width, flag_right[1]), flag_cut_wide/2)
+                    .close().extrude(self.thick))
+
+            five = five.union(flag)
+
+            return five
 
     def get_number(self, number_string, invert=False):
         '''
