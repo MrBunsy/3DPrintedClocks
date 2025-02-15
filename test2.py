@@ -98,7 +98,7 @@ if False:
 
 numbers = FancyFrenchArabicNumbers(30)
 digit = 2
-# show_object(numbers.get_digit(digit))
-# show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
-show_object(numbers.get_twirly_bit(numbers.get_width(digit), numbers.height/2))
-show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height/2))
+show_object(numbers.get_digit(digit))
+show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
+# show_object(numbers.get_twirly_bit(numbers.get_width(digit), numbers.height/2))
+# show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height/2))

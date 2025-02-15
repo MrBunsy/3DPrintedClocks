@@ -682,7 +682,7 @@ class Line:
         else:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector
-        self.dir = np.divide(self.dir, np.linalg.norm(self.dir))
+        self.dir = np_to_set(np.divide(self.dir, np.linalg.norm(self.dir)))
 
     def get2D(self, length=100, both_directions=False):
         line = cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0] * length, self.dir[1] * length)
@@ -1380,8 +1380,9 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
 
 
 machine_screw_lengths={
+    2: [x for x in range(4, 10, 2) ],
     3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60],
-    2: [x for x in range(4, 10, 2) ]
+    4: [x for x in range(10, 100+10, 10)]
 }
 
 def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, prefer_longer=False):

@@ -596,11 +596,11 @@ class BearingPulley:
         '''
         return self.edge_thick * 2 + self.taper_thick * 2 + self.cord_diameter
 
-    def getMaxRadius(self):
+    def get_max_radius(self):
         #needs to be kept consistent with bottomPos below
         return self.diameter/2 + self.cord_diameter
 
-    def getHalf(self, top=False):
+    def get_half(self, top=False):
         radius = self.diameter/2
         #from the side
         bottomPos = (radius + self.cord_diameter, 0)
@@ -658,10 +658,10 @@ class BearingPulley:
 
         return pulley
 
-    def getHookTotalThick(self):
+    def get_hook_total_thick(self):
         return self.get_total_thick() + self.hook_side_gap*2 + self.hook_thick*2
 
-    def getHookHalf(self):
+    def get_hook_half(self):
         '''
         Get a way to attach a weight to a pulley wheel
         assumes we're using a bearing
@@ -669,11 +669,11 @@ class BearingPulley:
 
 
 
-        axleHeight = self.getMaxRadius() + self.hook_bottom_gap + self.hook_thick * 0.5
+        axleHeight = self.get_max_radius() + self.hook_bottom_gap + self.hook_thick * 0.5
 
         extraHeight = 0
 
-        length = self.getHookTotalThick()
+        length = self.get_hook_total_thick()
 
         # hook = cq.Workplane("XY").lineTo(length/2,0).line(0,axleHeight+extraHeight).line(- thick,0).line(0,-(axleHeight + extraHeight - thick) ).lineTo(0,thick).mirrorY().extrude(wide)
 
@@ -683,7 +683,7 @@ class BearingPulley:
 
         hook = cq.Workplane("XY").lineTo(axleHeight + extraHeight, 0).radiusArc((axleHeight + extraHeight, self.hook_wide), -r).lineTo(0, self.hook_wide).radiusArc((0, 0), -r).close().extrude(length / 2)
 
-        holeR = self.getMaxRadius() + self.hook_bottom_gap
+        holeR = self.get_max_radius() + self.hook_bottom_gap
 
         #leave two sticky out bits on the hook that will press right up to the inside of the bearing
         pulleyHole = cq.Workplane("XY").circle(holeR).extrude(self.get_total_thick() - self.bearing_holder_thick)\
@@ -717,40 +717,87 @@ class BearingPulley:
 
         cuckooHookHole = cq.Workplane("XY").moveTo(0, self.cuckoo_hook_outer_d / 2).radiusArc((0, -self.cuckoo_hook_outer_d / 2), self.cuckoo_hook_outer_d / 2).line(-100, 0).line(0, self.cuckoo_hook_outer_d).close().extrude(self.cuckoo_hook_thick)
 
-        hook = hook.cut(cuckooHookHole.translate((0, 0, self.getHookTotalThick() / 2 - self.cuckoo_hook_thick / 2)))
+        hook = hook.cut(cuckooHookHole.translate((0, 0, self.get_hook_total_thick() / 2 - self.cuckoo_hook_thick / 2)))
 
         return hook
 
     def get_assembled(self):
-        pulley = self.getHalf(top=False).add(self.getHalf(top=True).rotate((0,0,self.get_total_thick()/2),(1,0,self.get_total_thick()/2),180))
+        pulley = self.get_half(top=False).add(self.get_half(top=True).rotate((0, 0, self.get_total_thick() / 2), (1, 0, self.get_total_thick() / 2), 180))
 
         if self.bearing is not None:
             # hook = self.getHookHalf()
             # pulley = hook.add(pulley.translate((0,0,-self.get_total_thick()/2)).rotate((0,0,0),(0,1,0),90))
 
-            hook = self.getHookHalf().add(self.getHookHalf().rotate((0,0,self.getHookTotalThick()/2),(1,0,self.getHookTotalThick()/2),180))
-            pulley = hook.add(pulley.translate((0,0,self.getHookTotalThick()/2-self.get_total_thick()/2)))
+            hook = self.get_hook_half().add(self.get_hook_half().rotate((0, 0, self.get_hook_total_thick() / 2), (1, 0, self.get_hook_total_thick() / 2), 180))
+            pulley = hook.add(pulley.translate((0, 0, self.get_hook_total_thick() / 2 - self.get_total_thick() / 2)))
 
         pulley = pulley.rotate((0,0,0), (0,0,1), 90)
 
         return pulley
 
     def printInfo(self):
-        print("pulley needs screws {} {}mm and {} {}mm".format(self.screws, self.get_total_thick(), self.hook_screws, self.getHookTotalThick()))
+
+
+        def get_BOM(self):
+            screw_length = self.get_total_thickness()
+
+            instructions = """![Example lightweight pulley](./lightweight_pulley.jpg \"Example lightweight pulley\")
+
+    Push the two nyloc nuts into their slots in the back of the back holder.
+
+    Screw the bottom fixing screw partially into the front holder. Then slot the hook over the back before screwing the back holder to the front.
+
+    Screw the top fixing screw partially into the front holder, then slot over a washer. Screw the screw in slightly further, then slot over the pulley wheel. Screw it slightly further again and slot over the final washer. Then make sure that there's enough spacing for the pulley wheel to spin freely before screwing into the back holder.
+
+    When fully assembled the pulley wheel should be able to spin freely.
+    """
+            bom = BillOfMaterials("Lightweight pulley", instructions)
+
+            bom.add_image("lightweight_pulley.jpg")
+
+            bom.add_item(BillOfMaterials.Item("Cuckoo hook 1mm thick"))
+            bom.add_item(BillOfMaterials.Item(f"{self.screws} {screw_length:.0f}mm", quantity=2, purpose="Fixing screws"))
+            bom.add_item(BillOfMaterials.Item(f"M{self.screws.metric_thread} nyloc nut", quantity=2, purpose="Fixing nuts"))
+            bom.add_item(BillOfMaterials.Item(f"M{self.screws.metric_thread} washer", quantity=2, purpose="Padding washers"))
+
+            if self.use_steel_rod:
+                bom.add_item(BillOfMaterials.Item(f"Steel tube {STEEL_TUBE_DIAMETER}x{self.screws.metric_thread} {self.wheel_thick:.1f}mm", purpose="Tube insert for pulley wheel"))
+
+            bom.add_printed_parts(self.get_printed_parts())
+            bom.add_model(self.get_assembled())
+            bom.add_model(self.get_assembled(), svg_preview_options=BillOfMaterials.SVG_OPTS_SIDE_PROJECTION)
+            return bom
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Bearing Pulley")
+
+        bom.add_model(self.get_assembled())
+        #TODO instructions
+        hook_screws_length = get_nearest_machine_screw_length(self.get_hook_total_thick() * 2 + self.hook_screws.get_nut_height(), self.hook_screws)
+
+        bom.add_item(BillOfMaterials.Item(f"{self.screws} {self.screws.length}mm", quantity=2, purpose="Fix the pulley wheel together"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.screws.metric_thread} nut", quantity=2, purpose="Fix the pulley wheel together"))
+        bom.add_item(BillOfMaterials.Item(f"{self.hook_screws} {hook_screws_length}mm", quantity=2, purpose="Fix whole pulley together"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.hook_screws.metric_thread} nut", quantity=2, purpose="Fix whole pulley together"))
+        bom.add_item(BillOfMaterials.Item(f"Cuckoo hook {self.cuckoo_hook_thick}mm thick"))
+        bom.add_item(BillOfMaterials.Item(f"{self.bearing}"))
+
+        return bom
+
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pulley_wheel_top.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHalf(top=True), out)
+        exporters.export(self.get_half(top=True), out)
 
         out = os.path.join(path, "{}_pulley_wheel_bottom.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getHalf(top=False), out)
+        exporters.export(self.get_half(top=False), out)
 
         if self.bearing is not None:
             out = os.path.join(path, "{}_pulley_hook_half.stl".format(name))
             print("Outputting ", out)
-            exporters.export(self.getHookHalf(), out)
+            exporters.export(self.get_hook_half(), out)
 
 class MainSpring:
     '''

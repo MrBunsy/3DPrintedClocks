@@ -2418,7 +2418,21 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         return cut
 
-    def get_bob(self, hollow=True, for_printing=True):
+    def hollow_out_bob(self, bob):
+        # hexagon shell around the rod so shot won't escape
+        rod_case = cq.Workplane("XY").polygon(6, diameter=self.threaded_rod_m * 2).extrude(self.bob_r * 4).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.bob_r * 2, self.bob_thick / 2))
+        rod_case = rod_case.intersect(bob)
+        # return bob
+        bob = bob.shell(-self.wall_thick)
+        return bob
+
+
+        # encase the rod hole so we can fill with shot without a rod
+        bob = bob.union(rod_case)
+
+        return bob
+
+    def get_bob(self, hollow=True):
 
 
 
@@ -2427,7 +2441,15 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         #nice rounded edge
         bob = cq.Workplane("XZ").lineTo(self.bob_r, 0).radiusArc((self.bob_r, self.bob_thick), -self.bob_thick * 0.9).lineTo(0, self.bob_thick).close().sweep(circle)
 
-        bob=bob.cut(self.get_rod_and_nut_cutter())
+        #was 0.5, which is plenty of space, but can slowly rotate. 0.1 seems to be a tight fit that help stop it rotate over time
+        extraR=0.1
+
+
+
+        #rectangle for the nut, with space for the threaded rod up and down
+        cut = cq.Workplane("XY").rect(self.gap_width, self.gap_height).extrude(self.bob_thick * 2).faces(">Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.threaded_rod_m / 2 + extraR).extrude(self.bob_r * 2).\
+            faces("<Y").workplane().moveTo(0, self.bob_thick / 2).circle(self.threaded_rod_m / 2 + extraR).extrude(self.bob_r * 2)
+        bob=bob.cut(cut)
 
 
         if hollow:
@@ -2656,16 +2678,9 @@ class FancyPendulum(Pendulum):
         bob = bob.cut(self.get_nut_hole_cutter())
 
         if hollow:
-            #hexagon shell around the rod so shot won't escape
-            rod_case = cq.Workplane("XY").polygon(6, diameter=self.threaded_rod_m * 2).extrude(self.bob_r * 4).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.bob_r * 2, self.bob_thick / 2))
-            rod_case = rod_case.intersect(bob)
 
-            bob = bob.shell(-self.wall_thick)
-
+            bob = self.hollow_out_bob(bob)
             bob = bob.cut(self.get_bob_lid(for_cutting=True))
-
-            #encase the rod hole so we can fill with shot without a rod
-            bob = bob.union(rod_case)
 
             for pos in self.lid_fixing_positions:
                 pillar_r = self.bob_lid_screws.metric_thread/2 + 1.5

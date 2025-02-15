@@ -153,9 +153,7 @@ def get_stroke_curve(start, end, start_dir, end_dir, wide, thick, style=StrokeSt
     '''
     this doesn't actually work in many cases :(
     '''
-    if style == StrokeStyle.ROUND:
-        raise NotImplementedError("TODO round ends for get_stroke_curve (easy to do but lazy)")
-    
+
     start_line = Line(start, direction=start_dir)
     
     start_clockwise_dir = start_line.get_perpendicular_direction(clockwise=True)
@@ -173,7 +171,11 @@ def get_stroke_curve(start, end, start_dir, end_dir, wide, thick, style=StrokeSt
     end_anticlockwise_pos = np_to_set(np.add(end, np.multiply(end_anticlockwise_dir, wide / 2)))
 
     curve = cq.Workplane("XY").spline([start_clockwise_pos, end_clockwise_pos], tangents=[start_dir, end_dir]).lineTo(end_anticlockwise_pos[0], end_anticlockwise_pos[1]).spline([end_anticlockwise_pos, start_anticlockwise_pos], tangents=[backwards_vector(end_dir), backwards_vector(start_dir)]).close().extrude(thick)
-    
+
+    if style == StrokeStyle.ROUND:
+        for pos in [start, end]:
+            curve = curve.union(cq.Workplane("XY").circle(wide/2).extrude(thick).translate(pos))
+
     return curve
     
 

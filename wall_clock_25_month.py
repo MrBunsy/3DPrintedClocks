@@ -72,7 +72,7 @@ train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, 
                 powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters, escapement_split=True)
 train.print_info(weight_kg=6)
 
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True, cannon_pinion_to_hour_holder_gap_size=0.75)
 motionWorks.calculate_size(arbor_distance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
@@ -94,28 +94,30 @@ hands = clock.Hands(style=clock.HandStyle.INDUSTRIAL, minute_fixing="square", mi
 #TODO pullet capable of holding two weights, I think two cheap weights in fancy shells looks better and works out a similar price to one large cheap (ugly) weight
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
-print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.getHookTotalThick()))
+print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.get_hook_total_thick()))
 
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley, pendulum=pendulum)#, timeHours=12, timeMins=0)#weights=[clock.Weight(height=245,diameter=55)]
 
-assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
+if not outputSTL:
+    assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.PURPLE], plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
                     hand_colours=[clock.Colour.RED], with_rods=True)
 
 # show_object(plates.getDrillTemplate(6))
 
 if outputSTL:
+    assembly.get_BOM().export()
     #
     #
     # train.output_STLs(clockName,clockOutDir)
-    plaque.output_STLs(clockName, clockOutDir)
-    motionWorks.output_STLs(clockName,clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    pulley.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+    # plaque.output_STLs(clockName, clockOutDir)
+    # motionWorks.output_STLs(clockName,clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # pulley.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
 
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)
