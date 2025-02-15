@@ -683,8 +683,54 @@ class FancyFrenchArabicNumbers:
 
     def get_edge_of_spiral(self, pos, tangent, inside=True):
         return np_to_set(np.add(pos, np.multiply(get_perpendicular_direction(tangent, clockwise=inside), self.thin_line_width / 2)))
-    
-    def get_twirly_bit(self, width, height, top=True, clockwise=True, big_diamond_offset_angle=0):
+
+    def get_tadpole_and_diamond(self, width, bottom=True, tadpole_on_right=True):
+        '''
+        get hte bottom of the 2, but TODO support re-arranging for use on other numbers
+
+        returns dict:
+        {
+        'shape': cq object,
+        'tip_pos': (x,y) of bottom tip of this tail
+        }
+        '''
+
+        #-width / 2 + width * 0.17 (how inkscape says the slightly distorted 2 has its bottom left, but it looks a little odd
+        bottom_left = (-width/2 + width*0.05, -self.height / 2 + self.thin_line_width / 2)
+
+
+        base_diamond_size = self.height * 0.15
+
+        base_diamond_pos = (0, -self.height / 2 + self.height * 0.1)
+        diamond_line_left = get_stroke_curve(bottom_left, (base_diamond_pos[0] - base_diamond_size / 2, base_diamond_pos[1]), start_dir=(0.5, 1), end_dir=(1, 0),
+                                             wide=self.thin_line_width, thick=self.thick, style=StrokeStyle.ROUND)
+        tail = diamond_line_left.union(self.get_rounded_diamond(base_diamond_size, self.thin_line_width).translate(base_diamond_pos))
+
+        tadpole_r = self.height * 0.045
+        tadpole_centre = (width * 0.3, -self.height * 0.25)
+        tadpole_tail_pos = (width * 0.45, -self.height * 0.35)
+        tadpole = self.get_tadpole(tadpole_centre, tadpole_r, tadpole_tail_pos)
+
+        tail_line = get_stroke_curve((base_diamond_pos[0] + base_diamond_size / 2, base_diamond_pos[1]), tadpole_tail_pos, start_dir=(1, 0), end_dir=(0, 1),
+                                     wide=self.thin_line_width, thick=self.thick)
+
+        tail = tail.union(tadpole)
+        tail = tail.union(tail_line)
+
+        if not bottom:
+            tail = tail.mirror(mirrorPlane="XZ", basePointVector=(0,0,0))
+            bottom_left = (bottom_left[0], -bottom_left[1])
+
+        if not tadpole_on_right:
+            tail = tail.mirror(mirrorPlane="YZ", basePointVector=(0,0,0))
+            bottom_left = (-bottom_left[0], bottom_left[1])
+
+        return {
+        'shape': tail,
+        'tip_pos': bottom_left
+        }
+
+    def get_twirly_bit(self, width, height, top=True, small_diamond_on_left=True, big_diamond_offset_angle=0, y_scale=1.25):
         '''
         Get fancy spiral with two diamons on eitehr side. Draw the top of a 2 first and re-arrange the rest accordingly
 
@@ -704,7 +750,7 @@ class FancyFrenchArabicNumbers:
 
         start_pos = (-width * 0.08, -height * 0.07)
 
-        spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=1.25, start_angle=0, x_scale=-1)
+        spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=y_scale, start_angle=0, x_scale=-1)
 
         spiral_points = []
         spiral_directions = []
@@ -732,7 +778,7 @@ class FancyFrenchArabicNumbers:
             spiral_directions.append(dir)
             outer_pos = self.get_edge_of_spiral(pos, dir, inside=False)
 
-            if i> 0 and  i < points_per_spiral*1.0:
+            if i> 0 and  i < points_per_spiral*0.7:
                 tadpole = tadpole.spline([last_outer_pos, outer_pos], tangents=[last_dir, dir])
                 tadpole_end_index = i
             last_outer_pos = outer_pos
@@ -825,7 +871,21 @@ class FancyFrenchArabicNumbers:
             # r = abs(from_pos[0] - to_pos[0])
             # twirly = twirly.union(get_stroke_arc(from_pos=from_pos, to_pos=to_pos, radius=-r, wide=self.thin_line_width, thick=self.thick))
             twirly = twirly.union(get_stroke_curve(from_pos, to_pos, from_dir, to_dir, self.thin_line_width, self.thick))
+        
+        if not top:
+            twirly = twirly.mirror(mirrorPlane="XZ", basePointVector=(0,0,0))
+            big_diamond_inner_pos = (big_diamond_inner_pos[0], -big_diamond_inner_pos[1])
+            big_diamond_outer_pos = (big_diamond_outer_pos[0], -big_diamond_outer_pos[1])
+            # big_diamond_centre_angle = (big_diamond_centre_angle[0], -big_diamond_centre_angle[1])
 
+        if not small_diamond_on_left:
+            #TODO is this correct for clockwise, or do I raelly just mean "on right"?
+            twirly = twirly.mirror(mirrorPlane="YZ", basePointVector=(0,0,0))
+            big_diamond_inner_pos = (-big_diamond_inner_pos[0], big_diamond_inner_pos[1])
+            big_diamond_outer_pos = (-big_diamond_outer_pos[0], big_diamond_outer_pos[1])
+            # big_diamond_centre_angle = (-big_diamond_centre_angle[0], big_diamond_centre_angle[1])
+        
+        
         return {
             'shape': twirly,
             'inner_pos': big_diamond_inner_pos,
@@ -875,29 +935,58 @@ class FancyFrenchArabicNumbers:
                        .spline([base_of_diamond_outer_pos, twirly["outer_pos"]], tangents=[backwards_vector(base_of_diamond_dir), (1,1)]).close().extrude(self.thick))
             diamond = diamond.translate((0,self.height/4))
 
-            bottom_left = (-width/2 + width*0.17, -self.height/2 + self.thin_line_width/2)
+            tail = self.get_tadpole_and_diamond(width)
 
+            two = two.union(tail["shape"])
+            bottom_left = tail["tip_pos"]
+            
             middle_line = get_stroke_curve((base_of_diamond_pos[0], base_of_diamond_pos[1] + self.height/4), bottom_left, start_dir=base_of_diamond_dir, end_dir=(0,-1),
                                            wide=self.thin_line_width, thick=self.thick, style=StrokeStyle.ROUND)
 
-            base_diamond_size = self.height*0.15
             two = two.union(diamond).union(middle_line)
 
-            base_diamond_pos = (0, -self.height/2 + self.height*0.1)
-            diamond_line_left = get_stroke_curve(bottom_left, (base_diamond_pos[0] - base_diamond_size/2, base_diamond_pos[1]), start_dir=(0.5, 1), end_dir=(1,0),
-                                           wide=self.thin_line_width, thick=self.thick, style=StrokeStyle.ROUND)
-            two = two.union(diamond_line_left).union(self.get_rounded_diamond(base_diamond_size, self.thin_line_width).translate(base_diamond_pos))
-
-            tadpole_centre = (width*0.3, -self.height*0.25)
-            tadpole_tail_pos = (width*0.4, -self.height*0.35)
-            tadpole = self.get_tadpole(tadpole_centre, self.height*0.045, tadpole_tail_pos)
-
-            tail_line = get_stroke_curve((base_diamond_pos[0] + base_diamond_size/2, base_diamond_pos[1]), tadpole_tail_pos, start_dir=(1,0), end_dir=(0,1),
-                                         wide=self.thin_line_width, thick=self.thick)
-
-            two = two.union(tadpole).union(tail_line)
 
             return two
+
+        if digit == 3:
+            top =  self.get_tadpole_and_diamond(width, bottom=False, tadpole_on_right=False)
+            three = top["shape"]
+
+            centre= (0,0)
+
+            middle_line = get_stroke_line([top["tip_pos"], centre],wide = self.thin_line_width, thick =self.thick)
+
+            three=  three.union(middle_line)
+
+            twirly_height = self.height *0.4
+            twirly = self.get_twirly_bit(width, twirly_height, top=False, y_scale=1)
+
+            y_offset = twirly_height/2 - self.height/2 + self.height*0.02
+
+            def correctify(pos):
+                return (pos[0], pos[1] + y_offset)
+
+            r = self.height/4
+            diamond_tip_angle = math.pi/4
+            diamond_tip_pos = np.add((0, -self.height/4), polar(diamond_tip_angle, r))
+            diamond_tip_dir = polar(diamond_tip_angle + math.pi / 2)
+
+            #the inside and outside is only true for the non-inverted spiral, oops
+            diamond_tip_inner = self.get_edge_of_spiral(diamond_tip_pos, diamond_tip_dir, inside=False)
+            diamond_tip_outer = self.get_edge_of_spiral(diamond_tip_pos, diamond_tip_dir, inside=True)
+
+
+
+            diamond = (cq.Workplane("XY").spline([correctify(twirly["inner_pos"]), diamond_tip_inner], tangents=[(1,1), diamond_tip_dir])
+                       .radiusArc((0,-self.thin_line_width/2), -r).lineTo(0, self.thin_line_width/2).radiusArc(diamond_tip_outer, r)
+                       .spline([diamond_tip_outer, correctify(twirly["outer_pos"])], tangents=[backwards_vector(diamond_tip_dir), (1,-1)]).close().extrude(self.thick))
+
+            three = three.union(diamond)
+
+
+            three = three.union(twirly["shape"].translate((0,y_offset)))
+
+            return three
         if digit == 4:
             centre = (self.thick_line_width/2, -self.height*0.17)
             #vertical line with diamond at bottom
@@ -920,6 +1009,20 @@ class FancyFrenchArabicNumbers:
 
 
             return four
+
+    def get_number(self, number_string, invert=False):
+        '''
+        Assumes number is a string
+        '''
+
+        widths = []
+
+        for char in number_string:
+            width = self.get_width(int(char))
+            widths.append(width)
+
+        total_width = sum(widths)
+
 class DialPillar:
     def __init__(self, position, screws_absolute_positions, radius, length, embedded_nuts=False, screws=None):
         #pillar position relative to the centre of the dial
