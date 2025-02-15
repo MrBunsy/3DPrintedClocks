@@ -623,7 +623,7 @@ class FancyFrenchArabicNumbers:
         # self.width = self.height/1.36
 
         self.thick_line_width = self.height*0.125
-        self.thin_line_width = self.height*0.01
+        self.thin_line_width = self.height*0.02#self.height*0.01
         self.diamond_width = self.thick_line_width*1.75
 
     def get_square_diamond(self):
@@ -745,8 +745,6 @@ class FancyFrenchArabicNumbers:
         'angle': big_diamond_centre_angle,
         }
         '''
-        # blob_r = width*0.035
-        blob_r = width * 0.05
 
         start_pos = (-width * 0.08, -height * 0.07)
 
@@ -778,19 +776,11 @@ class FancyFrenchArabicNumbers:
             spiral_directions.append(dir)
             outer_pos = self.get_edge_of_spiral(pos, dir, inside=False)
 
-            if i> 0 and  i < points_per_spiral*0.7:
+            if i> 1 and  i < points_per_spiral*0.7:
                 tadpole = tadpole.spline([last_outer_pos, outer_pos], tangents=[last_dir, dir])
                 tadpole_end_index = i
             last_outer_pos = outer_pos
             last_dir = dir
-
-        # tadpole_end_index+=1
-
-            # twirly = twirly.union(cq.Workplane("XY").circle(0.1).extrude(10).translate(spiral.get_pos(angle)))
-
-        centre_blob_pos = (spiral_points[0][0]-blob_r + self.thin_line_width/2, spiral_points[0][1])
-
-
 
         small_diamond_span_angle = math.pi*0.6
         small_diamond_centre_angle = math.pi*4 + math.pi*0.05
@@ -821,11 +811,9 @@ class FancyFrenchArabicNumbers:
                          .spline([small_diamond_top_inner_pos, small_diamond_inner_pos], tangents=[backwards_vector(spiral.get_tangent(small_diamond_top_angle)), (1,-1)])
                          .spline([small_diamond_inner_pos, self.get_edge_of_spiral(small_diamond_base_pos, spiral.get_tangent(small_diamond_base_angle), inside=True)], tangents=[(-1,-1), backwards_vector(spiral.get_tangent(small_diamond_base_angle))]).close().extrude(self.thick))
 
-        # twirly = cq.Workplane("XY").moveTo(centre_blob_pos[0], centre_blob_pos[1]).circle(blob_r).extrude(self.thick)
-        #
+
         twirly = cq.Workplane("XY")
-        # twirly = cq.Workplane("XY").moveTo(spiral.start_pos[0], spiral.start_pos[1]).circle(0.01).extrude(10)
-        # return small_diamond
+
         twirly = twirly.union(small_diamond)
 
 
@@ -837,7 +825,10 @@ class FancyFrenchArabicNumbers:
 
         # tadpole_end_pos_inner = np_to_set(np.add(tadpole_end_pos, np.multiply(get_perpendicular_direction(spiral_directions[tadpole_end_index], clockwise=True), self.thin_line_width/2)))
         tadpole_end_pos_inner = self.get_edge_of_spiral(tadpole_end_pos, spiral_directions[tadpole_end_index], inside=True)
-        tadpole = tadpole.lineTo(tadpole_end_pos_inner[0], tadpole_end_pos_inner[1]).spline([tadpole_end_pos_inner, tadpole_start_outer], tangents=[backwards_vector(spiral_directions[tadpole_end_index]), spiral_directions[tadpole_start_index]]).close().extrude(self.thick)
+        tadpole = (tadpole.lineTo(tadpole_end_pos_inner[0], tadpole_end_pos_inner[1])
+                   .spline([tadpole_end_pos_inner, tadpole_start_outer], tangents=[backwards_vector(spiral_directions[tadpole_end_index]), spiral_directions[tadpole_start_index]])
+                   .close().extrude(self.thick))
+
         # return tadpole
         twirly = twirly.union(tadpole)
 
