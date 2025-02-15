@@ -635,6 +635,8 @@ class FancyFrenchArabicNumbers:
         if tip_size == 0:
             #hack so cq is happy with zero line lengths
             tip_size = 0.0000001
+
+        r = tip_size/2
         #TODO if needed
         # if left is None:
         #     left = (-size / 2,0)
@@ -650,11 +652,34 @@ class FancyFrenchArabicNumbers:
         bottoma = (tip_size/2, -size / 2)
         bottomb = (-tip_size/2, -size / 2)
 
-        return (cq.Workplane("XY").spline([leftb, topa], tangents=[(1,0), (0,1)]).spline([topa, topb], tangents=[(0,1), (0, -1)])
-                .spline([topb, righta], tangents=[(0,-1), (1,0)]).spline([righta, rightb], tangents=[(1,0), (-1, 0)])
-                .spline([rightb, bottoma], tangents=[(-1,0),(0,-1)]).spline([bottoma, bottomb], tangents=[(0,-1), (0, 1)])
-                .spline([bottomb, lefta], tangents=[(0,1), (-1,0)]).spline([lefta, leftb], tangents=[(-1,0), (1, 0)])
+        return (cq.Workplane("XY").spline([leftb, topa], tangents=[(1,0), (0,1)]).radiusArc(topb, r)
+                .spline([topb, righta], tangents=[(0,-1), (1,0)]).radiusArc(rightb, r)
+                .spline([rightb, bottoma], tangents=[(-1,0),(0,-1)]).radiusArc(bottomb, r)
+                .spline([bottomb, lefta], tangents=[(0,1), (-1,0)]).radiusArc(leftb, r)
                 .close().extrude(self.thick))
+
+    def get_tadpole(self, centre, r, tail_end_pos):
+        '''
+        get tadpole with tail to the bottom right in a clockwise direction
+        '''
+        if not (centre[0] < tail_end_pos[0] and centre[1] > tail_end_pos[1]):
+            raise NotImplementedError("TODO work out orentation and flip tadpole around")
+
+        tadpole = cq.Workplane("XY").moveTo(centre[0], centre[1]).circle(r).extrude(self.thick)
+
+        tail_outer_pos = (tail_end_pos[0] + self.thin_line_width/2, tail_end_pos[1])
+        tail_inner_pos = (tail_end_pos[0] - self.thin_line_width/2, tail_end_pos[1])
+
+        tail_start_angle = -math.pi*0.25
+        tail_start_pos = np_to_set(np.add(centre, polar(tail_start_angle, r)))
+        tail_start_dir = polar(tail_start_angle + math.pi/2)
+
+        tail = (cq.Workplane("XY").spline([tail_start_pos, tail_inner_pos], tangents=[tail_start_dir, (0,-1)]).lineTo(tail_outer_pos[0], tail_outer_pos[1])#radiusArc(tail_outer_pos, -self.thin_line_width*0.50001)
+                .spline([tail_outer_pos, (centre[0], centre[1] + r)], tangents=[(0,1), (-1, 0)]).close().extrude(self.thick))
+
+        tadpole = tadpole.union(tail)
+
+        return tadpole
 
     def get_edge_of_spiral(self, pos, tangent, inside=True):
         return np_to_set(np.add(pos, np.multiply(get_perpendicular_direction(tangent, clockwise=inside), self.thin_line_width / 2)))
@@ -862,6 +887,15 @@ class FancyFrenchArabicNumbers:
             diamond_line_left = get_stroke_curve(bottom_left, (base_diamond_pos[0] - base_diamond_size/2, base_diamond_pos[1]), start_dir=(0.5, 1), end_dir=(1,0),
                                            wide=self.thin_line_width, thick=self.thick, style=StrokeStyle.ROUND)
             two = two.union(diamond_line_left).union(self.get_rounded_diamond(base_diamond_size, self.thin_line_width).translate(base_diamond_pos))
+
+            tadpole_centre = (width*0.3, -self.height*0.25)
+            tadpole_tail_pos = (width*0.4, -self.height*0.35)
+            tadpole = self.get_tadpole(tadpole_centre, self.height*0.045, tadpole_tail_pos)
+
+            tail_line = get_stroke_curve((base_diamond_pos[0] + base_diamond_size/2, base_diamond_pos[1]), tadpole_tail_pos, start_dir=(1,0), end_dir=(0,1),
+                                         wide=self.thin_line_width, thick=self.thick)
+
+            two = two.union(tadpole).union(tail_line)
 
             return two
         if digit == 4:
