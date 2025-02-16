@@ -623,7 +623,7 @@ class FancyFrenchArabicNumbers:
         # self.width = self.height/1.36
 
         self.thick_line_width = self.height*0.125
-        self.thin_line_width = self.height*0.02#self.height*0.01
+        self.thin_line_width = self.height*0.035#self.height*0.01
         self.diamond_width = self.thick_line_width*1.75
 
     def get_square_diamond(self):
@@ -860,7 +860,7 @@ class FancyFrenchArabicNumbers:
         small_diamond_base_pos = spiral.get_pos(small_diamond_base_angle)
         small_diamond_top_pos = spiral.get_pos(small_diamond_top_angle)
 
-        small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - self.thin_line_width*2
+        small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - self.thin_line_width
         # small_diamond_wide = 3
         small_diamond_line = Line(spiral.start_pos, anotherPoint=small_diamond_centre_pos)
         #makes a wonky diamond
@@ -876,7 +876,8 @@ class FancyFrenchArabicNumbers:
                          .spline([small_diamond_outer_pos, self.get_edge_of_line(small_diamond_top_pos, spiral.get_tangent(small_diamond_top_angle), clockwise=False)], tangents=[(1, 1), spiral.get_tangent(small_diamond_top_angle)])
                          .lineTo(small_diamond_top_inner_pos[0], small_diamond_top_inner_pos[1])
                          .spline([small_diamond_top_inner_pos, small_diamond_inner_pos], tangents=[backwards_vector(spiral.get_tangent(small_diamond_top_angle)), (1,-1)])
-                         .spline([small_diamond_inner_pos, self.get_edge_of_line(small_diamond_base_pos, spiral.get_tangent(small_diamond_base_angle), clockwise=True)], tangents=[(-1, -1), backwards_vector(spiral.get_tangent(small_diamond_base_angle))]).close().extrude(self.thick))
+                         .spline([small_diamond_inner_pos, self.get_edge_of_line(small_diamond_base_pos, spiral.get_tangent(small_diamond_base_angle), clockwise=True)], tangents=[(-1, -1), backwards_vector(spiral.get_tangent(small_diamond_base_angle))])
+                         .close().extrude(self.thick))
 
 
         twirly = cq.Workplane("XY")
@@ -904,7 +905,7 @@ class FancyFrenchArabicNumbers:
         big_diamond_top_angle = big_diamond_centre_angle - (small_diamond_span_angle) / 2 - big_diamond_offset_angle
         big_diamond_centre_pos = spiral.get_pos(big_diamond_centre_angle)
         big_diamond_outer_wide = width/2 - big_diamond_centre_pos[0] - self.thin_line_width/2
-        big_diamond_inner_wide = distance_between_two_points(spiral.get_pos(big_diamond_centre_angle - math.pi*2), big_diamond_centre_pos) - self.thin_line_width*2
+        big_diamond_inner_wide = distance_between_two_points(spiral.get_pos(big_diamond_centre_angle - math.pi*2), big_diamond_centre_pos) - self.thin_line_width
         big_diamond_outer_pos = (width / 2, big_diamond_centre_pos[1])
         big_diamond_inner_pos = (big_diamond_centre_pos[0] - big_diamond_inner_wide, big_diamond_centre_pos[1])
         big_diamond_top_pos = spiral.get_pos(big_diamond_top_angle)
@@ -972,7 +973,8 @@ class FancyFrenchArabicNumbers:
             # return self.height*0.47
             return self.height*0.6
         if digit in [1]:
-            return self.diamond_width
+            #trying wider than the actual digit for spacing
+            return self.diamond_width*1.5
         if digit in [2]:
             return self.height/1.65
         if digit in [3, 5]:
@@ -1002,12 +1004,12 @@ class FancyFrenchArabicNumbers:
             hole_wide = (width - self.diamond_width - sides_wide )
 
             #just do top left and mirror it twice
-            top_left = cq.Workplane("XY").rect(sides_wide, self.height/2).extrude(self.thick).union(self.get_square_diamond()).translate((-width/2 + self.diamond_width/2, self.height/4))
+            top_left = cq.Workplane("XY").rect(sides_wide, self.height/2).extrude(self.thick).union(self.get_square_diamond().translate((0,-self.height/4))).translate((-width/2 + self.diamond_width/2, self.height/4))
 
             # right = cq.Workplane("XY").rect(sides_wide, self.height).extrude(self.thick).union(self.get_square_diamond()).translate((width / 2 - self.diamond_width / 2, 0))
 
             r = hole_wide*0.75
-            top_circle_pos = (0,self.height/2 - r - self.thin_line_width)
+            top_circle_pos = (0,self.height/2 - r )
             bottom_circle_pos = (0, -top_circle_pos[1])
 
             left_inner_line = Line((-width/2 + self.diamond_width/2 + sides_wide/2, -self.height/2), direction=(0,1))
@@ -1023,6 +1025,23 @@ class FancyFrenchArabicNumbers:
             centre_intersection = cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1] - top_circle_pos[0] + r*2).extrude(self.thick))
             centre = cq.Workplane("XY").rect(hole_wide, self.height).extrude(self.thick).intersect(centre_intersection)
             centre_hollowed = cq.Workplane("XY").union(centre).cut(cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r-self.thin_line_width).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1] - top_circle_pos[0] + r*2).extrude(self.thick)))
+
+            #chop the top off the top left
+            top_left_intersect_line = Line(top_circle_pos, anotherPoint=top_left_intersect)
+            top_left_intersect_angle = top_left_intersect_line.get_angle() + math.pi/2
+            top_left_intersect_dir = polar(top_left_intersect_angle)
+            leftmost = (-width/2, top_left_intersect[1] - self.diamond_width/2)
+
+            top_left_cutter = (cq.Workplane("XY").spline([top_left_intersect, leftmost], tangents=[top_left_intersect_dir, (-1,0)])
+                               .lineTo(-width/2, self.height/2).lineTo(top_left_intersect[0], self.height/2).close().extrude(self.thick))
+
+            top_left = top_left.cut(top_left_cutter)
+
+            y = top_left_intersect[1] - leftmost[1]
+
+            top_left_stickyout = (cq.Workplane("XY").spline([top_left_intersect, leftmost], tangents=[top_left_intersect_dir, (-1,0)])
+                                  .lineTo(top_left_intersect[0], top_left_intersect[1] - y*2).close().extrude(self.thick))
+            top_left = top_left.union(top_left_stickyout)
 
             sides = top_left.union(top_left.mirror("YZ"))
             sides = sides.union(sides.mirror("XZ"))
@@ -1316,18 +1335,28 @@ class FancyFrenchArabicNumbers:
         if digit == 9:
             return self.get_digit(6).mirror("XZ").mirror("YZ")
 
-    def get_number(self, number_string, invert=False):
+    def get_number(self, number, invert=False):
         '''
         Assumes number is a string
         '''
 
         widths = []
 
-        for char in number_string:
+        for char in str(number):
             width = self.get_width(int(char))
             widths.append(width)
 
         total_width = sum(widths)
+
+        x = -total_width / 2
+        number_shape = cq.Workplane("XY")
+        for char in str(number):
+            width = self.get_width(int(char))
+            number_shape = number_shape.union(self.get_digit(int(char)).translate((x + width/2, 0)))
+            x+=width
+
+        return number_shape
+
 
 class DialPillar:
     def __init__(self, position, screws_absolute_positions, radius, length, embedded_nuts=False, screws=None):
