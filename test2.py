@@ -97,16 +97,16 @@ if False:
 # show_object(pendulum.get_bob_lid())
 
 numbers = FancyFrenchArabicNumbers(30)
-digit = 2
-show_object(numbers.get_digit(digit))
-show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
+# digit = 0
+# show_object(numbers.get_digit(digit))
+# show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
 # show_object(numbers.get_twirly_bit(numbers.get_width(digit), numbers.height/2)["shape"])
 # show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height/2))
 
 # show_object(numbers.get_tadpole((0,0), (10,10), clockwise=False)["shape"])
 # show_object(cq.Workplane("XY").circle(1).extrude(10).translate((10,10)))
 
-if False:
+if True:
     x = 0
     for digit in range(1,10):
         wide = numbers.get_width(digit)

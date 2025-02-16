@@ -813,7 +813,7 @@ class FancyFrenchArabicNumbers:
         }
         '''
 
-        start_pos = (-width * 0.08, -height * 0.07)
+        start_pos = (-width * 0.05, -height * 0.07)
 
         spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=y_scale, start_angle=0, x_scale=-1)
 
@@ -968,6 +968,9 @@ class FancyFrenchArabicNumbers:
         }
 
     def get_width(self, digit):
+        if digit in [0]:
+            # return self.height*0.47
+            return self.height*0.6
         if digit in [1]:
             return self.diamond_width
         if digit in [2]:
@@ -989,6 +992,44 @@ class FancyFrenchArabicNumbers:
         digit = int(digit)
 
         width = self.get_width(digit)
+
+        if digit == 0:
+            #found some similar clocks with similar digits which have a more straight zero, so going to copy that instead
+            zero = cq.Workplane("XY")
+
+            # hole_wide = width *0.35
+            sides_wide = width*0.25
+            hole_wide = (width - self.diamond_width - sides_wide )
+
+            #just do top left and mirror it twice
+            top_left = cq.Workplane("XY").rect(sides_wide, self.height/2).extrude(self.thick).union(self.get_square_diamond()).translate((-width/2 + self.diamond_width/2, self.height/4))
+
+            # right = cq.Workplane("XY").rect(sides_wide, self.height).extrude(self.thick).union(self.get_square_diamond()).translate((width / 2 - self.diamond_width / 2, 0))
+
+            r = hole_wide*0.75
+            top_circle_pos = (0,self.height/2 - r - self.thin_line_width)
+            bottom_circle_pos = (0, -top_circle_pos[1])
+
+            left_inner_line = Line((-width/2 + self.diamond_width/2 + sides_wide/2, -self.height/2), direction=(0,1))
+            top_left_intersects = left_inner_line.intersection_with_circle(top_circle_pos, r)
+            top_left_intersect = top_left_intersects[1]
+            if top_left_intersects[0][1] > top_left_intersects[1][1]:
+                top_left_intersect = top_left_intersects[0]
+
+            bottom_left_intersect = (top_left_intersect[0], -top_left_intersect[1])
+
+            # top_right_intersects = (-top_left_intersects[0], top_left_intersects[1])
+
+            centre_intersection = cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1] - top_circle_pos[0] + r*2).extrude(self.thick))
+            centre = cq.Workplane("XY").rect(hole_wide, self.height).extrude(self.thick).intersect(centre_intersection)
+            centre_hollowed = cq.Workplane("XY").union(centre).cut(cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r-self.thin_line_width).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1] - top_circle_pos[0] + r*2).extrude(self.thick)))
+
+            sides = top_left.union(top_left.mirror("YZ"))
+            sides = sides.union(sides.mirror("XZ"))
+
+            zero = sides.union(centre_hollowed)
+            # zero = centre
+            return zero
 
         if digit == 1:
             long = self.height - self.diamond_width
