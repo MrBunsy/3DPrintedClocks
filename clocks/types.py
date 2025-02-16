@@ -221,6 +221,8 @@ class DialStyle(Enum):
     '''
     #simple lines that are actually slightly wedge shaped
     LINES_ARC = "lines_arc"
+    #lines rect, but with diamonds for the hours instead of chunky lines
+    LINES_RECT_DIAMONDS_INDICATORS = "lines with diamonds"
     #simple lines that are just rectangles
     LINES_RECT = "lines_rect"
     #same but long indicators rather than thick indicators

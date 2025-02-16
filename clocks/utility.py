@@ -1288,6 +1288,33 @@ class Font:
         self.kind = kind
         self.filepath = filepath
         self.dial_scale = dial_scale
+        self.custom = False
+
+    def get_text(self, text, text_size, thick):
+        shape = cq.Workplane("XY").text(text, text_size, thick, kind=self.kind, font=self.name, fontPath=self.filepath)
+        bb = shape.val().BoundingBox()
+
+        # actually centre it, the align feature of text does...something else
+        shape = shape.translate((-bb.center.x, -bb.center.y))
+
+        return shape
+
+class CustomFontDrawing:
+    def __init__(self, height, thick = LAYER_THICK*2):
+        self.height = height
+        self.thick = thick
+
+    def get_text(self, text):
+        raise NotImplementedError("Implement in child class")
+class CustomFont(Font):
+    def __init__(self, custom_font_class, dial_scale=1.0):
+        super().__init__(dial_scale=dial_scale)
+        self.custom_font_class = custom_font_class
+        self.custom = True
+
+    def get_text(self, text, text_size, thick):
+        font = self.custom_font_class(height=text_size, thick=thick)
+        return font.get_text(text)
 
 #I don't think I have the rights to distribute these, so anyone checking out the repo will have to source them themselves.
 FANCY_WATCH_FONT = Font(name="Eurostile Extended #2", dial_scale=1.5, filepath="../fonts/Eurostile_Extended_2_Bold.otf")
@@ -1336,11 +1363,12 @@ class TextSpace:
         '''
         get the text centred properly
         '''
-        shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind=self.font.kind, font=self.font.name, fontPath=self.font.filepath)  # , font="Comic Sans MS")
-        bb = shape.val().BoundingBox()
-
-        # actually centre it, the align feature of text does...something else
-        shape = shape.translate((-bb.center.x, -bb.center.y))
+        # shape = cq.Workplane("XY").text(self.text, self.text_size, self.thick, kind=self.font.kind, font=self.font.name, fontPath=self.font.filepath)  # , font="Comic Sans MS")
+        # bb = shape.val().BoundingBox()
+        #
+        # # actually centre it, the align feature of text does...something else
+        # shape = shape.translate((-bb.center.x, -bb.center.y))
+        shape = self.font.get_text(self.text, self.text_size, self.thick)
 
         if self.inverted:
             shape = shape.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.thick))
@@ -1540,6 +1568,7 @@ class BillOfMaterials:
         # images to copy from the images dir into the clock output for including in markdown and pdf
         self.images = []
         self.template_path = template_path
+        print(f"Generating {name} BOM")
 
     def add_image(self, image):
         self.images.append(image)
@@ -1770,7 +1799,7 @@ class BillOfMaterials:
         return instructions
 
     def export(self, out_path="out", image_path="images/"):
-
+        print(f"Exporting {self.name} BOM")
         if self.parent is None:
             out_path = os.path.join(out_path, self.tidy_name())
 

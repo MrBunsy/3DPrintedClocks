@@ -616,10 +616,9 @@ class RomanNumerals:
 
         return number_shape
 
-class FancyFrenchArabicNumbers:
+class FancyFrenchArabicNumbers(CustomFontDrawing):
     def __init__(self,height, thick=LAYER_THICK*2):
-        self.height = height
-        self.thick = thick
+        super().__init__(height, thick)
         # self.width = self.height/1.36
 
         self.thick_line_width = self.height*0.125
@@ -629,33 +628,43 @@ class FancyFrenchArabicNumbers:
     def get_square_diamond(self):
         return cq.Workplane("XY").moveTo(-self.diamond_width/2,0).lineTo(0, self.diamond_width/2).lineTo(self.diamond_width/2, 0).lineTo(0, -self.diamond_width/2).close().extrude(self.thick)
 
-    def get_rounded_diamond(self, size, tip_size=0.1, left=None, right=None, top = None, bottom=None):
+    def get_rounded_diamond(self, size, side_tip_size=0.1, top_tip_size =-1, left=None, right=None, top = None, bottom=None):
 
 
-        if tip_size == 0:
+        if side_tip_size == 0:
             #hack so cq is happy with zero line lengths
-            tip_size = 0.0000001
+            side_tip_size = 0.0000001
 
-        r = tip_size/2
+        if top_tip_size < 0:
+            top_tip_size = side_tip_size
+
+        r = side_tip_size / 2
         #TODO if needed
         # if left is None:
         #     left = (-size / 2,0)
         # if right is None:
         #     right = (-size / 2,0)
 
-        lefta = (-size / 2, -tip_size/2)
-        leftb = (-size / 2, tip_size/2)
-        topa = (-tip_size/2, size / 2)
-        topb = (tip_size/2, size / 2)
-        righta = (size / 2, tip_size/2)
-        rightb = (size / 2, -tip_size/2)
-        bottoma = (tip_size/2, -size / 2)
-        bottomb = (-tip_size/2, -size / 2)
+        lefta = (-size / 2, -side_tip_size / 2)
+        leftb = (-size / 2, side_tip_size / 2)
+        topa = (-side_tip_size / 2, size / 2)
+        top = (0, size / 2 + r)
+        topb = (side_tip_size / 2, size / 2)
+        righta = (size / 2, side_tip_size / 2)
+        rightb = (size / 2, -side_tip_size / 2)
+        bottoma = (side_tip_size / 2, -size / 2)
+        bottom = (0, -size / 2 - r)
+        bottomb = (-side_tip_size / 2, -size / 2)
 
-        return (cq.Workplane("XY").spline([leftb, topa], tangents=[(1,0), (0,1)]).radiusArc(topb, r)
-                .spline([topb, righta], tangents=[(0,-1), (1,0)]).radiusArc(rightb, r)
-                .spline([rightb, bottoma], tangents=[(-1,0),(0,-1)]).radiusArc(bottomb, r)
-                .spline([bottomb, lefta], tangents=[(0,1), (-1,0)]).radiusArc(leftb, r)
+        # return (cq.Workplane("XY").spline([leftb, topa], tangents=[(1,0), (0,1)]).radiusArc(topb, r)
+        #         .spline([topb, righta], tangents=[(0,-1), (1,0)]).radiusArc(rightb, r)
+        #         .spline([rightb, bottoma], tangents=[(-1,0),(0,-1)]).radiusArc(bottomb, r)
+        #         .spline([bottomb, lefta], tangents=[(0,1), (-1,0)]).radiusArc(leftb, r)
+        #         .close().extrude(self.thick))
+        return (cq.Workplane("XY").spline([leftb, top], tangents=[(1, 0), (0.25, 1)])
+                .spline([top, righta], tangents=[(0.25, -1), (1, 0)]).radiusArc(rightb, r)
+                .spline([rightb, bottom], tangents=[(-1, 0), (-0.25, -1)])
+                .spline([bottom, lefta], tangents=[(-0.25, 1), (-1, 0)]).radiusArc(leftb, r)
                 .close().extrude(self.thick))
 
     def get_tadpole(self, centre, tail_end_pos, clockwise=False):
@@ -813,6 +822,8 @@ class FancyFrenchArabicNumbers:
         }
         '''
 
+        inner_diamond_gap = self.thin_line_width*1.5
+
         start_pos = (-width * 0.05, -height * 0.07)
 
         spiral = ArithmeticSpiral(width*0.16, start_pos=start_pos, y_scale=y_scale, start_angle=0, x_scale=-1)
@@ -860,7 +871,7 @@ class FancyFrenchArabicNumbers:
         small_diamond_base_pos = spiral.get_pos(small_diamond_base_angle)
         small_diamond_top_pos = spiral.get_pos(small_diamond_top_angle)
 
-        small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - self.thin_line_width
+        small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - inner_diamond_gap
         # small_diamond_wide = 3
         small_diamond_line = Line(spiral.start_pos, anotherPoint=small_diamond_centre_pos)
         #makes a wonky diamond
@@ -905,7 +916,7 @@ class FancyFrenchArabicNumbers:
         big_diamond_top_angle = big_diamond_centre_angle - (small_diamond_span_angle) / 2 - big_diamond_offset_angle
         big_diamond_centre_pos = spiral.get_pos(big_diamond_centre_angle)
         big_diamond_outer_wide = width/2 - big_diamond_centre_pos[0] - self.thin_line_width/2
-        big_diamond_inner_wide = distance_between_two_points(spiral.get_pos(big_diamond_centre_angle - math.pi*2), big_diamond_centre_pos) - self.thin_line_width
+        big_diamond_inner_wide = distance_between_two_points(spiral.get_pos(big_diamond_centre_angle - math.pi*2), big_diamond_centre_pos) - inner_diamond_gap
         big_diamond_outer_pos = (width / 2, big_diamond_centre_pos[1])
         big_diamond_inner_pos = (big_diamond_centre_pos[0] - big_diamond_inner_wide, big_diamond_centre_pos[1])
         big_diamond_top_pos = spiral.get_pos(big_diamond_top_angle)
@@ -1335,6 +1346,8 @@ class FancyFrenchArabicNumbers:
         if digit == 9:
             return self.get_digit(6).mirror("XZ").mirror("YZ")
 
+    def get_text(self, text):
+        return self.get_number(int(text))
     def get_number(self, number, invert=False):
         '''
         Assumes number is a string
@@ -1455,11 +1468,14 @@ class Dial:
         #TODO switch over to new Font class (although we use font_scale for roman numerals, so take that into consideration)
         #if this is a roman numeral we will first look for romain_numerals_style. If it is None, fall back on font
         #for any styles which use a font
-        self.font = font
+
+        # backwards compatibility
+        if isinstance(font, str):
+            self.font = Font(name=font, filepath=font_path)
+        else:
+            self.font = font
         #manual adjustment for size of font if my automatic attempt doesn't work
         self.font_scale = font_scale
-        #manual location of font file for when cadquery can't seem to find it on the system
-        self.font_path = font_path
 
         # a shape to be subtracted from the supports to avoid crashing into things, bit hacky, will be set by plates
         self.subtract_from_supports = None
@@ -1711,7 +1727,7 @@ class Dial:
 
         if self.font is not None:
             #if font, use that, otherwise use the old hand-written cuckoo numerals
-            number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font, font_path=self.font_path) for number in numbers]
+            number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font) for number in numbers]
 
             max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 
@@ -1737,7 +1753,7 @@ class Dial:
         return detail
 
     def get_lines_detail(self, outer_r, dial_width, from_edge, thick_indicators=False, long_indicators=False, total_lines=60, inner_ring=False, outer_ring=False, only=None,
-                         big_thick=2, small_thick=1, long_line_length_fraction=-1.0, short_line_length_fraction=-1.0):
+                         big_thick=2.0, small_thick=1.0, long_line_length_fraction=-1.0, short_line_length_fraction=-1.0, diamond_indicators=False):
         '''
         Intended to be used on the congrieve rolling ball clock, where there are separate dials for the hours and seconds
         so if total lines is 48 the long indicator is for the half hours
@@ -1745,8 +1761,6 @@ class Dial:
         r = outer_r
         line_inner_r = outer_r - dial_width + from_edge
         line_outer_r = r - from_edge
-
-        total_lines
 
         dA = math.pi * 2 / total_lines
 
@@ -1780,13 +1794,20 @@ class Dial:
                 continue
 
             line_thick = small_line_thick
-            if i % indicators_on == indicators_offset and thick_indicators:
-                line_thick = big_line_thick
+            diamond = False
+            if i % indicators_on == indicators_offset:
+                if thick_indicators:
+                    line_thick = big_line_thick
+                if diamond_indicators:
+                    diamond = True
 
             centre_r = (line_inner_r + line_outer_r) / 2
             line_length = short_line_length
             if i % indicators_on == indicators_offset and long_indicators:
                 line_length = long_line_length
+            # if diamond:
+            #     #bodgetastic
+            #     line_length*=1.2
             if inner_ring:
                 centre_r = line_inner_r + line_length/2
             elif outer_ring:
@@ -1794,8 +1815,10 @@ class Dial:
                 #else leave in centre
 
             angle = math.pi / 2 - i * dA
-
-            line = cq.Workplane("XY").moveTo(centre_r, 0).rect(line_length,line_thick).extrude(self.detail_thick)
+            if diamond:
+                line = cq.Workplane("XY").moveTo(centre_r - line_length/2, 0).lineTo(centre_r, line_thick/2).lineTo(centre_r + line_length/2, 0).lineTo(centre_r, -line_thick/2).close().extrude(self.detail_thick)
+            else:
+                line = cq.Workplane("XY").moveTo(centre_r, 0).rect(line_length,line_thick).extrude(self.detail_thick)
 
             detail = detail.add(line.rotate((0,0,0), (0,0,1), rad_to_deg(angle)))
 
@@ -1891,6 +1914,9 @@ class Dial:
             return self.get_arcs_detail(outer_r, width, detail_from_edges)
         elif style == DialStyle.LINES_RECT:
             return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, thick_indicators=True, inner_ring=inner_ring, outer_ring = outer_ring)
+        elif style == DialStyle.LINES_RECT_DIAMONDS_INDICATORS:
+            return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, thick_indicators=True, long_indicators=True, diamond_indicators=True,
+                                         inner_ring=inner_ring, outer_ring=outer_ring, long_line_length_fraction=0.75, big_thick=2.5)
         elif style == DialStyle.LINES_RECT_LONG_INDICATORS:
             return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, long_indicators=True, inner_ring=inner_ring, outer_ring = outer_ring)
         elif style == DialStyle.CONCENTRIC_CIRCLES:
@@ -1962,7 +1988,7 @@ class Dial:
 
         font = self.font
         if self.font is None:
-            font = "Arial"
+            font = DEFAULT_FONT
 
 
 
@@ -1974,7 +2000,7 @@ class Dial:
             only = numbers
         centre_r = outer_r - dial_width/2
         number_height = (dial_width - dial_detail_from_edges*2)*self.font_scale
-        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=numbers[i], thick=self.detail_thick, font=font, font_path=self.font_path) for i in range(12)]
+        number_spaces = [TextSpace(x=0, y=0, width=number_height, height=number_height, horizontal=True, text=numbers[i], thick=self.detail_thick, font=font) for i in range(12)]
 
         max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
 

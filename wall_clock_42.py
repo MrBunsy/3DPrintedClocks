@@ -77,8 +77,8 @@ motion_works_angle_deg=360-40
 
 pendulum = FancyPendulum(bob_d=40)
 
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
-            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
+            outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
 
 # dial = Dial(210, DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
 #             outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=40)
