@@ -126,7 +126,10 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
         #     arc = arc.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(wide/2).extrude(thick))
 
 class ArithmeticSpiral:
-    def __init__(self, r, start_pos=None, x_scale=1, y_scale=1, start_angle=0, power=1):
+    def __init__(self, r, start_pos=None, x_scale=1, y_scale=1, start_angle=0, power=1, clockwise=False):
+        '''
+        if clockwise then starting angle must be -ve
+        '''
         self.r = r
         self.start_pos = start_pos
         if self.start_pos is None:
@@ -135,18 +138,64 @@ class ArithmeticSpiral:
         self.y_scale = y_scale
         self.start_angle = start_angle
         self.power = power
+        self.clockwise = clockwise
     def get_pos(self, angle):
-        r = self.r * (angle + self.start_angle)/(math.pi*2)
+
+        dir = 1
+        if self.clockwise:
+            dir = -1
+
+        r = self.r * (dir*angle + self.start_angle)/(math.pi*2)
         r = r ** self.power
         pos = polar(angle, r)
 
         return (pos[0]*self.x_scale + self.start_pos[0], pos[1] * self.y_scale + self.start_pos[1])
 
     def get_tangent(self, angle):
-        pre_pos = self.get_pos(angle - 0.01)
-        post_pos = self.get_pos(angle + 0.01)
+        if self.clockwise:
+            pre_pos = self.get_pos(angle + 0.01)
+            post_pos = self.get_pos(angle - 0.01)
+        else:
+            pre_pos = self.get_pos(angle - 0.01)
+            post_pos = self.get_pos(angle + 0.01)
         line = Line(pre_pos, anotherPoint=post_pos)
         return line.dir
+
+    def get_draw_info(self, from_angle, to_angle, points_per_spiral=15):
+        spiral_points = []
+        spiral_directions = []
+
+        spirals = abs(from_angle - to_angle)/(math.pi*2)
+
+        clockwise = 1 if from_angle < to_angle else -1
+
+        for i in range(math.ceil(points_per_spiral*spirals) + 1):
+            angle =from_angle + clockwise*i*math.pi*2/points_per_spiral
+            pos = self.get_pos(angle)
+            dir = self.get_tangent(angle)
+            spiral_points.append(pos)
+            spiral_directions.append(dir)
+
+        return {
+            "points": spiral_points,
+            "tangents": spiral_directions
+        }
+
+    def draw(self, from_angle, to_angle, wide, thick, points_per_spiral=15):
+        info = self.get_draw_info(from_angle, to_angle, points_per_spiral)
+        spiral_points = info["points"]
+        spiral_directions = info["tangents"]
+
+        twirly = cq.Workplane("XY")
+
+        for i in range(len(spiral_points)-1):
+            from_pos = spiral_points[i]
+            from_dir = spiral_directions[i ]
+            to_pos = spiral_points[i + 1]
+            to_dir = spiral_directions[(i+1)]
+            twirly = twirly.union(get_stroke_curve(from_pos, to_pos, from_dir, to_dir, wide, thick))
+
+        return twirly
 
 
 def get_stroke_curve(start, end, start_dir, end_dir, wide, thick, style=StrokeStyle.SQUARE):

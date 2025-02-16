@@ -103,6 +103,9 @@ numbers = FancyFrenchArabicNumbers(30)
 # show_object(numbers.get_twirly_bit(numbers.get_width(digit), numbers.height/2))
 # show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height/2))
 
+# show_object(numbers.get_tadpole((0,0), (10,10), clockwise=False)["shape"])
+# show_object(cq.Workplane("XY").circle(1).extrude(10).translate((10,10)))
+
 if True:
     x = 0
     for digit in range(1,6):
