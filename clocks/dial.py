@@ -797,7 +797,7 @@ class FancyFrenchArabicNumbers:
         'tip_pos': bottom_left
         }
 
-    def get_twirly_bit(self, width, height, top=True, small_diamond_on_left=True, big_diamond_offset_angle=0, y_scale=1.25):
+    def get_twirly_bit(self, width, height, top=True, small_diamond_on_left=True, big_diamond_offset_angle=0.0, y_scale=1.25):
         '''
         Get fancy spiral with two diamons on eitehr side. Draw the top of a 2 first and re-arrange the rest accordingly
 
@@ -920,15 +920,26 @@ class FancyFrenchArabicNumbers:
         # twirly = twirly.union(get_stroke_curve(spiral_points[0], spiral_points[1], (0,-2), (0,2), self.thin_line_width, self.thick*2))
         # twirly = twirly.union(get_stroke_line(spiral_points, self.thin_line_width, self.thick))
         # twirly = twirly.union(get_stroke_arc(sp))
-        for i in range(len(spiral_points)-1):
+        # skip = floor(points_per_spiral*(small_diamond_span_angle/2)/(math.pi*2))
+        for i in range(len(spiral_points) - 1 ):
             #assume all points are a quarter circle NOT TRUE
+            angle = spiral_offset_angle + (i+1) * math.pi * 2 / points_per_spiral
+
             from_pos = spiral_points[i]
             from_dir = spiral_directions[i ]
             to_pos = spiral_points[i + 1]
             to_dir = spiral_directions[(i+1)]
+
+            if angle > big_diamond_top_angle:
+                #just link to big diamond (otherwise the spiral can sometimes clip outside the edge of the diamond)
+                to_pos = big_diamond_top_pos
+                to_dir = spiral.get_tangent(big_diamond_top_angle)
+
             # r = abs(from_pos[0] - to_pos[0])
             # twirly = twirly.union(get_stroke_arc(from_pos=from_pos, to_pos=to_pos, radius=-r, wide=self.thin_line_width, thick=self.thick))
             twirly = twirly.union(get_stroke_curve(from_pos, to_pos, from_dir, to_dir, self.thin_line_width, self.thick))
+            if angle > big_diamond_top_angle:
+                break
         
         if not top:
             twirly = twirly.mirror(mirrorPlane="XZ", basePointVector=(0,0,0))
@@ -963,7 +974,7 @@ class FancyFrenchArabicNumbers:
             return self.height/1.65
         if digit in [3, 5]:
             return self.height/1.5
-        if digit in [4]:
+        if digit in [4, 6, 9]:
             return self.height/1.36
     
     def get_digit(self, digit):
@@ -1132,6 +1143,61 @@ class FancyFrenchArabicNumbers:
             five = five.union(flag)
 
             return five
+
+        if digit == 6:
+            twirly_height = self.height * 0.6
+            twirly = self.get_twirly_bit(width, twirly_height, top=False, y_scale=1.25, small_diamond_on_left=False, big_diamond_offset_angle=math.pi*0.15)
+
+            y_offset = twirly_height / 2 - self.height / 2# + self.height * 0.0
+
+            six = twirly["shape"].translate((0,y_offset))
+
+            def correcto(pos):
+                return (pos[0], pos[1] + y_offset)
+
+            r = width*0.4
+            circle_pos = (width*0.1, self.height/2 - r - self.thin_line_width/2)
+            big_diamond_top_angle = math.pi*0.75
+
+            big_diamond_top_pos = np_to_set(np.add(circle_pos, polar(big_diamond_top_angle, r)))
+            big_diamond_top_pos_outer = np_to_set(np.add(circle_pos, polar(big_diamond_top_angle, r + self.thin_line_width/2)))
+            big_diamond_top_pos_inner = np_to_set(np.add(circle_pos, polar(big_diamond_top_angle, r - self.thin_line_width / 2)))
+            big_diamond_top_dir = polar(big_diamond_top_angle-math.pi/2)
+
+            big_diamond = (cq.Workplane("XY").spline([correcto(twirly["outer_pos"]), big_diamond_top_pos_outer], tangents=[(1,1), big_diamond_top_dir])
+                           .lineTo(big_diamond_top_pos_inner[0], big_diamond_top_pos_inner[1])
+                           .spline([big_diamond_top_pos_inner, correcto(twirly["inner_pos"])], tangents=[backwards_vector(big_diamond_top_dir), (1,-1)])
+                           .close().extrude(self.thick))
+
+            # big_diamond = big_diamond.union(cq.Workplane("XY").circle(r).extrude(self.thick/2).translate(circle_pos))
+            six = six.union(big_diamond)
+            circle_top_pos = (circle_pos[0], circle_pos[1] + r)
+            top_left_line = get_stroke_curve(big_diamond_top_pos, circle_top_pos, big_diamond_top_dir, (1,0), self.thin_line_width, self.thick)
+
+            six = six.union(top_left_line)
+
+
+
+            little_circle_r = self.height*0.175
+            little_circle_pos = (circle_pos[0], circle_pos[1] + (r - little_circle_r + self.thin_line_width/2))
+
+            top_cutter_r = little_circle_r * 0.5
+            bottom_cutter_r = little_circle_r * 0.6
+
+            curly_bit = cq.Workplane("XY").circle(little_circle_r).extrude(self.thick).translate(little_circle_pos).cut(cq.Workplane("XY").moveTo(-little_circle_r/2,0).rect(little_circle_r,little_circle_r*2).extrude(self.thick).translate(little_circle_pos))
+
+            top_cutter_pos = (little_circle_pos[0], little_circle_pos[1] + (little_circle_r - top_cutter_r - self.thin_line_width))
+            bottom_cutter_pos = (little_circle_pos[0], little_circle_pos[1] - bottom_cutter_r)
+            curly_bit = curly_bit.cut(cq.Workplane("XY").circle(top_cutter_r).extrude(self.thick).translate(top_cutter_pos))
+            curly_bit = curly_bit.cut(cq.Workplane("XY").circle(bottom_cutter_r).extrude(self.thick).translate(bottom_cutter_pos))
+
+            six = six.union(curly_bit)
+
+
+            return six
+
+        if digit == 9:
+            return self.get_digit(6).mirror("XZ").mirror("YZ")
 
     def get_number(self, number_string, invert=False):
         '''
