@@ -46,13 +46,13 @@ barrel_gear_thick = 5
 powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=barrel_gear_thick,
                         wall_thick=10, extra_barrel_height=1.5)
 
-train = GoingTrain(pendulum_period=1, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
+train = GoingTrain(pendulum_period=1.1, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=2, runtime_hours=8 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=False)
 moduleReduction=1
 pillar_style = PillarStyle.CLASSIC
 train.calculate_ratios(max_wheel_teeth=200, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
 
-train.set_powered_wheel_ratios([[64, 10], [74, 10]])
+train.set_powered_wheel_ratios([[64, 10], [69, 10]])
 
 train.print_info(for_runtime_hours=7*24)
 
@@ -80,8 +80,10 @@ pendulum = FancyPendulum(bob_d=40)
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
 
-# dial = Dial(210, DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
-#             outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, dial_width=40)
+#much faster to render while testing out other things
+# dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Royal Bavarian Plain", font_scale=0.8, font_path="../fonts/Royal Bavarian Plain PDF.ttf",
+#             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
+
 plaque = Plaque(text_lines=["W42#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2025"])
 
 plates = RoundClockPlates(train, motion_works, name="Wall 42", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
