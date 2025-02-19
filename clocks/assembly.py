@@ -497,7 +497,10 @@ $render{render_with_dial_id}
 
 """
         else:
-            raise NotImplementedError("TODO instructions for non-round plates")
+            # raise NotImplementedError("TODO instructions for non-round plates")
+            #TODO
+            final_assembly_bom.assembly_instructions +="TODO assembly instructions"
+            render_with_dial = cq.Workplane("XY")
 
         render_with_motion_works = cq.Workplane("XY").add(render_with_dial)
 
@@ -783,6 +786,9 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             moon = self.moon_complication.get_moon_half()
             moon = moon.add(moon.rotate((0,0,0),(0,1,0),180))
             clock = clock.add(moon.translate((0, self.plates.moon_holder.get_moon_base_y() + self.moon_complication.moon_radius, self.moon_complication.get_relative_moon_z() + self.front_of_clock_z)))
+            holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
+            for i, holder in enumerate(holder_parts):
+                clock = clock.add(holder.translate((0, 0, self.front_of_clock_z)))
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time

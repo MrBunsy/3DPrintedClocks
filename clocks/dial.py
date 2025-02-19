@@ -420,8 +420,8 @@ class MoonPhaseComplication3D:
         return parts
 
     def get_printed_parts(self):
-        parts = [BillOfMaterials.PrintedPart(f"Arbor {i}", self.get_arbor_shape(i)) for i in range(len(self.train))]
-        parts.append(BillOfMaterials.PrintedPart("Moon half", self.get_moon_half(), tolerance=0.01, printing_instructions="Print one in grey and one in black, then hot glue together", quantity=2))
+        parts = [BillOfMaterials.PrintedPart(f"arbor_{i}", self.get_arbor_shape(i)) for i in range(len(self.train))]
+        parts.append(BillOfMaterials.PrintedPart("moon_half", self.get_moon_half(), tolerance=0.01, printing_instructions="Print one in grey and one in black, then hot glue together", quantity=2))
         return parts
 
     def get_BOM(self):

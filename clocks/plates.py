@@ -157,11 +157,15 @@ The moon on its threaded rod slots through a steel tube.
         bom.add_printed_parts(self.get_printed_parts())
         steel_pipe_long = 0
         if self.moon_inside_dial:
+            #I think this is wrong - isn't moon_y the centre of the moon?
             base_of_pipe = self.moon_y + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT*2
             top_of_pipe = self.get_outer_radius()
             steel_pipe_long = top_of_pipe - base_of_pipe
         else:
-            raise NotImplementedError("TODO calculate length of steel pipe for moon holder on top of clock")
+            top_of_pipe = self.moon_y - self.moon_complication.moon_radius - TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT*2
+            #sticking slightly out
+            base_of_pipe = self.centre_y - self.height/2
+            steel_pipe_long = top_of_pipe - base_of_pipe
 
         bom.add_item(BillOfMaterials.Item(f"Steel pipe {STEEL_TUBE_DIAMETER}ODx{self.fixing_screws.metric_thread}ID {steel_pipe_long:.1f}mm",
                                           purpose="Clamped between the spoon and the cap, to provide a way to hold the moon and the bevel gear upright"))
@@ -909,7 +913,8 @@ class SimpleClockPlates:
             bom.add_subcomponent(self.moon_complication.get_BOM())
         if self.dial is not None:
             dial_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + 10, self.dial.fixing_screws)
-            bom.add_item(BillOfMaterials.Item(f"{self.dial.fixing_screws} {dial_screw_length:.0f}mm", purpose="Dial screws", quantity=len(self.dial.fixing_positions)))
+            dial_screw_count = len(self.dial.fixing_positions) * len(self.dial.fixing_positions[0])
+            bom.add_item(BillOfMaterials.Item(f"{self.dial.fixing_screws} {dial_screw_length:.0f}mm", purpose="Dial screws", quantity=dial_screw_count))
 
         if self.plaque is not None:
             bom.add_subcomponent(self.plaque.get_BOM())
@@ -3590,7 +3595,7 @@ class SimpleClockPlates:
             whole =  shapes["plates"].union(shapes["pillars"])
             if "standoff_pillars" in shapes:
                 whole = whole.union(shapes["standoff_pillars"])
-            if "detail" in shapes:
+            if "detail" in shapes and shapes["detail"] is not None:
                 whole= whole.union(shapes["detail"])
             if "standoffs" in shapes:
                 whole = whole.union(shapes["standoffs"])
@@ -3625,7 +3630,7 @@ class SimpleClockPlates:
 
     def get_printable_parts(self):
         parts = []
-        strong_part_instructions = "Print with larger nozzle is possible and add extra perimeters, top and bottom layers, for strength"
+        strong_part_instructions = "Print with larger nozzle if possible and add extra perimeters, top and bottom layers, for strength"
         parts.append(BillOfMaterials.PrintedPart("back", self.get_plate(True, for_printing=True), tolerance=self.export_tolerance,
                                                  printing_instructions=strong_part_instructions))
 

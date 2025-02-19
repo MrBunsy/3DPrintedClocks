@@ -2408,7 +2408,8 @@ class CordBarrel(WeightPoweredWheel):
         self.ratchet_thick=ratchet_thick
         #so that the cord barrel base isn't rubbing up against the click and pawl (and they can move freely)
         #due to a (now fixed) but the original 0.6 had been doubled, but while I want to keep repoducing STLs for clock 40 as identical as i can I'll keep it
-        self.pawl_thick = ratchet_thick - 1.2#0.6
+        #clocks 39 and 40 were printed with a pawl thick 1.2 thinner than the ratchet and seem to be fine. but going back to the original plan to see how that fares
+        self.pawl_thick = ratchet_thick - 0.6
         self.ratchet_diameter = ratchet_diameter
         #TODO finish deprecating support for non-traditional ratchet
         self.traditional_ratchet=traditional_ratchet
