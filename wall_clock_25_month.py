@@ -62,7 +62,7 @@ backPlateFromWall=30
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 
 lanterns=[0, 1]
-pinion_extensions = {0:2}
+pinion_extensions = {0:2, 1:2}
 #want to make second powered wheel have chunkier rod, but really struggling to get the rest of the train to fit without a crazy small module.
 #let's see if m3 is enough
 rod_diameters = [4,3,3,3,3,3]

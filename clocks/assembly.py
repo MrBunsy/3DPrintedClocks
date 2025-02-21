@@ -979,8 +979,8 @@ To fix this there are modifier STLs which can be used to change the settings for
         if "standoff_pillars" in plate_parts:
             show_object(plate_parts["standoff_pillars"], options={"color": plate_colours[1 % len(plate_colours)]}, name="Standoff Pillars")
 
-        if "plate_detail" in plate_parts:
-            show_object(plate_parts["plate_detail"], options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
+        if "detail" in plate_parts:
+            show_object(plate_parts["detail"], options={"color": plate_colours[2 % len(plate_colours)]}, name="Plate Detail")
 
         if self.plaque is not None:
             show_object(self.plaque_shape, options={"color": plaque_colours[0]}, name="Back Plaque")
