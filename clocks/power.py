@@ -530,11 +530,14 @@ class BearingPulley:
         #if hooks > 1, how far apart are they?
         self.hook_distance = hook_distance
 
+        # TODO make this respect the actual style, at the moment it just does what it can to avoid the screws
+        self.style = style
+
         self.diameter=diameter
         self.cord_diameter=cord_diameter
         self.v_shaped=v_shaped
 
-        self.style=style
+
 
         #if negative, don't punch holes
         self.rod_metric_size=rod_metric_size
@@ -641,7 +644,22 @@ class BearingPulley:
         # if self.rodMetricSize > 0:
         #     shape = shape.faces(">Z").workplane().circle((self.rodMetricSize+LOOSE_FIT_ON_ROD)/2).cutThruAll()
 
-        pulley = Gear.cutStyle(pulley, outer_radius=self.diameter / 2 - self.cord_diameter / 2, inner_radius=holeD / 2, style=self.style)
+
+        if self.style is not None:
+            #TODO
+            # pulley = Gear.cutStyle(pulley, outer_radius=self.diameter / 2 - self.cord_diameter / 2, inner_radius=holeD / 2, style=self.style)
+            #for now, avoid the screws
+            extra_r = 2.5
+            outer_radius = self.diameter / 2 - self.cord_diameter / 2 - extra_r
+            inner_radius = holeD/2 + extra_r
+            cutter = cq.Workplane("XY").circle(inner_radius).circle(outer_radius).extrude(self.get_total_thick())
+            for pos in self.screw_positions:
+                line = Line((0,0), anotherPoint=pos)
+
+                cutter = cutter.cut(get_stroke_line([(0,0), polar(line.get_angle(), outer_radius*2)], wide=self.screws.get_head_diameter() + extra_r, thick=self.get_total_thick()))
+            cutter = cutter.edges("|Z").fillet(self.screws.get_head_diameter()*0.25)
+            pulley = pulley.cut(cutter)
+
 
 
 
@@ -718,7 +736,7 @@ class BearingPulley:
             hook = hook.cut(self.hook_screws.get_cutter(ignore_head=not front).translate(pos))
 
             if not front:
-                hook = hook.cut(self.hook_screws.get_nut_cutter().translate(pos))
+                hook = hook.cut(self.hook_screws.get_nut_cutter(with_bridging=True).translate(pos))
 
         # # cut out hole for m4 rod for the pulley axle
         # rod_hole = cq.Workplane("XY").circle(self.bearing.inner_d / 2).extrude(1000).translate((axle_height, 0, 0))
@@ -792,10 +810,15 @@ class BearingPulley:
             return bom
 
     def get_BOM(self):
+
         bom = BillOfMaterials("Bearing Pulley")
 
         bom.add_model(self.get_assembled())
-        #TODO instructions
+
+        bom.assembly_instructions += f"""Push the M{self.hook_screws.metric_thread} nuts into the back of the bottom hook.
+
+"""
+
         hook_screws_length = get_nearest_machine_screw_length(self.get_hook_total_thick(), self.hook_screws)
 
         bom.add_item(BillOfMaterials.Item(f"{self.screws} {self.screws.length}mm", quantity=2, purpose="Fix the pulley wheel together"))
@@ -804,9 +827,21 @@ class BearingPulley:
         bom.add_item(BillOfMaterials.Item(f"M{self.hook_screws.metric_thread} nut", quantity=2, purpose="Fix whole pulley together"))
         bom.add_item(BillOfMaterials.Item(f"Cuckoo hook {self.cuckoo_hook_thick}mm thick"))
         bom.add_item(BillOfMaterials.Item(f"{self.bearing}"))
+        bom.add_printed_parts(self.get_printed_parts())
 
         return bom
-
+    def get_printed_parts(self):
+        parts = [
+            BillOfMaterials.PrintedPart("pulley_wheel_top", self.get_half(top=True)),
+            BillOfMaterials.PrintedPart("pulley_wheel_bottom", self.get_half(top=False))
+        ]
+        if self.bearing is not None:
+            #I really can't remember what the use case was without the bearing?
+            parts += [
+                BillOfMaterials.PrintedPart("pulley_hook_half_top", self.get_hook_half(front=True)),
+                BillOfMaterials.PrintedPart("pulley_hook_half_bottom", self.get_hook_half(front=False)),
+            ]
+        return parts
 
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_pulley_wheel_top.stl".format(name))

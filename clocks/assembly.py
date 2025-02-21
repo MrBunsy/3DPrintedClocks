@@ -395,8 +395,19 @@ To fix this there are modifier STLs which can be used to change the settings for
          '''
 
         bom.add_subcomponent(self.plates.get_BOM())
+        try:
+            bom.add_subcomponent(self.get_final_assembly_bom())
+        except NotImplementedError as e:
+            print(f"TODO finish instructions: {e}")
 
-        #this is going to get messy and brittle, but I think I'll just write it and refactor it later if there becomes an obviously better way to do it
+        return bom
+
+    def get_final_assembly_bom(self):
+        '''
+        get a BOM for a set of instructions and renders on how to assemble the entire clock
+        '''
+
+        # this is going to get messy and brittle, but I think I'll just write it and refactor it later if there becomes an obviously better way to do it
         final_assembly_bom = BillOfMaterials("Final Assembly")
 
         # plates, pillars, detail, standoff_pillars, standoffs = self.plates.get_assembled(one_peice=False)
@@ -419,33 +430,31 @@ To fix this there are modifier STLs which can be used to change the settings for
             render_up_to_rear_plate = cq.Workplane("XY").add(render_standoffs_and_rods_and_standoff_pillars).add(plate_parts["back_plate"]).add(plate_parts["pillars"])
             render_up_to_rear_plate_id = final_assembly_bom.add_render(render_up_to_rear_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
+            final_assembly_bom.assembly_instructions += f"""Place the two rear standoffs down with the nuts on the bottom side. Thread in the four M4{self.plates.fixing_screws.metric_thread} rods partially (so they're just into the nuts, but not all the way).
 
+        $render{render_standoffs_and_rods_id}
 
-            final_assembly_bom.assembly_instructions+=f"""Place the two rear standoffs down with the nuts on the bottom side. Thread in the four M4{self.plates.fixing_screws.metric_thread} rods partially (so they're just into the nuts, but not all the way).
-            
-$render{render_standoffs_and_rods_id}
+        Slot the four standoff pillars onto the rods (note that this is much easier if the holes have been cleaned out with a drill bit first)
 
-Slot the four standoff pillars onto the rods (note that this is much easier if the holes have been cleaned out with a drill bit first)
+        $render{render_standoffs_and_rods_and_standoff_pillars_id}
 
-$render{render_standoffs_and_rods_and_standoff_pillars_id}
+        Slot the rear plate (which should have had all its bearings inserted by this point) and the pillars onto the rods.
 
-Slot the rear plate (which should have had all its bearings inserted by this point) and the pillars onto the rods.
+        $render{render_up_to_rear_plate_id}
 
-$render{render_up_to_rear_plate_id}
+        The next stage is harder to describe. Slot all the arbors into the bearings so they mesh correctly with each other.
 
-The next stage is harder to describe. Slot all the arbors into the bearings so they mesh correctly with each other.
-
-"""
-            #this assumes power is at the front
+        """
+            # this assumes power is at the front
             centre_arbor = self.going_train.powered_wheels
-            #from centre up to and NOT including anchor
-            other_arbors_ints = [str(i) for i in range(0, centre_arbor)] + [str(i) for i in range(centre_arbor+1, len(self.plates.arbors_for_plate)-1)]
-            other_arbors=", ".join(other_arbors_ints)
+            # from centre up to and NOT including anchor
+            other_arbors_ints = [str(i) for i in range(0, centre_arbor)] + [str(i) for i in range(centre_arbor + 1, len(self.plates.arbors_for_plate) - 1)]
+            other_arbors = ", ".join(other_arbors_ints)
             render_with_centre_arbor = cq.Workplane("XY").add(render_up_to_rear_plate).add(self.plates.arbors_for_plate[centre_arbor].get_assembled(with_extras=True)).add(arbor_rod_models[centre_arbor])
             render_with_centre_arbor_id = final_assembly_bom.add_render(render_with_centre_arbor, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
             render_with_more_arbors = cq.Workplane("XY").add(render_up_to_rear_plate)
-            for i in range(len(self.plates.arbors_for_plate)-1):
+            for i in range(len(self.plates.arbors_for_plate) - 1):
                 render_with_more_arbors = render_with_more_arbors.add(self.plates.arbors_for_plate[i].get_assembled(with_extras=True)).add(arbor_rod_models[i])
 
             render_with_more_arbors_id = final_assembly_bom.add_render(render_with_more_arbors, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
@@ -454,19 +463,19 @@ The next stage is harder to describe. Slot all the arbors into the bearings so t
             # Viewed from the top:
             render_with_all_arbors_id = final_assembly_bom.add_render(render_with_all_arbors, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
-            final_assembly_bom.assembly_instructions+= f"""Start with the centre arbor (arbor {centre_arbor}).
-            
-$render{render_with_centre_arbor_id}
+            final_assembly_bom.assembly_instructions += f"""Start with the centre arbor (arbor {centre_arbor}).
 
-Then the other arbors ({other_arbors}, not the anchor) should slot around it relatively easily. Make sure that the wheels (big gears) are slotted into the pinions (little gears).
+        $render{render_with_centre_arbor_id}
 
-$render{render_with_more_arbors_id}
+        Then the other arbors ({other_arbors}, not the anchor) should slot around it relatively easily. Make sure that the wheels (big gears) are slotted into the pinions (little gears).
 
-Slot the anchor (arbor {len(self.plates.arbors_for_plate)-1}) through the hole at the top. Put the pendulum holder on the arbor so it slots over the square section and is behind the back plate.
+        $render{render_with_more_arbors_id}
 
-$render{render_with_all_arbors_id}
+        Slot the anchor (arbor {len(self.plates.arbors_for_plate) - 1}) through the hole at the top. Put the pendulum holder on the arbor so it slots over the square section and is behind the back plate.
 
-"""
+        $render{render_with_all_arbors_id}
+
+        """
             render_up_to_front_plate = cq.Workplane("XY").add(render_with_all_arbors).add(plate_parts["front_plate"])
             if self.dial.raised_detail:
                 # dial pillars are already attached to front plate
@@ -484,22 +493,22 @@ $render{render_with_all_arbors_id}
             render_with_dial_id = final_assembly_bom.add_render(render_with_dial, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
             final_assembly_bom.assembly_instructions += f"""This is easier said than done, but next slot the front plate over the top. Be patient and gentle, lining up one arbor at a time. A pair of tweezers can be very useful to lining up arbors with bearings.
-            
-$render{render_up_to_front_plate_id}
 
-Once the front plate is on, with all the arbors in place, put an M{self.plates.fixing_screws.metric_thread} washer and dome nut on each of the plate fixing rods. Using a spanner tighten these nuts to hold the plates together. If the rod lengths have been cut currently, they should not stick out the back. If they do stick out the back: undo the dome nut, unscrew the rod from the front and make sure the dome nut is fully screwed into the top of the rod before trying again.
+        $render{render_up_to_front_plate_id}
 
-The pendulum holder is still loose on the back of the anchor arbor - line it up so it's roughly central between the back plate and the wall standoffs then (gently) tighten the small screw in the side to lock it in place. Don't over-tighten as this will easily crack the printed parts! It's just to hold it in place.
+        Once the front plate is on, with all the arbors in place, put an M{self.plates.fixing_screws.metric_thread} washer and dome nut on each of the plate fixing rods. Using a spanner tighten these nuts to hold the plates together. If the rod lengths have been cut currently, they should not stick out the back. If they do stick out the back: undo the dome nut, unscrew the rod from the front and make sure the dome nut is fully screwed into the top of the rod before trying again.
 
-Now is a good time to glue the chapter ring to the dial pillars.
+        The pendulum holder is still loose on the back of the anchor arbor - line it up so it's roughly central between the back plate and the wall standoffs then (gently) tighten the small screw in the side to lock it in place. Don't over-tighten as this will easily crack the printed parts! It's just to hold it in place.
 
-$render{render_with_dial_id}
+        Now is a good time to glue the chapter ring to the dial pillars.
 
-"""
+        $render{render_with_dial_id}
+
+        """
         else:
             # raise NotImplementedError("TODO instructions for non-round plates")
-            #TODO
-            final_assembly_bom.assembly_instructions +="TODO assembly instructions"
+            # TODO
+            final_assembly_bom.assembly_instructions += "TODO assembly instructions"
             render_with_dial = cq.Workplane("XY")
 
         render_with_motion_works = cq.Workplane("XY").add(render_with_dial)
@@ -513,59 +522,57 @@ $render{render_with_dial_id}
         final_assembly_bom.add_image("back_of_clutch_assembly.jpg")
         final_assembly_bom.add_image("back_of_clutch_assembly2.jpg")
         final_assembly_bom.add_image("back_of_clutch_assembly3.jpg")
-        final_assembly_bom.assembly_instructions+=f"""
-Now the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
+        final_assembly_bom.assembly_instructions += f"""
+        Now the arbors are fully assembled and the plates fixed together, you can assemble the clutch mechanism:
 
- - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
- - Use two spanners to lock these nuts against each other so they cannot come loose
-   - ![Back of clutch](./back_of_clutch_assembly.jpg \"Back of clutch\")
- - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwiched between two flat washers.
-   - ![Back of clutch 2](./back_of_clutch_assembly2.jpg \"Back of clutch 2\")
-   - ![Back of clutch 3](./back_of_clutch_assembly3.jpg \"Back of clutch 3\")
+         - Thread two half nuts down the arbor rod until they are close to the plate (without touching the plate)
+         - Use two spanners to lock these nuts against each other so they cannot come loose
+           - ![Back of clutch](./back_of_clutch_assembly.jpg \"Back of clutch\")
+         - Put a flat washer, then the spring washer, the another spring washer down the arbor rod, so the spring washer is sandwiched between two flat washers.
+           - ![Back of clutch 2](./back_of_clutch_assembly2.jpg \"Back of clutch 2\")
+           - ![Back of clutch 3](./back_of_clutch_assembly3.jpg \"Back of clutch 3\")
 
-Next slot the cannon pinion over the centre arbor, then the minute wheel over the screw which sticks out the front plate and finally the hour holder over the top.
+        Next slot the cannon pinion over the centre arbor, then the minute wheel over the screw which sticks out the front plate and finally the hour holder over the top.
 
-$render{render_with_motion_works_id}
+        $render{render_with_motion_works_id}
 
-There should be two nuts on the motion works screw, behind the minute wheel. Now the rest of the motion works are assembled you can tell what height they should be to prevent the minute wheel from being able to fall behind the cannon pinion. Use two spanners to lock these nuts against each other so they can't rotate.
+        There should be two nuts on the motion works screw, behind the minute wheel. Now the rest of the motion works are assembled you can tell what height they should be to prevent the minute wheel from being able to fall behind the cannon pinion. Use two spanners to lock these nuts against each other so they can't rotate.
 
-"""
+        """
         hands = self.hands.get_assembled(include_seconds=False, gap_size=self.motion_works.hour_hand_slot_height - self.hands.thick)
         render_with_hands = cq.Workplane("XY").add(render_with_motion_works).add(hands.translate(self.hands_assembly_pos))
         render_with_hands_id = final_assembly_bom.add_render(render_with_hands, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
-        minute_hand_fixing =  "square" if self.hands.minute_fixing == "rectangle" else "round"
+        minute_hand_fixing = "square" if self.hands.minute_fixing == "rectangle" else "round"
         hand_metric_size = self.plates.arbors_for_plate[self.going_train.powered_wheels].arbor_d
-        #TODO centred seconds hand
+        # TODO centred seconds hand
         if self.plates.centred_second_hand:
             raise NotImplementedError("TODO instructions for centred second hand")
         else:
             final_assembly_bom.assembly_instructions += f"""Now you can put the hands on. First push the hour hand (round fixing) onto the hour holder at roughly 12o'clock. This is just friction fit. Push it so it is just beyond the top of the holder and check it's roughly horizontal (or vertical once the clock is upright) so it can't clash with the minute hand.
-            
-Then slot the minute hand onto the top of the cannon pinion ({minute_hand_fixing} fixing). Line both the hands up so they point at 12. You may need to re-adjust the hour hand slightly.
 
-Next thread an M{hand_metric_size} washer and nut onto this rod. Tighten it so that the split washer in the clutch is compressed but not completely flat. The hands should be held tightly enough that they will rotate with the clock, but loose enough that you can set the time easily.
+        Then slot the minute hand onto the top of the cannon pinion ({minute_hand_fixing} fixing). Line both the hands up so they point at 12. You may need to re-adjust the hour hand slightly.
 
-![Partially assembled clutch and motion works](./top_of_hands.jpg \"Partially assembled clutch and motion works\")
+        Next thread an M{hand_metric_size} washer and nut onto this rod. Tighten it so that the split washer in the clutch is compressed but not completely flat. The hands should be held tightly enough that they will rotate with the clock, but loose enough that you can set the time easily.
 
-Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this to the half nut. If the isn't enough, or is too much, threaded rod left to achieve this, undo the two half nuts under the clutch and re-align them to give you the correct amount of spare rod.
+        ![Partially assembled clutch and motion works](./top_of_hands.jpg \"Partially assembled clutch and motion works\")
 
-![Assembled clutch and motion works](./assembled_motion_works_and_clutch.jpg \"Assembled clutch and motion works\")
+        Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this to the half nut. If the isn't enough, or is too much, threaded rod left to achieve this, undo the two half nuts under the clutch and re-align them to give you the correct amount of spare rod.
 
-"""
+        ![Assembled clutch and motion works](./assembled_motion_works_and_clutch.jpg \"Assembled clutch and motion works\")
+
+        """
 
         final_assembly_bom.add_image("assembled_motion_works_and_clutch.jpg")
         final_assembly_bom.add_image("top_of_hands.jpg")
 
-        final_assembly_bom.assembly_instructions+= f"$render{render_with_hands_id}\n\n"
+        final_assembly_bom.assembly_instructions += f"$render{render_with_hands_id}\n\n"
 
         if self.going_train.powered_wheel.type == PowerType.CORD:
             final_assembly_bom.assembly_instructions += f"Now feed the free end of the cord through the pulley and tie it to the hole in the bottom of the front plate. Again I recommend a gnat's hitch knot.\n\n"
 
         final_assembly_bom.assembly_instructions += f"Your clock should now be fully assembled! See Setting Up A Pendulum Clock for advice on getting it ticking reliably."
 
-        bom.add_subcomponent(final_assembly_bom)
-
-        return bom
+        return final_assembly_bom
 
     def get_arbor_rod_lengths(self):
         '''

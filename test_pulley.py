@@ -14,7 +14,7 @@ if 'show_object' not in globals():
 diameter = 40
 cord_thick = 2
 
-heavy = BearingPulley(diameter, cord_diameter=cord_thick, bearing=get_bearing_info(4))
+heavy = BearingPulley(diameter, cord_diameter=cord_thick, bearing=get_bearing_info(4), style=GearStyle.BENT_ARMS4)
 light = LightweightPulley(diameter, rope_diameter=cord_thick)
 
 
