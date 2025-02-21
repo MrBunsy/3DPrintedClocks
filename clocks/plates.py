@@ -167,7 +167,7 @@ The moon on its threaded rod slots through a steel tube.
             base_of_pipe = self.centre_y - self.height/2
             steel_pipe_long = top_of_pipe - base_of_pipe
 
-        bom.add_item(BillOfMaterials.Item(f"Steel pipe {STEEL_TUBE_DIAMETER}ODx{self.fixing_screws.metric_thread}ID {steel_pipe_long:.1f}mm",
+        bom.add_item(BillOfMaterials.Item(f"Steel pipe {STEEL_TUBE_DIAMETER}mm outer diameter x {self.fixing_screws.metric_thread}mm internal diameter {steel_pipe_long:.1f}mm long",
                                           purpose="Clamped between the spoon and the cap, to provide a way to hold the moon and the bevel gear upright"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} washer", quantity=1, purpose="Below the moon and above the split washer, to provide the friction clutch to allow setting the moon phase"))
         bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} half nut", quantity=4, purpose="Two pairs of locked together half nuts, above and below the moon."))

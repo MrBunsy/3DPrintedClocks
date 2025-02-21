@@ -93,16 +93,17 @@ hands = clock.Hands(style=clock.HandStyle.INDUSTRIAL, minute_fixing="square", mi
 
 #TODO pullet capable of holding two weights, I think two cheap weights in fancy shells looks better and works out a similar price to one large cheap (ugly) weight
 
-pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
-print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.get_hook_total_thick()))
+pulley = clock.BearingPulley(diameter=plates.get_diameter_for_pulley(), bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
+# print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.get_hook_total_thick()))
 
 
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley, pendulum=pendulum)#, timeHours=12, timeMins=0)#weights=[clock.Weight(height=245,diameter=55)]
 
 if not outputSTL:
-    assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.PURPLE], plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
-                    hand_colours=[clock.Colour.RED], with_rods=True)
+    show_object(pulley.get_assembled())
+    # assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
+    #                 bob_colours=[clock.Colour.PURPLE], plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
+    #                 hand_colours=[clock.Colour.RED], with_rods=True)
 
 # show_object(plates.getDrillTemplate(6))
 

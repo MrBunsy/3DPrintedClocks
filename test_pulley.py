@@ -11,11 +11,15 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-diameter = 25
-cord_thick = 1
+diameter = 40
+cord_thick = 2
 
 heavy = BearingPulley(diameter, cord_diameter=cord_thick, bearing=get_bearing_info(4))
 light = LightweightPulley(diameter, rope_diameter=cord_thick)
 
+
+# show_object(heavy.get_hook_half())
 show_object(heavy.get_assembled())
-show_object(light.get_assembled())
+# show_object(light.get_assembled())
+
+print(heavy.get_BOM().to_json())

@@ -341,7 +341,7 @@ class MachineScrew:
 
         return r
 
-    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False, ignore_head=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -374,24 +374,24 @@ class MachineScrew:
             for angle in angles:
                 pos = polar(angle, r + inner_r - overlap)
                 screw = screw.cut(cq.Workplane("XY").circle(inner_r).extrude(length).translate(pos))
-
-        if self.countersunk:
-            #countersink angle for ANSI metric machine screws is 90deg, so this means edges sloping at 45deg. Therefore cut a code of height same as radius
-            screw = screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=0,
-                                        height=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL))
-            # # countersunk screw lengths seem to include the head
-            # screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
-        else:
-            if space_for_pan_head:
-                length += self.get_head_height()
-                # pan head screw lengths do not include the head
-                if not with_bridging:
-                    screw = screw.union(cq.Workplane("XY").circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height()))
-                else:
-                    screw = screw.union(get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layer_thick=layer_thick))
-        # extend out from the headbackwards too
-        if head_space_length > 0:
-            screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
+        if not ignore_head:
+            if self.countersunk:
+                #countersink angle for ANSI metric machine screws is 90deg, so this means edges sloping at 45deg. Therefore cut a code of height same as radius
+                screw = screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=0,
+                                            height=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL))
+                # # countersunk screw lengths seem to include the head
+                # screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
+            else:
+                if space_for_pan_head:
+                    length += self.get_head_height()
+                    # pan head screw lengths do not include the head
+                    if not with_bridging:
+                        screw = screw.union(cq.Workplane("XY").circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height()))
+                    else:
+                        screw = screw.union(get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layer_thick=layer_thick))
+            # extend out from the headbackwards too
+            if head_space_length > 0:
+                screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
 
         return screw
 
@@ -1410,7 +1410,7 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
 machine_screw_lengths={
     2: [x for x in range(4, 10, 2) ],
     3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60],
-    4: [x for x in range(10, 100+10, 10)]
+    4: [x for x in range(4,22+2,2)] + [x for x in range(25, 60+5, 5)] + [x for x in range(70, 100+10, 10)] # I don't own all of these, but they can easily be bought
 }
 
 def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, prefer_longer=False):
