@@ -24,7 +24,7 @@ if 'show_object' not in globals():
 
 pendulum = Pendulum()
 #
-# show_object(pendulum.get_bob_assembled())
+show_object(pendulum.get_bob_assembled())
 #
 # holder = ColletFixingPendulumWithBeatSetting(6)
 #
@@ -34,6 +34,6 @@ pendulum = Pendulum()
 #
 # # show_object(pendulum.get_bob_assembled(hollow=True))
 # #
-show_object(pendulum.get_bob())
+# show_object(pendulum.get_bob())
 # #
 # show_object(pendulum.get_bob_lid())

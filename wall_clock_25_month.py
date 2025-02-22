@@ -75,7 +75,7 @@ train.print_info(weight_kg=6)
 motionWorks = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True, cannon_pinion_to_hour_holder_gap_size=0.75)
 motionWorks.calculate_size(arbor_distance=30)
 
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
+pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=15)
 #toying with making dial wider if I reprint
 dial = clock.Dial(outside_d=192.5+10, dial_width=192.5/10 + 5, style=clock.DialStyle.LINES_INDUSTRIAL, pillar_style=clock.PillarStyle.BARLEY_TWIST, top_fixing=False)
 

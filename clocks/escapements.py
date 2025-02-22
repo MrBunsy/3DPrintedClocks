@@ -2527,10 +2527,10 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         '''
         #TODO consider calculating how much time+- a single segment might be
         segments = 20
-        knobbleR = self.bob_nut_d / 30
-        r= self.bob_nut_d / 2 - knobbleR
+        knobble_r = self.bob_nut_d / 30
+        r= self.bob_nut_d / 2 - knobble_r
 
-        knobbleAngle = knobbleR*2/r
+        knobbleAngle = knobble_r*2/r
         # nonSegmentAngle=math.pi*2/segments - segmentAngle
 
         nut = cq.Workplane("XY").moveTo(r,0)
@@ -2543,7 +2543,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
             nobbleStart = polar(angle + dA - knobbleAngle, r)
             nobbleEnd = polar(angle + dA, r)
             nut = nut.radiusArc(nobbleStart,-r)
-            nut = nut.radiusArc(nobbleEnd, -knobbleR)
+            nut = nut.radiusArc(nobbleEnd, -knobble_r)
         nut = nut.close().extrude(self.bob_nut_thick).faces(">Z").workplane().circle(self.threaded_rod_m / 2 + 0.25).cutThruAll()
 
         # currently assuming M3
@@ -2552,6 +2552,14 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
         nutHeight=get_nut_height(3, nyloc=True)
 
         nutSpace=cq.Workplane("XY").polygon(6,nutD).extrude(nutHeight).translate((0, 0, self.bob_nut_thick - nutHeight))
+
+        chamfer = knobble_r
+
+        chamfered_nut = cq.Workplane("XY").circle(self.bob_nut_d/2).extrude(self.bob_nut_thick).edges(">Z").chamfer(chamfer).edges("<Z").chamfer(chamfer)
+        # return chamfered_nut
+        nut = nut.intersect(chamfered_nut)
+        # chamfer = 0.4
+        # nut = nut.edges(">Z").chamfer(chamfer).edges("<Z").chamfer(chamfer)
 
         nut = nut.cut(nutSpace)
         return nut
