@@ -20,15 +20,15 @@ if 'show_object' not in globals():
 
 diameter = 55
 #
-# escapement2 = BrocotEscapment(use_rubies=True, diameter=diameter)
+escapement = BrocotEscapment(use_rubies=True, diameter=diameter, style=AnchorStyle.FANCY_BROCOT)
 # teeth=30
 # anchor_teeth = math.floor(teeth / 3) + 0.5
 #
 # escapement = AnchorEscapement(anchor_teeth=anchor_teeth, diameter=diameter)
 #
-# # show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1),-(escapement.lift_deg/2+escapement.lock_deg/2)))
-# # show_object(escapement.get_anchor())
-# # show_object(escapement.get_wheel_2d())
+# show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1),-(escapement.lift_deg/2+escapement.lock_deg/2)))
+show_object(escapement.get_anchor().translate((0,escapement.anchor_centre_distance)))
+show_object(escapement.get_wheel().translate((0,0,10)))
 # show_object(escapement.get_assembled())
 # show_object(escapement2.get_assembled())
 #
@@ -89,55 +89,56 @@ teeth=40
 
 teeth=30
 drop=2.75
-escapement2 = AnchorEscapement.get_with_optimal_pallets(teeth, drop)
-# escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
-# escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=tooth_tip_angle,
-# escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
-# escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75, diameter=60)
-escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
-#                                     tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
-
-print("wheel angle ",rad_to_deg(escapement.wheel_angle))
-
-drop = escapement.drop_deg
-lift = escapement.lift_deg#+0.5
-escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
-#but we want to reconfigure the diameter and tooth size
-big_escapement = AnchorEscapement(60, diameter=132, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=9.5, style=AnchorStyle.CURVED_MATCHING_WHEEL,
-                                        tooth_height_fraction=0.1, tooth_tip_angle=5/2, tooth_base_angle=4/2, force_diameter=True, wheel_thick=2)
-#old anchor distance
-anchor_centre_distance = big_escapement.anchor_centre_distance
-
-#trying with normal tooth span and retrofitting
-
-teeth = 60
-anchor_teeth = math.floor(teeth / 4) + 0.5
-wheel_angle = math.pi * 2 * anchor_teeth / teeth
-radius  = anchor_centre_distance * math.cos(wheel_angle / 2)
-
-tooth_height_fraction=0.15
-angle_divisor = (0.2/tooth_height_fraction)
-big_escapement = AnchorEscapement(teeth, diameter=radius*2, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=anchor_teeth, style=AnchorStyle.STRAIGHT,
-                                        tooth_height_fraction=tooth_height_fraction, tooth_tip_angle=2, tooth_base_angle=1.5, force_diameter=True,
-                                        wheel_thick=2, run=5, lock=1)
-
-anchor_angle_deg =0#1#-2.5
-wheel_angle_deg = -1.2#0.7#1.8#-0.6#-5.25#-1.7
+#
+# escapement2 = AnchorEscapement.get_with_optimal_pallets(teeth, drop)
+# # escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
+# # escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=tooth_tip_angle,
+# # escapement = AnchorEscapement.get_with_45deg_pallets(teeth=30, drop_deg=2, lock_deg=1.5, force_diameter=False, anchor_thick=10)
+# # escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75, diameter=60)
+# escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
+# #                                     tooth_base_angle=tooth_base_angle, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2, type=EscapementType.DEADBEAT)
+#
+# print("wheel angle ",rad_to_deg(escapement.wheel_angle))
+#
+# drop = escapement.drop_deg
+# lift = escapement.lift_deg#+0.5
+# escapement = AnchorEscapement.get_with_optimal_pallets(60, drop_deg=1.75, diameter=60, anchor_teeth=9.5)
+# #but we want to reconfigure the diameter and tooth size
+# big_escapement = AnchorEscapement(60, diameter=132, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=9.5, style=AnchorStyle.CURVED_MATCHING_WHEEL,
+#                                         tooth_height_fraction=0.1, tooth_tip_angle=5/2, tooth_base_angle=4/2, force_diameter=True, wheel_thick=2)
+# #old anchor distance
+# anchor_centre_distance = big_escapement.anchor_centre_distance
+#
+# #trying with normal tooth span and retrofitting
+#
+# teeth = 60
+# anchor_teeth = math.floor(teeth / 4) + 0.5
+# wheel_angle = math.pi * 2 * anchor_teeth / teeth
+# radius  = anchor_centre_distance * math.cos(wheel_angle / 2)
+#
+# tooth_height_fraction=0.15
+# angle_divisor = (0.2/tooth_height_fraction)
+# big_escapement = AnchorEscapement(teeth, diameter=radius*2, drop=escapement.drop_deg, lift=escapement.lift_deg, anchor_teeth=anchor_teeth, style=AnchorStyle.STRAIGHT,
+#                                         tooth_height_fraction=tooth_height_fraction, tooth_tip_angle=2, tooth_base_angle=1.5, force_diameter=True,
+#                                         wheel_thick=2, run=5, lock=1)
+#
+# anchor_angle_deg =0#1#-2.5
+# wheel_angle_deg = -1.2#0.7#1.8#-0.6#-5.25#-1.7
 
 # anchor_angle_deg = 0
 # wheel_angle_deg = -1.25
-
-model = big_escapement.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg, distance_fudge_mm=0.5)
-
-# show_object(escapement2.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg, distance_fudge_mm=0.5))
-show_object(model)
-
-# show_object(Gear.cutStyle(big_escapement.get_wheel(2), outer_radius=big_escapement.get_wheel_inner_r(), inner_radius=6, style = GearStyle.DIAMONDS, clockwise_from_pinion_side=True, lightweight=True))
-
-# show_object(cq.Workplane("XY").circle(escapement.radius))
-#40 teeth distance 73.6593180385267
-print("distance", escapement.anchor_centre_distance)
-#(-1.75, 1.1, 5)
-
-#"projectionDir": (-1, 0, 0), "xDirection": (0,0,1)
-exportSVG(model, "out/test_model.svg", opts={"width":400, "height":400, "projectionDir": (1, -1, 1), "xDirection": (-1, -1, 0), "yDirection": (0, 0, 1), "showHidden": False})
+#
+# model = big_escapement.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg, distance_fudge_mm=0.5)
+#
+# # show_object(escapement2.get_assembled(anchor_angle_deg=anchor_angle_deg, wheel_angle_deg=wheel_angle_deg, distance_fudge_mm=0.5))
+# show_object(model)
+#
+# # show_object(Gear.cutStyle(big_escapement.get_wheel(2), outer_radius=big_escapement.get_wheel_inner_r(), inner_radius=6, style = GearStyle.DIAMONDS, clockwise_from_pinion_side=True, lightweight=True))
+#
+# # show_object(cq.Workplane("XY").circle(escapement.radius))
+# #40 teeth distance 73.6593180385267
+# print("distance", escapement.anchor_centre_distance)
+# #(-1.75, 1.1, 5)
+#
+# #"projectionDir": (-1, 0, 0), "xDirection": (0,0,1)
+# exportSVG(model, "out/test_model.svg", opts={"width":400, "height":400, "projectionDir": (1, -1, 1), "xDirection": (-1, -1, 0), "yDirection": (0, 0, 1), "showHidden": False})

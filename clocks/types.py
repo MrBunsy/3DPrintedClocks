@@ -158,6 +158,7 @@ class AnchorStyle(Enum):
     STRAIGHT = "straight" #the old default style
     CURVED = "curved" # from a make of my clock someone posted on printables - I love it so I'm pinching the idea
     CURVED_MATCHING_WHEEL = "curved2" # curved arms but of a radius that matches the escape wheel
+    FANCY_BROCOT = "fancy brocot" # based on a real french clock
 
 '''
 ideas for new styles:

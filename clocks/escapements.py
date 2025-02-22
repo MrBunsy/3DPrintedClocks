@@ -737,14 +737,14 @@ class BrocotEscapment(AnchorEscapement):
     RUBY_LENGTH = 6
 
 
-    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True, arbor_d=3, anchor_teeth=-1):
+    def __init__(self, teeth=30, diameter=-1, wheel_thick=2, lift=4, drop=2, lock=2, use_rubies=True, arbor_d=3, anchor_teeth=-1, style=AnchorStyle.CURVED_MATCHING_WHEEL):
         self.use_rubies = use_rubies
         if anchor_teeth < 0:
             # increasing number of anchor teeth to increase distance between anchor pivot and escape wheel - entirely for cosmetic purposes given the brocot is usually on teh front of the clock
             anchor_teeth = math.floor(teeth / 3) + 0.5
         super().__init__(teeth=teeth, diameter=100 if diameter < 0 else diameter, anchor_teeth=anchor_teeth, type=EscapementType.BROCOT, lift=lift, drop=drop, run=10, lock=lock,
                          tooth_height_fraction=0.2, tooth_tip_angle=4, wheel_thick=wheel_thick, force_diameter=diameter >= 0, anchor_thick=3,
-                         style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=arbor_d)
+                         style=style, arbor_d=arbor_d)
 
     def get_BOM_for_combining_with_arbor(self):
         bom = super().get_BOM_for_combining_with_arbor()
@@ -811,31 +811,44 @@ class BrocotEscapment(AnchorEscapement):
         # cylinder around the rod
         anchor = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(self.anchor_thick)
 
+        if self.style == AnchorStyle.FANCY_BROCOT:
+            ruby_holder_outer_r = self.pallet_r+2.5
+            ruby_distance = distance_between_two_points(self.entry_pallet_stone_centre, self.exit_pallet_stone_centre)
+            split_arm_r = ruby_distance/2 
 
-        arm_wide = self.pallet_r*2 + 4
+            split_arm_wide = self.radius*0.1
+            split_arm_from_ruby_holder = 0.5
 
+            # curved_arms = cq.Workplane("XY").moveTo()
 
+            for pos in [self.entry_pallet_stone_centre, self.exit_pallet_stone_centre]:
+                anchor = anchor.union(cq.Workplane("XY").circle(ruby_holder_outer_r).circle(self.pallet_r).extrude(self.anchor_thick).translate(pos))
 
+                curved_arm = cq.Workplane("XY").circle(split_arm_r).circle(split_arm_r-split_arm_wide).extrude(self.anchor_thick).translate((pos[0], pos[1] + ruby_holder_outer_r + split_arm_r + split_arm_from_ruby_holder))
 
+                anchor = anchor.union(curved_arm)
 
-        distance_to_entry = distance_between_two_points(self.wheel_centre, self.entry_pallet_stone_centre)
-        distance_to_exit = distance_between_two_points(self.wheel_centre, self.exit_pallet_stone_centre)
-        arm_radius = (distance_to_entry + distance_to_exit)/2
+        else:
+            arm_wide = self.pallet_r*2 + 4
 
-        anchor = anchor.union(get_stroke_arc(self.exit_pallet_stone_centre, self.entry_pallet_stone_centre, arm_radius, wide=arm_wide, thick=self.anchor_thick, style=StrokeStyle.ROUND))
+            distance_to_entry = distance_between_two_points(self.wheel_centre, self.entry_pallet_stone_centre)
+            distance_to_exit = distance_between_two_points(self.wheel_centre, self.exit_pallet_stone_centre)
+            arm_radius = (distance_to_entry + distance_to_exit)/2
 
-        # stone_holder_r = self.pallet_r*2.5
-        #stone holders
-        # for stone_pos in [self.entry_pallet_stone_centre, self.exit_pallet_stone_centre]:
-        #     #TODO exactly how much space needed to press stones into PETG?
-        #     # anchor = anchor.union(cq.Workplane("XY").moveTo(stone_pos[0], stone_pos[1]).circle(arm_wide/2).circle(self.pallet_r).extrude(self.anchor_thick))
+            anchor = anchor.union(get_stroke_arc(self.exit_pallet_stone_centre, self.entry_pallet_stone_centre, arm_radius, wide=arm_wide, thick=self.anchor_thick, style=StrokeStyle.ROUND))
 
-        anchor = anchor.faces(">Z").workplane().pushPoints([self.entry_pallet_stone_centre, self.exit_pallet_stone_centre]).circle(self.pallet_r).cutThruAll()
+            # stone_holder_r = self.pallet_r*2.5
+            #stone holders
+            # for stone_pos in [self.entry_pallet_stone_centre, self.exit_pallet_stone_centre]:
+            #     #TODO exactly how much space needed to press stones into PETG?
+            #     # anchor = anchor.union(cq.Workplane("XY").moveTo(stone_pos[0], stone_pos[1]).circle(arm_wide/2).circle(self.pallet_r).extrude(self.anchor_thick))
 
-        pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance / 2).rect(self.centre_r * 2, self.anchor_centre_distance).extrude(self.anchor_thick)
-        pillar = pillar.cut(cq.Workplane("XY").circle(arm_radius).extrude(self.anchor_thick))
+            anchor = anchor.faces(">Z").workplane().pushPoints([self.entry_pallet_stone_centre, self.exit_pallet_stone_centre]).circle(self.pallet_r).cutThruAll()
 
-        anchor = anchor.union(pillar)
+            pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance / 2).rect(self.centre_r * 2, self.anchor_centre_distance).extrude(self.anchor_thick)
+            pillar = pillar.cut(cq.Workplane("XY").circle(arm_radius).extrude(self.anchor_thick))
+
+            anchor = anchor.union(pillar)
         anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
 
         return anchor.translate((0, -self.anchor_centre_distance, 0))

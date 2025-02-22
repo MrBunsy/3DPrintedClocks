@@ -31,7 +31,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_23.1"
+clockName="Wall Clock 23#1"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -96,7 +96,7 @@ print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get
 hands = clock.Hands(style=clock.HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clockName)
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clockName, pulley=pulley)
 
 assembly.show_clock(show_object, with_rods=True, plate_colours=clock.Colour.LIGHTGREY, dial_colours=[clock.Colour.BLUE, clock.Colour.WHITE])
 

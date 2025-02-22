@@ -646,19 +646,20 @@ class BearingPulley:
 
 
         if self.style is not None:
-            #TODO
+            #TODO but need to work out how to have arms in the right places for the screws
             # pulley = Gear.cutStyle(pulley, outer_radius=self.diameter / 2 - self.cord_diameter / 2, inner_radius=holeD / 2, style=self.style)
             #for now, avoid the screws
             extra_r = 2.5
             outer_radius = self.diameter / 2 - self.cord_diameter / 2 - extra_r
             inner_radius = holeD/2 + extra_r
-            cutter = cq.Workplane("XY").circle(inner_radius).circle(outer_radius).extrude(self.get_total_thick())
-            for pos in self.screw_positions:
-                line = Line((0,0), anotherPoint=pos)
+            if outer_radius > inner_radius + 1:
+                cutter = cq.Workplane("XY").circle(inner_radius).circle(outer_radius).extrude(self.get_total_thick())
+                for pos in self.screw_positions:
+                    line = Line((0,0), anotherPoint=pos)
 
-                cutter = cutter.cut(get_stroke_line([(0,0), polar(line.get_angle(), outer_radius*2)], wide=self.screws.get_head_diameter() + extra_r, thick=self.get_total_thick()))
-            cutter = cutter.edges("|Z").fillet(self.screws.get_head_diameter()*0.25)
-            pulley = pulley.cut(cutter)
+                    cutter = cutter.cut(get_stroke_line([(0,0), polar(line.get_angle(), outer_radius*2)], wide=self.screws.get_head_diameter() + extra_r, thick=self.get_total_thick()))
+                cutter = cutter.edges("|Z").fillet(self.screws.get_head_diameter()*0.25)
+                pulley = pulley.cut(cutter)
 
 
 
@@ -814,9 +815,22 @@ class BearingPulley:
         bom = BillOfMaterials("Bearing Pulley")
 
         bom.add_model(self.get_assembled())
+        bom.add_image("bearing_pulley.jpg")
+        bom.add_image("bearing_pulley_wheel.jpg")
 
-        bom.assembly_instructions += f"""Push the M{self.hook_screws.metric_thread} nuts into the back of the bottom hook.
+        bom.assembly_instructions += f"""![Example Bearing Pulley](./bearing_pulley.jpg \"Example Bearing Pulley\")
 
+If the top surfaces (as printed) of the parts of the pulley wheel aren't completely flat it's worth sanding or filing them flat. Then when the two parts of the pulley are screwed together there won't be a gap.
+        
+Push the M{self.hook_screws.metric_thread} nuts into the back of the bottom hook and the M{self.screws.metric_thread} nuts into the back of the pulley wheel. Push the bearing into one half of the pulley wheel.
+
+![Example Bearing Pulley Wheel](./bearing_pulley_wheel.jpg \"Example Bearing Pulley Wheel\")
+
+Screw the two halves of the pulley wheel together with the M{self.screws.metric_thread} screws.
+
+Use one of the M{self.hook_screws.metric_thread} screws to fix the top of the two hook halves together through the pulley wheel.
+
+Finally screw the bottom half of the pulley hook together with the remaining M{self.hook_screws.metric_thread} screw, remembering to insert the cuckoo hook.
 """
 
         hook_screws_length = get_nearest_machine_screw_length(self.get_hook_total_thick(), self.hook_screws)
