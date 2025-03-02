@@ -814,7 +814,7 @@ class BrocotEscapment(AnchorEscapement):
         if self.style == AnchorStyle.FANCY_BROCOT:
             ruby_holder_outer_r = self.pallet_r+2.5
             ruby_distance = distance_between_two_points(self.entry_pallet_stone_centre, self.exit_pallet_stone_centre)
-            split_arm_r = ruby_distance/2 
+            split_arm_r = ruby_distance/2
 
             split_arm_wide = self.radius*0.1
             split_arm_from_ruby_holder = 0.5

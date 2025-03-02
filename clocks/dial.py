@@ -981,8 +981,8 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
 
     def get_width(self, digit):
         if digit in [0]:
-            # return self.height*0.47
-            return self.height*0.6
+            return self.height*0.47
+            # return self.height*0.6
         if digit in [1]:
             #trying wider than the actual digit for spacing
             return self.diamond_width*1.5
@@ -1012,45 +1012,57 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
 
             # hole_wide = width *0.35
             sides_wide = width*0.25
-            hole_wide = (width - self.diamond_width - sides_wide )
+            hole_wide = (width/2 - self.diamond_width/2 - sides_wide/2)*2
 
             #just do top left and mirror it twice
             top_left = cq.Workplane("XY").rect(sides_wide, self.height/2).extrude(self.thick).union(self.get_square_diamond().translate((0,-self.height/4))).translate((-width/2 + self.diamond_width/2, self.height/4))
 
             # right = cq.Workplane("XY").rect(sides_wide, self.height).extrude(self.thick).union(self.get_square_diamond()).translate((width / 2 - self.diamond_width / 2, 0))
-
-            r = hole_wide*0.75
+            inner_r = hole_wide / 2
+            r = inner_r + self.thin_line_width
+            # if r < hole_wide - self.thin_line_width:
+            #     r = hole_wide - self.thin_line_width
             top_circle_pos = (0,self.height/2 - r )
             bottom_circle_pos = (0, -top_circle_pos[1])
 
+            # inner_r = hole_wide/2#r - self.thin_line_width
+            # if inner_r < r/2:
+            #     inner_r = r/2
+
+            # left_inner_line = Line((-width/2 + self.diamond_width/2 + sides_wide/2, -self.height/2), direction=(0,1))
             left_inner_line = Line((-width/2 + self.diamond_width/2 + sides_wide/2, -self.height/2), direction=(0,1))
             top_left_intersects = left_inner_line.intersection_with_circle(top_circle_pos, r)
             top_left_intersect = top_left_intersects[1]
             if top_left_intersects[0][1] > top_left_intersects[1][1]:
                 top_left_intersect = top_left_intersects[0]
 
-            bottom_left_intersect = (top_left_intersect[0], -top_left_intersect[1])
+            # bottom_left_intersect = (top_left_intersect[0], -top_left_intersect[1])
 
             # top_right_intersects = (-top_left_intersects[0], top_left_intersects[1])
 
-            centre_intersection = cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1] - top_circle_pos[0] + r*2).extrude(self.thick))
+            centre_intersection = cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1]*2 - inner_r*2).extrude(self.thick))
+            # return centre_intersection
             centre = cq.Workplane("XY").rect(hole_wide, self.height).extrude(self.thick).intersect(centre_intersection)
-            centre_hollowed = cq.Workplane("XY").union(centre).cut(cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(r-self.thin_line_width).extrude(self.thick).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1] - top_circle_pos[0] + r*2).extrude(self.thick)))
-
+            # return centre
+            centre_hollowed = cq.Workplane("XY").union(centre).cut(cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(inner_r).extrude(self.thick*2).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1]*2).extrude(self.thick*2)))
+            # return centre_hollowed
             #chop the top off the top left
             top_left_intersect_line = Line(top_circle_pos, anotherPoint=top_left_intersect)
             top_left_intersect_angle = top_left_intersect_line.get_angle() + math.pi/2
             top_left_intersect_dir = polar(top_left_intersect_angle)
             leftmost = (-width/2, top_left_intersect[1] - self.diamond_width/2)
 
-            top_left_cutter = (cq.Workplane("XY").spline([top_left_intersect, leftmost], tangents=[top_left_intersect_dir, (-1,0)])
+            sticky_out_top_line_tangent = (-1,-0.25)
+
+            top_left_cutter = (cq.Workplane("XY").spline([top_left_intersect, leftmost], tangents=[top_left_intersect_dir, sticky_out_top_line_tangent])
                                .lineTo(-width/2, self.height/2).lineTo(top_left_intersect[0], self.height/2).close().extrude(self.thick))
 
             top_left = top_left.cut(top_left_cutter)
 
+
             y = top_left_intersect[1] - leftmost[1]
 
-            top_left_stickyout = (cq.Workplane("XY").spline([top_left_intersect, leftmost], tangents=[top_left_intersect_dir, (-1,0)])
+            top_left_stickyout = (cq.Workplane("XY").spline([top_left_intersect, leftmost], tangents=[top_left_intersect_dir, sticky_out_top_line_tangent])
                                   .lineTo(top_left_intersect[0], top_left_intersect[1] - y*2).close().extrude(self.thick))
             top_left = top_left.union(top_left_stickyout)
 

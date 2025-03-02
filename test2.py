@@ -97,29 +97,29 @@ if False:
 # show_object(pendulum.get_bob_lid())
 
 numbers = FancyFrenchArabicNumbers(30)
-# digit = 2
-# show_object(numbers.get_digit(digit))
-# show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
+digit = 0
+show_object(numbers.get_digit(digit))
+show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height))
 # show_object(numbers.get_twirly_bit(numbers.get_width(digit), numbers.height/2)["shape"])
 # show_object(cq.Workplane("XY").rect(numbers.get_width(digit), numbers.height/2))
 
 # show_object(numbers.get_tadpole((0,0), (10,10), clockwise=False)["shape"])
 # show_object(cq.Workplane("XY").circle(1).extrude(10).translate((10,10)))
 
-if False:
-    x = 0
-    for digit in range(0,10):
-        wide = numbers.get_width(digit)
-        x+= wide/2
-        show_object(numbers.get_digit(digit).translate((x,0)))
-        show_object(cq.Workplane("XY").moveTo(x,0).rect(numbers.get_width(digit), numbers.height))
-        x+= wide/2
-        print(f"digit {digit} x {x}")
-
-if True:
-    y = 0
-    for number in range(13):
-        show_object(numbers.get_number(number).translate((0, y)))
-        y+= numbers.height
+# if False:
+#     x = 0
+#     for digit in range(0,10):
+#         wide = numbers.get_width(digit)
+#         x+= wide/2
+#         show_object(numbers.get_digit(digit).translate((x,0)))
+#         show_object(cq.Workplane("XY").moveTo(x,0).rect(numbers.get_width(digit), numbers.height))
+#         x+= wide/2
+#         print(f"digit {digit} x {x}")
+#
+# if True:
+#     y = 0
+#     for number in range(13):
+#         show_object(numbers.get_number(number).translate((0, y)))
+#         y+= numbers.height
 
 # show_object(numbers.get_tadpole((0,0), r=5, tail_end_pos=(10,-10)))

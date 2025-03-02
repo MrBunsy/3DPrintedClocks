@@ -336,10 +336,12 @@ class GoingTrain:
         self.trains = [time]
 
     def calculate_powered_wheel_ratios(self, pinion_min=10, pinion_max=20, wheel_min=20, wheel_max=160, prefer_small=False, inaccurate=False, big_pinion=False,
-                                       prefer_large_second_wheel=True):
+                                       prefer_large_second_wheel=True, tooth_ratio=-1):
         '''
         Calcualte the ratio of the chain wheel based on the desired runtime and chain drop
         used to prefer largest wheel, now is hard coded to prefer smallest.
+
+        size ratio: first wheel teeth / second wheel teeth, so we can calculate sizes that are useful
 
         experiment for springs, if inaccurate then allow a large variation of the final ratio if it helps keep the size down
 
@@ -431,15 +433,15 @@ class GoingTrain:
                 error = desiredRatio - totalRatio
                 # weighting = totalWheelTeeth
                 if self.powered_wheels == 2:
-                    # prefer similar sizes
-                    # weighting+=abs(allTrains[c][0][0] - allTrains[c][1][0])*0.5
-
-                    if prefer_large_second_wheel:
-                        # prefer second wheel more teeth (but not so much that it makes it huge)
-                        weighting += (allTrains[c][0][0] - allTrains[c][1][0]) * 0.5  # *0.5
+                    if tooth_ratio > 0:
+                        weighting +=abs(tooth_ratio - allTrains[c][0][0]/allTrains[c][1][0])*100
                     else:
-                        # similar sized if possible
-                        weighting += abs(allTrains[c][0][0] - allTrains[c][1][0])
+                        if prefer_large_second_wheel:
+                            # prefer second wheel more teeth (but not so much that it makes it huge)
+                            weighting += (allTrains[c][0][0] - allTrains[c][1][0]) * 0.5  # *0.5
+                        else:
+                            # similar sized if possible
+                            weighting += abs(allTrains[c][0][0] - allTrains[c][1][0])
                     '''
                     Want large first pinion (for strength) and a smaller second wheel (so it will fit)
                     '''

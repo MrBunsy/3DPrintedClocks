@@ -47,7 +47,7 @@ class HandStyle(Enum):
     FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
     TWIRLY = "twirly"
     THIN_DIAMOND = "thin_diamond"
-    FANCY_CLOCK = "fancy clock" # inspired by an ebay clock
+    FANCY_FRENCH = "fancy clock" # inspired by an ebay clock
 
 class BobStyle(Enum):
     SIMPLE = "Simple"
@@ -73,7 +73,9 @@ class GearTrainLayout(Enum):
     VERTICAL = "vertical"
     #gear train points on a circle (not printed since clock 05, but still broadly functional, might be worth ressurecting properly)
     ROUND = "round"
-    #gear train approximately vertical but zigzagged to reduce height
+    # gear train approximately vertical but zigzagged to reduce height
+    VERTICAL_COMPACT = "vertical compact"
+    # more compact, without escape wheel at top if that makes it smaller
     COMPACT = "compact"
     #new design that attemps to put the seconds wheel in the centre and doesn't care where the minute wheel goes
     #designed with round clock plates in mind

@@ -15,3 +15,4 @@ from .power import *
 from .striking import *
 from .types import *
 from .utility import *
+from .mantel_clock import *

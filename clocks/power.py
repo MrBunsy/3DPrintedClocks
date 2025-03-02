@@ -1056,7 +1056,7 @@ class SpringBarrel:
     '''
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
-                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=2,
+                 base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
                  ratchet_thick=8):
         '''
 
@@ -1168,7 +1168,8 @@ class SpringBarrel:
         self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1.5
         self.back_collet_thick = self.ratchet_collet_thick + self.back_bearing_standoff
 
-        self.radius_for_style = self.barrel_diameter/2#-1
+        self.outer_radius_for_style = self.barrel_diameter / 2#-1
+        self.inner_radius_for_style = self.key_bearing.outer_d / 2 + self.wall_thick / 2
 
         self.collet_diameter = self.arbor_d+8
         self.click_angle = click_angle
@@ -1394,8 +1395,13 @@ class SpringBarrel:
         '''
 
         inner_r = self.arbor_d/2+self.collet_wiggle_room/2
-        collet = cq.Workplane("XY").circle(self.collet_diameter / 2).circle(inner_r).extrude(self.back_collet_thick - self.back_bearing_standoff)
-        collet = collet.faces(">Z").workplane().circle(self.key_bearing.inner_safe_d/2).circle(inner_r).extrude(self.back_bearing_standoff)
+        collet = cq.Workplane("XY").circle(self.collet_diameter / 2).extrude(self.back_collet_thick - self.back_bearing_standoff)
+        collet = collet.faces(">Z").workplane().circle(self.key_bearing.inner_safe_d/2).extrude(self.back_bearing_standoff)
+
+        cutoff_height = self.cutoff_height - self.collet_wiggle_room/2
+        centre_cutout = cq.Workplane("XY").circle(inner_r).extrude(self.back_collet_thick).cut(cq.Workplane("XY").rect(self.collet_diameter, cutoff_height*2).extrude(self.back_collet_thick ).translate((0,-self.arbor_d/2)))
+
+        collet =collet.cut(centre_cutout)
 
         screwshape = self.collet_screws.get_cutter(length=self.collet_diameter / 2).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, self.collet_diameter / 2, (self.back_collet_thick - self.back_bearing_standoff) / 2))
 
@@ -1405,7 +1411,7 @@ class SpringBarrel:
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
 
-        barrel = Gear.cutStyle(barrel, outer_radius=self.radius_for_style, inner_radius=self.key_bearing.outer_d / 2 + self.wall_thick / 3, style=self.style,
+        barrel = Gear.cutStyle(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
                                clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
@@ -1431,7 +1437,7 @@ class SpringBarrel:
         # lid = lid.cut()
         lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
 
-        lid = Gear.cutStyle(lid, outer_radius=self.radius_for_style, inner_radius=self.key_bearing.outer_d / 2 + self.wall_thick / 2, style=self.style,
+        lid = Gear.cutStyle(lid, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
                             clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         if for_printing:

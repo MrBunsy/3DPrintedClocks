@@ -822,6 +822,30 @@ class Hands:
         self.hour_fixing=hourFixing
         self.hour_fixing_d = hourfixing_d
 
+        self.configure_length(length)
+        # was attempting to use a cache, but so many edge cases that I've given up
+        self.hand_shapes = {}
+        self.outline_shapes = {}
+        for hand_type in HandType:
+            self.hand_shapes[hand_type] = None
+            self.outline_shapes[hand_type] = None
+
+    def configure_motion_works(self, motion_works):
+        #configure fixings and thicknesses from the motion works
+        self.minute_fixing = motion_works.get_minute_hand_fixing_shape()
+        self.minute_fixing_d1 = motion_works.get_minute_hand_square_size()
+        self.hour_fixing_d = motion_works.get_hour_hand_hole_d()
+
+        self.thick = motion_works.minute_hand_slot_height
+
+        if self.minute_fixing == "square":
+            self.minute_fixing_d2 = self.minute_fixing_d1
+            self.minute_fixing= "rectangle"
+
+    def configure_length(self, length, second_length=-1):
+        self.length = length
+        if second_length > 0:
+            self.second_length = second_length
         if self.style == HandStyle.BAROQUE:
             line_width = max(self.length * 0.03, 2.4)
             #TODO tidy up the base_r calculations do this here again (commented out below)
@@ -830,15 +854,10 @@ class Hands:
         if self.style == HandStyle.FANCY_WATCH:
             #TODO base_r properly?
             self.generator = FancyWatchHands(base_r=self.length*0.1, thick = self.thick, total_length= self.length, outline= self.outline, detail_thick=self.outline_thick)
-        if self.style == HandStyle.FANCY_CLOCK:
+        if self.style == HandStyle.FANCY_FRENCH:
             self.generator = FancyClockHands(base_r=self.length*0.1, thick = self.thick, length= self.length)
 
-        #was attempting to use a cache, but so many edge cases that I've given up
-        self.hand_shapes = {}
-        self.outline_shapes = {}
-        for hand_type in HandType:
-            self.hand_shapes[hand_type] = None
-            self.outline_shapes[hand_type] = None
+
 
     def cut_fixing(self, hand, hand_type):
         if hand_type == HandType.SECOND and self.second_fixing == "rod":

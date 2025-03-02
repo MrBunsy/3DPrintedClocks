@@ -2927,7 +2927,7 @@ To keep this assembly together, use a small amount of superglue between the whee
             if self.powered_wheel.type == PowerType.SPRING_BARREL:
 
                 # cut a hole in teh gear wheel so the style in the back of the barrel works
-                gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.radius_for_style + 1).cutThruAll()
+                gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.outer_radius_for_style).cutThruAll()
 
                 z_offset = 0
                 barrel_r = self.powered_wheel.get_outer_diameter()/2
@@ -3334,6 +3334,12 @@ class MotionWorks:
         Get the size of the square needed for the hand to slot onto the cannon pinion
         '''
         return self.minute_hand_holder_size + 0.2
+
+    def get_minute_hand_fixing_shape(self):
+        if self.bearing:
+            return "circle"
+        else:
+            return "square"
 
     def get_arbor_distance(self):
         return self.arbor_distance
