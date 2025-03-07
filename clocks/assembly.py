@@ -395,6 +395,10 @@ To fix this there are modifier STLs which can be used to change the settings for
          '''
 
         bom.add_subcomponent(self.plates.get_BOM())
+
+        if self.with_mat:
+            bom.add_subcomponent(self.plates.get_mat_BOM())
+
         try:
             bom.add_subcomponent(self.get_final_assembly_bom())
         except NotImplementedError as e:

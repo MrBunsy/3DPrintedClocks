@@ -34,18 +34,19 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "mantel_clock_34"
+clock_name= "Mantel Clock 34"
 clock_out_dir= "out"
 
 #dial sizes will be overriden
 dial_d=210
 dial_width = dial_d*0.15
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
-            outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
+# dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
+#             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width)
+dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
+            outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS)
+hands = Hands(style=HandStyle.SPADE, minute_fixing="square", length=dial_d/2, outline=1, chunky=False, outline_same_as_body=False)
 
-hands = Hands(style=HandStyle.FANCY_FRENCH, minute_fixing="square", length=dial_d/2, outline=0)
-
-assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial)
+assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial, second_hand=True)
 
 
 plate_colours=[Colour.DARKGREY, Colour.BRASS, Colour.BRASS]#[Colour.DARK_GREEN, Colour.BRASS, Colour.BRASS]
@@ -55,9 +56,12 @@ plate_colours=[Colour.DARKGREY, Colour.BRASS, Colour.BRASS]#[Colour.DARK_GREEN, 
 if output_STL:
     assembly.get_BOM().export()
 else:
-    assembly.show_clock(show_object, hand_colours=[Colour.GOLD], motion_works_colours=[Colour.GOLD],
+    assembly.show_clock(show_object, hand_colours=[Colour.WHITE, Colour.BLACK], motion_works_colours=[Colour.BRASS],
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
                         plate_colours=plate_colours)
+    # for a, arbor in enumerate(assembly.plates.arbors_for_plate):
+    #     show_object(arbor.get_assembled(), name="Arbour {}".format(a))
+
 
 
 

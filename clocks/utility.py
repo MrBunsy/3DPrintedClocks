@@ -1194,7 +1194,7 @@ def get_bearing_info(innerD):
         # 4x13x5
         # used for power arbor on eight day clocks
         # was outer 13.2 but the bearing fell out of the latest print using light grey fibreology easy-PETG!
-        return BearingInfo(outer_d=13, outer_safe_d=13 - 4, height=5, inner_d=innerD, inner_safe_d=5.4)
+        return BearingInfo(outer_d=13, outer_safe_d=13 - 4, height=5, inner_d=innerD, inner_safe_d=5.4, inner_safe_d_at_a_push=6.0)
     if innerD == 6:
         # these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
         return BearingInfo(outer_d=19, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8, cutter_wiggle_room=0.2)

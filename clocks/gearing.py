@@ -2956,7 +2956,8 @@ To keep this assembly together, use a small amount of superglue between the whee
                     extension_r = boltR - self.ratchet_screws.get_nut_containing_diameter() / 2
 
             bearing_standoff_height = LAYER_THICK * 2
-            bearing_standoff_r = get_bearing_info(self.arbor_d).inner_safe_d / 2
+            #TODO use actual bearing assigned to the arbor
+            bearing_standoff_r = get_bearing_info(self.arbor_d).inner_safe_d_at_a_push / 2
             if bearing_standoff_r > extension_r:
                 bearing_standoff_r = extension_r
 
@@ -2999,7 +3000,7 @@ To keep this assembly together, use a small amount of superglue between the whee
             #cut a hole through the arbour extension too (until the arbour extension takes this into account, but it doesn't since this currently only applies to the cord wheel)
             cutter = cq.Workplane("XY").circle(self.hole_d / 2).extrude(10000).translate((0, 0, -5000))
             gear_wheel = gear_wheel.cut(cutter)
-            print("Need steel tube of length {}mm".format(self.wheel_thick + rear_side_extension))
+            # print("Need steel tube of length {}mm".format(self.wheel_thick + rear_side_extension))
 
         if not self.pinion_at_front:
             #chain is at the back

@@ -2380,7 +2380,7 @@ class CordBarrel(WeightPoweredWheel):
     def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3,
                  cord_thick=2, bearing=None, key_square_bit_height=30,gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS,
                  cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=True, ratchet_diameter=-1,
-                 use_steel_tube=True):
+                 use_steel_tube=True, key_bearing_standoff = 1):
         '''
         loose_on_rod - if True (DEPRECATED) then the cord/chain/rope section of the wheel (this bit) is loose on the arbour .
          If false, then that is fixed and the actual gear wheel is loose on the arbour with a steel tube (PREFERRED)
@@ -2410,7 +2410,7 @@ class CordBarrel(WeightPoweredWheel):
 
         self.top_cap_overlap=0
         # even the 2mm cap got a bit wonky, so ensure lots of clearence from the front plate
-        self.before_bearing_extra_height = 1
+        self.key_bearing_standoff = key_bearing_standoff
 
         if self.heavy_duty:
             #trying to prevent the end cap warping and rubbing against front plate
@@ -2470,7 +2470,7 @@ class CordBarrel(WeightPoweredWheel):
         self.weight_drop_mm = -1
 
         self.style = style
-        # slowly switch over to using this
+        # slowly switch over to using MachineScrews
         self.fixing_screw = MachineScrew(self.screw_thread_metric, countersunk=True)
 
         #how far from the centre are the screws that hold this together
@@ -2605,7 +2605,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
         if self.use_key:
             #one hole only
-            chainZTop = -self.before_bearing_extra_height - self.top_cap_thick
+            chainZTop = -self.key_bearing_standoff - self.top_cap_thick
             chainZBottom = chainZTop - self.thick
 
             side = 1 if self.ratchet.is_clockwise() else -1
@@ -2651,12 +2651,12 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
             #space for the cap
 
             # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
-            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.inner_d / 2 - self.bearing_wiggle_room).extrude(self.key_bearing.height + self.before_bearing_extra_height + self.top_cap_thick)
+            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.inner_d / 2 - self.bearing_wiggle_room).extrude(self.key_bearing.height + self.key_bearing_standoff + self.top_cap_thick)
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
             #key = cq.Workplane("XY").polygon(4, self.key_bearing.innerD - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
             key = cq.Workplane("XY").rect(self.key_square_side_length, self.key_square_side_length).extrude(self.key_square_bit_height)
             #.rotate((0,0,0),(0,0,1),45)
-            segment = segment.union(key.translate((0, 0, self.cap_thick + self.thick + self.key_bearing.height + self.before_bearing_extra_height + self.top_cap_thick)))
+            segment = segment.union(key.translate((0, 0, self.cap_thick + self.thick + self.key_bearing.height + self.key_bearing_standoff + self.top_cap_thick)))
 
 
 
@@ -2741,7 +2741,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
             holeR = self.key_bearing.inner_d / 2 + self.bearing_wiggle_room
             print("cord wheel cap holeR: {} innerSafe raduis:{}".format(holeR, self.key_bearing.inner_safe_d / 2))
             #add small ring to keep this further away from the bearing
-            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.key_bearing.inner_safe_d / 2).extrude(self.before_bearing_extra_height)
+            cap = cap.faces(">Z").workplane().circle(holeR).circle(self.key_bearing.inner_safe_d / 2).extrude(self.key_bearing_standoff)
             #add space for countersunk screw heads
             countersink = self.get_fixing_screws_cutter(capThick + extraThick)
             cap = cap.cut(countersink)
@@ -2882,7 +2882,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         '''
 
         if self.use_key:
-            return self.ratchet.thick  + self.before_bearing_extra_height + self.cap_thick + self.top_cap_thick + self.thick
+            return self.ratchet.thick  + self.key_bearing_standoff + self.cap_thick + self.top_cap_thick + self.thick
 
         return self.ratchet.thick + self.cap_thick * 2 + self.top_cap_thick + self.thick * 2 + WASHER_THICK_M3
 

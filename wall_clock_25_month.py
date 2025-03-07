@@ -41,8 +41,10 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 #might be worth instead filing the "feet" of it flat or slightly at an angle to get the anchor and escape wheel closer together
 escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, diameter=45, force_diameter=True, anchor_thick=10)
 
+power = clock.CordBarrel(ratchet_thick=8, rod_metric_size=4, cord_thick=2, thick=14-0.5, style=gear_style, use_key=True, diameter=35, loose_on_rod=False, traditional_ratchet=True,
+                         cap_diameter=65, ratchet_diameter=33, key_bearing_standoff=1+0.5, use_steel_tube=False)
 train = clock.GoingTrain(pendulum_period=2.0, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=True, chain_at_back=False,
-                         powered_wheels=2, runtime_hours=32 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
+                         powered_wheels=2, runtime_hours=32 * 24, support_second_hand=False, powered_wheel=power)
 
 moduleReduction=0.9
 
@@ -51,10 +53,12 @@ train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=12, wheel_min_teeth
 
 #TODO one screw goes straight through the hole used to tie the cord! printed clock is assembled with just three screws
 #also reduced ratchet diameter slightly after initial print as the pawl looks like it can bump into the next pinion
-train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=2, cord_coil_thick=14, style=gear_style, use_key=True, prefered_diameter=35, loose_on_rod=False, prefer_small=True,
-                      min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=33)
+# train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=2, cord_coil_thick=14, style=gear_style, use_key=True, prefered_diameter=35, loose_on_rod=False, prefer_small=True,
+#                       min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=33)
 
-train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120)
+# train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120)
+#so I can retrofit a new cord barrel
+train.set_powered_wheel_ratios([[54, 10], [62, 10]])
 
 pendulumSticksOut=10
 backPlateFromWall=30
@@ -101,25 +105,9 @@ pulley = clock.BearingPulley(diameter=plates.get_diameter_for_pulley(), bearing=
 assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pulley = pulley, pendulum=pendulum, name=clockName)#, timeHours=12, timeMins=0)#weights=[clock.Weight(height=245,diameter=55)]
 
 if not outputSTL:
-    # show_object(pulley.get_assembled())
     assembly.show_clock(show_object, motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.PURPLE], plate_colours=[clock.Colour.DARKBLUE, clock.Colour.BRASS, clock.Colour.BRASS, clock.Colour.BRASS],
                     hand_colours=[clock.Colour.RED], with_rods=True)
 
-# show_object(plates.getDrillTemplate(6))
-
 if outputSTL:
     assembly.get_BOM().export()
-    #
-    #
-    # train.output_STLs(clockName,clockOutDir)
-    # plaque.output_STLs(clockName, clockOutDir)
-    # motionWorks.output_STLs(clockName,clockOutDir)
-    # pendulum.output_STLs(clockName, clockOutDir)
-    # plates.output_STLs(clockName, clockOutDir)
-    # hands.output_STLs(clockName, clockOutDir)
-    # pulley.output_STLs(clockName, clockOutDir)
-    # assembly.output_STLs(clockName, clockOutDir)
-
-
-    # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)
