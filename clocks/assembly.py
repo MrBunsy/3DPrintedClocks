@@ -924,7 +924,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
-                rod = cq.Workplane("XY").circle(self.going_train.get_arbour_with_conventional_naming(i).arbor_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
+                rod = cq.Workplane("XY").circle(self.going_train.get_arbor_with_conventional_naming(i).arbor_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
                 clock = clock.add(rod)
 
         return clock
@@ -1124,7 +1124,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             for i in range(len(rod_lengths)):
                 if rod_lengths[i] <= 0:
                     continue
-                rod = cq.Workplane("XY").circle(self.going_train.get_arbour_with_conventional_naming(i).arbor_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
+                rod = cq.Workplane("XY").circle(self.going_train.get_arbor_with_conventional_naming(i).arbor_d / 2 - 0.2).extrude(rod_lengths[i]).translate((self.plates.bearing_positions[i][0], self.plates.bearing_positions[i][1], rod_zs[i]))
                 show_object(rod, options={"color": rod_colour}, name="Arbor Rod {}".format(i))
             for p, rod in enumerate(self.rod_models):
                 show_object(rod, options={"color": rod_colour}, name="Fixing Rod {}".format(p))

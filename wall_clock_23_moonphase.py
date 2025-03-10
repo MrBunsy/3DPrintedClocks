@@ -59,7 +59,8 @@ pendulumSticksOut=10
 backPlateFromWall=40
 
 #the gear layout has changed a bit since this clock was produced, and is now more compact so we need to avoid pinions crashing into wheels.
-pinion_extensions={1:3}
+#and gone back again!
+pinion_extensions={}#{1:3}
 
 train.gen_gears(module_size=1.1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=2 / 2.4, powered_wheel_thick=4.5, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, pinion_extensions=pinion_extensions)
@@ -67,7 +68,7 @@ train.print_info(weight_kg=3)
 train.print_info(weight_kg=2.5)
 train.print_info(weight_kg=1)
 train.print_info(weight_kg=2)
-train.get_arbour_with_conventional_naming(0).print_screw_length()
+train.get_arbor_with_conventional_naming(0).print_screw_length()
 
 #tweaking angle slightly so that the second gear doesn't line up with an arbor that's between the plates
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.2)

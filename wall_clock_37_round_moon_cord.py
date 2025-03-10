@@ -107,7 +107,7 @@ train.gen_gears(module_sizes=[0.9, 0.85, 0.85], module_reduction=moduleReduction
 #                 powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters)
 train.print_info(for_runtime_hours=24*32, weight_kg=4)
 moon_radius=13
-train.get_arbour_with_conventional_naming(0).print_screw_length()
+train.get_arbor_with_conventional_naming(0).print_screw_length()
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                   bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 #no need to make inset, we've got lots of space here with the moon complication

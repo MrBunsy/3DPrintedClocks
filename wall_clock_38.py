@@ -98,7 +98,7 @@ train.gen_gears(module_sizes=[0.9, 0.85, 0.85], module_reduction=moduleReduction
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
                 pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875, powered_wheel_thicks=[barrel_gear_thick, 4])
 train.print_info(for_runtime_hours=24*7)
-train.get_arbour_with_conventional_naming(0).print_screw_length()
+train.get_arbor_with_conventional_naming(0).print_screw_length()
 #no need to make inset, we've got lots of space here with the moon complication
 motion_works = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
                                  cannon_pinion_to_hour_holder_gap_size=0.6)

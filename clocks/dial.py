@@ -521,8 +521,8 @@ class RomanNumerals:
         bottom_left = (-self.width_v_base/2, self.centre_radius - self.height/2)
         bottom_right = (self.width_v_base / 2, self.centre_radius - self.height / 2)
 
-        left_line = Line(bottom_left, anotherPoint=top_left)
-        right_line = Line(bottom_right, anotherPoint=top_right)
+        left_line = Line(bottom_left, another_point=top_left)
+        right_line = Line(bottom_right, another_point=top_right)
 
         top_left_extended = np_to_set(np.add(bottom_left, np.multiply(left_line.dir, self.height_extra)))
         top_right_extended = np_to_set(np.add(bottom_right, np.multiply(right_line.dir, self.height_extra)))
@@ -556,8 +556,8 @@ class RomanNumerals:
         bottom_left = (-lines_apart / 2, self.centre_radius - self.height / 2)
         bottom_right = (lines_apart / 2, self.centre_radius - self.height / 2)
 
-        thick_line = Line(centre, anotherPoint=top_left)
-        thin_line = Line(centre, anotherPoint=top_right)
+        thick_line = Line(centre, another_point=top_left)
+        thin_line = Line(centre, another_point=top_right)
 
         angle_thick_line = thick_line.get_angle()
         angle_thin_line = thin_line.get_angle()
@@ -679,7 +679,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
 
         distance = distance_between_two_points(centre, tail_end_pos)
 
-        tail_line = Line(centre, anotherPoint=tail_end_pos)
+        tail_line = Line(centre, another_point=tail_end_pos)
 
         start_angle = tail_line.get_angle()
         if start_angle < 0:
@@ -873,7 +873,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
 
         small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - inner_diamond_gap
         # small_diamond_wide = 3
-        small_diamond_line = Line(spiral.start_pos, anotherPoint=small_diamond_centre_pos)
+        small_diamond_line = Line(spiral.start_pos, another_point=small_diamond_centre_pos)
         #makes a wonky diamond
         # small_diamond_outer_pos = np_to_set(np.add(small_diamond_centre_pos, np.multiply(small_diamond_line.dir, small_diamond_wide/2)))
         # small_diamond_inner_pos = np_to_set(np.add(small_diamond_centre_pos, np.multiply(small_diamond_line.dir, -small_diamond_wide / 2)))
@@ -1047,7 +1047,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
             centre_hollowed = cq.Workplane("XY").union(centre).cut(cq.Workplane("XY").pushPoints([top_circle_pos, bottom_circle_pos]).circle(inner_r).extrude(self.thick*2).union(cq.Workplane("XY").rect(hole_wide, top_circle_pos[1]*2).extrude(self.thick*2)))
             # return centre_hollowed
             #chop the top off the top left
-            top_left_intersect_line = Line(top_circle_pos, anotherPoint=top_left_intersect)
+            top_left_intersect_line = Line(top_circle_pos, another_point=top_left_intersect)
             top_left_intersect_angle = top_left_intersect_line.get_angle() + math.pi/2
             top_left_intersect_dir = polar(top_left_intersect_angle)
             leftmost = (-width/2, top_left_intersect[1] - self.diamond_width/2)
@@ -1290,7 +1290,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
             centre= (-width*0.1,0)
 
             seven = seven.union(get_stroke_line([top["tip_pos"], centre], wide=self.thin_line_width, thick=self.thick))
-            line = Line(top["tip_pos"], anotherPoint=centre)
+            line = Line(top["tip_pos"], another_point=centre)
 
             centre_top = self.get_edge_of_line(centre, line.dir, True)
             centre_bottom = self.get_edge_of_line(centre, line.dir, False)
@@ -1302,7 +1302,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
             diamond_wide = width*0.5
 
             diamond_right_tip = (diamond_left_tip[0] + diamond_wide, diamond_left_tip[1]-self.height*0.05)
-            diamond_line = Line(diamond_left_tip, anotherPoint=diamond_right_tip)
+            diamond_line = Line(diamond_left_tip, another_point=diamond_right_tip)
             diamond_centre = average_of_two_points(diamond_left_tip, diamond_right_tip)
             tip_dir = diamond_line.get_perpendicular_direction(True)
             diamond_tip_line = Line(diamond_centre, direction=tip_dir)
@@ -2043,6 +2043,8 @@ class Dial:
         width = self.seconds_dial_width
         if self.seconds_style == DialStyle.LINES_ARC:
             dial = self.get_arcs_detail(outer_r=outer_r, dial_width=width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
+        elif self.seconds_style == DialStyle.LINES_RECT:
+            dial = self.get_lines_detail(outer_r=outer_r, dial_width=width, from_edge=self.seconds_dial_detail_from_edges, thick_indicators=False)
         elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
             dial = self.get_concentric_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
         else:

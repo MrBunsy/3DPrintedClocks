@@ -89,7 +89,7 @@ pendulumSticksOut=15
 train.gen_gears(module_size=0.8, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=4, pinion_thick_multiplier=3, style=gearStyle,
                 powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True)
 train.print_info(weight_kg=1.5)
-train.get_arbour_with_conventional_naming(0).print_screw_length()
+train.get_arbor_with_conventional_naming(0).print_screw_length()
 
 
 motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)

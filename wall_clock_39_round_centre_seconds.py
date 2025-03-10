@@ -111,7 +111,8 @@ dial = Dial(dial_d, DialStyle.FANCY_WATCH_NUMBERS, font="Eurostile Extended #2",
 
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 39#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=25,
                                 motion_works_angle_deg=45, leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
-                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, centred_second_hand=True, escapement_on_back=True)
+                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, centred_second_hand=True, escapement_on_back=True,
+                                gear_train_layout=GearTrainLayout.COMPACT_CENTRE_SECONDS)
 
 #BODGE wnat to retrofit just one gear reprinted with reduced jamming
 #this may have been unecessary - I think the friction clip was catching on the cannon pinion seam. I've filed the seam and it seems promising.

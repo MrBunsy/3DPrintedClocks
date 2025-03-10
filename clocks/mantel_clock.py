@@ -34,7 +34,8 @@ based on mantel clock 33 (the moon one) but designed to be configurable.
 This clock has a proven gear train and I've stuggled to reduce its size, so it seems like a good one to use as a base for other styles of mantle clock
 '''
 
-def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, moon = False, second_hand=False, dial=None, hands=None, pillar_style=PillarStyle.CLASSIC):
+def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, moon = False, second_hand=False, dial=None, hands=None, pillar_style=PillarStyle.CLASSIC,
+                     prefer_tall=True):
     '''
     return the assembly object
     '''
@@ -120,7 +121,7 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     plates = MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=PlateStyle.RAISED_EDGING,
                                      pillar_style=pillar_style, moon_complication=moon_complication, second_hand=second_hand, symetrical=True, pendulum_sticks_out=21,
                                      standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
-                                     plaque=plaque, split_detailed_plate=True, prefer_tall=True)
+                                     plaque=plaque, split_detailed_plate=True, prefer_tall=prefer_tall)
     print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
     if hands is None:

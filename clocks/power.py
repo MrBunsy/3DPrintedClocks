@@ -655,7 +655,7 @@ class BearingPulley:
             if outer_radius > inner_radius + 1:
                 cutter = cq.Workplane("XY").circle(inner_radius).circle(outer_radius).extrude(self.get_total_thick())
                 for pos in self.screw_positions:
-                    line = Line((0,0), anotherPoint=pos)
+                    line = Line((0,0), another_point=pos)
 
                     cutter = cutter.cut(get_stroke_line([(0,0), polar(line.get_angle(), outer_radius*2)], wide=self.screws.get_head_diameter() + extra_r, thick=self.get_total_thick()))
                 cutter = cutter.edges("|Z").fillet(self.screws.get_head_diameter()*0.25)
@@ -2503,14 +2503,17 @@ class CordBarrel(WeightPoweredWheel):
     def get_screw_positions(self):
         return self.fixing_points
 
-
-    def get_BOM(self):
+    def get_fixing_screw_length(self):
         if self.use_key:
             fixing_screw_length = self.ratchet.thick + self.cap_thick + self.thick + self.top_cap_thick
         else:
             raise NotImplementedError("TODO BOM screw length for non-key cord wheel")
         print(f"Cord wheel needs {self.fixing_screw} less than {fixing_screw_length:.1f}mm")
         fixing_screw_length = get_nearest_machine_screw_length(fixing_screw_length, self.fixing_screw)
+        return fixing_screw_length
+
+    def get_BOM(self):
+        fixing_screw_length = self.get_fixing_screw_length()
         instructions =f"""
 Insert the fixing nuts into the ratchet wheel, then slot the top cap over the cord barrel. Use the fixing screws through the top cap and barrel to fix the ratchet wheel onto the bottom of the barrel and hold the entire assembly together.
 
@@ -2775,8 +2778,10 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         cutter = cq.Workplane("XY")
         if self.use_key:
             #space for a nut
+            #screws can be slightly shorter than required, so might want to inset nuts slightly further
+            extra_deep = (self.ratchet.thick + self.cap_thick + self.thick + self.top_cap_thick) - self.get_fixing_screw_length()
             for fixingPoint in self.fixing_points:
-                cutter = cutter.add(self.fixing_screw.get_nut_cutter(height=self.ratchet.thick / 2, with_bridging=bridging, with_screw_length=1000).translate(fixingPoint))
+                cutter = cutter.add(self.fixing_screw.get_nut_cutter(height=self.fixing_screw.get_nut_height() + extra_deep,with_bridging=bridging, with_screw_length=1000).translate(fixingPoint))
         else:
             #cut out space for screwheads
             for fixingPoint in self.fixing_points:
@@ -3973,7 +3978,7 @@ class TraditionalRatchet:
 
         # click = click.union(cq.Workplane("XY").circle(self.click_fixings_r + self.click_wide/2).circle(self.click_fixings_r - self.click_wide/2).extrude(self.thick))
 
-        line_to_click_end = Line((0,0), anotherPoint=click_end_pos)
+        line_to_click_end = Line((0,0), another_point=click_end_pos)
 
         click_end_inner_pos = np_to_set(np.subtract(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))
         click_end_outer_pos = np_to_set(np.add(click_end_pos, np.multiply(line_to_click_end.dir, self.click_wide / 2)))

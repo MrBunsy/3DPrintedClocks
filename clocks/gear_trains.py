@@ -999,7 +999,7 @@ class GoingTrain:
         # if self.chainWheels > 0:
         #     self.chainWheelArbours=[getWheelWithRatchet(self.ratchet,self.chainWheelPair.wheel,holeD=holeD, thick=chainWheelThick, style=style)]
 
-    def get_arbour_with_conventional_naming(self, i):
+    def get_arbor_with_conventional_naming(self, i):
         '''
         Use the traditional naming of the chain wheel being zero
         if -ve, count from the anchor backwards (like array indexing in python, so -1 is the anchor, -2 is the escape wheel)

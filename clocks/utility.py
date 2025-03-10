@@ -500,11 +500,11 @@ def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwis
     '''
     tangents = get_tangents_through_point(circle_centre, circle_r, point)
 
-    direct_line = Line(circle_centre, anotherPoint=point)
+    direct_line = Line(circle_centre, another_point=point)
 
     perpendicular = direct_line.get_perpendicular_direction(clockwise=clockwise)
 
-    centre_to_tangent = Line(circle_centre, anotherPoint=tangents[0].anotherPoint)
+    centre_to_tangent = Line(circle_centre, another_point=tangents[0].anotherPoint)
 
     if centre_to_tangent.dir.dot(perpendicular) >= 0:
         return tangents[0]
@@ -598,7 +598,7 @@ def get_tangents_through_point(circle_centre, circle_r, point):
             # print('The equations of the lines P-T1 and P-T2:')
             # print('\t%+g·y%+g·x%+g = 0' % (T1x - Px, Py - T1y, T1y * Px - T1x * Py))
             # print('\t%+g·y%+g·x%+g = 0' % (T2x - Px, Py - T2y, T2y * Px - T2x * Py))
-            return [Line(point, anotherPoint=(T1x, T1y)), Line(point, anotherPoint=(T2x, T2y))]
+            return [Line(point, another_point=(T1x, T1y)), Line(point, another_point=(T2x, T2y))]
     else:
         raise ValueError('''\
     Point P≡(%g,%g) is inside the circle with centre C≡(%g,%g) and radius r=%g.
@@ -658,7 +658,7 @@ def get_perpendicular_direction(dir, clockwise=True):
     return np.cross(dir, [0, 0, z])[:-1]
 
 class Line:
-    def __init__(self, start, angle=None, direction=None, anotherPoint=None):
+    def __init__(self, start, angle=None, direction=None, another_point=None):
         '''
         start = (x,y)
         Then one of:
@@ -675,10 +675,10 @@ class Line:
 
         elif angle is not None:
             self.dir = (math.cos(angle), math.sin(angle))
-        elif anotherPoint is not None:
-            self.dir = (anotherPoint[0] - start[0], anotherPoint[1] - start[1])
+        elif another_point is not None:
+            self.dir = (another_point[0] - start[0], another_point[1] - start[1])
             # store for hackery
-            self.anotherPoint = anotherPoint
+            self.anotherPoint = another_point
         else:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector

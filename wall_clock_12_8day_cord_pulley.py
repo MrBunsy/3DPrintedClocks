@@ -109,7 +109,7 @@ cord wheel screw (m3) length between 20.6 22.6
 Cordwheel power varies from 42.2μW to 47.8μW
 '''
 
-cordwheel = train.get_arbour_with_conventional_naming(0)
+cordwheel = train.get_arbor_with_conventional_naming(0)
 
 # show_object(cordwheel.poweredWheel.get_assembled())
 # show_object(cordwheel.poweredWheel.getSegment(front=False))

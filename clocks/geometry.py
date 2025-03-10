@@ -64,7 +64,7 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
         radius *= -1
         from_pos, to_pos = to_pos, from_pos
 
-    line = Line(from_pos, anotherPoint=to_pos)
+    line = Line(from_pos, another_point=to_pos)
     midpoint = average_of_two_points(from_pos, to_pos)
     nighty_deg = math.pi/2 * (1 if radius > 0 else -1)
     from_midpoint_to_centre_angle = line.get_angle() + nighty_deg
@@ -82,8 +82,8 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
     
     centre = np_to_set(np.add(midpoint, polar(from_midpoint_to_centre_angle, radius-s)))
 
-    from_line = Line(centre, anotherPoint=from_pos)
-    to_line = Line(centre, anotherPoint=to_pos)
+    from_line = Line(centre, another_point=from_pos)
+    to_line = Line(centre, another_point=to_pos)
 
     inner_from = np_to_set(np.add(centre, polar(from_line.get_angle(), radius - wide / 2)))
     outer_from = np_to_set(np.add(centre, polar(from_line.get_angle(), radius + wide / 2)))
@@ -158,7 +158,7 @@ class ArithmeticSpiral:
         else:
             pre_pos = self.get_pos(angle - 0.01)
             post_pos = self.get_pos(angle + 0.01)
-        line = Line(pre_pos, anotherPoint=post_pos)
+        line = Line(pre_pos, another_point=post_pos)
         return line.dir
 
     def get_draw_info(self, from_angle, to_angle, points_per_spiral=15):

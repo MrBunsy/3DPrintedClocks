@@ -250,6 +250,9 @@ if moon and False:
 # show_object(plates.get_plate(back=True))
 # show_object(plaque.get_plaque().rotate((0,0,0), (0,0,1), clock.rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-plaque.thick)))
 
+# show_object(plates.get_plate(back=False))
+# for a, arbor in enumerate(assembly.plates.arbors_for_plate):
+#         show_object(arbor.get_assembled(), name="Arbour {}".format(a))
 assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
                     bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=dial_colours,
                     plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])

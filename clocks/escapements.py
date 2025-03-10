@@ -253,7 +253,7 @@ class AnchorEscapement:
 
         if self.type == EscapementType.RECOIL:
             #extend the start outwards
-            self.entry_pallet_line = Line(self.entry_pallet_end_pos, anotherPoint=self.entry_pallet_start_pos)
+            self.entry_pallet_line = Line(self.entry_pallet_end_pos, another_point=self.entry_pallet_start_pos)
             # self.entry_pallet_length = distance_between_two_points(self.entry_pallet_start_pos, self.entry_pallet_end_pos)*5
             # self.entry_pallet_start_pos = np_to_set(np.add(self.entry_pallet_end_pos, np.multiply(self.entry_pallet_line.dir, self.entry_pallet_length)))
             self.entry_pallet_start_pos = self.entry_pallet_line.intersection_with_circle(self.wheel_centre, self.top_arm_r, line_length=self.diameter*4)[0]
@@ -270,7 +270,7 @@ class AnchorEscapement:
         
         if self.type == EscapementType.RECOIL:
             #extend the start outwards
-            self.exit_pallet_line = Line(self.exit_pallet_end_pos, anotherPoint=self.exit_pallet_start_pos)
+            self.exit_pallet_line = Line(self.exit_pallet_end_pos, another_point=self.exit_pallet_start_pos)
             # self.exit_pallet_length = distance_between_two_points(self.exit_pallet_start_pos, self.exit_pallet_end_pos)*5
             # self.exit_pallet_start_pos = np_to_set(np.add(self.exit_pallet_end_pos, np.multiply(self.exit_pallet_line.dir, self.exit_pallet_length)))
             self.exit_pallet_start_pos = self.exit_pallet_line.intersection_with_circle(self.wheel_centre, self.bottom_arm_r, line_length=self.diameter * 4)[0]
@@ -297,7 +297,7 @@ class AnchorEscapement:
         self.arm_thick_angle_exit = arm_thick / self.exit_pallet_end_r
         self.outer_right_point = tuple(np.add(polar(math.pi * 1.5 + self.anchor_angle / 2 + palletLengthAngle / 2 + deadbeat_angle + self.arm_thick_angle_exit, self.exit_pallet_end_r), self.anchor_centre))
         if self.type == EscapementType.RECOIL:
-            wheel_to_exit_pallet_end = Line(self.wheel_centre, anotherPoint=self.exit_pallet_end_pos)
+            wheel_to_exit_pallet_end = Line(self.wheel_centre, another_point=self.exit_pallet_end_pos)
             self.outer_right_point = polar(math.atan2(self.exit_pallet_end_pos[1], self.exit_pallet_end_pos[0]), self.top_arm_r)
             self.outer_left_point = self.entry_pallet_start_pos
             self.inner_left_point = polar(math.atan2(self.entry_pallet_end_pos[1], self.entry_pallet_end_pos[0]), self.bottom_arm_r)
@@ -764,26 +764,26 @@ class BrocotEscapment(AnchorEscapement):
 
         #calculate what radius the brocot pallet stones need to be. My plan is to support 3D printed or real stones (cousins sell them)
 
-        entry_pallet_start_dir = Line(self.anchor_centre, anotherPoint=self.entry_pallet_start_pos)
-        entry_pallet_end_dir = Line(self.anchor_centre, anotherPoint=self.entry_pallet_end_pos)
+        entry_pallet_start_dir = Line(self.anchor_centre, another_point=self.entry_pallet_start_pos)
+        entry_pallet_end_dir = Line(self.anchor_centre, another_point=self.entry_pallet_end_pos)
         entry_pallet_start_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_start_pos)
         entry_pallet_end_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_end_pos)
         entry_pallet_end_distance_along_line = np.dot(entry_pallet_start_dir.dir, np.subtract(self.entry_pallet_end_pos,self.anchor_centre))
         self.entry_pallet_r = abs(entry_pallet_start_distance - entry_pallet_end_distance_along_line)
 
         entry_pallet_centre = average_of_two_points(self.entry_pallet_start_pos, self.entry_pallet_end_pos)
-        entry_pallet_centre_dir = Line(self.anchor_centre, anotherPoint=entry_pallet_centre)
+        entry_pallet_centre_dir = Line(self.anchor_centre, another_point=entry_pallet_centre)
         entry_pallet_centre_distance = distance_between_two_points(self.anchor_centre, entry_pallet_centre)
 
-        exit_pallet_start_dir = Line(self.anchor_centre, anotherPoint=self.exit_pallet_start_pos)
-        exit_pallet_end_dir = Line(self.anchor_centre, anotherPoint=self.exit_pallet_end_pos)
+        exit_pallet_start_dir = Line(self.anchor_centre, another_point=self.exit_pallet_start_pos)
+        exit_pallet_end_dir = Line(self.anchor_centre, another_point=self.exit_pallet_end_pos)
         exit_pallet_start_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_start_pos)
         exit_pallet_end_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_end_pos)
         exit_pallet_distance_along_line = np.dot(exit_pallet_start_dir.dir, np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
         self.exit_pallet_r = abs(exit_pallet_start_distance - exit_pallet_distance_along_line)
 
         exit_pallet_centre = average_of_two_points(self.exit_pallet_start_pos, self.exit_pallet_end_pos)
-        exit_pallet_centre_dir = Line(self.anchor_centre, anotherPoint=exit_pallet_centre)
+        exit_pallet_centre_dir = Line(self.anchor_centre, another_point=exit_pallet_centre)
         exit_pallet_centre_distance = distance_between_two_points(self.anchor_centre, exit_pallet_centre)
 
         print("entry_pallet_r: {}, exit_pallet_r:{}".format(self.entry_pallet_r, self.exit_pallet_r))
@@ -1194,18 +1194,18 @@ class GrasshopperEscapement:
 
         #[3] At the start of exit impulse, the exit pallet nib locking corner is captured by an escape wheel tooth tip located at point D
         D_start_of_exit_impulse = polar(0, radius)
-        line_3 = Line((0,0), anotherPoint=D_start_of_exit_impulse)
+        line_3 = Line((0,0), another_point=D_start_of_exit_impulse)
         #[4] clockwise by half a tooth angle
         end_of_exit_impulse_angle = -self.tooth_angle/2
         C_end_of_exit_impulse = polar(end_of_exit_impulse_angle, radius)
-        line_4 = Line((0,0), anotherPoint=C_end_of_exit_impulse)
+        line_4 = Line((0,0), another_point=C_end_of_exit_impulse)
 
         #[5]
         minimum_tooth_space = math.floor(self.tooth_span)
         minimum_tooth_angle = minimum_tooth_space * math.pi*2 / self.teeth
         #I think this is end of the entry impulse?
         K_end_of_entry_impulse = polar(0 + minimum_tooth_angle, radius)
-        line_5 = Line((0,0), anotherPoint=K_end_of_entry_impulse)
+        line_5 = Line((0,0), another_point=K_end_of_entry_impulse)
 
         #[6]
         maximum_tooth_space = math.ceil(self.tooth_span)
@@ -1213,7 +1213,7 @@ class GrasshopperEscapement:
         #anticlockwise from end of exit impulse by maximum arc of teeth
         J_angle = end_of_exit_impulse_angle + maxiumum_tooth_angle
         J_start_of_entry_impulse = polar( J_angle, radius)
-        line_6 = Line((0,0), anotherPoint=J_start_of_entry_impulse)
+        line_6 = Line((0,0), another_point=J_start_of_entry_impulse)
 
 
         #[7]
@@ -1336,11 +1336,11 @@ class GrasshopperEscapement:
         # ========== STEP FIVE =================
 
         #entry geometry
-        line_23_ST = Line(S, anotherPoint=T)
+        line_23_ST = Line(S, another_point=T)
         line_24_dir = line_23_ST.get_perpendicular_direction(clockwise=False)
         line_24 = Line(average_of_two_points(S, T), direction=line_24_dir)
 
-        line_25_JK = Line(J_start_of_entry_impulse, anotherPoint=K_end_of_entry_impulse)
+        line_25_JK = Line(J_start_of_entry_impulse, another_point=K_end_of_entry_impulse)
         line_26_dir = line_25_JK.get_perpendicular_direction(clockwise=False)
         line_26 = Line(average_of_two_points(J_start_of_entry_impulse, K_end_of_entry_impulse), direction=line_26_dir)
 
@@ -1348,11 +1348,11 @@ class GrasshopperEscapement:
 
         #exit geometry
 
-        line_27_QR = Line(Q, anotherPoint=R)
+        line_27_QR = Line(Q, another_point=R)
         line_28_dir = line_27_QR.get_perpendicular_direction(clockwise=False)
         line_28 = Line(average_of_two_points(Q, R), direction = line_28_dir)
 
-        line_29_DC = Line(D_start_of_exit_impulse, anotherPoint=C_end_of_exit_impulse)
+        line_29_DC = Line(D_start_of_exit_impulse, another_point=C_end_of_exit_impulse)
         line_30_dir = line_29_DC.get_perpendicular_direction(clockwise=False)
         line_30 = Line(average_of_two_points(D_start_of_exit_impulse, C_end_of_exit_impulse), direction=line_30_dir)
 
@@ -1370,8 +1370,8 @@ class GrasshopperEscapement:
         # return step_five_figure_39
         # ============= STEP SIX =============
 
-        line_31_VZ = Line(V, anotherPoint=Z)
-        line_32_JKmid_STmid = Line(average_of_two_points(J_start_of_entry_impulse, K_end_of_entry_impulse), anotherPoint=average_of_two_points(S, T))
+        line_31_VZ = Line(V, another_point=Z)
+        line_32_JKmid_STmid = Line(average_of_two_points(J_start_of_entry_impulse, K_end_of_entry_impulse), another_point=average_of_two_points(S, T))
 
         PN_centre = line_31_VZ.intersection(line_32_JKmid_STmid)
 
@@ -1384,14 +1384,14 @@ class GrasshopperEscapement:
 
 
 
-        line_34_ZW = Line(Z, anotherPoint=W)
-        line_35_CDmid_QRmid = Line(average_of_two_points(C_end_of_exit_impulse, D_start_of_exit_impulse), anotherPoint=average_of_two_points(Q, R))
+        line_34_ZW = Line(Z, another_point=W)
+        line_35_CDmid_QRmid = Line(average_of_two_points(C_end_of_exit_impulse, D_start_of_exit_impulse), another_point=average_of_two_points(Q, R))
         FG_centre = line_35_CDmid_QRmid.intersection(line_34_ZW)
         line_36_FG = Line(FG_centre, direction=line_34_ZW.get_perpendicular_direction())
 
         #could have been defined earlier, doesn't seem to have been (I think this one was 'obvious' previously)
-        line_21_DQ = Line(D_start_of_exit_impulse, anotherPoint=Q)
-        line_22_CR = Line(C_end_of_exit_impulse, anotherPoint=R)
+        line_21_DQ = Line(D_start_of_exit_impulse, another_point=Q)
+        line_22_CR = Line(C_end_of_exit_impulse, another_point=R)
         F = line_36_FG.intersection(line_21_DQ)
         G = line_36_FG.intersection(line_22_CR)
 
@@ -1418,16 +1418,16 @@ class GrasshopperEscapement:
 
         # ============= STEP SEVEN ==============
         #This line represents the physical connection between the escapement frame arbor axis and the entry pallet arm pivot at the end of entry impulse
-        line_37_ZN = Line(Z, anotherPoint=N)
-        line_38_ZP = Line(Z, anotherPoint=P)
+        line_37_ZN = Line(Z, another_point=N)
+        line_38_ZP = Line(Z, another_point=P)
 
         #. This is the escaping arc of the entry geometry.
         En = line_38_ZP.get_angle() - line_37_ZN.get_angle()
 
 
 
-        line_39_ZF = Line(Z, anotherPoint=F)
-        line_40_ZG = Line(Z, anotherPoint=G)
+        line_39_ZF = Line(Z, another_point=F)
+        line_40_ZG = Line(Z, another_point=G)
 
         Ex = line_40_ZG.get_angle() - line_39_ZF.get_angle()
 
@@ -1535,12 +1535,12 @@ class GrasshopperEscapement:
         the below copy-pasted and tweaked from the geometry check function
         '''
         geometry = self.geometry
-        line_PJ = Line(geometry["P"], anotherPoint=geometry["J"])
-        line_DF = Line(geometry["D"], anotherPoint=geometry["F"])
+        line_PJ = Line(geometry["P"], another_point=geometry["J"])
+        line_DF = Line(geometry["D"], another_point=geometry["F"])
         start_of_impulse_torque_circle_radius_entry = line_PJ.get_shortest_distance_to_point(geometry["Z"])
         start_of_impulse_torque_circle_radius_exit = line_DF.get_shortest_distance_to_point(geometry["Z"])
-        line_KN = Line(geometry["K"], anotherPoint=geometry["N"])
-        line_GC = Line(geometry["G"], anotherPoint=geometry["C"])
+        line_KN = Line(geometry["K"], another_point=geometry["N"])
+        line_GC = Line(geometry["G"], another_point=geometry["C"])
         end_of_impulse_torque_circle_radius_entry = line_KN.get_shortest_distance_to_point(geometry["Z"])
         end_of_impulse_torque_circle_radius_exit = line_GC.get_shortest_distance_to_point(geometry["Z"])
         # check 10b (there are two check 10s): EZ / HZ should match the designer-chosen end/start ratio, T. For Harrison compliant geometries, the ratio should be 3 / 2.
@@ -1565,8 +1565,8 @@ class GrasshopperEscapement:
             geometry = self.geometry
         #check 1: Angle COD should be the angle subtended by half an escape wheel tooth space
         half_tooth_angle = (math.pi*2/self.teeth)/2
-        line_CO = Line(geometry["C"], anotherPoint=geometry["O"])
-        line_OD = Line(geometry["O"], anotherPoint=geometry["D"])
+        line_CO = Line(geometry["C"], another_point=geometry["O"])
+        line_OD = Line(geometry["O"], another_point=geometry["D"])
         COD = line_CO.get_angle_between_lines(line_OD)
         if loud:
             print("COD: {}deg, half tooth angle:{}deg".format(rad_to_deg(COD), rad_to_deg(half_tooth_angle)))
@@ -1575,8 +1575,8 @@ class GrasshopperEscapement:
 
         #check 2: Angle DOK should be the angle subtended by the minimum tooth spaces spanned.
         minimum_tooth_spaces = floor(self.tooth_span)*math.pi*2/self.teeth
-        line_DO = Line(geometry["D"], anotherPoint=geometry["O"])
-        line_OK = Line(geometry["O"], anotherPoint=geometry["K"])
+        line_DO = Line(geometry["D"], another_point=geometry["O"])
+        line_OK = Line(geometry["O"], another_point=geometry["K"])
         DOK = line_DO.get_angle_between_lines(line_OK)
         if loud:
             print("DOK: {}deg, minimum_tooth_spaces: {}deg".format(rad_to_deg(DOK), rad_to_deg(minimum_tooth_spaces)))
@@ -1585,7 +1585,7 @@ class GrasshopperEscapement:
 
         #check 3: Angle COJ should be the angle subtended by the maximum tooth spaces spanned.
         maximum_tooth_spaces = math.ceil(self.tooth_span)*math.pi*2/self.teeth
-        line_OJ = Line(geometry["O"], anotherPoint=geometry["J"])
+        line_OJ = Line(geometry["O"], another_point=geometry["J"])
         COJ = line_CO.get_angle_between_lines(line_OJ)
         if loud:
             print("COJ: {}deg, maximum_tooth_spaces: {}deg".format(rad_to_deg(COJ), rad_to_deg(maximum_tooth_spaces)))
@@ -1632,7 +1632,7 @@ class GrasshopperEscapement:
             assert abs(FZ - GZ) < acceptableError, "check 8: FZ should equal GZ (exit pallet pivot to escapement frame axis at the start and end of impulse)."
 
         #check 9: Angle PJO should match the designer-chosen STEP ONE entry angle (self.an)
-        line_PJ = Line(geometry["P"], anotherPoint=geometry["J"])
+        line_PJ = Line(geometry["P"], another_point=geometry["J"])
         PJO = line_PJ.get_angle_between_lines(line_OJ)
         if loud:
             print("PJO: {}deg an: {}deg".format(rad_to_deg(PJO), rad_to_deg(self.an)))
@@ -1644,7 +1644,7 @@ class GrasshopperEscapement:
         that an alteration to the mean span should be investigated, as explained on page 41.
         '''
         #I don't ever calculate H, but HDF are in a line, so use line DF instead of HD
-        line_DF = Line(geometry["D"], anotherPoint=geometry["F"])
+        line_DF = Line(geometry["D"], another_point=geometry["F"])
         HDO = line_DF.get_angle_between_lines(line_DO)
         if loud:
             print("HDO/DFO: {}deg ax: {}deg".format(rad_to_deg(HDO), rad_to_deg(geometry["ax"])))
@@ -1669,8 +1669,8 @@ class GrasshopperEscapement:
         if not self.skip_failed_checks:
             assert abs(start_of_impulse_torque_circle_radius_entry - start_of_impulse_torque_circle_radius_exit) < acceptableError, "start impulse torque circle radii not equal"
 
-        line_KN = Line(geometry["K"], anotherPoint=geometry["N"])
-        line_GC = Line(geometry["G"], anotherPoint=geometry["C"])
+        line_KN = Line(geometry["K"], another_point=geometry["N"])
+        line_GC = Line(geometry["G"], another_point=geometry["C"])
         end_of_impulse_torque_circle_radius_entry = line_KN.get_shortest_distance_to_point(geometry["Z"])
         end_of_impulse_torque_circle_radius_exit = line_GC.get_shortest_distance_to_point(geometry["Z"])
         if loud:
@@ -1696,12 +1696,12 @@ class GrasshopperEscapement:
 
         #check 13: Escaping arcs NZP and FZG should both match the designer-chosen escaping arc, E*, with at least the designer-chosen degree of precision.
         #I think this is a given, because of how I iterate the choice of d/ax to select the escaping arc
-        line_NZ = Line(geometry["N"], anotherPoint=geometry["Z"])
-        line_ZP = Line(geometry["Z"], anotherPoint=geometry["P"])
+        line_NZ = Line(geometry["N"], another_point=geometry["Z"])
+        line_ZP = Line(geometry["Z"], another_point=geometry["P"])
         NZP = line_NZ.get_angle_between_lines(line_ZP)
 
-        line_FZ = Line(geometry["F"], anotherPoint=geometry["Z"])
-        line_ZG = Line(geometry["Z"], anotherPoint=geometry["G"])
+        line_FZ = Line(geometry["F"], another_point=geometry["Z"])
+        line_ZG = Line(geometry["Z"], another_point=geometry["G"])
         FZG = line_FZ.get_angle_between_lines(line_ZG)
 
         if loud:
@@ -1748,7 +1748,7 @@ class GrasshopperEscapement:
         # frame = frame.workplaneFromTagged("base").moveTo(self.geometry["Z"][0], self.geometry["Z"][1]).circle(arbour_circle_r).extrude(self.frame_thick)
 
         # entry  side
-        line_ZP = Line(self.geometry["Z"], anotherPoint=self.geometry["P"])
+        line_ZP = Line(self.geometry["Z"], another_point=self.geometry["P"])
         dir_ZP_perpendicular = line_ZP.get_perpendicular_direction()
 
         entry_composer_rest = self.getComposerRestScrewCentrePos(self.geometry["J"], self.geometry["P"])
@@ -1771,7 +1771,7 @@ class GrasshopperEscapement:
         frame = frame.radiusArc(endArc, -arm_wide * 0.50001).lineTo(self.geometry["Z"][0] - dir_ZP_perpendicular[0] * arm_wide * 0.5, self.geometry["Z"][1] - dir_ZP_perpendicular[1] * arm_wide * 0.5)
         frame = frame.close().extrude(thick)
 
-        line_entry_end_to_entry_composer_rest = Line(entry_side_end, anotherPoint=entry_composer_rest)
+        line_entry_end_to_entry_composer_rest = Line(entry_side_end, another_point=entry_composer_rest)
         holder_r = self.screws.metric_thread*1.5
         arm_to_rest_distance = distance_between_two_points(entry_composer_rest, entry_side_end)
         holder_circle_distance = arm_to_rest_distance + (holder_r - self.screws.metric_thread/2)
@@ -1784,7 +1784,7 @@ class GrasshopperEscapement:
         frame = frame.faces(">Z").workplane().moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
 
         #exit side
-        line_ZG = Line(self.geometry["Z"], anotherPoint=self.geometry["G"])
+        line_ZG = Line(self.geometry["Z"], another_point=self.geometry["G"])
         dir_ZG_perpendicular = line_ZG.get_perpendicular_direction()
 
         #hacky side effect
@@ -1806,7 +1806,7 @@ class GrasshopperEscapement:
         exit_composer_rest_along_arm = -np.dot(np.subtract(exit_composer_rest, self.geometry["G"]), line_ZG.dir)
         exit_composer_rest_base = np.add(self.geometry["G"], np.multiply(line_ZG.dir, -exit_composer_rest_along_arm))
 
-        exit_composer_rest_line = Line(exit_composer_rest_base, anotherPoint=exit_composer_rest)
+        exit_composer_rest_line = Line(exit_composer_rest_base, another_point=exit_composer_rest)
         exit_composer_rest_base_left = np.add(exit_composer_rest_base, np.multiply(line_ZG.dir, -arm_wide/2))
         exit_composer_rest_base_right = np.add(exit_composer_rest_base, np.multiply(line_ZG.dir, arm_wide / 2))
         exit_composer_rest_top_left = np.add(exit_composer_rest, np.multiply(line_ZG.dir, -arm_wide / 2))
@@ -1874,7 +1874,7 @@ class GrasshopperEscapement:
         if in-situ assume 0,0 is centre of the escaep wheel
         '''
         # rotate so that Z is at the top
-        line_OZ = Line(self.geometry["O"], anotherPoint=self.geometry["Z"])
+        line_OZ = Line(self.geometry["O"], another_point=self.geometry["Z"])
         part = part.rotate((0, 0, 0), (0, 0, 1), rad_to_deg((math.pi / 2 - line_OZ.get_angle())))
 
         return part
@@ -1887,7 +1887,7 @@ class GrasshopperEscapement:
         # angle between line of arm and the nib
         nib_offset_angle = self.nib_offset_angle
 
-        line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
+        line_pivot_to_nib = Line(pivot_pos, another_point=nib_pos)
         distance_to_nib = distance_between_two_points(nib_pos, pivot_pos)
         # distance from pivot that the bend towards the nib starts
         distance_nib_bend_start = distance_to_nib * 0.8
@@ -1912,7 +1912,7 @@ class GrasshopperEscapement:
         '''
         pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
 
-        line_along_arm = Line(pivot_pos, anotherPoint=pallet_arm_bend_start)
+        line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
 
         composer_length = distance_between_two_points(pivot_pos, pallet_arm_bend_start)
 
@@ -1930,7 +1930,7 @@ class GrasshopperEscapement:
 
 
         pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
-        line_along_arm = Line(pivot_pos, anotherPoint=pallet_arm_bend_start)
+        line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
 
         #make a shape which has the pivot_pos at (0,0) and assumes pallet arm is horizontal facing left, then rotate and translate into position
         composer_length = distance_between_two_points(pivot_pos, pallet_arm_bend_start)
@@ -1983,8 +1983,8 @@ class GrasshopperEscapement:
         '''
         arm = cq.Workplane("XY").tag("base").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
 
-        line_pivot_to_nib = Line(pivot_pos, anotherPoint=nib_pos)
-        line_nib_to_escape_wheel = Line(nib_pos, anotherPoint=self.geometry["O"])
+        line_pivot_to_nib = Line(pivot_pos, another_point=nib_pos)
+        line_nib_to_escape_wheel = Line(nib_pos, another_point=self.geometry["O"])
         distance_to_nib = distance_between_two_points(nib_pos, pivot_pos)
         #I want this to be longer so the counterweight works better, but any larger than this and the entry arm will clash with any extra rod that stick through the frame
         distance_to_counterweight = distance_to_nib * 0.4
@@ -2010,7 +2010,7 @@ class GrasshopperEscapement:
 
         nib_bend_r = (distance_to_nib - distance_between_two_points(pivot_pos, arm_bend_start))
 
-        line_along_arm = Line(pivot_pos, anotherPoint=arm_bend_start)
+        line_along_arm = Line(pivot_pos, another_point=arm_bend_start)
         arm_angle = line_along_arm.get_angle()
 
         nib_base = np.add(nib_pos, polar(nib_tangent_angle + math.pi / 2, nib_base_end_r))
@@ -2712,7 +2712,7 @@ class FancyPendulum(Pendulum):
                 pillar_top = cq.Workplane("XY").add(cq.Solid.makeCone(radius1=pillar_top_r, radius2=pillar_r, height=pillar_top_height)).translate(pos).translate((0,0, self.wall_thick))
 
                 #chop out the uneeded bits
-                line_to_screw = Line((0,0), anotherPoint=pos)
+                line_to_screw = Line((0,0), another_point=pos)
                 top_outer = np_to_set(np.multiply(line_to_screw.dir, self.bob_r))
                 top = (0, self.bob_r)
                 pillar_top_cutter = cq.Workplane("XY").lineTo(top_outer[0], top_outer[1]).lineTo(top[0], top[1]).close().extrude(pillar_top_height).translate((0,0,self.wall_thick))
