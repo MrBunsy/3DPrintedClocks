@@ -344,12 +344,12 @@ class SimpleClockPlates:
 
     def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
-                 pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False,escapement_on_back=False, chain_through_pillar_required=True,
+                 pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1,
-                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, compact_zigzag=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
+                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, zigzag_side=True, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=False):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=False):
         '''
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -438,8 +438,8 @@ class SimpleClockPlates:
         anglesFromChain = None
 
         self.gear_train_layout=gear_train_layout
-        #TODO scrap this, add more gear train layouts instead of insane numbers of modifiers to the compact layout
-        self.compact_zigzag = compact_zigzag
+        #which side should the zigzag start?
+        self.zigzag_side = zigzag_side
 
         #to print on the back
         self.name = name
@@ -1263,7 +1263,7 @@ class SimpleClockPlates:
         else:
             centre_wheel_pos = positions_relative[1] = (0, self.going_train.get_arbor_with_conventional_naming(0).distance_to_next_arbor)
 
-        # if self.compact_zigzag:
+        # if self.compact_zigzag_side:
         #     on_side *= -1
 
         '''
@@ -1514,12 +1514,12 @@ class SimpleClockPlates:
             if self.going_train.get_arbor_with_conventional_naming(self.going_train.powered_wheels + 1).pinion_extension > 0:
                 skip_pinion_spaces.append(self.going_train.powered_wheels + 2)
 
-            positions_relative = self.get_compact_bearing_positions_2d_configable(centred_arbors=centred_arbors, skip_pinion_spaces=skip_pinion_spaces)
+            positions_relative = self.get_compact_bearing_positions_2d_configable(centred_arbors=centred_arbors, skip_pinion_spaces=skip_pinion_spaces, start_on_right=self.zigzag_side)
             self.calculate_angles_from_bearing_positions(positions_relative)
 
         elif self.gear_train_layout == GearTrainLayout.COMPACT:
 
-            positions_relative = self.get_compact_bearing_positions_2d()
+            positions_relative = self.get_compact_bearing_positions_2d(start_on_right=self.zigzag_side)
             self.calculate_angles_from_bearing_positions(positions_relative)
 
 
@@ -2907,8 +2907,11 @@ class SimpleClockPlates:
 
         return pillar
 
+    def get_top_pillar_positions(self, for_standoff=False):
+        return self.top_pillar_positions[:]
+
     def get_standoff_pillars(self, top=True):
-        pillar_positions = self.top_pillar_positions if top else self.bottom_pillar_positions
+        pillar_positions = self.get_top_pillar_positions(for_standoffs=True) if top else self.bottom_pillar_positions
         plate_thick = self.get_plate_thick(standoff=True)
 
         standoff = cq.Workplane("XY")
@@ -3868,8 +3871,10 @@ class MantelClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
-                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False):
+                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, zig_zag_side=True):
         self.symetrical = symetrical
+        # bit of a bodge, if we're symetric but the pillars aren't symetric, which one is in the "wrong" place?
+        self.relocated_top_pillar = -1
         #if we've got the moon sticking out the top, can arrange the pillars in such a way that we'rea taller
         self.can_be_extra_tall = (moon_complication is not None) or prefer_tall
         if fixing_screws is None:
@@ -3880,7 +3885,7 @@ class MantelClockPlates(SimpleClockPlates):
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=fixing_screws,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, zigzag_side=zig_zag_side, screws_from_back=screws_from_back,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
                          standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
                          split_detailed_plate=split_detailed_plate)
@@ -3890,6 +3895,8 @@ class MantelClockPlates(SimpleClockPlates):
         # self.moon_holder_wide = self.plate_width*1.5
         self.mat_thick = 4
         self.little_plate_for_pawl = False
+
+
 
         self.little_arm_to_motion_works = False
 
@@ -3951,6 +3958,21 @@ class MantelClockPlates(SimpleClockPlates):
     def get_plate_shape(self):
         return PlateShape.MANTEL
 
+    def get_top_pillar_positions(self, for_standoffs=True):
+
+        if not for_standoffs:
+            return self.top_pillar_positions[:]
+        else:
+            #pretend symetric
+            pillar_positions = self.top_pillar_positions[:]
+            if self.relocated_top_pillar >= 0:
+                other = 1 if self.relocated_top_pillar == 0 else 0
+                # bodge for a clock with a seconds hand where the top right pillar clashes, pretend it's mirrored
+                pillar_positions[self.relocated_top_pillar] = (-pillar_positions[other][0], pillar_positions[other][1])
+
+            return pillar_positions
+
+
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
         current plan: asymetric to be compact, with anchor arbor sticking out the top above the topmost pillar
@@ -3968,6 +3990,9 @@ class MantelClockPlates(SimpleClockPlates):
 
         self.bottom_pillar_positions = []
         self.top_pillar_positions = []
+
+
+
         self.bottom_pillar_r = self.plate_width/2
         self.top_pillar_r = self.min_plate_width/2
         if self.pillar_style is not PillarStyle.SIMPLE:
@@ -3978,7 +4003,7 @@ class MantelClockPlates(SimpleClockPlates):
             '''
             fairly specific case - spring powered with second hand
             '''
-
+            side = 1 if self.zigzag_side else -1
             # make as short as possible
             y = self.bearing_positions[0][1] - self.arbors_for_plate[0].get_max_radius() - self.small_gear_gap + self.bottom_pillar_r
 
@@ -3987,21 +4012,41 @@ class MantelClockPlates(SimpleClockPlates):
             self.bottom_pillar_positions = sorted(self.bottom_pillar_positions, key=lambda p:p[0])
 
             # between powered wheels or under escape wheel?
-            possible_top_rights = [get_point_two_circles_intersect(self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.top_pillar_r + self.small_gear_gap,
+            possible_top_offset_pillar = [get_point_two_circles_intersect(self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.top_pillar_r + self.small_gear_gap,
                                                                    self.bearing_positions[2][:2], self.arbors_for_plate[2].get_max_radius() + self.top_pillar_r + self.small_gear_gap,
-                                                                   in_direction=(1, 0)),
+                                                                   in_direction=(side, 0)),
                                    get_point_two_circles_intersect(self.bearing_positions[-2][:2], self.arbors_for_plate[1].get_max_radius() + self.top_pillar_r + self.small_gear_gap,
                                                                    self.bearing_positions[2][:2], self.arbors_for_plate[2].get_max_radius() + self.top_pillar_r + self.small_gear_gap,
-                                                                   in_direction=(1, 0))
+                                                                   in_direction=(side, 0))
                                    ]
-            top_right = possible_top_rights[0] if possible_top_rights[0][0] < possible_top_rights[1][0] else possible_top_rights[1]
+            if self.zigzag_side:
+                #prefer right hand side
+                top_offset_pillar = possible_top_offset_pillar[0] if possible_top_offset_pillar[0][0] < possible_top_offset_pillar[1][0] else possible_top_offset_pillar[1]
+                self.relocated_top_pillar = 1
+            else:
+                #left hand side
+                top_offset_pillar = possible_top_offset_pillar[0] if possible_top_offset_pillar[0][0] > possible_top_offset_pillar[1][0] else possible_top_offset_pillar[1]
+                self.relocated_top_pillar = 0
 
-            right_line = Line(self.bottom_pillar_positions[1], another_point=top_right)
-            left_line = Line(self.bottom_pillar_positions[0], direction=(-right_line.dir[0], right_line.dir[1]))
-            points = left_line.intersection_with_circle(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius() + self.top_pillar_r + self.small_gear_gap)
-            top_left = points[0] if points[0][1] > points[1][1] else points[1]
 
-            self.top_pillar_positions = [top_left, top_right]
+
+
+            if self.zigzag_side:
+                right_line = Line(self.bottom_pillar_positions[1], another_point=top_offset_pillar)
+                left_line = Line(self.bottom_pillar_positions[0], direction=(-right_line.dir[0], right_line.dir[1]))
+
+                points = left_line.intersection_with_circle(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius() + self.top_pillar_r + self.small_gear_gap)
+                top_left = points[0] if points[0][1] > points[1][1] else points[1]
+
+                self.top_pillar_positions = [top_left, top_offset_pillar]
+            else:
+                left_line = Line(self.bottom_pillar_positions[0], another_point=top_offset_pillar)
+                right_line = Line(self.bottom_pillar_positions[1], direction=(-left_line.dir[0], left_line.dir[1]))
+
+                points = right_line.intersection_with_circle(self.bearing_positions[3][:2], self.arbors_for_plate[3].get_max_radius() + self.top_pillar_r + self.small_gear_gap)
+                top_right = points[0] if points[0][1] > points[1][1] else points[1]
+
+                self.top_pillar_positions = [top_offset_pillar, top_right]
             return
 
         a = self.bearing_positions[self.going_train.powered_wheels + 1][:2]
@@ -4055,17 +4100,17 @@ class MantelClockPlates(SimpleClockPlates):
             # ]
             #probably only works when there's no second hand
             # top_left = np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.55), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r)))
-            top_right = (-top_left[0], top_left[1])
+            top_offset_pillar = (-top_left[0], top_left[1])
             min_distance = self.arbors_for_plate[-2].get_max_radius() + 1 + self.top_pillar_r
-            if self.clashes_with_wheel(top_right, self.top_pillar_r):
+            if self.clashes_with_wheel(top_offset_pillar, self.top_pillar_r):
                 #this would clash with something, probably escape wheel
-                right_line = Line(top_right, another_point=self.bottom_pillar_positions[1])
+                right_line = Line(top_offset_pillar, another_point=self.bottom_pillar_positions[1])
                 #hacky, line uses another_point so by default the intersection will only look for between start and another_point
-                top_right = right_line.intersection_with_circle(self.bearing_positions[-2][:2], min_distance)[0]
+                top_offset_pillar = right_line.intersection_with_circle(self.bearing_positions[-2][:2], min_distance)[0]
 
 
 
-            self.top_pillar_positions = [top_left, top_right]
+            self.top_pillar_positions = [top_left, top_offset_pillar]
 
 
         else:
@@ -4109,10 +4154,7 @@ class MantelClockPlates(SimpleClockPlates):
         #     next_pillar_pos = pillar_positions[(pillar + 1)% len(pillar_positions)]
         #
 
-        top_pillar_positions = self.top_pillar_positions[:]
-        if self.symetrical:
-            #bodge for a clock with a seconds hand where the top right pillar clashes, pretend it's mirrored
-            top_pillar_positions[1] = (-top_pillar_positions[0][0], top_pillar_positions[0][1])
+        top_pillar_positions = self.get_top_pillar_positions(for_standoffs=True)
 
         #link up the side pillars with each other
         for side in [0,1]:
@@ -4143,8 +4185,18 @@ class MantelClockPlates(SimpleClockPlates):
         #barrel to minute wheel
         plate = plate.union(get_stroke_line([self.bearing_positions[0][:2], self.bearing_positions[self.going_train.powered_wheels][:2]], wide=medium_arm_wide, thick=plate_thick))
 
+        left_line = Line(self.bottom_pillar_positions[0], another_point=top_pillar_positions[0])
+        right_line = Line(self.bottom_pillar_positions[1], another_point=top_pillar_positions[1])
+
+
+
+        cross_support_line = Line(self.bearing_positions[1][:2], another_point=self.bearing_positions[self.going_train.powered_wheels+1][:2])
+
+        left_point = left_line.intersection(cross_support_line)
+        right_point = right_line.intersection(cross_support_line)
+
         #across the front of the plate
-        plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels+1][:2], self.bearing_positions[1][:2]], wide=medium_arm_wide, thick=plate_thick))
+        plate = plate.union(get_stroke_line([left_point, right_point], wide=medium_arm_wide, thick=plate_thick))
 
         #idea - 3 thin arms all linking to the second hand arbor? medium from barrel to minute wheel, thick just for the edges
         links = [self.bearing_positions[self.going_train.powered_wheels][:2],
@@ -4290,6 +4342,10 @@ class MantelClockPlates(SimpleClockPlates):
         '''
         return []
 
+    # def get_standoff_pillars(self, top=True):
+    #     pillar_positions = self.get_top_pillar_positions(real=False)
+
+
     def get_wall_standoff(self, top=True, for_printing=True):
         '''
         not really a wall standoff, but the bit that holds the pendulum at the top
@@ -4300,8 +4356,10 @@ class MantelClockPlates(SimpleClockPlates):
         width = self.top_pillar_r*2
 
         plate_thick = self.get_plate_thick(standoff=True)
+        pillar_positions = self.get_top_pillar_positions(for_standoffs=True)
+
         #to match the plate
-        standoff = get_stroke_line([self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]], wide=width, thick=plate_thick)
+        standoff = get_stroke_line([pillar_positions[0], self.bearing_positions[-1][:2], pillar_positions[1]], wide=width, thick=plate_thick)
         clockwise = True
 
         if not self.standoff_pillars_separate:
@@ -4317,6 +4375,22 @@ class MantelClockPlates(SimpleClockPlates):
         standoff = standoff.cut(self.get_fixing_screws_cutter())
 
         return standoff
+
+    def get_fixing_screws_cutter(self):
+
+        cutter = super().get_fixing_screws_cutter()
+
+        if self.symetrical and self.relocated_top_pillar >=0:
+            #plates and back cock are symetric, but one of the pillars isn't
+            #this will split the pillar so the back cock still has two mini pillars in the usual place
+            top_pillars=self.get_top_pillar_positions(for_standoffs=True)
+            relocated = top_pillars[self.relocated_top_pillar]
+            bottom_nut_base_z, top_nut_base_z, bottom_nut_hole_height, top_nut_hole_height = self.get_fixing_screw_nut_info()
+            cutter = cutter.union(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(self.back_plate_from_wall + self.get_plate_thick(back=True))
+                                .translate((relocated[0], relocated[1], bottom_nut_base_z)))
+            cutter = cutter.union(self.fixing_screws.get_nut_cutter().translate((relocated[0], relocated[1], bottom_nut_base_z)))
+
+        return cutter
 
     def get_mat(self):
         '''
@@ -4394,6 +4468,45 @@ class MantelClockPlates(SimpleClockPlates):
 
         return pillar
 
+class RoundMantelClockPlates(MantelClockPlates):
+    '''
+    requires second hand and 4 wheel train to work
+
+    this experiment doesn't work - the anchor will crash into the penultimate wheel and there's no-where to put the right hand pillar
+    parking for now
+    '''
+    def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", dial=None,
+                 motion_works_angle_deg=-1, layer_thick=LAYER_THICK, escapement_on_front=False,
+                 style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, fixing_screws=None, embed_nuts_in_plate=True,
+                 plaque = None, vanity_plate_radius=-1, split_detailed_plate=False):
+
+        if going_train.wheels != 4:
+            raise NotImplementedError("Round mantel clock plates built around a 4 wheel train with a second hand on the penultimate wheel")
+
+        super().__init__(going_train, motion_works, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+                         pendulum_sticks_out=pendulum_sticks_out, name=name,
+                         fixing_screws=fixing_screws,
+                         centred_second_hand=False, dial=dial,
+                         second_hand=True, motion_works_angle_deg=motion_works_angle_deg, screws_from_back=None,
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
+                         standoff_pillars_separate = True, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
+                         split_detailed_plate=split_detailed_plate, symetrical=True)
+
+    def get_compact_bearing_positions_2d(self, start_on_right=True):
+        positions_relative = super().get_compact_bearing_positions_2d(start_on_right)
+        #make last two same distance from penultimate wheel
+        top_circle_centre = positions_relative[-3]
+        top_circle_r = self.going_train.get_arbor_with_conventional_naming(-3).distance_to_next_arbor
+        #bring anchor down lower
+        positions_relative[-1] = (positions_relative[-3][0], positions_relative[-3][1] + top_circle_r)
+
+        dir = 1 if start_on_right else -1
+
+        positions_relative[-2] = get_point_two_circles_intersect(top_circle_centre, top_circle_r,
+                                                                 positions_relative[-1], self.going_train.get_arbor_with_conventional_naming(-2).distance_to_next_arbor,
+                                                                 in_direction=(dir,0))
+        return positions_relative
+
 class RoundClockPlates(SimpleClockPlates):
     '''
     Plan for a traditional-ish movement shape on legs, so the pendulum will be visible below the dial.
@@ -4426,7 +4539,7 @@ class RoundClockPlates(SimpleClockPlates):
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
-                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, compact_zigzag=True, screws_from_back=None,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, zigzag_side=True, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
                          anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel, escapement_on_back=escapement_on_back)
@@ -5506,7 +5619,7 @@ class RollingBallClock(SimpleClockPlates):
         #                  pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
         #                  pendulum_at_front=False, back_plate_from_wall=0, fixing_screws=MachineScrew(4, countersunk=True),
         #                  centred_second_hand=False, pillars_separate=True, dial=None, bottom_pillars=2, top_pillars=2,
-        #                  second_hand=second_hand, motion_works_angle_deg=math.pi, endshake=1.5, compact_zigzag=True, screws_from_back=None,
+        #                  second_hand=second_hand, motion_works_angle_deg=math.pi, endshake=1.5, compact_zigzag_side=True, screws_from_back=None,
         #                  layer_thick=layer_thick)
         #
         # self.narrow_bottom_pillar=False
@@ -5760,7 +5873,7 @@ class StrikingClockPlates(SimpleClockPlates):
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, compact_zigzag=True, screws_from_back=screws_from_back,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, zigzag_side=True, screws_from_back=screws_from_back,
                          layer_thick=layer_thick)
 
 class SlideWhistlePlates:

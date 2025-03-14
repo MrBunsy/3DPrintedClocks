@@ -40,13 +40,13 @@ clock_out_dir= "out"
 #dial sizes will be overriden
 dial_d=210
 dial_width = dial_d*0.15
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
-            outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.LINES_RECT)
-# dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
-#             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
+# dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
+#             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.LINES_RECT)
+dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
+            outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
 hands = Hands(style=HandStyle.SPADE, minute_fixing="square", length=dial_d/2, outline=1, chunky=False, outline_same_as_body=False)
 
-assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial, second_hand=True, prefer_tall=False)
+assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial, second_hand=True, prefer_tall=False, zig_zag_side=False)
 
 
 plate_colours=[Colour.DARKGREY, Colour.BRASS, Colour.BRASS]#[Colour.DARK_GREEN, Colour.BRASS, Colour.BRASS]
