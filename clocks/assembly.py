@@ -16,7 +16,8 @@ class Assembly:
 
     currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
-    def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None, with_mat=False, name="clock", specific_instructions=None):
+    def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None, with_mat=False, name="clock", specific_instructions=None,
+                 key_angle_deg = 0):
         self.plates = plates
         self.hands = hands
         self.dial= plates.dial
@@ -190,7 +191,7 @@ class Assembly:
         if key is not None:
             key_model = key.get_assembled()
             #put the winding key on the end of the key shape, should be most simple way of getting it in the right place!
-            self.key_model = key_model.translate(
+            self.key_model = key_model.rotate((0,0,0), (0,0,1), key_angle_deg).translate(
                 (self.plates.bearing_positions[0][0],
                  self.plates.bearing_positions[0][1],
                  self.front_of_clock_z + self.plates.key_length )#+ self.plates.endshake / 2 # not sure why I used to add endshake to leave a gap

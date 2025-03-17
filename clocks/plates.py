@@ -4198,10 +4198,11 @@ class MantelClockPlates(SimpleClockPlates):
         #across the front of the plate
         plate = plate.union(get_stroke_line([left_point, right_point], wide=medium_arm_wide, thick=plate_thick))
 
+        link_pillar_index = 0 if self.zigzag_side else 1
         #idea - 3 thin arms all linking to the second hand arbor? medium from barrel to minute wheel, thick just for the edges
         links = [self.bearing_positions[self.going_train.powered_wheels][:2],
                  self.bearing_positions[self.going_train.powered_wheels+3][:2],
-                 self.top_pillar_positions[0]
+                 top_pillar_positions[link_pillar_index]
                  ]
         for link_pos in links:
             plate = plate.union(get_stroke_line([self.bearing_positions[self.going_train.powered_wheels + 2][:2], link_pos], wide=small_arm_wide, thick=plate_thick))
@@ -4212,6 +4213,12 @@ class MantelClockPlates(SimpleClockPlates):
                      ]
             for link_pos in links:
                 plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], link_pos], wide=small_arm_wide, thick=plate_thick))
+
+        if self.symetrical and self.second_hand and back:
+            pillar_index = 1 if self.zigzag_side else 0
+            #tidy up the escape wheel bearing holder
+            plate = plate.union(get_stroke_line([top_pillar_positions[pillar_index], self.bearing_positions[-2][:2]], wide=main_arm_wide, thick=plate_thick))
+
 
         for i, pos in enumerate(self.bearing_positions):
 

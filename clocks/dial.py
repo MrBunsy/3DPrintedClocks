@@ -1417,7 +1417,8 @@ class Dial:
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
-                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2, raised_detail=False):
+                 minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2, raised_detail=False,
+                 seconds_dial_width=-1):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -1465,6 +1466,7 @@ class Dial:
 
         #if -1 this will be overriden in configure_dimensions to the default of 0.1*diameter
         self.dial_width = dial_width
+        self.seconds_dial_width = seconds_dial_width
         #backwards compatibiltiy with things that relied on teh minimum dial width being 15mm:
         hacky_default_support_d = 5
         if self.dial_width < 0:
@@ -1573,8 +1575,8 @@ class Dial:
         if self.style == DialStyle.TONY_THE_CLOCK:
             self.inner_r = self.hand_hole_d/2
             self.dial_width = self.outside_d/2 - self.inner_r
-
-        self.seconds_dial_width = self.dial_width * 0.3  # self.second_hand_mini_dial_d * 0.4
+        if self.seconds_dial_width < 0:
+            self.seconds_dial_width = self.dial_width * 0.3  # self.second_hand_mini_dial_d * 0.4
 
         self.dial_detail_from_edges = self.outside_d * 0.01
         self.seconds_dial_detail_from_edges = self.dial_detail_from_edges * 0.75
@@ -2046,7 +2048,7 @@ class Dial:
         elif self.seconds_style == DialStyle.LINES_RECT:
             dial = self.get_lines_detail(outer_r=outer_r, dial_width=width, from_edge=self.seconds_dial_detail_from_edges, thick_indicators=False)
         elif self.seconds_style == DialStyle.CONCENTRIC_CIRCLES:
-            dial = self.get_concentric_circles_detail(self.second_hand_mini_dial_d / 2, self.seconds_dial_width, self.seconds_dial_detail_from_edges, thick_fives=False)
+            dial = self.get_concentric_circles_detail(self.second_hand_mini_dial_d / 2, dial_width=self.seconds_dial_width, from_edge=self.seconds_dial_detail_from_edges, thick_fives=False)
         else:
             dial = self.get_style_for_dial(style=self.seconds_style, outer_r=outer_r, width=width, detail_from_edges=from_edge)
         if dial is not None:

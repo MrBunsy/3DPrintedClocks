@@ -1113,7 +1113,7 @@ class BearingInfo:
     '''
 
     def __init__(self, outer_d=10, height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d=-1, inner_safe_d_at_a_push=-1,
-                 flange_thick=0, flange_diameter=0, cutter_wiggle_room=0.1):
+                 flange_thick=0.0, flange_diameter=0.0, cutter_wiggle_room=0.1):
         self.outer_d = outer_d
         self.height = height
         self.inner_d = inner_d
@@ -1165,6 +1165,10 @@ class BearingInfo:
 
     def __str__(self):
         return self.get_string()
+
+BEARING_10x15x4_FLANGED = BearingInfo(outer_d=15, inner_d=10, height=4, flange_diameter=16.5, flange_thick=0.8, inner_safe_d=10+1.5)#TODO inner safe measuremnts
+BEARING_10x15x4 = BearingInfo(outer_d=15, inner_d=10, height=4, inner_safe_d=10+1.5)#TODO inner safe measuremnts
+
 
 BEARING_12x18x4_FLANGED = BearingInfo(outer_d=18, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
 BEARING_12x18x4_THIN = BearingInfo(outer_d=18, inner_d=12, height=4, outer_safe_d=15, inner_safe_d=13, inner_safe_d_at_a_push=14)
