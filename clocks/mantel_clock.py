@@ -45,10 +45,11 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     escapement = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
     barrel_gear_thick = 5
 
-    power = SpringBarrel(pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi / 4, base_thick=barrel_gear_thick,
-                         style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING)
     # power = SpringBarrel(pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi / 4, base_thick=barrel_gear_thick,
-    #                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4)
+    #                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING)
+    #this looks plausible, but not sure I want to push my luck
+    power = SpringBarrel(pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi / 4, base_thick=barrel_gear_thick,
+                         style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4)
 
     train = GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
                              runtime_hours=8 * 24, support_second_hand=second_hand, escape_wheel_pinion_at_front=False, powered_wheel=power)
@@ -61,7 +62,7 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
         # 2/3s with second hand with 36 teeth
         train.set_ratios([[75, 9], [72, 10], [55, 22]])
         pinion_extensions =  {0: 1, 1: 15, 2: 0}
-        module_sizes = [0.95, 0.9, 0.9]
+        module_sizes = [0.8, 0.75, 0.75]
     else:
         #2/3s without second hand with 30 teeth
         train.set_ratios([[72, 10], [70, 12], [60, 14]])
@@ -76,7 +77,7 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     back_plate_from_wall=30
 
 
-    powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
+    powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
 
 
 
@@ -89,11 +90,11 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
     
-    dial_d=205
+    dial_d=175#205
     dial_width=25
     seconds_dial_width = 7
     if second_hand:
-        dial_width=31.5#32.5
+        dial_width=30#31.5#32.5
 
     moon_radius=13
 
@@ -141,10 +142,10 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
         hand_style = HandStyle.SPADE
         hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                         length=dial.outside_d*0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-                        second_length=dial.second_hand_mini_dial_d * 0.45 if second_hand else 1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
+                        second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width/2 if second_hand else 1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
     else:
         hands.configure_motion_works(motion_works)
-        hands.configure_length(dial.outside_d*0.5 - dial_width/2)
+        hands.configure_length(dial.outside_d*0.5 - dial_width/2, second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width/2 if second_hand else 1)
 
     
     

@@ -44,7 +44,7 @@ dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialS
             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
 # dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
 #             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
-hands = Hands(style=HandStyle.SPADE, minute_fixing="square", length=dial_d/2, outline=1, chunky=False, outline_same_as_body=False)
+hands = Hands(style=HandStyle.SWORD, minute_fixing="square", length=dial_d/2, outline=1, chunky=False, outline_same_as_body=False)
 
 plaque = Plaque(text_lines=["Mantel 34#0", "L.Wallin 2024"])
 

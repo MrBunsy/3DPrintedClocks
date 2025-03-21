@@ -1492,11 +1492,13 @@ class SpringBarrel:
         screwhole_r = self.spring_hook_screws.get_diameter_for_die_cutting()/2
         #the die cutting never really worked, and printing with 0.6 nozzle not convinced it's helpful.
         screwhole_r = self.spring_hook_screws.get_rod_cutter_r()
-        screwhole = cq.Workplane("XY").circle(screwhole_r).extrude(self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
+        # screwhole = cq.Workplane("XY").circle(screwhole_r).extrude(self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
+        # I think at one time I wanted this to not go all the way through. Now it just goes all the way through.
+        screwhole = self.spring_hook_screws.get_cutter(self_tapping=True, length=self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
         screwhole = screwhole.translate(((self.barrel_height - self.internal_endshake)/2, 0, 0))
         arbor = arbor.cut(screwhole)
 
-        #screwhole for ratchet collet TODO
+        #screwhole for ratchet collet
         top_z = self.key_containing_diameter - self.cutoff_height*2
         ratchet_screwhole_x = []
         if self.ratchet_at_back:

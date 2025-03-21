@@ -213,8 +213,9 @@ def get_diameter_for_die_cutting(M, sideways=False):
     if M == 2:
         return 1.6
     if M == 3:
-        if sideways:
-            return 2.75
+        # don't think we want this with the new self tapping mechanism?
+        # if sideways:
+        #     return 2.75
         return 2.5
     if M == 4:
         return 3.3
@@ -349,8 +350,13 @@ class MachineScrew:
 
         previously pan heads provided a cutter to fit the head into. but I don't think I ever actually used this and now this does not happen
         only countersunk screws have a space for the head included in the cutter
-        for_tap_die - DEPRECATED - intended to be able to cut a thread with a real tap die. didn't really work at m3
+
         self_tapping: using an idea from a youtube video, add three nubs so the thread has something to bite and form a strong join without being too hard to screw
+
+        sideways: DEPRECATED. no longer does anything
+
+        ignore_head - this is just a cutter for the rod
+        space_for_pan_head: include a sunken space for the pan head
         '''
 
         if length < 0:
@@ -1166,8 +1172,8 @@ class BearingInfo:
     def __str__(self):
         return self.get_string()
 
-BEARING_10x15x4_FLANGED = BearingInfo(outer_d=15, inner_d=10, height=4, flange_diameter=16.5, flange_thick=0.8, inner_safe_d=10+1.5)#TODO inner safe measuremnts
-BEARING_10x15x4 = BearingInfo(outer_d=15, inner_d=10, height=4, inner_safe_d=10+1.5)#TODO inner safe measuremnts
+BEARING_10x15x4_FLANGED = BearingInfo(outer_d=15, inner_d=10, height=4, flange_diameter=16.5, flange_thick=0.8, inner_safe_d=10+1.5, outer_safe_d=12)#TODO safe measuremnts
+BEARING_10x15x4 = BearingInfo(outer_d=15, inner_d=10, height=4, inner_safe_d=10+1.5, outer_safe_d=12)#TODO safe measuremnts
 
 
 BEARING_12x18x4_FLANGED = BearingInfo(outer_d=18, inner_d=12, height=4, flange_thick=0.8, flange_diameter=19.5, outer_safe_d=15, inner_safe_d=13.5, inner_safe_d_at_a_push=14)
@@ -1202,6 +1208,8 @@ def get_bearing_info(innerD):
     if innerD == 6:
         # these are really chunky, might need to get some which are less chunky. Not actually used in a print yet
         return BearingInfo(outer_d=19, outer_safe_d=12, height=6, inner_d=6, inner_safe_d=8, cutter_wiggle_room=0.2)
+    if innerD == 10:
+        return BEARING_10x15x4
     if innerD == 12:
         # 12x21x5
         return BEARING_12x21x5
