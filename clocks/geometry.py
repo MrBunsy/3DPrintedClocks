@@ -73,7 +73,7 @@ def get_stroke_arc(from_pos, to_pos, radius, wide, thick, style=StrokeStyle.ROUN
 
 
     #sagitta to work out where the centre should be
-    l = distance_between_two_points(from_pos, to_pos)
+    l = get_distance_between_two_points(from_pos, to_pos)
     # if radius**2 - 0.25*l**2 < 0:
     #     #assume aproximately zero and that this is a quarter of a circle (bold assumption)
     #     s = radius
@@ -349,7 +349,7 @@ def get_point_two_circles_intersect(pos0, distance0, pos1, distance1, anticlockw
     #putting into standard form for cosine rule
     c = distance1
     a = distance0
-    b = distance_between_two_points(pos0, pos1)
+    b = get_distance_between_two_points(pos0, pos1)
 
     #cosine rule
     angle = math.acos((a**2 + b**2 - c**2)/(2*a*b))

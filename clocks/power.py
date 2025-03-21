@@ -1189,6 +1189,11 @@ class SpringBarrel:
 
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d, thick=self.ratchet_thick, blocks_clockwise=ratchet_blocks_clockwise, click_fixing_angle=self.click_angle, pawl_angle=self.pawl_angle)
 
+    def configure_ratchet_angles(self, click_angle, pawl_angle):
+        self.click_angle = click_angle
+        self.pawl_angle = pawl_angle
+        self.configure_ratchet()
+
     def get_rod_radius(self):
         '''
         get space behind* the powered wheel space so the gear train can fit the minute wheel
@@ -1377,7 +1382,7 @@ class SpringBarrel:
             #offset so it doesn't coincide with the spring hook
             pos = polar((i+0.25 )* math.pi * 2 / self.lid_fixing_screws_count, self.barrel_diameter / 2 + self.wall_thick / 2)
 
-            cutter = cutter.add(self.lid_fixing_screws.get_cutter().rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
+            cutter = cutter.add(self.lid_fixing_screws.get_cutter(self_tapping=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
 
         return cutter
 
@@ -1421,7 +1426,7 @@ class SpringBarrel:
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
         #self.spring_hook_screws.getHeadHeight()
         #trying countersunk screw instead of pan head
-        barrel = barrel.cut(self.spring_hook_screws.get_cutter(self_tapping=True, sideways=True, length=self.barrel_diameter).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
+        barrel = barrel.cut(self.spring_hook_screws.get_cutter(self_tapping=True, sideways=True, length=self.barrel_diameter).rotate((0,0,0),(0,0,1),360/12).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
 
 
 
@@ -1494,7 +1499,7 @@ class SpringBarrel:
         screwhole_r = self.spring_hook_screws.get_rod_cutter_r()
         # screwhole = cq.Workplane("XY").circle(screwhole_r).extrude(self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
         # I think at one time I wanted this to not go all the way through. Now it just goes all the way through.
-        screwhole = self.spring_hook_screws.get_cutter(self_tapping=True, length=self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
+        screwhole = self.spring_hook_screws.get_cutter(self_tapping=True, ignore_head=True, length=self.spring_hook_screws.length - self.cutoff_height - self.spring_hook_space)
         screwhole = screwhole.translate(((self.barrel_height - self.internal_endshake)/2, 0, 0))
         arbor = arbor.cut(screwhole)
 
@@ -4053,7 +4058,8 @@ class TraditionalRatchet:
             if self.pawl_screwed_from_front:
                 click = click.cut(self.fixing_screws.get_cutter().rotate((0,0,0),(1,0,0),180).translate((screwpos[0], screwpos[1], self.pawl_and_click_thick)))
             else:
-                click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pawl_and_click_thick).translate(screwpos))
+                # click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pawl_and_click_thick).translate(screwpos))
+                click = click.cut(self.fixing_screws.get_cutter(self_tapping=True, length=self.pawl_and_click_thick, ignore_head=True).translate(screwpos))
 
         return click
 

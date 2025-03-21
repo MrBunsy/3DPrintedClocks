@@ -766,25 +766,25 @@ class BrocotEscapment(AnchorEscapement):
 
         entry_pallet_start_dir = Line(self.anchor_centre, another_point=self.entry_pallet_start_pos)
         entry_pallet_end_dir = Line(self.anchor_centre, another_point=self.entry_pallet_end_pos)
-        entry_pallet_start_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_start_pos)
-        entry_pallet_end_distance = distance_between_two_points(self.anchor_centre, self.entry_pallet_end_pos)
+        entry_pallet_start_distance = get_distance_between_two_points(self.anchor_centre, self.entry_pallet_start_pos)
+        entry_pallet_end_distance = get_distance_between_two_points(self.anchor_centre, self.entry_pallet_end_pos)
         entry_pallet_end_distance_along_line = np.dot(entry_pallet_start_dir.dir, np.subtract(self.entry_pallet_end_pos,self.anchor_centre))
         self.entry_pallet_r = abs(entry_pallet_start_distance - entry_pallet_end_distance_along_line)
 
         entry_pallet_centre = average_of_two_points(self.entry_pallet_start_pos, self.entry_pallet_end_pos)
         entry_pallet_centre_dir = Line(self.anchor_centre, another_point=entry_pallet_centre)
-        entry_pallet_centre_distance = distance_between_two_points(self.anchor_centre, entry_pallet_centre)
+        entry_pallet_centre_distance = get_distance_between_two_points(self.anchor_centre, entry_pallet_centre)
 
         exit_pallet_start_dir = Line(self.anchor_centre, another_point=self.exit_pallet_start_pos)
         exit_pallet_end_dir = Line(self.anchor_centre, another_point=self.exit_pallet_end_pos)
-        exit_pallet_start_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_start_pos)
-        exit_pallet_end_distance = distance_between_two_points(self.anchor_centre, self.exit_pallet_end_pos)
+        exit_pallet_start_distance = get_distance_between_two_points(self.anchor_centre, self.exit_pallet_start_pos)
+        exit_pallet_end_distance = get_distance_between_two_points(self.anchor_centre, self.exit_pallet_end_pos)
         exit_pallet_distance_along_line = np.dot(exit_pallet_start_dir.dir, np.subtract(self.exit_pallet_end_pos, self.anchor_centre))
         self.exit_pallet_r = abs(exit_pallet_start_distance - exit_pallet_distance_along_line)
 
         exit_pallet_centre = average_of_two_points(self.exit_pallet_start_pos, self.exit_pallet_end_pos)
         exit_pallet_centre_dir = Line(self.anchor_centre, another_point=exit_pallet_centre)
-        exit_pallet_centre_distance = distance_between_two_points(self.anchor_centre, exit_pallet_centre)
+        exit_pallet_centre_distance = get_distance_between_two_points(self.anchor_centre, exit_pallet_centre)
 
         print("entry_pallet_r: {}, exit_pallet_r:{}".format(self.entry_pallet_r, self.exit_pallet_r))
 
@@ -813,7 +813,7 @@ class BrocotEscapment(AnchorEscapement):
 
         if self.style == AnchorStyle.FANCY_BROCOT:
             ruby_holder_outer_r = self.pallet_r+2.5
-            ruby_distance = distance_between_two_points(self.entry_pallet_stone_centre, self.exit_pallet_stone_centre)
+            ruby_distance = get_distance_between_two_points(self.entry_pallet_stone_centre, self.exit_pallet_stone_centre)
             split_arm_r = ruby_distance/2
 
             split_arm_wide = self.radius*0.1
@@ -831,8 +831,8 @@ class BrocotEscapment(AnchorEscapement):
         else:
             arm_wide = self.pallet_r*2 + 4
 
-            distance_to_entry = distance_between_two_points(self.wheel_centre, self.entry_pallet_stone_centre)
-            distance_to_exit = distance_between_two_points(self.wheel_centre, self.exit_pallet_stone_centre)
+            distance_to_entry = get_distance_between_two_points(self.wheel_centre, self.entry_pallet_stone_centre)
+            distance_to_exit = get_distance_between_two_points(self.wheel_centre, self.exit_pallet_stone_centre)
             arm_radius = (distance_to_entry + distance_to_exit)/2
 
             anchor = anchor.union(get_stroke_arc(self.exit_pallet_stone_centre, self.entry_pallet_stone_centre, arm_radius, wide=arm_wide, thick=self.anchor_thick, style=StrokeStyle.ROUND))
@@ -1074,7 +1074,7 @@ class GrasshopperEscapement:
         '''
 
     def get_distance_beteen_arbours(self):
-        return distance_between_two_points(self.geometry["Z"], self.geometry["O"])
+        return get_distance_between_two_points(self.geometry["Z"], self.geometry["O"])
 
     def get_wheel_max_r(self):
         return self.diameter/2
@@ -1263,7 +1263,7 @@ class GrasshopperEscapement:
 
         line_12_intersect_line_7_point = line_12.intersection(line_7_entry_start_of_impulse_action)
 
-        line_12_length = distance_between_two_points(Z, line_12_intersect_line_7_point)
+        line_12_length = get_distance_between_two_points(Z, line_12_intersect_line_7_point)
 
         circle_13_r = line_12_length
 
@@ -1289,8 +1289,8 @@ class GrasshopperEscapement:
         step_three_figure_37 = step_two_figure_36
         step_three_figure_37 = step_three_figure_37.add(cq.Workplane("XY").moveTo(Z[0], Z[1]).circle(circle_14_r))
         #hackery: anotherPoint is the tangent point
-        step_three_figure_37 = step_three_figure_37.add(line_15_end_of_entry_impulse.get2D(distance_between_two_points(line_15_end_of_entry_impulse.start, line_15_end_of_entry_impulse.anotherPoint)))
-        step_three_figure_37 = step_three_figure_37.add(line_16_end_of_exit_impulse.get2D(distance_between_two_points(line_16_end_of_exit_impulse.start, line_16_end_of_exit_impulse.anotherPoint)))
+        step_three_figure_37 = step_three_figure_37.add(line_15_end_of_entry_impulse.get2D(get_distance_between_two_points(line_15_end_of_entry_impulse.start, line_15_end_of_entry_impulse.anotherPoint)))
+        step_three_figure_37 = step_three_figure_37.add(line_16_end_of_exit_impulse.get2D(get_distance_between_two_points(line_16_end_of_exit_impulse.start, line_16_end_of_exit_impulse.anotherPoint)))
 
         # return step_three_figure_37
 
@@ -1460,23 +1460,23 @@ class GrasshopperEscapement:
         #Perfecting the Harrison Twin Pivot Grasshopper Escapement, an older publication from David Heskin, goes into slightly more detail but is slightly different
 
         #K* is where the entry nib comes to rest: "derived from circular arcs through J centred at Z, through K centred at N"
-        circle_around_Z_to_J_r = distance_between_two_points(Z, J_start_of_entry_impulse)
-        circle_around_N_r = distance_between_two_points(K_end_of_entry_impulse, N)
+        circle_around_Z_to_J_r = get_distance_between_two_points(Z, J_start_of_entry_impulse)
+        circle_around_N_r = get_distance_between_two_points(K_end_of_entry_impulse, N)
 
         Kstar_possibilities = get_circle_intersections(Z, circle_around_Z_to_J_r, N, circle_around_N_r)
         #find the one that's nearest to K, not the one that's mirrored on the other size soemwhere
-        Kstar_possibility_distances = [distance_between_two_points(K_end_of_entry_impulse, Kstar) for Kstar in Kstar_possibilities]
+        Kstar_possibility_distances = [get_distance_between_two_points(K_end_of_entry_impulse, Kstar) for Kstar in Kstar_possibilities]
         if Kstar_possibility_distances[0] < Kstar_possibility_distances[1]:
             Kstar = Kstar_possibilities[0]
         else:
             Kstar = Kstar_possibilities[1]
 
         # C* is where the exit nib comes to rest : "derived from circular arcs ... through Dcentred at Z and through C centred at G"
-        circle_around_Z_to_D_r = distance_between_two_points(Z, D_start_of_exit_impulse)
-        circle_around_G_r = distance_between_two_points(G, C_end_of_exit_impulse)
+        circle_around_Z_to_D_r = get_distance_between_two_points(Z, D_start_of_exit_impulse)
+        circle_around_G_r = get_distance_between_two_points(G, C_end_of_exit_impulse)
         Cstar_posibilities = get_circle_intersections(Z, circle_around_Z_to_D_r, G, circle_around_G_r)
 
-        Cstar_possibility_distances = [distance_between_two_points(C_end_of_exit_impulse, Cstar) for Cstar in Cstar_posibilities]
+        Cstar_possibility_distances = [get_distance_between_two_points(C_end_of_exit_impulse, Cstar) for Cstar in Cstar_posibilities]
         if Cstar_possibility_distances[0] < Cstar_possibility_distances[1]:
             Cstar = Cstar_posibilities[0]
         else:
@@ -1489,7 +1489,7 @@ class GrasshopperEscapement:
         diagram_for_points = diagram_for_points.add(line_3.get2D(length=radius))
         diagram_for_points = diagram_for_points.add(line_4.get2D(length=radius))
         diagram_for_points.add(circleAt(Z, text="Z"))
-        diagram_for_points = diagram_for_points.add(line_10.get2D(length=distance_between_two_points((0, 0), Z)))
+        diagram_for_points = diagram_for_points.add(line_10.get2D(length=get_distance_between_two_points((0, 0), Z)))
         diagram_for_points.add(circleAt(J_start_of_entry_impulse, text="J"))
         diagram_for_points.add(circleAt(K_end_of_entry_impulse, text="K"))
         diagram_for_points.add(circleAt(Kstar, text="K*"))
@@ -1600,32 +1600,32 @@ class GrasshopperEscapement:
             assert abs(JOK - half_tooth_angle) < acceptableError, "check 4: Angle JOK should be the angle subtended by half an escape wheel tooth space"
 
         #check 5: JP should equal KN (equal entry pallet arm active lengths at the start and end of impulse).
-        JP = distance_between_two_points(geometry["J"], geometry["P"])
-        KN = distance_between_two_points(geometry["K"], geometry["N"])
+        JP = get_distance_between_two_points(geometry["J"], geometry["P"])
+        KN = get_distance_between_two_points(geometry["K"], geometry["N"])
         if loud:
             print("JP: {}, KN: {}".format(JP, KN))
         if not self.skip_failed_checks:
             assert abs(JP - KN) < acceptableError, "check 5: JP should equal KN (equal entry pallet arm active lengths at the start and end of impulse)."
 
         #check 6: DF should equal CG (equal exit pallet arm active lengths at the start and end of impulse).
-        DF = distance_between_two_points(geometry["D"], geometry["F"])
-        CG = distance_between_two_points(geometry["C"], geometry["G"])
+        DF = get_distance_between_two_points(geometry["D"], geometry["F"])
+        CG = get_distance_between_two_points(geometry["C"], geometry["G"])
         if loud:
             print("DF: {} CG: {}".format(DF, CG))
         if not self.skip_failed_checks:
             assert abs(DF - CG) < acceptableError, "check 6: DF should equal CG (equal exit pallet arm active lengths at the start and end of impulse)."
 
         #check 7: PZ should equal NZ (entry pallet pivot to escapement frame axis at the start and end of impulse).
-        PZ = distance_between_two_points(geometry["P"], geometry["Z"])
-        NZ = distance_between_two_points(geometry["N"], geometry["Z"])
+        PZ = get_distance_between_two_points(geometry["P"], geometry["Z"])
+        NZ = get_distance_between_two_points(geometry["N"], geometry["Z"])
         if loud:
             print("PZ: {}, NZ: {}".format(PZ, NZ))
         if not self.skip_failed_checks:
             assert abs(PZ - NZ) < acceptableError, "check 7: PZ should equal NZ (entry pallet pivot to escapement frame axis at the start and end of impulse)."
 
         #check 8: FZ should equal GZ (exit pallet pivot to escapement frame axis at the start and end of impulse).
-        FZ = distance_between_two_points(geometry["F"], geometry["Z"])
-        GZ = distance_between_two_points(geometry["G"], geometry["Z"])
+        FZ = get_distance_between_two_points(geometry["F"], geometry["Z"])
+        GZ = get_distance_between_two_points(geometry["G"], geometry["Z"])
         if loud:
             print("FZ: {}, GZ: {}".format(FZ, GZ))
         if not self.skip_failed_checks:
@@ -1773,7 +1773,7 @@ class GrasshopperEscapement:
 
         line_entry_end_to_entry_composer_rest = Line(entry_side_end, another_point=entry_composer_rest)
         holder_r = self.screws.metric_thread*1.5
-        arm_to_rest_distance = distance_between_two_points(entry_composer_rest, entry_side_end)
+        arm_to_rest_distance = get_distance_between_two_points(entry_composer_rest, entry_side_end)
         holder_circle_distance = arm_to_rest_distance + (holder_r - self.screws.metric_thread/2)
         holder_circle_centre = np.add(entry_side_end, np.multiply(line_entry_end_to_entry_composer_rest.dir, holder_circle_distance))
         frame = frame.cut(cq.Workplane("XY").moveTo(holder_circle_centre[0], holder_circle_centre[1]).circle(holder_r).extrude(thick))
@@ -1888,7 +1888,7 @@ class GrasshopperEscapement:
         nib_offset_angle = self.nib_offset_angle
 
         line_pivot_to_nib = Line(pivot_pos, another_point=nib_pos)
-        distance_to_nib = distance_between_two_points(nib_pos, pivot_pos)
+        distance_to_nib = get_distance_between_two_points(nib_pos, pivot_pos)
         # distance from pivot that the bend towards the nib starts
         distance_nib_bend_start = distance_to_nib * 0.8
 
@@ -1914,7 +1914,7 @@ class GrasshopperEscapement:
 
         line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
 
-        composer_length = distance_between_two_points(pivot_pos, pallet_arm_bend_start)
+        composer_length = get_distance_between_two_points(pivot_pos, pallet_arm_bend_start)
 
         arm_angle = line_along_arm.get_angle()
 
@@ -1933,7 +1933,7 @@ class GrasshopperEscapement:
         line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
 
         #make a shape which has the pivot_pos at (0,0) and assumes pallet arm is horizontal facing left, then rotate and translate into position
-        composer_length = distance_between_two_points(pivot_pos, pallet_arm_bend_start)
+        composer_length = get_distance_between_two_points(pivot_pos, pallet_arm_bend_start)
 
         screw_position =  (-composer_length, self.composer_height)
         around_screw_r = self.screws.metric_thread / 2 + self.composer_thick
@@ -1985,7 +1985,7 @@ class GrasshopperEscapement:
 
         line_pivot_to_nib = Line(pivot_pos, another_point=nib_pos)
         line_nib_to_escape_wheel = Line(nib_pos, another_point=self.geometry["O"])
-        distance_to_nib = distance_between_two_points(nib_pos, pivot_pos)
+        distance_to_nib = get_distance_between_two_points(nib_pos, pivot_pos)
         #I want this to be longer so the counterweight works better, but any larger than this and the entry arm will clash with any extra rod that stick through the frame
         distance_to_counterweight = distance_to_nib * 0.4
 
@@ -2008,7 +2008,7 @@ class GrasshopperEscapement:
 
         arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
 
-        nib_bend_r = (distance_to_nib - distance_between_two_points(pivot_pos, arm_bend_start))
+        nib_bend_r = (distance_to_nib - get_distance_between_two_points(pivot_pos, arm_bend_start))
 
         line_along_arm = Line(pivot_pos, another_point=arm_bend_start)
         arm_angle = line_along_arm.get_angle()

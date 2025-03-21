@@ -677,7 +677,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
         '''
         #spiral over 2 pi
 
-        distance = distance_between_two_points(centre, tail_end_pos)
+        distance = get_distance_between_two_points(centre, tail_end_pos)
 
         tail_line = Line(centre, another_point=tail_end_pos)
 
@@ -871,7 +871,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
         small_diamond_base_pos = spiral.get_pos(small_diamond_base_angle)
         small_diamond_top_pos = spiral.get_pos(small_diamond_top_angle)
 
-        small_diamond_inner_wide = distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi*2), small_diamond_centre_pos) - inner_diamond_gap
+        small_diamond_inner_wide = get_distance_between_two_points(spiral.get_pos(small_diamond_centre_angle - math.pi * 2), small_diamond_centre_pos) - inner_diamond_gap
         # small_diamond_wide = 3
         small_diamond_line = Line(spiral.start_pos, another_point=small_diamond_centre_pos)
         #makes a wonky diamond
@@ -916,7 +916,7 @@ class FancyFrenchArabicNumbers(CustomFontDrawing):
         big_diamond_top_angle = big_diamond_centre_angle - (small_diamond_span_angle) / 2 - big_diamond_offset_angle
         big_diamond_centre_pos = spiral.get_pos(big_diamond_centre_angle)
         big_diamond_outer_wide = width/2 - big_diamond_centre_pos[0] - self.thin_line_width/2
-        big_diamond_inner_wide = distance_between_two_points(spiral.get_pos(big_diamond_centre_angle - math.pi*2), big_diamond_centre_pos) - inner_diamond_gap
+        big_diamond_inner_wide = get_distance_between_two_points(spiral.get_pos(big_diamond_centre_angle - math.pi * 2), big_diamond_centre_pos) - inner_diamond_gap
         big_diamond_outer_pos = (width / 2, big_diamond_centre_pos[1])
         big_diamond_inner_pos = (big_diamond_centre_pos[0] - big_diamond_inner_wide, big_diamond_centre_pos[1])
         big_diamond_top_pos = spiral.get_pos(big_diamond_top_angle)
@@ -2282,7 +2282,8 @@ class Dial:
             supports = supports.union(support.translate(support_pos))
             for fixing_pos in fixing_pos_set:
                 # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
-                supports = supports.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread / 2).extrude(screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
+                # supports = supports.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread / 2).extrude(screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
+                supports = supports.cut(self.fixing_screws.get_cutter(self_tapping=True, length=screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
 
             if index > -1:
                 #put back in the centre and upright

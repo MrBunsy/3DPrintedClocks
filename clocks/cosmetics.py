@@ -284,7 +284,7 @@ class ChristmasPudding:
 
         for current in range(random.randrange(10,20)):
             pos = (random.uniform(-0.5,0.5)*self.diameter, random.uniform(-0.5,0)*self.diameter)
-            if distance_between_two_points((0, 0), pos) > self.diameter/2 - current_diameter:
+            if get_distance_between_two_points((0, 0), pos) > self.diameter/2 - current_diameter:
                 #outside the pud
                 continue
             current_angle = random.random()*math.pi*2

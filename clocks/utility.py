@@ -496,9 +496,12 @@ def average_of_two_points(a, b):
 #     '''
 #     return
 
-def distance_between_two_points(a, b):
+def get_distance_between_two_points(a, b):
     return math.sqrt(math.pow(a[0] - b[0], 2) + math.pow(a[1] - b[1], 2))
 
+def get_angle_between_two_points(a, b):
+    #angle from a -> b
+    return math.atan2(b[1] - a[1], b[0] - a[0])
 
 def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwise=True):
     '''

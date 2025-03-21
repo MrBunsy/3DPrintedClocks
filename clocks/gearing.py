@@ -140,7 +140,7 @@ class Gear:
                     arm_cutter = get_stroke_line([start,end], wide=arm_thick, thick=cutter_thick)
                 else:
                     # radius = (outer_radius - inner_radius)* 2 *(1 if clockwise else -1)
-                    distance = distance_between_two_points(start, end)
+                    distance = get_distance_between_two_points(start, end)
                     radius = distance * 0.6  *(1 if clockwise else -1)
                     arm_cutter = get_stroke_arc(start, end, radius=radius, wide=arm_thick, thick=cutter_thick)
                 cutter = cutter.cut(arm_cutter)
@@ -380,7 +380,7 @@ class Gear:
 
 
 
-        branchlength = distance_between_two_points(midBranch0, midBranch1) / 2
+        branchlength = get_distance_between_two_points(midBranch0, midBranch1) / 2
 
         branchLengths = [branchlength for branch in branchYs]
         branchAngle = math.pi/3

@@ -48,7 +48,7 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     # power = SpringBarrel(pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi / 4, base_thick=barrel_gear_thick,
     #                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING)
     #this looks plausible, but not sure I want to push my luck
-    power = SpringBarrel(pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi / 4, base_thick=barrel_gear_thick,
+    power = SpringBarrel(pawl_angle=-math.pi * 0.8125, click_angle=-math.pi *0.2125, base_thick=barrel_gear_thick,
                          style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4)
 
     train = GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
@@ -123,10 +123,12 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
                                      cannon_pinion_to_hour_holder_gap_size=0.6)
     
-    motion_works_angle_deg=360-32
+    motion_works_angle_deg=-1
 
     if moon:
         motion_works_angle_deg = 180 + 40
+        # if not zig_zag_side:
+        #     motion_works_angle_deg = 360 - 40
         motion_works.calculate_size(arbor_distance=30)
         moon_complication.set_motion_works_sizes(motion_works)
     
@@ -136,6 +138,8 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
                                      pillar_style=pillar_style, moon_complication=moon_complication, second_hand=second_hand, symetrical=True, pendulum_sticks_out=21,
                                      standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
                                      plaque=plaque, split_detailed_plate=True, prefer_tall=prefer_tall, zig_zag_side=zig_zag_side)
+
+
     print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
     if hands is None:
