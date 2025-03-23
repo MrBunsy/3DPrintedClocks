@@ -29,6 +29,37 @@ from .gearing import GearStyle,Gear
 from .cosmetics import tony_the_clock
 from .types import HandType, HandStyle
 
+def spade_hand(hand_width, length, thick):
+
+    # for the bottom of the spade, not the usual baseR
+    spadeBaseR = length * 0.05 * 2
+
+    spadeTopLength = length * 0.4
+    spadeTipWidth = hand_width * 0.5
+    tipLength = length * 0.1
+
+    # if second:
+    #     spadeTipWidth*=0.9
+
+    # length = length - tipLength - spadeTopLength
+
+    armLength = length - tipLength - spadeTopLength
+
+    midPoint = (spadeBaseR * 0.75, armLength + spadeTopLength * 0.3)
+    tipBase = (spadeTipWidth / 2, armLength + spadeTopLength)
+    tipEndSide = (spadeTipWidth / 2, armLength + spadeTopLength + tipLength)
+    tip = (0, armLength + spadeTopLength + tipLength + spadeTipWidth / 2)
+
+    hand = cq.Workplane("XY").moveTo(0, armLength / 2).rect(hand_width, armLength).extrude(thick)
+
+    hand = hand.union(cq.Workplane("XY").moveTo(0, armLength - spadeBaseR).radiusArc((spadeBaseR, armLength),
+                                                                                        -spadeBaseR) \
+        .tangentArcPoint(midPoint, relative=False) \
+        .tangentArcPoint(tipBase, relative=False).tangentArcPoint(tipEndSide, relative=False).tangentArcPoint(tip,
+                                                                                                              relative=False) \
+        .mirrorY().extrude(thick))
+
+    return hand
 
 
 class HandGenerator:
@@ -61,6 +92,11 @@ class HandGenerator:
     def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, fixing_thick=-1):
         raise NotImplemented()
 
+# class CombinedGenerator(HandGenerator):
+#     def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1, hour_generator=None, minute_generator=None, seconds_generator=None):
+#         '''
+#         Conform to the hand generator interface, but support a mix-and-match
+#         '''
 
 class KnobHands(HandGenerator):
     '''
@@ -677,6 +713,19 @@ class FancyClockHands(HandGenerator):
 
     def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False, fixing_thick=-1):
         hand = cq.Workplane("XY").tag("base")
+
+        return hand
+
+class SmithsPocketWatchHands(HandGenerator):
+
+    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
+        super().__init__(base_r, length, thick, second_base_r, second_thick)
+
+
+    def hour_hand(self, colour=None, thick_override=-1):
+        hand = cq.Workplane("XY").tag("base").circle(self.base_r).extrude(self.thick)
+
+        hand = hand.union(spade_hand())
 
         return hand
 
