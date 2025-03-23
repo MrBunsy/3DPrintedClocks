@@ -923,7 +923,7 @@ class Hands:
             however, over time the second hand became loose and so I ended up clamping it between two nuts. Therefore I'm now going to design it around being
             clamped between two nuts and abandon the standoff
             '''
-            # bearing_standoff_thick = 0
+            bearing_standoff_thick = 0
             # #mega hacky, review if I ever want to try a 2mm arbour for the escape wheel
             # # bearing = get_bearing_info(3)
             # bearing = None
@@ -933,7 +933,7 @@ class Hands:
 
             hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - z_offset).translate((0, 0, z_offset)))
             # try:
-            # hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.secondFixing_d).circle(self.secondFixing_d / 2).extrude(self.secondFixing_thick - bearing_standoff_thick).translate((0,0,self.secondThick)))
+            hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2+1).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - bearing_standoff_thick).translate((0,0,self.second_thick)))
             # if bearing is not None:
             #     hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.inner_safe_d / 2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
             # # except:
@@ -1838,7 +1838,7 @@ class Hands:
         for colour in hands[HandType.SECOND]:
             #relative position of second hand is irrelevant because Hands object doesn't know where to put it, so it's only valid for centred second hand
             #self.second_thick
-            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].rotate((0,0,0),(0,1,0),180).translate((0, 0, self.second_fixing_thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
+            hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].rotate((0,0,0),(0,1,0),180).translate((0, 0, self.second_thick)).rotate((0, 0, 0), (0, 0, 1), secondAngle)
 
             if self.second_hand_centred:
                 hands[HandType.SECOND][colour] = hands[HandType.SECOND][colour].translate((0, 0, self.thick * 2 + gap_size + second_gap_size))

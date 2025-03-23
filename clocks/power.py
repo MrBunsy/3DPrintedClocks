@@ -2116,6 +2116,7 @@ class WindingKeyBase:
         return [
             BillOfMaterials.PrintedPart("key", self.get_key(for_printing=True)),
             BillOfMaterials.PrintedPart("handle", self.get_handle(for_printing=True)),
+
         ]
 class WindingKey(WindingKeyBase):
     '''
@@ -2160,6 +2161,11 @@ class WindingKey(WindingKeyBase):
                 self.key_grip_wide = self.max_radius*2
 
         self.screw = MachineScrew(3, countersunk=True)
+
+    def get_printed_parts(self):
+        parts = super().get_printed_parts()
+        parts += [BillOfMaterials.PrintedPart("let_down_key", self.get_let_down_adapter())]
+        return parts
 
     def get_BOM(self):
         bom = BillOfMaterials("Winding key")

@@ -117,6 +117,8 @@ def get_washer_diameter(metric_thread):
 def get_washer_thick(metric_thread):
     if metric_thread == 3:
         return WASHER_THICK_M3
+    if metric_thread == 4:
+        return 0.75
     raise NotImplementedError("TODO add more washer dimensions")
 
 def get_nut_containing_diameter(metric_thread, wiggleRoom=0, thumb=False):

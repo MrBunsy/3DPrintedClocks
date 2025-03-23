@@ -2907,7 +2907,7 @@ class SimpleClockPlates:
 
         return pillar
 
-    def get_top_pillar_positions(self, for_standoff=False):
+    def get_top_pillar_positions(self, for_standoffs=False):
         return self.top_pillar_positions[:]
 
     def get_standoff_pillars(self, top=True):
@@ -4070,6 +4070,8 @@ class MantelClockPlates(SimpleClockPlates):
                 top_right = points[0] if points[0][1] > points[1][1] else points[1]
 
                 self.top_pillar_positions = [top_offset_pillar, top_right]
+
+            self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
             return
 
         a = self.bearing_positions[self.going_train.powered_wheels + 1][:2]
@@ -4142,6 +4144,8 @@ class MantelClockPlates(SimpleClockPlates):
                 top_left,
                 np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.small_gear_gap + self.top_pillar_r))),
             ]
+
+        self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
         print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
 
     def calc_fixing_info(self):
@@ -4444,6 +4448,50 @@ class MantelClockPlates(SimpleClockPlates):
         detail = self.get_plate_detail(back=False, for_this_shape=get_mat_shape(self.edging_wide*10)).translate((0,0,thick))
         # detail = None
         return (mat, detail)
+
+    def get_rod_lengths(self):
+        '''
+        returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
+        '''
+        lengths = []
+        zs = []
+        total_plate_distance = self.get_plate_thick(True) + self.get_plate_thick(False) + self.plate_distance
+
+        bottom_pillar_length = total_plate_distance + self.fixing_screws.get_nut_height()# + self.fixing_screws.get_washer_thick()
+
+        if self.has_vanity_plate:
+            bottom_pillar_length += self.vanity_plate_base_z + self.vanity_plate_thick
+
+
+        top_pillar_length = total_plate_distance + self.back_plate_from_wall
+
+        print("Need rod (M{}) of length {}mm for top pillars and {}mm for bottom pillars".format(self.fixing_screws.metric_thread, math.ceil(top_pillar_length), math.ceil(bottom_pillar_length)))
+
+        lengths = [bottom_pillar_length for pillar in self.bottom_pillar_positions] + [top_pillar_length for pillar in self.top_pillar_positions]
+
+        zs = [- self.fixing_screws.get_nut_height() for pillar in self.bottom_pillar_positions] + [-self.back_plate_from_wall  for pillar in self.top_pillar_positions]
+
+        return (lengths, zs)
+
+    def get_fixings_for_BOM(self):
+        '''
+        Since the current fixing screws and nuts is a bit of a mess with too many options, bypass it and use this
+        until the older designs get refactored
+        long term plan is probably to switch to cut threaded rod for basically everything
+        '''
+        fixings = []
+
+        rod_lengths, rod_zs = self.get_rod_lengths()
+
+        for rod_length in rod_lengths:
+            fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} rod {rod_length:.1f} (+ top fixing nut)mm ", purpose="Plate fixing rod. Length is in addition to the space of a nut and washer are fixed to one end"))
+
+        fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} nut", quantity=len(rod_lengths), purpose="Plate fixing rear nut"))
+        fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} washer", quantity=len(rod_lengths), purpose="Front plate fixing"))
+        fixings.append(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} dome nut", quantity=len(rod_lengths), purpose="Front plate fixing"))
+
+        return fixings
+
 
     def get_mat_BOM(self):
         '''
