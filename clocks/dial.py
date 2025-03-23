@@ -2283,7 +2283,7 @@ class Dial:
             for fixing_pos in fixing_pos_set:
                 # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
                 # supports = supports.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread / 2).extrude(screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
-                supports = supports.cut(self.fixing_screws.get_cutter(self_tapping=True, length=screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
+                supports = supports.cut(self.fixing_screws.get_cutter(self_tapping=True, length=screwhole_length, ignore_head=True).translate((fixing_pos[0], fixing_pos[1], z_offset)))
 
             if index > -1:
                 #put back in the centre and upright

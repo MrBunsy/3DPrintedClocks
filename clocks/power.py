@@ -1375,14 +1375,14 @@ class SpringBarrel:
     def get_outer_diameter(self):
         return self.barrel_diameter + self.wall_thick*2
 
-    def get_lid_fixing_screws_cutter(self):
+    def get_lid_fixing_screws_cutter(self, loose=False):
         cutter = cq.Workplane("XY")
 
         for i in range(self.lid_fixing_screws_count):
             #offset so it doesn't coincide with the spring hook
             pos = polar((i+0.25 )* math.pi * 2 / self.lid_fixing_screws_count, self.barrel_diameter / 2 + self.wall_thick / 2)
 
-            cutter = cutter.add(self.lid_fixing_screws.get_cutter(self_tapping=True).rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
+            cutter = cutter.add(self.lid_fixing_screws.get_cutter(self_tapping=True, loose=loose).rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
 
         return cutter
 
@@ -1426,7 +1426,7 @@ class SpringBarrel:
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
         #self.spring_hook_screws.getHeadHeight()
         #trying countersunk screw instead of pan head
-        barrel = barrel.cut(self.spring_hook_screws.get_cutter(self_tapping=True, sideways=True, length=self.barrel_diameter).rotate((0,0,0),(0,0,1),360/12).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
+        barrel = barrel.cut(self.spring_hook_screws.get_cutter(self_tapping=True, sideways=True, length=self.barrel_diameter).rotate((0,0,0),(0,0,1),-360/12).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
 
 
 
@@ -1440,7 +1440,7 @@ class SpringBarrel:
         lid = cq.Workplane("XY").circle(self.barrel_diameter / 2 + self.wall_thick).extrude(self.lid_thick)
         lid = lid.cut(self.lid_bearing.get_cutter())
         # lid = lid.cut()
-        lid = lid.cut(self.get_lid_fixing_screws_cutter().translate((0,0,-self.base_thick - self.barrel_height)))
+        lid = lid.cut(self.get_lid_fixing_screws_cutter(loose=True).translate((0,0,-self.base_thick - self.barrel_height)))
 
         lid = Gear.cutStyle(lid, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
                             clockwise_from_pinion_side=self.clockwise, rim_thick=0)

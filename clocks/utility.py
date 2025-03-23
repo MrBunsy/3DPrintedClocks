@@ -371,6 +371,9 @@ class MachineScrew:
 
         screw = cq.Workplane("XY").circle(r).extrude(length)
 
+        if loose:
+            self_tapping=False
+
         if self_tapping:
             #cut out three nubs from teh cutter so the hole has three bits for the screw to bite into
             inner_r = self.get_rod_cutter_r(for_tap_die=True)

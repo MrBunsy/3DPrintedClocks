@@ -120,8 +120,8 @@ def get_mantel_clock(clock_name = "mantel_clock_x", gear_style=GearStyle.ARCS, m
     motion_works_height = 22 if moon else 10
     
     #tiny bit extra gap as the brass PETG seems to need it
-    motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
-                                     cannon_pinion_to_hour_holder_gap_size=0.6)
+    motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compact=True, moon_complication=moon_complication,
+                                     cannon_pinion_to_hour_holder_gap_size=0.6, reduced_jamming=True)
     
     motion_works_angle_deg=-1
 
