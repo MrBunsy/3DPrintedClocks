@@ -1055,6 +1055,9 @@ class SimpleClockPlates:
                 return True
 
         return False
+
+    def get_all_pillar_positions(self):
+        return self.bottom_pillar_positions + self.top_pillar_positions
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
         Calculate (and set) topPillarPos, topPillarR, bottomPillarPos, bottomPillarR, holderWide, reduce_bottom_pillar_height
@@ -3995,6 +3998,15 @@ class MantelClockPlates(SimpleClockPlates):
 
             return pillar_positions
 
+    def get_all_pillar_positions(self):
+        all_pillars = self.bottom_pillar_positions + self.top_pillar_positions
+
+        if self.relocated_top_pillar >= 0:
+            #include the pillar that's just on the standoff
+            top_pillars = self.get_top_pillar_positions(for_standoffs=True)
+            all_pillars += [top_pillars[self.relocated_top_pillar]]
+
+        return all_pillars
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
@@ -4071,7 +4083,6 @@ class MantelClockPlates(SimpleClockPlates):
 
                 self.top_pillar_positions = [top_offset_pillar, top_right]
 
-            self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
             return
 
         a = self.bearing_positions[self.going_train.powered_wheels + 1][:2]
@@ -4145,7 +4156,6 @@ class MantelClockPlates(SimpleClockPlates):
                 np_to_set(np.add(self.bearing_positions[1][:2], np.multiply(right_pillar_line.dir, self.arbors_for_plate[1].get_max_radius() + self.small_gear_gap + self.top_pillar_r))),
             ]
 
-        self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
         print("top pillar distance gap: ", np.linalg.norm(np.subtract(self.top_pillar_positions[1], self.bearing_positions[-1][:2])) - self.top_pillar_r - self.arbors_for_plate[-1].get_max_radius())
 
     def calc_fixing_info(self):
@@ -4452,6 +4462,7 @@ class MantelClockPlates(SimpleClockPlates):
     def get_rod_lengths(self):
         '''
         returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
+        for the rods which hold these plates together
         '''
         lengths = []
         zs = []
@@ -4463,14 +4474,31 @@ class MantelClockPlates(SimpleClockPlates):
             bottom_pillar_length += self.vanity_plate_base_z + self.vanity_plate_thick
 
 
-        top_pillar_length = total_plate_distance + self.back_plate_from_wall
+        full_top_pillar_length = total_plate_distance + self.back_plate_from_wall
+        #for the symetric mantel clock where one pillar is in the "wrong" place
+        top_standoff_pillar_length = self.back_plate_from_wall + self.get_plate_thick(back=True)
+        top_front_plates_only_pillar_length = bottom_pillar_length
 
-        print("Need rod (M{}) of length {}mm for top pillars and {}mm for bottom pillars".format(self.fixing_screws.metric_thread, math.ceil(top_pillar_length), math.ceil(bottom_pillar_length)))
+        if self.relocated_top_pillar < 0:
+            #two normal top pilllars
+            top_pillar_lengths = [full_top_pillar_length for pillar in self.top_pillar_positions]
+        else:
+            top_pillar_lengths = [full_top_pillar_length for pillar in self.top_pillar_positions]
+            top_pillar_lengths[self.relocated_top_pillar] = top_front_plates_only_pillar_length
+            top_pillar_lengths += [top_standoff_pillar_length]
 
-        lengths = [bottom_pillar_length for pillar in self.bottom_pillar_positions] + [top_pillar_length for pillar in self.top_pillar_positions]
+        # print("Need rod (M{}) of length {}mm for top pillars and {}mm for bottom pillars".format(self.fixing_screws.metric_thread, math.ceil(full_top_pillar_length), math.ceil(bottom_pillar_length)))
 
-        zs = [- self.fixing_screws.get_nut_height() for pillar in self.bottom_pillar_positions] + [-self.back_plate_from_wall  for pillar in self.top_pillar_positions]
+        lengths = [bottom_pillar_length for pillar in self.bottom_pillar_positions] + top_pillar_lengths
 
+        bottom_pillar_z = - self.fixing_screws.get_nut_height()
+        bottom_pillar_zs = [ bottom_pillar_z for pillar in self.bottom_pillar_positions]
+        top_pillar_zs = [ -self.back_plate_from_wall for pillar in self.bottom_pillar_positions]
+        if self.relocated_top_pillar < 0:
+            zs = bottom_pillar_zs + top_pillar_zs
+        else:
+            top_pillar_zs[self.relocated_top_pillar] = bottom_pillar_z
+            zs =  bottom_pillar_zs + top_pillar_zs + [-self.back_plate_from_wall]
         return (lengths, zs)
 
     def get_fixings_for_BOM(self):

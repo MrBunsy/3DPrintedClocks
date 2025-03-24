@@ -204,8 +204,9 @@ class Assembly:
 
         self.rod_models = []
         pillar_rod_lengths, pillar_rod_zs = self.plates.get_rod_lengths()
+        all_pillars_positions = self.plates.get_all_pillar_positions()
         for p, length in enumerate(pillar_rod_lengths):
-            pos = self.plates.all_pillar_positions[p]
+            pos = all_pillars_positions[p]
             self.rod_models.append(cq.Workplane("XY").circle(self.plates.fixing_screws.metric_thread / 2 - 0.2).extrude(length).translate((pos[0], pos[1], pillar_rod_zs[p])))
 
 
