@@ -2665,8 +2665,8 @@ class SimpleClockPlates:
             top_screw_length = 100
 
         # TODO add option to use threaded rod with nuts on both sides. I've bodged this for tony by printing half with screws from back, and the rest with screws from front
-        print(
-            "Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
+        # print(
+        #     "Total length of front to back of clock is {}mm at top and {}mm at bottom. Assuming top screw length of {}mm and bottom screw length of {}mm".format(top_total_length, bottom_total_length, top_screw_length, bottom_screw_length))
         if top_screw_length > 60 and self.fixing_screws.metric_thread < 4:
             print("WARNING may not be able to source screws long enough, try M4")
 

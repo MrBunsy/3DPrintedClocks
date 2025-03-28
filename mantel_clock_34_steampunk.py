@@ -40,10 +40,11 @@ clock_out_dir= "out"
 #dial sizes will be overriden
 dial_d=210
 dial_width = dial_d*0.15
-# dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
-#             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
-dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
+#renders much faster:
+# dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
+#             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
 hands = Hands(style=HandStyle.SWORD, minute_fixing="square", length=dial_d/2, outline=1, chunky=False, outline_same_as_body=False, include_seconds_hand=True, second_fixing_thick=5)
 
 plaque = Plaque(text_lines=["Mantel 34#0", "L.Wallin 2024"])
