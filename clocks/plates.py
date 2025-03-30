@@ -4367,8 +4367,11 @@ class MantelClockPlates(SimpleClockPlates):
         will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
         '''
 
-        long_line = Line(self.bottom_pillar_positions[0], another_point=self.top_pillar_positions[0])
-        long_space_length = np.linalg.norm(np.subtract(self.bearing_positions[3][:2], self.bottom_pillar_positions[0]))
+        #crashes into ratchet pawl, so keep on the same side regardless
+        side = 0# if self.zigzag_side else 1
+
+        long_line = Line(self.bottom_pillar_positions[side], another_point=self.top_pillar_positions[side])
+        long_space_length = np.linalg.norm(np.subtract(self.bearing_positions[3][:2], self.bottom_pillar_positions[side]))
         long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
         text_height = self.plate_width * 0.9
         long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
@@ -4728,6 +4731,24 @@ class RoundClockPlates(SimpleClockPlates):
                 self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
 
         # self.front_anchor_holder_part_of_dial = True
+
+    def get_compact_bearing_positions_2d(self, start_on_right=True):
+        '''
+        if we have a mini seconds hand, we can make this a bit more compact than the default
+        '''
+        positions_relative = super().get_compact_bearing_positions_2d(start_on_right)
+        #make last two same distance from penultimate wheel
+        if self.second_hand and not self.centred_second_hand and self.going_train.wheels == 4:
+            #bring anchor down lower
+            anchor_from_penultimate_wheel = self.going_train.get_arbor_with_conventional_naming(-1).get_max_radius() + self.small_gear_gap + self.going_train.get_arbor_with_conventional_naming(-3).arbor_d
+            positions_relative[-1] = (positions_relative[-3][0], positions_relative[-3][1] + anchor_from_penultimate_wheel)
+
+            dir = 1 if start_on_right else -1
+
+            positions_relative[-2] = get_point_two_circles_intersect(positions_relative[-3], anchor_from_penultimate_wheel,
+                                                                     positions_relative[-1], self.going_train.get_arbor_with_conventional_naming(-2).distance_to_next_arbor,
+                                                                     in_direction=(dir,0))
+        return positions_relative
 
     def get_friction_clip_direction(self):
         # return np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))

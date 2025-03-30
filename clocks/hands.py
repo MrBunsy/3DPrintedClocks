@@ -29,7 +29,7 @@ from .gearing import GearStyle,Gear
 from .cosmetics import tony_the_clock
 from .types import HandType, HandStyle
 
-def spade_hand(hand_width, length, thick):
+def spade_hand(base_r, hand_width, length, thick):
 
     # for the bottom of the spade, not the usual baseR
     spadeBaseR = length * 0.05 * 2
@@ -61,6 +61,107 @@ def spade_hand(hand_width, length, thick):
 
     return hand
 
+def diamond_hand(base_r, hand_width, length, thick, hollow_diamond=False, diamond_width=-1):
+    hand = cq.Workplane("XY").circle(base_r).extrude(thick)
+
+    base_diamond_width = hand_width * 1.5
+    base_diamond_top_y = base_r + hand_width*2
+    base_diamond_r = hand_width*0.25
+
+    if diamond_width < 0:
+        diamond_width = length*0.4
+
+    diamond_y = length*0.6
+
+    base_nib_extra = hand_width*0.5
+    base_bit = (cq.Workplane("XY").lineTo(base_diamond_width/2,0).lineTo(base_diamond_width/2, base_r + base_nib_extra).spline([(base_diamond_width/2, base_diamond_top_y), (0, base_diamond_top_y + base_diamond_r)], includeCurrent=True, tangents=[(-1,1), (1,1), (-1,0)])
+                ).close().extrude(thick)#.mirror(mirrorPlane="YZ", basePointVector=(0,0,0))
+
+    base_diamond = base_bit.union(base_bit.mirror("YZ"))
+
+
+    end_r = hand_width*0.2
+    # rect_length = length - base_diamond_top_y - end_r
+    # hand = hand.union(cq.Workplane("XY").rect(hand_width, rect_length).extrude(thick).translate((0,length - rect_length/2 - end_r)))
+    hand = hand.union(cq.Workplane("XY").rect(hand_width, diamond_y).extrude(thick).translate((0, diamond_y/2)))
+
+
+    # hand_end = cq.Workplane("XY").lineTo(hand_width/2, diamond_y + diamond_width/2).lineTo(end_r, length-end_r).lineTo(0, length-end_r).close().extrude(thick)
+    hand_end = cq.Workplane("XY").lineTo(hand_width / 2, diamond_y + diamond_width / 2).lineTo(end_r, length - end_r).tangentArcPoint((0, length),relative=False).close().extrude(thick)
+    # hand_end = cq.Workplane("XY").lineTo(hand_width/2, diamond_y + diamond_width/2).spline([(end_r, length-end_r)],includeCurrent=True,tangents=[(0,1),(0,1)]).lineTo(0, length-end_r).close().extrude(thick)
+
+    hand_end_line = Line((hand_width/2, diamond_y + diamond_width/2), another_point=(end_r, length-end_r))
+
+    hand = hand.union(hand_end.union(hand_end.mirror("YZ")))
+
+    # hand = hand.union(cq.Workplane("XY").moveTo(0,length - end_r).circle(end_r).extrude(thick))
+
+    # angles = [i*math.pi/2 for i in range(4)]
+    # diamond_points = [polar(angle, diamond_width/2) for angle in angles]
+
+
+    def get_diamond_outline(diamond_width, hand_width, diamond_r, vertical_diamond_r, top_taper_dir=None):
+        diamond = cq.Workplane("XY")#.moveTo(diamond_points[0][0], diamond_points[0][1])
+        started = False
+        for i in range(5):
+
+            end_r = diamond_r if i%2 == 0 else vertical_diamond_r#hand_width/2
+
+            angle = i*math.pi/2
+            point = polar(angle, diamond_width/2)
+
+
+
+            start_point = np_to_set(np.add(point, polar(angle - math.pi/2, end_r)))#polar(angle - diamond_end_angle, diamond_width/2)
+            end_point = np_to_set(np.add(point, polar(angle + math.pi/2, end_r)))
+
+            if not started:
+                started = True
+                diamond = diamond.moveTo(end_point[0], end_point[1])
+                continue
+                # last_point = polar((i-1)*math.pi/2, diamond_width/2)
+                # diamond = diamond.moveTo(last_point[0], last_point[1])
+
+            # tangent_angle = angle
+            # diamond = diamond.spline([point], includeCurrent=True, tangents=[polar(angle + math.pi/2), polar(tangent_angle)])
+            #diamond = diamond.spline([start_point, end_point], includeCurrent=True, tangents=[polar(angle + math.pi/2), polar(angle), polar(angle + math.pi)])
+            previous_tanget = polar(angle + math.pi / 2)
+            tangent = polar(angle)
+            if top_taper_dir is not None:
+                if i == 1:
+                    tangent = top_taper_dir
+                if i == 2:
+                    previous_tanget = (top_taper_dir[0], -top_taper_dir[1])
+
+            diamond = diamond.spline([start_point], includeCurrent=True, tangents=[previous_tanget, tangent]).radiusArc(end_point, -end_r)
+
+        diamond = diamond.close()#.extrude(thick).translate((0, diamond_y))
+        return diamond
+
+    diamond_r = hand_width * 0.2
+
+    diamond_outline = get_diamond_outline(diamond_width, hand_width, diamond_r, vertical_diamond_r=hand_width/2, top_taper_dir=hand_end_line.dir)
+    diamond = diamond_outline.extrude(thick).translate((0, diamond_y))
+
+    # thick_diamond = get_diamond_outline(diamond_width, hand_width, diamond_r, vertical_diamond_r=diamond_r).extrude(1000)
+    line_thick = hand_width * 0.5
+
+    # diamond_shell = thick_diamond.shell(-line_thick).translate((0,0,-line_thick*2))
+    # slab = cq.Workplane("XY").rect(length*10, length*10).extrude(thick)
+    # diamond_outline = diamond_shell.intersect(slab).translate((0, diamond_y))
+
+
+
+
+    hand = hand.union(base_diamond).union(diamond)
+    if hollow_diamond:
+        diamond_inner = get_diamond_outline(diamond_width - line_thick*3, hand_width- line_thick, diamond_r*0.01, vertical_diamond_r=diamond_r*0.01).extrude(thick).translate((0, diamond_y))
+        hand = hand.cut(diamond_inner)
+
+
+
+
+    return hand
 
 class HandGenerator:
     def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
@@ -930,10 +1031,12 @@ class Hands:
             #
             # if bearing is not None:
             #     bearing_standoff_thick =  LAYER_THICK*2
-
-            hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - z_offset).translate((0, 0, z_offset)))
+            hand_screw = MachineScrew(metric_thread=self.second_fixing_d)
+            hand = hand.union(cq.Workplane("XY").circle(self.second_fixing_d/2 + 1).extrude(self.second_fixing_thick).translate((0, 0, self.second_thick)))
+            hand = hand.cut(hand_screw.get_cutter(length=self.second_fixing_thick + self.second_thick - z_offset, ignore_head=True, self_tapping=True).translate((0, 0, z_offset)))
+            # hand = hand.cut(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - z_offset).translate((0, 0, z_offset)))
             # try:
-            hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2+1).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - bearing_standoff_thick).translate((0,0,self.second_thick)))
+            # hand = hand.add(cq.Workplane("XY").moveTo(0,0).circle(self.second_fixing_d / 2+1).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick - bearing_standoff_thick).translate((0,0,self.second_thick)))
             # if bearing is not None:
             #     hand = hand.add(cq.Workplane("XY").moveTo(0, 0).circle(bearing.inner_safe_d / 2).circle(self.secondFixing_d / 2).extrude(bearing_standoff_thick).translate((0, 0, self.secondThick + self.secondFixing_thick - bearing_standoff_thick)))
             # # except:
@@ -1024,6 +1127,10 @@ class Hands:
 
         ignoreOutline = False
 
+        width = self.length * 0.1
+        if second:
+            width = self.length * 0.05
+
         hand = cq.Workplane("XY").tag("base")
 
         # if colour is None and len(self.getExtraColours()) > 0:
@@ -1092,6 +1199,23 @@ class Hands:
 
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance / 2).rect(width, counterweight_distance).extrude(thick)
                 hand = hand.workplaneFromTagged("base").moveTo(0, -counterweight_distance).circle(counterweight_r).extrude(thick)
+
+        elif style == HandStyle.DIAMOND:
+            width = self.length*0.05
+            hollow_diamond = self.outline <= 0
+            base_r = self.length * 0.075
+            if hour:
+                diamond_width = self.length * 0.8 * 0.35
+            if minute:
+                diamond_width = self.length * 0.8 * 0.3
+            if second:
+                width = self.second_length*0.075
+                hollow_diamond=False
+                base_r = length * 0.15
+                need_base_r = False
+                diamond_width = -1
+
+            hand = diamond_hand(base_r=base_r, hand_width=width, length=length, thick=thick, hollow_diamond=hollow_diamond, diamond_width=diamond_width)
 
         elif style == HandStyle.SIMPLE_POINTED:
             #copypasted and tweaked from SIMPLE_ROUNDED
@@ -1641,13 +1765,13 @@ class Hands:
             base_r = min_base_r
 
         if need_base_r:
-            hand = hand.workplaneFromTagged("base").circle(radius=base_r).extrude(thick)
+            hand = hand.union(cq.Workplane("XY").circle(radius=base_r).extrude(thick))
 
             if second and self.second_fixing == "rod":
                 try:
-                    hand = hand.union(cq.Workplane("XY").moveTo(0, 0).circle(self.second_fixing_d).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick).translate((0, 0, self.second_thick)))
+                    hand = hand.union(cq.Workplane("XY").moveTo(0, 0).circle(self.second_fixing_d).extrude(self.second_fixing_thick).translate((0, 0, self.second_thick)))
                 except:
-                    hand = hand.workplaneFromTagged("base").moveTo(0, 0).circle(self.second_fixing_d * 0.99).circle(self.second_fixing_d / 2).extrude(self.second_fixing_thick + self.thick)
+                    hand = hand.union(cq.Workplane("XY").moveTo(0, 0).circle(self.second_fixing_d * 0.99).extrude(self.second_fixing_thick + self.thick))
 
 
         return hand

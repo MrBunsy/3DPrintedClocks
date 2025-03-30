@@ -45,9 +45,9 @@ dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialS
 #renders much faster:
 # dial =  Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, font=CustomFont(FancyFrenchArabicNumbers),
 #             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES)
-hands = Hands(style=HandStyle.SWORD, minute_fixing="square", length=dial_d/2, outline=1, chunky=False, outline_same_as_body=False, include_seconds_hand=True, second_fixing_thick=5)
+hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", length=dial_d/2, outline=0, chunky=False, outline_same_as_body=False, include_seconds_hand=True, second_fixing_thick=5)
 
-plaque = Plaque(text_lines=["Mantel 34#0", "L.Wallin 2024"])
+plaque = Plaque(text_lines=["Mantel 34#0", "L.Wallin 2025"])
 
 assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial, second_hand=True, prefer_tall=False, zig_zag_side=False, plaque=plaque, gear_style=GearStyle.ROUNDED_ARMS5)
 
@@ -60,7 +60,7 @@ print(f"barrel outer diameter: {assembly.going_train.powered_wheel.get_outer_dia
 if output_STL:
     assembly.get_BOM().export()
 else:
-    assembly.show_clock(show_object, hand_colours=[Colour.WHITE, Colour.BLACK], motion_works_colours=[Colour.BRASS],
+    assembly.show_clock(show_object, hand_colours=[Colour.GOLD, Colour.BLACK], motion_works_colours=[Colour.BRASS],
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
                         plate_colours=plate_colours)
     # for a, arbor in enumerate(assembly.plates.arbors_for_plate):
