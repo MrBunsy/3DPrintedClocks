@@ -33,7 +33,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="wall_clock_24_dialfix"
+clockName="wall_clock_24_dialfix_jamfix"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -87,7 +87,7 @@ train.get_arbor_with_conventional_naming(0).print_screw_length()
 # motionWorks.calculate_size(arbor_distance=30)
 
 #increasing cannon_pinion_to_hour_holder_gap_size slightly because the brass filament seems to always be a tight fit (possibly because it has to be printed at a lower temperature?)
-motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
+motionWorks = clock.MotionWorks(extra_height=15, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True,
                                 module=1, inset_at_base=clock.TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1, cannon_pinion_to_hour_holder_gap_size=0.6)#, bearing=clock.get_bearing_info(3)
 #make furtehr apart so we get a big enough cannon pinion for the inset_at_base, which we want so we don't clash with the escape wheel
 motionWorks.calculate_size(arbor_distance=35)

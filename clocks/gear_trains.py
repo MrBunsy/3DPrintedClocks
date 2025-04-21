@@ -1008,6 +1008,9 @@ class GoingTrain:
             i = i + len(self.arbors) + len(self.powered_wheel_arbors)
         return self.get_arbor(i - self.powered_wheels)
 
+    def get_all_arbors(self):
+        return self.powered_wheel_arbors + self.arbors
+
     def get_arbor(self, i):
         '''
         +ve is in direction of the anchor
@@ -1418,3 +1421,285 @@ class SlideWhistleTrain:
             self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=self.pinion_thicks[i], wheel_thick=self.thicknesses[i], arbor_d=arbor_d,
                                      distance_to_next_arbor=distance_to_next_arbour, style=style, pinion_at_front=pinion_at_front,
                                      clockwise_from_pinion_side=clockwise_from_powered_side))
+
+
+
+class GearLayout2D:
+
+    @staticmethod
+    def get_old_gear_train_layout(going_train, layout = GearTrainLayout.VERTICAL, extra_args=None):
+        '''
+        for a quick solution for backwards compatibility
+        '''
+        if extra_args is None:
+            extra_args = {}
+        layouts = {
+            GearTrainLayout.VERTICAL : GearLayout2D.get_vertical_layout,
+            GearTrainLayout.VERTICAL_COMPACT : GearLayout2D.get_compact_vertical_layout,
+            GearTrainLayout.COMPACT: GearLayout2D.get_compact_layout
+        }
+        return layouts[layout](going_train, **extra_args)
+
+    @staticmethod
+    def get_vertical_layout(going_train):
+        '''
+        All wheels in a line upright.
+        The old GearTrainLayout.VERTICAL
+        '''
+        return GearLayout2D(going_train, centred_arbors=[i for i in range(len(going_train.get_all_arbors()))])
+
+    @staticmethod
+    def get_compact_vertical_layout(going_train):
+        '''
+        Most wheels in a line upright, with alternate wheels after the centre wheel offset.
+        The old GearTrainLayout.VERTICAL_COMPACT
+        '''
+        #powered wheels and centre wheel
+        centred_arbors = [i for i in range(going_train.powered_wheels + 1)]
+
+        offset = True
+        for i in range(len(going_train.get_all_arbors()) - (going_train.powered_wheels + 1)):
+            if not offset:
+                centred_arbors.append( i + going_train.powered_wheels + 1)
+            offset = not offset
+
+        #always have the pendulum centred
+        pendulum_index = len(going_train.get_all_arbors()) - 1
+        if pendulum_index not in centred_arbors:
+            centred_arbors.append(pendulum_index)
+        return GearLayout2D(going_train, centred_arbors, all_offset_same_side=True)
+
+    @staticmethod
+    def get_compact_layout(going_train, centred_escape_wheel=True, start_on_right=True):
+        '''
+        Roughly the old GearTrainLayout.COMPACT
+        '''
+        pendulum_index = len(going_train.get_all_arbors()) - 1
+        #first powered wheel and centre wheel
+        centred_arbors = [0, going_train.powered_wheels]
+        if centred_escape_wheel:
+            centred_arbors.append(pendulum_index-1)
+        centred_arbors.append(pendulum_index)
+
+        can_ignore_pinions = []
+        #assume we can ignore them if the previous pinion has been extended
+        for i, arbor in enumerate(going_train.get_all_arbors()[:-1]):
+            if arbor.pinion_extension > 0:
+                can_ignore_pinions.append(i+1)
+
+        return GearLayout2D(going_train, centred_arbors, can_ignore_pinions=can_ignore_pinions, start_on_right=start_on_right)
+
+
+    def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2):
+        '''
+        centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
+        can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
+        can_ignore_wheels: [list of indexes] again for spacing purposes, we can ignore the size of these wheels. Probably because it's in front or behind the plates
+        '''
+        self.going_train = going_train
+        self.centred_arbors = centred_arbors
+        self.can_ignore_pinions = can_ignore_pinions
+        self.can_ignore_wheels = can_ignore_wheels
+        self.start_on_right = start_on_right
+        self.arbors = self.going_train.get_all_arbors()
+        self.all_offset_same_side = all_offset_same_side
+
+        #space in mm that must be left between all non-meshing gears
+        self.gear_gap = gear_gap
+
+        self.total_arbors = len(self.arbors)
+
+        if self.centred_arbors is None:
+            # power source, centre wheel, and anchor
+            self.centred_arbors = [0, self.going_train.powered_wheels,self.total_arbors - 1]
+
+        if self.can_ignore_pinions is None:
+            # which arbors will be orentated so we don't need to worry about crashing into their pinions
+            self.can_ignore_pinions = []
+
+        if self.can_ignore_wheels is None:
+            # which arbors will be orentated so we don't need to worry about crashing into their pinions
+            self.can_ignore_wheels = []
+
+        if self.total_arbors - 1 not in self.can_ignore_pinions:
+            # add the anchor in automatically as it doens't have a pinion
+            #TODO review this logic
+            self.can_ignore_pinions.append(self.total_arbors - 1)
+
+    def get_positions(self):
+        '''
+        an attempt to produce a fully configable layout where we start on the assumption of "a line of gears vertical from hands to anchor, and any gears in between off to one side"
+        but we can configure which gears are actually on the vertical line
+        '''
+        total_arbors = self.going_train.powered_wheels + self.going_train.wheels + 1
+        positions_relative = [(0, 0) for i in range(total_arbors)]
+        arbors = self.going_train.get_all_arbors()
+        # anchor_index = -1
+        # escape_wheel_index = -2
+        # penultimate_wheel_index = -3
+        # centre_wheel_index = self.going_train.powered_wheels
+
+        on_side = +1 if self.start_on_right else -1
+
+        # proceed vertically from bottom but if there is more than one that is not central, apply more logic
+        arbor_index = 0
+        while arbor_index < total_arbors - 1:
+
+            def get_pinion_r(index):
+                if index in self.can_ignore_pinions:
+                    return arbors[index].get_arbor_extension_r()
+                else:
+                    return arbors[index].pinion.get_max_radius()
+
+            non_vertical_arbors_next = 0
+            for next_arbor_index in range(arbor_index + 1, total_arbors):
+                if next_arbor_index not in self.centred_arbors:
+                    non_vertical_arbors_next += 1
+                else:
+                    break
+            if non_vertical_arbors_next == 0:
+                # next arbor is vertically above us
+                positions_relative[arbor_index + 1] = (0, positions_relative[arbor_index][1] + arbors[arbor_index].distance_to_next_arbor)
+                arbor_index += 1
+            else:
+                next_centred_index = arbor_index + non_vertical_arbors_next + 1
+                distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + get_pinion_r(next_centred_index) + self.gear_gap
+
+                #default, but not always true
+                positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor)
+
+                if non_vertical_arbors_next == 1:
+                    distance_from_next_to_next_centred = arbors[arbor_index + 1].distance_to_next_arbor
+                    positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                                                                                          positions_relative[arbor_index + 2], distance_from_next_to_next_centred,
+                                                                                          in_direction=(on_side, 0))
+
+
+                    # next arbor is sticking out to the side and the next next arbor is vertically above us
+                elif next_centred_index in self.can_ignore_wheels:
+                    #taking the idea from teh centre seconds clock, wrap the gears around the current arbor and next centred arbor in a circle around the next centre
+                    for i in range(arbor_index+1, next_centred_index):
+                        arbor = arbors[i]
+                        previous_pos = positions_relative[i - 1][:]
+                        previous_arbor = arbors[i - 1]
+                        distance_to_previous_wheel = previous_arbor.distance_to_next_arbor
+                        distance_to_next_centre = distance_to_next_centred_arbor
+                        if i == next_centred_index - 1:
+                            # this wheel will mesh with teh seconds pinion
+                            distance_to_next_centre = arbor.distance_to_next_arbor
+                        # going round the on_side side
+                        #TODO this might fail if there are enough gears that we go over the top
+                        positions_relative[i] = get_point_two_circles_intersect(positions_relative[next_centred_index], distance_to_next_centre,
+                                                                                previous_pos, distance_to_previous_wheel, in_direction=(on_side, 0))
+
+                elif non_vertical_arbors_next in [2,3]:
+                    #two horizontally aligned above the last centred wheel, with the one before that off to one side
+                    #with only 2 this isn't necessarily the most compact design vertically. TODO
+                    # probably the escape wheel
+                    last_wheel_index = next_centred_index - 1
+                    penultimate_wheel_index = next_centred_index - 2
+                    first_wheel_index = arbor_index + 1
+                    horizontal_distance = arbors[penultimate_wheel_index].distance_to_next_arbor
+                    current_to_last = arbors[arbor_index].get_max_radius() + get_pinion_r(last_wheel_index) + self.gear_gap
+
+                    third_wheel_angle_from_current = math.pi / 2 + on_side * math.asin((horizontal_distance / 2) / current_to_last)
+                    positions_relative[last_wheel_index] = np_to_set(np.add(polar(third_wheel_angle_from_current, current_to_last), positions_relative[arbor_index]))
+                    if non_vertical_arbors_next == 2:
+                        #penultimate arbor meshes with current arbor
+                        positions_relative[penultimate_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                                                                                                      positions_relative[last_wheel_index], horizontal_distance, in_direction=(on_side, 0))
+                    else:
+                        # choosing mirror of escape wheel for penultimate arbor
+                        positions_relative[penultimate_wheel_index] = (-positions_relative[last_wheel_index][0], positions_relative[last_wheel_index][1])
+                        positions_relative[first_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                                                                                                positions_relative[penultimate_wheel_index], arbors[first_wheel_index].distance_to_next_arbor,
+                                                                                                in_direction=(on_side, 0))
+                    #positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + math.sqrt(escape_wheel_to_anchor ** 2 - (penultimate_wheel_to_escape_wheel / 2) ** 2))
+
+                    last_wheel_to_next_centred = arbors[last_wheel_index].distance_to_next_arbor
+
+                    positions_relative[next_centred_index] = (0, positions_relative[last_wheel_index][1] + math.sqrt(last_wheel_to_next_centred ** 2 - (horizontal_distance / 2) ** 2))
+
+                else:
+                    raise NotImplementedError(f"TODO support {non_vertical_arbors_next} non_vertical_arbors_next in GearLayout2D")
+                on_side *= -1
+                arbor_index += 1 + non_vertical_arbors_next
+
+        return positions_relative
+
+    def get_demo(self):
+        demo = cq.Workplane("XY")
+        for position,arbor in zip(self.get_positions(), self.arbors):
+            demo = demo.add(arbor.get_assembled().translate(position))
+        return demo
+
+
+class GearLayout2DCentreSeconds(GearLayout2D):
+    def get_positions(self):
+        '''
+        Arranging the entire train around the seconds hand, intended to marry well with round clock plate but potentially re-usable for any layout
+        some duplication of effort here with COMPACT layout and might be worth abstracting further in the future
+
+        Thoughts - no reason why we couldn't use the standard GearLayout2D with the correct centred_wheels info? it would have to be a bit more flexible
+        '''
+        all_arbors_count = self.going_train.wheels + self.going_train.powered_wheels + 1
+        positions_relative = [(0, 0) for i in range(all_arbors_count)]
+        anchor_index = -1
+        escape_wheel_index = -2
+        penultimate_wheel_index = -3
+        if self.going_train.has_seconds_hand_on_escape_wheel():
+            second_hand_index = escape_wheel_index
+
+        if self.going_train.has_second_hand_on_last_wheel():
+            second_hand_index = penultimate_wheel_index
+
+        # ignoring differences between powered wheels and wheels after the minute wheel for this
+        arbors = [self.going_train.get_arbor_with_conventional_naming(i) for i in range(all_arbors_count)]
+
+        # seconds_wheel_radius = arbors[second_hand_index].get_max_radius() + self.gear_gap
+        # seconds_pinion_radius =  arbors[second_hand_index].pinion.get_max_radius() + self.gear_gap
+        # actually let's assume we only need to avoid the arbor extensions
+        seconds_pinion_radius = arbors[second_hand_index].arbor_d + self.gear_gap
+
+        # place seconds directly above powered wheel
+        positions_relative[second_hand_index] = (0, seconds_pinion_radius + arbors[0].get_max_radius())
+
+        for i, arbor in enumerate(arbors):
+            if i == 0:
+                # powered wheel at (0,0)
+                continue
+            if i == all_arbors_count + second_hand_index:
+                # reached the seconds wheel, bail out
+                break
+            previous_pos = positions_relative[i - 1][:]
+            previous_arbor = arbors[i - 1]
+            distance_to_previous_wheel = previous_arbor.distance_to_next_arbor
+            distance_to_seconds_wheel = arbor.get_max_radius() + seconds_pinion_radius
+            if i == all_arbors_count + second_hand_index - 1:
+                # this wheel will mesh with teh seconds pinion
+                distance_to_seconds_wheel = arbor.distance_to_next_arbor
+            # going round the right hand side
+            positions_relative[i] = get_point_two_circles_intersect(positions_relative[second_hand_index], distance_to_seconds_wheel,
+                                                                    previous_pos, distance_to_previous_wheel, in_direction=(1, 0))
+
+        if self.going_train.wheels > 3:
+            offset_escape_wheel = False
+            if offset_escape_wheel:
+                # got the escape wheel to deal with
+                seconds_to_anchor = seconds_pinion_radius + arbors[anchor_index].get_max_radius() + self.gear_gap
+                # directly above hands
+                positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + seconds_to_anchor)
+                # on the left hand side
+                positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[anchor_index], arbors[escape_wheel_index].distance_to_next_arbor,
+                                                                                         positions_relative[second_hand_index], arbors[second_hand_index].distance_to_next_arbor,
+                                                                                         in_direction=(-1, 0))
+            else:
+                # actually found that we didn't need to be that compact, so trying stacking vertically instead
+                # okay this ends upw ith the pendulum between the pillars, might have to go back to more compact
+                positions_relative[escape_wheel_index] = (0, positions_relative[second_hand_index][1] + arbors[second_hand_index].distance_to_next_arbor)
+                positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
+        else:
+            # seconds wheel is escape wheel, put anchor directly above
+            positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
+
+        return positions_relative

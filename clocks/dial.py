@@ -319,7 +319,7 @@ class MoonPhaseComplication3D:
         arbor1_pos = np_to_set(np.add(arbor0_pos, polar(angle + arbor0_to_bevel0_angle, arbor0_to_arbor1)))
         arbor1_to_bevel0_check = np.linalg.norm(np.subtract(bevel0_pos, arbor1_pos))
 
-        print("arbor1_to_bevel0: {}, arbor1_to_bevel0_check:{}".format(arbor1_to_bevel0, arbor1_to_bevel0_check))
+        # print("arbor1_to_bevel0: {}, arbor1_to_bevel0_check:{}".format(arbor1_to_bevel0, arbor1_to_bevel0_check))
 
         #flip it all if needed (don't want to re-do the angle stuff)
         x = 1 if self.on_left else -1

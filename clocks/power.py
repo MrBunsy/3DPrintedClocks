@@ -3780,7 +3780,7 @@ class TraditionalRatchet:
 
         self.pawl_diameter = self.fixing_screws.metric_thread*3
 
-        self.spring_rest_length = self.pawl_diameter*2
+        self.spring_rest_length = self.pawl_diameter*1.5
 
         # self.gear_diameter = 2 * (self.max_diameter / 2 - self.pawl_diameter / 2 - self.tooth_deep * 2)
 

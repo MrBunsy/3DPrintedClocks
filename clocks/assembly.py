@@ -294,6 +294,10 @@ The larger bearings are further down the train where there is more torque, so th
         if self.pulley is not None:
             bom.add_subcomponent(self.pulley.get_BOM())
 
+        #I think this belongs better here than as a sub assembly of plates
+        if self.plates.moon_complication is not None:
+            bom.add_subcomponent(self.plates.moon_complication.get_BOM())
+
         rod_lengths, rod_zs, beyond_back_of_arbors = self.get_arbor_rod_lengths()
         arbor_assembly_instructions="""The arbors (horological term for what is basically an axle) are assembled by threading two or more parts onto a length of threaded rod.
         

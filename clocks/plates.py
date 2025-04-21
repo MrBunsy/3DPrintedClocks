@@ -911,8 +911,9 @@ class SimpleClockPlates:
         bom.add_item(BillOfMaterials.Item(f"M{self.motion_works_screws.metric_thread} nut", purpose="Motion works backstop", quantity=2))
         #fixing screws + nuts
         bom.add_items(self.get_fixings_for_BOM())
-        if self.moon_complication is not None:
-            bom.add_subcomponent(self.moon_complication.get_BOM())
+        #do in assembly as this doesn't logically belong with the plates?
+        # if self.moon_complication is not None:
+        #     bom.add_subcomponent(self.moon_complication.get_BOM())
         if self.dial is not None:
             dial_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + 10, self.dial.fixing_screws)
             dial_screw_count = len(self.dial.fixing_positions) * len(self.dial.fixing_positions[0])
@@ -4631,7 +4632,7 @@ class RoundClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=True,
-                 screwhole_above_anchor=False, escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT):
+                 screwhole_above_anchor=False, escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, zigzag_side=False):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4648,7 +4649,7 @@ class RoundClockPlates(SimpleClockPlates):
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
-                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, zigzag_side=True, screws_from_back=None,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, zigzag_side=zigzag_side, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
                          anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel, escapement_on_back=escapement_on_back)
@@ -4790,7 +4791,8 @@ class RoundClockPlates(SimpleClockPlates):
         text_height = self.plate_width * 0.9
         long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
         long_angle = long_line.get_angle()
-
+        if long_line_length < 0 or text_height < 0:
+            raise ValueError(f"Negative values for calculating size of text: long_line_length: {long_line_length}, text_height:{text_height}")
         self.plaque.set_dimensions(long_line_length, text_height)
 
         self.plaque_pos = long_centre

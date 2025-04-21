@@ -117,7 +117,7 @@ if not outputSTL:
                         motion_works_colours=[Colour.BLUE, Colour.LIGHTBLUE],
                         bob_colours=[Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE,
                         dial_colours=[Colour.BLUE, Colour.WHITE], key_colour=Colour.PURPLE,
-                        plate_colours=[Colour.DARK_GREEN, Colour.BLACK, Colour.BRASS],
+                        plate_colours=[Colour.DARK_GREEN, Colour.BRASS, Colour.BRASS],
                         moon_complication_colours=[Colour.GREEN, Colour.YELLOW, Colour.RED, Colour.ORANGE])
                         # moon_complication_colours=[Colour.BLUE, Colour.ORANGE, Colour.BLUE, Colour.ORANGE])
 
