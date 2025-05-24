@@ -19,6 +19,7 @@ source.
 '''
 import numpy.linalg.linalg
 
+from .gear_trains import GearLayout2D
 from .utility import *
 from .power import *
 from .gearing import *
@@ -343,14 +344,19 @@ class SimpleClockPlates:
 
 
     def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
-                 pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, motion_works_above=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
+                 pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1,
-                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, zigzag_side=True, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
+                 embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
                  standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=False):
         '''
+
+        gear_train_layout: used to be an enum, now a GearTrainLayout2D object
+        force_escapement_above_hands: deprecated, handled by gear_train_layout
+        off_centre_escape_wheel: deprecated, handled by gear_train_layout
+
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
         - answer: it didn't work nicely. See calc_bearing_positions for how this is now done
@@ -434,12 +440,9 @@ class SimpleClockPlates:
         #TODO apply to cord power too?
         self.little_plate_for_pawl = True
 
-        angles_from_minute = None
-        anglesFromChain = None
-
-        self.gear_train_layout=gear_train_layout
-        #which side should the zigzag start?
-        self.zigzag_side = zigzag_side
+        self.gear_train_layout = gear_train_layout
+        if isinstance(gear_train_layout, Enum):
+            self.gear_train_layout = GearLayout2D(self.gear_train_layout)
 
         #to print on the back
         self.name = name
@@ -451,24 +454,12 @@ class SimpleClockPlates:
         self.endshake = endshake
 
         if motion_works_angle_deg is None:
-            if motion_works_above:
-                motion_works_angle_deg = 90
-            else:
-                motion_works_angle_deg = -90
+            motion_works_angle_deg = -90
 
         # override default position of the motion works (for example if it would be in the way of a keywind and it can't go above because there's a moon complication)
         self.motion_works_angle = deg_to_rad(motion_works_angle_deg)
 
         self.little_arm_to_motion_works = True
-
-        #DEPRECATED, this will break some old clockst hat still used motion_works_above, but will now allow negative motino works angles
-        # if self.motion_works_angle < 0:
-        #     # is the motion works arbour above the cannon pinion? if centred_second_hand then this is not user-controllable (deprecated - motion_works_angle is more flexible)
-        #     if motion_works_above:
-        #         self.motion_works_angle = math.pi/2
-        #     else:
-        #         #below
-        #         self.motion_works_angle = math.pi*1.5
 
         #escapement is on top of the front plate
         self.escapement_on_front = escapement_on_front
@@ -518,9 +509,6 @@ class SimpleClockPlates:
 
         #TODO this is deprecated, remove it
         self.pendulum=pendulum
-        #up to and including the anchor
-        self.angles_from_minute = angles_from_minute
-        self.angles_from_chain=anglesFromChain
         self.plate_thick=plate_thick
         self.back_plate_thick = back_plate_thick
         if self.back_plate_thick is None:
@@ -606,28 +594,10 @@ class SimpleClockPlates:
             minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
             minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
 
-            arbor_distance = minute_wheel_to_hands_distance / 2
+            # draw a line from the centre wheel to the hands position, then offset the motion works by motion_works_angle
+            arbor_distance = (minute_wheel_to_hands_distance / 2)/math.cos(self.motion_works_angle)
+            self.motion_works_relative_pos = polar(minute_wheel_to_hands_angle + math.pi + self.motion_works_angle, arbor_distance)
 
-            if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
-                #will need to offset motion works
-                #line from minute wheel to hands
-                print(f"minute_wheel_to_hands_angle: {minute_wheel_to_hands_angle} = {rad_to_deg(minute_wheel_to_hands_angle)}deg,"
-                      f" self.motion_works_angle: {self.motion_works_angle} = {rad_to_deg(self.motion_works_angle)}deg arbor_distance/math.cos(self.motion_works_angle): {arbor_distance/math.cos(self.motion_works_angle)}"
-                      f" arbor_distance: {arbor_distance}")
-                #using self.motion_works_angle to mean angle deviating from the line betwen minute and seconds wheels
-                # line_to_motion_arbor = Line(self.bearing_positions[self.going_train.powered_wheels], angle = minute_wheel_to_hands_angle + self.motion_works_angle)
-                arbor_distance = (minute_wheel_to_hands_distance / 2)/math.cos(self.motion_works_angle)
-                self.motion_works_relative_pos = polar(minute_wheel_to_hands_angle + math.pi + self.motion_works_angle, arbor_distance)
-                # mid_line = Line(average_of_two_points(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi / 2)
-
-            elif abs(self.motion_works_angle - minute_wheel_to_hands_angle) - math.pi > 0.01:
-                #motion works arbor is offset from the line between minute wheel and seconds wheel
-
-                line_from_hands = Line(self.hands_position, angle=self.motion_works_angle)
-                mid_line = Line(average_of_two_points(minute_wheel_pos, self.hands_position), angle=minute_wheel_to_hands_angle + math.pi / 2)
-
-                mid_arbor_pos = line_from_hands.intersection(mid_line)
-                arbor_distance = np.linalg.norm(np.subtract(mid_arbor_pos, minute_wheel_pos))
 
 
             self.motion_works.calculate_size(arbor_distance=arbor_distance)
@@ -696,41 +666,36 @@ class SimpleClockPlates:
 
 
 
-
-            #override motion works position
-            #note - new idea, allow this to function like the compact design of the plates
-            # self.motion_works_angle = math.pi/2 if not self.pendulum_at_top else math.pi * 1.5
-
-
-
         motion_works_distance = self.motion_works.get_arbor_distance()
         # where the time setting knob is on centred seconds hands
         self.time_setter_relative_pos = (0, -motion_works_distance*2)
         # get position of motion works relative to the minute wheel
-        if gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and self.centred_second_hand:
+        if self.centred_second_hand:
             '''
             already calculated motion_works_relative_pos, which is relative to the hands_position
             '''
             self.motion_works_pos = np_to_set(np.add(self.hands_position, self.motion_works_relative_pos))
             self.time_setter_relative_pos = np_to_set(np.subtract(self.bearing_positions[self.going_train.powered_wheels][:2], self.hands_position))
-        elif gear_train_layout == GearTrainLayout.ROUND:
-            # place the motion works on the same circle as the rest of the bearings
-            angle = self.hands_on_side*2 * math.asin(motion_works_distance / (2 * self.compact_radius))
-            compactCentre = (0, self.compact_radius)
-            minuteAngle = math.atan2(self.bearing_positions[self.going_train.powered_wheels][1] - compactCentre[1], self.bearing_positions[self.going_train.powered_wheels][0] - compactCentre[0])
-            motionWorksPos = polar(minuteAngle - angle, self.compact_radius)
-            motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
-            self.motion_works_relative_pos = (motionWorksPos[0] - self.bearing_positions[self.going_train.powered_wheels][0], motionWorksPos[1] - self.bearing_positions[self.going_train.powered_wheels][1])
-        elif self.gear_train_layout == GearTrainLayout.COMPACT and motion_works_above and self.has_seconds_hand() and not self.centred_second_hand and self.extra_heavy:
-            '''
-            niche case maybe?
-            put the motion works along the arm to the offset gear
-            '''
-            direction = np.subtract(self.bearing_positions[self.going_train.powered_wheels + 1][:2], self.bearing_positions[self.going_train.powered_wheels][:2])
-            #make unit vector
-            direction = np.multiply(direction, 1/np.linalg.norm(direction))
-
-            self.motion_works_relative_pos = np_to_set(np.multiply(direction, motion_works_distance))
+        #TODO if this is ever brought back, which is unlikely
+        # elif gear_train_layout == GearTrainLayout.ROUND:
+        #     # place the motion works on the same circle as the rest of the bearings
+        #     angle = self.hands_on_side*2 * math.asin(motion_works_distance / (2 * self.compact_radius))
+        #     compactCentre = (0, self.compact_radius)
+        #     minuteAngle = math.atan2(self.bearing_positions[self.going_train.powered_wheels][1] - compactCentre[1], self.bearing_positions[self.going_train.powered_wheels][0] - compactCentre[0])
+        #     motionWorksPos = polar(minuteAngle - angle, self.compact_radius)
+        #     motionWorksPos = (motionWorksPos[0] + compactCentre[0], motionWorksPos[1] + compactCentre[1])
+        #     self.motion_works_relative_pos = (motionWorksPos[0] - self.bearing_positions[self.going_train.powered_wheels][0], motionWorksPos[1] - self.bearing_positions[self.going_train.powered_wheels][1])
+        # elif self.gear_train_layout == GearTrainLayout.COMPACT and motion_works_above and self.has_seconds_hand() and not self.centred_second_hand and self.extra_heavy:
+        #     '''
+        #     niche case maybe?
+        #     put the motion works along the arm to the offset gear
+        #     '''
+        #     direction = np.subtract(self.bearing_positions[self.going_train.powered_wheels + 1][:2], self.bearing_positions[self.going_train.powered_wheels][:2])
+        #     #make unit vector
+        #     direction = np.multiply(direction, 1/np.linalg.norm(direction))
+        #
+        #     self.motion_works_relative_pos = np_to_set(np.multiply(direction, motion_works_distance))
+        #TODO option to put motion works in direction of a specific arbor?
         else:
             # motion works is directly below the minute rod by default, or whatever angle has been set
             self.motion_works_relative_pos = polar(self.motion_works_angle, motion_works_distance)
@@ -752,7 +717,7 @@ class SimpleClockPlates:
         ]
         self.motion_works_holder_thick = 4
         #if true then the only screws holding it in palce are the screws which also hold the friction clip
-        self.motion_works_holder_short = False
+        self.motion_works_holder_attached_to_friction_clip = False
 
         #even if it's not used:
 
@@ -945,7 +910,7 @@ class SimpleClockPlates:
             bom.add_subcomponent(self.moon_holder.get_BOM())
 
         if self.need_motion_works_holder:
-            if not self.motion_works_holder_short:
+            if not self.motion_works_holder_attached_to_friction_clip:
                 #two screws at the bottom
                 screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + self.motion_works_holder_thick, self.motion_works_screws)
                 bom.add_item(BillOfMaterials.Item(f"{self.motion_works_screws} {screw_length:.0f}mm",quantity=2 , purpose="Motion works fixing screws"))
@@ -1169,242 +1134,6 @@ class SimpleClockPlates:
             ]
         self.plate_fixings = self.plate_top_fixings + self.plate_bottom_fixings
 
-
-    def get_compact_bearing_positions_2d_configable(self, start_on_right=True, centred_arbors=None, skip_pinion_spaces=None):
-        '''
-        TODO finish or abandon?
-        an attempt to produce a fully configable layout where we start on the assumption of "a line of gears vertical from hands to anchor, and any gears in between off to one side"
-        but we can configure which gears are actually on the vertical line
-        '''
-        total_arbors = self.going_train.powered_wheels + self.going_train.wheels + 1
-        positions_relative = [(0, 0) for i in range(total_arbors)]
-        arbors = [self.going_train.get_arbor_with_conventional_naming(arbor_index) for arbor_index in range(total_arbors)]
-        # anchor_index = -1
-        # escape_wheel_index = -2
-        # penultimate_wheel_index = -3
-        # centre_wheel_index = self.going_train.powered_wheels
-
-        on_side = +1 if start_on_right else -1
-
-        if centred_arbors is None:
-            #power source, centre wheel, and anchor
-            centred_arbors = [0, self.going_train.powered_wheels, total_arbors-1]
-        if skip_pinion_spaces is None:
-            #which arbors will be orentated so we don't need to worry about crashing into their pinions
-            skip_pinion_spaces = [total_arbors-1]
-
-        if total_arbors not in skip_pinion_spaces:
-            #add the anchor in automatically as it doens't have a pinion
-            skip_pinion_spaces.append(total_arbors-1)
-
-        #proceed vertically from bottom but if there is more than one that is not central, put them horizontally in line
-        arbor_index=0
-        while arbor_index < total_arbors-1:
-            non_vertical_arbors_next = 0
-            for next_arbor_index in range(arbor_index+1, total_arbors):
-                if next_arbor_index not in centred_arbors:
-                    non_vertical_arbors_next += 1
-                else:
-                    break
-            distance_to_next_arbor = arbors[arbor_index].distance_to_next_arbor
-            if non_vertical_arbors_next == 0:
-                #next arbor is vertically above us
-                positions_relative[arbor_index+1] = (0, positions_relative[arbor_index][1] + distance_to_next_arbor)
-                arbor_index += 1
-            elif non_vertical_arbors_next == 1:
-
-                if arbor_index+2 in skip_pinion_spaces:
-                    #hacky, guessing what size the arbor extension will be
-                    next_next_r = arbors[arbor_index+2].arbor_d
-                else:
-                    next_next_r = arbors[arbor_index + 2].pinion.get_max_radius()
-                distance_to_next_next_arbor = arbors[arbor_index].get_max_radius() + next_next_r + self.small_gear_gap
-                positions_relative[arbor_index + 2] = (0, positions_relative[arbor_index][1] + distance_to_next_next_arbor)
-                distance_from_next_to_next_next = arbors[arbor_index+1].distance_to_next_arbor
-                positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
-                                                                                      positions_relative[arbor_index + 2], distance_from_next_to_next_next,
-                                                                                      in_direction=(on_side,0))
-                on_side *= -1
-                arbor_index += 2
-                #next arbor is sticking out to the side and the next next arbor is vertically above us
-            elif non_vertical_arbors_next == 2:
-                raise NotImplementedError("TODO support horizontally laid out gears in get_compact_bearing_positions_2d_configable")
-
-        return positions_relative
-
-
-    def get_compact_bearing_positions_2d(self, start_on_right=True):
-        '''
-        returns [
-            (x,y),
-            ...
-        ]
-        from powered wheel to the anchor
-
-        started out as : have a line of gears vertical from hands to anchor, and any gears in between off to one side
-
-        Tries to make as compact as possible placing wheels inline with hands only if needed, but the logic around "if needed" is... iffy
-
-        this is still a mess of logic, plan is to split it out into multiple different train layouts once its tidied up
-        '''
-        # relative to minute wheel
-        positions_relative = [(0, 0) for i in range(self.going_train.powered_wheels + self.going_train.wheels + 1)]
-        anchor_index = -1
-        escape_wheel_index = -2
-        penultimate_wheel_index = -3
-        centre_wheel_index = self.going_train.powered_wheels
-
-        on_side = +1 if start_on_right else -1
-
-        if self.going_train.powered_wheels == 2:
-
-            first_powered_wheel_to_minute_wheel = self.going_train.get_arbor_with_conventional_naming(0).get_max_radius() + self.going_train.get_arbor_with_conventional_naming(2).pinion.get_max_radius() + self.small_gear_gap
-            centre_wheel_pos = positions_relative[2] = (0, first_powered_wheel_to_minute_wheel)
-            positions_relative[1] = get_point_two_circles_intersect(positions_relative[0], self.going_train.get_arbor_with_conventional_naming(0).distance_to_next_arbor,
-                                                                    positions_relative[2], self.going_train.get_arbor_with_conventional_naming(1).distance_to_next_arbor, in_direction=(on_side, 0))
-            on_side *= -1
-
-        else:
-            centre_wheel_pos = positions_relative[1] = (0, self.going_train.get_arbor_with_conventional_naming(0).distance_to_next_arbor)
-
-        # if self.compact_zigzag_side:
-        #     on_side *= -1
-
-        '''
-        4 wheels and escape wheel would not be directly above hands using above logic
-        Place the escape wheel directly above the hands and then put the second and third wheel off to the side
-        Trying putting the third wheel directly left of the escape wheel and using the normal compact logic to place the second wheel
-
-
-        PLAN: when we don't have a second hand or need escapement above the hands we can do compact with 4 wheels better:
-        basically rotate the third wheel and escape wheel around slightly to the right so they're both equidistant from the line above the hands
-        this will be useful for the moon escapement (so the fixing doesn't clash with a bearing) and I think will result in an even more compact design
-        '''
-        forcing_escape_wheel_above_hands = self.force_escapement_above_hands
-        forcing_escape_wheel_slightly_off_centre = self.no_upper_wheel_in_centre  # self.going_train.wheels > 3 and not self.second_hand
-
-        # if we're forcing the escapement above the hands and have more than 3 wheels, we don't want to default to this logic as the escape wheel
-        # will be off to one side
-        # if we do have 3 wheels then the escape wheel is above the hands
-        minute_wheel_to_second_wheel = self.going_train.get_arbor(0).distance_to_next_arbor
-        second_wheel_to_third_wheel = self.going_train.get_arbor(1).distance_to_next_arbor
-
-        third_wheel_pinion_r = self.going_train.get_arbor(2).pinion.get_max_radius()
-        # bit of hackery here, we should really work out exactly where all the pinions and wheels will line up, then we don't need to guess
-        if self.going_train.get_arbor(1).pinion_extension > 0:
-            # ...this is guessing how thick the arbor extension will be, which is calcualted in ArborForPlate. TODO
-            third_wheel_pinion_r = self.going_train.get_arbor(2).arbor_d
-
-        centre_wheel_to_penultimate_wheel = self.going_train.get_arbor(0).get_max_radius() + third_wheel_pinion_r + self.small_gear_gap
-        if self.going_train.wheels == 3:
-            centre_wheel_to_penultimate_wheel = self.going_train.get_arbor(0).distance_to_next_arbor
-        #now done above
-        # positions_relative[self.going_train.powered_wheels] = minute_wheel_pos = (0, 0)
-        if forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre:
-            minute_wheel_r = self.going_train.get_arbor(0).get_max_radius()
-            escape_wheel_arbor_r = self.going_train.get_arbor(3).get_arbor_extension_r()
-            # #HACK HACK HACK TEMP instead of self.going_train.get_arbor(3).get_arbor_extension_r() use the old value of 2
-            # escape_wheel_arbor_r = self.going_train.get_arbor(3).get_rod_d()
-            # #MORE HACK TODO REMOVE ME
-            # escape_wheel_arbor_r = 2
-            minute_wheel_to_escape_wheel = minute_wheel_r + escape_wheel_arbor_r + self.small_gear_gap
-            penultimate_wheel_to_escape_wheel = self.going_train.get_arbor(self.going_train.wheels - 2).distance_to_next_arbor
-            escape_wheel_to_anchor = self.going_train.get_arbor(self.going_train.wheels - 1).distance_to_next_arbor
-
-            if forcing_escape_wheel_slightly_off_centre:
-                if self.going_train.wheels > 3:
-                    # escape wheel and wheel before that are the "base" of an isosceles triangle with the point at the minute hand
-                    escape_wheel_angle_from_hands = math.pi / 2 + on_side * math.asin((penultimate_wheel_to_escape_wheel / 2) / minute_wheel_to_escape_wheel)
-                    positions_relative[escape_wheel_index] = np_to_set(np.add(polar(escape_wheel_angle_from_hands, minute_wheel_to_escape_wheel), positions_relative[centre_wheel_index]))
-                    # choosing mirror of escape wheel
-                    positions_relative[penultimate_wheel_index] = (-positions_relative[escape_wheel_index][0], positions_relative[escape_wheel_index][1])
-                else:
-                    if self.going_train.wheels == 2:
-                        raise ValueError(f"{self.going_train.wheels} wheels not yet supported")
-                    # 3 wheels assumed
-                    # the penultimate wheel meshes with the minute wheel, so we don't have free placement of it, aproximate the triangle
-                    centre_wheel_to_penultimate_wheel = self.going_train.get_arbor(0).distance_to_next_arbor
-                    penultimate_wheel_angle_from_hands = math.pi / 2 + on_side * math.asin((penultimate_wheel_to_escape_wheel / 2) / centre_wheel_to_penultimate_wheel)
-                    positions_relative[penultimate_wheel_index] = polar(penultimate_wheel_angle_from_hands, centre_wheel_to_penultimate_wheel)
-
-                    positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[centre_wheel_index], minute_wheel_to_escape_wheel, positions_relative[penultimate_wheel_index],
-                                                                                             penultimate_wheel_to_escape_wheel, in_direction=(-1, 0))
-                # self.angles_from_minute[self.going_train.wheels-1] = math.pi - on_side*math.acos(escape_wheel_relative_pos[0]/escape_wheel_to_anchor)
-                positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + math.sqrt(escape_wheel_to_anchor ** 2 - (penultimate_wheel_to_escape_wheel / 2) ** 2))
-
-            else:
-
-                # escape wheel directly above hands
-                positions_relative[escape_wheel_index] = (0, minute_wheel_to_escape_wheel)
-
-                positions_relative[penultimate_wheel_index] = get_point_two_circles_intersect(positions_relative[centre_wheel_index], centre_wheel_to_penultimate_wheel,
-                                                                                              positions_relative[escape_wheel_index], penultimate_wheel_to_escape_wheel,
-                                                                                              in_direction=(-1, 0))  # ( -on_side*penultimate_wheel_to_escape_wheel, minute_wheel_to_escape_wheel)
-                # anchor is directly above escape wheel
-                positions_relative[anchor_index] = (positions_relative[escape_wheel_index][0], positions_relative[escape_wheel_index][1] + escape_wheel_to_anchor)
-
-            centre_wheel_to_penultimate_wheel = get_distance_between_two_points(centre_wheel_pos, positions_relative[penultimate_wheel_index])
-            # escape wheel is directly right of third wheel (for three wheels this gets overriden below, but with teh same result anyway
-            # self.angles_from_minute[self.going_train.wheels-2] = math.pi if on_side < 0 else 0
-        else:
-            #pendultimate wheel is directly above the hands (for a second hand, presumably)
-            positions_relative[penultimate_wheel_index] = (positions_relative[centre_wheel_index][0], positions_relative[centre_wheel_index][1] + centre_wheel_to_penultimate_wheel)
-
-        if self.going_train.wheels > 3:
-            # have an extra wheel (the second wheel) which needs putting somewhere
-            # TODO make in_direction solve to general problem, at the moment I just want the one on the left
-            positions_relative[centre_wheel_index + 1] = get_point_two_circles_intersect(positions_relative[centre_wheel_index], minute_wheel_to_second_wheel,
-                                                                    positions_relative[centre_wheel_index + 2], second_wheel_to_third_wheel,
-                                                                    in_direction=(on_side, 0))
-            on_side *=-1
-
-        # TODO if the second wheel would clash with the powered wheel, push the third wheel up higher
-        #
-        if self.going_train.wheels > 3 and not (forcing_escape_wheel_above_hands or forcing_escape_wheel_slightly_off_centre):
-            #penultimate wheel is above hands so stick the escape wheel out too
-
-            penultimate_wheel_to_escape_wheel = self.going_train.get_arbor(2).distance_to_next_arbor
-            escape_wheel_to_anchor = self.going_train.get_arbor(3).distance_to_next_arbor + self.anchor_distance_fudge_mm
-            # third_wheel_to_anchor is a bit tricky to calculate. going to try instead just choosing an angle
-            # TODO could make anchor thinner and then it just needs to avoid the rod
-            penultimate_wheel_to_anchor = self.going_train.get_arbor_with_conventional_naming(-1).get_max_radius() + self.going_train.get_arbor(2).get_max_radius() + self.small_gear_gap
-            positions_relative[anchor_index] = (positions_relative[penultimate_wheel_index][0], positions_relative[penultimate_wheel_index][1] + penultimate_wheel_to_anchor)
-
-            positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[penultimate_wheel_index], penultimate_wheel_to_escape_wheel,
-                                                                                     positions_relative[anchor_index], escape_wheel_to_anchor,
-                                                                                     in_direction=(on_side,0))
-
-
-        escape_wheel_to_anchor = self.going_train.get_arbor(-2).distance_to_next_arbor + self.anchor_distance_fudge_mm
-        if escape_wheel_to_anchor < abs(positions_relative[-1][0]):
-            # need to re-think how this works
-            raise ValueError("Cannot put anchor above hands without tweaking")
-
-        return positions_relative
-
-    def calculate_angles_from_bearing_positions(self, positions_relative):
-        # calculate angles_from_minute until it's removed entirely
-        for i in range(self.going_train.powered_wheels + self.going_train.wheels):
-            relative_to_next_pos = np_to_set(np.subtract(positions_relative[i + 1], positions_relative[i]))
-            distance_to_next_pos = get_distance_between_two_points(positions_relative[i], positions_relative[i + 1])
-            print(f"i: {i} distance_to_next_pos: {distance_to_next_pos}")
-            angle = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
-            if i < self.going_train.powered_wheels:
-                self.angles_from_chain[i] = angle
-            self.angles_from_minute[i - self.going_train.powered_wheels] = angle
-
-        print(f"positions_relative: {positions_relative}: self.angles_from_minute deg: {[rad_to_deg(angle) for angle in self.angles_from_minute]}")
-        if self.bottom_pillars > 1 and not self.using_pulley and self.going_train.powered_wheels > 0 and self.centre_weight:
-            # put chain in the centre. this works (although lots of things assume the bottom bearing is in the centre)
-            # but I'm undecided if I actually want it - if we have two screwholes is that sufficient? the reduction in height is minimal
-            x = self.going_train.powered_wheel.diameter / 2
-            r = self.going_train.get_arbor_with_conventional_naming(0).distance_to_next_arbor
-            angle = math.acos(x / r)
-            if self.weight_on_right_side:
-                self.angles_from_chain[0] = math.pi - angle
-            else:
-                self.angles_from_chain[0] = angle
-
     def calc_bearing_positions(self):
         '''
         TODO, with an overhaul of GoingTrain this should layout the gears in 2D, then lay them out vertically
@@ -1415,166 +1144,7 @@ class SimpleClockPlates:
         '''
         # if angles are not given, assume clock is entirely vertical, unless overriden by style below
 
-        if self.angles_from_minute is None:
-            # assume simple pendulum at top
-            angle = math.pi / 2 if self.pendulum_at_top else math.pi / 2
-
-            # one extra for the anchor
-            self.angles_from_minute = [angle for i in range(self.going_train.wheels + 1)]
-        if self.angles_from_chain is None:
-            angle = math.pi / 2 if self.pendulum_at_top else -math.pi / 2
-
-            self.angles_from_chain = [angle for i in range(self.going_train.powered_wheels)]
-        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
-            '''
-            Arranging the entire train around the seconds hand, intended to marry well with round clock plate but potentially re-usable for any layout
-            some duplication of effort here with COMPACT layout and might be worth abstracting further in the future
-            '''
-            all_arbors_count = self.going_train.wheels + self.going_train.powered_wheels + 1
-            positions_relative = [(0, 0) for i in range(all_arbors_count)]
-            anchor_index = -1
-            escape_wheel_index = -2
-            penultimate_wheel_index = -3
-            if self.going_train.has_seconds_hand_on_escape_wheel():
-                second_hand_index = escape_wheel_index
-
-            if self.going_train.has_second_hand_on_last_wheel():
-                second_hand_index = penultimate_wheel_index
-
-            #ignoring differences between powered wheels and wheels after the minute wheel for this
-            arbors = [self.going_train.get_arbor_with_conventional_naming(i) for i in range(all_arbors_count)]
-
-            # seconds_wheel_radius = arbors[second_hand_index].get_max_radius() + self.gear_gap
-            # seconds_pinion_radius =  arbors[second_hand_index].pinion.get_max_radius() + self.gear_gap
-            #actually let's assume we only need to avoid the arbor extensions
-            seconds_pinion_radius = arbors[second_hand_index].arbor_d + self.small_gear_gap
-
-            #place seconds directly above powered wheel
-            positions_relative[second_hand_index] = (0, seconds_pinion_radius + arbors[0].get_max_radius())
-
-            for i,arbor in enumerate(arbors):
-                if i ==0:
-                    #powered wheel at (0,0)
-                    continue
-                if i == all_arbors_count+second_hand_index:
-                    #reached the seconds wheel, bail out
-                    break
-                previous_pos = positions_relative[i-1][:]
-                previous_arbor = arbors[i-1]
-                distance_to_previous_wheel = previous_arbor.distance_to_next_arbor
-                distance_to_seconds_wheel = arbor.get_max_radius() + seconds_pinion_radius
-                if i == all_arbors_count+second_hand_index - 1:
-                    #this wheel will mesh with teh seconds pinion
-                    distance_to_seconds_wheel = arbor.distance_to_next_arbor
-                #going round the right hand side
-                positions_relative[i] = get_point_two_circles_intersect(positions_relative[second_hand_index], distance_to_seconds_wheel,
-                                                                 previous_pos, distance_to_previous_wheel, in_direction=(1,0))
-
-            if self.going_train.wheels > 3:
-                offset_escape_wheel = False
-                if offset_escape_wheel:
-                    #got the escape wheel to deal with
-                    seconds_to_anchor = seconds_pinion_radius + arbors[anchor_index].get_max_radius() + self.gear_gap
-                    #directly above hands
-                    positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + seconds_to_anchor)
-                    #on the left hand side
-                    positions_relative[escape_wheel_index] = get_point_two_circles_intersect(positions_relative[anchor_index], arbors[escape_wheel_index].distance_to_next_arbor,
-                                                                                         positions_relative[second_hand_index], arbors[second_hand_index].distance_to_next_arbor,
-                                                                                         in_direction=(-1,0))
-                else:
-                    #actually found that we didn't need to be that compact, so trying stacking vertically instead
-                    #okay this ends upw ith the pendulum between the pillars, might have to go back to more compact
-                    positions_relative[escape_wheel_index] = (0, positions_relative[second_hand_index][1] + arbors[second_hand_index].distance_to_next_arbor)
-                    positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
-            else:
-                #seconds wheel is escape wheel, put anchor directly above
-                positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
-
-            distances = [arbor.distance_to_next_arbor for arbor in arbors]
-            distances2 = [get_distance_between_two_points(positions_relative[i], positions_relative[i + 1]) for i in range(len(arbors) - 1)]
-
-            # calculate angles_from_minute until it's removed
-            for i in range(all_arbors_count-1):
-
-                relative_to_next_pos = np_to_set(np.subtract(positions_relative[i + 1], positions_relative[i]))
-                distanced_calced = get_distance_between_two_points(positions_relative[i + 1], positions_relative[i])
-                distanced_shuold = arbors[i].distance_to_next_arbor
-                if i < self.going_train.powered_wheels:
-                    self.angles_from_chain[i] = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
-                else:
-
-                    self.angles_from_minute[i - self.going_train.powered_wheels] = math.atan2(relative_to_next_pos[1], relative_to_next_pos[0])
-        elif self.gear_train_layout == GearTrainLayout.VERTICAL_COMPACT:
-            #powered wheel, centre wheel, (escape wheel or penultimate wheel), anchor
-            centred_arbors = [0,
-                              self.going_train.powered_wheels,
-                              self.going_train.powered_wheels + 2,
-                              self.going_train.powered_wheels + self.going_train.wheels]
-            # we can put the arbors sligthly closer togehter if we know a previous wheel isn't going to crash into an unrelated pinion
-            # so, for now, assume that if there is a pinion extension on the arbor before the pinion we can ignore that pinion
-            # will probably backfire, but let's find out
-            # skip_pinion_spaces = [self.going_train.powered_wheels + 2]
-            skip_pinion_spaces = []
-            if self.going_train.get_arbor_with_conventional_naming(self.going_train.powered_wheels + 1).pinion_extension > 0:
-                skip_pinion_spaces.append(self.going_train.powered_wheels + 2)
-
-            positions_relative = self.get_compact_bearing_positions_2d_configable(centred_arbors=centred_arbors, skip_pinion_spaces=skip_pinion_spaces, start_on_right=self.zigzag_side)
-            self.calculate_angles_from_bearing_positions(positions_relative)
-
-        elif self.gear_train_layout == GearTrainLayout.COMPACT:
-
-            positions_relative = self.get_compact_bearing_positions_2d(start_on_right=self.zigzag_side)
-            self.calculate_angles_from_bearing_positions(positions_relative)
-
-
-        elif self.gear_train_layout == GearTrainLayout.ROUND:
-
-            # TODO decide if we want the train to go in different directions based on which side the weight is
-            self.hands_on_side = -1 if self.going_train.is_weight_on_the_right() else 1
-            arbours = [self.going_train.get_arbor_with_conventional_naming(arbour) for arbour in range(self.going_train.wheels + self.going_train.powered_wheels)]
-            distances = [arbour.distance_to_next_arbor for arbour in arbours]
-            maxRs = [arbour.get_max_radius() for arbour in arbours]
-            arcAngleDeg = 270
-
-            foundSolution = False
-            while (not foundSolution and arcAngleDeg > 180):
-                arcRadius = getRadiusForPointsOnAnArc(distances, deg_to_rad(arcAngleDeg))
-
-                # minDistance = max(distances)
-
-                if arcRadius > max(maxRs):
-                    # if none of the gears cross the centre, they should all fit
-                    # pretty sure there are other situations where they all fit
-                    # and it might be possible for this to be true and they still don't all fit
-                    # but a bit of playing around and it looks true enough
-                    foundSolution = True
-                    self.compact_radius = arcRadius
-                else:
-                    arcAngleDeg -= 1
-            if not foundSolution:
-                raise ValueError("Unable to calculate radius for gear ring, try a vertical clock instead")
-
-            angleOnArc = -math.pi / 2
-            lastPos = polar(angleOnArc, arcRadius)
-
-            for i in range(-self.going_train.powered_wheels, self.going_train.wheels):
-                '''
-                Calculate angle of the isololese triangle with the distance at the base and radius as the other two sides
-                then work around the arc to get the positions
-                then calculate the relative angles so the logic for finding bearing locations still works
-                bit over complicated
-                '''
-                # print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
-                nextAngleOnArc = angleOnArc + 2 * math.asin(distances[i + self.going_train.powered_wheels] / (2 * arcRadius)) * self.hands_on_side
-                nextPos = polar(nextAngleOnArc, arcRadius)
-
-                relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
-                if i < 0:
-                    self.angles_from_chain[i + self.going_train.powered_wheels] = relativeAngle
-                else:
-                    self.angles_from_minute[i] = relativeAngle
-                lastPos = nextPos
-                angleOnArc = nextAngleOnArc
+        positions_2d = self.gear_train_layout.get_positions()
 
         # [[x,y,z],]
         # for everything, arbours and anchor
@@ -1584,25 +1154,22 @@ class SimpleClockPlates:
         self.arbor_thicknesses = []
 
         # height of the centre of the wheel that will drive the next pinion
-        drivingZ = 0
-        for i in range(-self.going_train.powered_wheels, self.going_train.wheels + 1):
-            # print(str(i))
-            if i == -self.going_train.powered_wheels:
-                # the wheel with chain wheel ratchet
+        driving_z = 0
+        for i in range(self.going_train.powered_wheels + self.going_train.wheels + 1):
+            if i == 0:
+                # the wheel with a power source
                 # assuming this is at the very back of the clock
                 # note - this is true when chain *is* at the back, when the chain is at the front the bearingPositions will be relative, not absolute
-                pos = [0, 0, 0]
+                pos = [positions_2d[0][0], positions_2d[0][1], 0]
                 self.bearing_positions.append(pos)
                 # note - this is the chain wheel, which has the wheel at the back, but only pretends to have the pinion at the back for calculating the direction of the rest of the train
-                drivingZ = self.going_train.get_arbor(i).get_wheel_centre_z()
-                self.arbor_thicknesses.append(self.going_train.get_arbor(i).get_total_thickness())
-                # print("pinionAtFront: {} wheel {} drivingZ: {}".format(self.goingTrain.getArbour(i).pinionAtFront, i, drivingZ), pos)
+                driving_z = self.going_train.get_arbor_with_conventional_naming(i).get_wheel_centre_z()
+                self.arbor_thicknesses.append(self.going_train.get_arbor_with_conventional_naming(i).get_total_thickness())
             else:
-                r = self.going_train.get_arbor(i - 1).distance_to_next_arbor
+                r = self.going_train.get_arbor_with_conventional_naming(i - 1).distance_to_next_arbor
                 print(f"i: {i} distance_to_next_pos: {r}")
-                # print("r", r)
                 # all the other going wheels up to and including the escape wheel
-                if i == self.going_train.wheels:
+                if i == self.going_train.powered_wheels + self.going_train.wheels:
                     # the anchor
                     r+= self.anchor_distance_fudge_mm
                     if self.escapement_on_front or self.escapement_on_back:
@@ -1610,55 +1177,38 @@ class SimpleClockPlates:
                         self.arbor_thicknesses.append(0)
                         # don't do anything else
                     else:
-                        escapement = self.going_train.get_arbor(i).escapement
-                        baseZ = drivingZ - self.going_train.get_arbor(i - 1).wheel_thick / 2 + escapement.get_wheel_base_to_anchor_base_z()
+                        escapement = self.going_train.get_arbor_with_conventional_naming(i).escapement
+                        base_z = driving_z - self.going_train.get_arbor_with_conventional_naming(i - 1).wheel_thick / 2 + escapement.get_wheel_base_to_anchor_base_z()
                         self.arbor_thicknesses.append(escapement.get_anchor_thick())
-                    # print("is anchor")
+
                 else:
                     # any of the other wheels
-                    # pinionAtBack = not pinionAtBack
-                    # print("drivingZ at start:{} pinionToWheel: {} pinionCentreZ: {}".format(drivingZ, self.goingTrain.getArbour(i).getPinionToWheelZ(), self.goingTrain.getArbour(i).getPinionCentreZ()))
+                    pinion_to_wheel = self.going_train.get_arbor_with_conventional_naming(i).get_pinion_to_wheel_z()
+                    pinion_z = self.going_train.get_arbor_with_conventional_naming(i).get_pinion_centre_z()
+                    base_z = driving_z - pinion_z
 
-                    # massive bodge here, the arbor doesn't know about the escapement being on the front yet
-                    # just_pinion = i == self.going_train.wheels - 1 and (self.escapement_on_back or self.escapement_on_front)
-                    pinionToWheel = self.going_train.get_arbor(i).get_pinion_to_wheel_z()
-                    pinionZ = self.going_train.get_arbor(i).get_pinion_centre_z()
-                    baseZ = drivingZ - pinionZ
+                    driving_z = driving_z + pinion_to_wheel
 
-                    drivingZ = drivingZ + pinionToWheel
-
-                    arbor_thick = self.going_train.get_arbor(i).get_total_thickness()
+                    arbor_thick = self.going_train.get_arbor_with_conventional_naming(i).get_total_thickness()
                     self.arbor_thicknesses.append(arbor_thick)
 
-                if i <= 0:
-                    angle = self.angles_from_chain[i - 1 + self.going_train.powered_wheels]
-                else:
-                    angle = self.angles_from_minute[i - 1]
-                v = polar(angle, r)
-                # v = [v[0], v[1], baseZ]
-                lastPos = self.bearing_positions[-1]
-                # pos = list(np.add(self.bearing_positions[i-1][:2],polar(angle, r)))
-                # pos.append(baseZ)
-                pos = [lastPos[0] + v[0], lastPos[1] + v[1], baseZ]
-                # if i < self.goingTrain.wheels:
-                #     print("pinionAtFront: {} wheel {} r: {} angle: {}".format( self.goingTrain.getArbour(i).pinionAtFront, i, r, angle), pos)
-                # print("baseZ: ",baseZ, "drivingZ ", drivingZ)
+                pos = [positions_2d[i][0], positions_2d[i][1], base_z]
 
                 self.bearing_positions.append(pos)
 
         # print(self.bearingPositions)
 
-        topZs = [self.arbor_thicknesses[i] + self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
+        # work out max/min heights and adjust everything
+        top_zs = [self.arbor_thicknesses[i] + self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
 
-        bottomZs = [self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
+        bottom_zs = [self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
 
-        bottomZ = min(bottomZs)
-        if bottomZ < 0:
+        bottom_z = min(bottom_zs)
+        if bottom_z < 0:
             # positions are relative (chain at front), so readjust everything
-            topZs = [z - bottomZ for z in topZs]
-            # bottomZs = [z - bottomZ for z in bottomZs]
+            top_zs = [z - bottom_z for z in top_zs]
             for i in range(len(self.bearing_positions)):
-                self.bearing_positions[i][2] -= bottomZ
+                self.bearing_positions[i][2] -= bottom_z
 
         '''
         something is always pressed up against both the front and back plate. If it's a powered wheel that's designed for that (the chain/rope wheel is designed to use a washer,
@@ -1668,45 +1218,44 @@ class SimpleClockPlates:
 
         TODO - I assumed that the chainwheel was alays the frontmost or backmost, but that isn't necessarily true.
         '''
-        needExtraFront = False
-        needExtraBack = False
+        need_extra_front = False
+        need_extra_back = False
 
-        preliminaryPlateDistance = max(topZs)
+        preliminary_plate_distance = max(top_zs)
         for i in range(len(self.bearing_positions)):
             # check front plate
-            canIgnoreFront = False
-            canIgnoreBack = False
+            can_ignore_front = False
+            can_ignore_back = False
             if self.going_train.get_arbor_with_conventional_naming(i).get_type() == ArborType.POWERED_WHEEL:
                 if self.going_train.chain_at_back:
-                    canIgnoreBack = True
+                    can_ignore_back = True
                 else:
                     # this is the part of the chain wheel with a washer, can ignore
-                    canIgnoreFront = True
-            # topZ = self.goingTrain.getArbourWithConventionalNaming(i).get_total_thickness() + self.bearingPositions[i][2]
-            if topZs[i] >= preliminaryPlateDistance - LAYER_THICK * 2 and not canIgnoreFront:
+                    can_ignore_front = True
+            if top_zs[i] >= preliminary_plate_distance - LAYER_THICK * 2 and not can_ignore_front:
                 # something that matters is pressed up against the top plate
                 # could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
-                needExtraFront = True
+                need_extra_front = True
 
-            if self.bearing_positions[i][2] == 0 and not canIgnoreBack:
-                needExtraBack = True
+            if self.bearing_positions[i][2] == 0 and not can_ignore_back:
+                need_extra_back = True
 
-        extraFront = 0
-        extraBack = 0
-        if needExtraFront:
-            extraFront = LAYER_THICK * 2
-        if needExtraBack:
-            extraBack = LAYER_THICK * 2
+        extra_front = 0
+        extra_back = 0
+        if need_extra_front:
+            extra_front = LAYER_THICK * 2
+        if need_extra_back:
+            extra_back = LAYER_THICK * 2
 
         for i in range(len(self.bearing_positions)):
-            self.bearing_positions[i][2] += extraBack
+            self.bearing_positions[i][2] += extra_back
 
-        # print(self.bearingPositions)
-        self.plate_distance = max(topZs) + self.endshake + extraFront + extraBack
+        self.plate_distance = max(top_zs) + self.endshake + extra_front + extra_back
 
 
         if not self.power_at_bottom:
             #quick bodge, reverse the y
+            #TODO move this to GearLayout2D
             for i in range(len(self.bearing_positions)):
                 self.bearing_positions[i] = [self.bearing_positions[i][0], -self.bearing_positions[i][1], self.bearing_positions[i][2]]
 
@@ -1996,7 +1545,7 @@ class SimpleClockPlates:
         holder_thick = self.motion_works_holder_thick
 
         bottom_pos = (0, min_y)
-        if self.motion_works_holder_short:
+        if self.motion_works_holder_attached_to_friction_clip:
             bottom_pos = self.hands_position
             bottom_screw_positions=[]
 
@@ -4632,7 +4181,7 @@ class RoundClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=True,
-                 screwhole_above_anchor=False, escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, zigzag_side=False):
+                 screwhole_above_anchor=False, escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4649,13 +4198,14 @@ class RoundClockPlates(SimpleClockPlates):
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
-                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, zigzag_side=zigzag_side, screws_from_back=None,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
                          anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel, escapement_on_back=escapement_on_back)
 
-        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
-            self.motion_works_holder_short = True
+        # if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+        #assume true now
+        self.motion_works_holder_attached_to_friction_clip = True
 
         if self.wall_mounted:
             #I liked the idea, but it just didn't print well being face-up, and I really want to print those standoffs that way to print the nut without bridging
@@ -5680,7 +5230,7 @@ Firmly push all bearings into their slots, a bench vice can help with this. Alte
 
         #TODO this will also apply to simple plates
         if self.need_motion_works_holder:
-            if self.motion_works_holder_short:
+            if self.motion_works_holder_attached_to_friction_clip:
                 bom.assembly_instructions+="\n\nThe motion works holder cannot be screwed to the plate yet as it is held in with the same screws as the friction clip. It can be attached with the friction clip and the rest of the motion works later."
             else:
                 #TODO on simple plates

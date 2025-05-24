@@ -1490,7 +1490,8 @@ class GearLayout2D:
         return GearLayout2D(going_train, centred_arbors, can_ignore_pinions=can_ignore_pinions, start_on_right=start_on_right)
 
 
-    def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2):
+    def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
+                 hands_arbor_index=-1, motion_works=None, anchor_distance_fudge_mm=0):
         '''
         centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
         can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
@@ -1503,11 +1504,19 @@ class GearLayout2D:
         self.start_on_right = start_on_right
         self.arbors = self.going_train.get_all_arbors()
         self.all_offset_same_side = all_offset_same_side
+        self.hands_arbor_index = hands_arbor_index
+        self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
+        #for some plates we want to be able to carefully place motion works
+        #UNDECIDED - should this be here or stay on plates? leaving for now
+        self.motion_works = motion_works
 
         #space in mm that must be left between all non-meshing gears
         self.gear_gap = gear_gap
 
         self.total_arbors = len(self.arbors)
+
+        if self.hands_arbor_index < 0:
+            self.hands_arbor_index = self.going_train.powered_wheels
 
         if self.centred_arbors is None:
             # power source, centre wheel, and anchor
@@ -1559,7 +1568,11 @@ class GearLayout2D:
                     break
             if non_vertical_arbors_next == 0:
                 # next arbor is vertically above us
-                positions_relative[arbor_index + 1] = (0, positions_relative[arbor_index][1] + arbors[arbor_index].distance_to_next_arbor)
+                distance_to_next_arbor = arbors[arbor_index].distance_to_next_arbor
+                if arbor_index + 1 == total_arbors:
+                    #this is the distance to the anchor
+                    distance_to_next_arbor += self.anchor_distance_fudge_mm
+                positions_relative[arbor_index + 1] = (0, positions_relative[arbor_index][1] + distance_to_next_arbor)
                 arbor_index += 1
             else:
                 next_centred_index = arbor_index + non_vertical_arbors_next + 1
@@ -1570,6 +1583,7 @@ class GearLayout2D:
 
                 if non_vertical_arbors_next == 1:
                     distance_from_next_to_next_centred = arbors[arbor_index + 1].distance_to_next_arbor
+
                     positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
                                                                                           positions_relative[arbor_index + 2], distance_from_next_to_next_centred,
                                                                                           in_direction=(on_side, 0))
@@ -1703,3 +1717,58 @@ class GearLayout2DCentreSeconds(GearLayout2D):
             positions_relative[anchor_index] = (0, positions_relative[second_hand_index][1] + arbors[escape_wheel_index].distance_to_next_arbor)
 
         return positions_relative
+
+
+#TODO "circular" layout:
+'''
+
+        elif self.gear_train_layout == GearTrainLayout.ROUND:
+
+           
+ # TODO decide if we want the train to go in different directions based on which side the weight is
+            self.hands_on_side = -1 if self.going_train.is_weight_on_the_right() else 1
+            arbours = [self.going_train.get_arbor_with_conventional_naming(arbour) for arbour in range(self.going_train.wheels + self.going_train.powered_wheels)]
+            distances = [arbour.distance_to_next_arbor for arbour in arbours]
+            maxRs = [arbour.get_max_radius() for arbour in arbours]
+            arcAngleDeg = 270
+
+            foundSolution = False
+            while (not foundSolution and arcAngleDeg > 180):
+                arcRadius = getRadiusForPointsOnAnArc(distances, deg_to_rad(arcAngleDeg))
+
+                # minDistance = max(distances)
+
+                if arcRadius > max(maxRs):
+                    # if none of the gears cross the centre, they should all fit
+                    # pretty sure there are other situations where they all fit
+                    # and it might be possible for this to be true and they still don't all fit
+                    # but a bit of playing around and it looks true enough
+                    foundSolution = True
+                    self.compact_radius = arcRadius
+                else:
+                    arcAngleDeg -= 1
+            if not foundSolution:
+                raise ValueError("Unable to calculate radius for gear ring, try a vertical clock instead")
+
+            angleOnArc = -math.pi / 2
+            lastPos = polar(angleOnArc, arcRadius)
+
+            for i in range(-self.going_train.powered_wheels, self.going_train.wheels):
+
+                Calculate angle of the isololese triangle with the distance at the base and radius as the other two sides
+                then work around the arc to get the positions
+                then calculate the relative angles so the logic for finding bearing locations still works
+                bit over complicated
+
+                # print("angle on arc: {}deg".format(radToDeg(angleOnArc)))
+                nextAngleOnArc = angleOnArc + 2 * math.asin(distances[i + self.going_train.powered_wheels] / (2 * arcRadius)) * self.hands_on_side
+                nextPos = polar(nextAngleOnArc, arcRadius)
+
+                relativeAngle = math.atan2(nextPos[1] - lastPos[1], nextPos[0] - lastPos[0])
+                if i < 0:
+                    self.angles_from_chain[i + self.going_train.powered_wheels] = relativeAngle
+                else:
+                    self.angles_from_minute[i] = relativeAngle
+                lastPos = nextPos
+                angleOnArc = nextAngleOnArc
+'''

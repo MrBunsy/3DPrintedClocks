@@ -88,37 +88,38 @@ plaque = Plaque(text_lines=["W42#0 {:.1f}cm".format(train.pendulum_length_m * 10
 plaque = None
 
 # layout = GearLayout2D.get_old_gear_train_layout(train, GearTrainLayout.VERTICAL_COMPACT)#(train)
-layout = GearLayout2D.get_compact_layout(train, centred_escape_wheel=True)
+# layout = GearLayout2D.get_compact_layout(train, centred_escape_wheel=True)
+layout = GearLayout2D(train, centred_arbors=[0, 2, 4, 5], can_ignore_pinions=[4])
 
-show_object(layout.get_demo())
+# show_object(layout.get_demo())
 
-# plates = RoundClockPlates(train, motion_works, name="Wall 42", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-#                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-#                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=True,
-#                                 off_centre_escape_wheel=False)
+plates = RoundClockPlates(train, motion_works, name="Wall 42", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
+                                motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=True,
+                                off_centre_escape_wheel=False, gear_train_layout=layout)
 
 # for i,arbor in enumerate(plates.arbors_for_plate):
-#     show_object(arbor.get_assembled().translate(plates.bearing_positions[i]))
+#     show_object(arbor.get_assembled())#.translate(plates.bearing_positions[i]))
 
 # show_object(plates.get_plate(back=False))
 #
-# hands = Hands(style=HandStyle.FANCY_FRENCH, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-#               length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0)
-#
-# specific_instructions = [
-# "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
-# ]
-#
-# assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, specific_instructions=specific_instructions)
-#
-# if not outputSTL:
-#     assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.DARKER_GREY, Colour.BLACK, Colour.BLACK],
-#                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.GOLD],
-#                         gear_colours=[Colour.GOLD],
-#                         motion_works_colours=[Colour.GOLD],
-#                         plaque_colours=[Colour.WHITE, Colour.BLACK],
-#                         ratchet_colour=Colour.GOLD,
-#                         hand_colours=[Colour.BRASS])
-#
+hands = Hands(style=HandStyle.FANCY_FRENCH, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+              length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0)
+
+specific_instructions = [
+"The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
+]
+
+assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, specific_instructions=specific_instructions)
+
+if not outputSTL:
+    assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.DARKER_GREY, Colour.BLACK, Colour.BLACK],
+                        dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.GOLD],
+                        gear_colours=[Colour.GOLD],
+                        motion_works_colours=[Colour.GOLD],
+                        plaque_colours=[Colour.WHITE, Colour.BLACK],
+                        ratchet_colour=Colour.GOLD,
+                        hand_colours=[Colour.BRASS])
+
 # if outputSTL:
 #     assembly.get_BOM().export(clock_out_dir)
