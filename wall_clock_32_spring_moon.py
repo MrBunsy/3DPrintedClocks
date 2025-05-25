@@ -44,7 +44,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "wall_clock_32.2"
+clock_name= "wall_clock_32.2_postrefactor"
 clock_out_dir= "out"
 gearStyle=GearStyle.CIRCLES
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -106,7 +106,7 @@ hands = Hands(style=HandStyle.MOON, minute_fixing="square", minute_fixing_d1=mot
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
 
-assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 32#2 (Moon)")
+assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 32#2 (Moon) refactor")
 
 assembly.get_arbor_rod_lengths()
 plates.get_rod_lengths()

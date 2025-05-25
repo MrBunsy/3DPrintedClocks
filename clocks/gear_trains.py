@@ -1427,29 +1427,30 @@ class SlideWhistleTrain:
 class GearLayout2D:
 
     @staticmethod
-    def get_old_gear_train_layout(going_train, layout = GearTrainLayout.VERTICAL, extra_args=None):
+    def get_old_gear_train_layout(going_train, layout = GearTrainLayout.VERTICAL, **kwargs):
         '''
         for a quick solution for backwards compatibility
         '''
-        if extra_args is None:
-            extra_args = {}
+        # if extra_args is None:
+        #     extra_args = {}
         layouts = {
             GearTrainLayout.VERTICAL : GearLayout2D.get_vertical_layout,
             GearTrainLayout.VERTICAL_COMPACT : GearLayout2D.get_compact_vertical_layout,
-            GearTrainLayout.COMPACT: GearLayout2D.get_compact_layout
+            GearTrainLayout.COMPACT: GearLayout2D.get_compact_layout,
+            GearTrainLayout.COMPACT_CENTRE_SECONDS: GearLayout2DCentreSeconds,
         }
-        return layouts[layout](going_train, **extra_args)
+        return layouts[layout](going_train, **kwargs)
 
     @staticmethod
-    def get_vertical_layout(going_train):
+    def get_vertical_layout(going_train, **kwargs):
         '''
         All wheels in a line upright.
         The old GearTrainLayout.VERTICAL
         '''
-        return GearLayout2D(going_train, centred_arbors=[i for i in range(len(going_train.get_all_arbors()))])
+        return GearLayout2D(going_train, centred_arbors=[i for i in range(len(going_train.get_all_arbors()))], **kwargs)
 
     @staticmethod
-    def get_compact_vertical_layout(going_train):
+    def get_compact_vertical_layout(going_train, **kwargs):
         '''
         Most wheels in a line upright, with alternate wheels after the centre wheel offset.
         The old GearTrainLayout.VERTICAL_COMPACT
@@ -1467,10 +1468,10 @@ class GearLayout2D:
         pendulum_index = len(going_train.get_all_arbors()) - 1
         if pendulum_index not in centred_arbors:
             centred_arbors.append(pendulum_index)
-        return GearLayout2D(going_train, centred_arbors, all_offset_same_side=True)
+        return GearLayout2D(going_train, centred_arbors, all_offset_same_side=True, **kwargs)
 
     @staticmethod
-    def get_compact_layout(going_train, centred_escape_wheel=True, start_on_right=True):
+    def get_compact_layout(going_train, centred_escape_wheel=False, start_on_right=True, **kwargs):
         '''
         Roughly the old GearTrainLayout.COMPACT
         '''
@@ -1487,7 +1488,7 @@ class GearLayout2D:
             if arbor.pinion_extension > 0:
                 can_ignore_pinions.append(i+1)
 
-        return GearLayout2D(going_train, centred_arbors, can_ignore_pinions=can_ignore_pinions, start_on_right=start_on_right)
+        return GearLayout2D(going_train, centred_arbors, can_ignore_pinions=can_ignore_pinions, start_on_right=start_on_right, **kwargs)
 
 
     def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
@@ -1534,6 +1535,10 @@ class GearLayout2D:
             # add the anchor in automatically as it doens't have a pinion
             #TODO review this logic
             self.can_ignore_pinions.append(self.total_arbors - 1)
+
+    def get_angle_between(self, from_index, to_index):
+        positions = self.get_positions()
+        return math.atan2(positions[to_index][1] - positions[from_index][1], positions[to_index][0] - positions[from_index][0])
 
     def get_positions(self):
         '''
@@ -1614,7 +1619,12 @@ class GearLayout2D:
                     penultimate_wheel_index = next_centred_index - 2
                     first_wheel_index = arbor_index + 1
                     horizontal_distance = arbors[penultimate_wheel_index].distance_to_next_arbor
-                    current_to_last = arbors[arbor_index].get_max_radius() + get_pinion_r(last_wheel_index) + self.gear_gap
+
+                    last_wheel_pinion_r = get_pinion_r(last_wheel_index)
+                    #however, it's likely that the pinion is on the front of both the last wheel and the current wheel so we can ignore it for that reason too
+                    if arbors[arbor_index].pinion_at_front == arbors[last_wheel_index].pinion_at_front:
+                        last_wheel_pinion_r = arbors[last_wheel_index].get_arbor_extension_r()
+                    current_to_last = arbors[arbor_index].get_max_radius() + last_wheel_pinion_r + self.gear_gap
 
                     third_wheel_angle_from_current = math.pi / 2 + on_side * math.asin((horizontal_distance / 2) / current_to_last)
                     positions_relative[last_wheel_index] = np_to_set(np.add(polar(third_wheel_angle_from_current, current_to_last), positions_relative[arbor_index]))
@@ -1636,7 +1646,8 @@ class GearLayout2D:
 
                 else:
                     raise NotImplementedError(f"TODO support {non_vertical_arbors_next} non_vertical_arbors_next in GearLayout2D")
-                on_side *= -1
+                if not self.all_offset_same_side:
+                    on_side *= -1
                 arbor_index += 1 + non_vertical_arbors_next
 
         return positions_relative

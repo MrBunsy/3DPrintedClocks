@@ -28,4 +28,17 @@ fred = NotGearTrainLayout.FRED
 
 is_enum = isinstance(bob, Enum)
 
-print(is_enum)
+# print(is_enum)
+
+def function1(firstarg, kwargs_dict):
+    function2(firstarg, **kwargs_dict)
+
+def function2(firstarg, **kwargs):
+    function3(firstarg, **kwargs)
+
+def function3(firstarg, bob="bob"):
+    print(f"{firstarg}, {bob}")
+
+# function1("fred", {"bob": "robert"})
+
+function3("fred")

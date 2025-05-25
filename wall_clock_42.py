@@ -91,12 +91,14 @@ plaque = None
 # layout = GearLayout2D.get_compact_layout(train, centred_escape_wheel=True)
 layout = GearLayout2D(train, centred_arbors=[0, 2, 4, 5], can_ignore_pinions=[4])
 
+motion_works_angle_deg= rad_to_deg(layout.get_angle_between(2, 1))
+
 # show_object(layout.get_demo())
 
 plates = RoundClockPlates(train, motion_works, name="Wall 42", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=True,
-                                off_centre_escape_wheel=False, gear_train_layout=layout)
+                                gear_train_layout=layout)
 
 # for i,arbor in enumerate(plates.arbors_for_plate):
 #     show_object(arbor.get_assembled())#.translate(plates.bearing_positions[i]))

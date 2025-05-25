@@ -88,8 +88,7 @@ plaque = Plaque(text_lines=["W43#0 {:.1f}cm".format(train.pendulum_length_m * 10
 
 plates = RoundClockPlates(train, motion_works, name="Wall 43", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=False,
-                                off_centre_escape_wheel=False)
+                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=False)
 
 hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
               length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0, seconds_hand_thick=1, second_length=dial.get_hand_length(HandType.SECOND))

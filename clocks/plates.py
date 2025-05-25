@@ -349,13 +349,11 @@ class SimpleClockPlates:
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
-                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, force_escapement_above_hands=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=False):
+                 override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True):
         '''
 
-        gear_train_layout: used to be an enum, now a GearTrainLayout2D object
-        force_escapement_above_hands: deprecated, handled by gear_train_layout
-        off_centre_escape_wheel: deprecated, handled by gear_train_layout
+        gear_train_layout: used to be an enum, now a GearTrainLayout2D object, supports enum for backwards compat
 
         Idea: provide the train and the angles desired between the arbours, try and generate the rest
         No idea if it will work nicely!
@@ -366,7 +364,6 @@ class SimpleClockPlates:
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         split_detailed_plate - if the detail is raised on the front plate we'd have to print using hole-in-hole supports for the bearing holes. Some filaments this isn't as clean as others
         so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
-        anchor_distance_fudge_mm - add this to the distance between anchor and escape wheel
         off_centre_escape_wheel - if true, permit escape wheel off centre where default settings wouldn't assume this
         '''
 
@@ -375,9 +372,6 @@ class SimpleClockPlates:
         #for raised edging style
         self.edging_wide = 3
         self.edging_thick=LAYER_THICK*2
-
-        self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
-
         self.export_tolerance = 0.1
 
         self.motion_works_position_bodge = (0,0)
@@ -442,7 +436,8 @@ class SimpleClockPlates:
 
         self.gear_train_layout = gear_train_layout
         if isinstance(gear_train_layout, Enum):
-            self.gear_train_layout = GearLayout2D(self.gear_train_layout)
+            # support old designs which still use the enum
+            self.gear_train_layout = GearLayout2D.get_old_gear_train_layout(going_train, self.gear_train_layout)
 
         #to print on the back
         self.name = name
@@ -466,12 +461,11 @@ class SimpleClockPlates:
         self.escapement_on_back = escapement_on_back
         self.front_anchor_holder_part_of_dial = False
 
-        #many designs have thet escapement above the hands anyway, but do we force it? currently I think this is a 1:1 mapping with escapement_on_front
-        self.force_escapement_above_hands = escapement_on_front or force_escapement_above_hands
         self.going_train = going_train
         #we can have the escape wheel and wheel before that at same y level and both same distance from y axis
         #IDEA - why not with 3 wheels as well? would be less wide
-        self.no_upper_wheel_in_centre = (self.going_train.wheels > 3 and not self.second_hand) or off_centre_escape_wheel
+        #TODO fix this logic and tie up properly with new gear train layouts
+        self.no_upper_wheel_in_centre = (self.going_train.wheels > 3 and not self.second_hand)
 
         #if true, mount the escapment on the front of the clock (to show it off or help the grasshopper fit easily)
         #if false, it's between the plates like the rest of the gear train
@@ -1166,16 +1160,15 @@ class SimpleClockPlates:
                 driving_z = self.going_train.get_arbor_with_conventional_naming(i).get_wheel_centre_z()
                 self.arbor_thicknesses.append(self.going_train.get_arbor_with_conventional_naming(i).get_total_thickness())
             else:
-                r = self.going_train.get_arbor_with_conventional_naming(i - 1).distance_to_next_arbor
-                print(f"i: {i} distance_to_next_pos: {r}")
                 # all the other going wheels up to and including the escape wheel
                 if i == self.going_train.powered_wheels + self.going_train.wheels:
                     # the anchor
-                    r+= self.anchor_distance_fudge_mm
                     if self.escapement_on_front or self.escapement_on_back:
                         # there is nothing between the plates for this
                         self.arbor_thicknesses.append(0)
                         # don't do anything else
+                        # base_z ??
+                        base_z = 0
                     else:
                         escapement = self.going_train.get_arbor_with_conventional_naming(i).escapement
                         base_z = driving_z - self.going_train.get_arbor_with_conventional_naming(i - 1).wheel_thick / 2 + escapement.get_wheel_base_to_anchor_base_z()
@@ -2805,7 +2798,7 @@ class SimpleClockPlates:
     def add_motion_works_arm(self, plate, plate_thick, cut_holes=False):
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
 
-        if self.need_motion_works_holder and not self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+        if self.need_motion_works_holder and not self.centred_second_hand:
             # screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
@@ -4180,8 +4173,8 @@ class RoundClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
-                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, anchor_distance_fudge_mm=0, power_at_bottom=True, off_centre_escape_wheel=True,
-                 screwhole_above_anchor=False, escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT):
+                 front_anchor_holder_part_of_dial = False, split_detailed_plate=False, power_at_bottom=True,
+                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4199,9 +4192,9 @@ class RoundClockPlates(SimpleClockPlates):
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, screws_from_back=None,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, force_escapement_above_hands=escapement_on_front, style=style,
+                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
-                         anchor_distance_fudge_mm=anchor_distance_fudge_mm, power_at_bottom=power_at_bottom, off_centre_escape_wheel=off_centre_escape_wheel, escapement_on_back=escapement_on_back)
+                         power_at_bottom=power_at_bottom, escapement_on_back=escapement_on_back)
 
         # if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
         #assume true now
@@ -4303,7 +4296,7 @@ class RoundClockPlates(SimpleClockPlates):
 
     def get_friction_clip_direction(self):
         # return np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
-        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+        if self.centred_second_hand:
             #use the spare arm
             #should really abstract out the left/right pillar positions properly
             top_left_pillar = self.top_pillar_positions[0] if self.top_pillar_positions[0][0] < self.top_pillar_positions[1][0] else self.top_pillar_positions[1]
@@ -4433,7 +4426,7 @@ class RoundClockPlates(SimpleClockPlates):
         self.bottom_pillar_r = self.pillar_r
         self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick * 2
 
-        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
+        if self.centred_second_hand:
             #assume between first two wheels is further point
             #assume this is on the right hand side
             bottom_right_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius()+ 1 + self.bottom_pillar_r,
@@ -4444,7 +4437,6 @@ class RoundClockPlates(SimpleClockPlates):
             self.bottom_pillar_positions = [(-bottom_right_pillar_pos[0], bottom_right_pillar_pos[1]), bottom_right_pillar_pos]
             self.top_pillar_positions = [np_to_set(np.add(self.hands_position, pillar_pos)) for pillar_pos in [polar(math.pi/4, self.radius), polar(math.pi*3/4, self.radius)]]
         else:
-            # for the half-round design
             self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
             self.radius = self.bottom_pillar_distance/2
 
@@ -4728,7 +4720,7 @@ class RoundClockPlates(SimpleClockPlates):
             plate = plate.union(get_stroke_line([centre, end], line_wide, plate_thick))
 
 
-        if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS and self.going_train.wheels == 3:
+        if self.centred_second_hand and self.going_train.wheels == 3:
             #want some extra arms on the top left
             top_left_pillar = self.top_pillar_positions[0] if self.top_pillar_positions[0][0] < self.top_pillar_positions[1][0] else self.top_pillar_positions[1]
             plate = plate.union(get_stroke_line([centre, top_left_pillar], small_arm_wide, plate_thick))

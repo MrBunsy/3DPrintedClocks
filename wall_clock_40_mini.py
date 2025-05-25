@@ -93,9 +93,13 @@ dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialSt
                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True)
 plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 
+gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False)
+
+
 plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication)
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication,
+                                gear_train_layout=gear_train_layout)
 
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 

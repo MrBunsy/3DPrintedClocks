@@ -89,7 +89,7 @@ plates = clock.SimpleClockPlates(train, motion_works, pendulum, plate_thick=9, b
                                  back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
                                  second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225
-                                 , endshake=1.75, force_escapement_above_hands=True)#, screws_from_back=[True, False])
+                                 , endshake=1.75)#, screws_from_back=[True, False])
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.get_hook_total_thick()))
