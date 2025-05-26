@@ -66,7 +66,7 @@ backPlateFromWall=30
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 
 lanterns=[0, 1]
-pinion_extensions = {0:2, 1:2}
+pinion_extensions = {0:2, 1:3}
 #want to make second powered wheel have chunkier rod, but really struggling to get the rest of the train to fit without a crazy small module.
 #let's see if m3 is enough
 rod_diameters = [4,3,3,3,3,3]
@@ -86,7 +86,7 @@ dial = clock.Dial(outside_d=192.5+10, dial_width=192.5/10 + 5, style=clock.DialS
 plaque = clock.Plaque(text_lines=["W25#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2024"])
 
 # gear_train_layout=clock.GearLayout2D.get_old_gear_train_layout(train, clock.GearTrainLayout.VERTICAL_COMPACT, {'anchor_distance_fudge_mm':-0.5})
-gear_train_layout=clock.GearLayout2D.get_compact_vertical_layout(train, anchor_distance_fudge_mm = -0.5)
+gear_train_layout=clock.GearLayout2D.get_compact_vertical_layout(train,all_offset_same_side=False, anchor_distance_fudge_mm = -0.5, can_ignore_pinions=[2])
 
 #anchor_distance_fudge_mm judged by eye tinkering with a modelled escapement to get it to behave like the real one
 #I think that the escape wheel is being angled downwards as the back of the arbor is pressed upwards, and it's hinging aroudn the front plate.

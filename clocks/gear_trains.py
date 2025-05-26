@@ -1450,13 +1450,13 @@ class GearLayout2D:
         return GearLayout2D(going_train, centred_arbors=[i for i in range(len(going_train.get_all_arbors()))], **kwargs)
 
     @staticmethod
-    def get_compact_vertical_layout(going_train, **kwargs):
+    def get_compact_vertical_layout(going_train,  all_offset_same_side=True, **kwargs):
         '''
         Most wheels in a line upright, with alternate wheels after the centre wheel offset.
         The old GearTrainLayout.VERTICAL_COMPACT
         '''
         #powered wheels and centre wheel
-        centred_arbors = [i for i in range(going_train.powered_wheels + 1)]
+        centred_arbors = [0, going_train.powered_wheels]
 
         offset = True
         for i in range(len(going_train.get_all_arbors()) - (going_train.powered_wheels + 1)):
@@ -1468,7 +1468,7 @@ class GearLayout2D:
         pendulum_index = len(going_train.get_all_arbors()) - 1
         if pendulum_index not in centred_arbors:
             centred_arbors.append(pendulum_index)
-        return GearLayout2D(going_train, centred_arbors, all_offset_same_side=True, **kwargs)
+        return GearLayout2D(going_train, centred_arbors, all_offset_same_side=all_offset_same_side, **kwargs)
 
     @staticmethod
     def get_compact_layout(going_train, centred_escape_wheel=False, start_on_right=True, **kwargs):
