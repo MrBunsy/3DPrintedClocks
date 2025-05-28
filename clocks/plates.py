@@ -1983,57 +1983,36 @@ class SimpleClockPlates:
 
         #the bulk material that holds the bearings
         plate = cq.Workplane("XY").tag("base")
-        if self.gear_train_layout==GearTrainLayout.ROUND:
-            radius = self.compact_radius + plate_width / 2
-            #the ring that holds the gears
-            plate = plate.moveTo(self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius).circle(radius).circle(radius - plate_width).extrude(thick)
-        elif self.gear_train_layout in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT, GearTrainLayout.VERTICAL_COMPACT]:
+        # TODO if I want to brign this back. Really this should be a different plate class.
+        # if self.gear_train_layout==GearTrainLayout.ROUND:
+        #     radius = self.compact_radius + plate_width / 2
+        #     #the ring that holds the gears
+        #     plate = plate.moveTo(self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius).circle(radius).circle(radius - plate_width).extrude(thick)
+        # elif self.gear_train_layout in [GearTrainLayout.VERTICAL, GearTrainLayout.COMPACT, GearTrainLayout.VERTICAL_COMPACT]:
             #rectangle that just spans from the top bearing to the bottom pillar (so we can vary the width of the bottom section later)
-            plate = plate.moveTo((self.bearing_positions[0][0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[0][1] + self.bearing_positions[-1][1]) / 2).rect(plate_width, abs(self.bearing_positions[-1][1] - self.bearing_positions[0][1])).extrude(self.get_plate_thick(back))
-
-        if self.gear_train_layout in [GearTrainLayout.COMPACT, GearTrainLayout.VERTICAL_COMPACT]:
-            '''
-            need some extra bits to hold the bearings that are off to one side
-            '''
-            #second wheel will be off to one side
-            # side_shoots = 1 if self.goingTrain.wheels < 4 else 2
-            # for i in range(side_shoots):
-            #
-            #     points = [self.bearingPositions[self.goingTrain.chainWheels+i*2],self.bearingPositions[self.goingTrain.chainWheels+1+i*2], self.bearingPositions[self.goingTrain.chainWheels+2+i*2]]
-            #     points = [(x,y) for x,y,z in points]
-            #     plate = plate.union(get_stroke_line(points,self.minPlateWidth, self.getPlateThick(back=back)))
-            points = []
+        plate = plate.moveTo((self.bearing_positions[0][0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[0][1] + self.bearing_positions[-1][1]) / 2).rect(plate_width, abs(self.bearing_positions[-1][1] - self.bearing_positions[0][1])).extrude(self.get_plate_thick(back))
 
 
+        for bearing_index in range(len(self.bearing_positions)):
+            #little arms for any bearings not vertically aligned
+            sticky_out_ness = abs(self.bearing_positions[self.going_train.powered_wheels][0] - self.bearing_positions[bearing_index][0])
+            if sticky_out_ness > 30:
+                #a-frame arms
+                #reducing to thin arms and chunky circle around bearings
+                points = [ #bearing_pos[:2]for bearing_pos in self.bearing_positions[bearing_index - 1:bearing_index + 1 + 1 ]]
+                    self.bearing_positions[bearing_index - 1][:2],
+                    self.bearing_positions[bearing_index][:2],
+                    self.bearing_positions[bearing_index + 1][:2]
+                ]
+                plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[bearing_index][:2]))
+                # points = [(x, y) for x, y, z in points]
+                plate = plate.union(get_stroke_line(points, self.min_plate_width / 2, thick))
 
-            sticky_out_bearing_indexes = []
-            if self.going_train.wheels == 4:
-                sticky_out_bearing_indexes = [self.going_train.powered_wheels + 1, self.going_train.powered_wheels + 3]
-            else:
-                sticky_out_bearing_indexes = [self.going_train.powered_wheels + 1]
-
-            if self.going_train.powered_wheels == 2:
-                sticky_out_bearing_indexes += [1]
-
-            for bearing_index in sticky_out_bearing_indexes:
-                sticky_out_ness = abs(self.bearing_positions[self.going_train.powered_wheels][0] - self.bearing_positions[bearing_index][0])
-                if sticky_out_ness > 30:
-                    #a-frame arms
-                    #reducing to thin arms and chunky circle around bearings
-                    points = [ #bearing_pos[:2]for bearing_pos in self.bearing_positions[bearing_index - 1:bearing_index + 1 + 1 ]]
-                        self.bearing_positions[bearing_index - 1][:2],
-                        self.bearing_positions[bearing_index][:2],
-                        self.bearing_positions[bearing_index + 1][:2]
-                    ]
-                    plate = plate.union(cq.Workplane("XY").circle(self.min_plate_width / 2).extrude(thick).translate(self.bearing_positions[bearing_index][:2]))
-                    # points = [(x, y) for x, y, z in points]
-                    plate = plate.union(get_stroke_line(points, self.min_plate_width / 2, thick))
-
-                else:
-                    #just stick a tiny arm out the side for each bearing
-                    bearing_pos = self.bearing_positions[bearing_index]
-                    points = [(0, bearing_pos[1]), (bearing_pos[0], bearing_pos[1])]
-                    plate = plate.union(get_stroke_line(points, self.min_plate_width, thick))
+            elif sticky_out_ness > self.min_plate_width/2:
+                #just stick a tiny arm out the side for each bearing
+                bearing_pos = self.bearing_positions[bearing_index]
+                points = [(0, bearing_pos[1]), (bearing_pos[0], bearing_pos[1])]
+                plate = plate.union(get_stroke_line(points, self.min_plate_width, thick))
 
 
 
@@ -2075,12 +2054,12 @@ class SimpleClockPlates:
 
 
 
-        if self.gear_train_layout == GearTrainLayout.ROUND:
-            #centre of the top of the ring
-            topOfPlate = (self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius * 2)
-        else:
+        # if self.gear_train_layout == GearTrainLayout.ROUND:
+        #     #centre of the top of the ring
+        #     topOfPlate = (self.bearing_positions[0][0], self.bearing_positions[0][1] + self.compact_radius * 2)
+        # else:
             #topmost bearing
-            topOfPlate = self.bearing_positions[-1]
+        topOfPlate = self.bearing_positions[-1]
 
         # link the top pillar to the rest of the plate
         plate = plate.workplaneFromTagged("base").moveTo(topOfPlate[0] - top_pillar_r, topOfPlate[1]) \
@@ -2810,6 +2789,7 @@ class SimpleClockPlates:
                 plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
             # hole for screw to hold motion works arbour
             if cut_holes:
+                #this segfaults - if there isn't anything to cut through?
                 plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
         return plate
 

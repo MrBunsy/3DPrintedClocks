@@ -77,7 +77,7 @@ pendulumSticksOut=10
 backPlateFromWall=30
 
 train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions={1:10})
+                powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions={1:10}, escapement_split=True)
 train.print_info(weight_kg=2.5)
 train.get_arbor_with_conventional_naming(0).print_screw_length()
 
@@ -97,7 +97,7 @@ dial = clock.Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=clo
 # dial = None
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 24", gear_train_layout=clock.GearTrainLayout.COMPACT,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 24", gear_train_layout=clock.GearTrainLayout.VERTICAL_COMPACT,
                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360-30,

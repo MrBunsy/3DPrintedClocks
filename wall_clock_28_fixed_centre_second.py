@@ -37,7 +37,7 @@ if 'show_object' not in globals():
         #     raise ValueError("invalid object to show")
         pass
 
-clockName="wall_clock_28b"
+clockName="wall_clock_28b_refactor"
 clockOutDir="out"
 gearStyle=clock.GearStyle.DIAMONDS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
