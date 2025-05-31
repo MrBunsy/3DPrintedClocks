@@ -102,14 +102,15 @@ motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearS
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
+pendulum = clock.Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
 
 
 
 dial = clock.Dial(120)
 
 #rear plate super thick mainly just to ensure there's enough space for the weight to not bump into the wall!
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, back_plate_thick=15, pendulum_sticks_out=pendulumSticksOut, name="Wall 10", gear_train_layout=clock.GearTrainLayout.VERTICAL, motion_works_above=True, heavy=True, extra_heavy=True)
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, back_plate_thick=15, pendulum_sticks_out=pendulumSticksOut,
+                                 name="Wall 10", gear_train_layout=clock.GearTrainLayout.VERTICAL, motion_works_angle_deg=90, heavy=True, extra_heavy=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.SWORD, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(),

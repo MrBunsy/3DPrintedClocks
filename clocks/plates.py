@@ -1652,23 +1652,23 @@ class SimpleClockPlates:
                 # line up the hole with the big heavy weight
                 weightX = weightOnSide * self.going_train.powered_wheel.diameter / 2
 
-            if self.gear_train_layout == GearTrainLayout.ROUND:
-                #screwHoleY = chainWheelR * 1.4
-                #raise NotImplementedError("Haven't fixed this for round clocks")
-                print("TODO: fix screwholes for round clocks properly")
-                return [(weightX, self.compact_radius, True)]
+            # if self.gear_train_layout == GearTrainLayout.ROUND:
+            #     #screwHoleY = chainWheelR * 1.4
+            #     #raise NotImplementedError("Haven't fixed this for round clocks")
+            #     print("TODO: fix screwholes for round clocks properly")
+            #     return [(weightX, self.compact_radius, True)]
+            #
+            # elif self.gear_train_layout == GearTrainLayout.VERTICAL:
+            if self.extra_heavy:
 
-            elif self.gear_train_layout == GearTrainLayout.VERTICAL:
-                if self.extra_heavy:
+                # below anchor
+                topScrewHoleY = self.bearing_positions[-2][1] + (self.bearing_positions[-1][1] - self.bearing_positions[-2][1]) * 0.6
+                return [(weightX, bottomScrewHoleY, extraSupport), (weightX, topScrewHoleY, True)]
+            else:
+                # just below anchor
+                screwHoleY = self.bearing_positions[-2][1] + (self.bearing_positions[-1][1] - self.bearing_positions[-2][1]) * 0.6
 
-                    # below anchor
-                    topScrewHoleY = self.bearing_positions[-2][1] + (self.bearing_positions[-1][1] - self.bearing_positions[-2][1]) * 0.6
-                    return [(weightX, bottomScrewHoleY, extraSupport), (weightX, topScrewHoleY, True)]
-                else:
-                    # just below anchor
-                    screwHoleY = self.bearing_positions[-2][1] + (self.bearing_positions[-1][1] - self.bearing_positions[-2][1]) * 0.6
-
-                    return [(weightX, screwHoleY, extraSupport)]
+                return [(weightX, screwHoleY, extraSupport)]
 
     def get_drill_template(self, drillHoleD=7, layer_thick=LAYER_THICK_EXTRATHICK):
 
