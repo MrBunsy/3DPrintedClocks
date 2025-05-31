@@ -1492,11 +1492,13 @@ class GearLayout2D:
 
 
     def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
-                 hands_arbor_index=-1, motion_works=None, anchor_distance_fudge_mm=0):
+                 anchor_distance_fudge_mm=0, make_space_for_anchor=False):
         '''
         centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
         can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
         can_ignore_wheels: [list of indexes] again for spacing purposes, we can ignore the size of these wheels. Probably because it's in front or behind the plates
+        make_space_for_anchor: if true, assume the anchor is a circle and leave enough space. Fudge for until I bother to properly work out where the anchor is
+        anchor_distance_fudge_mm: vertical extra distance to make anchor from escape wheel, bodge to compensate for escapement on front
         '''
         self.going_train = going_train
         self.centred_arbors = centred_arbors
@@ -1505,19 +1507,13 @@ class GearLayout2D:
         self.start_on_right = start_on_right
         self.arbors = self.going_train.get_all_arbors()
         self.all_offset_same_side = all_offset_same_side
-        self.hands_arbor_index = hands_arbor_index
         self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
-        #for some plates we want to be able to carefully place motion works
-        #UNDECIDED - should this be here or stay on plates? leaving for now
-        self.motion_works = motion_works
+        self.make_space_for_anchor=make_space_for_anchor
 
         #space in mm that must be left between all non-meshing gears
         self.gear_gap = gear_gap
 
         self.total_arbors = len(self.arbors)
-
-        if self.hands_arbor_index < 0:
-            self.hands_arbor_index = self.going_train.powered_wheels
 
         if self.centred_arbors is None:
             # power source, centre wheel, and anchor
@@ -1540,6 +1536,9 @@ class GearLayout2D:
         positions = self.get_positions()
         return math.atan2(positions[to_index][1] - positions[from_index][1], positions[to_index][0] - positions[from_index][0])
 
+    # @staticmethod
+    # def check_too_close(positions, arbors, test_position):
+
     def get_positions(self):
         '''
         an attempt to produce a fully configable layout where we start on the assumption of "a line of gears vertical from hands to anchor, and any gears in between off to one side"
@@ -1555,16 +1554,21 @@ class GearLayout2D:
 
         on_side = +1 if self.start_on_right else -1
 
+        #keep track of some history for some cases where we need it (example, vertical compact design with sticking out all on the same side)
+        last_offset_side = on_side
+        last_centred_arbor = 0
+
         # proceed vertically from bottom but if there is more than one that is not central, apply more logic
         arbor_index = 0
         while arbor_index < total_arbors - 1:
+            #in this loop the current arbor index is the one that has actually been placed successfully, and the "next arbor" is the one we're current trying to place
 
             def get_pinion_r(index):
                 if index in self.can_ignore_pinions:
                     return arbors[index].get_arbor_extension_r()
                 else:
                     return arbors[index].pinion.get_max_radius()
-
+            #count how many arbors there are before the next centred arbor
             non_vertical_arbors_next = 0
             for next_arbor_index in range(arbor_index + 1, total_arbors):
                 if next_arbor_index not in self.centred_arbors:
@@ -1580,19 +1584,64 @@ class GearLayout2D:
                 positions_relative[arbor_index + 1] = (0, positions_relative[arbor_index][1] + distance_to_next_arbor)
                 arbor_index += 1
             else:
+                # more complicated logic to place 1 or more arbors which aren't centred
+
                 next_centred_index = arbor_index + non_vertical_arbors_next + 1
                 distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + get_pinion_r(next_centred_index) + self.gear_gap
+
+                if next_centred_index == total_arbors - 1 and self.make_space_for_anchor:
+                    #assume anchor is a circle
+                    distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + arbors[next_centred_index].get_max_radius()# + self.gear_gap
 
                 #default, but not always true
                 positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor)
 
                 if non_vertical_arbors_next == 1:
+
+                    #simple case, just working out min distance between the current and next centred arbor and offset to the side
                     distance_from_next_to_next_centred = arbors[arbor_index + 1].distance_to_next_arbor
 
                     positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
-                                                                                          positions_relative[arbor_index + 2], distance_from_next_to_next_centred,
+                                                                                          positions_relative[next_centred_index], distance_from_next_to_next_centred,
                                                                                           in_direction=(on_side, 0))
 
+                    def check_valid_position(check_index):
+                        '''
+                        returns {valid: bool, clash_index: int, clash_distance: float}
+                        true if should be fine,
+                        false if it will definitely clash
+                        probably lots of false negatives and positives...
+                        '''
+                        result = {
+                            'valid': True,
+                            'clash_index': -1,
+                            'clash_distance': -1.0,
+                            'clash_min_distance': -1.0
+                        }
+                        for i in range(1, check_index):
+                            #index 0 doesn't have a pinion, just skip it
+                            distance = get_distance_between_two_points(positions_relative[i], positions_relative[check_index])
+                            min_distance = arbors[check_index].get_max_radius() + get_pinion_r(i) + self.gear_gap
+                            if distance < min_distance:
+                                result['valid'] = False
+                                result['clash_distance'] = distance
+                                result['clash_min_distance'] = min_distance
+                                result['clash_index'] = i
+                                break
+                        return result
+                    clash_info = check_valid_position(arbor_index + 1)
+                    if not clash_info['valid']:#last_centred_arbor == arbor_index -2:
+                        #there was previously only one arbor stuck out the side, so the simple logic will put things too close
+                        #(probably, designed to catch this case)
+                        need_extra_space = clash_info['clash_min_distance'] - clash_info['clash_distance']
+                        #crude, just extend upwards by double this much, should really do the proper trig
+                        positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor + need_extra_space*2)
+                        #copypaste from above, think refactoring to re-use would be too much of a faff and hard to follow
+                        positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                                                                                              positions_relative[next_centred_index], distance_from_next_to_next_centred,
+                                                                                              in_direction=(on_side, 0))
+
+                    #TODO a make_space_for_anchor option for the vertical_compact layout to get clock 20 working as-was again?
 
                     # next arbor is sticking out to the side and the next next arbor is vertically above us
                 elif next_centred_index in self.can_ignore_wheels:
@@ -1649,6 +1698,9 @@ class GearLayout2D:
                 if not self.all_offset_same_side:
                     on_side *= -1
                 arbor_index += 1 + non_vertical_arbors_next
+
+                last_centred_arbor = next_centred_index
+
 
         return positions_relative
 

@@ -520,7 +520,7 @@ def get_preferred_tangent_through_point(circle_centre, circle_r, point, clockwis
 
     centre_to_tangent = Line(circle_centre, another_point=tangents[0].anotherPoint)
 
-    if centre_to_tangent.dir.dot(perpendicular) >= 0:
+    if np.dot(centre_to_tangent.dir, perpendicular) >= 0:
         return tangents[0]
     else:
         return tangents[1]
