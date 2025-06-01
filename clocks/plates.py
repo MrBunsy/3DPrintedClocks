@@ -347,7 +347,7 @@ class SimpleClockPlates:
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
-                 bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1,
+                 bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1.0,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
                  standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True):
@@ -3397,7 +3397,7 @@ class MantelClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
-                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, zig_zag_side=True):
+                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, gears_start_on_right=True):
         self.symetrical = symetrical
         # bit of a bodge, if we're symetric but the pillars aren't symetric, which one is in the "wrong" place?
         self.relocated_top_pillar = -1
@@ -3405,15 +3405,18 @@ class MantelClockPlates(SimpleClockPlates):
         self.can_be_extra_tall = (moon_complication is not None) or prefer_tall
         auto_motion_works_angle = motion_works_angle_deg < 0
 
+        gear_train_layout = GearLayout2D.get_compact_layout(going_train, start_on_right=gears_start_on_right)
+        self.zigzag_side = gears_start_on_right
+
         if fixing_screws is None:
             fixing_screws = MachineScrew(4, countersunk=True)
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
-        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=GearTrainLayout.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=fixing_screws,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
-                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, zigzag_side=zig_zag_side, screws_from_back=screws_from_back,
+                         second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, screws_from_back=screws_from_back,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
                          standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
                          split_detailed_plate=split_detailed_plate)

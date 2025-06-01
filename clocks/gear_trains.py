@@ -1471,15 +1471,19 @@ class GearLayout2D:
         return GearLayout2D(going_train, centred_arbors, all_offset_same_side=all_offset_same_side, **kwargs)
 
     @staticmethod
-    def get_compact_layout(going_train, centred_escape_wheel=False, start_on_right=True, **kwargs):
+    def get_compact_layout(going_train, start_on_right=True, **kwargs):
         '''
         Roughly the old GearTrainLayout.COMPACT
         '''
         pendulum_index = len(going_train.get_all_arbors()) - 1
         #first powered wheel and centre wheel
         centred_arbors = [0, going_train.powered_wheels]
-        if centred_escape_wheel:
-            centred_arbors.append(pendulum_index-1)
+
+        if going_train.has_seconds_hand_on_escape_wheel():
+            centred_arbors.append(pendulum_index -1)
+        if going_train.has_second_hand_on_last_wheel():
+            centred_arbors.append(pendulum_index - 2)
+
         centred_arbors.append(pendulum_index)
 
         can_ignore_pinions = []
@@ -1492,12 +1496,11 @@ class GearLayout2D:
 
 
     def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
-                 anchor_distance_fudge_mm=0, make_space_for_anchor=False):
+                 anchor_distance_fudge_mm=0):
         '''
         centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
         can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
         can_ignore_wheels: [list of indexes] again for spacing purposes, we can ignore the size of these wheels. Probably because it's in front or behind the plates
-        make_space_for_anchor: if true, assume the anchor is a circle and leave enough space. Fudge for until I bother to properly work out where the anchor is
         anchor_distance_fudge_mm: vertical extra distance to make anchor from escape wheel, bodge to compensate for escapement on front
         '''
         self.going_train = going_train
@@ -1508,7 +1511,6 @@ class GearLayout2D:
         self.arbors = self.going_train.get_all_arbors()
         self.all_offset_same_side = all_offset_same_side
         self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
-        self.make_space_for_anchor=make_space_for_anchor
 
         #space in mm that must be left between all non-meshing gears
         self.gear_gap = gear_gap
@@ -1558,6 +1560,31 @@ class GearLayout2D:
         last_offset_side = on_side
         last_centred_arbor = 0
 
+        def check_valid_position(check_index):
+            '''
+            returns {valid: bool, clash_index: int, clash_distance: float}
+            true if should be fine,
+            false if it will definitely clash
+            probably lots of false negatives and positives...
+            '''
+            result = {
+                'valid': True,
+                'clash_index': -1,
+                'clash_distance': -1.0,
+                'clash_min_distance': -1.0
+            }
+            for i in range(1, check_index):
+                # index 0 doesn't have a pinion, just skip it
+                distance = get_distance_between_two_points(positions_relative[i], positions_relative[check_index])
+                min_distance = arbors[check_index].get_max_radius() + get_pinion_r(i) + self.gear_gap
+                if distance < min_distance:
+                    result['valid'] = False
+                    result['clash_distance'] = distance
+                    result['clash_min_distance'] = min_distance
+                    result['clash_index'] = i
+                    break
+            return result
+
         # proceed vertically from bottom but if there is more than one that is not central, apply more logic
         arbor_index = 0
         while arbor_index < total_arbors - 1:
@@ -1589,9 +1616,11 @@ class GearLayout2D:
                 next_centred_index = arbor_index + non_vertical_arbors_next + 1
                 distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + get_pinion_r(next_centred_index) + self.gear_gap
 
-                if next_centred_index == total_arbors - 1 and self.make_space_for_anchor:
-                    #assume anchor is a circle
-                    distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + arbors[next_centred_index].get_max_radius()# + self.gear_gap
+                if next_centred_index == total_arbors - 1 and non_vertical_arbors_next == 1:
+                    #this is one sticky-out wheel just before the anchor, need to take the anchor itself into account
+                    # distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + arbors[next_centred_index].get_max_radius()# + self.gear_gap
+                    # old logic, needs review and really should be done properly with trig to work out where the anchor is.
+                    distance_to_next_centred_arbor =  arbors[-1].get_max_radius() + arbors[arbor_index].get_max_radius() + self.gear_gap
 
                 #default, but not always true
                 positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor)
@@ -1605,30 +1634,7 @@ class GearLayout2D:
                                                                                           positions_relative[next_centred_index], distance_from_next_to_next_centred,
                                                                                           in_direction=(on_side, 0))
 
-                    def check_valid_position(check_index):
-                        '''
-                        returns {valid: bool, clash_index: int, clash_distance: float}
-                        true if should be fine,
-                        false if it will definitely clash
-                        probably lots of false negatives and positives...
-                        '''
-                        result = {
-                            'valid': True,
-                            'clash_index': -1,
-                            'clash_distance': -1.0,
-                            'clash_min_distance': -1.0
-                        }
-                        for i in range(1, check_index):
-                            #index 0 doesn't have a pinion, just skip it
-                            distance = get_distance_between_two_points(positions_relative[i], positions_relative[check_index])
-                            min_distance = arbors[check_index].get_max_radius() + get_pinion_r(i) + self.gear_gap
-                            if distance < min_distance:
-                                result['valid'] = False
-                                result['clash_distance'] = distance
-                                result['clash_min_distance'] = min_distance
-                                result['clash_index'] = i
-                                break
-                        return result
+
                     clash_info = check_valid_position(arbor_index + 1)
                     if not clash_info['valid']:#last_centred_arbor == arbor_index -2:
                         #there was previously only one arbor stuck out the side, so the simple logic will put things too close
@@ -1640,8 +1646,6 @@ class GearLayout2D:
                         positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
                                                                                               positions_relative[next_centred_index], distance_from_next_to_next_centred,
                                                                                               in_direction=(on_side, 0))
-
-                    #TODO a make_space_for_anchor option for the vertical_compact layout to get clock 20 working as-was again?
 
                     # next arbor is sticking out to the side and the next next arbor is vertically above us
                 elif next_centred_index in self.can_ignore_wheels:

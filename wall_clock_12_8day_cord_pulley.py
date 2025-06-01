@@ -138,7 +138,7 @@ or just stick with original plan of arm on top with rounded suqare for hand?
 '''
 dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
 plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 12", gear_train_layout=clock.GearTrainLayout.VERTICAL,
-                                 motion_works_above=False, heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+                                 motion_works_angle_deg=0, heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True)
 

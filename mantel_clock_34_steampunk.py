@@ -49,7 +49,7 @@ hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", length=dial_d/2, 
 
 plaque = Plaque(text_lines=["Mantel 34#0", "L.Wallin 2025"])
 
-assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial, second_hand=True, prefer_tall=False, zig_zag_side=False, plaque=plaque, gear_style=GearStyle.ROUNDED_ARMS5)
+assembly = get_mantel_clock(clock_name=clock_name, hands = hands, dial=dial, second_hand=True, prefer_tall=False, gears_start_on_right=False, plaque=plaque, gear_style=GearStyle.ROUNDED_ARMS5)
 
 
 plate_colours=[Colour.DARKGREY, Colour.BRASS, Colour.BRASS]#[Colour.DARK_GREEN, Colour.BRASS, Colour.BRASS]

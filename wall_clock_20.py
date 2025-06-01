@@ -96,13 +96,13 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=8)
 
 dial = clock.Dial(outside_d=180, bottom_fixing=True, top_fixing=True, style=clock.DialStyle.ROMAN_NUMERALS, outer_edge_style=clock.DialStyle.CONCENTRIC_CIRCLES, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_ROUNDED)
 
-gear_train_layout = clock.GearLayout2D.get_compact_vertical_layout(train, start_on_right=False, make_space_for_anchor=True)
+# gear_train_layout = clock.GearLayout2D.get_compact_vertical_layout(train, start_on_right=False, make_space_for_anchor=True)
 
 # show_object(gear_train_layout.get_demo())
 
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", gear_train_layout=gear_train_layout,
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", gear_train_layout=clock.GearTrainLayout.VERTICAL_COMPACT,
                                  heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=40,
