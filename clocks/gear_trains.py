@@ -1634,18 +1634,18 @@ class GearLayout2D:
                                                                                           positions_relative[next_centred_index], distance_from_next_to_next_centred,
                                                                                           in_direction=(on_side, 0))
 
-
-                    clash_info = check_valid_position(arbor_index + 1)
-                    if not clash_info['valid']:#last_centred_arbor == arbor_index -2:
-                        #there was previously only one arbor stuck out the side, so the simple logic will put things too close
-                        #(probably, designed to catch this case)
-                        need_extra_space = clash_info['clash_min_distance'] - clash_info['clash_distance']
-                        #crude, just extend upwards by double this much, should really do the proper trig
-                        positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor + need_extra_space*2)
-                        #copypaste from above, think refactoring to re-use would be too much of a faff and hard to follow
-                        positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
-                                                                                              positions_relative[next_centred_index], distance_from_next_to_next_centred,
-                                                                                              in_direction=(on_side, 0))
+                    # this seems to have been producing false positives, and the main problem was avioded by using the old logic for anchor spacing, so removing for now
+                    # clash_info = check_valid_position(arbor_index + 1)
+                    # if not clash_info['valid']:#last_centred_arbor == arbor_index -2:
+                    #     #there was previously only one arbor stuck out the side, so the simple logic will put things too close
+                    #     #(probably, designed to catch this case)
+                    #     need_extra_space = clash_info['clash_min_distance'] - clash_info['clash_distance']
+                    #     #crude, just extend upwards by double this much, should really do the proper trig
+                    #     positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor + need_extra_space*2)
+                    #     #copypaste from above, think refactoring to re-use would be too much of a faff and hard to follow
+                    #     positions_relative[arbor_index + 1] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                    #                                                                           positions_relative[next_centred_index], distance_from_next_to_next_centred,
+                    #                                                                           in_direction=(on_side, 0))
 
                     # next arbor is sticking out to the side and the next next arbor is vertically above us
                 elif next_centred_index in self.can_ignore_wheels:

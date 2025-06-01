@@ -1008,10 +1008,15 @@ class SimpleClockPlates:
                                            pendulum_length=self.going_train.pendulum_length_m*1000, escapement_on_back=self.escapement_on_back)
             self.arbors_for_plate.append(arbourForPlate)
 
-    def clashes_with_wheel(self, pillar_pos, pillar_r):
+    def clashes_with_wheel(self, pillar_pos, pillar_r, min_gap=-1):
+        if min_gap < 0:
+            min_gap = self.small_gear_gap
         for i, bearing_pos in enumerate(self.bearing_positions):
             arbor = self.arbors_for_plate[i]
-            if get_distance_between_two_points(pillar_pos, bearing_pos[:2]) < arbor.get_max_radius() + pillar_r + self.small_gear_gap:
+            distance = get_distance_between_two_points(pillar_pos, bearing_pos[:2])
+            space = arbor.get_max_radius() + pillar_r + min_gap
+            if distance < space:
+                print(f"clashes by", distance - space )
                 return True
 
         return False
@@ -3664,7 +3669,7 @@ class MantelClockPlates(SimpleClockPlates):
             # top_left = np_to_set(np.add(self.bearing_positions[self.going_train.powered_wheels + 1][:2], np.multiply(polar(math.pi * 0.55), self.arbors_for_plate[self.going_train.powered_wheels + 1].get_max_radius() + self.gear_gap + self.top_pillar_r)))
             top_offset_pillar = (-top_left[0], top_left[1])
             min_distance = self.arbors_for_plate[-2].get_max_radius() + 1 + self.top_pillar_r
-            if self.clashes_with_wheel(top_offset_pillar, self.top_pillar_r):
+            if self.clashes_with_wheel(top_offset_pillar, self.top_pillar_r, min_gap=1):
                 #this would clash with something, probably escape wheel
                 right_line = Line(top_offset_pillar, another_point=self.bottom_pillar_positions[1])
                 #hacky, line uses another_point so by default the intersection will only look for between start and another_point
