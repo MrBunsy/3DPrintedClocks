@@ -21,7 +21,126 @@ class GearTrainBase:
     and enable it to be shared by multiple types of trains
     '''
 
-class GoingTrain:
+    @staticmethod
+    def tidy_list(thelist, expected_length, default_value, default_reduction=0.9):
+        '''
+        Given a list of modules or thicknesses, tidy up, fill in the gaps, trim.
+        replace -1s with expected values and fatten up list to full expected length
+        '''
+        if thelist is None:
+            # none provided, calculate entirely default train
+            thelist = [default_value * default_reduction ** i for i in range(expected_length)]
+
+        for i, module in enumerate(thelist):
+            # check for any -1s and fill them in
+            if module < 0:
+                if i == 0:
+                    thelist[i] = default_value
+                else:
+                    thelist[i] = thelist[i - 1] * default_reduction
+
+        if len(thelist) < expected_length:
+            # only some provided, finish the rest
+            for i in range(expected_length - len(thelist)):
+                thelist += [thelist[-1] * default_reduction]
+
+        return thelist[:expected_length]
+
+    def __init__(self, total_arbors, default_thickness=5.0, default_module=1.0, default_rod_diameter=3, default_reduction=0.9):
+        self.total_arbors=total_arbors
+        self.default_thickness = default_thickness
+        self.default_module = default_module
+        self.default_rod_diameter = default_rod_diameter
+        self.default_reduction = default_reduction
+
+    def generate_arbors_internal(self, modules, thicknesses, rod_diameters, pinion_thicks, lanterns, styles, pinions_face_forwards, wheel_outside_plates, pinion_extensions):
+        raise NotImplementedError("Implement in sub classes")
+
+    def generate_arbors(self, modules=None, thicknesses=None, rod_diameters=None, pinion_thicks=None, lanterns=None, styles=None, pinions_face_forwards=None,
+                        reduction=None, wheel_outside_plates=None, pinion_extensions=None):
+        '''
+        Base function to take potentially incomplete lists of requirements and fill them all out, then call the class-specific functions
+
+        modules - list of modules sizes, or -1 for auto. Can be shorter than train and rest will be filled in
+        thicknesses - list of thicknesses of gears, as per modules -1 for auto. can be shorter than train and rest will be filled in
+        rod diameters - list of diameters for the rods, or -1 for auto. Can be shorter than train and rest will be filled in
+        pinion_thicks - list of sizes of pinion, or -1 for auto. Can be shorter than train and rest will be filled in
+        pinion_extensions - list of extensions for each pinion
+        lanterns - list of indexes. Any arbor in this list will have a lantern pinion. (should this be a boolean list to be consistent?)
+        styles - list of styles. If a non-list is presented it will be used for all arbors
+        pinions_face_forwards - list of True, False or None for auto Can be shorter than train and rest will be filled in
+        reduction - for any non-specified thicknesses or modules, multiply previous thickness or module by this to get the next
+        wheel_outside_plates - list of SplitArborType. only splitting escapement currently supported, but API ready for any
+        '''
+
+
+        if reduction is None:
+            reduction = self.default_reduction
+
+        self.modules = self.tidy_list(modules, expected_length=self.total_arbors, default_value=self.default_module, default_reduction=reduction)
+        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.total_arbors, default_value=self.default_thickness, default_reduction=reduction)
+        self.rod_diameters = self.tidy_list(rod_diameters, expected_length=self.total_arbors, default_value=self.default_rod_diameter, default_reduction=1)
+        self.pinion_extensions = pinion_extensions#self.tidy_list(pinion_extensions, expected_length=self.total_arbors, default_value=0, default_reduction=1)
+        self.lanterns = lanterns
+        if self.lanterns is None:
+            self.lanterns = []
+
+        self.wheel_outside_plates = wheel_outside_plates
+
+        if self.pinion_extensions is None:
+            self.pinion_extensions = []
+        if len(self.pinion_extensions) < self.total_arbors:
+            for i in range(self.total_arbors - len(self.pinion_extensions)):
+                self.pinion_extensions += [0]
+
+        if self.wheel_outside_plates is None:
+            self.wheel_outside_plates = []
+
+        if len(self.wheel_outside_plates) < self.total_arbors:
+            for i in range(self.total_arbors - len(self.wheel_outside_plates)):
+                self.wheel_outside_plates += [SplitArborType.NORMAL_ARBOR]
+
+        self.styles = styles
+
+        if not isinstance(self.styles, list):
+            #support different style per arbor
+            self.styles = [self.styles] * self.total_arbors
+
+        #can't use tidy_list without major refactor to support non-numbers, easier to just do this to expand a short styles list:
+        if len(self.styles) < self.total_arbors:
+            for i in range(self.total_arbors - len(self.styles)):
+                self.styles += [self.styles[-1]]
+
+        #first "pinion" is the side of the powered wheel with the power mechanism, be it barrel or sprocket or anything else
+        #auto filled in will just alternate true and false through the train
+        self.pinions_face_forwards = pinions_face_forwards
+        if self.pinions_face_forwards is None:
+            #Everything I've made so far has the next wheel stack behind the powered wheel, so that's the default here
+            self.pinions_face_forwards = [True, True]
+        if len(self.pinions_face_forwards) < self.total_arbors:
+            self.pinions_face_forwards += [None] * (self.total_arbors - len(self.pinions_face_forwards))
+        for i, pinion_face_forward in enumerate(self.pinions_face_forwards):
+            if pinion_face_forward is None:
+                self.pinions_face_forwards[i] = not self.pinions_face_forwards[i-1]
+
+        self.pinion_thicks = pinion_thicks
+        if self.pinion_thicks is None:
+            self.pinion_thicks = [min(wheel_thick+3, wheel_thick*2) for wheel_thick in self.thicknesses]
+        else:
+            if len(self.pinion_thicks) < self.total_arbors:
+                self.pinion_thicks += [-1]*(self.total_arbors - len(self.pinion_thicks))
+            for i, pinion_thick in enumerate(self.pinion_thicks):
+                if pinion_thick < 0:
+                    wheel_thick = self.thicknesses[i]
+                    pinion_thick = min(wheel_thick+3, wheel_thick*2)
+                    self.pinion_thicks[i] = pinion_thick
+
+        print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}, pinions on front: {self.pinions_face_forwards}")
+
+        # self.pairs = [WheelPinionPair(pair[0], pair[1], self.modules[i], lantern=i in self.lanterns) for i, pair in enumerate(self.trains[0]["train"])]
+        self.generate_arbors_internal(self.modules, self.thicknesses, self.rod_diameters, self.pinion_thicks, self.lanterns, self.styles, self.pinions_face_forwards, self.wheel_outside_plates, self.pinion_extensions)
+    
+class GoingTrain(GearTrainBase):
     '''
     This sets which direction the gears are facing and does some work about setting the size of the escape wheel, which is getting increasingly messy
     and makes some assumptions that are no longer true, now there's a variety of power sources and train layouts.
@@ -75,6 +194,9 @@ class GoingTrain:
          This is intended to be agnostic to how the gears are laid out - the options are manually provided for which ways round the gear and scape wheel should face
 
         '''
+
+        super().__init__(total_arbors=wheels + powered_wheels + 1)
+        self.total_wheels = wheels + powered_wheels
 
         # in seconds
         self.pendulum_period = pendulum_period
@@ -684,6 +806,87 @@ class GoingTrain:
             max_power = effective_weight * GRAVITY * max_weight_speed * math.pow(10, 6)
             print("Cordwheel power varies from {:.1f}uW to {:.1f}uW".format(min_power, max_power))
 
+    def generate_arbors_internal(self, module_sizes, thicknesses, rod_diameters, pinion_thicks, lanterns, styles, pinions_face_forwards, wheel_outside_plates, pinion_extensions):
+        '''
+        replacement for gen_gears. Everything has been specified for each arbor and is customisable via generate_arbors, as inherited from GearTrainBase
+        '''
+
+        # this has been assumed for a while
+        self.pendulum_fixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+        arbors = []
+        pairs = [WheelPinionPair(wheel[0], wheel[1], module_sizes[i + self.powered_wheels], lantern=(i + self.powered_wheels) in lanterns) for i, wheel in enumerate(self.trains[0]["train"])]
+
+        powered_pairs = [WheelPinionPair(wheel[0], wheel[1], module_sizes[i], lantern=i in lanterns) for i, wheel in enumerate(self.chain_wheel_ratios)]
+
+        all_pairs = powered_pairs + pairs
+
+        # make the escape wheel as large as possible, by default
+        escape_wheel_by_arbor_extension = pinions_face_forwards[-2] == pinions_face_forwards[-3]
+        if escape_wheel_by_arbor_extension or pinion_extensions[self.total_wheels - 1] > 0:
+            # assume if a pinion extension has been added that the escape wheel doesn't clash with pinion.
+            # avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
+            escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - rod_diameters[-2] - 2) * 2
+        else:
+            # avoid previous pinion
+            escape_wheel_diameter = (pairs[len(pairs) - 1].centre_distance - pairs[len(pairs) - 2].pinion.get_max_radius() - 2) * 2
+
+        # escapement may or may not accept us changing the diameter based on its own config
+        self.escapement.set_diameter(escape_wheel_diameter)
+
+        for i in range(self.total_wheels + 1):
+
+
+
+            # works both +ve and -ve from centre wheel
+            arbors_from_centre_wheel = abs(self.powered_wheels - i)
+            clockwise = arbors_from_centre_wheel % 2 == 0
+            clockwise_from_pinion_side = clockwise == pinions_face_forwards[i]
+            powered_wheel = None
+            escapement = None
+            pinion = None
+            wheel = None
+            distance_to_next_arbor = -1
+            if i == 0:
+                powered_wheel = self.powered_wheel
+                wheel = all_pairs[i].wheel
+                distance_to_next_arbor = all_pairs[i].centre_distance
+            elif i < self.total_wheels - 1:
+                # normal wheel-pinion pairs
+                pinion = all_pairs[i - 1].pinion
+                wheel = all_pairs[i].wheel
+                distance_to_next_arbor = all_pairs[i].centre_distance
+            elif i == self.total_wheels - 1:
+                # escape wheel
+                pinion = all_pairs[i - 1].pinion
+                escapement = self.escapement
+                distance_to_next_arbor = escapement.anchor_centre_distance
+            else:
+                # anchor
+                escapement = self.escapement
+            arbor = Arbor(powered_wheel=powered_wheel,
+                          wheel=wheel,
+                          wheel_thick=thicknesses[i],
+                          arbor_d=rod_diameters[i],
+                          pinion=pinion,
+                          pinion_thick=pinion_thicks[i],
+                          end_cap_thick=-1,
+                          escapement=escapement,
+                          distance_to_next_arbor=distance_to_next_arbor,
+                          style=styles[i],
+                          pinion_at_front=pinions_face_forwards[i],
+                          clockwise_from_pinion_side=clockwise_from_pinion_side,
+                          use_ratchet=not self.huygens_maintaining_power,
+                          pinion_extension=pinion_extensions[i],
+                          #TODO finish overhauling this to make it more generic
+                          escapement_split=wheel_outside_plates[i] != SplitArborType.NORMAL_ARBOR
+                          )
+            arbors.append(arbor)
+
+        # TODO overhaul so this is always from zero
+        self.arbors = arbors[self.powered_wheels:]
+        self.powered_wheel_arbors = arbors[:self.powered_wheels]
+        self.all_arbors = arbors
+
     def gen_gears(self, module_size=1.5, rod_diameters=None, module_reduction=0.5, thick=6, powered_wheel_thick=-1, escape_wheel_max_d=-1,
                   powered_wheel_module_increase=None, pinion_thick_multiplier=2.5, style="HAC", powered_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes=None, stack_away_from_powered_wheel=False, pinion_extensions=None,
@@ -1213,7 +1416,8 @@ class SlideWhistleTrain:
         self.fan = fan
         # decided that this will be total wheels, not just wheels from the minute wheel this might become a gotcha, or might be worth refactoring the
         # time going train
-        self.wheels = wheels
+        #"total_wheels" so we can be consistent with going_train for any shared code.
+        self.total_wheels = wheels
         self.trains = []
         self.arbors = []
 
@@ -1227,7 +1431,7 @@ class SlideWhistleTrain:
         # [ [[w,p],[w,p],[w,p]] ,  ]
         all_trains = []
         all_trains_length = 1
-        for i in range(self.wheels):
+        for i in range(self.total_wheels):
             all_trains_length *= len(all_gear_pair_combos)
         allcombo_count = len(all_gear_pair_combos)
 
@@ -1235,7 +1439,7 @@ class SlideWhistleTrain:
             if previous_pairs is None:
                 previous_pairs = []
             # one fewer pair than wheels, and if we're the last pair then add the combos, else recurse
-            final_pair = pair_index == self.wheels - 2
+            final_pair = pair_index == self.total_wheels - 2
             valid_combos = all_gear_pair_combos
             for pair in range(len(valid_combos)):
                 if loud and pair % 10 == 0 and pair_index == 0:
@@ -1316,31 +1520,7 @@ class SlideWhistleTrain:
             raise RuntimeError("Unable to calculate valid going train")
         print(all_times[0])
 
-    @staticmethod
-    def tidy_list(thelist, expected_length, default_value, default_reduction=0.9):
-        '''
-        Given a list of modules or thicknesses, tidy up, fill in the gaps, trim.
-        replace -1s with expected values and fatten up list to full expected length
-        '''
-        if thelist is None:
-            #none provided, calculate entirely default train
-            thelist = [default_value*default_reduction**i for i in range(expected_length)]
 
-        for i,module in enumerate(thelist):
-            #check for any -1s and fill them in
-            if module < 0:
-                if i ==0:
-                    thelist[i] = default_value
-                else:
-                    thelist[i] = thelist[i-1]*default_reduction
-
-
-        if len(thelist) < expected_length:
-            #only some provided, finish the rest
-            for i in range(expected_length - len(thelist)):
-                thelist += [thelist[-1]*default_reduction]
-
-        return thelist[:expected_length]
 
     def generate_arbors(self, modules=None, thicknesses=None, rod_diameters=None, default_reduction=0.9, pinion_thicks=None, lanterns=None, style=None, pinions_face_forwards=None):
         '''
@@ -1356,9 +1536,9 @@ class SlideWhistleTrain:
         pinions_face_forwards - list of True, False or None for auto Can be shorter than train and rest will be filled in
         '''
 
-        self.modules = self.tidy_list(modules, expected_length=self.wheels, default_value=1, default_reduction=default_reduction)
-        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.wheels, default_value=5, default_reduction=default_reduction)
-        self.rod_diameters = self.tidy_list(rod_diameters, expected_length=self.wheels, default_value=3, default_reduction=1)
+        self.modules = self.tidy_list(modules, expected_length=self.total_wheels, default_value=1, default_reduction=default_reduction)
+        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.total_wheels, default_value=5, default_reduction=default_reduction)
+        self.rod_diameters = self.tidy_list(rod_diameters, expected_length=self.total_wheels, default_value=3, default_reduction=1)
         self.lanterns = lanterns
         if self.lanterns is None:
             self.lanterns = []
@@ -1369,8 +1549,8 @@ class SlideWhistleTrain:
         if self.pinions_face_forwards is None:
             #Everything I've made so far has the next wheel stack behind the powered wheel, so that's the default here
             self.pinions_face_forwards = [True, True]
-        if len(self.pinions_face_forwards) < self.wheels:
-            self.pinions_face_forwards += [None] * (self.wheels - len(self.pinions_face_forwards))
+        if len(self.pinions_face_forwards) < self.total_wheels:
+            self.pinions_face_forwards += [None] * (self.total_wheels - len(self.pinions_face_forwards))
         for i, pinion_face_forward in enumerate(self.pinions_face_forwards):
             if pinion_face_forward is None:
                 self.pinions_face_forwards[i] = not self.pinions_face_forwards[i-1]
@@ -1379,8 +1559,8 @@ class SlideWhistleTrain:
         if self.pinion_thicks is None:
             self.pinion_thicks = [min(wheel_thick+3, wheel_thick*2) for wheel_thick in self.thicknesses]
         else:
-            if len(self.pinion_thicks) < self.wheels:
-                self.pinion_thicks += [-1]*(self.wheels - len(self.pinion_thicks))
+            if len(self.pinion_thicks) < self.total_wheels:
+                self.pinion_thicks += [-1]*(self.total_wheels - len(self.pinion_thicks))
             for i, pinion_thick in self.pinion_thicks:
                 if pinion_thick < 0:
                     wheel_thick = self.thicknesses[i]
@@ -1396,7 +1576,7 @@ class SlideWhistleTrain:
         #TODO check this works - I'm ignoring chain at back/front like in old going train, just using the first pinion face forward to decide instead.
         clockwise = self.powered_wheel.is_clockwise() and self.pinions_face_forwards[0]
 
-        for i in range(self.wheels):
+        for i in range(self.total_wheels):
             pinion_at_front = self.pinions_face_forwards[i]
             arbor_d = self.rod_diameters[i]
             powered_wheel = None
@@ -1406,7 +1586,7 @@ class SlideWhistleTrain:
                 pinion = None
                 wheel = self.pairs[i].wheel
                 distance_to_next_arbour = self.pairs[i].centre_distance
-            elif i == self.wheels - 1:
+            elif i == self.total_wheels - 1:
                 #the fan
                 wheel = None
                 pinion = self.pairs[i - 1].pinion

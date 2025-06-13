@@ -66,6 +66,11 @@ class EscapementType(Enum):
     BROCOT = "brocot"
     NOT_IMPLEMENTED = None
 
+class SplitArborType(Enum):
+    WHEEL_OUT_FRONT = "front"
+    WHEEL_OUT_BACK = "back"
+    NORMAL_ARBOR = "normal"
+
 class GearTrainLayout(Enum):
     '''
     how to lay out gear train

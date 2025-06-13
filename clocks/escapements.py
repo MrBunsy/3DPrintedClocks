@@ -33,8 +33,8 @@ from cadquery import exporters
 class AnchorEscapement:
 
     @staticmethod
-    def get_with_optimal_pallets(teeth=30, drop_deg=2, type=EscapementType.DEADBEAT, lock_deg=2, style=AnchorStyle.CURVED_MATCHING_WHEEL, diameter=100, force_diameter=False,
-                                 anchor_thick=12, wheel_thick=3, anchor_teeth=None):
+    def get_with_optimal_pallets(teeth=30, drop_deg=2, type=EscapementType.DEADBEAT, lock_deg=2, anchor_teeth=None, force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, diameter=100,
+                                 anchor_thick=12, wheel_thick=3):
         '''
         Good drops: 3 with 30 teeth, 1.5 with 40 teeth
         Generate an anchor with pallets at 45 degrees, based only on the number of teeth and desired drop
@@ -852,6 +852,42 @@ class BrocotEscapment(AnchorEscapement):
         anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
 
         return anchor.translate((0, -self.anchor_centre_distance, 0))
+
+class SilentAnchorEscapement(AnchorEscapement):
+    def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
+            force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, cord_thick=0.8):
+
+        self.disc_thick = 2
+        anchor_thick = 3
+
+        wheel_thick = self.disc_thick*2 + anchor_thick + 3
+        self.cord_thick = cord_thick
+        self.disc_extra = 1
+
+        super().__init__(teeth=teeth, diameter=diameter, anchor_teeth=anchor_teeth, type=type, lift=lift, drop=drop, run=run, lock=lock, force_diameter=force_diameter, style=style, arbor_d=arbor_d,
+                         wheel_thick=wheel_thick, anchor_thick=anchor_thick)
+
+
+    def get_disc(self):
+        disc = cq.Workplane("XY").circle(self.radius + self.disc_extra).extrude(self.disc_thick)
+
+        cutter = cq.Workplane("XY")
+        angle_diff = math.pi*2/self.teeth
+        for tooth in range(self.teeth):
+            angle = tooth * angle_diff
+            cutter =  cutter.add(get_stroke_line([polar(angle, self.radius), polar(angle, self.radius + self.disc_extra)], thick=self.disc_thick, wide=self.cord_thick))
+        disc = disc.cut(cutter)
+
+        return disc
+
+    def get_wheel(self, pinion_side=True):
+        '''
+
+        '''
+        wheel = self.get_disc()
+
+        return wheel
+
 
 class EscapmentInterface:
     '''

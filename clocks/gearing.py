@@ -1987,7 +1987,9 @@ class ArborForPlate:
 
 
         if self.need_separate_arbor_extension(front=True):
-            assembly = assembly.add(self.get_arbour_extension(front = True).translate(self.bearing_position).translate((0,0, self.endshake/2 + self.total_thickness + self.back_plate_thick)))
+            extendo = self.get_arbour_extension(front = True)
+            if extendo is not None:
+                assembly = assembly.add(extendo.translate(self.bearing_position).translate((0,0, self.endshake/2 + self.total_thickness + self.back_plate_thick)))
         if self.need_separate_arbor_extension(front = False):
             assembly = assembly.add(self.get_arbour_extension(front = False).rotate((0,0,0),(1,0,0),180).translate(self.bearing_position).translate((0,0,self.endshake/2 + self.back_plate_thick)))
 
@@ -2466,6 +2468,12 @@ class Arbor:
         if self.get_type() == ArborType.POWERED_WHEEL:
             # currently this can only be used with the cord wheel
             self.loose_on_rod = (not self.powered_wheel.loose_on_rod) and use_ratchet
+
+        if self.end_cap_thick < 0 and self.pinion is not None:
+            self.end_cap_thick = max(wheel_thick * 0.25, 0.8)
+            if self.pinion.lantern:
+                # on the assumption that we're using lantern pinions for strenght, make them chunky
+                self.end_cap_thick = wheel_thick
 
         self.hole_d = arbor_d
         if self.loose_on_rod:

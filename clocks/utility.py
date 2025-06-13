@@ -646,6 +646,7 @@ class Colour:
     DARKER_GREY = (30, 30, 30)
     BLACK = "black"
     BROWN = (66, 40, 14)  # (139,69,19)
+    DARK_PURPLE = (12, 11, 17)
 
     RAINBOW = [RED,
                ORANGE,

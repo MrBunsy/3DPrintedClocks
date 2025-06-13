@@ -27,8 +27,8 @@ escapement = BrocotEscapment(use_rubies=True, diameter=diameter, style=AnchorSty
 # escapement = AnchorEscapement(anchor_teeth=anchor_teeth, diameter=diameter)
 #
 # show_object(escapement.get_anchor_2d().rotate((0,escapement.anchor_centre_distance,0),(0,escapement.anchor_centre_distance,1),-(escapement.lift_deg/2+escapement.lock_deg/2)))
-show_object(escapement.get_anchor().translate((0,escapement.anchor_centre_distance)))
-show_object(escapement.get_wheel().translate((0,0,10)))
+# show_object(escapement.get_anchor().translate((0,escapement.anchor_centre_distance)))
+# show_object(escapement.get_wheel().translate((0,0,10)))
 # show_object(escapement.get_assembled())
 # show_object(escapement2.get_assembled())
 #
@@ -142,3 +142,9 @@ drop=2.75
 #
 # #"projectionDir": (-1, 0, 0), "xDirection": (0,0,1)
 # exportSVG(model, "out/test_model.svg", opts={"width":400, "height":400, "projectionDir": (1, -1, 1), "xDirection": (-1, -1, 0), "yDirection": (0, 0, 1), "showHidden": False})
+
+
+# anchor = AnchorEscapement.get_with_optimal_pallets(diameter=40)
+silent = SilentAnchorEscapement(diameter=40)
+
+show_object(silent.get_wheel())

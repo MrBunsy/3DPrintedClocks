@@ -1141,15 +1141,11 @@ class SimpleClockPlates:
 
 
         '''
-        # if angles are not given, assume clock is entirely vertical, unless overriden by style below
-
         positions_2d = self.gear_train_layout.get_positions()
 
         # [[x,y,z],]
         # for everything, arbours and anchor
         self.bearing_positions = []
-        # TODO consider putting the anchor on a bushing
-        # self.bushingPositions=[]
         self.arbor_thicknesses = []
 
         # height of the centre of the wheel that will drive the next pinion
@@ -4412,7 +4408,8 @@ class RoundClockPlates(SimpleClockPlates):
         # various shared bits expect these
         self.top_pillar_r = self.pillar_r
         self.bottom_pillar_r = self.pillar_r
-        self.bottom_arm_wide = self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick * 2
+        #limiting max size because i think it was excessive for spring clocks and looks much better thinner. Shame I've already made three clock 32s.
+        self.bottom_arm_wide = min(self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick * 2, 20)
 
         if self.centred_second_hand:
             #assume between first two wheels is further point
