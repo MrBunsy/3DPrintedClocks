@@ -46,6 +46,8 @@ else:
     pinion_extensions = [0, 0, 1, 3, 0, 8]
     module_sizes = [1, 0.9, 0.9]
 
+print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
+
 pendulum_sticks_out = 10
 back_plate_from_wall = 30
 

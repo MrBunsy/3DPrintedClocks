@@ -40,17 +40,22 @@ pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 second_hand_centred = False
 escapement_details = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75, anchor_teeth=9.5)
 escapement = BrocotEscapment(teeth=escapement_details.teeth, anchor_teeth=escapement_details.anchor_teeth, lock=escapement_details.lock_deg, drop=escapement_details.drop_deg,
-                             diameter=47.5)
+                             diameter=35)#47.5
 
 barrel_gear_thick = 5
 powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=barrel_gear_thick,
-                        wall_thick=10, extra_barrel_height=1.5)
+                        wall_thick=10, extra_barrel_height=1.5, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4)
 
 train = GoingTrain(pendulum_period=1.1, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=2, runtime_hours=8 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=False)
 moduleReduction=1
 pillar_style = PillarStyle.CLASSIC
-train.calculate_ratios(max_wheel_teeth=200, min_pinion_teeth=9, wheel_min_teeth=70, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction)
+#idea - larger error allowed as I don't care about the exact pendulum period, but I do want a small gear train.
+#re-calculate pendulum period from smallest gear train
+#setting error too large and it will just favour a longer pendulum. My aim is just to find one that's really a smaller ratio
+train.calculate_ratios(max_wheel_teeth=150, min_pinion_teeth=9, wheel_min_teeth=50, pinion_max_teeth=15, max_error=200, module_reduction=moduleReduction)
+#[[93, 9], [82, 9]]
+print(f"Pendulum period: {train.recalculate_pendulum_period()}")#:.2f
 
 train.set_powered_wheel_ratios([[64, 10], [69, 10]])
 
@@ -59,14 +64,14 @@ train.print_info(for_runtime_hours=7*24)
 pendulumSticksOut=10
 backPlateFromWall=40
 
-pinion_extensions={0:1.5, 1:4}#{2:4}
-powered_modules=[WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
+pinion_extensions={0:1.5, 1:20}#{2:4}
+powered_modules=[WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
 train.gen_gears(module_sizes=[0.675, 0.675], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulum_fixing, lanterns=[0, 1],
                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=True, escapement_split=True)
 
-dial_d=210
-dial_width = dial_d*0.15
+dial_d=200
+dial_width = 40#dial_d*0.15
 
 
 

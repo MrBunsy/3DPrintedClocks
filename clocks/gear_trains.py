@@ -203,6 +203,8 @@ class GoingTrain(GearTrainBase):
         # in metres
         self.pendulum_length_m = pendulum_length_m
 
+        self.set_pendulum_info(pendulum_length_m, pendulum_period)
+
         # was experimenting with having the minute wheel outside the powered wheel to escapement train - but I think it's a dead
         # end as it will end up with some slop if it's not in the train
         self.minute_wheel_ratio = minute_wheel_ratio
@@ -212,14 +214,7 @@ class GoingTrain(GearTrainBase):
         self.huygens_maintaining_power = huygens_maintaining_power
         self.arbors = []
 
-        if pendulum_length_m < 0 and pendulum_period > 0:
-            # calulate length from period
-            self.pendulum_length_m = getPendulumLength(pendulum_period)
-        elif pendulum_period < 0 and pendulum_length_m > 0:
-            self.pendulum_period = getPendulumPeriod(pendulum_length_m)
-        else:
-            raise ValueError("Must provide either pendulum length or perioud, not neither or both")
-        print("Pendulum length {}cm and period {}s".format(self.pendulum_length_m * 100, self.pendulum_period))
+
         # note - this has become assumed in many places and will require work to the plates and layout of gears to undo
         self.chain_at_back = chain_at_back
         # likewise, this has been assumed, but I'm trying to undo those assumptions to use this
@@ -265,14 +260,56 @@ class GoingTrain(GearTrainBase):
 
         self.trains = []
 
+    def set_pendulum_info(self, pendulum_length_m=-1, pendulum_period=-1):
+        if pendulum_length_m < 0 and pendulum_period > 0:
+            # calulate length from period
+            self.pendulum_length_m = getPendulumLength(pendulum_period)
+        elif pendulum_period < 0 and pendulum_length_m > 0:
+            self.pendulum_period = getPendulumPeriod(pendulum_length_m)
+        else:
+            raise ValueError("Must provide either pendulum length or perioud, not neither or both")
+        print("Pendulum length {}cm and period {}s".format(self.pendulum_length_m * 100, self.pendulum_period))
+
     def has_seconds_hand_on_escape_wheel(self):
         # not sure this should work with floating point, but it does...
         return self.escapement_time == 60
 
     def has_second_hand_on_last_wheel(self):
 
-        last_pair = self.trains[0]["train"][-1]
+        last_pair = self.get_gear_train()[-1]
         return self.escapement_time / (last_pair[1] / last_pair[0]) == 60
+
+    def get_gear_train(self):
+        '''
+        [[wheel teeth, pinion teeth], ...]
+        '''
+        return self.trains[0]["train"]
+
+    def recalculate_pendulum_period(self):
+        '''
+        Recalculte the pendulum period from the train. Useful if the train was calculated with a large error
+        (which enables a smaller set of gears to be calculated when pendulum period doesn't need to be exact)
+
+        engineering period of there and back again
+        '''
+        train = self.get_gear_train()
+
+        total_wheel_teeth_prod = math.prod([pair[0] for pair in train])
+        total_pinion_teeth_prod = math.prod([pair[1] for pair in train])
+
+        total_ratio = total_wheel_teeth_prod / total_pinion_teeth_prod
+
+        #total_time = total_ratio * self.escapement_time
+
+        #escape wheel rotates one hour * total_ratio times per hour
+        escape_wheel_seconds = 60*60/total_ratio
+
+        pendulum_period = escape_wheel_seconds / self.escapement.teeth
+
+        self.set_pendulum_info(pendulum_period=pendulum_period)
+
+        return pendulum_period
+
 
     def get_cord_usage(self):
         '''
@@ -284,6 +321,7 @@ class GoingTrain(GearTrainBase):
 
     '''
     TODO make this generic and re-usable, I've got similar logic over in calculating chain wheel ratios and motion works
+    
     '''
 
     def calculate_ratios(self, module_reduction=0.85, min_pinion_teeth=10, max_wheel_teeth=100, pinion_max_teeth=20, wheel_min_teeth=50,
@@ -416,8 +454,9 @@ class GoingTrain(GearTrainBase):
                 # avoid if we can
                 weighting += 100
 
-            #ensure we don't choose a slightly dodgy one over a better one
-            weighting += 100* abs(error)
+            #ensure we don't choose a slightly dodgy one over a better one (unless we've got a large max error in which case this was deliberate)
+            if max_error < 0.1:
+                weighting += 100* abs(error)
 
 
             train = {"time": total_time, "train": all_trains[c], "error": abs(error), "ratio": total_ratio, "teeth": total_wheel_teeth, "weighting": weighting}
@@ -438,7 +477,7 @@ class GoingTrain(GearTrainBase):
             print("")
 
         all_times.sort(key=lambda x: x["weighting"])
-        # print(allTimes)
+        # print(all_times)
 
         self.trains = all_times
 
