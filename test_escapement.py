@@ -145,6 +145,11 @@ drop=2.75
 
 
 # anchor = AnchorEscapement.get_with_optimal_pallets(diameter=40)
-silent = SilentAnchorEscapement(diameter=40)
+# silent = SilentAnchorEscapement(diameter=40)
+anchor = AnchorEscapement.get_with_optimal_pallets(teeth=36, drop_deg=2,diameter=40)
+silent = SilentPinPalletAnchorEscapement(diameter=47.75, teeth=anchor.teeth, drop=anchor.drop_deg, lock=anchor.lock_deg, lift=anchor.lift_deg, run=anchor.run_deg)
 
-show_object(silent.get_wheel())
+# show_object(silent.get_wheel())
+# show_object(silent.get_anchor())
+show_object(silent.get_assembled(anchor_angle_deg=2, wheel_angle_deg=1.5))
+# show_object(anchor.get_assembled())

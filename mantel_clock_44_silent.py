@@ -22,7 +22,8 @@ gear_style = GearStyle.ROUNDED_ARMS5
 pillar_style = PillarStyle.CLASSIC
 
 teeth = 30 if not second_hand else 36
-escapement = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
+escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
+escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg)
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck

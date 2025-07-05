@@ -854,6 +854,9 @@ class BrocotEscapment(AnchorEscapement):
         return anchor.translate((0, -self.anchor_centre_distance, 0))
 
 class SilentAnchorEscapement(AnchorEscapement):
+    '''
+    Silent escapement using cord/gut instead of teeth on the escape wheel
+    '''
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
             force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, cord_thick=0.8):
 
@@ -888,6 +891,131 @@ class SilentAnchorEscapement(AnchorEscapement):
 
         return wheel
 
+
+
+class PinPalletAnchorEscapement(AnchorEscapement):
+    '''
+    Much smaller rods than the brocot, so requires different shaped escape wheel teeth
+    '''
+    def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
+                 force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, pin_diameter=1.0, anchor_thick=5, wheel_thick=3):
+
+        self.pin_diameter = pin_diameter
+
+        #aprox
+        pin_arc_angle = pin_diameter*0.5/(diameter/2)
+        #add extra drop to take into account the size of the pin
+        #pretty sure this is actually wrong
+        drop += rad_to_deg(pin_arc_angle)
+        #probably need to do something similar for lift?
+
+        #anchor_thick just thickness of base, assuming twice that when pin is involved TODO
+
+        super().__init__(teeth=teeth, diameter=diameter, anchor_teeth=anchor_teeth, type=type, lift=lift, drop=drop, run=run, lock=lock, force_diameter=force_diameter, style=style, arbor_d=arbor_d,
+                         wheel_thick=wheel_thick, anchor_thick=anchor_thick)
+
+
+
+    def calc_geometry(self):
+        super().calc_geometry()
+
+        tooth_start_angle = math.atan2(self.entry_pallet_start_pos[1], self.entry_pallet_start_pos[0])
+        tooth_end_angle = math.atan2(self.entry_pallet_end_pos[1], self.entry_pallet_end_pos[0])
+        self.tooth_tip_angle = abs(tooth_start_angle - tooth_end_angle)
+
+        #not certain this is correct, will see how it looks
+        self.entry_pin_pos = get_average_of_points([self.entry_pallet_start_pos, self.entry_pallet_end_pos])
+        self.exit_pin_pos = get_average_of_points([self.exit_pallet_start_pos, self.exit_pallet_end_pos])
+
+    def get_wheel_base_to_anchor_base_z(self):
+        #TODO
+        return self.wheel_thick - self.anchor_thick*2
+
+    def get_wheel_2d(self):
+        '''
+
+        '''
+
+        start_distance = get_distance_between_two_points(self.entry_pallet_start_pos, (0,0))
+        end_distance = get_distance_between_two_points(self.entry_pallet_end_pos, (0,0))
+        #this doesn't take into account the thickness of the pin
+        end_distance_from_anchor = get_distance_between_two_points(self.entry_pallet_end_pos, self.anchor_centre)
+
+        points = get_circle_intersections((0,0), self.inner_radius, self.anchor_centre, end_distance_from_anchor)
+        inner_circle_intersection = points[0] if points[0][0] < points[1][0] else points[1]
+
+        end_points_angle = math.atan2(self.entry_pallet_end_pos[1], self.entry_pallet_end_pos[0])
+        inner_circle_intersection_angle = math.atan2(inner_circle_intersection[1], inner_circle_intersection[0])
+        inner_circle_intersection_relative_angle = inner_circle_intersection_angle - end_points_angle
+
+        wheel = cq.Workplane("XY").moveTo(self.inner_radius, 0)
+
+        for tooth in range(self.teeth):
+            #building clockwise so we match up wit hstart and end of pallets, even though the angles will be going -ve
+            start_angle = -tooth * math.pi*2/self.teeth
+            end_angle = start_angle - self.tooth_tip_angle
+
+            next_start_angle = start_angle - self.tooth_angle
+            next_start_pos = polar(next_start_angle, self.inner_radius)
+
+            pallet_start_pos = polar(start_angle, start_distance)
+            pallet_end_pos = polar(end_angle, end_distance)
+
+
+            wheel = wheel.lineTo(pallet_start_pos[0], pallet_start_pos[1]).lineTo(pallet_end_pos[0], pallet_end_pos[1])
+
+            inner = polar(end_angle, self.inner_radius)
+            # temp with straight lines
+            # wheel = wheel.lineTo(inner[0], inner[1]).radiusArc(next_start_pos, self.inner_radius)
+            curve_end = polar(end_angle + inner_circle_intersection_relative_angle, self.inner_radius)
+            wheel = wheel.radiusArc(curve_end, -end_distance_from_anchor).radiusArc(next_start_pos, self.inner_radius)
+
+
+        wheel = wheel.close()#.extrude(self.wheel_thick)
+
+
+        return wheel
+
+    def get_wheel(self, thick=-1):
+        if thick < 0:
+            thick = self.wheel_thick
+        return self.get_wheel_2d().extrude(thick)
+
+    def get_anchor(self):
+        '''
+        stolen from brocot
+        '''
+        # cylinder around the rod
+        anchor = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(self.anchor_thick)
+
+        arm_wide = min(self.pin_diameter * 2 + 4, self.centre_r*2)
+
+        distance_to_entry = get_distance_between_two_points(self.wheel_centre, self.entry_pin_pos)
+        distance_to_exit = get_distance_between_two_points(self.wheel_centre, self.exit_pin_pos)
+        arm_radius = (distance_to_entry + distance_to_exit) / 2
+
+        anchor = anchor.union(get_stroke_arc(self.exit_pin_pos, self.entry_pin_pos, arm_radius, wide=arm_wide, thick=self.anchor_thick, style=StrokeStyle.ROUND))
+
+        anchor = anchor.faces(">Z").workplane().pushPoints([self.entry_pin_pos, self.exit_pin_pos]).circle(self.pin_diameter/2).cutThruAll()
+
+        pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance / 2).rect(self.centre_r * 2, self.anchor_centre_distance).extrude(self.anchor_thick)
+        pillar = pillar.cut(cq.Workplane("XY").circle(arm_radius).extrude(self.anchor_thick))
+        try:
+            anchor = anchor.union(pillar)
+        except:
+            pass
+
+        anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
+        
+        return anchor.translate((0, -self.anchor_centre_distance, 0))
+
+
+class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
+    def get_wheel(self, thick=-1):
+        wheel = super().get_wheel(thick)
+        #this might be irrelevant unless printing with a really tiny nozzle
+        wheel = wheel.edges("|Z").fillet(0.03)
+        return wheel
 
 class EscapmentInterface:
     '''
@@ -939,6 +1067,9 @@ class EscapmentInterface:
         return None
 
     def get_wheel_2d(self):
+        '''
+        I don't think there's much need to get the 2D version any more, should probably replace with teh 3D version
+        '''
         return None
 
     def get_wheel_base_to_anchor_base_z(self):

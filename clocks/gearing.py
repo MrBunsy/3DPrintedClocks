@@ -2671,12 +2671,12 @@ To keep this assembly together, use a small amount of superglue between the whee
         arbour_or_pivot_r = self.pinion.get_max_radius()
         if standalone:
             arbour_or_pivot_r = self.arbor_d * 2
-        wheel = self.escapement.get_wheel_2d()
+        # wheel = self.escapement.get_wheel_2d()
 
         clockwise = True if standalone else self.clockwise_from_pinion_side
 
 
-        wheel = wheel.extrude(self.wheel_thick)
+        wheel = self.escapement.get_wheel()
         wheel = Gear.cutStyle(wheel, outer_radius=self.escapement.get_wheel_inner_r(), inner_radius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise, lightweight=True)
 
         if standalone:
