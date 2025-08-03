@@ -847,7 +847,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         if self.with_mat:
             mat, mat_detail = self.plates.get_mat()
             clock = clock.add(mat.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock))
-            clock = clock.add(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock))
+            if mat_detail is not None:
+                clock = clock.add(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock))
 
         if with_pendulum:
             bob = self.pendulum.get_bob(hollow=False)
@@ -1121,7 +1122,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             mat, mat_detail = self.plates.get_mat()
 
             show_object(mat.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[0]}, name="Mat")
-            show_object(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[2 % len(plate_colours)]}, name="Mat Detail")
+            if mat_detail is not None:
+                show_object(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[2 % len(plate_colours)]}, name="Mat Detail")
 
         if with_rods:
             #show with diameter slightly smaller so it's clearer on the render what's rod and what's hole

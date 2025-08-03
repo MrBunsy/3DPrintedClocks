@@ -3211,7 +3211,9 @@ class SimpleClockPlates:
 
         base = front_plate.intersect(plane)
         top = front_plate.cut(plane).translate((0,0,-main_chunk_thick))
-        detail = self.get_plate_detail(back=False, for_printing=True).translate((0,0,-main_chunk_thick))
+        detail = self.get_plate_detail(back=False, for_printing=True)
+        if detail is not None:
+            detail = detail.translate((0,0,-main_chunk_thick))
 
         return base, top, detail
 
@@ -3985,7 +3987,9 @@ class MantelClockPlates(SimpleClockPlates):
         mat = get_mat_shape(thick)
 
         #thicker mat because otherwise the shell won't work
-        detail = self.get_plate_detail(back=False, for_this_shape=get_mat_shape(self.edging_wide*10)).translate((0,0,thick))
+        detail = self.get_plate_detail(back=False, for_this_shape=get_mat_shape(self.edging_wide*10))
+        if detail is not None:
+            detail = detail.translate((0,0,thick))
         # detail = None
         return (mat, detail)
 
@@ -4070,7 +4074,8 @@ class MantelClockPlates(SimpleClockPlates):
             BillOfMaterials.PrintedPart("mat_detail", detail, printing_instructions="Combine with mat for a multicolour print"),
         ])
         model = cq.Workplane("XY").add(mat.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.mat_thick, 0)))
-        model = model.add(detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.mat_thick, 0)))
+        if detail is not None:
+            model = model.add(detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.mat_thick, 0)))
         bom.add_model(model)
 
         return bom
