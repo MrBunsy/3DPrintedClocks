@@ -856,6 +856,7 @@ class BrocotEscapment(AnchorEscapement):
 class SilentAnchorEscapement(AnchorEscapement):
     '''
     Silent escapement using cord/gut instead of teeth on the escape wheel
+    Unfinished
     '''
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
             force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, cord_thick=0.8):
@@ -898,9 +899,11 @@ class PinPalletAnchorEscapement(AnchorEscapement):
     Much smaller rods than the brocot, so requires different shaped escape wheel teeth
     '''
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
-                 force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, pin_diameter=1.0, anchor_thick=5, wheel_thick=3):
+                 force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, pin_diameter=1.0, anchor_thick=5, wheel_thick=3, pin_external_length=10):
 
         self.pin_diameter = pin_diameter
+        #how much pin sticks out the front (or size of gap for silent)
+        self.pin_external_length = pin_external_length
 
         #aprox
         pin_arc_angle = pin_diameter*0.5/(diameter/2)
@@ -909,10 +912,16 @@ class PinPalletAnchorEscapement(AnchorEscapement):
         drop += rad_to_deg(pin_arc_angle)
         #probably need to do something similar for lift?
 
+        self.fixing_screws = MachineScrew(metric_thread=2, countersunk=True)
+
         #anchor_thick just thickness of base, assuming twice that when pin is involved TODO
 
         super().__init__(teeth=teeth, diameter=diameter, anchor_teeth=anchor_teeth, type=type, lift=lift, drop=drop, run=run, lock=lock, force_diameter=force_diameter, style=style, arbor_d=arbor_d,
                          wheel_thick=wheel_thick, anchor_thick=anchor_thick)
+
+        gap_size = self.anchor_centre_distance - self.radius
+
+        self.fixing_screw_pos = (0, (-gap_size + self.fixing_screws.metric_thread/2 + 2))
 
 
 
@@ -981,14 +990,14 @@ class PinPalletAnchorEscapement(AnchorEscapement):
             thick = self.wheel_thick
         return self.get_wheel_2d().extrude(thick)
 
-    def get_anchor(self):
+    def get_basic_anchor_shape(self):
         '''
-        stolen from brocot
-        '''
+                stolen from brocot
+                '''
         # cylinder around the rod
         anchor = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance).circle(self.centre_r).extrude(self.anchor_thick)
 
-        arm_wide = min(self.pin_diameter * 2 + 4, self.centre_r*2)
+        arm_wide = min(self.pin_diameter * 2 + 4, self.centre_r * 2)
 
         distance_to_entry = get_distance_between_two_points(self.wheel_centre, self.entry_pin_pos)
         distance_to_exit = get_distance_between_two_points(self.wheel_centre, self.exit_pin_pos)
@@ -996,7 +1005,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
 
         anchor = anchor.union(get_stroke_arc(self.exit_pin_pos, self.entry_pin_pos, arm_radius, wide=arm_wide, thick=self.anchor_thick, style=StrokeStyle.ROUND))
 
-        anchor = anchor.faces(">Z").workplane().pushPoints([self.entry_pin_pos, self.exit_pin_pos]).circle(self.pin_diameter/2).cutThruAll()
+        anchor = anchor.faces(">Z").workplane().pushPoints([self.entry_pin_pos, self.exit_pin_pos]).circle(self.pin_diameter / 2).cutThruAll()
 
         pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance / 2).rect(self.centre_r * 2, self.anchor_centre_distance).extrude(self.anchor_thick)
         pillar = pillar.cut(cq.Workplane("XY").circle(arm_radius).extrude(self.anchor_thick))
@@ -1006,8 +1015,36 @@ class PinPalletAnchorEscapement(AnchorEscapement):
             pass
 
         anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
-        
+
         return anchor.translate((0, -self.anchor_centre_distance, 0))
+
+    def get_anchor(self, bottom_half=True):
+        outline = self.get_basic_anchor_shape()
+
+        '''
+        Assumption: bottom will be attached to the rod which links anchor to the pendulum, so will be printed upside down
+        
+        plan: screw in from the bottom without a nut, just using the new self-tapping hole
+        '''
+
+        if bottom_half:
+            outline = outline.cut(self.fixing_screws.get_cutter(self_tapping=False, loose=True, ignore_head=False).translate(self.fixing_screw_pos))
+        else:
+            outline = outline.cut(self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).translate(self.fixing_screw_pos))
+
+
+        return outline
+
+    def get_assembled(self, anchor_angle_deg = 0, wheel_angle_deg=0, distance_fudge_mm=0):
+
+        anchor =  self.get_anchor(bottom_half=True).add(self.get_anchor(bottom_half=False).translate((0,0,self.pin_external_length+self.anchor_thick)))
+
+        anchor = anchor.rotate((0, 0, 0), (0, 0, 1), anchor_angle_deg).translate((0, self.anchor_centre_distance + distance_fudge_mm))
+
+        assembly = anchor.add(self.get_wheel().rotate((0, 0, 0), (0, 0, 1), wheel_angle_deg).translate((0,0,self.anchor_thick + self.pin_external_length/2 - self.wheel_thick/2)))
+
+        return assembly
+
 
 
 class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):

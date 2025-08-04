@@ -56,7 +56,7 @@ print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
 pendulum_sticks_out = 10
 back_plate_from_wall = 30
 
-pinion_thicks = [barrel_gear_thick*1.8, 4*1.8, 7.5, 7, 7, 7]
+pinion_thicks = [barrel_gear_thick*20, 4*1.8, 7.5, 7, 7, 7]
 
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
 
