@@ -990,7 +990,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
             thick = self.wheel_thick
         return self.get_wheel_2d().extrude(thick)
 
-    def get_basic_anchor_shape(self):
+    def get_anchor(self):
         '''
                 stolen from brocot
                 '''
@@ -1018,32 +1018,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
 
         return anchor.translate((0, -self.anchor_centre_distance, 0))
 
-    def get_anchor(self, bottom_half=True):
-        outline = self.get_basic_anchor_shape()
 
-        '''
-        Assumption: bottom will be attached to the rod which links anchor to the pendulum, so will be printed upside down
-        
-        plan: screw in from the bottom without a nut, just using the new self-tapping hole
-        '''
-
-        if bottom_half:
-            outline = outline.cut(self.fixing_screws.get_cutter(self_tapping=False, loose=True, ignore_head=False).translate(self.fixing_screw_pos))
-        else:
-            outline = outline.cut(self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).translate(self.fixing_screw_pos))
-
-
-        return outline
-
-    def get_assembled(self, anchor_angle_deg = 0, wheel_angle_deg=0, distance_fudge_mm=0):
-
-        anchor =  self.get_anchor(bottom_half=True).add(self.get_anchor(bottom_half=False).translate((0,0,self.pin_external_length+self.anchor_thick)))
-
-        anchor = anchor.rotate((0, 0, 0), (0, 0, 1), anchor_angle_deg).translate((0, self.anchor_centre_distance + distance_fudge_mm))
-
-        assembly = anchor.add(self.get_wheel().rotate((0, 0, 0), (0, 0, 1), wheel_angle_deg).translate((0,0,self.anchor_thick + self.pin_external_length/2 - self.wheel_thick/2)))
-
-        return assembly
 
 
 
@@ -1053,6 +1028,38 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
         #this might be irrelevant unless printing with a really tiny nozzle
         wheel = wheel.edges("|Z").fillet(0.03)
         return wheel
+
+    def get_anchor(self, bottom_half=True):
+        outline = super().get_anchor()
+
+        '''
+        Assumption: bottom will be attached to the rod which links anchor to the pendulum, so will be printed upside down
+
+        plan: screw in from the bottom without a nut, just using the new self-tapping hole
+        '''
+
+        if bottom_half:
+            outline = outline.cut(
+                self.fixing_screws.get_cutter(self_tapping=False, loose=True, ignore_head=False).translate(
+                    self.fixing_screw_pos))
+        else:
+            outline = outline.cut(
+                self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).translate(self.fixing_screw_pos))
+
+        return outline
+
+    def get_assembled(self, anchor_angle_deg=0, wheel_angle_deg=0, distance_fudge_mm=0):
+
+        anchor = self.get_anchor(bottom_half=True).add(
+            self.get_anchor(bottom_half=False).translate((0, 0, self.pin_external_length + self.anchor_thick)))
+
+        anchor = anchor.rotate((0, 0, 0), (0, 0, 1), anchor_angle_deg).translate(
+            (0, self.anchor_centre_distance + distance_fudge_mm))
+
+        assembly = anchor.add(self.get_wheel().rotate((0, 0, 0), (0, 0, 1), wheel_angle_deg).translate(
+            (0, 0, self.anchor_thick + self.pin_external_length / 2 - self.wheel_thick / 2)))
+
+        return assembly
 
 class EscapmentInterface:
     '''
