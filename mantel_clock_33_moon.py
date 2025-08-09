@@ -152,6 +152,7 @@ back_plate_from_wall=30
 # print("new wheel r", newpair.wheel.get_max_radius(), "new pinion r", newpair.pinion.get_max_radius())
 #this was a mistake, should have been clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2) (but this doesn't fit current design)
 intermediate_wheel_module=1.2
+#TODO centre wheel and intemediate wheel can rub against each other.
 pinion_extensions = {0:1, 1:3, 3:8} if moon else {0:1, 1:12, 2:5}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 

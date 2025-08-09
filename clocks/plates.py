@@ -3896,8 +3896,8 @@ class MantelClockPlates(SimpleClockPlates):
         will be similar to get_text_spaces, not sure how to abstract anything out to share code yet
         '''
 
-        #crashes into ratchet pawl, so keep on the same side regardless
-        side = 0# if self.zigzag_side else 1
+        #crashes into ratchet pawl, so keep on the same side regardless (trying again..)
+        side = 0# if self.zigzag_side else 1# if self.zigzag_side else 1
 
         long_line = Line(self.bottom_pillar_positions[side], another_point=self.top_pillar_positions[side])
         long_space_length = np.linalg.norm(np.subtract(self.bearing_positions[3][:2], self.bottom_pillar_positions[side]))

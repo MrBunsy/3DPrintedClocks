@@ -1759,6 +1759,8 @@ class ArborForPlate:
                 #need arbor extension on the pinion
                 wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinion_at_front).translate((0, 0, self.total_thickness)))
 
+
+
         return wheel
 
     def get_escape_wheel_shapes(self):
@@ -1782,6 +1784,9 @@ class ArborForPlate:
         #the Arbor will flip the anchor to the correct clockwiseness
         anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), rad_to_deg(anchor_angle))
         anchor_thick = self.arbor.escapement.get_anchor_thick()
+        #hackery, tidy up when it's more obvious what the best approach is
+        if self.arbor.escapement.split:
+            anchor_thick=self.arbor.escapement.anchor_thick
         # flip over so the front is on the print bed
         anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, anchor_thick))
         if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
@@ -1876,6 +1881,10 @@ class ArborForPlate:
             # print("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
 
+        if self.arbor.escapement.split:
+            #
+            shapes["anchor_second_half"] = self.arbor.escapement.get_anchor(bottom_half=False).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(anchor_angle)).translate((0,0,-self.arbor.escapement.anchor_thick))
+
         crutch = self.get_pendulum_crutch()
         if crutch is not None:
             shapes["crutch"] = crutch
@@ -1895,6 +1904,10 @@ class ArborForPlate:
         shapes = self.get_shapes()
         if self.type == ArborType.ANCHOR:
             assembly = assembly.add(shapes["anchor"].rotate((0, 0, 0), (1, 0, 0), 180))
+            #hackery, need to decide where this logic should live:
+            if self.arbor.escapement.split:
+                assembly = assembly.translate((0,0, - (self.arbor.escapement.get_anchor_thick()-self.arbor.escapement.anchor_thick)))
+                assembly = assembly.union(shapes["anchor_second_half"])
             if self.arbor.escapement.type == EscapementType.GRASSHOPPER:
                 # move 'down' by frame thick because we've just rotated the frame above
                 assembly = assembly.add(self.arbor.escapement.get_assembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0, 0, -self.arbor.escapement.frame_thick)))
@@ -2704,6 +2717,10 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         arbour = arbour.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_total_thickness()))
 
+        cutter = self.get_pinion_extension_cutter()
+        if cutter is not None:
+            arbour = arbour.cut(cutter)
+
         return arbour
 
     def get_STL_modifier_pinion_shape(self, nozzle_size=0.4):
@@ -2730,6 +2747,21 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         return None
 
+    def get_pinion_extension_cutter(self):
+        '''
+        get a shape which can cut away the pinion extension to make it less chunky
+        '''
+        if self.pinion_extension > 5:
+            pinion_r = self.get_pinion_max_radius()
+            cut_to_r = self.get_arbor_extension_r()  # pinion_r * 0.7
+            cutter_high = self.pinion_extension - 2
+            cutter = cq.Workplane("XY").circle(pinion_r * 1.5).circle(cut_to_r).extrude(cutter_high).translate((0, 0, self.wheel_thick))
+            # trim off the top so this is printable at 45deg
+            cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0, height=pinion_r * 1.5, pnt=(0, 0, cutter_high + self.wheel_thick), dir=(0, 0, -1)))
+            return cutter
+
+        return None
+
     def get_shape(self, for_printing=True):
         '''
         return a shape that can be exported to STL
@@ -2746,6 +2778,14 @@ To keep this assembly together, use a small amount of superglue between the whee
             shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                              pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
                                              lantern_offset=self.get_lantern_trundle_offset())
+            if self.pinion_extension > 5:
+                pinion_r = self.get_pinion_max_radius()
+                cut_to_r = self.get_arbor_extension_r()#pinion_r * 0.7
+                cutter_high = self.pinion_extension - 2
+                cutter = cq.Workplane("XY").circle(pinion_r * 1.5).circle(cut_to_r).extrude(cutter_high).translate((0, 0, self.wheel_thick))
+                # trim off the top so this is printable at 45deg
+                cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0, height=pinion_r * 1.5, pnt=(0, 0, cutter_high + self.wheel_thick), dir=(0, 0, -1)))
+                shape = shape.cut(cutter)
 
             # shape = self.pinion.get3D
 

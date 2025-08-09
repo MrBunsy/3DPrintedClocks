@@ -61,9 +61,10 @@ class HandType(Enum):
 
 class EscapementType(Enum):
     DEADBEAT = "deadbeat"
-    RECOIL = "recoil" # new recoil is still untested
+    RECOIL = "recoil" # new recoil works but needs reducing in size
     GRASSHOPPER = "grasshopper"
     BROCOT = "brocot"
+    PIN_PALLET = "pin pallet"
     NOT_IMPLEMENTED = None
 
 class SplitArborType(Enum):

@@ -166,6 +166,8 @@ class AnchorEscapement:
         self.tooth_tip_width=1
 
         self.type = type
+        # this anchor is split into more than one printed part. not sure best way to handle this?
+        self.split = False
 
         if anchor_teeth is None:
             # if type == "recoil":
@@ -338,7 +340,7 @@ class AnchorEscapement:
         '''
         REturn Z change between the bottom of the wheel and the bottom of the anchor
         '''
-        return -(self.anchor_thick - self.wheel_thick)/2
+        return -(self.get_anchor_thick() - self.wheel_thick)/2
 
     def get_distance_beteen_arbours(self):
         return self.anchor_centre_distance
@@ -912,16 +914,15 @@ class PinPalletAnchorEscapement(AnchorEscapement):
         drop += rad_to_deg(pin_arc_angle)
         #probably need to do something similar for lift?
 
-        self.fixing_screws = MachineScrew(metric_thread=2, countersunk=True)
+
 
         #anchor_thick just thickness of base, assuming twice that when pin is involved TODO
 
         super().__init__(teeth=teeth, diameter=diameter, anchor_teeth=anchor_teeth, type=type, lift=lift, drop=drop, run=run, lock=lock, force_diameter=force_diameter, style=style, arbor_d=arbor_d,
                          wheel_thick=wheel_thick, anchor_thick=anchor_thick)
 
-        gap_size = self.anchor_centre_distance - self.radius
 
-        self.fixing_screw_pos = (0, (-gap_size + self.fixing_screws.metric_thread/2 + 2))
+        self.type = EscapementType.PIN_PALLET
 
 
 
@@ -991,6 +992,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
         return self.get_wheel_2d().extrude(thick)
 
     def get_anchor(self):
+        print("PinPalletAnchorEscapement anchor")
         '''
                 stolen from brocot
                 '''
@@ -1023,15 +1025,43 @@ class PinPalletAnchorEscapement(AnchorEscapement):
 
 
 class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
+
+    def __init__(self, *args, **kwargs):
+        #feeling too lazy to repeat all those args, will see if this is easier to use or not
+        super().__init__(*args, **kwargs)
+        self.fixing_screws = MachineScrew(metric_thread=2, countersunk=True)
+        self.split = True
+
+    def get_BOM_for_combining_with_arbor(self):
+        bom = super().get_BOM_for_combining_with_arbor()
+        fixing_screw_length = get_nearest_machine_screw_length(self.get_anchor_thick(), self.fixing_screws)
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", purpose="Anchor fixing screws", quantity=1))
+        bom.add_item(BillOfMaterials.Item(f"Nylon (or similar) wire {self.pin_diameter:.0f}mm diameter", purpose="Strung between halves of anchor to make a silent pallet", quantity=1))
+
+        bom.assembly_instructions += "Screw both halves of the anchor together and string the wire through the holes."
+
+        return bom
+        # self.fixing_screw_pos = (0,-gap_size)
+    def get_anchor_thick(self):
+        return self.anchor_thick*2 + self.pin_external_length
     def get_wheel(self, thick=-1):
         wheel = super().get_wheel(thick)
         #this might be irrelevant unless printing with a really tiny nozzle
         wheel = wheel.edges("|Z").fillet(0.03)
         return wheel
 
-    def get_anchor(self, bottom_half=True):
-        outline = super().get_anchor()
+    def get_wheel_base_to_anchor_base_z(self):
+        '''
+        Return Z change between the bottom of the wheel and the bottom of the anchor
+        '''
+        return -(self.get_anchor_thick() - self.wheel_thick)/2
 
+    def get_anchor(self, bottom_half=True):
+        print("SilentPinPalletAnchorEscapement anchor")
+        #anchor already moved so it's arbor is at 0,0
+        anchor = super().get_anchor()
+        gap_size = self.anchor_centre_distance - self.radius
+        fixing_screw_pos = (0, (-gap_size + self.fixing_screws.metric_thread/2 + 2))
         '''
         Assumption: bottom will be attached to the rod which links anchor to the pendulum, so will be printed upside down
 
@@ -1039,14 +1069,24 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
         '''
 
         if bottom_half:
-            outline = outline.cut(
+            anchor = anchor.cut(
                 self.fixing_screws.get_cutter(self_tapping=False, loose=True, ignore_head=False).translate(
-                    self.fixing_screw_pos))
+                    fixing_screw_pos))
         else:
-            outline = outline.cut(
-                self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).translate(self.fixing_screw_pos))
+            # anchor = anchor.union()
+            # pillar = cq.Workplane("XY").circle(self.centre_r).extrude(self.pin_external_length).translate((0,0,- self.pin_external_length))
+            pillar = get_stroke_line([(0,0),(fixing_screw_pos[0], fixing_screw_pos[1] + (self.centre_r - self.fixing_screws.metric_thread))], wide=self.centre_r*2, thick=self.pin_external_length)
 
-        return outline
+            # pillar = pillar.intersect(cq.Workplane("XY").circle(get_distance_between_two_points((0,0), fixing_screw_pos) + self.fixing_screws.metric_thread).extrude(self.pin_external_length))
+
+
+            anchor = anchor.union(pillar.translate((0,0,- self.pin_external_length)))
+
+
+            anchor = anchor.cut(
+                self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).translate(fixing_screw_pos).translate((0,0,- self.pin_external_length)))
+        # anchor = anchor.union(cq.Workplane("XY").rect(30,30).extrude(10))
+        return anchor
 
     def get_assembled(self, anchor_angle_deg=0, wheel_angle_deg=0, distance_fudge_mm=0):
 

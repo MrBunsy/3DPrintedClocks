@@ -42,7 +42,7 @@ if second_hand:
     # 2/3s with second hand with 36 teeth
     train.set_ratios([[75, 9], [72, 10], [55, 22]])
     # pinion_extensions = {0: 1, 1: 15, 2: 0}
-    pinion_extensions = [0, 0, 2, 25, 0, 0]
+    pinion_extensions = [0, 0, 2, 25, 0, 10]
     module_sizes = [0.8, 0.75, 0.75]
 else:
     # 2/3s without second hand with 30 teeth
@@ -88,7 +88,7 @@ if dial is None:
     if moon:
         dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.DOTS, dial_width=dial_width, pillar_style=pillar_style)
     else:
-        if steampunk:
+        if steampunk or True:
             dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
                         outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, seconds_style=DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style, raised_detail=True,
                         seconds_dial_width=seconds_dial_width)
@@ -123,10 +123,13 @@ plate_style = PlateStyle.RAISED_EDGING
 if not steampunk:
     plate_style = PlateStyle.SIMPLE
 
-plates = MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=plate_style,
+plaque = Plaque(text_lines=["M44#0 {:.1f}cm ".format(train.pendulum_length_m * 100), "L.Wallin 2025"])#github.com/MrBunsy/3DPrintedClocks
+
+
+plates = MantelClockPlates(train, motion_works, name="Mantel 44", dial=dial, plate_thick=7, back_plate_thick=6, style=plate_style,
                            pillar_style=pillar_style, moon_complication=moon_complication, second_hand=second_hand, symetrical=True, pendulum_sticks_out=21,
                            standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
-                           plaque=None, split_detailed_plate=True, prefer_tall=tall, gears_start_on_right=False)
+                           plaque=plaque, split_detailed_plate=True, prefer_tall=tall, gears_start_on_right=False)
 
 # show_object(plates.gear_train_layout.get_demo())
 
