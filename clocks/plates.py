@@ -1001,7 +1001,7 @@ class SimpleClockPlates:
 
 
             #new way of doing it, new class for combining all this logic in once place
-            arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbour_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
+            arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, escapement_on_front=self.escapement_on_front, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,

@@ -609,7 +609,8 @@ Journal: Memoirs of the Royal Astronomical Society, Vol. 22, p.103
         if not clockwise:
             anchor = anchor.mirror("YZ", (0,0,0))
 
-        anchor = anchor.faces(">Z").workplane().moveTo(0,self.anchor_centre_distance).circle(hole_d / 2).cutThruAll()
+        # new plan: don't cut a hole and leave that for ArborForPlate
+        # anchor = anchor.faces(">Z").workplane().moveTo(0,self.anchor_centre_distance).circle(hole_d / 2).cutThruAll()
 
         return anchor
 
@@ -1016,7 +1017,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
         except:
             pass
 
-        anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
+        # anchor = anchor.faces(">Z").workplane().moveTo(0, self.anchor_centre_distance).circle(self.arbor_d / 2).cutThruAll()
 
         return anchor.translate((0, -self.anchor_centre_distance, 0))
 
