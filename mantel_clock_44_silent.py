@@ -68,8 +68,8 @@ train.generate_arbors(modules=all_modules, thicknesses=[barrel_gear_thick, 4, 2.
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
 
-dial_d = 160#165  # 205
-dial_width = 20
+dial_d = 160+15#165  # 205
+dial_width = 20+15/2
 seconds_dial_width = 7
 if second_hand:
     dial_width = 22#25  # 31.5#32.5
@@ -129,7 +129,7 @@ plaque = Plaque(text_lines=["M44#0 {:.1f}cm ".format(train.pendulum_length_m * 1
 plates = MantelClockPlates(train, motion_works, name="Mantel 44", dial=dial, plate_thick=7, back_plate_thick=6, style=plate_style,
                            pillar_style=pillar_style, moon_complication=moon_complication, second_hand=second_hand, symetrical=True, pendulum_sticks_out=21,
                            standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
-                           plaque=plaque, split_detailed_plate=True, prefer_tall=tall, gears_start_on_right=False)
+                           plaque=plaque, split_detailed_plate=True, prefer_tall=tall, gears_start_on_right=False, feet_extension=5)
 
 # show_object(plates.gear_train_layout.get_demo())
 

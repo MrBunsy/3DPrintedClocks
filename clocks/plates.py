@@ -3400,13 +3400,15 @@ class MantelClockPlates(SimpleClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
-                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, gears_start_on_right=True):
+                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, gears_start_on_right=True, feet_extension=0):
         self.symetrical = symetrical
         # bit of a bodge, if we're symetric but the pillars aren't symetric, which one is in the "wrong" place?
         self.relocated_top_pillar = -1
         #if we've got the moon sticking out the top, can arrange the pillars in such a way that we'rea taller
         self.can_be_extra_tall = (moon_complication is not None) or prefer_tall
         auto_motion_works_angle = motion_works_angle_deg < 0
+        #make the feet stick out further than necessary. useful for supporting larger dials
+        self.feet_extension = feet_extension
 
         gear_train_layout = GearLayout2D.get_compact_layout(going_train, start_on_right=gears_start_on_right)
         self.zigzag_side = gears_start_on_right
@@ -3624,6 +3626,10 @@ class MantelClockPlates(SimpleClockPlates):
         #TODO check this doesn't collide with next wheel
         bottom_angle = -math.pi/4
         self.bottom_pillar_positions = [polar(math.pi - bottom_angle, bottom_distance), polar(bottom_angle, bottom_distance)]
+
+        self.bottom_pillar_positions[0][1] -= self.feet_extension
+        self.bottom_pillar_positions[1][1] -= self.feet_extension
+
         if self.symetrical:
             if top_left[0]< self.bottom_pillar_positions[0][0]:
                 #top pillar is off further left than the bottom pillar

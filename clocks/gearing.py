@@ -1201,9 +1201,9 @@ class Gear:
 
         if cap_thick > 0:
             arbour = arbour.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(cap_thick).translate((0, 0, thick + pinion_thick + pinion_extension)))
-
-        # arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
-        arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(hole_d / 2).extrude(1000).translate((0, 0, -500)))
+        if hole_d > 0:
+            # arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
+            arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(hole_d / 2).extrude(1000).translate((0, 0, -500)))
 
         return arbour
 
@@ -1520,6 +1520,9 @@ class ArborForPlate:
         self.plates = plates
 
         self.arbor_d = self.arbor.arbor_d
+        self.threaded_rod = MachineScrew(self.arbor_d)
+
+        self.threaded_rod_cutter = self.threaded_rod.get_cutter(length=1000, ignore_head=True, self_tapping=True).translate((0,0,-500)).rotate((0,0,0),(0,0,1),-360/12)
 
         self.plate_distance = self.plates.get_plate_distance()
         self.front_plate_thick = self.plates.get_plate_thick(back=False)
@@ -1693,7 +1696,7 @@ class ArborForPlate:
             standalone_pinion = standalone_pinion.add(arbour_extension.translate((0, 0, thick)))
 
         if not for_printing and not including_front_arbor_extension:
-            standalone_pinion = standalone_pinion.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, thick))
+            standalone_pinion = standalone_pinion.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, thick))
 
         return standalone_pinion
 
@@ -1748,13 +1751,13 @@ class ArborForPlate:
             wheel = wheel.cut(arbourThreadedRod.get_nut_cutter(half=True).translate((0, 0, nut_base_z)))
 
             if for_printing and not extend_out_front:
-                wheel = wheel.rotate((0,0,0),(1,0,0),180).translate((0,0,self.arbor.wheel_thick))
+                wheel = wheel.rotate((0,0,0),(0,1,0),180).translate((0,0,self.arbor.wheel_thick))
 
 
         else:
 
             wheel = self.arbor.get_escape_wheel()
-
+            wheel = wheel.cut(self.threaded_rod_cutter)
             if self.need_arbor_extension(front=self.arbor.pinion_at_front):
                 #need arbor extension on the pinion
                 wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinion_at_front).translate((0, 0, self.total_thickness)))
@@ -1853,7 +1856,7 @@ class ArborForPlate:
 
 
 
-                wall_bearing = get_bearing_info(self.arbor.arbor_d)
+                wall_bearing = self.bearing#get_bearing_info(self.arbor.arbor_d)
 
 
                 #circular bit
@@ -1861,9 +1864,10 @@ class ArborForPlate:
                 #square bit
                 anchor = anchor.union(cq.Workplane("XY").rect(self.square_side_length, self.square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(self.cylinder_r).extrude(square_rod_length)).translate((0,0, anchor_thick + cylinder_length)))
                 #bearing standoff
-                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).circle(self.arbor.arbor_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
+                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
                 #cut hole through the middle
-                anchor = anchor.cut(cq.Workplane("XY").circle(self.arbor.arbor_d / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
+                # anchor = anchor.cut(cq.Workplane("XY").0circle(self.arbor.arbor_d / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
+                anchor = anchor.cut(self.threaded_rod_cutter)
 
             else:
                 '''
@@ -1884,6 +1888,8 @@ class ArborForPlate:
         if self.arbor.escapement.split:
             #
             shapes["anchor_second_half"] = self.arbor.escapement.get_anchor(bottom_half=False).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(anchor_angle)).translate((0,0,-self.arbor.escapement.anchor_thick))
+
+            shapes["anchor_second_half"] = shapes["anchor_second_half"].cut(self.threaded_rod_cutter)
 
         crutch = self.get_pendulum_crutch()
         if crutch is not None:
@@ -2295,7 +2301,7 @@ class ArborForPlate:
         elif self.arbor.get_type() == ArborType.WHEEL_AND_PINION:
 
             wheel = self.arbor.get_shape()
-
+            # wheel = wheel.cut(self.threaded_rod_cutter)
             if self.need_arbor_extension(front=self.arbor.pinion_at_front) and not self.need_separate_arbor_extension(front=self.arbor.pinion_at_front):
                 #need arbor extension on the pinion
                 wheel = wheel.union(self.get_arbour_extension(front=self.arbor.pinion_at_front).translate((0, 0, self.total_thickness)))
@@ -2404,7 +2410,7 @@ class ArborForPlate:
         bearing = get_bearing_info(self.arbor.get_rod_d())
 
         outer_r = self.arbor.get_arbor_extension_r()
-        inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
+        # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
             tip_r = outer_r
@@ -2413,18 +2419,18 @@ class ArborForPlate:
         if length - self.arbour_bearing_standoff_length >= 0:
             # 0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
             if length - self.arbour_bearing_standoff_length > 0.1:
-                extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).circle(inner_r).extrude(length-self.arbour_bearing_standoff_length).faces(">Z").workplane()
+                extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length-self.arbour_bearing_standoff_length).faces(">Z").workplane()
             else:
                 extendo_arbour=cq.Workplane("XY")
-            extendo_arbour = extendo_arbour.circle(tip_r).circle(inner_r).extrude(self.arbour_bearing_standoff_length)
+            extendo_arbour = extendo_arbour.circle(tip_r).extrude(self.arbour_bearing_standoff_length)
 
             if (length-self.arbour_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick and self.arbor.pinion is not None
                     and self.arbor.pinion.lantern):# and front is not self.arbor.pinion_at_front):
                 #extra wide flange to help the wheel remain perpendicular
                 #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
                 #will work out if it ends up clashing with other wheels if it becomes a problem in the future
-                extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.pinion.get_max_radius()).circle(inner_r).extrude(self.lantern_pinion_wheel_holder_thick))
-
+                extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
+            extendo_arbour = extendo_arbour.cut(self.threaded_rod_cutter)
             return extendo_arbour
         return None
 
@@ -2715,7 +2721,7 @@ To keep this assembly together, use a small amount of superglue between the whee
         if self.end_cap_thick > 0:
             arbour = arbour.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).circle(self.hole_d / 2).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
-        arbour = arbour.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_total_thickness()))
+        # arbour = arbour.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_total_thickness()))
 
         cutter = self.get_pinion_extension_cutter()
         if cutter is not None:
@@ -2775,7 +2781,7 @@ To keep this assembly together, use a small amount of superglue between the whee
                 pinion_extension = 0
                 pinion_thick+=self.pinion_extension
 
-            shape = self.pinion.add_to_wheel(self.wheel, hole_d=self.hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+            shape = self.pinion.add_to_wheel(self.wheel, hole_d=0, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                              pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
                                              lantern_offset=self.get_lantern_trundle_offset())
             if self.pinion_extension > 5:
