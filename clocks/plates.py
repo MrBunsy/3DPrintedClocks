@@ -2783,7 +2783,8 @@ class SimpleClockPlates:
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
                 if cut_holes:
-                    plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting() / 2).extrude(plate_thick).translate(screw_pos))
+                    # plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting() / 2).extrude(plate_thick).translate(screw_pos))
+                    plate = plate.cut(self.motion_works_screws.get_cutter(self_tapping=True, ignore_head=True).translate(screw_pos))
         else:
             if self.little_arm_to_motion_works:
                 # extra material in case the motion works is at an angle off to one side
@@ -2791,7 +2792,7 @@ class SimpleClockPlates:
             # hole for screw to hold motion works arbour
             if cut_holes:
                 #this segfaults - if there isn't anything to cut through?
-                plate = plate.cut(self.motion_works_screws.get_cutter().translate(self.motion_works_pos))
+                plate = plate.cut(self.motion_works_screws.get_cutter(self_tapping=True).translate(self.motion_works_pos))
         return plate
 
     def front_additions_to_plate(self, plate, plate_thick=-1, moon=False):
@@ -2823,7 +2824,8 @@ class SimpleClockPlates:
 
         if self.motion_works.cannon_pinion_friction_ring:
             for pos in self.cannon_pinion_friction_clip_fixings_pos:
-                plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(plate_thick).translate(pos))
+                #plate = plate.cut(cq.Workplane("XY").circle(self.motion_works_screws.get_diameter_for_die_cutting()/2).extrude(plate_thick).translate(pos))
+                plate = plate.cut(self.motion_works_screws.get_cutter(self_tapping=True, ignore_head=True).translate(pos))
 
         #embedded nut on the front so we can tighten this screw in
         #decided against this - I think it's might make the screw wonky as there's less plate for it to be going through.

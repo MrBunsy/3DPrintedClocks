@@ -27,7 +27,7 @@ if not steampunk:
 
 teeth = 30 if not second_hand else 36
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
-escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg)
+escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=0.2)
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
@@ -56,7 +56,8 @@ print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
 pendulum_sticks_out = 10
 back_plate_from_wall = 30
 
-pinion_thicks = [barrel_gear_thick*20, 4*1.8, 7.5, 7, 7, 7]
+#intermediate wheel pinion thicker than needed so it can use the one size of 1.2mm dowels I've got in stock
+pinion_thicks = [-1, barrel_gear_thick*2, 7.5, 7, 7, 7]
 
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
 

@@ -2772,7 +2772,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         return None
 
-    def get_shape(self, for_printing=True):
+    def get_shape(self, for_printing=True, hole_d=0):
         '''
         return a shape that can be exported to STL
         if for printing, wheel is on the bottom, if false, this is in the orientation required for the final clock
@@ -2785,7 +2785,7 @@ To keep this assembly together, use a small amount of superglue between the whee
                 pinion_extension = 0
                 pinion_thick+=self.pinion_extension
 
-            shape = self.pinion.add_to_wheel(self.wheel, hole_d=0, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+            shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                              pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
                                              lantern_offset=self.get_lantern_trundle_offset())
             if self.pinion_extension > 5:
@@ -3579,7 +3579,7 @@ class MotionWorks:
 
     def get_motion_arbour_shape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
-        return self.get_motion_arbour().get_shape()
+        return self.get_motion_arbour().get_shape(hole_d=self.hole_d)
 
     def get_widest_radius(self):
         '''

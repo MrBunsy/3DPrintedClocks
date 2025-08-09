@@ -1429,7 +1429,7 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
 
 
 machine_screw_lengths={
-    2: [x for x in range(4, 10, 2) ],
+    2: [x for x in range(4, 12+2, 2) ],
     3: [x for x in range(4,22+2,2)] + [x for x in range(25,40+5,5)] + [50, 60],
     4: [x for x in range(4,22+2,2)] + [x for x in range(25, 60+5, 5)] + [x for x in range(70, 100+10, 10)] # I don't own all of these, but they can easily be bought
 }
