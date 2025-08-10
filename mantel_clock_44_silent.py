@@ -27,7 +27,8 @@ if not steampunk:
 
 teeth = 30 if not second_hand else 36
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
-escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=0.2)
+#nylon wire only 0.15, but need a hole big enough to print well
+escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=0.75)
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
@@ -151,14 +152,16 @@ assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, wit
 
 # plate_colours = [Colour.DARK_PURPLE, Colour.BRASS, Colour.BRASS]
 plate_colours = [Colour.BLACK, Colour.GOLD, Colour.GOLD]
+motion_works_colours=[Colour.BRASS]
 # plate_colours = [Colour.DARKBLUE, Colour.BRASS, Colour.BRASS]
 if not steampunk:
     plate_colours = [Colour.LIGHTGREY, Colour.DARKGREY]
+    motion_works_colours = [Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE]
 
 if output_STL:
     assembly.get_BOM().export()
 else:
     #, hand_colours=[Colour.WHITE, Colour.BLACK], motion_works_colours=[Colour.BRASS]
     assembly.show_clock(show_object,
-                        bob_colours=[Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
-                        plate_colours=plate_colours)
+                        bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
+                        plate_colours=plate_colours, motion_works_colours=motion_works_colours)

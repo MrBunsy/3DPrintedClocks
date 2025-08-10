@@ -902,18 +902,20 @@ class PinPalletAnchorEscapement(AnchorEscapement):
     Much smaller rods than the brocot, so requires different shaped escape wheel teeth
     '''
     def __init__(self, teeth=30, diameter=100, anchor_teeth=None, type=EscapementType.DEADBEAT, lift=4, drop=2, run=10, lock=2,
-                 force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, pin_diameter=1.0, anchor_thick=5, wheel_thick=3, pin_external_length=10):
+                 force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, arbor_d=3, pin_diameter=1.0, anchor_thick=5, wheel_thick=3, pin_external_length=10,
+                 account_for_pin_diameter_in_drop=False):
 
         self.pin_diameter = pin_diameter
         #how much pin sticks out the front (or size of gap for silent)
         self.pin_external_length = pin_external_length
 
         #aprox
-        pin_arc_angle = pin_diameter*0.5/(diameter/2)
-        #add extra drop to take into account the size of the pin
-        #pretty sure this is actually wrong
-        drop += rad_to_deg(pin_arc_angle)
-        #probably need to do something similar for lift?
+        if account_for_pin_diameter_in_drop:
+            pin_arc_angle = pin_diameter*0.5/(diameter/2)
+            #add extra drop to take into account the size of the pin
+            #pretty sure this is actually wrong
+            drop += rad_to_deg(pin_arc_angle)
+            #probably need to do something similar for lift?
 
 
 

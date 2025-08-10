@@ -3907,10 +3907,15 @@ class MantelClockPlates(SimpleClockPlates):
         '''
 
         #crashes into ratchet pawl, so keep on the same side regardless (trying again..)
-        side = 0# if self.zigzag_side else 1# if self.zigzag_side else 1
+        side = 0 if self.zigzag_side else 1
 
         long_line = Line(self.bottom_pillar_positions[side], another_point=self.top_pillar_positions[side])
-        long_space_length = np.linalg.norm(np.subtract(self.bearing_positions[3][:2], self.bottom_pillar_positions[side]))
+        #old behaviour
+        if self.zigzag_side:
+            long_space_length = np.linalg.norm(np.subtract(self.bearing_positions[3][:2], self.bottom_pillar_positions[side]))
+        else:
+            #crude, lots of assumptions, but if we're on the other side we're probably too close to the ratchet so move upwards
+            long_space_length = np.linalg.norm(np.subtract(self.top_pillar_positions[side], self.bottom_pillar_positions[side]))
         long_line_length = long_space_length - self.top_pillar_r - self.bottom_pillar_r - 1
         text_height = self.plate_width * 0.9
         long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
