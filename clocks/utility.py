@@ -341,6 +341,8 @@ class MachineScrew:
             r += LOOSE_SCREW / 2 + max(layer_thick - LAYER_THICK_EXTRATHICK, 0)
         if for_tap_die:
             r = self.get_diameter_for_die_cutting(sideways=sideways) / 2
+            if loose:
+                r*=1.1# (add approx 0.125 to diameter)
 
         return r
 
@@ -368,17 +370,18 @@ class MachineScrew:
             else:
                 # use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
-
-        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose, for_tap_die=False, sideways=sideways)
+        #override loose here if we're self-tapping because that should only affect teh size of the inner nubs
+        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose if not self_tapping else False, for_tap_die=False, sideways=sideways)
 
         screw = cq.Workplane("XY").circle(r).extrude(length)
 
-        if loose:
-            self_tapping=False
+        #plan: allow "loose" self tapping for really long holes like the arbors, as the self-tapping holes work there but are pretty tough to screw the rod through
+        # if loose:
+        #     self_tapping=False
 
         if self_tapping:
             #cut out three nubs from teh cutter so the hole has three bits for the screw to bite into
-            inner_r = self.get_rod_cutter_r(for_tap_die=True)
+            inner_r = self.get_rod_cutter_r(for_tap_die=True, loose=loose)
             nubs = 3
             angles = [-math.pi/2 + nub*(math.pi*2/nubs) for nub in range(nubs)]
             overlap = r - inner_r

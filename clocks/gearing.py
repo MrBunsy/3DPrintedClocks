@@ -1521,7 +1521,8 @@ class ArborForPlate:
 
         self.arbor_d = self.arbor.arbor_d
         self.threaded_rod = MachineScrew(self.arbor_d)
-        self.threaded_rod_cutter = self.threaded_rod.get_cutter(length=1000, ignore_head=True, self_tapping=True).translate((0, 0, -500)).rotate((0, 0, 0), (0, 0, 1), -360 / 12)
+        #"loose" instead of best screw fit, because the arbors are long and it's a pain to screw the rod in
+        self.threaded_rod_cutter = self.threaded_rod.get_cutter(length=1000, ignore_head=True, self_tapping=True, loose=True).translate((0, 0, -500)).rotate((0, 0, 0), (0, 0, 1), -360 / 12)
 
         self.plate_distance = self.plates.get_plate_distance()
         self.front_plate_thick = self.plates.get_plate_thick(back=False)
@@ -1741,9 +1742,9 @@ class ArborForPlate:
                 face = "<Z"
                 nut_base_z = -extra_arbour_length
 
-            wheel = self.arbor.get_escape_wheel(standalone=True).faces(">Z").circle(self.arbor_d/2).cutThruAll()
+            wheel = self.arbor.get_escape_wheel(standalone=True)
 
-            wheel = wheel.faces(face).workplane().moveTo(0,0).circle(self.arbor_d*2).circle(self.arbor_d/2).extrude(extra_arbour_length)
+            wheel = wheel.faces(face).workplane().moveTo(0,0).circle(self.arbor_d*2).extrude(extra_arbour_length)
 
 
             #Clamping this both sides - plannign to use a dome nut on the front
@@ -2716,22 +2717,21 @@ To keep this assembly together, use a small amount of superglue between the whee
         #     wheel = wheel.mirror("YZ", (0, 0, 0))
 
         # pinion is on top of the wheel
-        pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=self.hole_d, style=self.style).translate([0, 0, self.wheel_thick])
+        pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=0, style=self.style).translate([0, 0, self.wheel_thick])
 
         if self.pinion_extension > 0:
-            pinion = pinion.translate((0,0,self.pinion_extension)).faces("<Z").workplane().circle(self.pinion.get_max_radius()).circle(self.hole_d / 2).extrude(self.pinion_extension)
+            pinion = pinion.translate((0,0,self.pinion_extension)).faces("<Z").workplane().circle(self.pinion.get_max_radius()).extrude(self.pinion_extension)
 
-        arbour = wheel.union(pinion)
+        arbor = wheel.union(pinion)
         if self.end_cap_thick > 0:
-            arbour = arbour.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).circle(self.hole_d / 2).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
+            arbor = arbor.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
-        arbour = arbour.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_total_thickness()))
-
+        #improve the extended pinion shape
         cutter = self.get_pinion_extension_cutter()
         if cutter is not None:
-            arbour = arbour.cut(cutter)
+            arbor = arbor.cut(cutter)
 
-        return arbour
+        return arbor
 
     def get_STL_modifier_pinion_shape(self, nozzle_size=0.4):
         '''

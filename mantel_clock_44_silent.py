@@ -28,7 +28,7 @@ if not steampunk:
 teeth = 30 if not second_hand else 36
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
 #nylon wire only 0.15, but need a hole big enough to print well
-escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=0.75)
+escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.0)
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
@@ -74,7 +74,7 @@ dial_d = 160+15#165  # 205
 dial_width = 20+15/2
 seconds_dial_width = 7
 if second_hand:
-    dial_width = 22#25  # 31.5#32.5
+    dial_width = 22+6#25  # 31.5#32.5
 
 moon_radius = 13
 
@@ -165,3 +165,4 @@ else:
     assembly.show_clock(show_object,
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
                         plate_colours=plate_colours, motion_works_colours=motion_works_colours)
+    # show_object(plates.arbors_for_plate[5].get_escape_wheel())

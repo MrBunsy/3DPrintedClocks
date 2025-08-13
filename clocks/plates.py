@@ -376,7 +376,7 @@ class SimpleClockPlates:
 
         self.motion_works_position_bodge = (0,0)
 
-        self.split_detailed_plate = split_detailed_plate
+        self.split_detailed_plate = split_detailed_plate and style != PlateStyle.SIMPLE
 
         #powered wheel at base of clock.
         self.power_at_bottom = power_at_bottom
