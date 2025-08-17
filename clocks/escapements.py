@@ -1051,6 +1051,13 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
         wheel = super().get_wheel(thick)
         #this might be irrelevant unless printing with a really tiny nozzle
         wheel = wheel.edges("|Z").fillet(0.03)
+
+        #elephant's foot doesn't seem to work well for the tooth tips, so reducing radius of first layer
+        #because otherwise there are little sharp bits I'm worried will cut the thread
+        cutter = cq.Workplane("XY").circle(self.radius+1).circle(self.radius-0.3).extrude(LAYER_THICK)
+
+        wheel = wheel.cut(cutter)
+
         return wheel
 
     def get_wheel_base_to_anchor_base_z(self):

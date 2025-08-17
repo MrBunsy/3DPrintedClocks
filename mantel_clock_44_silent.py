@@ -140,7 +140,7 @@ if hands is None:
     hand_style = HandStyle.SWORD
     hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                   length=dial.outside_d * 0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-                  second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 25, seconds_hand_thick=1.5, outline_on_seconds=0.5)
+                  second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 25, seconds_hand_thick=1.5, outline_on_seconds=0.5, include_seconds_hand=True)
     #dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 1
 else:
     hands.configure_motion_works(motion_works)
