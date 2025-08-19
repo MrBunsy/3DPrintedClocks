@@ -76,6 +76,10 @@ seconds_dial_width = 7
 if second_hand:
     dial_width = 22+6#25  # 31.5#32.5
 
+#shrinking to fit in bell jar
+# dial_d-=8
+# dial_width-=2
+
 moon_radius = 13
 
 if moon:
@@ -140,7 +144,7 @@ if hands is None:
     hand_style = HandStyle.SWORD
     hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                   length=dial.outside_d * 0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-                  second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 25, seconds_hand_thick=1.5, outline_on_seconds=0.5, include_seconds_hand=True)
+                  second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 25, seconds_hand_thick=1.5, outline_on_seconds=1, include_seconds_hand=True)
     #dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 1
 else:
     hands.configure_motion_works(motion_works)
@@ -148,7 +152,7 @@ else:
 
 # hands.show_hands(show_object)
 #
-assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True, name=clock_name, key_angle_deg=360 / 12)
+assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True, name=clock_name, key_angle_deg=360 / 12, time_mins=15)
 
 # plate_colours = [Colour.DARK_PURPLE, Colour.BRASS, Colour.BRASS]
 plate_colours = [Colour.BLACK, Colour.GOLD, Colour.GOLD]
@@ -165,4 +169,7 @@ else:
     assembly.show_clock(show_object,
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
                         plate_colours=plate_colours, motion_works_colours=motion_works_colours)
+    # dome = cq.Workplane("XZ").moveTo(0,45).circle(200 / 2 - 3).extrude(2)
+    dome = Dome()
+    show_object(dome.get_solid().rotate((0,0,0),(1,0,0),-90).translate(assembly.base_of_clock).translate((0,0,15)))
     # show_object(plates.arbors_for_plate[5].get_escape_wheel())

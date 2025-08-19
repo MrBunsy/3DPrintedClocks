@@ -1430,6 +1430,30 @@ def export_STL(object, object_name, clock_name="clock", path="../out", tolerance
     exporters.export(object, out, tolerance=tolerance, angularTolerance=tolerance)
 
 
+class Dome:
+
+    def __init__(self, radius=100, height=250, thickness=3):
+        self.radius = radius
+        self.height = height
+        self.thickness = thickness
+        self.cylinder_height = self.height - self.radius
+
+    def get_solid(self, internal=True):
+        r = self.radius
+        if internal:
+            r = self.radius - self.thickness
+
+        top = (0, self.height)
+        if internal:
+            top = (0, self.height-self.thickness)
+
+        circle = cq.Workplane("XY").circle(r)
+
+        dome_outline = cq.Workplane("XZ").moveTo(0, 0).lineTo(r, 0).lineTo(r, self.cylinder_height).radiusArc(top, -r).close()
+
+        dome = dome_outline.sweep(circle)
+
+        return dome
 
 machine_screw_lengths={
     2: [x for x in range(4, 12+2, 2) ],

@@ -3487,9 +3487,12 @@ class MantelClockPlates(SimpleClockPlates):
 
 
                 self.dial_fixing_positions = pillar_positions
+                #mantel 44 original dial, experimenting with smaller replacement so it can fit in a glass dome
+                # self.dial_fixing_positions = [(-40.062401651297534, -16.01334987183618), (40.06240165129746, -16.013349871834837), (-21.594236007612665, 115.86475087251996), (21.594236007612665, 115.86475087251996)]
+                print("self.dial_fixing_positions", self.dial_fixing_positions)
                 dial_fixing_positions = []
 
-                for pos in pillar_positions:
+                for pos in self.dial_fixing_positions:
                     pos_relative_to_hands = np_to_set(np.subtract(pos, self.hands_position))
                     # NOTE dial is "upside down" so invert x (not done consistently as most clocks are symmetric, so it goes unnoticed)
                     # single screw in each pillar ought to be enoguh, hence putting each element in its own list
