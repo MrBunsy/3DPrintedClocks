@@ -4181,7 +4181,7 @@ class RoundClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, power_at_bottom=True,
-                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT):
+                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4191,6 +4191,8 @@ class RoundClockPlates(SimpleClockPlates):
         #review this later, but for now at least its a different variable
         self.wall_mounted = leg_height == 0
         self.fully_round = fully_round
+        #reduce the number of arms on the plate - possibly should be an extension to this class rather than yet another option?
+        self.fewer_arms = fewer_arms
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         #was force_escapement_above_hands because the gear train looks better on a circular plate that way ( now got forcing_escape_wheel_slightly_off_centre in bearing placement)
@@ -4480,9 +4482,12 @@ class RoundClockPlates(SimpleClockPlates):
                 else:
                     # two power wheels - probably spring but also month duration cord
                     # put the bottom right pillar so it's between the two power wheels
+                    direction = 1
+                    if self.bearing_positions[1][0] < self.bearing_positions[0][0]:
+                        direction = -1
                     bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
                                                                  self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1,
-                                                                 in_direction=(1,0))
+                                                                 in_direction=(direction,0))
                     self.radius = get_distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
                     self.bottom_pillar_positions = [
                         bottom_pillar_pos,
@@ -4528,7 +4533,7 @@ class RoundClockPlates(SimpleClockPlates):
                     if abs(pos[0]) > furthest:
                         furthest = abs(pos[0])
                         furthest_pos = pos
-                furthest_pos = np_to_set(np.add(centre, furthest_pos))
+                furthest_pos = list(np_to_set(np.add(centre, furthest_pos)))
 
                 if furthest_pos[0] < 0:
                     furthest_pos[0] *= -1
@@ -4660,15 +4665,24 @@ class RoundClockPlates(SimpleClockPlates):
         if self.fully_round:
             plate = cq.Workplane("XY").circle(self.radius + main_arm_wide/2).circle(self.radius - main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)
 
-            #if there is only going to be a tiny gap under the arm, just make the whole bit solid
-            extra_width_at_bottom = 0
-            bottom_of_arm_y = self.bearing_positions[0][1] - self.bottom_arm_wide/2
-            top_of_circle_y = self.hands_position[1] - self.radius + main_arm_wide/2
-            if bottom_of_arm_y - top_of_circle_y < 4:
-                extra_width_at_bottom=5
+            if not self.fewer_arms:
+                #horizontal arm to add extra support to the great wheel
+                #if there is only going to be a tiny gap under the arm, just make the whole bit solid
+                extra_width_at_bottom = 0
+                bottom_of_arm_y = self.bearing_positions[0][1] - self.bottom_arm_wide/2
+                top_of_circle_y = self.hands_position[1] - self.radius + main_arm_wide/2
+                if bottom_of_arm_y - top_of_circle_y < 4:
+                    extra_width_at_bottom=5
 
-            bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide + extra_width_at_bottom).extrude(plate_thick).translate(self.bearing_positions[0][:2]).translate((0,-extra_width_at_bottom))
-            plate = plate.union(bottom_arm.intersect(cq.Workplane("XY").circle(self.radius + main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)))
+                bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide + extra_width_at_bottom).extrude(plate_thick).translate(self.bearing_positions[0][:2]).translate((0,-extra_width_at_bottom))
+                plate = plate.union(bottom_arm.intersect(cq.Workplane("XY").circle(self.radius + main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)))
+            else:
+                #two angled arms
+                angles = [-math.pi/4, -math.pi*3/4]
+                for angle in angles:
+                    line = Line(self.bearing_positions[0][:2], direction=polar(angle))
+                    end = line.intersection_with_circle(self.hands_position, self.radius)[0]
+                    plate = plate.union(get_stroke_line([line.start, end], wide=main_arm_wide, thick=plate_thick))
         else:
             #semicircular with rectangle on the bottom
             plate = get_stroke_arc((self.radius,centre[1]), (-self.radius,centre[1]), self.radius, main_arm_wide, plate_thick)
@@ -4709,6 +4723,14 @@ class RoundClockPlates(SimpleClockPlates):
 
             line = Line(centre, another_point=bearing_pos[:2])
             end = np_to_set(np.add(polar(line.get_angle(), self.radius), centre))
+
+            if i == 0 and self.fewer_arms:
+                #don't need to extend this all the way to teh edge, we've got two angled arms supporting the great wheel
+                end = bearing_pos[:2]
+
+            if bearing_distance > self.radius:
+                #extends out of the circle
+                end = bearing_pos[:2]
 
             bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].bearing.outer_d
             bearing_from_radius = abs(get_distance_between_two_points(bearing_pos[:2], centre) - self.radius)

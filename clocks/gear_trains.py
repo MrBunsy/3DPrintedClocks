@@ -1715,7 +1715,7 @@ class GearLayout2D:
 
 
     def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
-                 anchor_distance_fudge_mm=0):
+                 anchor_distance_fudge_mm=0, minimum_anchor_distance=False):
         '''
         centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
         can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
@@ -1730,6 +1730,8 @@ class GearLayout2D:
         self.arbors = self.going_train.get_all_arbors()
         self.all_offset_same_side = all_offset_same_side
         self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
+        #if true assume everything has been designed so the anchor just needs to avoid arbor extensions, not wheels
+        self.minimum_anchor_distance = minimum_anchor_distance
 
         #space in mm that must be left between all non-meshing gears
         self.gear_gap = gear_gap
@@ -1838,8 +1840,14 @@ class GearLayout2D:
                 if next_centred_index == total_arbors - 1 and non_vertical_arbors_next == 1:
                     #this is one sticky-out wheel just before the anchor, need to take the anchor itself into account
                     # distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + arbors[next_centred_index].get_max_radius()# + self.gear_gap
-                    # old logic, needs review and really should be done properly with trig to work out where the anchor is.
-                    distance_to_next_centred_arbor =  arbors[-1].get_max_radius() + arbors[arbor_index].get_max_radius() + self.gear_gap
+
+
+                    if self.minimum_anchor_distance:
+                        #just avoid arbor extension
+                        distance_to_next_centred_arbor =  arbors[next_centred_index].get_max_radius() + self.gear_gap + arbors[-1].get_arbor_extension_r()
+                    else:
+                        # old logic, needs review and really should be done properly with trig to work out where the anchor is.
+                        distance_to_next_centred_arbor =  arbors[next_centred_index].get_max_radius() + self.gear_gap + arbors[arbor_index].get_max_radius()
 
                 #default, but not always true
                 positions_relative[next_centred_index] = (0, positions_relative[arbor_index][1] + distance_to_next_centred_arbor)
