@@ -1024,30 +1024,32 @@ class SpringArbour:
 class SpringBarrel:
     '''
     Experiment! Can heavy duty 3D printed PETG hold up to an eight day spring? Let's find out!
+    answer: after over a year I can tentitively say yes. I've even shrunk the arbor to 10mm bearings and it's working with an ASA arbor
+    other observations: lantern pinions for intermediate gear is a must otherwise the pinions will wear very rapidly.
+    PETG rather than ASA is a must for the wheels as ASA seems to wear, no observable wear on PETG yet.
 
     Plan: chunkier arbor than normal (and might need to make barrel diameter slightly larger as a result)
     Use M3 screws for the hooks on both the arbor and the barrel inside.
     Barrel will need a seriously thick wall - 5mm? 10mm?
     Arbor will be printed lying on its side, so the side the screw screws into will be the flat side Hopefully this will give it enough strength
 
-    TODO determine how many turns the barrel should make - can easily count teeth on an old smiths.
+    successfully auto determines size of barrel, although it seems to be slightly off as this always results in needing slightly more winds than
+    the smiths clocks I modelled the ratios off
+
     Worth making an experimental rig to see how much weight the spring can pull up? then I can estimate the power
-    Current plan: work out how many turns are needed, then make a clock that runs for only 3 days using those turns
 
-    In theory the going train already supports multiple chain wheels, time to shake out the bugs!
-
-    TODO have the winding key on the back for the first mantel clock
+    TODO have the winding key on the back for the first mantel clock (still not done this, undecided on merit)
 
     Observations:
-     - The barrel is far chunkier than it needs to be - can be given much thinner walls, but will still want a chunky bit to take the m3 screw
+     - The barrel is far chunkier than it needs to be - can be given much thinner walls, but will still want a chunky bit to take the m3 screw (since successfully shrunk to 10mm)
      - M3 countersunk screws worked better than pan head
-     - The chunky arbor was very hard to fit inside the spring, ended up mangling the spring a bit with pliers. Will want to reduce diameter to use a decent spring
+     - The chunky arbor was very hard to fit inside the spring, ended up mangling the spring a bit with pliers. Will want to reduce diameter to use a decent spring (not much of an issue with 10mm)
 
      Ideas:
      Use bearings on the lid and base of barrel, since the barrel rotates in normal usage DONE
-     Try 15mm bearings on lid and barrel, and 12mm in plates.
+     Try 15mm bearings on lid and barrel, and 12mm in plates. (successful designs with just 12 and 10mm bearings)
      Can round the edges of the key like on the anchor arbor to get as chunky a key as possible through a smaller diameter
-     Since the barrel seems strong enough - try cutting a gear style?
+     Since the barrel seems strong enough - try cutting a gear style? (done, looks good)
 
      more ideas:
      12mm bearings on lid barrel and plates, and use collets to keep distances DONE
@@ -1057,7 +1059,7 @@ class SpringBarrel:
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
                  base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
-                 ratchet_thick=8):
+                 ratchet_thick=8, ratchet_screws=None):
         '''
 
         '''
@@ -1153,6 +1155,9 @@ class SpringBarrel:
         # self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.collet_screws = self.lid_fixing_screws
+        self.ratchet_screws = ratchet_screws
+        if self.ratchet_screws is None:
+            self.ratchet_screws = self.collet_screws
 
         self.spring_hook_screws = spring_hook_screws
         if self.spring_hook_screws is None:
@@ -1165,8 +1170,11 @@ class SpringBarrel:
 
 
 
-        self.ratchet_collet_thick = self.lid_fixing_screws.get_head_diameter() + 1.5
-        self.back_collet_thick = self.ratchet_collet_thick + self.back_bearing_standoff
+        self.ratchet_collet_thick = 0
+        if not self.ratchet_screws.grub:
+            self.ratchet_collet_thick = self.ratchet_screws.get_head_diameter() + 1.5
+
+        self.back_collet_thick = self.collet_screws.get_head_diameter() + 1.5 + self.back_bearing_standoff
 
         self.outer_radius_for_style = self.barrel_diameter / 2#-1
         self.inner_radius_for_style = self.key_bearing.outer_d / 2 + self.wall_thick / 2
@@ -1508,6 +1516,9 @@ class SpringBarrel:
         ratchet_screwhole_x = []
         if self.ratchet_at_back:
             ratchet_x = -behind_spring_cylinder_length - self.ratchet.thick - self.ratchet_collet_thick / 2
+            if self.ratchet_screws.grub:
+                #put the ratchet screw in the ratchet rather than a cylinder out the back
+                ratchet_x = -behind_spring_cylinder_length - self.ratchet.thick/2
             back_collet_screwhole_x = -behind_spring_cylinder_length + back_collet_from_back + self.back_bearing_standoff + (self.back_collet_thick - self.back_bearing_standoff) / 2
             ratchet_screwhole_x = [ratchet_x, back_collet_screwhole_x]
         else:
@@ -1562,7 +1573,7 @@ class SpringBarrel:
         outer_d = self.collet_diameter
         gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
         # means to hold screw that will hold this in place
-        screwshape = self.collet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick / 2))
+        screwshape = self.ratchet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick / 2))
 
         #TODO put a hole for a nut in the collet, instead of the arbor like it was previously
 

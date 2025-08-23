@@ -302,9 +302,19 @@ class MachineScrew:
     TODO include layer thickness as part of screw or keep it as input to the cutters?
     '''
 
-    def __init__(self, metric_thread=3, countersunk=False, length=-1):
+    def __init__(self, metric_thread=3, countersunk=False, length=-1, grub=False):
+
+        '''
+        countersunk - head is countersunk
+        grub - has no head at all
+        otherwise assume pan head
+
+        TODO enum? was just countersunk true/false for a long time so might be some of that to unpick since adding grub, or is it well enough
+        self contained in this class now?
+        '''
         self.metric_thread = metric_thread
         self.countersunk = countersunk
+        self.grub = grub
         # if length is provided, this represents a specific screw
         self.length = length
 
@@ -362,6 +372,10 @@ class MachineScrew:
         ignore_head - this is just a cutter for the rod
         space_for_pan_head: include a sunken space for the pan head
         '''
+
+        if self.grub:
+            #simple way to add support for grub screws
+            ignore_head = True
 
         if length < 0:
             if self.length < 0:
@@ -459,6 +473,9 @@ class MachineScrew:
         return get_nut_containing_diameter(self.metric_thread, wiggle, thumb=thumb)
 
     def get_head_diameter(self):
+        if self.grub:
+            #TODO
+            return self.metric_thread/2
         return get_screw_head_diameter(self.metric_thread, countersunk=self.countersunk)
 
 
