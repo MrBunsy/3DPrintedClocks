@@ -2,6 +2,11 @@ import math
 import cadquery as cq
 from clocks import *
 
+'''
+A wall clock version of mantel 44. Silent escapement with same style: sword hands, roman numeral dial and modern plates
+
+plan is to keep pendulum length the same (1/3s) so it's not visibly below the clock, but also try and see if I can get the clock relatively thin
+'''
 
 output_STL = False
 
@@ -12,7 +17,7 @@ if 'show_object' not in globals():
         pass
 
 
-clock_name = "Wall_44_silent"
+clock_name = "Wall_45_silent"
 
 second_hand = True
 gear_style = GearStyle.ROUNDED_ARMS5
