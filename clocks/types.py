@@ -223,7 +223,6 @@ class PillarStyle(Enum):
     CLASSIC = "classic"
     PLAIN = "modern" #simplified classic pillar
 
-
 class DialStyle(Enum):
     '''
     Thoughts, there's lots here that could be abstracted out into options for the dial as a whole, rather than separate styles

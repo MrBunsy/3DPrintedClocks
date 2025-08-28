@@ -1195,7 +1195,8 @@ class SpringBarrel:
             ratchet_blocks_clockwise = self.clockwise
         ratchet_d = self.arbor_d * 2.5
 
-        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d, thick=self.ratchet_thick, blocks_clockwise=ratchet_blocks_clockwise, click_fixing_angle=self.click_angle, pawl_angle=self.pawl_angle)
+        self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d, thick=self.ratchet_thick, blocks_clockwise=ratchet_blocks_clockwise,
+                                          click_fixing_angle=self.click_angle, pawl_angle=self.pawl_angle)
 
     def configure_ratchet_angles(self, click_angle, pawl_angle):
         self.click_angle = click_angle
@@ -1571,11 +1572,18 @@ class SpringBarrel:
         gear = self.ratchet.get_gear()
         # if self.ratchet_at_back:
         outer_d = self.collet_diameter
-        gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
+        if self.ratchet_collet_thick > 0:
+            gear = gear.faces(">Z").workplane().circle(outer_d/2).extrude(self.ratchet_collet_thick)
+            z = self.ratchet.thick + self.ratchet_collet_thick / 2
+            length =  outer_d/2
         # means to hold screw that will hold this in place
-        screwshape = self.ratchet_screws.get_cutter(length=outer_d/2).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.ratchet.thick + self.ratchet_collet_thick / 2))
+        else:
+            length =self.ratchet.get_max_diameter()
+            z = self.ratchet_thick/2
+        screwshape = self.ratchet_screws.get_cutter(length=length).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -length, z))
 
         #TODO put a hole for a nut in the collet, instead of the arbor like it was previously
+        # seems to work fine without, it's not going to come loose
 
         # return screwshape
         gear = gear.cut(screwshape)

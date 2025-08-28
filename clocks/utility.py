@@ -22,11 +22,13 @@ import os
 import re
 import pathlib
 import json
+from enum import Enum
 
 import numpy as np
 from math import sin, cos, pi, floor
 import cadquery as cq
 from cadquery import exporters
+
 from .cq_svg import exportSVG
 import shutil
 try:
@@ -293,6 +295,10 @@ Shoulder Length (High Type) - 5mm
 Shoulder Length (Thin Type) - 0.5mm
 '''
 
+class MachineScrewType(Enum):
+    PAN_HEAD = "pan"
+    COUNTERSUNK = "CS"
+    GRUB = "grub"
 
 class MachineScrew:
     '''
@@ -448,8 +454,15 @@ class MachineScrew:
             nut = nut.faces(">Z").workplane().circle(inner_r).extrude(with_screw_length - height)
         return nut
 
+    def get_type(self):
+        if self.grub:
+            return MachineScrewType.GRUB
+        if self.countersunk:
+            return MachineScrewType.COUNTERSUNK
+        return MachineScrewType.PAN_HEAD
+
     def get_string(self):
-        return "Machine screw M{} ({})".format(self.metric_thread, "CS" if self.countersunk else "pan")
+        return f"Machine screw M{self.metric_thread} ({self.get_type().value})"
 
     def __str__(self):
         return self.get_string()
