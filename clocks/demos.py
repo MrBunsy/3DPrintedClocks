@@ -99,7 +99,20 @@ def get_ratchet_demo():
     min_outer_d = 40
     max_outer_d = 80
 
+def get_pillar_demo(r=20, length=80, base_fillet_r=-1):
+    demo = cq.Workplane("XY")
 
+    x = 0
+
+
+    for pillar_type in PillarStyle:
+        pillar = fancy_pillar(r=r, length=length, clockwise=True, style=pillar_type, base_fillet_r=base_fillet_r)
+
+        demo = demo.add(pillar.translate((x,0,0)))
+
+        x += r*4
+
+    return demo
 
 def get_gear_demo(module=1, just_style=None, one_gear=False):
     demo = cq.Workplane("XY")

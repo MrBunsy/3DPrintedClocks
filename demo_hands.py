@@ -8,6 +8,4 @@ if 'show_object' not in globals():
 
 # show_object(getGearDemo())
 # show_object(getHandDemo(assembled=True, chunky=True).translate((0,400,0)))
-# show_hand_demo(show_object, outline=1, length=200*0.45)
-
-show_object(get_pillar_demo())
+show_hand_demo(show_object, outline=1, length=200*0.45)
