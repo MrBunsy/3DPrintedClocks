@@ -1,4 +1,5 @@
 from enum import Enum
+from clocks.utility import *
 
 
 class GearTrainLayout(Enum):
@@ -42,3 +43,5 @@ def function3(firstarg, bob="bob"):
 # function1("fred", {"bob": "robert"})
 
 function3("fred")
+
+dome = Dome()
