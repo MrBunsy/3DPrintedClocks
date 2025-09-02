@@ -2413,7 +2413,7 @@ class GrasshopperEscapement:
 
     def getWheel(self, style=GearStyle.HONEYCOMB):
         #I think this is just for models, so fudge the inner radius
-        return Gear.cutStyle(self.get_wheel_2d().extrude(self.wheel_thick), self.get_wheel_inner_r(), inner_radius=10, style=style)
+        return Gear.cut_style(self.get_wheel_2d().extrude(self.wheel_thick), self.get_wheel_inner_r(), inner_radius=10, style=style)
 
     def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
         grasshopper = cq.Workplane("XY")

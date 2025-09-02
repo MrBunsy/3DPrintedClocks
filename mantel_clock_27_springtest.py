@@ -79,8 +79,10 @@ backPlateFromWall=30
 
 pinion_extensions = {1:12, 2:5}
 
+#idea - the first pinion has finally failed. Plan: replace with a lantern pinion and keep the clock going. It needs rods of diameter 1.637612012951289mm, but I can buy 1.6mm which should work
+
 train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gearStyle,
-                powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions)
+                powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions=pinion_extensions, lanterns=[0])
 # train.print_info(weight_kg=1.5)
 train.print_info(for_runtime_hours=24*7)
 
@@ -123,10 +125,10 @@ assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.
 
 # show_object(plates.getDrillTemplate(6))
 
-if outputSTL:
-    motionWorks.output_STLs(clockName,clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+# if outputSTL:
+#     motionWorks.output_STLs(clockName,clockOutDir)
+#     pendulum.output_STLs(clockName, clockOutDir)
+#     plates.output_STLs(clockName, clockOutDir)
+#     hands.output_STLs(clockName, clockOutDir)
+#     assembly.output_STLs(clockName, clockOutDir)
 

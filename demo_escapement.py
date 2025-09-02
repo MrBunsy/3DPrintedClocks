@@ -87,7 +87,7 @@ class AnchorDemo:
     def get_escape_wheel(self):
         wheel = self.escapement.get_wheel().faces(">Z").workplane().circle(self.screw.metric_thread/2).cutThruAll()
 
-        wheel = Gear.cutStyle(wheel, inner_radius=self.screw.metric_thread + 8, outer_radius=self.escapement.get_wheel_inner_r(), style=GearStyle.ROUNDED_ARMS5)
+        wheel = Gear.cut_style(wheel, inner_radius=self.screw.metric_thread + 8, outer_radius=self.escapement.get_wheel_inner_r(), style=GearStyle.ROUNDED_ARMS5)
 
         wheel = wheel.translate((0,0,self.arbor_long - self.escapement.wheel_thick)).union(self.get_arbor_beefer_upper())
 

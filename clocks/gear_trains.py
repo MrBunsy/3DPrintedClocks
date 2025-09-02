@@ -46,19 +46,115 @@ class GearTrainBase:
 
         return thelist[:expected_length]
 
-    def __init__(self, total_arbors, default_thickness=5.0, default_module=1.0, default_rod_diameter=3, default_reduction=0.9):
+    def __init__(self, total_arbors, default_thickness=5.0, default_module=1.0, default_rod_diameter=3, default_reduction=0.9, default_pinion_thick_multiplier=3):
         self.total_arbors=total_arbors
         self.default_thickness = default_thickness
         self.default_module = default_module
         self.default_rod_diameter = default_rod_diameter
         self.default_reduction = default_reduction
+        self.default_pinion_thick_multiplier = default_pinion_thick_multiplier
 
     def generate_arbors_internal(self, modules, thicknesses, rod_diameters, pinion_thicks, lanterns, styles, pinions_face_forwards, wheel_outside_plates, pinion_extensions):
         raise NotImplementedError("Implement in sub classes")
 
-    def generate_arbors(self, modules=None, thicknesses=None, rod_diameters=None, pinion_thicks=None, lanterns=None, styles=None, pinions_face_forwards=None,
-                        reduction=None, wheel_outside_plates=None, pinion_extensions=None):
+    def generate_arbors_dicts(self, arbor_info, reduction=-1):
         '''
+        It should have been obvious, but passing a whole load of lists in is a messier way of just passing a list of dicts
+        any of the below can be missing and will be automatically filled in as best as possible
+
+        arbor_info =
+            [
+                {
+                "module": float,
+                "wheel_thick": float,
+                "pinion_thick": float,
+                "lantern": bool,
+                "style": GearStyle enum,
+                "pinion_faces_forwards": bool,
+                "wheel_outside_plates": bool, #escapement on front or back only one supported currently
+                "pinion_extension": float,
+                "rod_diameter": float
+                },
+            ]
+        '''
+        modules = []
+        thicknesses = []
+        rod_diameters = []
+        pinion_thicks = []
+        lanterns = []
+        styles = []
+        pinions_face_forwards = []
+        wheel_outside_plates = []
+        pinion_extensions = []
+        if len(arbor_info) < self.total_arbors:
+            arbor_info+= [{}] * (len(arbor_info) - self.total_arbors)
+
+
+        if reduction < 0:
+            reduction = self.default_reduction
+
+        def add_if_in(add_to, dict, key):
+            if key in dict:
+                add_to.append(dict[key])
+                return True
+            return False
+
+        for i, info in enumerate(arbor_info):
+            if not add_if_in(modules, info, "module"):
+                if i ==0:
+                    modules.append(self.default_module)
+                else:
+                    modules.append(modules[-1]*reduction)
+
+            if not add_if_in(thicknesses, info, "wheel_thick"):
+                if i ==0:
+                    thicknesses.append(self.default_thickness)
+                else:
+                    thicknesses.append(thicknesses[-1]*reduction)
+
+            if not add_if_in(rod_diameters, info, "rod_diameter"):
+                rod_diameters.append(self.default_rod_diameter)
+
+            if not add_if_in(pinion_thicks, info, "pinion_thick"):
+                if i == 0:
+                    #no pinion on the great wheel
+                    pinion_thicks.append(-1)
+                else:
+                    #triple the previous wheel thick
+                    pinion_thicks.append(thicknesses[-2]*self.default_pinion_thick_multiplier)
+
+            if not add_if_in(lanterns, info, "lantern"):
+                lanterns.append(False)
+
+            if not add_if_in(styles, info, "style"):
+                if i == 0:
+                    styles.append(None)
+                else:
+                    styles.append(styles[-1])
+
+            if not add_if_in(pinions_face_forwards, info, "pinion_faces_forwards"):
+                if i <= 1:
+                    #default to first two facing forwards
+                    pinions_face_forwards.append(True)
+                else:
+                    #otherwise flip backwards and forwards
+                    pinions_face_forwards.append(not pinions_face_forwards[-1])
+
+            if not add_if_in(wheel_outside_plates, info, "wheel_outside_plates"):
+                wheel_outside_plates.append(False)
+
+            if not add_if_in(pinion_extensions, info, "pinion_extension"):
+                pinion_extensions.append(0)
+
+            self.generate_arbors_internal(modules, thicknesses, rod_diameters, pinion_thicks, lanterns, styles, pinions_face_forwards, wheel_outside_plates, pinion_extensions)
+
+
+
+    def generate_arbors_lists(self, modules=None, thicknesses=None, rod_diameters=None, pinion_thicks=None, lanterns=None, styles=None, pinions_face_forwards=None,
+                              reduction=None, wheel_outside_plates=None, pinion_extensions=None):
+        '''
+        New interface idea - lists of all features. However I've realised it probably makes more sense to instead have a list of dicts, so this will be deprecated
+
         Base function to take potentially incomplete lists of requirements and fill them all out, then call the class-specific functions
 
         modules - list of modules sizes, or -1 for auto. Can be shorter than train and rest will be filled in
@@ -931,8 +1027,8 @@ class GoingTrain(GearTrainBase):
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes=None, stack_away_from_powered_wheel=False, pinion_extensions=None,
                   powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1, powered_wheel_thicks = None, escapement_split=False):
         '''
-
-        TODO this has been overhauled for the bird whistle and should be backported here
+        Deprecated - old interface for generating the arbors. It's messy and doesn't provide the ability to override everything. The original intention was to do everything
+        automatically but one by one I needed to override little bits and bobs. use generate_arbors_dicts instead
 
         What's provided to teh constructor and what's provided here is a bit scatty and needs tidying up. Might be worth breaking some backwards compatibility to do so
         Also this assumes a *lot* about the layout, which really should be in the control of the plates

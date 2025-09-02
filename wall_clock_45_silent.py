@@ -19,32 +19,32 @@ if 'show_object' not in globals():
 
 clock_name = "Wall_45_silent"
 
-second_hand = True
-gear_style = GearStyle.ROUNDED_ARMS5
+gear_style = GearStyle.SNOWFLAKE#GearStyle.ROUNDED_ARMS5
 pillar_style = PillarStyle.TWISTY
 
 
-teeth = 30 if not second_hand else 36
+teeth = 24#36
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
 #nylon wire only 0.15, but need a hole big enough to print well
-escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.0)
+escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.4)
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=barrel_gear_thick,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
-                     key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4,
                      ratchet_screws=MachineScrew(2, grub=True))
 
-train = GoingTrain(pendulum_period=2 / 3, wheels=4, escapement=escapement, powered_wheels=2, runtime_hours=8 * 24, support_second_hand=second_hand, powered_wheel=power)
+#idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth
+
+train = GoingTrain(pendulum_period=2 / 3, wheels=4, escapement=escapement, powered_wheels=2, runtime_hours=8 * 24, support_second_hand=True, powered_wheel=power)
 
 train.set_powered_wheel_ratios([[61, 10], [64, 10]])
 
-# 2/3s with second hand with 36 teeth
-train.set_ratios([[75, 9], [72, 10], [55, 22]])
-# pinion_extensions = {0: 1, 1: 15, 2: 0}
+# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, pinion_max_teeth=30, wheel_min_teeth=50, loud=True)
+#[60, 16], [75, 20], [40,12]
+train.set_ratios([[72, 10], [75, 9], [60, 16]])
 pinion_extensions = [0, 0, 3, 25, 0, 10]
-module_sizes = [0.8, 0.75, 0.75]
+module_sizes = [1.0, 0.9, 0.9]
 
 print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
 
@@ -54,12 +54,12 @@ back_plate_from_wall = 30
 #intermediate wheel pinion thicker than needed so it can use the one size of 1.2mm dowels I've got in stock
 pinion_thicks = [-1, barrel_gear_thick*2, 7.5, 7, 7, 7]
 
-powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
+powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 
 all_modules = powered_modules + module_sizes
 
-train.generate_arbors(modules=all_modules, thicknesses=[barrel_gear_thick, 4, 2.4], pinions_face_forwards=[True, True, True, False, True, True, False],
-                      pinion_extensions=pinion_extensions, lanterns=[0, 1], reduction=0.9, pinion_thicks=pinion_thicks, styles=gear_style)
+train.generate_arbors_lists(modules=all_modules, thicknesses=[barrel_gear_thick, 4, 2.4], pinions_face_forwards=[True, True, True, False, True, True, False],
+                            pinion_extensions=pinion_extensions, lanterns=[0, 1], reduction=0.9, pinion_thicks=pinion_thicks, styles=gear_style)
 
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
@@ -68,8 +68,11 @@ dial_d = 175
 seconds_dial_width = 7
 dial_width = 28# + 2.5
 
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
-            outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, seconds_style=DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style, raised_detail=True,
+dial_d=210
+dial_width = 33#dial_d*0.15
+
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False,  style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
+            outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES,
             seconds_dial_width=seconds_dial_width)
 
 motion_works_height = 10
@@ -97,19 +100,15 @@ TODO:
  - pinion extensions for lantern pinions could just have a solid extension if above a certain amount? like normal pinion extensions.
 '''
 
-# plates = MantelClockPlates(train, motion_works, name="Mantel 44", dial=dial, plate_thick=7, back_plate_thick=6, style=plate_style,
-#                            pillar_style=pillar_style, second_hand=second_hand, symetrical=True, pendulum_sticks_out=21,
-#                            standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
-#                            plaque=plaque, split_detailed_plate=True, prefer_tall=False, gears_start_on_right=False, feet_extension=5)
 plates = RoundClockPlates(train, motion_works, name="Wall 45", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=plate_style, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False,
                                 gear_train_layout=gear_train_layout, fewer_arms=True)
 
-hand_style = HandStyle.SWORD
+hand_style = HandStyle.FANCY_FRENCH
 hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-              length=dial.outside_d * 0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
-              second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2 if second_hand else 25, seconds_hand_thick=1.5, outline_on_seconds=1, include_seconds_hand=True)
+              length=dial.outside_d * 0.5, thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True,
+              second_length=dial.second_hand_mini_dial_d * 0.5 - seconds_dial_width / 2, seconds_hand_thick=1.5, outline_on_seconds=0, include_seconds_hand=True)
 
 # hands.show_hands(show_object)
 #
@@ -117,10 +116,11 @@ assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, wit
 
 plate_colours = [Colour.LIGHTGREY, Colour.DARKGREY]
 motion_works_colours = [Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE]
+hand_colours=[Colour.GOLD]
 
 if output_STL:
     assembly.get_BOM().export()
 else:
     assembly.show_clock(show_object,
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
-                        plate_colours=plate_colours, motion_works_colours=motion_works_colours)
+                        plate_colours=plate_colours, motion_works_colours=motion_works_colours, hand_colours=hand_colours)

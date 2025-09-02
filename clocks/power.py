@@ -446,7 +446,7 @@ When fully assembled the pulley wheel should be able to spin freely.
 
         wheel = wheel.cut(cq.Workplane("XY").circle(self.hole_d/2).extrude(self.wheel_thick))
 
-        wheel = Gear.cutStyle(wheel, outer_radius= self.diameter/2 - self.rope_diameter/2, inner_radius=self.hole_d, style=self.style, rim_thick=2)
+        wheel = Gear.cut_style(wheel, outer_radius=self.diameter / 2 - self.rope_diameter / 2, inner_radius=self.hole_d, style=self.style, rim_thick=2)
 
         return wheel
 
@@ -1425,8 +1425,8 @@ class SpringBarrel:
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
 
-        barrel = Gear.cutStyle(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
-                               clockwise_from_pinion_side=self.clockwise, rim_thick=0)
+        barrel = Gear.cut_style(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
+                                clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
@@ -1451,8 +1451,8 @@ class SpringBarrel:
         # lid = lid.cut()
         lid = lid.cut(self.get_lid_fixing_screws_cutter(loose=True).translate((0,0,-self.base_thick - self.barrel_height)))
 
-        lid = Gear.cutStyle(lid, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
-                            clockwise_from_pinion_side=self.clockwise, rim_thick=0)
+        lid = Gear.cut_style(lid, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
+                             clockwise_from_pinion_side=self.clockwise, rim_thick=0)
 
         if for_printing:
             lid = lid.rotate((0,0,0),(1,0,0),180).translate((0,0,self.lid_thick))
@@ -2791,7 +2791,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixing_points).circle(self.screw_thread_metric / 2).cutThruAll()
-        cap = Gear.cutStyle(cap, self.cap_diameter / 2 - self.holeD * 0.75, inner_radius=self.diameter / 2 + self.cord_thick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
+        cap = Gear.cut_style(cap, self.cap_diameter / 2 - self.holeD * 0.75, inner_radius=self.diameter / 2 + self.cord_thick, style=self.style, clockwise_from_pinion_side=self.power_clockwise)
         return cap
 
     def get_ratchet_wheel_for_cord(self, for_printing=True):

@@ -264,7 +264,7 @@ if False:
             innerRadius = 15
 
 
-        shape = Gear.cutStyle(cq.Workplane("XY").circle(r).extrude(3), outer_radius=r, inner_radius=innerRadius, style=GearStyle.SNOWFLAKE)
+        shape = Gear.cut_style(cq.Workplane("XY").circle(r).extrude(3), outer_radius=r, inner_radius=innerRadius, style=GearStyle.SNOWFLAKE)
         shape = shape.translate(((flake%3)*space*2.5,(floor(flake/3))*space*2.5))
         combinedFlake = combinedFlake.add(shape)
     show_object(combinedFlake)

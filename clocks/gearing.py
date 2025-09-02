@@ -47,7 +47,7 @@ class Gear:
     '''
 
     @staticmethod
-    def cutStyle(gear, outer_radius, inner_radius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1, lightweight=False):
+    def cut_style(gear, outer_radius, inner_radius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1, lightweight=False):
         '''
         rim_thick: override default rim to leave around the outside of the gear. Need some for strength, but want less to make gears lighter
         lightweight: cut out more if possible (up to each style) to make the gear lighter. Primarily for large escape wheels
@@ -1099,7 +1099,7 @@ class Gear:
             #     #     innerRadius = self.
             #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
             try:
-                gear = Gear.cutStyle(gear, outer_radius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, inner_radius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
+                gear = Gear.cut_style(gear, outer_radius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, inner_radius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
             except:
                 print("Failed to cut gear style")
 
@@ -1522,7 +1522,10 @@ class ArborForPlate:
         self.arbor_d = self.arbor.arbor_d
         self.threaded_rod = MachineScrew(self.arbor_d)
         #"loose" instead of best screw fit, because the arbors are long and it's a pain to screw the rod in
-        self.threaded_rod_cutter = self.threaded_rod.get_cutter(length=1000, ignore_head=True, self_tapping=True, loose=True).translate((0, 0, -500)).rotate((0, 0, 0), (0, 0, 1), -360 / 12)
+        try:
+            self.threaded_rod_cutter = self.threaded_rod.get_cutter(length=1000, ignore_head=True, self_tapping=True, loose=True).translate((0, 0, -500)).rotate((0, 0, 0), (0, 0, 1), -360 / 12)
+        except:
+            print("couldn't generate threaded rod cutter - spring arbor?")
 
         self.plate_distance = self.plates.get_plate_distance()
         self.front_plate_thick = self.plates.get_plate_thick(back=False)
@@ -2701,7 +2704,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 
 
         wheel = self.escapement.get_wheel()
-        wheel = Gear.cutStyle(wheel, outer_radius=self.escapement.get_wheel_inner_r(), inner_radius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise, lightweight=True)
+        wheel = Gear.cut_style(wheel, outer_radius=self.escapement.get_wheel_inner_r(), inner_radius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise, lightweight=True)
 
         if standalone:
             return wheel
@@ -2992,7 +2995,8 @@ To keep this assembly together, use a small amount of superglue between the whee
                 wheel_r = self.wheel.get_min_radius()
 
                 if barrel_r < wheel_r - 10 and cut_style_in_outer_section:
-                    gear_wheel = Gear.cutStyle(gear_wheel, wheel_r, barrel_r, self.style)
+                    #enough space outside the barrel to cut the style there as well
+                    gear_wheel = Gear.cut_style(gear_wheel, wheel_r, barrel_r, self.style)
                 
                 
             gear_wheel = gear_wheel.union(self.powered_wheel.get_assembled().translate((0, 0, z_offset)))

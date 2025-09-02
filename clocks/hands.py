@@ -1484,7 +1484,7 @@ class Hands:
                 y += r - overlap / 2
             if not second:
                 # is this too much? # TODO line up cutter with hand!
-                hand = Gear.cutStyle(hand, base_r * 0.9, self.hour_fixing_d * 0.7, style=GearStyle.CIRCLES)
+                hand = Gear.cut_style(hand, base_r * 0.9, self.hour_fixing_d * 0.7, style=GearStyle.CIRCLES)
             base_r = self.hour_fixing_d * 0.6
 
             # circle on the other side (I'm sure there's a way to set up initial y to do this properly)
