@@ -46,15 +46,15 @@ class GearTrainBase:
 
         return thelist[:expected_length]
 
-    def __init__(self, total_arbors, default_thickness=5.0, default_module=1.0, default_rod_diameter=3, default_reduction=0.9, default_pinion_thick_multiplier=3):
+    def __init__(self, total_arbors, default_thickness=5.0, default_module=1.0, default_rod_diameter=3, default_reduction=0.9, default_pinion_thick_extra=3):
         self.total_arbors=total_arbors
         self.default_thickness = default_thickness
         self.default_module = default_module
         self.default_rod_diameter = default_rod_diameter
         self.default_reduction = default_reduction
-        self.default_pinion_thick_multiplier = default_pinion_thick_multiplier
+        self.default_pinion_thick_extra = default_pinion_thick_extra
 
-    def generate_arbors_internal(self, modules, thicknesses, rod_diameters, pinion_thicks, lanterns, styles, pinions_face_forwards, wheel_outside_plates, pinion_extensions):
+    def generate_arbors_internal(self, arbor_info):
         raise NotImplementedError("Implement in sub classes")
 
     def generate_arbors_dicts(self, arbor_info, reduction=-1):
@@ -77,15 +77,15 @@ class GearTrainBase:
                 },
             ]
         '''
-        modules = []
-        thicknesses = []
-        rod_diameters = []
-        pinion_thicks = []
-        lanterns = []
-        styles = []
-        pinions_face_forwards = []
-        wheel_outside_plates = []
-        pinion_extensions = []
+        # modules = []
+        # thicknesses = []
+        # rod_diameters = []
+        # pinion_thicks = []
+        # lanterns = []
+        # styles = []
+        # pinions_face_forwards = []
+        # wheel_outside_plates = []
+        # pinion_extensions = []
         if len(arbor_info) < self.total_arbors:
             arbor_info+= [{}] * (len(arbor_info) - self.total_arbors)
 
@@ -98,55 +98,55 @@ class GearTrainBase:
                 add_to.append(dict[key])
                 return True
             return False
-
+        # fill in any missing info
         for i, info in enumerate(arbor_info):
-            if not add_if_in(modules, info, "module"):
+            if "module" not in info:
                 if i ==0:
-                    modules.append(self.default_module)
+                    info["module"] = self.default_module
                 else:
-                    modules.append(modules[-1]*reduction)
+                    info["module"] = arbor_info[i-1]["module"]*reduction
 
-            if not add_if_in(thicknesses, info, "wheel_thick"):
+            if "wheel_thick" not in info:
                 if i ==0:
-                    thicknesses.append(self.default_thickness)
+                    info["wheel_thick"] = self.default_thickness
                 else:
-                    thicknesses.append(thicknesses[-1]*reduction)
+                    info["wheel_thick"] = arbor_info[i-1]["wheel_thick"]*reduction
 
-            if not add_if_in(rod_diameters, info, "rod_diameter"):
-                rod_diameters.append(self.default_rod_diameter)
+            if "rod_diameter" not in info:
+                info["rod_diameter"] = self.default_rod_diameter
 
-            if not add_if_in(pinion_thicks, info, "pinion_thick"):
+            if "pinion_thick" not in info:
                 if i == 0:
                     #no pinion on the great wheel
-                    pinion_thicks.append(-1)
+                    info["pinion_thick"] = -1
                 else:
-                    #triple the previous wheel thick
-                    pinion_thicks.append(thicknesses[-2]*self.default_pinion_thick_multiplier)
+                    #the previous wheel thick + extra
+                    info["pinion_thick"] = arbor_info[i-1]["wheel_thick"] + self.default_pinion_thick_extra
 
-            if not add_if_in(lanterns, info, "lantern"):
-                lanterns.append(False)
+            if "lantern" not in info:
+                info["lantern"] = False
 
-            if not add_if_in(styles, info, "style"):
+            if "style" not in info:
                 if i == 0:
-                    styles.append(None)
+                    info["style"] = None
                 else:
-                    styles.append(styles[-1])
+                    info["style"] = arbor_info[i-1]["style"]
 
-            if not add_if_in(pinions_face_forwards, info, "pinion_faces_forwards"):
+            if "pinion_faces_forwards" not in info:
                 if i <= 1:
                     #default to first two facing forwards
-                    pinions_face_forwards.append(True)
+                    info["pinion_faces_forwards"] = True
                 else:
                     #otherwise flip backwards and forwards
-                    pinions_face_forwards.append(not pinions_face_forwards[-1])
+                    info["pinion_faces_forwards"] = not arbor_info[i-1]["pinion_faces_forwards"]
 
-            if not add_if_in(wheel_outside_plates, info, "wheel_outside_plates"):
-                wheel_outside_plates.append(False)
+            if "wheel_outside_plates" not in info:
+                info["wheel_outside_plates"] = False
 
-            if not add_if_in(pinion_extensions, info, "pinion_extension"):
-                pinion_extensions.append(0)
+            if "pinion_extension" not in info:
+                info["pinion_extension"] = 0
 
-            self.generate_arbors_internal(modules, thicknesses, rod_diameters, pinion_thicks, lanterns, styles, pinions_face_forwards, wheel_outside_plates, pinion_extensions)
+            self.generate_arbors_internal(arbor_info)
 
 
 
