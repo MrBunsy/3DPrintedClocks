@@ -99,7 +99,7 @@ class Gear:
         if style == GearStyle.HONEYCOMB_CHUNKY:
             return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
-            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius, innerRadius =inner_radius + 2)
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2)
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
@@ -437,7 +437,7 @@ class Gear:
 
 
 
-            snowflake = snowflake.add(armShape.rotate((0,0,0), (0,0,1),arm * 360/6))
+            snowflake = snowflake.union(armShape.rotate((0,0,0), (0,0,1),arm * 360/6))
 
 
         cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
