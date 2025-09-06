@@ -161,6 +161,7 @@ hand_colours=[Colour.GOLD]
 if output_STL:
     assembly.get_BOM().export()
 else:
+    # show_object(plates.arbors_for_plate[1].get_assembled())
     # show_object(plates.arbors_for_plate[0].get_shapes()["wheel"])
     assembly.show_clock(show_object,
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
