@@ -66,6 +66,7 @@ train.generate_arbors_dicts([
         #barrel
         "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5),
         "wheel_thick": barrel_gear_thick,
+        "style": gear_style,
 
     },
     {
@@ -80,6 +81,7 @@ train.generate_arbors_dicts([
         #centre wheel
         "module": 1.0,
         "pinion_faces_forwards": True,
+        # "pinion_thick": 7
         "pinion_type": PinionType.LANTERN,
         "wheel_thick": 2.4,
 
@@ -99,7 +101,7 @@ train.generate_arbors_dicts([
         "pinion_faces_forwards": True,
         "pinion_extension": 10
     }
-])
+], pinion_thick_extra=5)
 
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)

@@ -57,7 +57,7 @@ class GearTrainBase:
     def generate_arbors_internal(self, arbor_info):
         raise NotImplementedError("Implement in sub classes")
 
-    def generate_arbors_dicts(self, arbor_info, reduction=-1):
+    def generate_arbors_dicts(self, arbor_info, reduction=-1, pinion_thick_extra=-1):
         '''
         It should have been obvious, but passing a whole load of lists in is a messier way of just passing a list of dicts
         any of the below can be missing and will be automatically filled in as best as possible
@@ -77,6 +77,9 @@ class GearTrainBase:
                 },
             ]
         '''
+
+        if pinion_thick_extra < 0:
+            pinion_thick_extra = self.default_pinion_thick_extra
 
         if len(arbor_info) < self.total_arbors:
             arbor_info+= [{}] * (self.total_arbors - len(arbor_info))
@@ -107,7 +110,7 @@ class GearTrainBase:
                     info["pinion_thick"] = -1
                 else:
                     #the previous wheel thick + extra
-                    info["pinion_thick"] = arbor_info[i-1]["wheel_thick"] + self.default_pinion_thick_extra
+                    info["pinion_thick"] = arbor_info[i-1]["wheel_thick"] + pinion_thick_extra
 
             if "pinion_type" not in info:
                 #previously lantern
