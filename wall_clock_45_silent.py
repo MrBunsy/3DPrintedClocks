@@ -58,8 +58,48 @@ powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diamet
 
 all_modules = powered_modules + module_sizes
 
-train.generate_arbors_lists(modules=all_modules, thicknesses=[barrel_gear_thick, 4, 2.4], pinions_face_forwards=[True, True, True, False, True, True, False],
-                            pinion_extensions=pinion_extensions, lanterns=[0, 1], reduction=0.9, pinion_thicks=pinion_thicks, styles=gear_style)
+# train.generate_arbors_lists(modules=all_modules, thicknesses=[barrel_gear_thick, 4, 2.4], pinions_face_forwards=[True, True, True, False, True, True, False],
+#                             pinion_extensions=pinion_extensions, lanterns=[0, 1], reduction=0.9, pinion_thicks=pinion_thicks, styles=gear_style)
+
+train.generate_arbors_dicts([
+    {
+        #barrel
+        "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5),
+        "wheel_thick": barrel_gear_thick,
+
+    },
+    {
+        #intermediate wheel
+        "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2),
+        "pinion_type": PinionType.THIN_LANTERN,
+        "pinion_thick": barrel_gear_thick*2,
+        "wheel_thick": 4,
+
+    },
+    {
+        #centre wheel
+        "module": 1.0,
+        "pinion_faces_forwards": True,
+        "pinion_type": PinionType.LANTERN,
+        "wheel_thick": 2.4,
+
+    },
+    {
+        #second wheel
+        "module": 0.9,
+        "pinion_extension": 25
+    },
+    {
+        #third wheel
+        "module": 0.9,
+        "pinion_faces_forwards": True
+    },
+    {
+        #escape wheel
+        "pinion_faces_forwards": True,
+        "pinion_extension": 10
+    }
+])
 
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)

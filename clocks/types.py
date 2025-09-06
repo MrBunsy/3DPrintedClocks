@@ -72,6 +72,14 @@ class SplitArborType(Enum):
     WHEEL_OUT_BACK = "back"
     NORMAL_ARBOR = "normal"
 
+class PinionType(Enum):
+    PLASTIC = "plastic"
+    LANTERN = "lantern"
+    THIN_LANTERN = "thin lantern" # lantern but less chunky. Will be more of a faff to put together but useful for some clocks
+
+    def is_lantern(self):
+        return self in [PinionType.LANTERN, PinionType.THIN_LANTERN]
+
 class GearTrainLayout(Enum):
     '''
     how to lay out gear train

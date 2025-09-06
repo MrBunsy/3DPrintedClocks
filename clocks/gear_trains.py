@@ -65,39 +65,25 @@ class GearTrainBase:
         arbor_info =
             [
                 {
-                "module": float,
+                "module": float, (for this wheel and the next arbor's pinion)
                 "wheel_thick": float,
                 "pinion_thick": float,
-                "lantern": bool,
+                "pinion_type": PinionType (for the pinion on this arbor, which engages with the previous wheel)
                 "style": GearStyle enum,
                 "pinion_faces_forwards": bool,
-                "wheel_outside_plates": bool, #escapement on front or back only one supported currently
+                "wheel_outside_plates":  SplitArborType, #escapement on front or back only one supported currently
                 "pinion_extension": float,
                 "rod_diameter": float
                 },
             ]
         '''
-        # modules = []
-        # thicknesses = []
-        # rod_diameters = []
-        # pinion_thicks = []
-        # lanterns = []
-        # styles = []
-        # pinions_face_forwards = []
-        # wheel_outside_plates = []
-        # pinion_extensions = []
+
         if len(arbor_info) < self.total_arbors:
-            arbor_info+= [{}] * (len(arbor_info) - self.total_arbors)
+            arbor_info+= [{}] * (self.total_arbors - len(arbor_info))
 
 
         if reduction < 0:
             reduction = self.default_reduction
-
-        def add_if_in(add_to, dict, key):
-            if key in dict:
-                add_to.append(dict[key])
-                return True
-            return False
         # fill in any missing info
         for i, info in enumerate(arbor_info):
             if "module" not in info:
@@ -123,8 +109,9 @@ class GearTrainBase:
                     #the previous wheel thick + extra
                     info["pinion_thick"] = arbor_info[i-1]["wheel_thick"] + self.default_pinion_thick_extra
 
-            if "lantern" not in info:
-                info["lantern"] = False
+            if "pinion_type" not in info:
+                #previously lantern
+                info["pinion_type"] = PinionType.PLASTIC
 
             if "style" not in info:
                 if i == 0:
@@ -146,7 +133,7 @@ class GearTrainBase:
             if "pinion_extension" not in info:
                 info["pinion_extension"] = 0
 
-            self.generate_arbors_internal(arbor_info)
+        self.generate_arbors_internal(arbor_info)
 
 
 
@@ -242,7 +229,8 @@ class GearTrainBase:
                 "rod_diameter": self.rod_diameters[i],
                 "pinion_thick": self.pinion_thicks[i],
                 "pinion_faces_forwards": self.pinions_face_forwards[i],
-                "lantern":i in self.lanterns,
+                #i-1 because we now put pinino type (eg lantern) with the arbor of the pinion, not the wheel which meshes with that pinion. This is consistent with pinion_thick
+                "pinion_type": PinionType.LANTERN if i-1 in self.lanterns else PinionType.PLASTIC,
                 "wheel_outside_plates": self.wheel_outside_plates[i],
                 "pinion_extension": self.pinion_extensions[i],
                 "style": self.styles[i]
@@ -965,9 +953,10 @@ class GoingTrain(GearTrainBase):
         # this has been assumed for a while
         self.pendulum_fixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
         arbors = []
-        pairs = [WheelPinionPair(wheel[0], wheel[1], arbor_infos[i + self.powered_wheels]["module"], lantern=arbor_infos[i + self.powered_wheels]["lantern"]) for i, wheel in enumerate(self.trains[0]["train"])]
 
-        powered_pairs = [WheelPinionPair(wheel[0], wheel[1], arbor_infos[i]["module"], lantern=arbor_infos[i]["lantern"]) for i, wheel in enumerate(self.chain_wheel_ratios)]
+        pairs = [WheelPinionPair(wheel[0], wheel[1], arbor_infos[i + self.powered_wheels]["module"], lantern=arbor_infos[i + self.powered_wheels + 1]["pinion_type"].is_lantern()) for i, wheel in enumerate(self.trains[0]["train"])]
+
+        powered_pairs = [WheelPinionPair(wheel[0], wheel[1], arbor_infos[i]["module"], lantern=arbor_infos[i + 1]["pinion_type"].is_lantern()) for i, wheel in enumerate(self.chain_wheel_ratios)]
 
         all_pairs = powered_pairs + pairs
 
@@ -1029,7 +1018,8 @@ class GoingTrain(GearTrainBase):
                           use_ratchet=not self.huygens_maintaining_power,
                           pinion_extension=arbor_infos[i]["pinion_extension"],
                           #TODO finish overhauling this to make it more generic
-                          escapement_split=arbor_infos[i]["wheel_outside_plates"] != SplitArborType.NORMAL_ARBOR
+                          escapement_split=arbor_infos[i]["wheel_outside_plates"] != SplitArborType.NORMAL_ARBOR,
+                          pinion_type=arbor_infos[i]["pinion_type"]
                           )
             arbors.append(arbor)
 
