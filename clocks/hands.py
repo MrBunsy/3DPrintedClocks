@@ -655,6 +655,9 @@ class BaroqueHands(HandGenerator):
         return hand
 
 class FancyClockHands(HandGenerator):
+    '''
+    FANCY_FRENCH
+    '''
     def __init__(self, base_r, length, thick):
         super().__init__(base_r, length, thick)
         self.diamond_width = self.length*0.15
@@ -814,6 +817,15 @@ class FancyClockHands(HandGenerator):
 
     def second_hand(self, total_length=30, base_r=6, thick=3, colour=None, balanced=False, fixing_thick=-1):
         hand = cq.Workplane("XY").tag("base")
+
+        #temp, use black forest second hand
+        width = total_length * 0.075
+        hollow_diamond = False
+        base_r = total_length * 0.15
+        need_base_r = False
+        diamond_width = -1
+
+        hand = diamond_hand(base_r=base_r, hand_width=width, length=total_length, thick=thick, hollow_diamond=hollow_diamond, diamond_width=diamond_width)
 
         return hand
 
