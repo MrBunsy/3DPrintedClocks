@@ -51,8 +51,8 @@ module_sizes = [1.0, 0.9, 0.9]
 
 print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
 
-pendulum_sticks_out = 15
-back_plate_from_wall = 30
+pendulum_sticks_out = 17
+back_plate_from_wall = 34
 
 #intermediate wheel pinion thicker than needed so it can use the one size of 1.2mm dowels I've got in stock
 pinion_thicks = [-1, barrel_gear_thick*2, 7.5, 7, 7, 7]
@@ -107,7 +107,7 @@ train.generate_arbors_dicts([
 ], pinion_thick_extra=5)
 
 
-pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
+pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=9, bob_nut_d=12)
 
 dial_d = 175
 seconds_dial_width = 7
@@ -148,7 +148,7 @@ TODO:
 plates = RoundClockPlates(train, motion_works, name="Wall 45", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=plate_style, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False,
-                                gear_train_layout=gear_train_layout, fewer_arms=True)
+                                gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=back_plate_from_wall)
 
 hand_style = HandStyle.FANCY_FRENCH
 hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
