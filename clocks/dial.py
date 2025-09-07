@@ -244,16 +244,16 @@ class MoonPhaseComplication3D:
             arbor_object = Arbor(arbor_d= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheel_thick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinion_thick=self.pinion_thick,
                           pinion_extension=pinion_length - self.pinion_thick, pinion_at_front=False, clockwise_from_pinion_side=True, style=self.gear_style, end_cap_thick=0)
             arbor = arbor_object.get_shape()
-            if index == 0:
-                #cut away a bit to improve fitting ext to motion works (woopsee printing clock 32)
-                pinion_r = arbor_object.get_pinion_max_radius()
-                cut_to_r = pinion_r*0.7
-                cutter_high = pinion_length - self.pinion_thick*1.25
-                cutter = cq.Workplane("XY").circle(pinion_r*1.5).circle(cut_to_r).extrude(cutter_high).translate((0,0,self.gear_thick))
-                #trim off the top so this is printable at 45deg
-                cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0,height=pinion_r*1.5,pnt=(0,0,cutter_high + self.gear_thick), dir=(0,0,-1)))
-                arbor = arbor.cut(cutter)
-
+            # if index == 0:
+            #     #cut away a bit to improve fitting ext to motion works (woopsee printing clock 32)
+            #     pinion_r = arbor_object.get_pinion_max_radius()
+            #     cut_to_r = pinion_r*0.7
+            #     cutter_high = pinion_length - self.pinion_thick*1.25
+            #     cutter = cq.Workplane("XY").circle(pinion_r*1.5).circle(cut_to_r).extrude(cutter_high).translate((0,0,self.gear_thick))
+            #     #trim off the top so this is printable at 45deg
+            #     cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0,height=pinion_r*1.5,pnt=(0,0,cutter_high + self.gear_thick), dir=(0,0,-1)))
+            #     arbor = arbor.cut(cutter)
+            arbor = arbor.cut(cq.Workplane("XY").circle(self.arbor_loose_d/2).extrude(1000))
             if not for_printing and index == 0:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.gear_thick + pinion_length))
             return arbor

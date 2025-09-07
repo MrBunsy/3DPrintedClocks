@@ -1239,9 +1239,11 @@ class GoingTrain(GearTrainBase):
             if i == 0:
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 # the powered wheel
+                pinion_type =PinionType.LANTERN if i in lanterns else PinionType.PLASTIC
                 self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=powered_wheel_thicks[i], arbor_d=self.powered_wheel.arbor_d,
                                                        distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
-                                                       use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side))
+                                                       use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side,
+                                                       pinion_type=pinion_type))
             else:
                 # just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
                 clockwise_from_pinion_side = first_chainwheel_clockwise == (i % 2 == 0)
@@ -1250,12 +1252,14 @@ class GoingTrain(GearTrainBase):
                     pinion_thick = self.powered_wheel_arbors[i - 1].wheel_thick + pinion_thick_extra
                 cap_thick = gear_pinion_end_cap_thick
                 wheel_thick = powered_wheel_thicks[i]
+                pinion_type = PinionType.PLASTIC
                 if self.powered_wheel_pairs[i - 1].pinion.lantern:
                     cap_thick = wheel_thick
+                    pinion_type = PinionType.LANTERN
                 self.powered_wheel_arbors.append(Arbor(wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
                                                        pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                                        distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
-                                                       clockwise_from_pinion_side=clockwise_from_pinion_side))
+                                                       clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_type=pinion_type))
                 if i == 1:
                     # negate flipping the direction of the pinion
                     pinion_at_front = not pinion_at_front
