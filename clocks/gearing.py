@@ -47,7 +47,7 @@ class Gear:
     '''
 
     @staticmethod
-    def cut_style(gear, outer_radius, inner_radius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1, lightweight=False):
+    def cut_style(gear, outer_radius, inner_radius = -1, style=None, clockwise_from_pinion_side=True, rim_thick=-1, lightweight=False, random_seed=-1):
         '''
         rim_thick: override default rim to leave around the outside of the gear. Need some for strength, but want less to make gears lighter
         lightweight: cut out more if possible (up to each style) to make the gear lighter. Primarily for large escape wheels
@@ -99,7 +99,7 @@ class Gear:
         if style == GearStyle.HONEYCOMB_CHUNKY:
             return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
-            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2)
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2, seed=random_seed)
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
@@ -341,12 +341,16 @@ class Gear:
 
 
     @staticmethod
-    def cutSnowflakeStyle(gear, outerRadius, innerRadius):
+    def cutSnowflakeStyle(gear, outerRadius, innerRadius, seed=-1):
         '''
         Just random branching arms until I can think of something better
         '''
         middleOfGapR = (outerRadius + innerRadius)/2
         gapSize = outerRadius - innerRadius
+
+        if seed != -1:
+            state = random.getstate()
+            random.seed(seed)
 
         armThick = 4
 
@@ -443,6 +447,9 @@ class Gear:
         cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
 
         cutter = cutter.cut(snowflake)
+
+        if seed != -1:
+             random.setstate(state)
 
         return gear.cut(cutter)
 
@@ -2612,7 +2619,7 @@ class Arbor:
         if self.pinion is not None and self.pinion.lantern:
             diameter = self.pinion.trundle_r * 2
             min_length = self.pinion_thick + self.pinion_extension
-            max_length = self.pinion_thick + self.pinion_extension + (self.end_cap_thick - self.get_lantern_trundle_offset()) + (self.wheel_thick - self.get_lantern_trundle_offset())
+            max_length = self.pinion_thick + self.pinion_extension + (self.end_cap_thick - self.get_lantern_trundle_offset()) + (self.wheel_thick - self.get_lantern_trundle_offset()) - self.lantern_fixing_wheel_offset
             print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
             trundle_length = max_length - (max_length%2)
             trundle_item = BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity=self.pinion.teeth, purpose="Lantern pinion trundles")
@@ -3014,7 +3021,8 @@ To keep this assembly together, use a small amount of superglue between the whee
             if self.powered_wheel.type == PowerType.SPRING_BARREL:
 
                 # cut a hole in teh gear wheel so the style in the back of the barrel works
-                gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.outer_radius_for_style).cutThruAll()
+                #note - also this means we can have different barrel base thicknesses and wheel thicknesses!
+                gear_wheel = gear_wheel.faces(">Z").workplane().circle(self.powered_wheel.barrel_diameter / 2).cutThruAll()
 
                 z_offset = 0
                 barrel_r = self.powered_wheel.get_outer_diameter()/2

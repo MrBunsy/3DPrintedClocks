@@ -1,6 +1,7 @@
 import math
 import cadquery as cq
 from clocks import *
+import random
 
 '''
 A wall clock version of mantel 44. Silent escapement with same style: sword hands, roman numeral dial and modern plates
@@ -19,6 +20,8 @@ if 'show_object' not in globals():
 
 clock_name = "Wall_45_silent"
 
+random.seed(clock_name)
+
 gear_style = GearStyle.SNOWFLAKE#GearStyle.ROUNDED_ARMS5
 pillar_style = PillarStyle.TWISTY
 
@@ -30,9 +33,9 @@ escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.d
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
-power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=barrel_gear_thick,
+power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=4, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
-                     ratchet_screws=MachineScrew(2, grub=True))
+                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel")
 
 #idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth
 
@@ -48,7 +51,7 @@ module_sizes = [1.0, 0.9, 0.9]
 
 print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
 
-pendulum_sticks_out = 10
+pendulum_sticks_out = 15
 back_plate_from_wall = 30
 
 #intermediate wheel pinion thicker than needed so it can use the one size of 1.2mm dowels I've got in stock
@@ -115,7 +118,7 @@ dial_width = 33#dial_d*0.15
 
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False,  style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES,
-            seconds_dial_width=seconds_dial_width)
+            seconds_dial_width=seconds_dial_width, pillar_style=pillar_style)
 
 motion_works_height = 10
 

@@ -1059,13 +1059,15 @@ class SpringBarrel:
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
                  base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
-                 ratchet_thick=8, ratchet_screws=None):
+                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1):
         '''
 
         '''
         self.type = PowerType.SPRING_BARREL
 
         self.style = style
+        #if the style has a random component, ensure we get teh same on teh lid and base
+        self.seed_for_gear_styles=seed_for_gear_styles
         #comply with PoweredWheel interface
         self.loose_on_rod=True
 
@@ -1426,7 +1428,7 @@ class SpringBarrel:
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
 
         barrel = Gear.cut_style(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
-                                clockwise_from_pinion_side=self.clockwise, rim_thick=0)
+                                clockwise_from_pinion_side=self.clockwise, rim_thick=0, random_seed=self.seed_for_gear_styles)
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
@@ -1452,7 +1454,7 @@ class SpringBarrel:
         lid = lid.cut(self.get_lid_fixing_screws_cutter(loose=True).translate((0,0,-self.base_thick - self.barrel_height)))
 
         lid = Gear.cut_style(lid, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
-                             clockwise_from_pinion_side=self.clockwise, rim_thick=0)
+                             clockwise_from_pinion_side=self.clockwise, rim_thick=0, random_seed=self.seed_for_gear_styles)
 
         if for_printing:
             lid = lid.rotate((0,0,0),(1,0,0),180).translate((0,0,self.lid_thick))
