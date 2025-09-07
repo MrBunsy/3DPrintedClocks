@@ -366,7 +366,7 @@ def get_point_two_circles_intersect(pos0, distance0, pos1, distance1, anticlockw
             if np.dot(relative_point, in_direction) >= 0:
                 return point
         #shouldn't be able to reach here?
-        raise ValueError("unable to find point")
+        raise ValueError("unable to find point circles intersect")
 
     else:
         dir = 1 if anticlockwise_from_0 else -1

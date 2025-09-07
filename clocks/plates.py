@@ -4415,7 +4415,6 @@ class RoundClockPlates(SimpleClockPlates):
         All pillars on this clock will be identical, with no real meanign behind top and bottom pillar, but to fit in with the other plate designs they'll still
         be divided into top and bottom pillars
 
-        currently assumes spring powered with two powered wheels, TODO make more robust
         '''
 
         # can make it big enough to fully encompass everything, but we still barely have space for a bottom right pillar and then its' just lots of empty space
@@ -4425,8 +4424,8 @@ class RoundClockPlates(SimpleClockPlates):
 
 
 
-        bearingInfo = get_bearing_info(self.arbor_d)
-        self.plate_width = bearingInfo.outer_d + self.bearing_wall_thick * 2
+        bearing_info = get_bearing_info(self.arbor_d)
+        self.plate_width = bearing_info.outer_d + self.bearing_wall_thick * 2
         self.min_plate_width = self.plate_width
         barrel_distance = get_distance_between_two_points(self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[0][:2])
 
@@ -4449,6 +4448,7 @@ class RoundClockPlates(SimpleClockPlates):
             self.bottom_pillar_positions = [(-bottom_right_pillar_pos[0], bottom_right_pillar_pos[1]), bottom_right_pillar_pos]
             self.top_pillar_positions = [np_to_set(np.add(self.hands_position, pillar_pos)) for pillar_pos in [polar(math.pi/4, self.radius), polar(math.pi*3/4, self.radius)]]
         else:
+            #the non-fully roudn version, which is actually barely used TODO extract this out into a different class
             self.bottom_pillar_distance = (self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 3)*2
             self.radius = self.bottom_pillar_distance/2
 
@@ -4461,6 +4461,7 @@ class RoundClockPlates(SimpleClockPlates):
             pillar_distance = self.radius
 
             if self.fully_round:
+                #the wall clock version which is in use on multiple designs
                 #pillars inline with the powered wheel
                 y = barrel_pos[1]
                 pillar_distance = self.bottom_pillar_distance/2
@@ -4502,44 +4503,67 @@ class RoundClockPlates(SimpleClockPlates):
                     (barrel_pos[0] + pillar_distance, y),
                 ]
 
-            #this did work, but in general I think we're better off putting the pillars as a mirror of the bottom pillars (for a 3 wheel train or second hand below)
-            # find where wheels 3 and 4 meet, then put the pillar in that direction
-            points = get_circle_intersections(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius(),
-                                              self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius())
-            # find furthest point
-            if get_distance_between_two_points(points[0], centre) > get_distance_between_two_points(points[1], centre):
-                point = points[0]
-            else:
-                point = points[1]
-            line_to_point = Line(centre, another_point=point)
+            bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
+            left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
+            right_pillar_pos = (-left_pillar_pos[0], left_pillar_pos[1])
+            mirrored_pillars_clash = self.clashes_with_wheel(left_pillar_pos, pillar_r=self.pillar_r) or self.clashes_with_wheel(right_pillar_pos, pillar_r=self.pillar_r, min_gap=self.gear_gap)
 
-            left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
+            if mirrored_pillars_clash:
+                # find where wheels 3 and 4 meet, then put the pillar in that direction
+                points = get_circle_intersections(self.bearing_positions[self.going_train.powered_wheels+1][:2], self.arbors_for_plate[self.going_train.powered_wheels+1].get_max_radius(),
+                                                  self.bearing_positions[self.going_train.powered_wheels+2][:2], self.arbors_for_plate[self.going_train.powered_wheels+2].get_max_radius())
+                # find furthest point
+                if get_distance_between_two_points(points[0], centre) > get_distance_between_two_points(points[1], centre):
+                    point = points[0]
+                else:
+                    point = points[1]
+                line_to_point = Line(centre, another_point=point)
 
-            if self.going_train.wheels == 3:
-                #mirror the bottom pillars
-                bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
-                left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
-            elif not self.no_upper_wheel_in_centre:
-                #4 wheels but one is centred, probably need to avoid the escape wheel
-                escape_wheel_pos = self.bearing_positions[-2][:2]
-                escape_wheel_distance = get_distance_between_two_points(escape_wheel_pos, centre)
-                escape_wheel_from_centre = np_to_set(np.subtract(escape_wheel_pos, centre))
-                escape_wheel_angle_from_centre = math.atan2(escape_wheel_from_centre[1], escape_wheel_from_centre[0])
-                escape_wheel_angle_half_span = (self.arbors_for_plate[-2].get_max_radius() + self.gear_gap + self.top_pillar_r)/escape_wheel_distance
+                left_pillar_pos = np_to_set(np.add(centre, polar(line_to_point.get_angle(), self.radius)))
 
-                #trying to be generic here so we end up on the outside of the escape wheel regardless of where the wheel is
-                furthest = 0
-                furthest_pos = None
-                potential_positions = [polar(escape_wheel_angle_from_centre + x*escape_wheel_angle_half_span, self.radius) for x in [-1, 1]]
-                for pos in potential_positions:
-                    if abs(pos[0]) > furthest:
-                        furthest = abs(pos[0])
-                        furthest_pos = pos
-                furthest_pos = list(np_to_set(np.add(centre, furthest_pos)))
+                # if self.going_train.wheels == 3:
+                #     #mirror the bottom pillars - now the default and we only end up here if it clashes
+                #     bottom_y_from_centre = self.bearing_positions[self.going_train.powered_wheels][1] - self.bottom_pillar_positions[0][1]
+                #     left_pillar_pos = (-self.bottom_pillar_positions[0][0], bottom_y_from_centre + self.bearing_positions[self.going_train.powered_wheels][1])
+                if not self.no_upper_wheel_in_centre:
+                    #4 wheels but one is centred, probably need to avoid the escape wheel
+                    escape_wheel_pos = self.bearing_positions[-2][:2]
+                    # escape_wheel_distance = get_distance_between_two_points(escape_wheel_pos, centre)
+                    # escape_wheel_from_centre = np_to_set(np.subtract(escape_wheel_pos, centre))
+                    # escape_wheel_angle_from_centre = math.atan2(escape_wheel_from_centre[1], escape_wheel_from_centre[0])
+                    # escape_wheel_angle_half_span = (self.arbors_for_plate[-2].get_max_radius() + self.gear_gap + self.top_pillar_r)/escape_wheel_distance
+                    #
+                    # get_point_two_circles_intersect()
+                    # #trying to be generic here so we end up on the outside of the escape wheel regardless of where the wheel is
+                    # furthest = 0
+                    # furthest_pos = None
+                    # potential_positions = [polar(escape_wheel_angle_from_centre + x*escape_wheel_angle_half_span, self.radius) for x in [-1, 1]]
+                    # for pos in potential_positions:
+                    #     if abs(pos[0]) > furthest:
+                    #         furthest = abs(pos[0])
+                    #         furthest_pos = pos
+                    # furthest_pos = list(np_to_set(np.add(centre, furthest_pos)))
+                    #
+                    # if furthest_pos[0] < 0:
+                    #     furthest_pos[0] *= -1
+                    # left_pillar_pos = furthest_pos
+                    line_to_escape_wheel = Line(self.hands_position, another_point=escape_wheel_pos)
+                    start_angle = line_to_escape_wheel.get_angle()
+                    potential_pos =  np_to_set(np.add(self.hands_position, polar(start_angle, self.radius)))#line_to_escape_wheel.intersection_with_circle(self.hands_position,self.radius, line_length=self.radius*2)[0]
+                    tries = 1
+                    #try and put the pillar just below the escape wheel. brute force approach. probably should maths it.
+                    # start_angle = line_to_escape_wheel.get_angle()
+                    angle_direction = +1 if potential_pos[0] < 0 else -1
+                    while (self.clashes_with_wheel(potential_pos, self.pillar_r) or self.clashes_with_wheel((-potential_pos[0], potential_pos[1]), self.pillar_r)) and tries < 100:
+                        test_angle = start_angle + tries*angle_direction*math.pi*0.02
+                        potential_pos = np_to_set(np.add(self.hands_position, polar(test_angle, self.radius)))
+                        tries += 1
 
-                if furthest_pos[0] < 0:
-                    furthest_pos[0] *= -1
-                left_pillar_pos = furthest_pos
+                    left_pillar_pos = potential_pos
+                    if left_pillar_pos[0] > 0:
+                        left_pillar_pos = (-left_pillar_pos[0], left_pillar_pos[1])
+
+
 
             #no real need to treat pillars differently, but the base class does so it makes some of the other logic easier
             self.top_pillar_positions = [
