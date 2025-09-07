@@ -1824,7 +1824,7 @@ class GearLayout2D:
 
 
     def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
-                 anchor_distance_fudge_mm=0, minimum_anchor_distance=False):
+                 anchor_distance_fudge_mm=0, minimum_anchor_distance=False, override_distances=None):
         '''
         centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
         can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
@@ -1841,6 +1841,15 @@ class GearLayout2D:
         self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
         #if true assume everything has been designed so the anchor just needs to avoid arbor extensions, not wheels
         self.minimum_anchor_distance = minimum_anchor_distance
+
+        self.override_distances=override_distances
+        '''
+        {
+        (from_index, to_index): distance
+        }
+        '''
+        if self.override_distances is None:
+            self.override_distances = {}
 
         #space in mm that must be left between all non-meshing gears
         self.gear_gap = gear_gap
@@ -1945,6 +1954,8 @@ class GearLayout2D:
 
                 next_centred_index = arbor_index + non_vertical_arbors_next + 1
                 distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + get_pinion_r(next_centred_index) + self.gear_gap
+                if (arbor_index, next_centred_index) in self.override_distances:
+                    distance_to_next_centred_arbor = self.override_distances[(arbor_index, next_centred_index)]
 
                 if next_centred_index == total_arbors - 1 and non_vertical_arbors_next == 1:
                     #this is one sticky-out wheel just before the anchor, need to take the anchor itself into account
