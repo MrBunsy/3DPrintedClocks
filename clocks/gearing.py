@@ -3617,7 +3617,7 @@ class MotionWorks:
 
     def get_motion_arbour_shape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
-        return self.get_motion_arbour().get_shape(hole_d=self.hole_d)
+        return self.get_motion_arbour().get_shape(hole_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS)
 
     def get_widest_radius(self):
         '''
