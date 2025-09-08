@@ -528,7 +528,7 @@ $render{render_with_dial_id}
             final_assembly_bom.assembly_instructions += "TODO assembly instructions"
             render_with_dial = cq.Workplane("XY")
 
-        render_with_motion_works = cq.Workplane("XY").add(render_with_dial)
+        render_with_motion_works = cq.Workplane("XY")#.add(render_with_dial)
 
         motion_works_parts = self.motion_works.get_parts_in_situ(motion_works_relative_pos=self.plates.motion_works_relative_pos, minute_angle=self.minuteAngle, time_setter_relative_pos=self.plates.time_setter_relative_pos)
 
