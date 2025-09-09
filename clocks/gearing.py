@@ -1897,8 +1897,8 @@ class ArborForPlate:
         else:
             #friction fitting pendulum
             shapes["pendulum_holder"] = self.friction_fit_bits.get_pendulum_holder()
-            shapes["arbor_extension"] = self.get_arbor_extension(front=True)
-            anchor = anchor.union(self.get_arbor_extension(front=False).translate((0,0,anchor_thick)))
+            shapes["arbor_extension"] = self.get_arbor_extension(front=True).cut(self.threaded_rod_cutter)
+            anchor = anchor.union(self.get_arbor_extension(front=False).translate((0,0,anchor_thick))).cut(self.threaded_rod_cutter)
             # print("Only direct arbour pendulum fixing supported currently")
         shapes["anchor"] = anchor
 
@@ -2339,6 +2339,9 @@ class ArborForPlate:
         elif self.arbor.get_type() == ArborType.POWERED_WHEEL:
             #TODO support chain at front?
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbor_extension_max_radius=self.arbor_extension_max_radius)
+            if PowerType.is_weight(self.arbor.powered_wheel.type) and not self.arbor.loose_on_rod:
+                wheel = wheel.cut(self.threaded_rod_cutter)
+
             shapes["wheel"] = wheel
             #rear side extended full endshake so we could go plain bushing if needed
         if self.need_separate_arbor_extension(front=False):
@@ -3014,7 +3017,7 @@ To keep this assembly together, use a small amount of superglue between the whee
             style = None
         #the "pinion" is used for the side of the powered wheel
         #TODO review logic if I ever get chain at back working again
-        gear_wheel = self.wheel.get3D(holeD=self.hole_d, thick=self.wheel_thick, style=style, innerRadiusForStyle=inner_radius_for_style,
+        gear_wheel = self.wheel.get3D(holeD=0, thick=self.wheel_thick, style=style, innerRadiusForStyle=inner_radius_for_style,
                                       clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
         if self.combine_with_powered_wheel:
@@ -3063,11 +3066,11 @@ To keep this assembly together, use a small amount of superglue between the whee
                 #this *shouldn't* be possible anymore as the module size of teh chain wheel is recalcualted to ensure there is space
                 # raise ValueError("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation. extension_r:{}".format(extension_r))
                 print("Wheel next to powered wheel is too large for powered wheel arbour extension to fit. Try making module reduction smaller for gear generation. extension_r:{}".format(extension_r))
-            extended_arbour = cq.Workplane("XY").circle(extension_r).extrude(rear_side_extension - bearing_standoff_height).faces(">Z").workplane().circle(bearing_standoff_r).extrude(bearing_standoff_height)
-            #add hole for rod!
-            extended_arbour = extended_arbour.faces(">Z").circle(self.arbor_d / 2).cutThruAll()
+            extended_arbor = cq.Workplane("XY").circle(extension_r).extrude(rear_side_extension - bearing_standoff_height).faces(">Z").workplane().circle(bearing_standoff_r).extrude(bearing_standoff_height)
+            #add hole for rod! (now done later with the self-tapping shape)
+            # extended_arbor = extended_arbor.faces(">Z").circle(self.arbor_d / 2).cutThruAll()
 
-            gear_wheel = gear_wheel.add(extended_arbour.rotate((0,0,0),(1,0,0),180))
+            gear_wheel = gear_wheel.union(extended_arbor.rotate((0,0,0),(1,0,0),180))
 
         if self.get_extra_ratchet() is not None or not self.use_ratchet and self.weight_driven:
             #need screwholes to attach the rest of the ratchet or the chain wheel (the boltPositions have alreayd been adjusted accordingly)
@@ -3095,7 +3098,7 @@ To keep this assembly together, use a small amount of superglue between the whee
             gear_wheel = gear_wheel.rotate((0,0,0),(1,0,0),180).translate((0,0, self.wheel_thick))
 
         if self.loose_on_rod:
-            #cut a hole through the arbour extension too (until the arbour extension takes this into account, but it doesn't since this currently only applies to the cord wheel)
+            #cut a hole through the arbour extension too (until the arbour extension takes this into account, but it doesn't since this currently only applies to the cord wheel with a key)
             cutter = cq.Workplane("XY").circle(self.hole_d / 2).extrude(10000).translate((0, 0, -5000))
             gear_wheel = gear_wheel.cut(cutter)
             # print("Need steel tube of length {}mm".format(self.wheel_thick + rear_side_extension))

@@ -2474,6 +2474,16 @@ class CordBarrel(WeightPoweredWheel):
         if self.loose_on_rod:
             self.holeD += LOOSE_FIT_ON_ROD
 
+        self.threaded_rod = MachineScrew(self.arbor_d)
+
+
+        if self.loose_on_rod:
+            self.barrel_hole_cutter = cq.Workplane("XY").circle(self.holeD/2).extrude(1000)
+        else:
+            # "loose" instead of best screw fit, because the arbors are long and it's a pain to screw the rod in
+            # same as ArborForPlate
+            self.barrel_hole_cutter = self.threaded_rod.get_cutter(length=1000, ignore_head=True, self_tapping=True, loose=True).translate((0, 0, -500)).rotate((0, 0, 0), (0, 0, 1), -360 / 12)
+
         self.screw_thread_metric=screw_thread_metric
 
         '''
@@ -2708,7 +2718,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
 
         #hole for the rod
-        segment = segment.faces(">Z").circle(self.holeD/2).cutThruAll()
+        segment = segment.cut(self.barrel_hole_cutter)
 
         #holes for the screws that hold this together
         #this can sometimes hang, not sure what conditions cause that.
@@ -2782,6 +2792,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
             #add space for countersunk screw heads
             countersink = self.get_fixing_screws_cutter(capThick + extraThick)
             cap = cap.cut(countersink)
+            cap = cap.cut(cq.Workplane("XY").circle(holeR).extrude(capThick * 10))
 
         if top and self.top_cap_overlap > 0:
             #overlap slot
@@ -2789,7 +2800,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
             cap = cap.cut(cutter)
 
         # hole for the rod
-        cap = cap.cut(cq.Workplane("XY").circle(holeR).extrude(capThick*10))
+        cap = cap.cut(self.barrel_hole_cutter)
 
         # holes for the screws that hold this together
         cap = cap.faces(">Z").pushPoints(self.fixing_points).circle(self.screw_thread_metric / 2).cutThruAll()
@@ -2808,7 +2819,8 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         bridging=False
 
         # hole for the rod
-        clickwheel = clickwheel.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.thick*2))
+        # clickwheel = clickwheel.cut(cq.Workplane("XY").circle(self.holeD / 2).extrude(self.thick*2))
+        clickwheel = clickwheel.cut(self.barrel_hole_cutter)
         cutter = cq.Workplane("XY")
         if self.use_key:
             #space for a nut
