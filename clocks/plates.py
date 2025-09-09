@@ -1275,9 +1275,10 @@ class SimpleClockPlates:
         '''
         If there's nothing sticking out of the front plate it can be printed the other way up - better front surface and no hole-in-hole needed for bearings
         '''
-        if self.pendulum_at_front and self.pendulum_sticks_out > 0:
-            #arm that holds the bearing (old designs)
-            return False
+        # if self.pendulum_at_front and self.pendulum_sticks_out > 0:
+        #     #arm that holds the bearing (old designs) #that arm no longer exists
+        #     # return False
+        #
         if self.style in [PlateStyle.RAISED_EDGING]:
             return False
 

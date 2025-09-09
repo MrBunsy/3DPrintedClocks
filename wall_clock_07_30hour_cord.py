@@ -61,7 +61,7 @@ pendulumSticksOut=20
 train.gen_gears(module_size=1.25, module_reduction=0.875, thick=3, powered_wheel_thick=6)
 
 
-motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30)
+motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut )
 
 
 #trying a thicker anchor and glue rather than nyloc
@@ -72,8 +72,8 @@ pendulum = clock.Pendulum(bob_d=70, bob_thick=10, hand_avoider_inner_d=100)
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Wall 07", gear_train_layout=clock.GearTrainLayout.VERTICAL,
-                                 embed_nuts_in_plate=False, pillars_separate=False)# screws_from_back=[[True, True], [True, True]])
+plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, back_plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="Wall 07", gear_train_layout=clock.GearTrainLayout.VERTICAL,
+                                 embed_nuts_in_plate=True, pillars_separate=True, fixing_screws=clock.MachineScrew(4))#, screws_from_back=[[True, True], [True, True]])
 
 
 hands = clock.Hands(style="simple_rounded", minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=100, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False)
