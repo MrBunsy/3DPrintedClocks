@@ -1538,7 +1538,7 @@ class GoingTrain(GearTrainBase):
 #     print(all_times[0])
 #     return all_times
 
-class SlideWhistleTrain:
+class SlideWhistleTrain(GearTrainBase):
     '''
     Going to write this completely independently of GoingTrain, but with the idea of re-writing GoingTrain later using this to test out neater ways to do it
     and maybe some sort of base class for calculating gear trains
@@ -1562,6 +1562,7 @@ class SlideWhistleTrain:
         # going to be a spring to develop this, but might eventually be any other source of power if it ends up in a clock
         #think it's much easier to just provide this in the constructor than the mess in goingtrain
         self.powered_wheel = powered_wheel
+        #original plan was a fan for the airflow, but I now think that a convential bellows might be easier
         self.fan = fan
         # decided that this will be total wheels, not just wheels from the minute wheel this might become a gotcha, or might be worth refactoring the
         # time going train
@@ -1671,50 +1672,27 @@ class SlideWhistleTrain:
 
 
 
-    def generate_arbors(self, modules=None, thicknesses=None, rod_diameters=None, default_reduction=0.9, pinion_thicks=None, lanterns=None, style=None, pinions_face_forwards=None):
+    def generate_arbors_internal(self, arbor_infos):
+
         '''
+        arbor_info =
+            [
+                {
+                "module": float, (for this wheel and the next arbor's pinion)
+                "wheel_thick": float,
+                "pinion_thick": float,
+                "pinion_type": PinionType (for the pinion on this arbor, which engages with the previous wheel)
+                "style": GearStyle enum,
+                "pinion_faces_forwards": bool,
+                "wheel_outside_plates":  SplitArborType, #escapement on front or back only one supported currently
+                "pinion_extension": float,
+                "rod_diameter": float
+                },
+            ]
         Take the gear ratios calculated in calculate_ratios and generate a list of Arbors - which can be handed to the plates
 
-        The old gen_gears in GoingTrain was becoming unmanagable. I'm trying something more simple here, manually provide everything in a list,
-        but with the option of -1 for auto or just leaving things off the list to be auto calculated
-
-        modules - list of modules sizes, or -1 for auto. Can be shorter than train and rest will be filled in
-        thicknesses - list of thicknesses of gears, as per modules -1 for auto. can be shorter than train and rest will be filled in
-        rod diameters - list of diameters for the rods, or -1 for auto. Can be shorter than train and rest will be filled in
-        pinion_thicks - list of sizes of pinion, or -1 for auto. Can be shorter than train and rest will be filled in
-        pinions_face_forwards - list of True, False or None for auto Can be shorter than train and rest will be filled in
         '''
 
-        self.modules = self.tidy_list(modules, expected_length=self.total_wheels, default_value=1, default_reduction=default_reduction)
-        self.thicknesses = self.tidy_list(thicknesses, expected_length=self.total_wheels, default_value=5, default_reduction=default_reduction)
-        self.rod_diameters = self.tidy_list(rod_diameters, expected_length=self.total_wheels, default_value=3, default_reduction=1)
-        self.lanterns = lanterns
-        if self.lanterns is None:
-            self.lanterns = []
-
-        #first "pinion" is the side of the powered wheel with the power mechanism, be it barrel or sprocket or anything else
-        #auto filled in will just alternate true and false through the train
-        self.pinions_face_forwards = pinions_face_forwards
-        if self.pinions_face_forwards is None:
-            #Everything I've made so far has the next wheel stack behind the powered wheel, so that's the default here
-            self.pinions_face_forwards = [True, True]
-        if len(self.pinions_face_forwards) < self.total_wheels:
-            self.pinions_face_forwards += [None] * (self.total_wheels - len(self.pinions_face_forwards))
-        for i, pinion_face_forward in enumerate(self.pinions_face_forwards):
-            if pinion_face_forward is None:
-                self.pinions_face_forwards[i] = not self.pinions_face_forwards[i-1]
-
-        self.pinion_thicks = pinion_thicks
-        if self.pinion_thicks is None:
-            self.pinion_thicks = [min(wheel_thick+3, wheel_thick*2) for wheel_thick in self.thicknesses]
-        else:
-            if len(self.pinion_thicks) < self.total_wheels:
-                self.pinion_thicks += [-1]*(self.total_wheels - len(self.pinion_thicks))
-            for i, pinion_thick in self.pinion_thicks:
-                if pinion_thick < 0:
-                    wheel_thick = self.thicknesses[i]
-                    pinion_thick = min(wheel_thick+3, wheel_thick*2)
-                    self.pinion_thicks[i] = pinion_thick
 
         print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}, pinions on front: {self.pinions_face_forwards}")
 

@@ -6,7 +6,9 @@ from .geometry import *
 import cadquery as cq
 
 class CentrifugalFan:
-
+    '''
+    Not going to finish this, decided to just use a conventional bellows and fly on the slide whistle
+    '''
     def __init__(self, outer_diameter=50, total_height=25, blade_angle_deg=30, bearing=None, screws=None, blades=10, endshake=1, clockwise=True):
         # dimensions of the outside of the casing
         self.outer_diameter = outer_diameter
@@ -84,3 +86,4 @@ class CentrifugalFan:
         assembly = assembly.add(self.get_case())
 
         return assembly
+

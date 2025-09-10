@@ -1524,6 +1524,45 @@ def get_nearest_machine_screw_length(length, machine_screw, allow_longer=False, 
     else:
         return just_above
 
+class PrintableObject:
+    '''
+    realised I'm following a regular pattern with most parts, so why not try and standardise? Would make assembling models and previews easier if
+    they all behave in the same way
+
+    idea is that then I can remove all the for_printing arguments as the default shape should be for printing and get_parts_in_situ does all the rotation
+    and translation needed for a model
+
+    TODO - plan for caching? this might be a suitable place to put it
+    '''
+
+    def __init__(self, name):
+        self.name = name
+
+    def get_BOM(self):
+        return BillOfMaterials(self.name)
+
+    def get_printable_parts(self):
+        return []
+
+    def get_parts_in_situ(self):
+        '''
+        TODO decide if this should be in the API
+        {
+        "part name": cq object
+        }
+        '''
+        return {}
+
+    def get_assembled(self):
+        assembly = cq.Workplane("XY")
+
+        parts = self.get_parts_in_situ()
+        for part in parts:
+            assembly = assembly.add(parts[part])
+
+        return assembly
+
+
 
 class BillOfMaterials:
 
