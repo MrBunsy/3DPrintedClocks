@@ -66,7 +66,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
 
     # get a chain wheel, a normal wheel, an escape wheel and part of the motion works for a good spread of sizes and inner radii
     demoArbours = [train.get_arbor_with_conventional_naming(i) for i in demoArboursNums]
-    demoArbours.append(motionWorks.get_motion_arbour())
+    demoArbours.append(motionWorks.get_minute_arbor())
     gap = 5
 
     for gear_style in GearStyle:

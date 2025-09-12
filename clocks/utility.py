@@ -1106,7 +1106,7 @@ class ChainInfo:
     Undecided on if to include tolerance with the chain or with the wheel, going to try with the wheel for now as I hope the improved pocket wheel won't need it as much
     '''
 
-    def __init__(self, wire_thick=0.85, width=3.6, outside_length=6.65, inside_length=-1):
+    def __init__(self, wire_thick=0.85, width=3.6, outside_length=6.65, inside_length=-1.0):
         self.wire_thick = wire_thick
         self.width = width
         self.outside_length = outside_length
@@ -1160,7 +1160,7 @@ class BearingInfo:
     TODO - remove holder lip and use entirely safe outer and safe inner diameters
     '''
 
-    def __init__(self, outer_d=10, height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d=-1, inner_safe_d_at_a_push=-1,
+    def __init__(self, outer_d=10, height=4, inner_d=3, inner_safe_d=4.25, inner_d_wiggle_room=0.05, outer_safe_d=-1.0, inner_safe_d_at_a_push=-1.0,
                  flange_thick=0.0, flange_diameter=0.0, cutter_wiggle_room=0.1):
         self.outer_d = outer_d
         self.height = height

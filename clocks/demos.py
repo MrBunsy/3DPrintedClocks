@@ -136,7 +136,7 @@ def get_gear_demo(module=1, just_style=None, one_gear=False):
 
     #get a chain wheel, a normal wheel, an escape wheel and part of the motion works for a good spread of sizes and inner radii
     demoArbours = [train.get_arbor_with_conventional_naming(i) for i in demoArboursNums]
-    demoArbours.append(motionWorks.get_motion_arbour())
+    demoArbours.append(motionWorks.get_minute_arbor())
 
     gap = 5
     space = max([arbour.get_max_radius() * 2 for arbour in demoArbours]) + gap

@@ -1977,6 +1977,16 @@ class ArborForPlate:
                 wheel_z = - self.arbor.escapement.anchor_thick - SMALL_WASHER_THICK_M3 - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2
             wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], wheel_z))
             assembly = assembly.add(wheel)
+        elif self.type == ArborType.FLY:
+            assembly = shapes["pinion"]
+            if with_extras:
+                assembly = assembly.add(shapes["fly"].translate((0,0,self.arbor.pinion_thick + self.arbor.end_cap_thick*2)))
+                assembly = assembly.add(shapes["fly_arbor_extension"].translate((0, 0, self.arbor.pinion_thick + self.arbor.end_cap_thick * 2)))
+            if self.arbor.pinion_at_front:
+                assembly = assembly.rotate((0,0,0),(1,0,0),180).translate((0,0,self.total_thickness))
+
+            assembly = assembly.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
+
         elif self.type == ArborType.POWERED_WHEEL:
 
             if "ratchet" in shapes:
@@ -2343,6 +2353,22 @@ class ArborForPlate:
                 wheel = wheel.cut(self.threaded_rod_cutter)
 
             shapes["wheel"] = wheel
+        elif self.arbor.get_type() == ArborType.FLY:
+            #fly shape is currently generated fly side up
+            shapes["pinion"] = self.arbor.get_shape()
+
+            #add extension to pinion
+            if self.need_arbor_extension(front=self.arbor.pinion_at_front) and not self.need_separate_arbor_extension(front=self.arbor.pinion_at_front):
+                shapes["pinion"] = shapes["pinion"].union(self.get_arbor_extension(front=self.arbor.pinion_at_front).rotate((0,0,0),(1,0,0),180))
+
+            shapes["pinion"] = shapes["pinion"].cut(self.threaded_rod_cutter)
+
+            #add extension to fly
+            if self.need_arbor_extension(front=not self.arbor.pinion_at_front) and not self.need_separate_arbor_extension(front=not self.arbor.pinion_at_front):
+                shapes["fly_arbor_extension"] = shapes["fly_arbor_extension"].union(self.get_arbor_extension(front=not self.arbor.pinion_at_front).translate((0,0,self.arbor.fly.length)))
+            shapes["fly_arbor_extension"] = shapes["fly_arbor_extension"].cut(self.threaded_rod_cutter)
+
+
             #rear side extended full endshake so we could go plain bushing if needed
         if self.need_separate_arbor_extension(front=False):
             shapes['arbor_extension_rear'] = self.get_arbor_extension(front=False).cut(self.threaded_rod_cutter)
@@ -2404,6 +2430,10 @@ class ArborForPlate:
                 #the arbor extension in this case is part of the wheel
                 return False
             return True
+
+        if self.arbor.get_type() == ArborType.FLY:
+            # arbor extensions are part of either the pinion of the fly
+            return False
 
         if not front and self.arbor.pinion_at_front and self.need_arbor_extension(front=False):
             #need a rear arbor extension
@@ -2475,12 +2505,14 @@ class ArborForPlate:
 
 class Arbor:
     def __init__(self, arbor_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
-                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, escapement_split=False, pinion_type=PinionType.PLASTIC):
+                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, escapement_split=False, pinion_type=PinionType.PLASTIC,
+                 type=ArborType.UNKNOWN, fly=None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
-        - chain wheel is wheel + ratchet (pinionThick is used for ratchet thickness)
+        - powered wheel is wheel + ratchet (+more logic than there used to be)
         - escape wheel is pinion + escape wheel
         - anchor is just the escapement anchor
+        - fly is pinion + fly
 
         This is purely theoretical and you need the ArbourForPlate to produce an STL that can be printed
 
@@ -2504,6 +2536,8 @@ class Arbor:
         self.end_cap_thick=end_cap_thick
         #the pocket chain wheel or cord wheel (needed to calculate full height and a few tweaks)
         self.powered_wheel=powered_wheel
+        #end of a striking/chiming/whistling train to limit its speed
+        self.fly = fly
         self.escapement_split=escapement_split
         self.style=style
         self.distance_to_next_arbor=distance_to_next_arbor
@@ -2516,6 +2550,9 @@ class Arbor:
         self.use_ratchet=use_ratchet
         #is this screwed (and optionally glued) to the threaded rod?
         self.loose_on_rod = False
+        self.type = type
+        if self.get_type() == ArborType.UNKNOWN:
+            raise ValueError("Not a valid arbour")
 
         self.ratchet = None
         if self.powered_wheel is not None:
@@ -2541,11 +2578,7 @@ class Arbor:
             else:
                 self.hole_d = self.arbor_d + LOOSE_FIT_ON_ROD
 
-        if self.get_type() == ArborType.UNKNOWN:
-            raise ValueError("Not a valid arbour")
 
-        #just to help debugging
-        self.type = self.get_type()
 
         self.combine_with_powered_wheel = False
 
@@ -2604,17 +2637,20 @@ class Arbor:
 
 
     def get_type(self):
-        if self.wheel is not None and self.pinion is not None:
-            return ArborType.WHEEL_AND_PINION
-        if self.wheel is not None and self.powered_wheel is not None:
-            return ArborType.POWERED_WHEEL
-        if self.wheel is None and self.escapement is not None and self.pinion is not None:
-            return ArborType.ESCAPE_WHEEL
-        if self.escapement is not None:
-            return ArborType.ANCHOR
-        if self.pinion is not None:
-            return ArborType.LONE_PINION
-        return ArborType.UNKNOWN
+        return self.type
+        # # note to self, why did I do this introspectively? why did I not just make it a requirement up front?
+        # # the gear generation knows exactly what it's trying to generate!
+        # if self.wheel is not None and self.pinion is not None:
+        #     return ArborType.WHEEL_AND_PINION
+        # if self.wheel is not None and self.powered_wheel is not None:
+        #     return ArborType.POWERED_WHEEL
+        # if self.wheel is None and self.escapement is not None and self.pinion is not None:
+        #     return ArborType.ESCAPE_WHEEL
+        # if self.escapement is not None:
+        #     return ArborType.ANCHOR
+        # if self.pinion is not None:
+        #     return ArborType.LONE_PINION
+        # return ArborType.UNKNOWN
 
     def get_BOM(self):
 
@@ -2691,6 +2727,8 @@ To keep this assembly together, use a small amount of superglue between the whee
         if self.get_type() == ArborType.ANCHOR:
             # wheel thick being used for anchor thick
             return self.wheel_thick
+        if self.get_type() == ArborType.FLY:
+            return self.pinion_thick + self.end_cap_thick*2 + self.fly.length
 
     def get_wheel_centre_z(self):
         '''
@@ -2702,7 +2740,7 @@ To keep this assembly together, use a small amount of superglue between the whee
             return self.get_total_thickness() - self.wheel_thick / 2
 
     def get_pinion_centre_z(self):
-        if self.get_type() not in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
+        if self.get_type() not in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL, ArborType.FLY]:
             raise ValueError("This arbour (type {}) does not have a pinion".format(self.get_type()))
         if self.pinion_at_front:
             return self.get_total_thickness() - self.end_cap_thick - self.pinion_thick / 2
@@ -2723,6 +2761,8 @@ To keep this assembly together, use a small amount of superglue between the whee
             return self.escapement.get_wheel_max_r()
         if self.get_type() == ArborType.ANCHOR:
             return self.escapement.get_anchor_max_r()
+        if self.get_type() == ArborType.FLY:
+            return self.fly.diameter/2
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.get_type()))
 
     def get_pinion_max_radius(self):
@@ -2848,18 +2888,34 @@ To keep this assembly together, use a small amount of superglue between the whee
         elif self.get_type() == ArborType.ANCHOR:
             # will be completely override by ArborForPlate
             shape = self.get_anchor(for_printing=for_printing)
+        elif self.get_type() == ArborType.FLY:
+            shape = self.get_standalone_pinion()
         else:
             raise ValueError("Cannot produce 3D model for type: {}".format(self.get_type().value))
 
-        if not for_printing and not self.pinion_at_front and (self.get_type() in [ArborType.WHEEL_AND_PINION]):
-            #make it the right way around for placing in a model
-            #rotate not mirror! otherwise the escape wheels end up backwards
-            # shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_total_thickness()))
-            shape = shape.mirror("YZ", (0, 0, 0))
+        # if not for_printing and not self.pinion_at_front and (self.get_type() in [ArborType.WHEEL_AND_PINION]):
+        #     #make it the right way around for placing in a model
+        #     #rotate not mirror! otherwise the escape wheels end up backwards
+        #     # shape = shape.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_total_thickness()))
+        #     shape = shape.mirror("YZ", (0, 0, 0))
 
 
         return shape
 
+    # def get_fly(self):
+    #     arbor = self.get_standalone_pinion()
+    #
+    #
+    #     fly = self.fly.get_arbor_extension()
+    #
+    #     # if self.pinion_at_front:
+    #     #     fly = fly.rotate((0,0,0),(1,0,0),180)
+    #     #     arbor = arbor.union(fly)
+    #     #     arbor = arbor.translate((0,0,self.fly.length))
+    #     # else:
+    #     arbor = arbor.union(fly.translate((0, 0, self.pinion_thick + self.end_cap_thick * 2)))
+    #
+    #     return arbor
 
     def get_anchor(self, for_printing=True):
 
@@ -2907,8 +2963,8 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         '''
 
-        pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=self.hole_d).translate((0, 0, self.end_cap_thick))
-        cap = cq.Workplane("XY").circle(self.pinion.get_max_radius()).circle(self.hole_d / 2).extrude(self.end_cap_thick)
+        pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=0).translate((0, 0, self.end_cap_thick))
+        cap = cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick)
         pinion = pinion.add(cap).add(cap.translate((0, 0, self.end_cap_thick + self.pinion_thick)))
 
         return pinion
@@ -2961,6 +3017,13 @@ To keep this assembly together, use a small amount of superglue between the whee
             extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
             #not needed on all designs (note - not needed on any new designs? we beef up the plate for the pawl screw now)
             # extras['ratchet_pawl_supporter'] = self.powered_wheel.ratchet.get_little_plate_for_pawl()
+
+        if self.get_type() == ArborType.FLY:
+            fly_bits = self.fly.get_parts_in_situ()
+            # the "fan" like bit which is attached later
+            extras["fly"] = fly_bits["fly"]
+            #now decided this isn't printed with the pinion, the pinion is better printed with the short arbor extension
+            extras["fly_arbor_extension"] = fly_bits["arbor_extension"]
 
         return extras
     def get_extra_ratchet(self, for_printing=True):
@@ -3416,7 +3479,7 @@ class MotionWorks:
         parts = {}
         parts["cannon_pinion"] = self.get_cannon_pinion().rotate((0, 0, 0), (0, 0, 1), minute_angle)
         parts["hour_holder"] = self.get_hour_holder().translate((0, 0, self.get_cannon_pinion_base_thick()))
-        parts["arbor"] = self.get_motion_arbour_shape().translate((motion_works_relative_pos[0], motion_works_relative_pos[1], self.get_cannon_pinion_base_thick() - self.thick))
+        parts["arbor"] = self.get_minute_arbor_shape().translate((motion_works_relative_pos[0], motion_works_relative_pos[1], self.get_cannon_pinion_base_thick() - self.thick))
 
         if self.centred_second_hand:
             if time_setter_relative_pos is None:
@@ -3605,7 +3668,7 @@ class MotionWorks:
 
         return pinion
 
-    def get_motion_arbour(self):
+    def get_minute_arbor(self):
         '''
         this might be better known as teh "minute arbor"? since the proper terms are the minute wheel and minute pinion
         '''
@@ -3615,14 +3678,16 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbor(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick, pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style, clockwise_from_pinion_side=False)
+        return Arbor(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick,
+                     pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style,
+                     clockwise_from_pinion_side=False, type=ArborType.WHEEL_AND_PINION)
 
     def get_motion_arbout_pinion_stl_modifier(self, nozzle_size=0.4):
         return self.pairs[1].pinion.get_STL_modifier_shape(thick=self.pinion_thick + self.pinion_cap_thick, offset_z=self.thick, nozzle_size=nozzle_size)
 
-    def get_motion_arbour_shape(self):
+    def get_minute_arbor_shape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
-        return self.get_motion_arbour().get_shape(hole_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS)
+        return self.get_minute_arbor().get_shape(hole_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS)
 
     def get_widest_radius(self):
         '''
@@ -3707,11 +3772,11 @@ class MotionWorks:
 
         #note that in older bits of code I've used "minute wheel" to refer to the centre wheel (which rotates once an hour and holds the minute hand). This is technically wrong, so
         #I'm trying to use the correct terminology but there will be some confusion as I switch everything over
-        motion_arbor_part = BillOfMaterials.PrintedPart("minute_wheel", self.get_motion_arbour_shape(), purpose="The \"minute wheel\" is the intermediate gear between the hour and minute hands.")
+        motion_arbor_part = BillOfMaterials.PrintedPart("minute_wheel", self.get_minute_arbor_shape(), purpose="The \"minute wheel\" is the intermediate gear between the hour and minute hands.")
 
         for nozzle in [0.25, 0.4]:
-            motion_arbor_part.modifier_objects[f"pinion_teeth_nozzle_{nozzle}"] = self.get_motion_arbour().get_STL_modifier_pinion_shape(nozzle_size=nozzle)
-            motion_arbor_part.modifier_objects[f"wheel_teeth_nozzle_{nozzle}"] = self.get_motion_arbour().get_STL_modifier_wheel_shape(nozzle_size=nozzle)
+            motion_arbor_part.modifier_objects[f"pinion_teeth_nozzle_{nozzle}"] = self.get_minute_arbor().get_STL_modifier_pinion_shape(nozzle_size=nozzle)
+            motion_arbor_part.modifier_objects[f"wheel_teeth_nozzle_{nozzle}"] = self.get_minute_arbor().get_STL_modifier_wheel_shape(nozzle_size=nozzle)
             cannon_pinon_part.modifier_objects[f"pinion_teeth_nozzle_{nozzle}"] = self.get_cannon_pinion_pinion_stl_modifier(nozzle_size=nozzle)
 
         parts.append(motion_arbor_part)
@@ -3759,10 +3824,10 @@ It's important that the motion works can rotate freely after the friction clip h
 
         out = os.path.join(path, "{}_motion_arbour.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.get_motion_arbour_shape(), out)
+        exporters.export(self.get_minute_arbor_shape(), out)
 
         for nozzle in [0.25, 0.4]:
-            export_STL(self.get_motion_arbour().get_STL_modifier_pinion_shape(nozzle_size=nozzle), object_name=f"motion_arbour_pinion_modifier_{nozzle}", clock_name=name, path=path)
+            export_STL(self.get_minute_arbor().get_STL_modifier_pinion_shape(nozzle_size=nozzle), object_name=f"motion_arbour_pinion_modifier_{nozzle}", clock_name=name, path=path)
             export_STL(self.get_cannon_pinion_pinion_stl_modifier(nozzle_size=nozzle), object_name=f"motion_cannon_pinion_modifier_{nozzle}", clock_name=name, path=path)
             export_STL(self.get_motion_arbout_pinion_stl_modifier(nozzle_size=nozzle), object_name=f"motion_arbour_pinion_modifier_{nozzle}", clock_name=name, path=path)
 

@@ -53,9 +53,13 @@ class GearTrainBase:
         self.default_rod_diameter = default_rod_diameter
         self.default_reduction = default_reduction
         self.default_pinion_thick_extra = default_pinion_thick_extra
+        self.arbors = []
+
+    def get_all_arbors(self):
+        return self.arbors
 
     def generate_arbors_internal(self, arbor_info):
-        raise NotImplementedError("Implement in sub classes")
+        raise NotImplementedError("Implement generate_arbors_internal in sub classes")
 
     def generate_arbors_dicts(self, arbor_info, reduction=-1, pinion_thick_extra=-1):
         '''
@@ -82,7 +86,8 @@ class GearTrainBase:
             pinion_thick_extra = self.default_pinion_thick_extra
 
         if len(arbor_info) < self.total_arbors:
-            arbor_info+= [{}] * (self.total_arbors - len(arbor_info))
+            for i in range(self.total_arbors - len(arbor_info)):
+                arbor_info.append({})
 
 
         if reduction < 0:
@@ -129,6 +134,7 @@ class GearTrainBase:
                 else:
                     #otherwise flip backwards and forwards
                     info["pinion_faces_forwards"] = not arbor_info[i-1]["pinion_faces_forwards"]
+                print(i,"info[\"pinion_faces_forwards\"]", info["pinion_faces_forwards"])
 
             if "wheel_outside_plates" not in info:
                 info["wheel_outside_plates"] = SplitArborType.NORMAL_ARBOR
@@ -990,10 +996,12 @@ class GoingTrain(GearTrainBase):
             pinion = None
             wheel = None
             distance_to_next_arbor = -1
+            type = ArborType.WHEEL_AND_PINION
             if i == 0:
                 powered_wheel = self.powered_wheel
                 wheel = all_pairs[i].wheel
                 distance_to_next_arbor = all_pairs[i].centre_distance
+                type = ArborType.POWERED_WHEEL
             elif i < self.total_wheels - 1:
                 # normal wheel-pinion pairs
                 pinion = all_pairs[i - 1].pinion
@@ -1004,9 +1012,11 @@ class GoingTrain(GearTrainBase):
                 pinion = all_pairs[i - 1].pinion
                 escapement = self.escapement
                 distance_to_next_arbor = escapement.anchor_centre_distance
+                type = ArborType.ESCAPE_WHEEL
             else:
                 # anchor
                 escapement = self.escapement
+                type = ArborType.ANCHOR
             arbor = Arbor(powered_wheel=powered_wheel,
                           wheel=wheel,
                           wheel_thick=arbor_infos[i]["wheel_thick"],
@@ -1023,7 +1033,8 @@ class GoingTrain(GearTrainBase):
                           pinion_extension=arbor_infos[i]["pinion_extension"],
                           #TODO finish overhauling this to make it more generic
                           escapement_split=arbor_infos[i]["wheel_outside_plates"] != SplitArborType.NORMAL_ARBOR,
-                          pinion_type=arbor_infos[i]["pinion_type"]
+                          pinion_type=arbor_infos[i]["pinion_type"],
+                          type = type
                           )
             arbors.append(arbor)
 
@@ -1244,7 +1255,7 @@ class GoingTrain(GearTrainBase):
                 self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=powered_wheel_thicks[i], arbor_d=self.powered_wheel.arbor_d,
                                                        distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
                                                        use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side,
-                                                       pinion_type=pinion_type))
+                                                       pinion_type=pinion_type, type=ArborType.POWERED_WHEEL))
             else:
                 # just a bog standard wheel and pinion TODO take into account direction of stacking?!? urgh, this will do for now
                 clockwise_from_pinion_side = first_chainwheel_clockwise == (i % 2 == 0)
@@ -1260,7 +1271,7 @@ class GoingTrain(GearTrainBase):
                 self.powered_wheel_arbors.append(Arbor(wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
                                                        pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                                        distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
-                                                       clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_type=pinion_type))
+                                                       clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_type=pinion_type, type=ArborType.WHEEL_AND_PINION))
                 if i == 1:
                     # negate flipping the direction of the pinion
                     pinion_at_front = not pinion_at_front
@@ -1275,12 +1286,12 @@ class GoingTrain(GearTrainBase):
                 pinion_extension = pinion_extensions[i]
 
             if i == 0:
-                # == minute wheel ==
+                # == centre wheel ==
                 if self.powered_wheels == 0:
-                    # the minute wheel also has the chain with ratchet
+                    # the centre wheel also has the chain with ratchet
                     arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=powered_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbor=pairs[i].centre_distance,
                                    style=style, pinion_at_front=not self.chain_at_back, ratchet_screws=ratchet_screws, use_ratchet=not self.huygens_maintaining_power,
-                                   clockwise_from_pinion_side=not self.chain_at_back)
+                                   clockwise_from_pinion_side=not self.chain_at_back, type=ArborType.POWERED_WHEEL)
                 else:
                     # just a normal gear
 
@@ -1297,7 +1308,8 @@ class GoingTrain(GearTrainBase):
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
                     arbour = Arbor(wheel=pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i + self.powered_wheels],
                                    wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,distance_to_next_arbor=pairs[i].centre_distance,
-                                   style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension)
+                                   style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension,
+                                   type=ArborType.WHEEL_AND_PINION)
 
                 arbours.append(arbour)
                 if stack_away_from_powered_wheel:
@@ -1321,7 +1333,8 @@ class GoingTrain(GearTrainBase):
                 # no need to worry about front and back as they can just be turned around
                 arbours.append(Arbor(wheel=pairs[i].wheel, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick * (thickness_reduction ** i),
                                      pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinion_extension,
-                                     distance_to_next_arbor=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side))
+                                     distance_to_next_arbor=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side,
+                                     type=ArborType.WHEEL_AND_PINION))
             else:
                 # == escape wheel ==
                 # Using the manual override to try and ensure that the anchor doesn't end up against the back plate (or front plate)
@@ -1335,14 +1348,15 @@ class GoingTrain(GearTrainBase):
                 # escape wheel has its thickness controlled by the escapement, but we control the arbor diameter
                 arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
                                      distance_to_next_arbor=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
-                                     pinion_extension=pinion_extension, escapement_split=escapement_split))
+                                     pinion_extension=pinion_extension, escapement_split=escapement_split, type=ArborType.ESCAPE_WHEEL))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
 
         # anchor is the last arbour
         # "pinion" is the direction of the extended arbour for fixing to pendulum
         # this doesn't need arbourD or thickness as this is controlled by the escapement
-        arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise, arbor_d=rod_diameters[self.powered_wheels + self.wheels]))
+        arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise, arbor_d=rod_diameters[self.powered_wheels + self.wheels],
+                             type=ArborType.ANCHOR))
 
         self.wheelPinionPairs = pairs
         self.arbors = arbours
@@ -1558,22 +1572,46 @@ class SlideWhistleTrain(GearTrainBase):
      how to calculate good gear ratios?
     '''
 
-    def __init__(self, powered_wheel, fan, wheels=5):
+    def __init__(self, powered_wheel, fly, arbors=6, cam_index=2):
+
+        '''
+        arbor 0: spring barrel
+        arbor 1: intermediate wheel
+        arbor 2: would be the star wheel in a striking train, turns the cam on teh whistle
+        arbor 3: gathering pallet on striking train, here drives the bellows
+        arbor 4: warning wheel, provides means to stop the train
+        arbor 5: fly
+        '''
+        super().__init__(total_arbors=arbors)
         # going to be a spring to develop this, but might eventually be any other source of power if it ends up in a clock
         #think it's much easier to just provide this in the constructor than the mess in goingtrain
         self.powered_wheel = powered_wheel
-        #original plan was a fan for the airflow, but I now think that a convential bellows might be easier
-        self.fan = fan
+        #original plan was a fan for the airflow, but I now think that a convential bellows and fly might be easier
+        self.fly = fly
+        self.bellows = None
         # decided that this will be total wheels, not just wheels from the minute wheel this might become a gotcha, or might be worth refactoring the
         # time going train
         #"total_wheels" so we can be consistent with going_train for any shared code.
-        self.total_wheels = wheels
+        # self.total_wheels = wheels
+        # self.total_arbors = wheels + 1
+        #arbor which holds the cams, all arbors before that are just for power
+        self.cam_index = cam_index
+        # self.powered_wheels = cam_index
+        #debug only
         self.trains = []
         self.arbors = []
+        self.gear_train = []
 
-    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=120, pinion_max_teeth=10, wheel_min_teeth=90,
-                         max_error=10, loud=False, cam_rpm = 1, fan_rpm=100):
+    def calculate_ratios(self, module_reduction=1, min_pinion_teeth=9, max_wheel_teeth=120, pinion_max_teeth=15, wheel_min_teeth=50,
+                         max_error=10, loud=False, cam_rpm = 1, fly_rpm=120, runtime=180):
+
+        '''
+        TODO also calc power ratios for now this can be helpful info but not directly usable
+        '''
+
         all_gear_pair_combos = []
+
+        total_relevant_wheels = self.total_arbors-self.cam_index
 
         for p in range(min_pinion_teeth, pinion_max_teeth):
             for w in range(wheel_min_teeth, max_wheel_teeth):
@@ -1581,7 +1619,7 @@ class SlideWhistleTrain(GearTrainBase):
         # [ [[w,p],[w,p],[w,p]] ,  ]
         all_trains = []
         all_trains_length = 1
-        for i in range(self.total_wheels):
+        for i in range(total_relevant_wheels):
             all_trains_length *= len(all_gear_pair_combos)
         allcombo_count = len(all_gear_pair_combos)
 
@@ -1589,7 +1627,7 @@ class SlideWhistleTrain(GearTrainBase):
             if previous_pairs is None:
                 previous_pairs = []
             # one fewer pair than wheels, and if we're the last pair then add the combos, else recurse
-            final_pair = pair_index == self.total_wheels - 2
+            final_pair = pair_index == total_relevant_wheels - 2
             valid_combos = all_gear_pair_combos
             for pair in range(len(valid_combos)):
                 if loud and pair % 10 == 0 and pair_index == 0:
@@ -1604,7 +1642,7 @@ class SlideWhistleTrain(GearTrainBase):
         # recursively create an array of all gear trains to test - should work with any number of wheels >= 2
         add_combos()
 
-        desired_ratio = fan_rpm / cam_rpm
+        desired_ratio = fly_rpm / cam_rpm
 
         all_times = []
         total_trains = len(all_trains)
@@ -1669,8 +1707,12 @@ class SlideWhistleTrain(GearTrainBase):
         if len(all_times) == 0:
             raise RuntimeError("Unable to calculate valid going train")
         print(all_times[0])
+        self.gear_train = all_times[0]
 
+        #TODO power ratios
 
+    def set_ratios(self, power_to_cam, cam_to_fly):
+        self.gear_train = power_to_cam + cam_to_fly
 
     def generate_arbors_internal(self, arbor_infos):
 
@@ -1694,30 +1736,35 @@ class SlideWhistleTrain(GearTrainBase):
         '''
 
 
-        print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}, pinions on front: {self.pinions_face_forwards}")
+        # print(f"Modules: {self.modules}, wheel thicknesses: {self.thicknesses}, rod diameters: {self.rod_diameters}, pinion thicknesses: {self.pinion_thicks}, pinions on front: {self.pinions_face_forwards}")
 
-        self.pairs = [WheelPinionPair(pair[0], pair[1], self.modules[i], lantern=i in self.lanterns) for i, pair in enumerate(self.trains[0]["train"])]
+        self.pairs = [WheelPinionPair(pair[0], pair[1], arbor_infos[i]["module"], lantern=arbor_infos[i+1]["pinion_type"].is_lantern()) for i, pair in enumerate(self.gear_train)]
 
 
 
         #TODO check this works - I'm ignoring chain at back/front like in old going train, just using the first pinion face forward to decide instead.
-        clockwise = self.powered_wheel.is_clockwise() and self.pinions_face_forwards[0]
+        clockwise = self.powered_wheel.is_clockwise() and arbor_infos[0]["pinion_faces_forwards"]
 
-        for i in range(self.total_wheels):
-            pinion_at_front = self.pinions_face_forwards[i]
-            arbor_d = self.rod_diameters[i]
+        for i in range(self.total_arbors):
+            pinion_at_front = arbor_infos[i]["pinion_faces_forwards"]
+            print(f"{i}: forwards {arbor_infos[i]['pinion_faces_forwards']}")
+            arbor_d = arbor_infos[i]["rod_diameter"]
             powered_wheel = None
+            fly=None
+            type= ArborType.WHEEL_AND_PINION
             if i == 0:
                 powered_wheel = self.powered_wheel
                 arbor_d = self.powered_wheel.arbor_d
                 pinion = None
                 wheel = self.pairs[i].wheel
                 distance_to_next_arbour = self.pairs[i].centre_distance
-            elif i == self.total_wheels - 1:
-                #the fan
+                type = ArborType.POWERED_WHEEL
+            elif i == self.total_arbors - 1:
                 wheel = None
                 pinion = self.pairs[i - 1].pinion
                 distance_to_next_arbour = -1
+                fly = self.fly
+                type = ArborType.FLY
             else:
                 pinion = self.pairs[i-1].pinion
                 wheel = self.pairs[i].wheel
@@ -1725,9 +1772,10 @@ class SlideWhistleTrain(GearTrainBase):
 
             clockwise_from_powered_side = clockwise == pinion_at_front
 
-            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=self.pinion_thicks[i], wheel_thick=self.thicknesses[i], arbor_d=arbor_d,
-                                     distance_to_next_arbor=distance_to_next_arbour, style=style, pinion_at_front=pinion_at_front,
-                                     clockwise_from_pinion_side=clockwise_from_powered_side))
+
+            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=arbor_infos[i]["pinion_thick"], wheel_thick=arbor_infos[i]["wheel_thick"], arbor_d=arbor_d,
+                                     distance_to_next_arbor=distance_to_next_arbour, style=arbor_infos[i]["style"], pinion_at_front=pinion_at_front,
+                                     clockwise_from_pinion_side=clockwise_from_powered_side, fly=fly, type=type, end_cap_thick=-1))
 
 
 
@@ -1864,7 +1912,7 @@ class GearLayout2D:
         an attempt to produce a fully configable layout where we start on the assumption of "a line of gears vertical from hands to anchor, and any gears in between off to one side"
         but we can configure which gears are actually on the vertical line
         '''
-        total_arbors = self.going_train.powered_wheels + self.going_train.wheels + 1
+        total_arbors = self.going_train.total_arbors
         positions_relative = [(0, 0) for i in range(total_arbors)]
         arbors = self.going_train.get_all_arbors()
         # anchor_index = -1

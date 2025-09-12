@@ -5607,6 +5607,13 @@ class StrikingClockPlates(SimpleClockPlates):
 class SlideWhistlePlates:
     '''
     Think I'll start fresh as there won't be a huge amount in common with the clocks. Probably abstract useful bits from SimpleClockPlates as I go
+
+    TODO: decide how to handle the fly with arbors, pinion_at_front logic was baked around a wheel-pinion pair
+    would it be better if the fly arbor extension was always seperate? I assume it's going to always be long so
+    it makes more sense if teh tiny arbor extension is part of the pinion
+
+    also TODO: fix lantern pinions missing teh wide base for arbor exentions
+
     '''
     def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45, endshake = 1):
         self.going_train = going_train
@@ -5617,17 +5624,24 @@ class SlideWhistlePlates:
         self.first_wheel_angle = deg_to_rad(first_wheel_angle_deg)
 
         self.bearing_positions = []
-        self.bearing_positions_2d = []
-        self.calc_bearing_positions()
-        self.calc_bearing_vertical_positions()
+        self.arbors_for_plate = []
+        self.gear_train_layout = GearLayout2D(self.going_train, [0, self.going_train.cam_index, self.going_train.total_arbors-1])
 
-    def calc_bearing_vertical_positions(self):
+        self.calc_bearing_positions()
+        self.generate_arbours_for_plate()
+
+    def calc_bearing_positions(self):
         '''
         currently copy-pasted from SimpleClockPlates.calc_bearing_positions.
         Plan is to make this more generic then refactor SimpleClockPlates to use a shared base class
         on second thoughts, the differences around escapements and fans might make that tricky?
 
+        update: ended up making a whole class to layout arbors, so I should switch to using that
+
         '''
+
+        bearing_positions_2d = self.gear_train_layout.get_positions()
+        
         arbor_thicknesses = [arbor.get_total_thickness() for arbor in self.going_train.arbors]
 
         # height of the centre of the wheel that will drive the next pinion
@@ -5641,21 +5655,21 @@ class SlideWhistlePlates:
             power_thick = self.going_train.arbors[0].get_total_thickness() - self.going_train.arbors[0].wheel_thick
             driving_z = power_thick + self.going_train.arbors[0].wheel_thick/2
 
-        self.bearing_positions.append([self.bearing_positions_2d[0][0], self.bearing_positions_2d[0][1], 0])
+        self.bearing_positions.append([bearing_positions_2d[0][0], bearing_positions_2d[0][1], 0])
 
-        for i in range(1,self.going_train.wheels):
-            if i == self.going_train.wheels-1:
-                # the fan TODO
-                pass
-            else:
-                # any of the other wheels
-                pinion_to_wheel = self.going_train.arbors[i].get_pinion_to_wheel_z()
-                pinion_z = self.going_train.arbors[i].get_pinion_centre_z()
-                base_z = driving_z - pinion_z
-                self.bearing_positions.append([self.bearing_positions_2d[i][0], self.bearing_positions_2d[i][1], base_z])
+        for i in range(1,self.going_train.total_arbors):
+            # if i == self.going_train.total_arbors-1:
+            #     # the fan TODO
+            #     pass
+            # else:
+            # any of the other wheels
+            pinion_to_wheel = self.going_train.arbors[i].get_pinion_to_wheel_z()
+            pinion_z = self.going_train.arbors[i].get_pinion_centre_z()
+            base_z = driving_z - pinion_z
+            self.bearing_positions.append([bearing_positions_2d[i][0], bearing_positions_2d[i][1], base_z])
 
-                # centre of our wheel, which drives next pinion
-                driving_z = driving_z + pinion_to_wheel
+            # centre of our wheel, which drives next pinion
+            driving_z = driving_z + pinion_to_wheel
 
 
 
@@ -5705,18 +5719,53 @@ class SlideWhistlePlates:
 
         self.plate_distance = preliminary_plate_distance + self.endshake + extra_front + extra_back
 
-    def calc_bearing_positions(self):
-        #centre on the powered wheel
-        #TODO make more compact, lazy for now just to get this off the ground
-        positions_2d = [(0,0), polar(self.first_wheel_angle, self.going_train.arbors[0].distance_to_next_arbor)]
-        for i in range(2, self.going_train.wheels):
-            positions_2d.append((np_to_set(np.add(positions_2d[-1], polar(self.first_wheel_angle, self.going_train.arbors[i-1].distance_to_next_arbor)))))
+    def generate_arbours_for_plate(self):
+        '''
+        copy-pasted and tweaked from SimpleClockPlates
+        '''
 
-        self.bearing_positions_2d = positions_2d
+        self.arbors_for_plate = []
+
+        print("Plate distance", self.plate_distance)
+
+        for i,bearing_pos in enumerate(self.bearing_positions):
+            arbor = self.going_train.arbors[i]
+            if i < self.going_train.total_arbors - 1:
+                max_r = arbor.distance_to_next_arbor - self.going_train.arbors[i + 1].get_max_radius() - self.gear_train_layout.gear_gap
+            else:
+                max_r = 0
+
+            try:
+                bearing = get_bearing_info(arbor.arbor_d)
+            except:
+                #mega bodge, TODO
+                #for the spring barrel the arbor isn't a threaded rod, so isn't a nice number for a bearing.
+                #need to work out what to do properly here
+                bearing = get_bearing_info(round(arbor.arbor_d))
+            front_anchor_from_plate = -1
+
+            #new way of doing it, new class for combining all this logic in once place
+            arbor_for_plate = ArborForPlate(arbor, self,
+                                            bearing_position=bearing_pos,
+                                            arbor_extension_max_radius=max_r,
+                                            bearing=bearing,
+                                            endshake=self.endshake,
+                                            previous_bearing_position=self.bearing_positions[i - 1])
+
+            self.arbors_for_plate.append(arbor_for_plate)
+
+        #hacky, for now
+        self.arbors_for_plate[0].key_length = self.going_train.powered_wheel.default_key_length
+
+    def get_plate_distance(self):
+        return self.plate_distance
+    def get_plate_thick(self, back=False, standoff=False):
+        return self.plate_thick
 
     def get_arbors_in_situ(self):
-        #just for debug, skip the fan until it has a finished model
-        arbors = [arbor.get_assembled().translate(self.bearing_positions[i]) for i,arbor in enumerate(self.going_train.arbors[:-1])]
+        #just for debug
+        #.translate(self.bearing_positions[i])
+        arbors = [arbor.get_assembled(with_extras=True) for i,arbor in enumerate(self.arbors_for_plate)]
 
         return arbors
 

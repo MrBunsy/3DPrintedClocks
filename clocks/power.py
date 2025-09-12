@@ -1059,11 +1059,13 @@ class SpringBarrel:
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
                  base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
-                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1):
+                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40):
         '''
 
         '''
         self.type = PowerType.SPRING_BARREL
+
+        self.default_key_length = default_key_length
 
         self.style = style
         #if the style has a random component, ensure we get teh same on teh lid and base

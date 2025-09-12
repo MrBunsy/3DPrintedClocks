@@ -553,13 +553,15 @@ class Fly(PrintableObject):
 
     '''
 
-    def __init__(self, default_diameter=30, max_diameter=40, length=40, rod_diameter=3):
+    def __init__(self, default_diameter=30, max_diameter=40, length=40, rod_diameter=3, end_space=2):
         '''
         plan is to be like the escape wheel and the ultimate diameter is set by the gear train after we know how much space is left
         or is it always going to be small?
         '''
         self.max_diameter=max_diameter
         self.length = length
+        #how much shorter to make the fan so it doesn't crash into anything
+        self.end_space=end_space
         self.rod_diameter= rod_diameter
         super().__init__("Fly")
         self.diameter=default_diameter
@@ -582,7 +584,7 @@ class Fly(PrintableObject):
     def get_fly(self):
         side_width = self.diameter/2 - self.rod_diameter - self.gap_size
 
-        half = cq.Workplane("XY").moveTo(self.diameter/2 - side_width/2, 0).rect(side_width, self.length)
+        half = cq.Workplane("XY").moveTo(self.diameter/2 - side_width/2, -self.end_space/2).rect(side_width, self.length - self.end_space)
 
         fly = half.add(half.mirrorY()).extrude(self.thick).edges("|Z").fillet(1)
 
@@ -593,7 +595,7 @@ class Fly(PrintableObject):
 
         # bridge = bridge.faces(">Y").chamfer(0.5).faces("<Y").chamfer(0.5)
 
-        fly = fly.union(bridge.translate((0,self.length/2))).union(bridge.translate((0,-self.length/2 + self.bridge_thick)))
+        fly = fly.union(bridge.translate((0,self.length/2-self.end_space))).union(bridge.translate((0, -self.length / 2 + self.bridge_thick)))
 
 
         wire_space = cq.Workplane("XY").rect(self.diameter*0.75,self.wire_diameter).extrude(self.wire_diameter/2).translate((0,0,self.thick-self.wire_diameter/2))
