@@ -25,7 +25,7 @@ for pair in going_train_ratios:
 
 print(f"total ratio: {total_ratio}")
 
-fly = Fly()
+fly = Fly(length=25, end_space=0)
 
 # show_object(fly.get_assembled())
 
@@ -38,6 +38,7 @@ train = SlideWhistleTrain(powered_wheel=power, fly=fly)
 #
 # train.calculate_ratios(loud=True)
 train.set_ratios([[61, 10], [64, 10]], [[80, 12], [63, 13], [52, 14]])
+# train.set_ratios([[61, 10], [64, 10]], [[71, 10], [64, 10], [64, 10]])
 
 train.generate_arbors_dicts([
     {
@@ -53,7 +54,21 @@ train.generate_arbors_dicts([
     {
         #cam wheel
         "module":0.8,
-        "pinion_type": PinionType.LANTERN
+        "pinion_type": PinionType.LANTERN,
+        "pinion_faces_forwards": True
+    },
+    {
+        #bellows wheel
+    },
+    {
+        #warning wheel
+        "pinion_faces_forwards": False,
+        "pinion_extension": 28
+
+    },
+    {
+        #fly
+        "pinion_faces_forwards": True
     }
 ])
 

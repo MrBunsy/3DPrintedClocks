@@ -2432,7 +2432,7 @@ class ArborForPlate:
             return True
 
         if self.arbor.get_type() == ArborType.FLY:
-            # arbor extensions are part of either the pinion of the fly
+            # arbor extensions are part of either the pinion or the fly, never separate
             return False
 
         if not front and self.arbor.pinion_at_front and self.need_arbor_extension(front=False):
@@ -2448,9 +2448,10 @@ class ArborForPlate:
         Need an arbor extension on this side of the arbor. May or may not end up being combined with the arbor
         '''
         #not enough to print
-        if front and self.distance_from_front < self.arbour_bearing_standoff_length:
+        #some fudge factor because I've seen it compare 0.39999999 with 0.4
+        if front and self.distance_from_front < self.arbour_bearing_standoff_length-0.05:
             return False
-        if (not front) and self.distance_from_back < self.arbour_bearing_standoff_length:
+        if (not front) and self.distance_from_back < self.arbour_bearing_standoff_length-0.05:
             return False
 
         if self.arbor.get_type() == ArborType.POWERED_WHEEL:
@@ -2475,13 +2476,13 @@ class ArborForPlate:
         bearing = get_bearing_info(self.arbor.get_rod_d())
 
         outer_r = self.arbor.get_arbor_extension_r()
-        inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
+        # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
             tip_r = outer_r
 
 
-        if length - self.arbour_bearing_standoff_length >= 0:
+        if length+0.05 - self.arbour_bearing_standoff_length >= 0:
             # 0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
             if length - self.arbour_bearing_standoff_length > 0.1:
                 extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length-self.arbour_bearing_standoff_length).faces(">Z").workplane()
