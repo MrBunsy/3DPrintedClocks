@@ -61,7 +61,7 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.gen_gears(module_size=1, module_reduction=0.875, thick=3, powered_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, powered_wheel_pinion_thick_multiplier=2, escapement_split=True)
+train.gen_gears(module_size=1, module_reduction=0.875, thick=3, powered_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, powered_wheel_pinion_thick_multiplier=2, escapement_split=clock.SplitArborType.WHEEL_OUT_FRONT)
 
 train.print_info(weight_kg=0.75)
 

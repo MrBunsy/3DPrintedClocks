@@ -327,10 +327,29 @@ The moon on its threaded rod slots through a steel tube.
 
         return [holder, lid]
 
+class BasePlates:
+    '''
+    Basic bits shared by all types of plates
+    TODO expand and consolidate as needed
+    '''
+    def __init__(self, layer_thick=LAYER_THICK):
+        self.layer_thick = layer_thick
+    def get_bearing_punch(self, plate_thick, bearing, bearing_on_top=True , with_support=False):
+        '''
+        General purpose bearing punch, aligned for cutting into the plate
+        '''
+        if bearing.height >= plate_thick:
+            raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
+
+        punch = bearing.get_cutter(layer_thick=self.layer_thick, with_bridging=with_support)
+
+        if bearing_on_top:
+            punch = punch.rotate((0,0,0),(1,0,0),180).translate((0,0,plate_thick))
+
+        return punch
 
 
-
-class SimpleClockPlates:
+class SimpleClockPlates(BasePlates):
     '''
     This took a while to settle - clocks before wall_clock_4 will be unlikely to work anymore.
 
@@ -366,6 +385,8 @@ class SimpleClockPlates:
         so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
         off_centre_escape_wheel - if true, permit escape wheel off centre where default settings wouldn't assume this
         '''
+
+        super().__init__(layer_thick=layer_thick)
 
         self.pillar_style = pillar_style
         self.style = style
@@ -1002,10 +1023,10 @@ class SimpleClockPlates:
 
             #new way of doing it, new class for combining all this logic in once place
             arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
-                                           pendulum_at_front=self.pendulum_at_front, bearing=bearing, escapement_on_front=self.escapement_on_front, back_from_wall=self.back_plate_from_wall,
+                                           pendulum_at_front=self.pendulum_at_front, bearing=bearing, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
-                                           pendulum_length=self.going_train.pendulum_length_m*1000, escapement_on_back=self.escapement_on_back)
+                                           pendulum_length=self.going_train.pendulum_length_m*1000)
             self.arbors_for_plate.append(arbourForPlate)
 
     def clashes_with_wheel(self, pillar_pos, pillar_r, min_gap=-1):
@@ -2606,19 +2627,7 @@ class SimpleClockPlates:
 
         return holder
 
-    def get_bearing_punch(self, plate_thick, bearing, bearing_on_top=True , with_support=False):
-        '''
-        General purpose bearing punch, aligned for cutting into the plate
-        '''
-        if bearing.height >= plate_thick:
-            raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
 
-        punch = bearing.get_cutter(layer_thick=self.layer_thick, with_bridging=with_support)
-
-        if bearing_on_top:
-            punch = punch.rotate((0,0,0),(1,0,0),180).translate((0,0,plate_thick))
-
-        return punch
 
     def punch_bearing_holes(self, plate, back, make_plate_bigger=True):
         for i, pos in enumerate(self.bearing_positions):
@@ -2646,7 +2655,7 @@ class SimpleClockPlates:
                 if not self.pendulum_at_front and back:
                     needs_plain_hole = True
 
-                if self.escapement_on_back:
+                if self.escapement_on_back:#self.arbors_for_plate[i].arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK and self.arbors_for_plate[i].arbor.type == ArborType.ANCHOR:
                     #no hole at all on the front plate
                     if not back:
                         continue
@@ -5604,7 +5613,7 @@ class StrikingClockPlates(SimpleClockPlates):
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, zigzag_side=True, screws_from_back=screws_from_back,
                          layer_thick=layer_thick)
 
-class SlideWhistlePlates:
+class SlideWhistlePlates(BasePlates):
     '''
     Think I'll start fresh as there won't be a huge amount in common with the clocks. Probably abstract useful bits from SimpleClockPlates as I go
 
@@ -5615,11 +5624,13 @@ class SlideWhistlePlates:
     also TODO: fix lantern pinions missing teh wide base for arbor exentions
 
     '''
-    def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45, endshake = 1):
+    def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45, endshake = 1, pillar_style=PillarStyle.SIMPLE):
+        super().__init__()
         self.going_train = going_train
         self.plate_thick = plate_thick
         self.style = style
         self.endshake = endshake
+        self.pillar_style = pillar_style
 
         self.first_wheel_angle = deg_to_rad(first_wheel_angle_deg)
 
@@ -5629,6 +5640,102 @@ class SlideWhistlePlates:
 
         self.calc_bearing_positions()
         self.generate_arbours_for_plate()
+
+        self.pillar_r=10
+
+        self.pillar_positions = []
+
+        self.calc_pillar_positions()
+
+    def punch_bearing_holes(self, plate, back, make_plate_bigger=True):
+        for i, pos in enumerate(self.bearing_positions):
+            bearing = self.arbors_for_plate[i].bearing
+            bearing_on_top = back
+
+            punch = self.get_bearing_punch(self.plate_thick, bearing, bearing_on_top, with_support=make_plate_bigger)
+
+            plate = plate.cut(punch.translate(pos[:2]))
+
+        return plate
+
+    def get_plate(self, top=True):
+        '''
+        assumes spring power and 4 arbors after the intermediate wheel
+        '''
+        pillar_width = abs(self.pillar_positions[1][0] - self.pillar_positions[0][0])
+        width = pillar_width  + self.pillar_r*2
+        pillar_length = self.pillar_positions[2][1] - self.pillar_positions[0][1]
+        length = pillar_length + self.pillar_r*2
+        centre = (get_average_of_points(self.pillar_positions))
+
+        plate_max = cq.Workplane("XY").moveTo(centre[0], centre[1]).rect(width, length).extrude(self.plate_thick).edges("|Z").fillet(self.pillar_r)
+        # plate.translate()
+
+        plate = get_stroke_line(self.pillar_positions, wide=self.pillar_r*2, thick=self.plate_thick, loop=True)
+
+        base_y = self.pillar_positions[0][1]
+
+        power_arm_wide = self.going_train.powered_wheel.key_bearing.outer_d + 10
+
+        plate = plate.union(get_stroke_line([(0,base_y), self.bearing_positions[0][:2]], wide=power_arm_wide, thick=self.plate_thick))
+
+
+        spring_to_intermediate_line = Line(self.bearing_positions[0][:2], another_point=self.bearing_positions[1][:2])
+
+        if self.bearing_positions[1][0] > self.bearing_positions[0][0]:
+            #on right
+            side = 1
+        else:
+            side = -1
+
+        side_line = Line((side*pillar_width/2, base_y), direction=(0,1))
+
+        intersection = spring_to_intermediate_line.intersection(side_line)
+
+        plate = plate.union(get_stroke_line([self.bearing_positions[0][:2], intersection], wide=self.pillar_r*2, thick = self.plate_thick))
+
+
+        start_next_line_from = self.bearing_positions[1][:2]
+        cam_line = Line(start_next_line_from, another_point=self.bearing_positions[self.going_train.cam_index][:2])
+
+        other_side_line = Line((-side*pillar_width/2, base_y), direction=(0,1))
+        next_intersection = cam_line.intersection(other_side_line)
+
+        plate = plate.union(get_stroke_line([start_next_line_from, next_intersection], wide=self.pillar_r * 2, thick=self.plate_thick))
+
+
+        top_line = Line(self.bearing_positions[-2][:2], another_point=self.bearing_positions[-3][:2])
+        top_intersect_first_side = side_line.intersection(top_line)
+        top_intersect_other_side = cam_line.intersection(top_line)
+
+        plate =plate.union(get_stroke_line([top_intersect_first_side, top_intersect_other_side], wide=self.pillar_r * 2, thick=self.plate_thick))
+
+
+        plate = plate.intersect(plate_max)
+        # plate = plate.union(get_stroke_arc(self.pillar_positions[2], self.pillar_positions[3], ))
+
+        plate = self.punch_bearing_holes(plate, back=not top)
+
+        return plate
+
+    def calc_pillar_positions(self):
+        if self.going_train.cam_index !=2:
+            raise NotImplementedError("TODO support non-spring versions")
+        direction = 1
+        if self.bearing_positions[1][0] < self.bearing_positions[0][0]:
+            direction = -1
+        bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
+                                                            self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1,
+                                                            in_direction=(direction, 0))
+
+        top_pillar_y = self.bearing_positions[-1][1]
+
+        self.pillar_positions = [
+            bottom_pillar_pos,
+            (-bottom_pillar_pos[0], bottom_pillar_pos[1]),
+            (-bottom_pillar_pos[0], top_pillar_y),
+            (bottom_pillar_pos[0], top_pillar_y)
+        ]
 
     def calc_bearing_positions(self):
         '''
@@ -5768,5 +5875,33 @@ class SlideWhistlePlates:
         arbors = [arbor.get_assembled(with_extras=True) for i,arbor in enumerate(self.arbors_for_plate)]
 
         return arbors
+
+    def get_plates_in_situ(self):
+        return [self.get_plate(top=False), self.get_plate(top=True).translate((0, 0, self.plate_distance + self.plate_thick))]
+
+    def get_pillar(self, index=0):
+        pillar = fancy_pillar(self.pillar_r, self.plate_distance,style=self.pillar_style, clockwise=index % 2 == 0)#cq.Workplane("XY").circle(self.pillar_r).extrude(self.plate_distance)
+
+        return pillar
+
+    def get_pillars_in_situ(self):
+        pillars = []
+        for i, pillar_pos in enumerate(self.pillar_positions):
+            pillars.append(self.get_pillar(i).translate(pillar_pos).translate((0,0,self.plate_thick)))
+
+        return pillars
+
+    # def get_assembled(self):
+    #     assembly = cq.Workplane("XY")
+    #
+    #     for arbor in self.get_arbors_in_situ():
+    #         assembly = assembly.add(arbor)
+    #
+    #     for i, pillar_pos in enumerate(self.pillar_positions):
+    #         assembly = assembly.add(self.get_pillar(i).translate(pillar_pos).translate((0,0,self.plate_thick)))
+    #
+    #     assembly = assembly.add(self.get_plate(top=False)).add(self.get_plate(top=True).translate((0,0,self.plate_distance + self.plate_thick)))
+    #
+    #     return assembly
 
 

@@ -1510,8 +1510,8 @@ class WheelPinionBeveledPair:
 
 class ArborForPlate:
 
-    def __init__(self, arbour, plates, arbor_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None, escapement_on_front=False, escapement_on_back=False,
-                back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOR, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
+    def __init__(self, arbor, plates, arbor_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None,
+                 back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOR, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
                  previous_bearing_position=None, front_anchor_from_plate=-1, pendulum_length=-1):
         '''
         Given a basic Arbour and a specific plate class do the following:
@@ -1527,7 +1527,7 @@ class ArborForPlate:
         Note - there is only one plate type at the moment, but the aim is that this should be applicable to others in the future
         as such, I'm trying not to tie it to the internals of SimpleClockPlates (this may be a fool's errand)
         '''
-        self.arbor = arbour
+        self.arbor = arbor
         self.plates = plates
 
         self.arbor_d = self.arbor.arbor_d
@@ -1567,8 +1567,9 @@ class ArborForPlate:
         self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
         self.pendulum_fixing = pendulum_fixing
-        self.escapement_on_front = escapement_on_front
-        self.escapement_on_back = escapement_on_back
+        #now fully part of arbor.arbor_split
+        # self.escapement_on_front = escapement_on_front
+        # self.escapement_on_back = escapement_on_back
 
 
 
@@ -1727,7 +1728,7 @@ class ArborForPlate:
         if extra_arbour_length > 10:
             extra_arbour_length = 10
 
-        if self.escapement_on_back and self.arbor.escapement.diameter > 80:
+        if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK and self.arbor.escapement.diameter > 80:
             #bit of a bodge for a specific clock in mind, but for large escape wheels make it a bit longer so it's more likely to
             #be a good right angle
             extra_arbour_length=10
@@ -1738,7 +1739,7 @@ class ArborForPlate:
         '''
         if escapement_on_front this is a standalone escape wheel, otherwise it's a fairly standard abor
         '''
-        if self.escapement_on_front or self.escapement_on_back:
+        if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
@@ -1787,7 +1788,7 @@ class ArborForPlate:
 
         shapes = {}
 
-        if self.escapement_on_front or self.escapement_on_back:
+        if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
 
             shapes["pinion"] = self.get_standalone_pinion_with_arbor_extension()
         shapes["wheel"] = self.get_escape_wheel()
@@ -1842,17 +1843,17 @@ class ArborForPlate:
 
                     square_rod_length = self.back_plate_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
 
-                    if self.escapement_on_back:
+                    if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
                         square_rod_length -= self.arbor.escapement.anchor_thick + SMALL_WASHER_THICK_M3
 
 
                 '''
                 Esacpement on teh front and pendulum at the back (like grasshopper)
                 '''
-                if self.escapement_on_front:
+                if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
                     #cylinder passes through plates and out the front
                     cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
-                elif self.escapement_on_back:
+                elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
                     #just square bit for holding pendulum
                     cylinder_length = 0
 
@@ -1934,10 +1935,10 @@ class ArborForPlate:
                 assembly = assembly.add(self.arbor.escapement.get_assembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0, 0, -self.arbor.escapement.frame_thick)))
 
 
-            if self.escapement_on_front:
+            if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
                 #minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
                 anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.get_anchor_thick() - self.endshake / 2
-            elif self.escapement_on_back:
+            elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
                 #back of back plate
                 anchor_assembly_end_z = -self.endshake/2 - SMALL_WASHER_THICK_M3
             else:
@@ -1965,7 +1966,7 @@ class ArborForPlate:
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
                 assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
-        elif self.type == ArborType.ESCAPE_WHEEL and (self.escapement_on_front or self.escapement_on_back):
+        elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
             pinion = pinion.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
             assembly = assembly.add(pinion)
@@ -1973,7 +1974,7 @@ class ArborForPlate:
             wheel = self.get_escape_wheel(for_printing=False)
             #same as anchor, pulling back by half the endshake (see above for why)
             wheel_z = self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2
-            if self.escapement_on_back:
+            if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
                 wheel_z = - self.arbor.escapement.anchor_thick - SMALL_WASHER_THICK_M3 - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2
             wheel = wheel.translate((self.bearing_position[0], self.bearing_position[1], wheel_z))
             assembly = assembly.add(wheel)
@@ -2206,7 +2207,7 @@ class ArborForPlate:
         #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
         if self.arbor.get_type() == ArborType.ANCHOR:
             bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
-            if self.arbor.escapement_split:
+            if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
                 bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the flat part of the anchor and the bearing in the clock plate to prevent anything rubbing."))
 
         bom.add_printed_parts(self.get_printed_parts())
@@ -2403,15 +2404,15 @@ class ArborForPlate:
         if self.arbor.get_type() == ArborType.POWERED_WHEEL:
             return False
 
-        if self.arbor.get_type() == ArborType.ANCHOR and self.escapement_on_back:
+        if self.arbor.get_type() == ArborType.ANCHOR and self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
             return False
 
         if self.arbor.get_type() == ArborType.ANCHOR and self.pendulum_fixing != PendulumFixing.FRICTION_ROD:
-            if self.escapement_on_front:
+            if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
                 return False
             return self.pendulum_at_front != front
 
-        if self.arbor.get_type() == ArborType.ESCAPE_WHEEL and self.escapement_on_front:
+        if self.arbor.get_type() == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
             #the longest is the one separate NOTE - DUPLICATED LOGIC HERE, needs to match with get_escape_wheel_shapes
 
             front_separate = self.distance_from_back > self.distance_from_front
@@ -2506,7 +2507,7 @@ class ArborForPlate:
 
 class Arbor:
     def __init__(self, arbor_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
-                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, escapement_split=False, pinion_type=PinionType.PLASTIC,
+                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR, pinion_type=PinionType.PLASTIC,
                  type=ArborType.UNKNOWN, fly=None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
@@ -2519,7 +2520,7 @@ class Arbor:
 
         its primary purpose is to help perform the layout of a gear train.
 
-        escapement_split - escapement is on the front or back, so the escape wheel isn't attached to its driving pinion (affects some of the calculations this class performs)
+        escapement_split replaced with arbor_split - escapement is on the front or back, so the escape wheel isn't attached to its driving pinion (affects some of the calculations this class performs)
 
 
         NOTE currently assumes chain/cord is at the front - needs to be controlled by something like pinionAtFront
@@ -2539,7 +2540,7 @@ class Arbor:
         self.powered_wheel=powered_wheel
         #end of a striking/chiming/whistling train to limit its speed
         self.fly = fly
-        self.escapement_split=escapement_split
+        self.arbor_split=arbor_split
         self.style=style
         self.distance_to_next_arbor=distance_to_next_arbor
         #for the anchor, this is the side with the pendulum
@@ -2714,7 +2715,7 @@ To keep this assembly together, use a small amount of superglue between the whee
         '''
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
 
-            if self.get_type() == ArborType.ESCAPE_WHEEL and self.escapement_split:
+            if self.get_type() == ArborType.ESCAPE_WHEEL and self.arbor_split != SplitArborType.NORMAL_ARBOR:
                 #just the pinion is within the plates
                 return self.pinion_thick + self.pinion_extension + self.end_cap_thick * 2
 
@@ -2822,7 +2823,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
             offset_z = self.wheel_thick + self.pinion_extension
-            if self.escapement_split and self.get_type() == ArborType.ESCAPE_WHEEL:
+            if self.arbor_split != SplitArborType.NORMAL_ARBOR and self.get_type() == ArborType.ESCAPE_WHEEL:
                 #lone pinion
                 offset_z = self.end_cap_thick
             return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=offset_z, min_inner_r=self.arbor_d / 2, nozzle_size=nozzle_size)

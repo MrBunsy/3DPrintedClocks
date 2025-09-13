@@ -92,7 +92,7 @@ else:
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1, leaves=train.chain_wheel_ratios[0][1])]
 train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=4.5, pinion_thick_multiplier=3, style=gear_style,
                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, lanterns=[0],
-                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False, escapement_split=True)
+                pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False, escapement_split=SplitArborType.WHEEL_OUT_BACK)
 train.print_info(weight_kg=2.0)
 
 motion_works = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,

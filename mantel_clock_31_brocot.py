@@ -96,7 +96,7 @@ powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
 train.gen_gears(module_size=0.75, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2, rod_diameters=[12,3,3,2,2,2,2,2], escapement_split=True)
+                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2, rod_diameters=[12,3,3,2,2,2,2,2], escapement_split=clock.SplitArborType.WHEEL_OUT_FRONT)
 # train.print_info(weight_kg=1.5)
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable

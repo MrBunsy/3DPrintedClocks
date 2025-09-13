@@ -18,6 +18,7 @@ going_train_ratios = [[65, 14], [60, 13], [56, 10]]
 for ratio in going_train_ratios:
     print(ratio[0]/ratio[1])
 
+gear_style = GearStyle.BENT_ARMS5
 
 total_ratio = 1
 for pair in going_train_ratios:
@@ -25,13 +26,13 @@ for pair in going_train_ratios:
 
 print(f"total ratio: {total_ratio}")
 
-fly = Fly(length=25, end_space=0)
+fly = Fly(length=22, end_space=0)
 
 # show_object(fly.get_assembled())
 
 # fan = CentrifugalFan()
 #
-power = SpringBarrel()
+power = SpringBarrel(style=gear_style, ratchet_screws=MachineScrew(2, grub=True))
 #
 
 train = SlideWhistleTrain(powered_wheel=power, fly=fly)
@@ -49,7 +50,7 @@ train.generate_arbors_dicts([
     {
         #intermediate wheel
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2),
-        "pinion_type": PinionType.LANTERN
+        "pinion_type": PinionType.THIN_LANTERN
     },
     {
         #cam wheel
@@ -63,7 +64,7 @@ train.generate_arbors_dicts([
     {
         #warning wheel
         "pinion_faces_forwards": False,
-        "pinion_extension": 28
+        "pinion_extension": 24
 
     },
     {
@@ -75,13 +76,19 @@ train.generate_arbors_dicts([
 #
 # train.generate_arbors(modules=[WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)], thicknesses=[5, 3], lanterns=[0])
 #
-plates = SlideWhistlePlates(going_train=train)
+plates = SlideWhistlePlates(going_train=train, pillar_style=PillarStyle.BARLEY_TWIST)
 print(plates.bearing_positions)
 # print(train.trains)
 
-for arbor in plates.get_arbors_in_situ():
-    show_object(arbor)
+# for arbor in plates.get_arbors_in_situ():
+#     show_object(arbor)
+
+# show_object(plates.get_assembled())
+
+assembly = WhistleAssembly(plates)
+assembly.show_whistle(show_object)
 
 # print([a.get_type() for a in train.arbors])
 
+# show_object(plates.get_plate())
 # show_object(fan.get_assembled())

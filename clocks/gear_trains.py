@@ -75,7 +75,7 @@ class GearTrainBase:
                 "pinion_type": PinionType (for the pinion on this arbor, which engages with the previous wheel)
                 "style": GearStyle enum,
                 "pinion_faces_forwards": bool,
-                "wheel_outside_plates":  SplitArborType, #escapement on front or back only one supported currently
+                "wheel_outside_plates":  SplitArborType, #escapement on front or back only one supported currently. Note that if used, both escape wheel and anchor must have this set the same
                 "pinion_extension": float,
                 "rod_diameter": float
                 },
@@ -1031,8 +1031,7 @@ class GoingTrain(GearTrainBase):
                           clockwise_from_pinion_side=clockwise_from_pinion_side,
                           use_ratchet=not self.huygens_maintaining_power,
                           pinion_extension=arbor_infos[i]["pinion_extension"],
-                          #TODO finish overhauling this to make it more generic
-                          escapement_split=arbor_infos[i]["wheel_outside_plates"] != SplitArborType.NORMAL_ARBOR,
+                          arbor_split=arbor_infos[i]["wheel_outside_plates"],
                           pinion_type=arbor_infos[i]["pinion_type"],
                           type = type
                           )
@@ -1046,7 +1045,7 @@ class GoingTrain(GearTrainBase):
     def gen_gears(self, module_size=1.5, rod_diameters=None, module_reduction=0.5, thick=6, powered_wheel_thick=-1, escape_wheel_max_d=-1,
                   powered_wheel_module_increase=None, pinion_thick_multiplier=2.5, style="HAC", powered_wheel_pinion_thick_multiplier=2, thickness_reduction=1,
                   ratchet_screws=None, pendulum_fixing=PendulumFixing.FRICTION_ROD, module_sizes=None, stack_away_from_powered_wheel=False, pinion_extensions=None,
-                  powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1, powered_wheel_thicks = None, escapement_split=False):
+                  powered_wheel_module_sizes=None, lanterns=None, pinion_thick_extra=-1, override_powered_wheel_distance=-1, powered_wheel_thicks = None, escapement_split=SplitArborType.NORMAL_ARBOR):
         '''
         Deprecated - old interface for generating the arbors. It's messy and doesn't provide the ability to override everything. The original intention was to do everything
         automatically but one by one I needed to override little bits and bobs. use generate_arbors_dicts instead
@@ -1080,6 +1079,12 @@ class GoingTrain(GearTrainBase):
 
          pinion_extensions is indexed from the minute wheel
         '''
+
+        if escapement_split == True:
+            #backwards compatibility
+            escapement_split = SplitArborType.WHEEL_OUT_FRONT
+        if escapement_split == False:
+            escapement_split = SplitArborType.NORMAL_ARBOR
 
         if rod_diameters is None:
             rod_diameters = [3 for i in range(self.powered_wheels + self.wheels + 1)]
@@ -1348,7 +1353,7 @@ class GoingTrain(GearTrainBase):
                 # escape wheel has its thickness controlled by the escapement, but we control the arbor diameter
                 arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
                                      distance_to_next_arbor=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
-                                     pinion_extension=pinion_extension, escapement_split=escapement_split, type=ArborType.ESCAPE_WHEEL))
+                                     pinion_extension=pinion_extension, arbor_split=escapement_split, type=ArborType.ESCAPE_WHEEL))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
 
@@ -1356,7 +1361,7 @@ class GoingTrain(GearTrainBase):
         # "pinion" is the direction of the extended arbour for fixing to pendulum
         # this doesn't need arbourD or thickness as this is controlled by the escapement
         arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise, arbor_d=rod_diameters[self.powered_wheels + self.wheels],
-                             type=ArborType.ANCHOR))
+                             type=ArborType.ANCHOR, arbor_split=escapement_split))
 
         self.wheelPinionPairs = pairs
         self.arbors = arbours
@@ -1785,7 +1790,8 @@ class SlideWhistleTrain(GearTrainBase):
 
             self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=arbor_infos[i]["pinion_thick"], wheel_thick=arbor_infos[i]["wheel_thick"], arbor_d=arbor_d,
                                      distance_to_next_arbor=distance_to_next_arbour, style=arbor_infos[i]["style"], pinion_at_front=pinion_at_front,
-                                     clockwise_from_pinion_side=clockwise_from_powered_side, fly=fly, type=type, end_cap_thick=-1, pinion_extension=arbor_infos[i]["pinion_extension"]))
+                                     clockwise_from_pinion_side=clockwise_from_powered_side, fly=fly, type=type, end_cap_thick=-1, pinion_extension=arbor_infos[i]["pinion_extension"],
+                                     pinion_type=arbor_infos[i]["pinion_type"]))
 
 
 
@@ -2071,50 +2077,37 @@ class GearLayout2D:
                     first_wheel_index = arbor_index + 1
                     horizontal_distance = arbors[penultimate_wheel_index].distance_to_next_arbor
 
-                    def align_two_or_three_spare_arbors(extra_angle=0.0):
+                    last_wheel_pinion_r = get_pinion_r(last_wheel_index)
+                    #however, it's likely that the pinion is on the front of both the last wheel and the current wheel so we can ignore it for that reason too
+                    if arbors[arbor_index].pinion_at_front == arbors[last_wheel_index].pinion_at_front:
+                        last_wheel_pinion_r = arbors[last_wheel_index].get_arbor_extension_r()
+                    current_to_last = arbors[arbor_index].get_max_radius() + last_wheel_pinion_r + self.gear_gap
+
+                    third_wheel_angle_from_current = math.pi / 2 + on_side * (math.asin((horizontal_distance / 2) / current_to_last))
+                    positions_relative[last_wheel_index] = np_to_set(np.add(polar(third_wheel_angle_from_current, current_to_last), positions_relative[arbor_index]))
+                    if non_vertical_arbors_next == 2:
+                        #penultimate arbor meshes with current arbor
+                        positions_relative[penultimate_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                                                                                                      positions_relative[last_wheel_index], horizontal_distance, in_direction=(on_side, 0))
+                        #check if the penultimate wheel clashes with the next centred, as this CAN happen
+                        # clash_info = check_valid_position(penultimate_wheel_index)
+                        # if not clash_info['valid']:
 
 
-                        last_wheel_pinion_r = get_pinion_r(last_wheel_index)
-                        #however, it's likely that the pinion is on the front of both the last wheel and the current wheel so we can ignore it for that reason too
-                        if arbors[arbor_index].pinion_at_front == arbors[last_wheel_index].pinion_at_front:
-                            last_wheel_pinion_r = arbors[last_wheel_index].get_arbor_extension_r()
-                        current_to_last = arbors[arbor_index].get_max_radius() + last_wheel_pinion_r + self.gear_gap
+                    else:
+                        # choosing mirror of escape wheel for penultimate arbor
+                        positions_relative[penultimate_wheel_index] = (-positions_relative[last_wheel_index][0], positions_relative[last_wheel_index][1])
+                        positions_relative[first_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                                                                                                positions_relative[penultimate_wheel_index], arbors[first_wheel_index].distance_to_next_arbor,
+                                                                                                in_direction=(on_side, 0))
+                    #positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + math.sqrt(escape_wheel_to_anchor ** 2 - (penultimate_wheel_to_escape_wheel / 2) ** 2))
 
-                        third_wheel_angle_from_current = math.pi / 2 + on_side * (math.asin((horizontal_distance / 2) / current_to_last) - extra_angle)
-                        positions_relative[last_wheel_index] = np_to_set(np.add(polar(third_wheel_angle_from_current, current_to_last), positions_relative[arbor_index]))
-                        if non_vertical_arbors_next == 2:
-                            #penultimate arbor meshes with current arbor
-                            positions_relative[penultimate_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
-                                                                                                          positions_relative[last_wheel_index], horizontal_distance, in_direction=(on_side, 0))
-                            #check if the penultimate wheel clashes with the next centred, as this CAN happen
-                            # clash_info = check_valid_position(penultimate_wheel_index)
-                            # if not clash_info['valid']:
+                    last_wheel_to_next_centred = arbors[last_wheel_index].distance_to_next_arbor
 
+                    last_wheel_x = positions_relative[last_wheel_index][0]
+                    positions_relative[next_centred_index] = (0, positions_relative[last_wheel_index][1] + math.sqrt(last_wheel_to_next_centred ** 2 - (last_wheel_x) ** 2))
 
-                        else:
-                            # choosing mirror of escape wheel for penultimate arbor
-                            positions_relative[penultimate_wheel_index] = (-positions_relative[last_wheel_index][0], positions_relative[last_wheel_index][1])
-                            positions_relative[first_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
-                                                                                                    positions_relative[penultimate_wheel_index], arbors[first_wheel_index].distance_to_next_arbor,
-                                                                                                    in_direction=(on_side, 0))
-                        #positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + math.sqrt(escape_wheel_to_anchor ** 2 - (penultimate_wheel_to_escape_wheel / 2) ** 2))
-
-                        last_wheel_to_next_centred = arbors[last_wheel_index].distance_to_next_arbor
-
-                        last_wheel_x = positions_relative[last_wheel_index][0]
-                        positions_relative[next_centred_index] = (0, positions_relative[last_wheel_index][1] + math.sqrt(last_wheel_to_next_centred ** 2 - (last_wheel_x) ** 2))
-
-                    align_two_or_three_spare_arbors()
                     clash_info = check_valid_position(penultimate_wheel_index, check_until=next_centred_index)
-                    # i=0
-                    # while not clash_info['valid'] and i < 200:
-                    #     i+=1
-                    #     #try again, but put last wheel further around
-                    #     # idea - could actually do this easily with real maths. if it clashes put the next centred at x=0 and exactly the right distance from teh penultimate wheel
-                    #     align_two_or_three_spare_arbors(i*math.pi/100)
-                    #     clash_info = check_valid_position(penultimate_wheel_index, check_until=next_centred_index)
-                    # if not clash_info['valid']:
-                    #     print(f"Failed to align wheels {penultimate_wheel_index}, {last_wheel_index}")
                     if not clash_info['valid']:
                         #penultimate wheel crashes into the next centred
                         penultimate_wheel_to_next_centred = get_pinion_r(next_centred_index) + self.gear_gap + arbors[penultimate_wheel_index].get_max_radius()

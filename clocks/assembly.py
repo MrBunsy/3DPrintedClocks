@@ -13,8 +13,6 @@ class Assembly:
     '''
     Produce a fully (or near fully) assembled clock
     likely to be fragile as it will need to delve into the detail of basically everything
-
-    currently assumes pendulum and chain wheels are at front - doesn't listen to their values
     '''
     def __init__(self, plates, hands=None, time_mins=10, time_hours=10, time_seconds=0, pulley=None, weights=None, pretty_bob=None, pendulum=None, with_mat=False, name="clock", specific_instructions=None,
                  key_angle_deg = 0):
@@ -1165,3 +1163,37 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         print("Outputting ", out)
         exportSVG(self.get_clock(), out, opts={"width":720, "height":1280})
 
+class WhistleAssembly:
+    def __init__(self, plates):
+        self.plates = plates
+
+    def get_whistle(self):
+        assembly = cq.Workplane("XY")
+
+        for arbor in self.plates.get_arbors_in_situ():
+            assembly = assembly.add(arbor)
+
+        for i, pillar in enumerate(self.plates.get_pillars_in_situ()):
+            assembly = assembly.add(pillar)
+
+        assembly = assembly.add(self.plates.get_plate(top=False)).add(self.plates.get_plate(top=True).translate((0, 0, self.plates.plate_distance + self.plates.plate_thick)))
+
+        return assembly
+
+    def show_whistle(self, show_object, gear_colours=None, plate_colours=None, pillar_colours=None):
+        if gear_colours is None:
+            gear_colours = Colour.RAINBOW
+            gear_colours.reverse()
+        if plate_colours is None:
+            plate_colours = [Colour.LIGHTGREY]
+        if pillar_colours is None:
+            pillar_colours = [Colour.DARKGREY]
+
+        for i, arbor in enumerate(self.plates.get_arbors_in_situ()):
+            show_object(arbor, options={"color": gear_colours[i % len(gear_colours)]}, name=f"Arbor {i}")
+
+        for i, pillar in enumerate(self.plates.get_pillars_in_situ()):
+            show_object(pillar, options={"color": pillar_colours[i % len(pillar_colours)]}, name=f"Pillar {i}")
+
+        for i, (plate, name) in enumerate(zip(self.plates.get_plates_in_situ(), ["Bottom", "Top"])):
+            show_object(plate, options={"color": plate_colours[i % len(plate_colours)]}, name=f"{i} Plate")
