@@ -1059,13 +1059,17 @@ class SpringBarrel:
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
                  base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
-                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40):
+                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40, ratchet_pawl_screwed_from_front=False):
         '''
 
         '''
         self.type = PowerType.SPRING_BARREL
 
+        #ratchet_pawl_screwed_from_front - default is false and the pawl needs a nut on top if true then the countersunk head will hold the pawl in place
+
         self.default_key_length = default_key_length
+
+        self.ratchet_pawl_screwed_from_front = ratchet_pawl_screwed_from_front
 
         self.style = style
         #if the style has a random component, ensure we get teh same on teh lid and base
@@ -1159,6 +1163,7 @@ class SpringBarrel:
         # self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.lid_fixing_screws = MachineScrew(2, countersunk=True, length=10)
         self.collet_screws = self.lid_fixing_screws
+        #for fixing the ratchet wheel to the back (or front) of the arbor
         self.ratchet_screws = ratchet_screws
         if self.ratchet_screws is None:
             self.ratchet_screws = self.collet_screws
@@ -1184,9 +1189,13 @@ class SpringBarrel:
         self.inner_radius_for_style = self.key_bearing.outer_d / 2 + self.wall_thick / 2
 
         self.collet_diameter = self.arbor_d+8
+
         self.click_angle = click_angle
         self.pawl_angle = pawl_angle
         self.configure_ratchet()
+
+        # if self.collet_diameter > self.ratchet.get_inner_radius():
+        #     self.collet_diameter = self.ratchet.get_inner_radius()
 
     def configure_direction(self, power_clockwise=True):
         self.clockwise = power_clockwise
@@ -1200,7 +1209,7 @@ class SpringBarrel:
         ratchet_d = self.arbor_d * 2.5
 
         self.ratchet = TraditionalRatchet(gear_diameter=ratchet_d, thick=self.ratchet_thick, blocks_clockwise=ratchet_blocks_clockwise,
-                                          click_fixing_angle=self.click_angle, pawl_angle=self.pawl_angle)
+                                          click_fixing_angle=self.click_angle, pawl_angle=self.pawl_angle, pawl_screwed_from_front=self.ratchet_pawl_screwed_from_front)
 
     def configure_ratchet_angles(self, click_angle, pawl_angle):
         self.click_angle = click_angle
@@ -1427,7 +1436,7 @@ class SpringBarrel:
 
         return collet
     def get_barrel(self):
-        barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).circle(self.key_bearing.outer_safe_d/2).extrude(self.base_thick)
+        barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).extrude(self.base_thick)#.circle(self.key_bearing.outer_safe_d/2)#why was this here?
 
         barrel = Gear.cut_style(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
                                 clockwise_from_pinion_side=self.clockwise, rim_thick=0, random_seed=self.seed_for_gear_styles)
@@ -1573,7 +1582,10 @@ class SpringBarrel:
         '''
         get the ratchet gear with a hole to slot over the key, and a space for a grub screw to fix it to the key
         '''
-        gear = self.ratchet.get_gear()
+        #rotate back to "zero" then by 90deg + half a tooth so the screw goes through the middle of a back of a tooth
+        #TODO check this is right when I have a different number of teeth than the one which flukely works without rotating
+        gear = self.ratchet.get_gear().rotate((0,0,0),(0,0,1), -self.ratchet.rotate_by_deg).rotate((0,0,0),(0,0,1),-90-(0.5*360/self.ratchet.teeth))
+        #so we can rotate it such that a grub screw wouldn't be weakening the teeth
         # if self.ratchet_at_back:
         outer_d = self.collet_diameter
         if self.ratchet_collet_thick > 0:
@@ -1596,6 +1608,9 @@ class SpringBarrel:
 
         return gear
 
+    def get_ratchet_thick(self):
+        return self.ratchet.thick + self.ratchet_collet_thick
+
     def get_BOM(self):
         return None
         # instructions="""I recommend using a mainspring winder to put the mainspring in the barrel. It's possible by hand, but with a risk of harming yourself or the spring."""
@@ -1606,15 +1621,29 @@ class SpringBarrel:
             # BillOfMaterials.PrintedPart("spring_barrel", self.get_barrel())
         ]
 
+    def get_ratchet_screw_length(self):
+        if self.ratchet_screws.grub:
+            #just up to the inside of the ratchet
+            return get_nearest_machine_screw_length(self.arbor_d/2 + self.ratchet.get_inner_radius(), self.ratchet_screws)
+        else:
+            return get_nearest_machine_screw_length(self.collet_diameter/2, self.ratchet_screws)
+
     def get_BOM_for_combining_with_arbor(self, wheel_thick=-1):
+        '''
+        doesn't include the printed parts as these all make their way in via ArborForPlate
+        '''
+
         instructions = """I recommend using a mainspring winder to put the mainspring in the barrel. It's possible by hand, but with a risk of harming yourself or the spring.
 Screw the lid onto the barrel after putting the bearings, mainspring, and arbor into the barrel
 """
         bom = BillOfMaterials("Spring Barrel", assembly_instructions=instructions)
 
         bom.add_printed_part(BillOfMaterials.PrintedPart("lid", self.get_lid()))
-        bom.add_item(BillOfMaterials.Item(f"{self.lid_fixing_screws} {self.lid_fixing_screws.length}mm", quantity=self.lid_fixing_screws_count))
+        bom.add_item(BillOfMaterials.Item(f"{self.lid_fixing_screws} {self.lid_fixing_screws.length}mm", quantity=self.lid_fixing_screws_count, purpose="Lid fixing screws"))
 
+        bom.add_item(BillOfMaterials.Item(f"{self.ratchet_screws} {self.get_ratchet_screw_length()}mm", purpose="Ratchet wheel fixing screw"))
+        collet_screw_length = get_nearest_machine_screw_length(self.collet_diameter/2, self.ratchet_screws)
+        bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} {collet_screw_length}mm", purpose="Rear collet fixing screw"))
         return bom
 
     def get_parts_for_arbor(self, wheel_thick=-1):
@@ -2976,13 +3005,13 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
         print("Outputting ", out)
         exporters.export(self.get_ratchet_wheel_for_cord(), out)
 
-class SprocketChainWheel(WeightPoweredWheel):
-    '''
-    I really want to be able to use heavier weights with a chain so I can do an eight grasshopper with simple maintaining power, so this is an attempt to make a
-    stronger chainwheel using a sprocket sandwhiched between two large "washers"
-    '''
-    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, wall_thick=2):
-        self.ratchet = ratchet
+# class SprocketChainWheel(WeightPoweredWheel):
+#     '''
+#     I really want to be able to use heavier weights with a chain so I can do an eight grasshopper with simple maintaining power, so this is an attempt to make a
+#     stronger chainwheel using a sprocket sandwhiched between two large "washers"
+#     '''
+#     def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, wall_thick=2):
+#         self.ratchet = ratchet
 
 class PocketChainWheel2(WeightPoweredWheel):
     '''

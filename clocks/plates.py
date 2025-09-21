@@ -334,11 +334,33 @@ class BasePlates:
     '''
     def __init__(self, layer_thick=LAYER_THICK):
         self.layer_thick = layer_thick
+        self.little_plate_for_pawl=False
+        self.going_train = None
+
+        # if spring powered and little_plate_for_pawl is false (only in sub-classes so far)
+        self.beefed_up_pawl_thickness = 7.5
+        self.plate_width=10
+        self.bearing_positions=[]
+
+    def get_ratchet_pawl_beefer_upper(self):
+        '''
+        cone shape on the inside of hte rear plate to make the screw which holds the pawl a bit more rigid (it bends in just a thinner plate)
+        '''
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back:
+            # beef up the plate where the pawl screw goes through so we don't need to have an extra plate on the back to make it strong enough
+            # only possible at the back unless I change where the barrel is (TODO support power at back again...)
+            pawl_pos = np_to_set(np.add(self.bearing_positions[0][:2], self.going_train.powered_wheel.ratchet.get_pawl_screw_position()))
+            # should probably do somethign sensible like work out how much space there actually is between the nearby wheel and the plate
+
+
+            return (cq.Workplane("XY").moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width / 2-0.5)
+                    .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width * 0.4).loft(combine=True))
+        return None
     def get_bearing_punch(self, plate_thick, bearing, bearing_on_top=True , with_support=False):
         '''
         General purpose bearing punch, aligned for cutting into the plate
         '''
-        if bearing.height >= plate_thick:
+        if not bearing.plain_bushing and bearing.height >= plate_thick:
             raise ValueError("plate not thick enough to hold bearing: {}".format(bearing))
 
         punch = bearing.get_cutter(layer_thick=self.layer_thick, with_bridging=with_support)
@@ -347,6 +369,39 @@ class BasePlates:
             punch = punch.rotate((0,0,0),(1,0,0),180).translate((0,0,plate_thick))
 
         return punch
+
+    # def get_plate_thick(self, back=False):
+    #     raise NotImplementedError("TODO get_plate_thick in sub classes")
+
+    def get_spring_ratchet_screws_cutter(self, back_plate=True, plate_thick=8):
+        # plate_thick = self.get_plate_thick(back=back_plate)
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back_plate:
+            #spring powered, need the ratchet!
+            screw = self.going_train.powered_wheel.ratchet.fixing_screws
+
+            cutter = cq.Workplane("XY")
+
+            positions = self.going_train.powered_wheel.ratchet.get_screw_positions()
+            if self.little_plate_for_pawl:
+                positions += self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions()
+            for relative_pos in positions:
+                extra_z = 0
+                if relative_pos == self.going_train.powered_wheel.ratchet.get_pawl_screw_position():
+                    extra_z = -self.beefed_up_pawl_thickness
+                pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
+                pos = (pos[0], pos[1], extra_z)
+                #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
+
+                # if pawl_screwed_from_front the the countersunk head is on teh outside of the ratchet
+                ignore_head = self.going_train.powered_wheel.ratchet.pawl_screwed_from_front
+
+                cutter = cutter.add(screw.get_cutter(with_bridging=True, self_tapping=True, ignore_head=ignore_head).translate(pos)) # for_tap_die=True,
+
+            if back_plate:
+                cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
+
+            return cutter
+        return None
 
 
 class SimpleClockPlates(BasePlates):
@@ -423,8 +478,7 @@ class SimpleClockPlates(BasePlates):
 
         self.layer_thick = layer_thick
 
-        #if spring powered and little_plate_for_pawl is false (only in sub-classes so far)
-        self.beefed_up_pawl_thickness = 7.5
+
 
         #diameter of the cylinder that forms the arbour that physically links pendulum holder (or crutch in future) and anchor
         self.direct_arbor_d = direct_arbor_d
@@ -2242,31 +2296,7 @@ class SimpleClockPlates(BasePlates):
 
         return fixings
 
-    def get_spring_ratchet_screws_cutter(self, back_plate=True):
-        plate_thick = self.get_plate_thick(back=back_plate)
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back == back_plate:
-            #spring powered, need the ratchet!
-            screw = self.going_train.powered_wheel.ratchet.fixing_screws
 
-            cutter = cq.Workplane("XY")
-
-            positions = self.going_train.powered_wheel.ratchet.get_screw_positions()
-            if self.little_plate_for_pawl:
-                positions += self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions()
-            for relative_pos in positions:
-                extra_z = 0
-                if relative_pos == self.going_train.powered_wheel.ratchet.get_pawl_screw_position():
-                    extra_z = -self.beefed_up_pawl_thickness
-                pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
-                pos = (pos[0], pos[1], extra_z)
-                #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
-                cutter = cutter.add(screw.get_cutter(with_bridging=True).translate(pos)) # for_tap_die=True,
-
-            if back_plate:
-                cutter = cutter.rotate((0,0,0),(0,1,0),180).translate((0,0,plate_thick))
-
-            return cutter
-        return None
 
     def get_fixing_screws_cutter(self):
         '''
@@ -2745,16 +2775,17 @@ class SimpleClockPlates(BasePlates):
     def get_moon_complication_fixings_absolute(self):
         return [np_to_set(np.add(self.hands_position, relative_pos[:2])) for relative_pos in self.moon_complication.get_arbor_positions_relative_to_motion_works()]
 
+
+
     def rear_additions_to_plate(self, plate, plate_thick=-1):
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL and self.going_train.powered_wheel.ratchet_at_back:
-            # beef up the plate where the pawl screw goes through so we don't need to have an extra plate on the back to make it strong enough
-            # only possible at the back unless I change where the barrel is (TODO support power at back again...)
-            pawl_pos = np_to_set(np.add(self.bearing_positions[0][:2], self.going_train.powered_wheel.ratchet.get_pawl_screw_position()))
-            # should probably do somethign sensible like work out how much space there actually is between the nearby wheel and the plate
 
+        if plate_thick < 0:
+            plate_thick = self.get_plate_thick(back=True)
 
-            plate = (plate.faces(">Z").workplane().moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width / 2)
-                     .workplane(offset=self.beefed_up_pawl_thickness).moveTo(-pawl_pos[0], pawl_pos[1]).circle(self.plate_width * 0.4).loft(combine=True))
+        pawl_beefer_upper = self.get_ratchet_pawl_beefer_upper()
+        if pawl_beefer_upper is not None:
+            plate = plate.union(pawl_beefer_upper.translate((0,0,plate_thick)))
+
 
         if self.plaque is not None:
             for relative_pos in self.plaque.get_screw_positions():
@@ -3851,7 +3882,7 @@ class MantelClockPlates(SimpleClockPlates):
         else:
             plate = plate.cut(self.get_fixing_screws_cutter().translate((0, 0, -self.get_plate_thick(back=True) - self.plate_distance)))
 
-        ratchet_screws_cutter = self.get_spring_ratchet_screws_cutter(back_plate=back)
+        ratchet_screws_cutter = self.get_spring_ratchet_screws_cutter(back_plate=back, plate_thick=plate_thick)
         if ratchet_screws_cutter is not None:
             plate = plate.cut(ratchet_screws_cutter)
 
@@ -4349,7 +4380,18 @@ class RoundClockPlates(SimpleClockPlates):
 
         this is copy pasted and tweaked from mantleclockplates - TODO think about how to abstract out the useful bits
         '''
-        long_line = Line(self.hands_position, another_point=self.bearing_positions[self.going_train.powered_wheels + 1][:2])
+        #find longest arm
+        # longest_arm=0
+        # longest_arm_index=-1
+        # for i in range(1,self.going_train.total_arbors-1):
+        #     if i == self.going_train.powered_wheels:
+        #         continue
+        #     arm_length = get_distance_between_two_points(self.hands_position, self.bearing_positions[i][:2])
+        #     if arm_length > longest_arm:
+        #         longest_arm=arm_length
+        #         longest_arm_index = i
+
+        long_line = Line(self.hands_position, another_point=self.bearing_positions[1][:2])
         long_space_length = self.radius
         long_line_length = long_space_length - self.plate_width
         text_height = self.plate_width * 0.9
@@ -5624,7 +5666,7 @@ class SlideWhistlePlates(BasePlates):
     also TODO: fix lantern pinions missing teh wide base for arbor exentions
 
     '''
-    def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45, endshake = 1, pillar_style=PillarStyle.SIMPLE):
+    def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45, endshake = 1, pillar_style=PillarStyle.SIMPLE, fixing_screws=None):
         super().__init__()
         self.going_train = going_train
         self.plate_thick = plate_thick
@@ -5636,16 +5678,26 @@ class SlideWhistlePlates(BasePlates):
 
         self.bearing_positions = []
         self.arbors_for_plate = []
-        self.gear_train_layout = GearLayout2D(self.going_train, [0, self.going_train.cam_index, self.going_train.total_arbors-1])
+        self.gear_train_layout = GearLayout2D(self.going_train, [0, self.going_train.cam_index+1, self.going_train.total_arbors-1])
 
         self.calc_bearing_positions()
         self.generate_arbours_for_plate()
 
         self.pillar_r=10
+        self.plate_width = self.pillar_r*2
 
         self.pillar_positions = []
 
         self.calc_pillar_positions()
+
+        #bodge - re-align ratchet now we know where the plates are TODO this isn't easy yet
+        # base_line = Line(self.pillar_positions[2], another_point=self.pillar_positions[3])
+        #
+
+        self.fixing_screws = fixing_screws
+
+        if self.fixing_screws is None:
+            self.fixing_screws = MachineScrew(4)
 
     def punch_bearing_holes(self, plate, back, make_plate_bigger=True):
         for i, pos in enumerate(self.bearing_positions):
@@ -5696,7 +5748,7 @@ class SlideWhistlePlates(BasePlates):
 
 
         start_next_line_from = self.bearing_positions[1][:2]
-        cam_line = Line(start_next_line_from, another_point=self.bearing_positions[self.going_train.cam_index][:2])
+        cam_line = Line(start_next_line_from, another_point=self.bearing_positions[self.going_train.cam_index+1][:2])
 
         other_side_line = Line((-side*pillar_width/2, base_y), direction=(0,1))
         next_intersection = cam_line.intersection(other_side_line)
@@ -5714,13 +5766,42 @@ class SlideWhistlePlates(BasePlates):
         plate = plate.intersect(plate_max)
         # plate = plate.union(get_stroke_arc(self.pillar_positions[2], self.pillar_positions[3], ))
 
+        if not top:
+            pawl_beefer_upper = self.get_ratchet_pawl_beefer_upper()
+            if pawl_beefer_upper is not None:
+                plate = plate.union(pawl_beefer_upper.translate((0, 0, self.plate_thick)))
+
+
         plate = self.punch_bearing_holes(plate, back=not top)
+
+
+
+        plate = plate.cut(self.get_fixing_screws_cutter())
+
+        ratchet_screws_cutter = self.get_spring_ratchet_screws_cutter(back_plate=not top, plate_thick=self.plate_thick)
+        if ratchet_screws_cutter is not None:
+            plate = plate.cut(ratchet_screws_cutter)
+
+
 
         return plate
 
+    def get_feet_depth(self):
+        if self.going_train.powered_wheel.type != PowerType.SPRING_BARREL:
+            raise NotImplementedError("TODO feet for non-spring?")
+        return self.going_train.powered_wheel.get_ratchet_thick() + self.endshake + self.gear_train_layout.gear_gap
+
+
+    def get_fixing_screws_cutter(self):
+        cutter = cq.Workplane("XY")
+        for pos in self.pillar_positions:
+            cutter = cutter.add(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.get_feet_depth() + self.plate_thick*2 + self.plate_distance).translate(pos).translate((0,0,-self.get_feet_depth())))
+            cutter = cutter.union(self.fixing_screws.get_nut_cutter().translate(pos).translate((0,0,-self.get_feet_depth())))
+        return cutter
+
     def calc_pillar_positions(self):
-        if self.going_train.cam_index !=2:
-            raise NotImplementedError("TODO support non-spring versions")
+        # if self.going_train.cam_index !=2:
+        #     raise NotImplementedError("TODO support non-spring versions")
         direction = 1
         if self.bearing_positions[1][0] < self.bearing_positions[0][0]:
             direction = -1
@@ -5879,8 +5960,17 @@ class SlideWhistlePlates(BasePlates):
     def get_plates_in_situ(self):
         return [self.get_plate(top=False), self.get_plate(top=True).translate((0, 0, self.plate_distance + self.plate_thick))]
 
+    def get_foot(self, index):
+        pillar = fancy_pillar(self.pillar_r, self.get_feet_depth(), style=self.pillar_style, clockwise=index % 2 == 0)  # cq.Workplane("XY").circle(self.pillar_r).extrude(self.plate_distance)
+
+        pillar = pillar.translate(self.pillar_positions[index]).cut(self.get_fixing_screws_cutter().translate((0,0,self.get_feet_depth()))).translate(backwards_vector(self.pillar_positions[index]))
+
+        return pillar
+
     def get_pillar(self, index=0):
         pillar = fancy_pillar(self.pillar_r, self.plate_distance,style=self.pillar_style, clockwise=index % 2 == 0)#cq.Workplane("XY").circle(self.pillar_r).extrude(self.plate_distance)
+
+        pillar = pillar.faces(">Z").workplane().circle(self.fixing_screws.metric_thread/2).cutThruAll()
 
         return pillar
 
@@ -5888,6 +5978,13 @@ class SlideWhistlePlates(BasePlates):
         pillars = []
         for i, pillar_pos in enumerate(self.pillar_positions):
             pillars.append(self.get_pillar(i).translate(pillar_pos).translate((0,0,self.plate_thick)))
+
+        return pillars
+
+    def get_feet_in_situ(self):
+        pillars = []
+        for i, pillar_pos in enumerate(self.pillar_positions):
+            pillars.append(self.get_foot(i).translate(pillar_pos).translate((0, 0, -self.get_feet_depth())))
 
         return pillars
 

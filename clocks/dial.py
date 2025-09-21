@@ -2136,8 +2136,10 @@ class Dial:
                         support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
                     else:
                         support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
-
-                    dial = dial.union(support.translate(support_pos))
+                    try:
+                        dial = dial.union(support.translate(support_pos))
+                    except:
+                        print("exception putting dial support on")
                     for fixing_pos in fixing_pos_set:
                         # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
                         dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))

@@ -1152,6 +1152,19 @@ FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.1
 # 595.5/94
 REGULA_8_DAY_1_05MM_CHAIN = ChainInfo(wire_thick=1.05, width=4.4, inside_length=595.5 / 94)  # , outside_length=8.4)
 
+class PlainBushing:
+    '''
+    Fake bearing that's just a hole in the plate
+    '''
+    def __init__(self, inner_d, gap=LOOSE_FIT_ON_ROD/2):
+        self.inner_d = inner_d
+        self.outer_d = inner_d + gap*2 # LOOSE_FIT_ON_ROD added to diameter worked on first mantel clock. worth making a fraction?
+        self.gap = gap
+        self.inner_safe_d = inner_d
+        self.plain_bushing=True
+
+    def get_cutter(self, with_bridging=False, layer_thick=LAYER_THICK, rod_long=20):
+        return cq.Workplane("XY").circle(self.outer_d/2).extrude(rod_long)
 
 class BearingInfo:
     '''
@@ -1179,6 +1192,7 @@ class BearingInfo:
 
         self.flange_thick = flange_thick
         self.flange_diameter = flange_diameter
+        self.plain_bushing = False
 
     def get_cutter(self, with_bridging=False, layer_thick = LAYER_THICK, rod_long=20):
         '''

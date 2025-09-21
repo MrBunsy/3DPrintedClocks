@@ -1577,7 +1577,7 @@ class SlideWhistleTrain(GearTrainBase):
      how to calculate good gear ratios?
     '''
 
-    def __init__(self, powered_wheel, fly, arbors=6, cam_index=2):
+    def __init__(self, powered_wheel, fly, arbors=6, cam_index=1):
 
         '''
         arbor 0: spring barrel
@@ -1716,15 +1716,20 @@ class SlideWhistleTrain(GearTrainBase):
 
         #TODO power ratios
 
-    def set_ratios(self, power_to_cam, cam_to_fly):
-        self.gear_train = power_to_cam + cam_to_fly
+    def set_ratios(self, train, cam_arbor_to_cam_train):
+        '''
+        plan is the cam arbor isn't directly connected to the cam but via another pinion and wheel to gear it DOWN
+        so we can get the ~25 ratio between cam and bellows pump
+        '''
+        self.gear_train = train
+        self.cam_arbor_to_cam_train = cam_arbor_to_cam_train
 
         power_ratio = 1
         cam_to_fly_ratio =1
-        for pair in power_to_cam:
+        for pair in train[:self.cam_index]:
             power_ratio*=pair[0]/pair[1]
 
-        for pair in cam_to_fly:
+        for pair in train[self.cam_index:]:
             cam_to_fly_ratio *= pair[0]/pair[1]
         print(f"Power ratio: {power_ratio} cam to fly: {cam_to_fly_ratio}")
 

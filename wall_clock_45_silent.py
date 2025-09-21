@@ -129,8 +129,8 @@ motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, t
 
 plate_style = PlateStyle.SIMPLE
 
-plaque = Plaque(text_lines=["W45#0 {:.1f}cm ".format(train.pendulum_length_m * 100), "L.Wallin 2025"])#github.com/MrBunsy/3DPrintedClocks
-plaque = None
+plaque = Plaque(text_lines=["W45#0 {:.1f}cm 2025".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])#github.com/MrBunsy/3DPrintedClocks
+
 gear_train_layout = GearLayout2D.get_compact_layout(train, start_on_right=False, minimum_anchor_distance=True)
 bearing_positions = gear_train_layout.get_positions()
 arm_dir = (bearing_positions[1][0] - bearing_positions[2][0], bearing_positions[1][1] - bearing_positions[2][1])

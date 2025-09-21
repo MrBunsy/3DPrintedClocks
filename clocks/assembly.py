@@ -1166,6 +1166,20 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 class WhistleAssembly:
     def __init__(self, plates):
         self.plates = plates
+        self.front_z = self.plates.plate_thick * 2 + self.plates.plate_distance
+
+        self.ratchet_on_plates = None
+        #TODO this is copy-pasted from Assembly, but I think it needs tidying up so this is just temporarily here forever
+        if self.plates.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
+            #rotated so the screwhole lines up - can't decide where that should be done
+            self.ratchet_on_plates = self.plates.going_train.powered_wheel.get_ratchet_gear_for_arbor().rotate((0, 0, 0), (0, 0, 1), 180)\
+                .add(self.plates.going_train.powered_wheel.ratchet.get_pawl()).add(self.plates.going_train.powered_wheel.ratchet.get_click())
+            if self.plates.little_plate_for_pawl:
+                self.ratchet_on_plates = self.ratchet_on_plates.add(self.plates.going_train.powered_wheel.ratchet.get_little_plate_for_pawl()).translate(self.plates.bearing_positions[0][:2])
+            if self.plates.going_train.powered_wheel.ratchet_at_back:
+                self.ratchet_on_plates = self.ratchet_on_plates.rotate((0,0,0),(0,1,0),180).translate((0,0,-self.plates.endshake/2))
+            else:
+                self.ratchet_on_plates = self.ratchet_on_plates.translate((0, 0, self.front_z + self.plates.endshake/2))
 
     def get_whistle(self):
         assembly = cq.Workplane("XY")
@@ -1180,7 +1194,7 @@ class WhistleAssembly:
 
         return assembly
 
-    def show_whistle(self, show_object, gear_colours=None, plate_colours=None, pillar_colours=None):
+    def show_whistle(self, show_object, gear_colours=None, plate_colours=None, pillar_colours=None, ratchet_colour=Colour.PURPLE):
         if gear_colours is None:
             gear_colours = Colour.RAINBOW
             gear_colours.reverse()
@@ -1195,5 +1209,11 @@ class WhistleAssembly:
         for i, pillar in enumerate(self.plates.get_pillars_in_situ()):
             show_object(pillar, options={"color": pillar_colours[i % len(pillar_colours)]}, name=f"Pillar {i}")
 
+        for i, foot in enumerate(self.plates.get_feet_in_situ()):
+            show_object(foot, options={"color": pillar_colours[i % len(pillar_colours)]}, name=f"Foot {i}")
+
         for i, (plate, name) in enumerate(zip(self.plates.get_plates_in_situ(), ["Bottom", "Top"])):
             show_object(plate, options={"color": plate_colours[i % len(plate_colours)]}, name=f"{i} Plate")
+
+        if self.ratchet_on_plates is not None:
+            show_object(self.ratchet_on_plates, options={"color": ratchet_colour}, name="Ratchet")
