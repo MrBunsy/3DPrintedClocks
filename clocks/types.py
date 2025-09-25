@@ -159,6 +159,7 @@ class GearStyle(Enum):
     HONEYCOMB_CHUNKY = "honeycomb_chunky"
     #psuedorandom with global seed
     SNOWFLAKE = "snowflake"
+    SNOWFLAKE_06_NOZZLE = "snowflake0.6"
     CURVES = "curves"
     DIAMONDS = "diamonds"
     #planned - branching tree structure (not a million miles off snowflake) - probably best for a design with big wheels like grasshopper

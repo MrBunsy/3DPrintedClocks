@@ -100,6 +100,8 @@ class Gear:
             return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
             return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2, seed=random_seed)
+        if style == GearStyle.SNOWFLAKE_06_NOZZLE:
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2, seed=random_seed, nozzle_size=0.6)
         if style == GearStyle.CURVES:
             return Gear.cutCurvesStyle(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
@@ -341,7 +343,7 @@ class Gear:
 
 
     @staticmethod
-    def cutSnowflakeStyle(gear, outerRadius, innerRadius, seed=-1):
+    def cutSnowflakeStyle(gear, outerRadius, innerRadius, seed=-1, nozzle_size=0.4):
         '''
         Just random branching arms until I can think of something better
         '''
@@ -356,9 +358,11 @@ class Gear:
 
         branchThick = 2.4
 
+
+
         branchDepth=2
 
-        if gapSize < 20:
+        if gapSize < 20 and nozzle_size < 0.6:
             branchThick = 1.65
             armThick=2.4
 

@@ -69,7 +69,7 @@ train.generate_arbors_dicts([
         #barrel
         "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5),
         "wheel_thick": barrel_gear_thick,
-        "style": gear_style,
+        "style": GearStyle.SNOWFLAKE_06_NOZZLE,
 
     },
     {
@@ -78,6 +78,7 @@ train.generate_arbors_dicts([
         "pinion_type": PinionType.THIN_LANTERN,
         "pinion_thick": barrel_gear_thick*2,
         "wheel_thick": 4,
+        "style": gear_style,
 
     },
     {
@@ -92,7 +93,8 @@ train.generate_arbors_dicts([
     {
         #second wheel
         "module": 0.9,
-        "pinion_extension": 25
+        "pinion_extension": 25,
+
     },
     {
         #third wheel
