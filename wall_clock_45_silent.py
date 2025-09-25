@@ -34,7 +34,7 @@ barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=4, barrel_bearing=BEARING_12x18x4_FLANGED,
-                     style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
+                     style=GearStyle.SNOWFLAKE_06_NOZZLE, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
                      ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel")#, key_bearing=PlainBushing(12, fake_height=plate_thick))
 
 #idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth

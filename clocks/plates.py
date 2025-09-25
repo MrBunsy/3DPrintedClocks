@@ -1101,7 +1101,7 @@ class SimpleClockPlates(BasePlates):
             distance = get_distance_between_two_points(pillar_pos, bearing_pos[:2])
             space = arbor.get_max_radius() + pillar_r + min_gap
             if distance < space:
-                print(f"clashes by", distance - space )
+                # print(f"clashes by", distance - space )
                 return True
 
         return False

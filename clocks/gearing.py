@@ -360,14 +360,20 @@ class Gear:
 
 
 
+
+
         branchDepth=2
 
-        if gapSize < 20 and nozzle_size < 0.6:
+        if gapSize < 20:
             branchThick = 1.65
             armThick=2.4
+            if nozzle_size > 0.4:
+                branchThick = 2.4
 
         if gapSize < 40:
             branchDepth = 1
+
+        print(f"Snowflake: nozzle {nozzle_size} arm {armThick} branch {branchThick}")
 
         cutterThick = 1000
         snowflake=cq.Workplane("XY")
@@ -2431,7 +2437,7 @@ class ArborForPlate:
                 return front
 
         if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion.lantern:
-            if self.arbor.lantern_fixing_wheel_offset > 0:
+            if self.arbor.lantern_fixing_wheel_offset > 0 and front != self.arbor.pinion_at_front:
                 #the arbor extension in this case is part of the wheel
                 return False
             return True
