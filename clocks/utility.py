@@ -1156,12 +1156,14 @@ class PlainBushing:
     '''
     Fake bearing that's just a hole in the plate
     '''
-    def __init__(self, inner_d, gap=LOOSE_FIT_ON_ROD/2):
+    def __init__(self, inner_d, gap=LOOSE_FIT_ON_ROD/2, fake_height=8):
         self.inner_d = inner_d
         self.outer_d = inner_d + gap*2 # LOOSE_FIT_ON_ROD added to diameter worked on first mantel clock. worth making a fraction?
         self.gap = gap
         self.inner_safe_d = inner_d
         self.plain_bushing=True
+        self.outer_safe_d = self.outer_d
+        self.height=fake_height
 
     def get_cutter(self, with_bridging=False, layer_thick=LAYER_THICK, rod_long=20):
         return cq.Workplane("XY").circle(self.outer_d/2).extrude(rod_long)

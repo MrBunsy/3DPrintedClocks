@@ -24,7 +24,7 @@ random.seed(clock_name)
 
 gear_style = GearStyle.SNOWFLAKE#GearStyle.ROUNDED_ARMS5
 pillar_style = PillarStyle.TWISTY
-
+plate_thick=8
 
 teeth = 24#36
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
@@ -35,7 +35,7 @@ barrel_gear_thick = 5
 # this looks plausible, but not sure I want to push my luck
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=4, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
-                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel")
+                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel")#, key_bearing=PlainBushing(12, fake_height=plate_thick))
 
 #idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth
 
@@ -145,7 +145,7 @@ TODO:
  - pinion extensions for lantern pinions could just have a solid extension if above a certain amount? like normal pinion extensions.
 '''
 
-plates = RoundClockPlates(train, motion_works, name="Wall 45", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
+plates = RoundClockPlates(train, motion_works, name="Wall 45", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=plate_style, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False,
                                 gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=back_plate_from_wall)

@@ -2266,3 +2266,31 @@ class GearLayout2DCentreSeconds(GearLayout2D):
                 lastPos = nextPos
                 angleOnArc = nextAngleOnArc
 '''
+
+
+class RollingBallGearLayout(GearLayout2D):
+    def __init__(self, going_train, go_right=True):
+        '''
+        Plan: spring barrel bellow centre wheel, then clutch-driven motion works off to the left and the going train off to the right
+        '''
+
+        #don't think this will be used as I'm planning to override get_positions
+        #setting last to centred just so that the super class can succeed
+        centred = [0, going_train.powered_wheels, going_train.total_arbors-1]
+        self.go_right = go_right
+
+        super().__init__(going_train, centred_arbors=centred)
+
+    def get_positions(self):
+
+        #lazy, this will sort out up to the centre wheel successfully
+        positions = super().get_positions()
+        arbors = self.going_train.get_all_arbors()
+
+        #lazy for now, just go right, might want to consider making this compact
+        dir = 1 if self.go_right else -1
+        for i in range(self.going_train.powered_wheels+1, self.going_train.total_arbors):
+            distance = arbors[i-1].distance_to_next_arbor
+            positions[i] = (positions[i-1][0] + distance*dir, positions[i-1][1])
+
+        return positions

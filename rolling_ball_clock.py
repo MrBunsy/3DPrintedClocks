@@ -25,7 +25,7 @@ import cProfile
 
 
 
-from clocks.plates import *
+from clocks import *
 
 '''
 
@@ -40,10 +40,10 @@ if 'show_object' not in globals():
     # profile = True
     def show_object(*args, **kwargs):
         pass
-
-if profile:
-    pr = cProfile.Profile()
-    pr.enable()
+#
+# if profile:
+#     pr = cProfile.Profile()
+#     pr.enable()
 
 # class RollingBallGoingTrain(GoingTrain):
 #     '''
@@ -57,36 +57,33 @@ if profile:
 #         self.wheels = 3
 #         self.powered_wheel = SpringBarrel(style=style)
 
-clockName="congreve_clock_32"
+clock_name= "congreve_clock_47"
 clockOutDir="out"
-gearStyle=GearStyle.CIRCLES
+gear_style=GearStyle.CIRCLES
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+plate_thick=6
+
+#don't actually need an anchor, just a quick way to generate a gear train
+escapement = AnchorEscapement(teeth=2)
 
 
-#this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
-lift=2
-drop=3
-lock=2
-escapement = AnchorEscapement(drop=drop, lift=lift, teeth=2, lock=lock, tooth_tip_angle=3,
-                              tooth_base_angle=3, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2)
+power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=4, barrel_bearing=BEARING_12x18x4_FLANGED,
+                     style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
+                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel", key_bearing=PlainBushing(12, fake_height=plate_thick))
+
 #escape wheel this way around allows for a slightly larger diameter
-train = GoingTrain(pendulum_period=10, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, chain_wheels=1,
-                         runtime_hours=24, support_second_hand=True, escape_wheel_pinion_at_front=False)
+train = GoingTrain(pendulum_period=30, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=1,
+                         runtime_hours=24, support_second_hand=True, escape_wheel_pinion_at_front=False, powered_wheel=power)
 
 barrel_gear_thick = 8
 
 moduleReduction=0.9#0.85
-#train.gen_spring_barrel(click_angle=-math.pi*0.25)
-#smiths ratios but with more teeth on the first pinion (so I can print it with two perimeters, with external perimeter at 0.435 and perimeter at 0.43)
-#could swap the wheels round but I don't think I can get the pinions printable with two perimeters at any smaller a module
-#[[61, 10], [62, 10]] auto generated but putting here to save time
-train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick, wheel_min_teeth=40,
-                        chain_wheel_ratios=[[46, 10]])
-train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=9, wheel_min_teeth=60, pinion_max_teeth=12, max_error=0.1, module_reduction=moduleReduction, loud=True,
-                      allow_integer_ratio=True)
+
+train.calculate_ratios(max_wheel_teeth=90, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=12, max_error=2, module_reduction=moduleReduction, loud=True,
+                      allow_integer_ratio=False)
 # train.set_ratios([[75, 9], [72, 10], [60, 24]])
 
-
+train.set_powered_wheel_ratios([101,10])
 
 pendulumSticksOut=10
 backPlateFromWall=30
@@ -94,30 +91,58 @@ backPlateFromWall=30
 pinion_extensions = {}
 
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(2)]
+#
+# train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gear_style,
+#                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+#                 pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
 
-train.gen_gears(module_size=0.9, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
-                powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2)
+train.generate_arbors_dicts([
+    {
+        "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
+        "wheel_thick": barrel_gear_thick,
+        "style": gear_style,
+    },
+    {
+        "module":  WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
+        "pinion_type":PinionType.LANTERN
+    },
+    {
+        "pinion_type":PinionType.LANTERN
+    }
+])
 
 
 plates = RollingBallClockPlates(train, name="Congreve 32")
 
 
-hands = plates.get_hands()
+# hands = plates.get_hands()
 
+# for arbor in plates.arbors_for_plate[:-1]:
+#     show_object(arbor.get_assembled())
 
-assembly = Assembly(plates, hands=hands, time_seconds=30)#weights=[Weight(height=245,diameter=55)]
+rolling_ball = RollingBallEscapement()
 
+tray = rolling_ball.get_track_assembled()
 
-if not outputSTL or True:
-    assembly.show_clock(show_object, hand_colours=[Colour.WHITE, Colour.BLACK, Colour.RED], motion_works_colours=[Colour.BRASS],
-                    bob_colours=[Colour.GOLD], with_rods=False, with_key=True, ratchet_colour=Colour.GOLD, dial_colours=[Colour.WHITE, Colour.BLACK], key_colour=Colour.GOLD)
+show_object(tray)
+out = "tray.stl"
+print("Outputting ", out)
+exporters.export(rolling_ball.get_track(), out)
 
-if outputSTL:
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
-
-if profile:
-    pr.disable()
-    pr.print_stats(sort="calls")
+# show_object(plates.get)
+#
+# assembly = Assembly(plates, hands=hands, time_seconds=30)#weights=[Weight(height=245,diameter=55)]
+#
+#
+# if not outputSTL or True:
+#     assembly.show_clock(show_object, hand_colours=[Colour.WHITE, Colour.BLACK, Colour.RED], motion_works_colours=[Colour.BRASS],
+#                     bob_colours=[Colour.GOLD], with_rods=False, with_key=True, ratchet_colour=Colour.GOLD, dial_colours=[Colour.WHITE, Colour.BLACK], key_colour=Colour.GOLD)
+#
+# if outputSTL:
+#     plates.output_STLs(clock_name, clockOutDir)
+#     hands.output_STLs(clock_name, clockOutDir)
+#     assembly.output_STLs(clock_name, clockOutDir)
+#
+# if profile:
+#     pr.disable()
+#     pr.print_stats(sort="calls")

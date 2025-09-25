@@ -29,6 +29,7 @@ from .cosmetics import *
 from .leaves import *
 from .dial import *
 from .pillars import fancy_pillar
+from .gear_trains import *
 import cadquery as cq
 from pathlib import Path
 from cadquery import exporters
@@ -611,7 +612,8 @@ class SimpleClockPlates(BasePlates):
         self.has_vanity_plate = self.vanity_plate_radius > 0
         self.vanity_plate_thick = 2
         self.vanity_plate_pillar_r = self.small_fixing_screws.metric_thread
-        self.vanity_plate_base_z = self.front_of_motion_works_wheels_z()
+        if self.motion_works is not None:
+            self.vanity_plate_base_z = self.front_of_motion_works_wheels_z()
 
         #for some dials (filled-in ones like tony) it won't be possible to get a screwdriver (or the screw!) in from the front, so instead screw in from the back
         #currently this also implies that the nuts will be sticking out the front plate (I don't want to embed them in the plate and weaken it)
@@ -734,8 +736,10 @@ class SimpleClockPlates(BasePlates):
 
 
 
-
-        motion_works_distance = self.motion_works.get_arbor_distance()
+        if self.motion_works is not None:
+            motion_works_distance = self.motion_works.get_arbor_distance()
+        else:
+            motion_works_distance=0
         # where the time setting knob is on centred seconds hands
         self.time_setter_relative_pos = (0, -motion_works_distance*2)
         # get position of motion works relative to the minute wheel
@@ -771,22 +775,24 @@ class SimpleClockPlates(BasePlates):
 
         self.motion_works_pos = np_to_set(np.add(self.hands_position, self.motion_works_relative_pos))
 
-        #calculate position even if it's not applicable to this clock
-        friction_clip_dir = self.get_friction_clip_direction()
-        friction_clip_distance = self.motion_works.friction_ring_r*2.5
-        # print("friction_clip_distance", friction_clip_distance)
-        #HACK for retrofitted print to clock 28
-        # friction_clip_distance = 30.998806423611125
-        self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
-        screw_distance = math.sqrt(2*(self.plate_width / 5)**2)
-        friction_clip_angle = math.atan2(friction_clip_dir[1], friction_clip_dir[0])
-        self.cannon_pinion_friction_clip_fixings_pos = [
-            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, polar(friction_clip_angle+math.pi*3/4, screw_distance))),#(-self.plate_width / 5, -self.plate_width /  5)
-            np_to_set(np.add(self.cannon_pinion_friction_clip_pos, polar(friction_clip_angle-math.pi/4, screw_distance)))
-        ]
-        self.motion_works_holder_thick = 4
-        #if true then the only screws holding it in palce are the screws which also hold the friction clip
-        self.motion_works_holder_attached_to_friction_clip = False
+        if self.motion_works is not None:
+
+            #calculate position even if it's not applicable to this clock
+            friction_clip_dir = self.get_friction_clip_direction()
+            friction_clip_distance = self.motion_works.friction_ring_r*2.5
+            # print("friction_clip_distance", friction_clip_distance)
+            #HACK for retrofitted print to clock 28
+            # friction_clip_distance = 30.998806423611125
+            self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
+            screw_distance = math.sqrt(2*(self.plate_width / 5)**2)
+            friction_clip_angle = math.atan2(friction_clip_dir[1], friction_clip_dir[0])
+            self.cannon_pinion_friction_clip_fixings_pos = [
+                np_to_set(np.add(self.cannon_pinion_friction_clip_pos, polar(friction_clip_angle+math.pi*3/4, screw_distance))),#(-self.plate_width / 5, -self.plate_width /  5)
+                np_to_set(np.add(self.cannon_pinion_friction_clip_pos, polar(friction_clip_angle-math.pi/4, screw_distance)))
+            ]
+            self.motion_works_holder_thick = 4
+            #if true then the only screws holding it in palce are the screws which also hold the friction clip
+            self.motion_works_holder_attached_to_friction_clip = False
 
         #even if it's not used:
 
@@ -796,7 +802,11 @@ class SimpleClockPlates(BasePlates):
         self.motion_works_fixings_relative_pos = [(-self.plate_width / 4, self.motion_works_holder_length / 2) ,
                                                   (self.plate_width / 4, -(self.motion_works_holder_length / 2))]
 
-        self.top_of_hands_z = self.motion_works.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+        if self.motion_works is not None:
+            self.top_of_hands_z = self.motion_works.get_cannon_pinion_effective_height() + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+        else:
+            #TODO
+            self.top_of_hands_z = 5
 
         if self.centred_second_hand:
             #somewhat wrong logic, needs tidying up but will work for now
@@ -1336,8 +1346,12 @@ class SimpleClockPlates(BasePlates):
 
         if self.needs_motion_works_holder():
             extra = self.motion_works_holder_thick
+        if self.motion_works is None:
+            #TODO
+            return 5
+        else:
+            return  self.motion_works.get_hand_holder_height() + extra - self.motion_works.inset_at_base
 
-        return self.motion_works.get_hand_holder_height() + extra - self.motion_works.inset_at_base
 
     def front_of_motion_works_wheels_z(self):
         '''
@@ -3069,7 +3083,10 @@ class SimpleClockPlates(BasePlates):
         self.key_hole_d = key_bearing.outer_safe_d
 
         #on the old cord wheel, which didn't know the plate thickness, account for how much of the square bit is within the plate
-        key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
+        if key_bearing.plain_bushing:
+            key_within_front_plate=0
+        else:
+            key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
 
         # self.key_hole_d = self.going_train.powered_wheel.keyWidth + 1.5
         if self.bottom_of_hour_hand_z() < 25 and (self.weight_driven or self.going_train.powered_wheel.ratchet_at_back):# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.outer_d - 1:
@@ -3100,7 +3117,10 @@ class SimpleClockPlates(BasePlates):
         #how much of the key sticks out the front of the front plate
         self.key_length = key_length - key_within_front_plate
 
-        square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
+        if key_bearing.plain_bushing:
+            square_bit_inside_front_plate_length=0
+        else:
+            square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
         if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
             #the square bit of the key starts outisde the plate. See extra_in_front in gearing. TODO apply this to the cord wheel as well!
             square_bit_inside_front_plate_length = 0
@@ -5365,13 +5385,17 @@ Firmly push all bearings into their slots, a bench vice can help with this. Alte
         if self.has_vanity_plate:
             export_STL(self.get_vanity_plate(), "vanity_plate", name, path)
 
-class RollingBallClock(SimpleClockPlates):
+class RollingBallClockPlates(SimpleClockPlates):
     '''
-    Doing more than just the plates, this will create dials and hands and trains too
+    Grand Plan:
+
+    The plates (this class) will be like a mantel clock on its side
+
+    Then there will be a full RollingBallFrame (or something) which will combine the plates with a frame and the marble-run-plate to turn it into a complete clock
     '''
 
 
-    def __init__(self, name="",layer_thick=0.4):
+    def __init__(self, going_train, name="", plate_thick=6):
         '''
         plan:
 
@@ -5394,20 +5418,14 @@ class RollingBallClock(SimpleClockPlates):
 
         '''
 
-        # super().__init__(self.gen_going_train(), motion_works=None, pendulum=None, style=ClockPlateStyle.COMPACT, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
-        #                  pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
-        #                  pendulum_at_front=False, back_plate_from_wall=0, fixing_screws=MachineScrew(4, countersunk=True),
-        #                  centred_second_hand=False, pillars_separate=True, dial=None, bottom_pillars=2, top_pillars=2,
-        #                  second_hand=second_hand, motion_works_angle_deg=math.pi, endshake=1.5, compact_zigzag_side=True, screws_from_back=None,
-        #                  layer_thick=layer_thick)
+        super().__init__(going_train=going_train, motion_works=None, pendulum=None, plate_thick=plate_thick, name=name,
+                         back_plate_from_wall=0, fixing_screws=MachineScrew(4, countersunk=False),
+                         pillars_separate=True, dial=None, gear_train_layout=RollingBallGearLayout(going_train))
         #
         # self.narrow_bottom_pillar=False
         # self.little_arm_to_motion_works=False
         # self.pillar_screwhole_r = self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)
 
-
-    def gen_going_train(self):
-        return None
 
     def gen_dials(self):
         #TODO work with generating the train to
