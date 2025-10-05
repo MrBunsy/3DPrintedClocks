@@ -1054,7 +1054,7 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
 
         #elephant's foot doesn't seem to work well for the tooth tips, so reducing radius of first layer
         #because otherwise there are little sharp bits I'm worried will cut the thread
-        cutter = cq.Workplane("XY").circle(self.radius+1).circle(self.radius-0.3).extrude(LAYER_THICK)
+        cutter = cq.Workplane("XY").circle(self.radius+1).circle(self.radius-0.35).extrude(LAYER_THICK)
 
         wheel = wheel.cut(cutter)
 
@@ -2519,6 +2519,7 @@ class Pendulum:
         self.tolerance = 0.1
 
         self.rod_screws = MachineScrew(threaded_rod_m)
+        self.lid_screws = MachineScrew(threaded_rod_m)
 
         self.bob_nut_d = bob_nut_d
         if self.bob_nut_d < 0:
@@ -2736,7 +2737,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
             notHole = notHole.union(cq.Workplane("XY").rect(self.threaded_rod_m + extraR * 2 + self.wall_thick * 2, self.bob_r * 2).extrude(self.bob_thick / 2 - self.wall_thick).translate((0, 0, self.wall_thick)))
 
             for pos in self.bob_lid_nut_positions:
-                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.threaded_rod_m * 1.5).circle(self.threaded_rod_m / 2).extrude(self.bob_thick - self.wall_thick))
+                notHole = notHole.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.threaded_rod_m * 1.5).extrude(self.bob_thick - self.wall_thick))
 
             weightHole = weightHole.cut(notHole)
 
@@ -2745,6 +2746,10 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
             weightHole = weightHole.union(lid.translate((0, 0, self.bob_thick - self.wall_thick)))
 
             bob = bob.cut(weightHole)
+
+            for pos in self.bob_lid_nut_positions:
+                bob = bob.cut(self.lid_screws.get_cutter(self_tapping=True, ignore_head=True).translate((pos[0],pos[1],self.wall_thick)))
+
 
         #add a little S <--> F text
         textSize = self.gap_height

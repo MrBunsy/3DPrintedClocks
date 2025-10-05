@@ -125,6 +125,11 @@ if False:
 # show_object(numbers.get_tadpole((0,0), r=5, tail_end_pos=(10,-10)))
 
 
-dome = Dome()
+# dome = Dome()
+#
+# show_object(dome.get_solid())
 
-show_object(dome.get_solid())
+
+hole = get_hole_with_hole(3, outer_d=6, deep=1,sides=6)
+
+show_object(hole)

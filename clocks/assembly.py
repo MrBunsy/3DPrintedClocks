@@ -477,7 +477,7 @@ Slot the anchor (arbor {len(self.plates.arbors_for_plate) - 1}) through the hole
 
 $render{render_with_all_arbors_id}
 
-                """
+"""
         render_up_to_front_plate = cq.Workplane("XY").add(render_with_all_arbors).add(plate_parts["front_plate"])
         if self.dial.raised_detail:
             # dial pillars are already attached to front plate
@@ -494,7 +494,9 @@ $render{render_with_all_arbors_id}
         render_with_dial = cq.Workplane("XY").add(render_up_to_front_plate).add(dial).add(dial_detail)
         render_with_dial_id = final_assembly_bom.add_render(render_with_dial, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
-        final_assembly_bom.assembly_instructions += f"""This is easier said than done, but next slot the front plate over the top. Be patient and gentle, lining up one arbor at a time. A pair of tweezers can be very useful to lining up arbors with bearings.
+        final_assembly_bom.assembly_instructions += f"""
+
+This is easier said than done, but next slot the front plate over the top. Be patient and gentle, lining up one arbor at a time. A pair of tweezers can be very useful to lining up arbors with bearings.
 
 $render{render_up_to_front_plate_id}
 

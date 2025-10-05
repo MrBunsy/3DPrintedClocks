@@ -1137,7 +1137,7 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def get_lantern_cutter(self, offset = 1, trundle_length=100, wheel_offset=0):
+    def get_lantern_cutter(self, offset = 1, trundle_length=100, wheel_offset=0, hole_d=0):
         '''
         get a cutter that will provide slots for the lantern trundles to rest in
 
@@ -1153,6 +1153,9 @@ class Gear:
 
         if wheel_offset > 0:
             cutter = cutter.translate((0,0,wheel_offset))
+            if hole_d > 0:
+                #hole with hole as this is printed upside down
+                cutter = cutter.union(get_hole_with_hole(hole_d, self.inner_r_for_lantern_fixing_slot*2,sides=self.slot_sides).rotate((0,0,0),(1,0,0),180).translate((0,0,wheel_offset)))
 
         angle_change = math.pi*2 / self.teeth
 
@@ -1195,17 +1198,20 @@ class Gear:
         return cap
 
     def add_to_wheel(self, wheel, hole_d=0, thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True,
-                     pinion_extension=0, lantern_offset=1, lantern_fixing_wheel_offset=0):
+                     pinion_extension=0, lantern_offset=1, lantern_fixing_wheel_offset=0, hole_d_for_lantern=0):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
         pinionthicker is a multiplier to thickness of the week for thickness of the pinion
         clockwise_from_pinion_side is purely for cutting a style
+
+        hole_d is usually zero as we cut out the threaded rod self-tapping hole later. However for thin lantern pinions we need to pritn a hole-with-hole to provide supports
+        so we need to know what the hole size would be, hence hole_d_for_lantern
         '''
         base = wheel.get3D(thick=thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
 
         if self.lantern:
-            base = base.cut(self.get_lantern_cutter(offset=lantern_offset, wheel_offset=lantern_fixing_wheel_offset))
+            base = base.cut(self.get_lantern_cutter(offset=lantern_offset, wheel_offset=lantern_fixing_wheel_offset, hole_d=hole_d_for_lantern))
             # base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
             return base
 
@@ -2880,7 +2886,7 @@ To keep this assembly together, use a small amount of superglue between the whee
             print(f"end_cap_thick: {self.end_cap_thick}")
             shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                              pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
-                                             lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset)
+                                             lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset, hole_d_for_lantern=self.arbor_d)
             if self.pinion_extension > 5:
                 pinion_r = self.get_pinion_max_radius()
                 cut_to_r = self.get_arbor_extension_r()#pinion_r * 0.7

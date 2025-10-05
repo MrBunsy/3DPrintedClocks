@@ -997,7 +997,7 @@ def to_polar(x, y):
     return (angle, r)
 
 
-def get_hole_with_hole(inner_d, outer_d, deep, sides=1, layer_thick=LAYER_THICK):
+def get_hole_with_hole(inner_d, outer_d, deep=0, sides=1, layer_thick=LAYER_THICK):
     '''
     Generate the shape of a hole ( to be used to cut out of another shape)
     that can be printed with bridging

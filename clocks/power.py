@@ -3835,6 +3835,8 @@ class TraditionalRatchet:
         #if true then the head of the screw is in front of the pawl, so on a powered wheel it can't fall off
         self.pawl_screwed_from_front = pawl_screwed_from_front
 
+        self.click_screwed_from_front = False
+
         self.tooth_deep=3
         self.teeth = floor(self.gear_diameter / 2)
 
@@ -4125,7 +4127,7 @@ class TraditionalRatchet:
         # click = click_fixing
 
         for screwpos in self.click_fixings:
-            if self.pawl_screwed_from_front:
+            if self.click_screwed_from_front:
                 click = click.cut(self.fixing_screws.get_cutter().rotate((0,0,0),(1,0,0),180).translate((screwpos[0], screwpos[1], self.pawl_and_click_thick)))
             else:
                 # click = click.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.pawl_and_click_thick).translate(screwpos))

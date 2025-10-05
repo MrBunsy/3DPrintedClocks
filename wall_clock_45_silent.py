@@ -27,7 +27,7 @@ pillar_style = PillarStyle.TWISTY
 plate_thick=8
 
 teeth = 24#36
-escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
+escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=5)
 #nylon wire only 0.15, but need a hole big enough to print well
 escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.4)
 barrel_gear_thick = 5
@@ -35,7 +35,7 @@ barrel_gear_thick = 5
 # this looks plausible, but not sure I want to push my luck
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=4, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=GearStyle.SNOWFLAKE_06_NOZZLE, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
-                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel")#, key_bearing=PlainBushing(12, fake_height=plate_thick))
+                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True)#, key_bearing=PlainBushing(12, fake_height=plate_thick))
 
 #idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth
 
@@ -99,12 +99,15 @@ train.generate_arbors_dicts([
     {
         #third wheel
         "module": 0.9,
-        "pinion_faces_forwards": True
+        "pinion_faces_forwards":False,
+        "pinion_thick":6
+
     },
     {
         #escape wheel
         "pinion_faces_forwards": True,
-        "pinion_extension": 10
+        "pinion_extension": 15 + (9.260000000000007 - 5.156000000000004),
+        "pinion_thick":6
     }
 ], pinion_thick_extra=5)
 
@@ -118,7 +121,7 @@ dial_width = 28# + 2.5
 dial_d=210
 dial_width = 33#dial_d*0.15
 
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False,  style=DialStyle.ARABIC_NUMBERS, font=CustomFont(FancyFrenchArabicNumbers),
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False,  style=DialStyle.DOTS, font=CustomFont(FancyFrenchArabicNumbers),
             outer_edge_style=DialStyle.LINES_RECT_DIAMONDS_INDICATORS, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_style=DialStyle.CONCENTRIC_CIRCLES,
             seconds_dial_width=seconds_dial_width, pillar_style=pillar_style)
 
@@ -151,6 +154,9 @@ plates = RoundClockPlates(train, motion_works, name="Wall 45", dial=dial, plate_
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=plate_style, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False,
                                 gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=back_plate_from_wall)
+
+print(f"Bearing pos for anchor: {plates.bearing_positions[-1]}")
+#Bearing pos for anchor: [0, 138.60650591482255, 5.156000000000004]
 
 hand_style = HandStyle.FANCY_FRENCH
 hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
