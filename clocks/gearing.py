@@ -1363,6 +1363,7 @@ class WheelPinionPair:
         # self.wheelTeeth = wheelTeeth
         # self.pinionTeeth=pinionTeeth
         self.module=module
+        #this shouldn't be used? isn't used?
         self.thick = module
 
         self.gear_ratio = wheelTeeth/pinionTeeth
@@ -1817,9 +1818,9 @@ class ArborForPlate:
     def get_anchor_shapes(self):
         shapes = {}
         previous_bearing_to_here = np_to_set(np.subtract(self.bearing_position, self.previous_bearing_position))
-        anchor_angle = math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2
+        anchor_angle =  rad_to_deg(math.atan2(previous_bearing_to_here[1], previous_bearing_to_here[0]) - math.pi/2)
         #the Arbor will flip the anchor to the correct clockwiseness
-        anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), rad_to_deg(anchor_angle))
+        anchor = self.arbor.get_anchor().rotate((0, 0, 0), (0, 0, 1), anchor_angle)
         anchor_thick = self.arbor.escapement.get_anchor_thick()
         #hackery, tidy up when it's more obvious what the best approach is
         if self.arbor.escapement.split:
@@ -1921,7 +1922,7 @@ class ArborForPlate:
 
         if self.arbor.escapement.split:
             #
-            shapes["anchor_second_half"] = self.arbor.escapement.get_anchor(bottom_half=False).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(anchor_angle)).translate((0,0,-self.arbor.escapement.anchor_thick))
+            shapes["anchor_second_half"] = self.arbor.escapement.get_anchor(bottom_half=False).rotate((0, 0, 0), (0, 0, 1), anchor_angle).translate((0,0,-self.arbor.escapement.anchor_thick))
             shapes["anchor_second_half"] = shapes["anchor_second_half"].cut(self.threaded_rod_cutter)
         crutch = self.get_pendulum_crutch()
         if crutch is not None:
@@ -2570,7 +2571,7 @@ class Arbor:
         self.loose_on_rod = False
         self.type = type
         if self.get_type() == ArborType.UNKNOWN:
-            raise ValueError("Not a valid arbour")
+            raise ValueError("Not a valid arbor")
 
         self.ratchet = None
         if self.powered_wheel is not None:

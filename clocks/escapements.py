@@ -918,14 +918,15 @@ class PinPalletAnchorEscapement(AnchorEscapement):
             #probably need to do something similar for lift?
 
 
-
         #anchor_thick just thickness of base, assuming twice that when pin is involved TODO
-
+        self.arm_wide = self.pin_diameter * 2 + 4#min(self.pin_diameter * 2 + 4, self.centre_r * 2)
         super().__init__(teeth=teeth, diameter=diameter, anchor_teeth=anchor_teeth, type=type, lift=lift, drop=drop, run=run, lock=lock, force_diameter=force_diameter, style=style, arbor_d=arbor_d,
                          wheel_thick=wheel_thick, anchor_thick=anchor_thick)
 
 
+
         self.type = EscapementType.PIN_PALLET
+
 
 
 
@@ -939,6 +940,16 @@ class PinPalletAnchorEscapement(AnchorEscapement):
         #not certain this is correct, will see how it looks
         self.entry_pin_pos = get_average_of_points([self.entry_pallet_start_pos, self.entry_pallet_end_pos])
         self.exit_pin_pos = get_average_of_points([self.exit_pallet_start_pos, self.exit_pallet_end_pos])
+
+        self.entry_pin_r = np.linalg.norm(np.subtract(self.entry_pin_pos, self.anchor_centre))
+        self.exit_pin_r = np.linalg.norm(np.subtract(self.exit_pin_pos, self.anchor_centre))
+
+        self.largest_anchor_r = max(self.entry_pin_r, self.exit_pin_r) + self.arm_wide / 2
+
+
+
+
+
 
     def get_wheel_base_to_anchor_base_z(self):
         #TODO
