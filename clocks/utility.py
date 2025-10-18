@@ -1588,6 +1588,8 @@ class BillOfMaterials:
 
     SVG_OPTS_SIDE_PROJECTION = {"projectionDir": (-1, 0, 0), "xDirection": (0, 0, 1)}
     SVG_OPTS_BACK_PROJECTION = {"projectionDir": (0, 0, -1)}
+    SVG_OPTS_FRONT_PROJECTION = {"projectionDir": (0, 0, 1)}
+    SVG_OPTS_FRONT_PROJECTION_800 = {"width":800, "height":800, "projectionDir": (0, 0, 1)}
     #as if lying on a table looking down at them
     SVG_OPTS_TABLE_FRONT_PROJECTION = {"width":500, "height":500, "projectionDir": (0, -1, 1), "xDirection":(1, 0, 0), "yDirection":(0, 0, 1), "showHidden":False}
     SVG_OPTS_TABLE_BACK_PROJECTION = {"width":500, "height":500, "projectionDir": (0, 1, 1), "xDirection": (1, 0, 0), "yDirection": (0, 0, 1), "showHidden": False}
