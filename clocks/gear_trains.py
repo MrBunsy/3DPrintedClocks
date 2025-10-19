@@ -791,6 +791,10 @@ class GoingTrain(GearTrainBase):
         if self.powered_wheel is not None:
             self.powered_wheel.configure_direction(self.powered_wheel_clockwise)
 
+    '''
+    note - the gen_x_wheel methods are deprecated. Provide the power mehcanism straight into the constructor and then either set or calculation the ratios
+    with set_powered_wheel_ratios or calculate_powered_wheel_ratios
+    '''
     def gen_chain_wheels2(self, chain, ratchetThick=7.5, arbourD=3, loose_on_rod=True, prefer_small=False, preferedDiameter=-1, fixing_screws=None, ratchetOuterThick=5):
 
         diameter = preferedDiameter
@@ -927,9 +931,10 @@ class GoingTrain(GearTrainBase):
             max_barrel_turns = self.powered_wheel.get_max_barrel_turns()
 
             turns = for_runtime_hours / power_ratio
-
-            rewinding_turns = self.powered_wheel.get_key_turns_to_rewind_barrel_turns(turns)
-            print("Over a runtime of {:.1f}hours the spring barrel ({:.1f}mm diameter) will make {:.1f} full rotations which is {:.1f}% of the maximum number of turns ({:.1f}) and will take {:.1f} key turns to wind back up"
+            # so, on second thoughts, I'm just plain wrong here? it's always going to be the same number of turns as the barrel had made?
+            # as it's equivilant to turning the barrel backwards by how far it's just turned.
+            rewinding_turns = turns*2# self.powered_wheel.get_key_turns_to_rewind_barrel_turns(turns)
+            print("Over a runtime of {:.1f}hours the spring barrel ({:.1f}mm diameter) will make {:.1f} full rotations which is {:.1f}% of the maximum number of turns ({:.1f}) and will take {:.1f} key half turns to wind back up"
                   .format(for_runtime_hours, self.powered_wheel.barrel_diameter, turns, 100.0 * turns / max_barrel_turns, max_barrel_turns, rewinding_turns))
             return
 

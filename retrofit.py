@@ -195,9 +195,11 @@ replacement_arbor_for_plate = ArborForPlate(arbor, fake_plates, arbor_extension_
 
 
 if outputSTL:
-    bom = BillOfMaterials("Retrofitted wheel")
-    bom.add_printed_parts(replacement_arbor_for_plate.get_printed_parts())
-
+    bom = replacement_arbor_for_plate.get_BOM()
+    # bom = BillOfMaterials("Retrofitted wheel")
+    # bom.add_printed_parts(replacement_arbor_for_plate.get_printed_parts())
+    #
     bom.export(out_path="out/mantel_27_new_wheel")
+
 else:
     show_object(replacement_arbor_for_plate.get_assembled())

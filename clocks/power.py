@@ -1361,7 +1361,10 @@ class SpringBarrel:
     def get_key_turns_to_rewind_barrel_turns(self, barrel_turns):
         '''
         given a number of full rotations of the barrel, how many full key turns will be needed to wind back up fully?
+        answer: this was bollocks. It's just the same number of rotations as the barrel. Imagine twisting the barrel backwards until it gets to where it started
+        turning the key is the same thing.
         '''
+        raise ValueError("Do not use this method, it was just plain wrong")
         outer_r = self.barrel_diameter/2
         area_of_barrel = math.pi*outer_r**2
 

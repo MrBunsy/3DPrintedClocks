@@ -54,6 +54,8 @@ else:
 
 print(f"Pendulum period: {train.recalculate_pendulum_period():.2f}")
 
+train.print_info()
+
 pendulum_sticks_out = 10
 back_plate_from_wall = 30
 
