@@ -172,6 +172,6 @@ else:
                         bob_colours=[Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE, dial_colours=[Colour.WHITE, Colour.BLACK],
                         plate_colours=plate_colours, motion_works_colours=motion_works_colours)
     # dome = cq.Workplane("XZ").moveTo(0,45).circle(200 / 2 - 3).extrude(2)
-    dome = Dome()
-    show_object(dome.get_solid().rotate((0,0,0),(1,0,0),-90).translate(assembly.base_of_clock).translate((0,0,15)))
+    # dome = Dome()
+    # show_object(dome.get_solid().rotate((0,0,0),(1,0,0),-90).translate(assembly.base_of_clock).translate((0,0,15)))
     # show_object(plates.arbors_for_plate[5].get_escape_wheel())

@@ -1588,6 +1588,8 @@ class BillOfMaterials:
 
     SVG_OPTS_SIDE_PROJECTION = {"projectionDir": (-1, 0, 0), "xDirection": (0, 0, 1)}
     SVG_OPTS_BACK_PROJECTION = {"projectionDir": (0, 0, -1)}
+    SVG_OPTS_FRONT_PROJECTION = {"projectionDir": (0, 0, 1)}
+    SVG_OPTS_FRONT_PROJECTION_800 = {"width":800, "height":800, "projectionDir": (0, 0, 1)}
     #as if lying on a table looking down at them
     SVG_OPTS_TABLE_FRONT_PROJECTION = {"width":500, "height":500, "projectionDir": (0, -1, 1), "xDirection":(1, 0, 0), "yDirection":(0, 0, 1), "showHidden":False}
     SVG_OPTS_TABLE_BACK_PROJECTION = {"width":500, "height":500, "projectionDir": (0, 1, 1), "xDirection": (1, 0, 0), "yDirection": (0, 0, 1), "showHidden": False}
@@ -1644,7 +1646,9 @@ class BillOfMaterials:
             '''
             get the full path name of this item (eg clock_x_arbor_y)
             '''
-            return self.parent_BOM.get_full_name()
+            if self.parent_BOM is not None:
+                return self.parent_BOM.get_full_name()
+            return ""
 
         def get_filename(self):
             return f"{self.get_full_name()}_{self.name}.stl"
@@ -1684,7 +1688,11 @@ class BillOfMaterials:
             if self.object is None:
                 print(f"Cannot export {self.get_full_name()}_{self.name}.svg as object is None")
                 return
-            exportSVG(self.object,os.path.join(path,f"{self.get_full_name()}_{self.name}.svg"), opts=self.svg_options)
+            prefix = ""
+            if len(self.get_full_name()) > 0:
+                #actually part of a full clock BOM, rather than a lazy standalone way of exporting SVGs
+                prefix = f"{self.get_full_name()}_"
+            exportSVG(self.object,os.path.join(path,f"{prefix}{self.name}.svg"), opts=self.svg_options)
 
 
     def __init__(self, name, assembly_instructions="", template_path='docs/templates'):

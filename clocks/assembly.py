@@ -387,7 +387,14 @@ To fix this there are modifier STLs which can be used to change the settings for
 
         #trying to get this to fit onto the first page of the exported PDF
         with_pendulum = self.going_train.pendulum_length_m < 0.5
-        bom.add_model(self.get_clock(with_pendulum=with_pendulum), svg_preview_options={"width":675, "height":675, "showHidden":False})
+
+        self.assembled_model = self.get_clock(with_pendulum=with_pendulum)
+
+        bom.add_model(self.assembled_model, svg_preview_options={"width":675, "height":675, "showHidden":False})
+        #just one that I think will be nice to look at, might make good logos or icons
+        bom.add_model(self.assembled_model, svg_preview_options=BillOfMaterials.SVG_OPTS_FRONT_PROJECTION)
+
+        bom.add_model(self.assembled_model, svg_preview_options=BillOfMaterials.SVG_OPTS_FRONT_PROJECTION_800)
 
         motion_works_bom = self.motion_works.get_BOM()
         motion_works_bom.add_subcomponent(self.get_clutch_BOM())
