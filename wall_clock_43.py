@@ -22,6 +22,8 @@ import json
 '''
 With the success of mantel clock 34 (attempting to shrink down the spring barrel) I want to try and see how small I can make a spring driven wall clock
 so the gear train from mantel clock 34, but in a wall clock
+
+not printed.
 '''
 outputSTL = False
 

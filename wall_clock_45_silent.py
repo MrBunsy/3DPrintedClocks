@@ -7,6 +7,8 @@ import random
 A wall clock version of mantel 44. Silent escapement with same style: sword hands, roman numeral dial and modern plates
 
 plan is to keep pendulum length the same (1/3s) so it's not visibly below the clock, but also try and see if I can get the clock relatively thin
+
+Instead, ended up increasing size of module and spring arbor, and let billy choose the styling. I did keep it with 1/3s pendulum and as thin as I can currently do
 '''
 
 output_STL = False

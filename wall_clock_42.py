@@ -24,6 +24,7 @@ Eight day wall clock, inspired by a wall clock I saw on ebay
 
 visible Brocot escapement, fancy hands and dial and octagonal case (which I might try doing as an extension of the vanity plate)
 
+still need to finish and print this.
 '''
 outputSTL = False
 

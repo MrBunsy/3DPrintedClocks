@@ -26,6 +26,8 @@ from clocks import *
 
 '''
 Same as 39, but chain driven and different style
+
+never printed
 '''
 outputSTL = False
 

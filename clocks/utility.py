@@ -730,7 +730,10 @@ class Line:
         else:
             raise ValueError("Need one of angle, direction or anotherPoint")
         # make unit vector
-        self.dir = np_to_set(np.divide(self.dir, np.linalg.norm(self.dir)))
+        length = np.linalg.norm(self.dir)
+        if length <=0:
+            raise ValueError(f"length is not positive: {length}")
+        self.dir = np_to_set(np.divide(self.dir, length))
 
     def get2D(self, length=100, both_directions=False):
         line = cq.Workplane("XY").moveTo(self.start[0], self.start[1]).line(self.dir[0] * length, self.dir[1] * length)

@@ -1137,8 +1137,12 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def get_lantern_cutter(self, offset = 1, trundle_length=100, wheel_offset=0, hole_d=0):
+    def get_lantern_cutter(self, trundle_offset = 1, trundle_length=100, wheel_hex_hole_offset=0, hole_d=0):
         '''
+
+        trundle_offset = how far from the back of the wheel the trundle holes end
+        wheel_hex_hole_offset = how far from the back of the wheel the hexangle fixing hole ends
+
         get a cutter that will provide slots for the lantern trundles to rest in
 
         just provides a series of rods offset in z by height provided
@@ -1149,19 +1153,19 @@ class Gear:
 
 
 
-        cutter = cq.Workplane("XY").polygon(self.slot_sides, self.inner_r_for_lantern_fixing_slot * 2).extrude(trundle_length-wheel_offset)
+        cutter = cq.Workplane("XY").polygon(self.slot_sides, self.inner_r_for_lantern_fixing_slot * 2).extrude(trundle_length - wheel_hex_hole_offset)
 
-        if wheel_offset > 0:
-            cutter = cutter.translate((0,0,wheel_offset))
+        if wheel_hex_hole_offset > 0:
+            cutter = cutter.translate((0, 0, wheel_hex_hole_offset))
             if hole_d > 0:
                 #hole with hole as this is printed upside down
-                cutter = cutter.union(get_hole_with_hole(hole_d, self.inner_r_for_lantern_fixing_slot*2,sides=self.slot_sides).rotate((0,0,0),(1,0,0),180).translate((0,0,wheel_offset)))
+                cutter = cutter.union(get_hole_with_hole(hole_d, self.inner_r_for_lantern_fixing_slot*2,sides=self.slot_sides).rotate((0,0,0),(1,0,0),180).translate((0, 0, wheel_hex_hole_offset)))
 
         angle_change = math.pi*2 / self.teeth
 
         for angle in [angle_change*i for i in range(self.teeth)]:
             #0.1 extra is enough to squeeze in, but I broke the wheel first time trying to assemble.
-            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r+0.2).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)).translate((0,0,offset)))
+            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r+0.2).extrude(trundle_length).translate(polar(angle, self.pitch_diameter/2)).translate((0, 0, trundle_offset)))
 
         return cutter
 
@@ -1208,10 +1212,16 @@ class Gear:
         hole_d is usually zero as we cut out the threaded rod self-tapping hole later. However for thin lantern pinions we need to pritn a hole-with-hole to provide supports
         so we need to know what the hole size would be, hence hole_d_for_lantern
         '''
-        base = wheel.get3D(thick=thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
+        try:
+            #assume that whele is a wheel object
+            base = wheel.get3D(thick=thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
+        except:
+            #wheel is a cadquery 3d object
+            base = wheel
 
         if self.lantern:
-            base = base.cut(self.get_lantern_cutter(offset=lantern_offset, wheel_offset=lantern_fixing_wheel_offset, hole_d=hole_d_for_lantern))
+            #TODO pinion extensions for lantern pinions
+            base = base.cut(self.get_lantern_cutter(trundle_offset=lantern_offset, wheel_hex_hole_offset=lantern_fixing_wheel_offset, hole_d=hole_d_for_lantern))
             # base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
             return base
 
@@ -2332,6 +2342,9 @@ class ArborForPlate:
         '''
         return a dict of name:shape for all the components needed for this arbour
         always for printing, they will be arranged for the model in get_assembled()
+
+        there's no short way about it, this is a mess. Each type of arbor has done everything in slightly different ways
+        and what's spread between here and Arbor and other classes is a complete mess.
         '''
         shapes = {}
 
@@ -2817,12 +2830,19 @@ To keep this assembly together, use a small amount of superglue between the whee
         #     wheel = wheel.mirror("YZ", (0, 0, 0))
 
         # pinion is on top of the wheel
-        pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=0, style=self.style).translate([0, 0, self.wheel_thick])
-
-        if self.pinion_extension > 0:
-            pinion = pinion.translate((0,0,self.pinion_extension)).faces("<Z").workplane().circle(self.pinion.get_max_radius()).extrude(self.pinion_extension)
-
-        arbor = wheel.union(pinion)
+        # pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=0, style=self.style).translate([0, 0, self.wheel_thick])
+        # # shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+        # #                                  pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
+        # #                                  lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset, hole_d_for_lantern=self.arbor_d)
+        #
+        # if self.pinion_extension > 0:
+        #     pinion = pinion.translate((0,0,self.pinion_extension)).faces("<Z").workplane().circle(self.pinion.get_max_radius()).extrude(self.pinion_extension)
+        #
+        # arbor = wheel.union(pinion)
+        #note - slightly different logic for pinionthick vs pinion_extension as used on plain wheel-pinion pair. I don't think this will come to matter again as now the thin lantern pinions exist
+        arbor = self.pinion.add_to_wheel(wheel, hole_d=0, hole_d_for_lantern=self.arbor_d, thick=self.escapement.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
+                                         pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
+                                         lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset)
         if self.end_cap_thick > 0:
             arbor = arbor.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
