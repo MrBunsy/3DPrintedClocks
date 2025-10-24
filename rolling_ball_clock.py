@@ -120,7 +120,9 @@ plates = RollingBallClockPlates(train, name="Congreve 32")
 # for arbor in plates.arbors_for_plate[:-1]:
 #     show_object(arbor.get_assembled())
 
-rolling_ball = RollingBallEscapement()
+rolling_ball = RollingBallEscapement(ball_diameter=10)
+
+#idea: print main part of teh track in PLA so it's as smooth as possible, then print the edge bits in PETG like normal? or will PLA be fine for the whole thing? it's not under much stress
 
 tray = rolling_ball.get_track_assembled()
 

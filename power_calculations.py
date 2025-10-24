@@ -7,9 +7,10 @@ from clocks.utility import *
 ball_weight_kg = 13.77/1000
 
 #marbles: 20g, 16g, 12g, 11g for 20-15mm diameters
-ball_weight_kg = 20/1000#16/1000
+#4.0788g for the 10mm chrome steel balls https://simplybearings.co.uk/shop/p35940/10mm-Diameter-Grade-100-Hardened-52100-Chrome-Steel-Ball-Bearings/product_info.html
+ball_weight_kg = 4.1/1000#20/1000#16/1000
 time_s=12
-height_raised_m=2/100
+height_raised_m=1/100
 
 runtime_s = 30*60*60
 

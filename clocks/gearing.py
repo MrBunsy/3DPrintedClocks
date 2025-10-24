@@ -1180,7 +1180,7 @@ class Gear:
         holder_together = holder_together.rotate((0, 0, 0), (0, 0, 1), 360 / 12)
         holder_together = holder_together.rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.inner_r - self.cutoff_height))
 
-        # chop off the bottom so this is printable horizontally
+        # chop off the bottom so this is printable horizontally for maximum strength and no overhangs
         holder_together = holder_together.cut(cq.Workplane("XY").rect(1000, 1000).extrude(100).translate((0, 0, -100)))
 
         if not for_printing:
@@ -2051,7 +2051,7 @@ class ArborForPlate:
             if "lantern_pinion_cap" in shapes:
                 arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick + self.arbor.pinion_extension)))
             if "lantern_pinion_fixing" in shapes:
-                #messy, just wanted to avoid working out how to undo the rotation from for_printing
+                #messy duplication, just wanted to avoid working out how to undo the rotation from for_printing
                 fixing = self.arbor.pinion.get_lantern_inner_fixing(base_thick=self.arbor.wheel_thick-self.arbor.lantern_fixing_wheel_offset, pinion_height=self.arbor.pinion_thick + self.arbor.pinion_extension, top_thick=self.arbor.end_cap_thick, hole_d=self.arbor.hole_d, for_printing=False)
                 if self.arbor.lantern_fixing_wheel_offset > 0:
                     fixing = fixing.translate((0,0,self.arbor.lantern_fixing_wheel_offset))
