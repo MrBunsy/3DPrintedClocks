@@ -12,7 +12,7 @@ ball_weight_kg = 4.1/1000#20/1000#16/1000
 time_s=12
 height_raised_m=1/100
 
-runtime_s = 30*60*60
+runtime_s = 24*8*60*60
 
 ball_total_raised_m = height_raised_m * (runtime_s / time_s)
 print("ball total raised height: {}m".format(ball_total_raised_m))

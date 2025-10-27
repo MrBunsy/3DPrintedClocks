@@ -131,6 +131,8 @@ out = "tray.stl"
 print("Outputting ", out)
 exporters.export(rolling_ball.get_track(), out)
 
+show_object(cq.Workplane("XY").rect(250, 150))
+
 # show_object(plates.get)
 #
 # assembly = Assembly(plates, hands=hands, time_seconds=30)#weights=[Weight(height=245,diameter=55)]
