@@ -21,7 +21,11 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base
     elif style == PillarStyle.TWISTY:
         return fancy_pillar_twisty(r, length, clockwise)
     elif style == PillarStyle.CLASSIC:
-        return fancy_pillar_classic(r, length, clockwise=clockwise, base_fillet_r=base_fillet_r)
+        try:
+            return fancy_pillar_classic(r, length, clockwise=clockwise, base_fillet_r=base_fillet_r)
+        except:
+            #fall back to PillarStyle.PLAIN if too short
+            return fancy_pillar_column(r, length, clockwise, with_divots=False)
     elif style == PillarStyle.SIMPLE_HEX:
         return poly_cylinder(r, length, sides=6)
     else:

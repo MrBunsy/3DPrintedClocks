@@ -124,14 +124,17 @@ rolling_ball = RollingBallEscapement(ball_diameter=10)
 
 #idea: print main part of teh track in PLA so it's as smooth as possible, then print the edge bits in PETG like normal? or will PLA be fine for the whole thing? it's not under much stress
 
-tray = rolling_ball.get_track_assembled()
-
-show_object(tray)
+# tray = rolling_ball.get_track_assembled()
+#
+# show_object(tray)
+# show_object(rolling_ball.track)
 out = "tray.stl"
 print("Outputting ", out)
 exporters.export(rolling_ball.get_track(), out)
 
-show_object(cq.Workplane("XY").rect(250, 150))
+# show_object(cq.Workplane("XY").rect(250, 150))
+
+show_object(rolling_ball.get_escape_wheel())
 
 # show_object(plates.get)
 #

@@ -38,27 +38,29 @@ clock_out_dir= "out"
 gear_style=GearStyle.ROUNDED_ARMS5
 
 
-escapement = AnchorEscapement.get_with_optimal_pallets(36, drop_deg=2)
+#escapement = AnchorEscapement.get_with_optimal_pallets(36, drop_deg=2)
+escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2)
 
 
 barrel_gear_thick = 5
 powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=barrel_gear_thick,
-                        wall_thick=8)
+                        wall_thick=8, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4_FLANGED, ratchet_screws=MachineScrew(2, grub=True))
 
-train = GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
-                             runtime_hours=8 * 24, support_second_hand=True, escape_wheel_pinion_at_front=False, powered_wheel=powered_wheel)
+train = GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
+                             runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False, powered_wheel=powered_wheel)
 
 
 module_reduction=0.9
 train.set_powered_wheel_ratios([[61, 10], [64, 10]])
 
-train.set_ratios([[75, 9], [72, 10], [55, 22]])
+# train.set_ratios([[75, 9], [72, 10], [55, 22]])
+train.set_ratios([[65, 14], [60, 13], [56, 10]])
 pinion_extensions =  {0: 1, 1: 15, 2: 0}
 module_sizes = [0.8, 0.75, 0.75]
 
 pillar_style = PillarStyle.CLASSIC
 
-train.set_powered_wheel_ratios([[64, 10], [69, 10]])
+# train.set_powered_wheel_ratios([[64, 10], [69, 10]])
 
 train.print_info(for_runtime_hours=7*24)
 
@@ -69,11 +71,56 @@ pinion_extensions={0:1.5, 1:4, 3:8}
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
 
 lanterns=[0, 1]
-train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[barrel_gear_thick, 4],
-                pinion_thick_multiplier=3, style=gear_style,
-                powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=lanterns, pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
+# train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[barrel_gear_thick, 4],
+#                 pinion_thick_multiplier=3, style=gear_style,
+#                 powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, stack_away_from_powered_wheel=True,
+#                 pinion_extensions=pinion_extensions, lanterns=lanterns, pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
+train.generate_arbors_dicts([
+    {
+        #barrel
+        "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2),
+        "wheel_thick": barrel_gear_thick,
+        "style": gear_style,
 
+    },
+    {
+        #intermediate wheel
+        "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
+        "pinion_type": PinionType.THIN_LANTERN,
+        "pinion_thick": barrel_gear_thick*2,
+        "wheel_thick": 4,
+        "style": gear_style,
+
+    },
+    {
+        #centre wheel
+        "module": 0.9,
+        "pinion_faces_forwards": True,
+        # "pinion_thick": 7
+        "pinion_type": PinionType.LANTERN,
+        "wheel_thick": 2.4,
+
+    },
+    {
+        #second wheel
+        "module": 0.9,
+        "pinion_extension": 25,
+
+    },
+    {
+        #third wheel
+        "module": 0.9,
+        "pinion_faces_forwards":False,
+        "pinion_thick":6
+
+    },
+    {
+        #escape wheel
+        "pinion_faces_forwards": True,
+        "pinion_extension": 19,
+        "pinion_thick":6
+    }
+], pinion_thick_extra=5)
 motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
 motion_works_angle_deg=360-40
 
@@ -84,16 +131,19 @@ seconds_dial_width = 7
 dial_width=30
 
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED,
-            outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_dial_width=seconds_dial_width)
+            outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_dial_width=seconds_dial_width)
 
 plaque = Plaque(text_lines=["W43#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2025"])
 
-plates = RoundClockPlates(train, motion_works, name="Wall 43", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
+gear_train_layout = GearLayout2D.get_compact_layout(train, start_on_right=True, extra_anchor_distance=8)
+
+plates = RoundClockPlates(train, motion_works, name="Wall 43", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=False)
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=False,
+                          gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=30)
 
 hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-              length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0, seconds_hand_thick=1, second_length=dial.get_hand_length(HandType.SECOND))
+              length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0, seconds_hand_thick=1, second_length=25)
 
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",

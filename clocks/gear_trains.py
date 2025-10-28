@@ -1877,12 +1877,14 @@ class GearLayout2D:
 
 
     def __init__(self, going_train, centred_arbors=None, can_ignore_pinions=None, can_ignore_wheels=None, start_on_right=True, all_offset_same_side = False, gear_gap = 2,
-                 anchor_distance_fudge_mm=0, minimum_anchor_distance=False, override_distances=None):
+                 anchor_distance_fudge_mm=0, extra_anchor_distance=-1, override_distances=None):
         '''
         centred_arbors: [list of indexes] which arbors must have x=0. Defaults to powered wheel, centre wheel and anchor
         can_ignore_pinions: [list of indexes] for spacing purposes, usually we make sure wheels avoid other pinions. For this pinion we can safely assume it won't collide
         can_ignore_wheels: [list of indexes] again for spacing purposes, we can ignore the size of these wheels. Probably because it's in front or behind the plates
         anchor_distance_fudge_mm: vertical extra distance to make anchor from escape wheel, bodge to compensate for escapement on front
+        extra_anchor_distance: If -1, old behavouir where anchor distance was a bit odd. If 0, smallest distance to anchor possible. if >0 then we make the anchor further away.
+         This can be useful for round designs where we want the anchor in the outer ring
         '''
         self.going_train = going_train
         self.centred_arbors = centred_arbors
@@ -1893,7 +1895,11 @@ class GearLayout2D:
         self.all_offset_same_side = all_offset_same_side
         self.anchor_distance_fudge_mm = anchor_distance_fudge_mm
         #if true assume everything has been designed so the anchor just needs to avoid arbor extensions, not wheels
-        self.minimum_anchor_distance = minimum_anchor_distance
+        if extra_anchor_distance is True:
+            #used to be boolean, now it's a distance
+            #-1 for old behaviour where it was further apart than it needed to be
+            extra_anchor_distance = 0
+        self.extra_anchor_distance = extra_anchor_distance
 
         self.override_distances=override_distances
         '''
@@ -2026,9 +2032,9 @@ class GearLayout2D:
                     # distance_to_next_centred_arbor = arbors[arbor_index].get_max_radius() + arbors[next_centred_index].get_max_radius()# + self.gear_gap
 
 
-                    if self.minimum_anchor_distance:
+                    if self.extra_anchor_distance >= 0:
                         #just avoid arbor extension
-                        distance_to_next_centred_arbor =  arbors[next_centred_index].get_max_radius() + self.gear_gap + arbors[-1].get_arbor_extension_r()
+                        distance_to_next_centred_arbor =  arbors[next_centred_index].get_max_radius() + self.gear_gap + arbors[-1].get_arbor_extension_r() + self.extra_anchor_distance
                     # elif arbors[next_centred_index].type == ArborType.FLY:
                     #     #very hacky to be delving into this logic, but will do until I fix logic with arranging two spare arbors between centred arbors properly (this can clash and doesn't check)
                     #     distance_to_next_centred_arbor = arbors[next_centred_index].get_max_radius() + self.gear_gap + arbors[arbor_index].get_max_radius() + 5
@@ -2094,7 +2100,11 @@ class GearLayout2D:
                     current_to_last = arbors[arbor_index].get_max_radius() + last_wheel_pinion_r + self.gear_gap
 
                     third_wheel_angle_from_current = math.pi / 2 + on_side * (math.asin((horizontal_distance / 2) / current_to_last))
+                    extra_vertical = 0
+                    if self.extra_anchor_distance >=0:
+                        extra_vertical+=self.extra_anchor_distance
                     positions_relative[last_wheel_index] = np_to_set(np.add(polar(third_wheel_angle_from_current, current_to_last), positions_relative[arbor_index]))
+                    positions_relative[last_wheel_index] = (positions_relative[last_wheel_index][0], positions_relative[last_wheel_index][1] + extra_vertical)
                     if non_vertical_arbors_next == 2:
                         #penultimate arbor meshes with current arbor
                         positions_relative[penultimate_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,

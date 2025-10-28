@@ -3270,12 +3270,16 @@ class RollingBallEscapement:
 
         #get radius at corners for the top of the track holder
 
+        self.rods = MachineScrew(3, countersunk=True)
+
+        self.arbor_rod = MachineScrew(3, countersunk=False)
+
 
         self.gen_track_parts()
 
     def get_period(self):
         #TODO
-        return 5
+        return 12.0
 
     def get_track(self):
         return self.track
@@ -3287,7 +3291,47 @@ class RollingBallEscapement:
 
         return assembly
 
+    def get_escape_wheel(self):
+        '''
+        not really a wheel, but essentially a rotating beat-setter which will drive an arm to raise and lower half the track
+        Assumes it's always out the back of the plates
+
+        Plan: hold a pan head machine screw and use two washers with compression washer between on the outside to provide friction so it hopefully doesn't turn by itself
+        then can adjust it with a screwdriver
+        '''
+
+        inner_arm_length = 40
+        arm_thick = 8
+        outer_length = inner_arm_length + arm_thick*2
+        arm = cq.Workplane("XY").rect(outer_length, arm_thick).extrude(arm_thick)
+
+        screw_z = arm_thick + arm_thick/2
+
+        arm_top_z = arm_thick + arm_thick
+
+        arm = arm.faces(">Z").workplane().pushPoints([(-inner_arm_length/2-arm_thick/2, 0), (inner_arm_length/2+arm_thick/2, 0)]).rect(arm_thick, arm_thick).extrude(arm_thick)
+
+        screw_cutter = self.rods.get_cutter(loose=True, ignore_head=True, sideways=True).rotate((0,0,0),(0,1,0), 90).translate((-outer_length/2,0,screw_z))
+
+        arm = arm.cut(screw_cutter)
+
+        #nut space slightly deeper than needed so that the top part can slide smoothly over
+        fixing_cutter = self.arbor_rod.get_cutter(ignore_head=True, self_tapping=True).union(self.arbor_rod.get_nut_cutter(half=False)
+                                                                                             .translate((0,0,arm_thick-self.arbor_rod.get_nut_height(half=True)-0.5)))
+
+        arm = arm.cut(fixing_cutter)
+
+        return arm
+
+
     def gen_track_parts(self):
+        '''
+        Generates track, with a marble run cut out of it, a top track which beefs up the marble run and provides more strenght
+        and a bottom track which makes the whole thing more rigid (hopefully)
+        TODO bearings
+        TODO make the start/end lengths shorter and work out where the lever arms will go
+
+        '''
 
         tray_edge_space = 10
 
@@ -3354,8 +3398,17 @@ class RollingBallEscapement:
         front_pivot_points.insert(0, (front_pivot_points[0][0] -  centre_pivots_distance, front_y))
         front_pivot_points.append((front_pivot_points[-1][0] + centre_pivots_distance, front_y))
 
+        #since these two "pivot" points aren't actually pivoted around, is it worth scrapping this and just making them track end points?
+        #or was this designed so the track can also end at the front?
+        # I could enforce the track ending at the back
+        # track can only end at the back because we add in the back ones at the edge distance here:
         back_pivot_points.insert(0, (back_pivot_points[0][0] - edge_pivots_distance, back_y))
         back_pivot_points.append((back_pivot_points[-1][0] + edge_pivots_distance, back_y))
+
+        #plan: add None into first and last back pivots, then below we can just check if it's none, and if it is, use the right track end point?
+        #or do we just abuse the "pivot point" as an end point?
+        #ah - because we carefully calculate the angles to get the curves exactly right, that would require another set of logic, so it really is easier to
+        #treat it as a fake pivot point
 
         #debug
         # for pivot in front_pivot_points + back_pivot_points:
@@ -3428,7 +3481,9 @@ class RollingBallEscapement:
             else:
                 #cap off the start
 
+                #start of the track
                 start_pos = np_to_set(np.add(polar(b2f_straight_section_angle + math.pi / 2, b2f_straight_section_length / 2 + inner_radius + track_wide / 2), b2f_straight_section_centre))
+                #putting circles on the corners
                 outline = outline.arc(start_pos, track_wide/2 + track_start_from_edge, 0., 360.)
                 outline = outline.arc(front_pivot, inner_radius + track_wide + pivot_from_front_edge, 0., 360.)
                 track_cutter = track_cutter.union(get_stroke_line([b2f_straight_section_centre, start_pos],wide=track_wide, thick=track_cutter_thick))
@@ -3452,7 +3507,13 @@ class RollingBallEscapement:
         self.track_top = (tray_outline.extrude(self.track_top_thick)
                          .cut(cq.Workplane("XY").rect(self.tray_wide, self.tray_deep - pivot_from_edge - pivot_from_front_edge).extrude(track_top_thick))
                          .cut(track_top_cutter))
-        self.track_top = self.track_top.edges("|Z").fillet(self.track_wide/2).cut(track_cutter)
+        try:
+            self.track_top = self.track_top.edges("|Z").fillet(self.track_wide/2)
+        except:
+            print("Failed to fillet track top")
+
+        self.track_top = self.track_top.cut(track_cutter)
+
         # return outline
 
         #plan for tray holders - decide how thick I want them, then work out what the radius should be from the pivot points and cut out circles

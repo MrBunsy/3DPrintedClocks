@@ -138,7 +138,7 @@ plate_style = PlateStyle.SIMPLE
 
 plaque = Plaque(text_lines=["W45#0 {:.1f}cm 2025".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])#github.com/MrBunsy/3DPrintedClocks
 
-gear_train_layout = GearLayout2D.get_compact_layout(train, start_on_right=False, minimum_anchor_distance=True)
+gear_train_layout = GearLayout2D.get_compact_layout(train, start_on_right=False, extra_anchor_distance=True)
 bearing_positions = gear_train_layout.get_positions()
 arm_dir = (bearing_positions[1][0] - bearing_positions[2][0], bearing_positions[1][1] - bearing_positions[2][1])
 motion_works_angle_deg = rad_to_deg(math.atan2(arm_dir[1], -arm_dir[0]))
