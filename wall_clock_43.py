@@ -88,7 +88,7 @@ train.generate_arbors_dicts([
     },
     {
         #centre wheel
-        "module": 0.9,
+        "module": 0.925,
         "pinion_faces_forwards": True,
         # "pinion_thick": 7
         "pinion_type": PinionType.LANTERN,
@@ -97,13 +97,13 @@ train.generate_arbors_dicts([
     },
     {
         #second wheel
-        "module": 0.9,
+        "module": 0.925,
         "pinion_extension": 25,
 
     },
     {
         #third wheel
-        "module": 0.9,
+        "module": 0.925,
         "pinion_faces_forwards":False,
         "pinion_thick":6
 
