@@ -46,35 +46,29 @@ barrel_gear_thick = 5
 powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=BEARING_10x15x4_FLANGED.height,
                         wall_thick=8, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4_FLANGED, ratchet_screws=MachineScrew(2, grub=True))
 
-train = GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
+train = GoingTrain(pendulum_length_m=0.20, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
                              runtime_hours=8 * 24, support_second_hand=False, escape_wheel_pinion_at_front=False, powered_wheel=powered_wheel)
 
 
 module_reduction=0.9
 train.set_powered_wheel_ratios([[61, 10], [64, 10]])
 
-# train.set_ratios([[75, 9], [72, 10], [55, 22]])
-train.set_ratios([[65, 14], [60, 13], [56, 10]])
+#found gear train with large error so it's not huge as we don't actually care about the exact length of pendulum.
+# train.calculate_ratios(max_wheel_teeth=80, min_pinion_teeth=10, wheel_min_teeth=50, pinion_max_teeth=15, max_error=200, module_reduction=1, loud=True)
+train.set_ratios([[63, 10], [56, 10], [50, 13]])
+print(f"Pendulum period: {train.recalculate_pendulum_period()}")#:.2f
+
+
 pinion_extensions =  {0: 1, 1: 15, 2: 0}
 module_sizes = [0.8, 0.75, 0.75]
 
 pillar_style = PillarStyle.CLASSIC
-
-# train.set_powered_wheel_ratios([[64, 10], [69, 10]])
 
 train.print_info(for_runtime_hours=7*24)
 
 pendulumSticksOut=10
 backPlateFromWall=40
 
-pinion_extensions={0:1.5, 1:4, 3:8}
-powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0)]
-
-lanterns=[0, 1]
-# train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[barrel_gear_thick, 4],
-#                 pinion_thick_multiplier=3, style=gear_style,
-#                 powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, stack_away_from_powered_wheel=True,
-#                 pinion_extensions=pinion_extensions, lanterns=lanterns, pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
 train.generate_arbors_dicts([
     {
         #barrel
@@ -155,6 +149,7 @@ hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", minute_fixing_d1=
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
 ]
+
 
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, specific_instructions=specific_instructions)
 
