@@ -3083,9 +3083,10 @@ class SimpleClockPlates(BasePlates):
         self.key_hole_d = key_bearing.outer_safe_d
 
         #on the old cord wheel, which didn't know the plate thickness, account for how much of the square bit is within the plate
-        if key_bearing.plain_bushing:
+        if key_bearing.plain_bushing or True:
             key_within_front_plate=0
         else:
+            #I'm not sure how many clocks this still, if ever, applies to
             key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
 
         # self.key_hole_d = self.going_train.powered_wheel.keyWidth + 1.5
@@ -3132,7 +3133,8 @@ class SimpleClockPlates(BasePlates):
 
         if self.dial is not None and not self.key_is_inside_dial() and self.weight_driven:
             # just so the crank (only for weights) doesn't clip the dial (the key is outside the dial)
-            cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
+            # cylinder_length = self.dial_z + self.dial.thick + 6 - self.key_offset_from_front_plate
+            cylinder_length = key_length + 6 - self.key_offset_from_front_plate
             # reach to edge of the dial (avoiding the hands)
             handle_length = self.hands_position[1] - (self.dial.outside_d / 2 ) - self.bearing_positions[0][1]
         else:
