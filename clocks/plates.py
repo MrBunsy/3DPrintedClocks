@@ -3103,7 +3103,9 @@ class SimpleClockPlates(BasePlates):
             key_within_front_plate = 0
 
         if self.key_is_inside_dial():
-            key_length = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
+            #old logic:
+            #key_length = self.bottom_of_hour_hand_z() - 4 + key_within_front_plate
+            key_length = self.dial_z + self.dial.thick + key_within_front_plate
         else:
             key_length = key_within_front_plate + self.ideal_key_length
         #hack - set key size here

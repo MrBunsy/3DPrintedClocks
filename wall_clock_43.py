@@ -43,7 +43,7 @@ escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2)
 
 
 barrel_gear_thick = 5
-powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=barrel_gear_thick,
+powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=BEARING_10x15x4_FLANGED.height,
                         wall_thick=8, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4_FLANGED, ratchet_screws=MachineScrew(2, grub=True))
 
 train = GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
@@ -121,8 +121,13 @@ train.generate_arbors_dicts([
         "pinion_thick":6
     }
 ], pinion_thick_extra=5)
-motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
-motion_works_angle_deg=360-40
+# motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
+
+
+motion_works = MotionWorks(extra_height=8, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True,
+                                module=1, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1)#, cannon_pinion_to_hour_holder_gap_size=0.6)#, bearing=clock.get_bearing_info(3)
+#make furtehr apart so we get a big enough cannon pinion for the inset_at_base, which we want so we don't clash with the escape wheel
+motion_works.calculate_size(arbor_distance=35)
 
 pendulum = FancyPendulum(bob_d=40)
 dial_d=175
@@ -131,12 +136,14 @@ seconds_dial_width = 7
 dial_width=30
 
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED,
-            outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_dial_width=seconds_dial_width)
+            outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, inner_edge_style=None, raised_detail=True, dial_width=dial_width, seconds_dial_width=seconds_dial_width, pillar_style=pillar_style)
 
 plaque = Plaque(text_lines=["W43#0 {:.1f}cm".format(train.pendulum_length_m * 100), "L.Wallin 2025"])
 
 gear_train_layout = GearLayout2D.get_compact_layout(train, start_on_right=True, extra_anchor_distance=8)
 
+# motion_works_angle_deg=360-40
+motion_works_angle_deg= 180-rad_to_deg(gear_train_layout.get_angle_between(2,1))
 plates = RoundClockPlates(train, motion_works, name="Wall 43", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=False,
