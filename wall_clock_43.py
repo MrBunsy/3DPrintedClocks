@@ -151,7 +151,8 @@ specific_instructions = [
 ]
 
 
-assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, specific_instructions=specific_instructions)
+assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, specific_instructions=specific_instructions,
+                    key_angle_deg=360/12)
 
 if not outputSTL:
     assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
@@ -160,7 +161,8 @@ if not outputSTL:
                         motion_works_colours=[Colour.GOLD],
                         plaque_colours=[Colour.WHITE, Colour.BLACK],
                         ratchet_colour=Colour.GOLD,
-                        hand_colours=[Colour.BRASS])
+                        hand_colours=[Colour.GOLD],
+                        with_key=True)
 
 if outputSTL:
     assembly.get_BOM().export(clock_out_dir)
