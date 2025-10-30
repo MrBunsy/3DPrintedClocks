@@ -143,9 +143,10 @@ plates = RoundClockPlates(train, motion_works, name="Wall 43", dial=dial, plate_
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False, moon_complication=None, escapement_on_front=False,
                           gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=30)
 
-hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-              length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0, seconds_hand_thick=1, second_length=25)
-
+# hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+#               length=dial_d/2, thick=motion_works.minute_hand_slot_height, outline=0, seconds_hand_thick=1, second_length=25)
+hands = Hands(style=HandStyle.SPADE, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+              length=dial.get_hand_length(reach_outer_edge=True), thick=motion_works.minute_hand_slot_height, outline=1, seconds_hand_thick=1, second_length=25)
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
 ]
@@ -161,7 +162,7 @@ if not outputSTL:
                         motion_works_colours=[Colour.GOLD],
                         plaque_colours=[Colour.WHITE, Colour.BLACK],
                         ratchet_colour=Colour.GOLD,
-                        hand_colours=[Colour.GOLD],
+                        # hand_colours=[Colour.GOLD],
                         with_key=True)
 
 if outputSTL:

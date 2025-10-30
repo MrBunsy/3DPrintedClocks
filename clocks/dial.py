@@ -1533,7 +1533,7 @@ class Dial:
 
         return self.hand_space_z
 
-    def get_hand_length(self, hand=HandType.MINUTE):
+    def get_hand_length(self, hand=HandType.MINUTE, reach_outer_edge=False):
         '''
         what length hands should go on this dial?
         '''
@@ -1544,6 +1544,8 @@ class Dial:
             return self.get_tony_dimension("minute_hand_length")
         elif self.style == DialStyle.FANCY_WATCH_NUMBERS:
             return self.outside_d/2 - self.get_edge_style_width(self.outer_edge_style, outer=True) - self.dial_detail_from_edges
+        elif reach_outer_edge:
+            return self.outside_d / 2 - self.get_edge_style_width(self.outer_edge_style, outer=True)/2
         else:
             return self.outside_d/2 - self.dial_width/2
 
