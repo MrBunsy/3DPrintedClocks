@@ -5,7 +5,14 @@ https://github.com/CadQuery/cadquery/blob/master/cadquery/occ_impl/exporters/svg
 
 import io as StringIO
 from cadquery import Workplane
-from cadquery.occ_impl.exporters import toCompound
+
+try:
+    from cadquery.occ_impl.exporters import toCompound
+except:
+    #see 6d7d1d6 in cadquery
+    from cadquery.occ_impl.shapes import compound
+    def toCompound(workplane):
+        return compound(*workplane)
 
 '''
 copy-paste and tweak of svg.py from cadquery so I can get SVGs rendering "properly" (centred! cropped!):
