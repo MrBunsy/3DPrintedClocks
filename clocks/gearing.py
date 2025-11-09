@@ -2353,9 +2353,10 @@ class ArborForPlate:
             shapes["pinion_STL_modifier"] = self.arbor.get_STL_modifier_pinion_shape()
         except:
             pass
-
-        extras = self.arbor.get_extras(rear_side_extension=self.distance_from_back + self.endshake + self.back_plate_thick,
-                                       front_side_extension=self.endshake / 2 + self.front_plate_thick, key_length=self.key_length,
+        to_front_of_front_plate = self.endshake / 2 + self.front_plate_thick
+        to_back_of_back_plate = self.distance_from_back + self.endshake + self.back_plate_thick
+        extras = self.arbor.get_extras(to_back_of_back_plate=to_back_of_back_plate,
+                                       to_front_of_front_plate=to_front_of_front_plate, key_length=self.key_length,
                                        ratchet_key_extra_length=0, back_collet_from_back=self.endshake + self.back_plate_thick)
         for extraName in extras:
             shapes[extraName] = extras[extraName]
@@ -2379,6 +2380,14 @@ class ArborForPlate:
             shapes["wheel"] = wheel.cut(self.threaded_rod_cutter)
         elif self.arbor.get_type() == ArborType.POWERED_WHEEL:
             #TODO support chain at front?
+            '''
+            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_at_back=rear_side_extension, extra_in_front=front_side_extension,
+                                                                key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length,
+                                                                back_collet_from_back= back_collet_from_back)
+            looks like I used to have two different defintions of rear_side_extension - for get_extras it includes the back plate
+            for the older cord/rope wheels it only goes up to the inside of the back plate
+            now renamed one to to_back_of_back_plate
+            '''
             wheel = self.arbor.get_powered_wheel(rear_side_extension = self.distance_from_back, arbor_extension_max_radius=self.arbor_extension_max_radius)
             if PowerType.is_weight(self.arbor.powered_wheel.type) and not self.arbor.loose_on_rod:
                 wheel = wheel.cut(self.threaded_rod_cutter)
@@ -3016,7 +3025,7 @@ To keep this assembly together, use a small amount of superglue between the whee
         if self.wheel_thick <= 3:
             return 0
         return 1
-    def get_extras(self, rear_side_extension = 0, front_side_extension = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0, back_collet_from_back=0):
+    def get_extras(self, to_back_of_back_plate = 0, to_front_of_front_plate = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0, back_collet_from_back=0):
         '''
         rear_side_extension - how far to extend the spring arbor to the back of the back plates + endshaoe
         back_collet_from_back - how far to the inside of the back plate - endshake
@@ -3041,7 +3050,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
             #back_collet_from_back only used if the ratchet is at the back (and barrel at front, still assumed for now)
-            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_at_back=rear_side_extension, extra_in_front=front_side_extension,
+            extras['spring_arbor']=self.powered_wheel.get_arbor(extra_at_back=to_back_of_back_plate, extra_in_front=to_front_of_front_plate,
                                                                 key_length=key_length, ratchet_key_extra_length=ratchet_key_extra_length,
                                                                 back_collet_from_back= back_collet_from_back)
             extras['lid'] = self.powered_wheel.get_lid()
@@ -3105,6 +3114,8 @@ To keep this assembly together, use a small amount of superglue between the whee
         '''
         The Arbor class no longer knows about the placement of the arbors in teh plates, so if we want to generate a complete wheel rear_side_extension and arbor_extension_max_r must be provided
         This will gracefully fall back to still producing a chain wheel if they're not
+
+        This is a mess and really needs looking at - the spring barrel is generally a cleaner implementation, but it is more simple as far as the arbor is concerned.
         '''
         style = self.style
         if PowerType.is_weight(self.powered_wheel.type):

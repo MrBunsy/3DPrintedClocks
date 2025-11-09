@@ -3277,8 +3277,12 @@ class RollingBallEscapement:
 
         self.gen_track_parts()
 
+        self.arm_thick = 8
+        self.inner_arm_length = 40
+        self.wiggle_room = 0.4
+
     def get_period(self):
-        #TODO
+        # this is based off a real clock with a period of 12s. I need to confirm mine is too
         return 12.0
 
     def get_track(self):
@@ -3291,7 +3295,12 @@ class RollingBallEscapement:
 
         return assembly
 
-    def get_escape_wheel(self):
+    def get_escape_wheel_screw_cutter(self):
+        screw_z = self.arm_thick*1.5
+        screw_cutter = self.rods.get_cutter(loose=True, ignore_head=True, sideways=True).rotate((0,0,0),(0,1,0), 90).translate((-(self.inner_arm_length + self.arm_thick*2)/2,0,screw_z))
+        return screw_cutter
+
+    def get_wheel(self):
         '''
         not really a wheel, but essentially a rotating beat-setter which will drive an arm to raise and lower half the track
         Assumes it's always out the back of the plates
@@ -3300,20 +3309,20 @@ class RollingBallEscapement:
         then can adjust it with a screwdriver
         '''
 
-        inner_arm_length = 40
-        arm_thick = 8
+        inner_arm_length = self.inner_arm_length
+        arm_thick = self.arm_thick
         outer_length = inner_arm_length + arm_thick*2
         arm = cq.Workplane("XY").rect(outer_length, arm_thick).extrude(arm_thick)
 
-        screw_z = arm_thick + arm_thick/2
+
 
         arm_top_z = arm_thick + arm_thick
 
         arm = arm.faces(">Z").workplane().pushPoints([(-inner_arm_length/2-arm_thick/2, 0), (inner_arm_length/2+arm_thick/2, 0)]).rect(arm_thick, arm_thick).extrude(arm_thick)
 
-        screw_cutter = self.rods.get_cutter(loose=True, ignore_head=True, sideways=True).rotate((0,0,0),(0,1,0), 90).translate((-outer_length/2,0,screw_z))
 
-        arm = arm.cut(screw_cutter)
+
+        arm = arm.cut(self.get_escape_wheel_screw_cutter())
 
         #nut space slightly deeper than needed so that the top part can slide smoothly over
         fixing_cutter = self.arbor_rod.get_cutter(ignore_head=True, self_tapping=True).union(self.arbor_rod.get_nut_cutter(half=False)
@@ -3322,6 +3331,27 @@ class RollingBallEscapement:
         arm = arm.cut(fixing_cutter)
 
         return arm
+
+    def get_rate_setter(self):
+        '''
+        this is the bit which is on the threaded rod of the escape wheel, adjusting it will adjust the rate (in theory)
+
+        Plan is it will have a hole on teh end which can take a small machine screw that will fix to the top of the arm (with a bearing)
+        and sideways it will have a slotted in nut (might actually use teh square ones at last?) so it can be adjusted
+        '''
+
+
+        r = self.arm_thick/2 + 5
+
+        rate_setter = cq.Workplane("XY").circle(r).extrude(self.arm_thick*3)
+
+        rate_setter = rate_setter.cut(cq.Workplane("XY").rect(r*2, self.arm_thick+self.wiggle_room).extrude(self.arm_thick))
+        rate_setter = rate_setter.cut(self.rods.get_cutter(ignore_head=True, self_tapping=True).translate((0,0, self.arm_thick*1.5 + self.rods.get_rod_cutter_r(loose=True)+1)))
+        rate_setter = rate_setter.cut(self.get_escape_wheel_screw_cutter())
+
+        #TODO slot for square nut
+
+        return rate_setter
 
 
     def gen_track_parts(self):

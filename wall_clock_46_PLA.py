@@ -162,7 +162,7 @@ if not outputSTL:
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BRIGHT_ORANGE],
                         gear_colours=[Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
                         motion_works_colours=[Colour.BRIGHT_ORANGE, Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
-                        pulley_colour=Colour.LIME_GREEN, plaque_colours=[Colour.WHITE, Colour.BLACK])
+                        pulley_colour=Colour.LIME_GREEN, plaque_colours=[Colour.WHITE, Colour.BLACK], with_key=True)
 
 if outputSTL:
     assembly.get_BOM().export(clock_out_dir)

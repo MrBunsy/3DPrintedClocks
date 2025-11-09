@@ -3090,7 +3090,9 @@ class SimpleClockPlates(BasePlates):
             key_within_front_plate = self.get_plate_thick(back=False) - key_bearing.height
 
         # self.key_hole_d = self.going_train.powered_wheel.keyWidth + 1.5
-        if self.bottom_of_hour_hand_z() < 25 and (self.weight_driven or self.going_train.powered_wheel.ratchet_at_back):# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.outer_d - 1:
+        if False and self.bottom_of_hour_hand_z() < 25 and (self.weight_driven or self.going_train.powered_wheel.ratchet_at_back):# and self.key_hole_d > front_hole_d and self.key_hole_d < key_bearing.outer_d - 1:
+            #decided against this idea
+
             # only if the key would otherwise be a bit too short (for dials very close to the front plate) make the hole just big enough to fit the key into
             #can't do this for spring driven as the ratchet is on the front (could move it to the back but it would make letting down the spring harder)
             print("Making the front hole just big enough for the cord key")
@@ -3101,6 +3103,7 @@ class SimpleClockPlates(BasePlates):
 
         #HACK remove this once cord wheel works like the spring barrel (where ArborForPlate provides all the info about how long the key is)
         if not self.weight_driven:
+            #spring and cord currently do this differnetly- spring does it via get_extras in ArborForPlate, cord does this...unsure
             key_within_front_plate = 0
 
         if self.key_is_inside_dial():
@@ -3114,19 +3117,28 @@ class SimpleClockPlates(BasePlates):
         #TODO remove this for cord wheel
 
         self.going_train.powered_wheel.key_square_bit_height = key_length
+
+        try:
+            #hack for cord barrel
+            #endshake/2 purely because that looks right on the preview and I've actually lost track of what's really going on
+            self.going_train.powered_wheel.key_round_bit_height = self.get_plate_thick(back=False) + self.endshake/2
+        except:
+            pass
+
         #the slightly less hacky way... (although now I think about it, is it actually? we're still reaching into an object to set something)
         self.arbors_for_plate[0].key_length = key_length
 
         #how much of the key sticks out the front of the front plate
         self.key_length = key_length - key_within_front_plate
-
-        if key_bearing.plain_bushing:
-            square_bit_inside_front_plate_length=0
-        else:
-            square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
-        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
-            #the square bit of the key starts outisde the plate. See extra_in_front in gearing. TODO apply this to the cord wheel as well!
-            square_bit_inside_front_plate_length = 0
+        #introduced key_round_bit_height so this is always zero
+        square_bit_inside_front_plate_length = 0
+        # if key_bearing.plain_bushing:
+        #     square_bit_inside_front_plate_length=0
+        # else:
+        #     square_bit_inside_front_plate_length = self.get_plate_thick(back=False) - key_bearing.height
+        # if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
+        #     #the square bit of the key starts outisde the plate. See extra_in_front in gearing. TODO apply this to the cord wheel as well!
+        #     square_bit_inside_front_plate_length = 0
         key_hole_deep = key_length - (square_bit_inside_front_plate_length + self.key_offset_from_front_plate) - self.endshake
 
 
@@ -4233,6 +4245,11 @@ class RoundMantelClockPlates(MantelClockPlates):
 
 class RoundClockPlates(SimpleClockPlates):
     '''
+    IDEA - specify wall fixing screws distance, or have a few pre-set distances and choose nearest.
+    Shouldn't be too hard to make the bottom wall plate vary its shape, can use curves like the top one
+    then I can actually replace clocks on the wall rather than having each one require a unique fixing!
+
+
     Plan for a traditional-ish movement shape on legs, so the pendulum will be visible below the dial.
     Inspired by some Brocot clocks I've seen
 

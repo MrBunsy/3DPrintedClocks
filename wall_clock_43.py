@@ -24,6 +24,10 @@ With the success of mantel clock 34 (attempting to shrink down the spring barrel
 so the gear train from mantel clock 34, but in a wall clock
 
 not printed.
+
+Plan: make this a good test case for improving timekeeping with silent escapement
+ - Reduce gap in anchor so the string is slightly more taunt
+ - have a go at geneva stopworks!
 '''
 outputSTL = False
 
@@ -37,13 +41,16 @@ clock_name= "Wall Clock 43"
 clock_out_dir= "out"
 gear_style=GearStyle.ROUNDED_ARMS5
 
-
+teeth=30
 #escapement = AnchorEscapement.get_with_optimal_pallets(36, drop_deg=2)
-escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2)
-
+escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth, drop_deg=2)
+#nylon wire only 0.15, but need a hole big enough to print well
+#pin_external_length is the badly named gap between arms of the anchor. This will be double endshake + escape wheel thick + 1
+escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
+                                             pin_diameter=1.0, pin_external_length=1.5*2 + 3 + 1)
 
 barrel_gear_thick = 5
-powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=math.pi, click_angle=-math.pi/2, ratchet_at_back=True, style=gear_style, base_thick=BEARING_10x15x4_FLANGED.height,
+powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, ratchet_at_back=True, style=gear_style, base_thick=BEARING_10x15x4_FLANGED.height,
                         wall_thick=8, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4_FLANGED, ratchet_screws=MachineScrew(2, grub=True))
 
 train = GoingTrain(pendulum_length_m=0.20, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
@@ -162,6 +169,7 @@ if not outputSTL:
                         motion_works_colours=[Colour.GOLD],
                         plaque_colours=[Colour.WHITE, Colour.BLACK],
                         ratchet_colour=Colour.GOLD,
+                        # hand_colours=[Colour.BLACK, Colour.GOLD],
                         # hand_colours=[Colour.GOLD],
                         with_key=True)
 

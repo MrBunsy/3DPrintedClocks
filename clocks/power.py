@@ -2446,7 +2446,7 @@ class CordBarrel(WeightPoweredWheel):
 
 
     def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3,
-                 cord_thick=2, bearing=None, key_square_bit_height=30,gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS,
+                 cord_thick=2, bearing=None, key_square_bit_height=30, key_round_bit_height=10, gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS,
                  cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=True, ratchet_diameter=-1,
                  use_steel_tube=True, key_bearing_standoff = 1):
         '''
@@ -2536,6 +2536,8 @@ class CordBarrel(WeightPoweredWheel):
         self.bearing_wiggle_room = 0.05
         #this is the square bit that sticks out the front of the clock. I suck at names
         self.key_square_bit_height=key_square_bit_height
+        #in the front plate, including the bearing?
+        self.key_round_bit_height = key_round_bit_height
         self.gear_thick = gear_thick
         self.front_plate_thick=front_plate_thick
 
@@ -2731,13 +2733,15 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
             #space for the cap
 
-            # segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.bearingInnerD / 2 + self.bearingLip).extrude(self.beforeBearingExtraHeight)
-            segment = segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.inner_d / 2 - self.bearing_wiggle_room).extrude(self.key_bearing.height + self.key_bearing_standoff + self.top_cap_thick)
+            # segment = (segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.inner_d / 2 - self.bearing_wiggle_room)
+            #            .extrude(self.key_bearing.height + self.key_bearing_standoff + self.top_cap_thick))
+            segment = (segment.faces(">Z").workplane().moveTo(0, 0).circle(self.key_bearing.inner_d / 2 - self.bearing_wiggle_room)
+                       .extrude(self.key_round_bit_height + self.key_bearing_standoff + self.top_cap_thick))
             #using polygon rather than rect so it calcualtes the size to fit in teh circle, rotating 45deg so we have more room for the screw heads
-            #key = cq.Workplane("XY").polygon(4, self.key_bearing.innerD - self.bearingWiggleRoom * 2).extrude(self.keySquareBitHeight)
-            key = cq.Workplane("XY").rect(self.key_square_side_length, self.key_square_side_length).extrude(self.key_square_bit_height)
+            # key = cq.Workplane("XY").rect(self.key_square_side_length, self.key_square_side_length).extrude(self.key_square_bit_height)
             #.rotate((0,0,0),(0,0,1),45)
-            segment = segment.union(key.translate((0, 0, self.cap_thick + self.thick + self.key_bearing.height + self.key_bearing_standoff + self.top_cap_thick)))
+            # segment = segment.union(key.translate((0, 0, self.cap_thick + self.thick + self.key_bearing.height + self.key_bearing_standoff + self.top_cap_thick)))
+            segment = (segment.faces(">Z").workplane().moveTo(0, 0).rect(self.key_square_side_length, self.key_square_side_length).extrude(self.key_square_bit_height))
 
 
 
@@ -2974,6 +2978,9 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
     def get_printed_parts(self):
         parts = [
             #previously "cordwheel_bottom_segment"
+            #flaw here - for the key we need to know its full length and thickness of front plate. We don't know this in this class
+            #for the spring this was done via the ArborForPlate and get_extras, which solved this problem
+            #current hacky idea - just set these properties in plates
             BillOfMaterials.PrintedPart("barrel",self.get_segment(False), purpose="Cord wraps around this"),
             BillOfMaterials.PrintedPart("top_cap", self.get_cap(top=True), purpose="Top of cord barrel", printing_instructions="Print with extra elephant's foot to avoid lip on inside edge"),
             BillOfMaterials.PrintedPart("ratchet_wheel", self.get_ratchet_wheel_for_cord(), purpose="Fixed to base to form part of ratchet")

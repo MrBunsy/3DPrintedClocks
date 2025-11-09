@@ -134,7 +134,8 @@ exporters.export(rolling_ball.get_track(), out)
 
 # show_object(cq.Workplane("XY").rect(250, 150))
 
-show_object(rolling_ball.get_escape_wheel())
+show_object(rolling_ball.get_wheel())
+show_object(rolling_ball.get_rate_setter())
 
 # show_object(plates.get)
 #
