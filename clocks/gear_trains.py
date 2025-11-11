@@ -373,8 +373,10 @@ class GoingTrain(GearTrainBase):
         if pendulum_length_m < 0 and pendulum_period > 0:
             # calulate length from period
             self.pendulum_length_m = getPendulumLength(pendulum_period)
+            self.pendulum_period = pendulum_period
         elif pendulum_period < 0 and pendulum_length_m > 0:
             self.pendulum_period = getPendulumPeriod(pendulum_length_m)
+            self.pendulum_length_m = pendulum_length_m
         else:
             raise ValueError("Must provide either pendulum length or perioud, not neither or both")
         print("Pendulum length {}cm and period {}s".format(self.pendulum_length_m * 100, self.pendulum_period))
@@ -399,7 +401,7 @@ class GoingTrain(GearTrainBase):
         Recalculte the pendulum period from the train. Useful if the train was calculated with a large error
         (which enables a smaller set of gears to be calculated when pendulum period doesn't need to be exact)
 
-        engineering period of there and back again
+        engineering period of there and back again, rather than horilogical period of one half pendulum swing
         '''
         train = self.get_gear_train()
 
@@ -412,9 +414,10 @@ class GoingTrain(GearTrainBase):
 
         #escape wheel rotates one hour * total_ratio times per hour
         escape_wheel_seconds = 60*60/total_ratio
+        self.escapement_time = escape_wheel_seconds
 
         pendulum_period = escape_wheel_seconds / self.escapement.teeth
-
+        print(f"Recalculated pendulum period: {pendulum_period}")
         self.set_pendulum_info(pendulum_period=pendulum_period)
 
         return pendulum_period
@@ -465,8 +468,8 @@ class GoingTrain(GearTrainBase):
 
         target_time = 60 * 60 / self.minute_wheel_ratio
 
-        for p in range(pinion_min, pinion_max):
-            for w in range(wheel_min, wheel_max):
+        for p in range(pinion_min, pinion_max+1):
+            for w in range(wheel_min, wheel_max+1):
                 all_gear_pair_combos.append([w, p])
 
         # use a much wider range

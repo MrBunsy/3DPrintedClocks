@@ -38,17 +38,28 @@ gear_style=GearStyle.HONEYCOMB_CHUNKY
 
 second_hand_centred = False
 
-escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75)
+escapement = AnchorEscapement.get_with_optimal_pallets(24, drop_deg=1.75)
 
 powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
-train = GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
+train = GoingTrain(pendulum_length_m=0.2, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
 pillar_style = PillarStyle.PLAIN
 
-train.set_ratios([[70, 9], [60, 14], [54, 10]])
+# train.set_ratios([[70, 9], [60, 14], [54, 10]])
+
+# train.set_ratios([[63, 10], [56, 10], [49, 10]])
+# train.set_ratios([[63, 10], [56, 10], [50, 13]])
+
+# train.calculate_ratios(module_reduction=1.0, pinion_max_teeth=11, min_pinion_teeth=10, wheel_min_teeth=50, max_wheel_teeth=75, max_error=100, loud=True)
+# train.set_train([[63, 10], [56, 9], [50, 11]])
+#[[63, 11], [56, 11], [50, 11]]
+train.set_ratios([[63, 10], [56, 10], [49, 10]])
+print(f"Pendulum period: {train.recalculate_pendulum_period()}")#:.2f
+
+
 train.calculate_powered_wheel_ratios()
 
 
@@ -113,7 +124,7 @@ train.generate_arbors_dicts([
 train.print_info(weight_kg=2)
 
 dial_d=160
-dial_width = dial_d*0.1
+dial_width = dial_d*0.125
 moon_radius=10
 
 moon = False
@@ -135,16 +146,16 @@ else:
 pendulum = Pendulum(bob_d=60, bob_thick=10)
 
 dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
-                  seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True)
+                  seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False)
 
 
-plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
+plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication,
-                                gear_train_layout=gear_train_layout)
+                                gear_train_layout=gear_train_layout, back_plate_from_wall=27, fewer_arms=True)
 
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 
