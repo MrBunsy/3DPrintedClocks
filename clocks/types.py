@@ -44,6 +44,7 @@ class HandStyle(Enum):
     ARROWS="arrows"#specicially for Tony the Clock
     MOON = "moon"#Brequet but with crescents instead of circles
     INDUSTRIAL = "industrial"#based on a Siemens slave clock
+    INDUSTRIAL_THICK = "industrial_thicker"
     FANCY_WATCH = "fancy_watch" #inspired by rolex explorer
     TWIRLY = "twirly"
     THIN_DIAMOND = "thin_diamond"

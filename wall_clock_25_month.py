@@ -96,7 +96,7 @@ plates = clock.RoundClockPlates(train, motionWorks, second_hand=False, style=clo
                                 plate_thick=10, gear_train_layout=gear_train_layout)
 
 hands = clock.Hands(style=clock.HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True, second_length=20, seconds_hand_thick=1.5)
+                    length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=False, second_length=20, seconds_hand_thick=1.5)
 
 #TODO pullet capable of holding two weights, I think two cheap weights in fancy shells looks better and works out a similar price to one large cheap (ugly) weight
 

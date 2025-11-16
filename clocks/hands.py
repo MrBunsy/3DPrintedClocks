@@ -1179,6 +1179,8 @@ class Hands:
 
             #square but with a point on the end
             width = self.length * 0.1
+            if self.chunky:
+                width*=1.4
             if second:
                 width = self.length * 0.075
             if hour:

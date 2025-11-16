@@ -41,7 +41,7 @@ second_hand_centred = False
 escapement = AnchorEscapement.get_with_optimal_pallets(24, drop_deg=1.75)
 
 powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
+                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
 train = GoingTrain(pendulum_length_m=0.2, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
@@ -124,7 +124,7 @@ train.generate_arbors_dicts([
 train.print_info(weight_kg=2)
 
 dial_d=160
-dial_width = dial_d*0.125
+dial_width = 27#dial_d*0.125
 moon_radius=10
 
 moon = False
@@ -143,9 +143,13 @@ else:
 
 
 
-pendulum = Pendulum(bob_d=60, bob_thick=10)
+#pendulum = Pendulum(bob_d=60, bob_thick=10)
+pendulum = FancyPendulum(bob_d=45)
 
-dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
+# dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
+#                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
+dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
+                        outer_edge_style=DialStyle.CONCENTRIC_CIRCLES,
                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 plaque = None
@@ -159,8 +163,8 @@ plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_
 
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 
-hands = Hands(style=HandStyle.SWORD, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length()+dial_width/4, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",

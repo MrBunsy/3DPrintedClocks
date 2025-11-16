@@ -2636,6 +2636,8 @@ class Arbor:
                     #could do with not having to care about the innards of the ratchet here
                     if self.powered_wheel.traditional_ratchet:
                         self.bolt_positions = self.powered_wheel.ratchet.get_screw_positions()
+                        self.pawl_screw_positions = self.powered_wheel.ratchet.get_screw_positions(pawl=True)
+                        self.click_screw_positions =  self.powered_wheel.ratchet.get_screw_positions(pawl=False)
                         self.ratchet_screws = self.powered_wheel.ratchet.fixing_screws
                     else:
                         bolts = 4
@@ -3196,14 +3198,15 @@ To keep this assembly together, use a small amount of superglue between the whee
                 # else screwing straight into the wheel seemed surprisingly secure, and if the wheel is that thin it probably isn't holding much weight anyway
                 gear_wheel = gear_wheel.cut(cutter)
         if self.use_ratchet and self.powered_wheel.traditional_ratchet:
-            for hole_pos in self.bolt_positions:
-                if self.powered_wheel.ratchet.pawl_screwed_from_front:
-                    #TODO fetch teh screwcutter from the ratchet?
-                    #just a hole
-                    gear_wheel = gear_wheel.cut(cq.Workplane("XY").circle(self.ratchet_screws.get_rod_cutter_r(for_tap_die=True)).extrude(self.wheel_thick).translate(hole_pos))
-                else:
-                    #countersunk hole for machine screw
-                    gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True).translate(hole_pos))
+            for hole_pos in self.pawl_screw_positions:
+                    #if self.powered_wheel.ratchet.pawl_screwed_from_frontjust a hole
+                gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True,ignore_head = self.powered_wheel.ratchet.pawl_screwed_from_front).translate(hole_pos))
+                # else:
+                #     #countersunk hole for machine screw
+                #     gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True).translate(hole_pos))
+            for hole_pos in self.click_screw_positions:
+                # if self.powered_wheel.ratchet.pawl_screwed_from_frontjust a hole
+                gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True, ignore_head=self.powered_wheel.ratchet.click_screwed_from_front).translate(hole_pos))
 
 
         if for_printing and not self.combine_with_powered_wheel:

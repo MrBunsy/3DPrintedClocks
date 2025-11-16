@@ -2448,7 +2448,7 @@ class CordBarrel(WeightPoweredWheel):
     def __init__(self, diameter, ratchet_thick=4, power_clockwise=True, rod_metric_size=3, thick=10, use_key=False, screw_thread_metric=3,
                  cord_thick=2, bearing=None, key_square_bit_height=30, key_round_bit_height=10, gear_thick=5, front_plate_thick=8, style=GearStyle.ARCS,
                  cord_length=2000, loose_on_rod=True, cap_diameter=-1, traditional_ratchet=True, ratchet_diameter=-1,
-                 use_steel_tube=True, key_bearing_standoff = 1):
+                 use_steel_tube=True, key_bearing_standoff = 1, pawl_screwed_from_front=False):
         '''
         loose_on_rod - if True (DEPRECATED) then the cord/chain/rope section of the wheel (this bit) is loose on the arbour .
          If false, then that is fixed and the actual gear wheel is loose on the arbour with a steel tube (PREFERRED)
@@ -2457,6 +2457,7 @@ class CordBarrel(WeightPoweredWheel):
         '''
         super().__init__(diameter=diameter, arbor_d=rod_metric_size, loose_on_rod=loose_on_rod, power_clockwise=power_clockwise, use_key=use_key,ratchet_thick=ratchet_thick, ratchet_diameter=ratchet_diameter)
         self.type = PowerType.CORD
+        self.pawl_screwed_from_front = pawl_screwed_from_front
         #if not loose_on_rod then we use a steel tube to slot over the threaded rod on teh wheel, leaving the cord barrel glued to the rod
         #however, to save on parts and faff, make the tube optional and allow plastic to just slide over the rod
         self.use_steel_tube =use_steel_tube
@@ -3911,8 +3912,13 @@ class TraditionalRatchet:
     def get_pawl_screw_position(self):
         return rotate_vector(self.pawl_fixing, (0,0,1), deg_to_rad(self.rotate_by_deg))
 
-    def get_screw_positions(self):
-        return [self.get_pawl_screw_position()] + self.click_fixings
+    def get_screw_positions(self, pawl=None):
+        if pawl is None:
+            return [self.get_pawl_screw_position()] + self.click_fixings
+        if pawl:
+            return [self.get_pawl_screw_position()]
+        else:
+            return self.click_fixings
 
     def get_max_diameter(self):
         return np.linalg.norm(self.pawl_fixing) + self.pawl_diameter/2
