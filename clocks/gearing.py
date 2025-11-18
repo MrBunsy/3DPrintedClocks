@@ -1017,8 +1017,14 @@ class Gear:
 
 
 
-    def __init__(self, isWheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi/2, is_crown=False, lantern=False):
-        self.iswheel = isWheel
+    def __init__(self, is_wheel, teeth, module, addendum_factor, addendum_radius_factor, dedendum_factor, toothFactor=math.pi / 2, is_crown=False, lantern=False):
+        '''
+        Trying to keep this as theoretical (as in, not much 3D geometry as possible)
+        but with lots of helper functions taht can be used by Arbor, which knows a lot more about the final geometry
+        hence why I think I'll keep this lantern knowledge as just "lantern" or not, rather than all the different types.
+
+        '''
+        self.iswheel = is_wheel
         self.teeth = teeth
         self.module=module
         self.addendum_factor=addendum_factor
@@ -1137,7 +1143,7 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
-    def get_lantern_cutter(self, trundle_offset = 1, trundle_length=100, wheel_hex_hole_offset=0, hole_d=0):
+    def get_lantern_cutter(self, trundle_offset = 1, trundle_length=100, wheel_hex_hole_offset=0, hole_d=0, trundles_only=False):
         '''
 
         trundle_offset = how far from the back of the wheel the trundle holes end
@@ -1152,10 +1158,12 @@ class Gear:
         '''
 
 
+        if trundles_only:
+            cutter = cq.Workplane("XY")
+        else:
+            cutter = cq.Workplane("XY").polygon(self.slot_sides, self.inner_r_for_lantern_fixing_slot * 2).extrude(trundle_length - wheel_hex_hole_offset)
 
-        cutter = cq.Workplane("XY").polygon(self.slot_sides, self.inner_r_for_lantern_fixing_slot * 2).extrude(trundle_length - wheel_hex_hole_offset)
-
-        if wheel_hex_hole_offset > 0:
+        if wheel_hex_hole_offset > 0 and not trundles_only:
             cutter = cutter.translate((0, 0, wheel_hex_hole_offset))
             if hole_d > 0:
                 #hole with hole as this is printed upside down
@@ -1644,7 +1652,7 @@ class ArborForPlate:
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
 
         # so that we don't have the arbour pressing up against hte bit of the bearing that doesn't move, adding friction
-        self.arbour_bearing_standoff_length = LAYER_THICK * 2
+        self.arbor_bearing_standoff_length = LAYER_THICK * 2
         self.lantern_pinion_wheel_holder_thick = 2
 
         if self.type == ArborType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
@@ -1991,7 +1999,7 @@ class ArborForPlate:
                 else:
                     assembly = assembly.add(self.friction_fit_bits.get_pendulum_holder().rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum_holder_thick)).translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)))
             if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-                assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0,0, - self.endshake/2 - self.crutch_holder_slack_space/2 - self.arbour_bearing_standoff_length/2)))
+                assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0, 0, - self.endshake / 2 - self.crutch_holder_slack_space / 2 - self.arbor_bearing_standoff_length / 2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
@@ -2046,7 +2054,7 @@ class ArborForPlate:
 
             assembly = assembly.translate(self.bearing_position).translate((0,0, self.back_plate_thick + self.endshake/2))
         else:
-            #"normal" wheel-pinion pair (or escape wheel if not on the front)
+            #"normal" wheel-pinion pair (or escape wheel if not on the front/back of the clock)
             arbor = shapes["wheel"]
             if "lantern_pinion_cap" in shapes:
                 arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick + self.arbor.pinion_extension)))
@@ -2464,10 +2472,11 @@ class ArborForPlate:
             else:
                 #front one is longest
                 return front
-
-        if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion.lantern:
+        #note that if it's PinionType.LANTERN_LOW_TORQUE this is treated like a regular printed pinion
+        if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion_type in [PinionType.LANTERN, PinionType.LANTERN_THIN]:
             if self.arbor.lantern_fixing_wheel_offset > 0 and front != self.arbor.pinion_at_front:
-                #the arbor extension in this case is part of the wheel
+                #the arbor extension in this case is part of the wheel because the lantern fixing (the hex bit) is offset from the back of the wheel - so there's a solid
+                #part of the wheel for the extension to be part of
                 return False
             return True
 
@@ -2489,9 +2498,9 @@ class ArborForPlate:
         '''
         #not enough to print
         #some fudge factor because I've seen it compare 0.39999999 with 0.4
-        if front and self.distance_from_front < self.arbour_bearing_standoff_length-0.05:
+        if front and self.distance_from_front < self.arbor_bearing_standoff_length-0.05:
             return False
-        if (not front) and self.distance_from_back < self.arbour_bearing_standoff_length-0.05:
+        if (not front) and self.distance_from_back < self.arbor_bearing_standoff_length-0.05:
             return False
 
         if self.arbor.get_type() == ArborType.POWERED_WHEEL:
@@ -2522,19 +2531,19 @@ class ArborForPlate:
             tip_r = outer_r
 
 
-        if length+0.05 - self.arbour_bearing_standoff_length >= 0:
+        if length+0.05 - self.arbor_bearing_standoff_length >= 0:
             # 0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
-            if length - self.arbour_bearing_standoff_length > 0.1:
-                extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length-self.arbour_bearing_standoff_length).faces(">Z").workplane()
+            if length - self.arbor_bearing_standoff_length > 0.1:
+                extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length - self.arbor_bearing_standoff_length).faces(">Z").workplane()
             else:
                 extendo_arbour=cq.Workplane("XY")
-            extendo_arbour = extendo_arbour.circle(tip_r).extrude(self.arbour_bearing_standoff_length)
+            extendo_arbour = extendo_arbour.circle(tip_r).extrude(self.arbor_bearing_standoff_length)
 
-            if (length-self.arbour_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick and self.arbor.pinion is not None):# and front is not self.arbor.pinion_at_front):
+            if (length - self.arbor_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick) and self.arbor.pinion is not None:# and front is not self.arbor.pinion_at_front):
                 #extra wide flange to help the wheel remain perpendicular
                 #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
                 #will work out if it ends up clashing with other wheels if it becomes a problem in the future
-                if self.arbor.pinion_type == PinionType.LANTERN or (self.arbor.pinion_type == PinionType.THIN_LANTERN and front == self.arbor.pinion_at_front):
+                if self.arbor.pinion_type == PinionType.LANTERN or (self.arbor.pinion_type == PinionType.LANTERN_THIN and front == self.arbor.pinion_at_front):
                     extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
             #not hole, that's done after it's unioned with something (if it is) as unioning two things with tehse holes cut seems to struggle
             # extendo_arbour = extendo_arbour.cut(self.threaded_rod_cutter)
@@ -2674,7 +2683,7 @@ class Arbor:
         # for lantern pinions there's a vertical component with a hex base and top which holds the wheel and pinion can together
         self.lantern_fixing_wheel_offset = 0
 
-        if self.pinion_type == PinionType.THIN_LANTERN:
+        if self.pinion_type == PinionType.LANTERN_THIN:
             # on a thin lantern it doesn't go all the way into the wheel
             self.lantern_fixing_wheel_offset = 1
 

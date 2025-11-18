@@ -135,7 +135,7 @@ train.generate_arbors_dicts([
     {
         #intermediate wheel
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
-        "pinion_type": PinionType.THIN_LANTERN,
+        "pinion_type": PinionType.LANTERN_THIN,
         "pinion_thick":1.875*barrel_gear_thick,
         "wheel_thick":4
     },

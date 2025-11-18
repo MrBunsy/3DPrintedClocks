@@ -3035,6 +3035,8 @@ class SimpleClockPlates(BasePlates):
         return plate
 
     def get_diameter_for_pulley(self):
+        if self.going_train.powered_wheel.type == PowerType.SPRING_BARREL:
+            raise ValueError("No pulley needed for a spring clock")
 
         holePositions = self.going_train.powered_wheel.get_chain_positions_from_top()
 

@@ -1106,14 +1106,19 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             text_colour = bob_colours[ 2 % len(bob_colours)]
             bob = self.pendulum.get_bob(hollow=False)
 
-            if self.pretty_bob is not None:
-                bob = self.pretty_bob.get_model()
+            # if self.pretty_bob is not None:
+            #     # bob = self.pretty_bob.get_model()
+            #     self.pretty_bob.show(show_object, (self.pendulum_bob_centre_pos[0], self.pendulum_bob_centre_pos[1], self.pendulum_bob_centre_pos[2] + self.pendulum.bob_thick / 2 ))
 
             bob_text = self.pendulum.get_bob_text()
             if bob_text is not None:
                 show_object(bob_text.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos), options={"color": text_colour}, name="Pendulum Bob Text")
-
-            show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour}, name="Pendulum Bob")
+            if self.pretty_bob is not None:
+                translation = lambda b : b.rotate((0,0,0),(0,1,0),180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos)
+                # bob = self.pretty_bob.get_model()
+                self.pretty_bob.show(show_object, translation)#(self.pendulum_bob_centre_pos[0], self.pendulum_bob_centre_pos[1], self.pendulum_bob_centre_pos[2] + self.pendulum.bob_thick / 2)
+            else:
+                show_object(bob.rotate((0,0,0),(0,1,0),180).translate((0, 0, self.pendulum.bob_thick / 2)).translate(self.pendulum_bob_centre_pos), options={"color": bob_colour}, name="Pendulum Bob")
 
             show_object(self.pendulum.get_bob_nut().translate((0, 0, -self.pendulum.bob_nut_thick / 2)).rotate((0, 0, 0), (1, 0, 0), 90).translate(self.pendulum_bob_centre_pos), options={"color": nut_colour}, name="Pendulum Bob Nut")
 

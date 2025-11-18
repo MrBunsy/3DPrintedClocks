@@ -200,6 +200,13 @@ class ItemWithCosmetics:
 
         return complete_model
 
+    def show(self, show_object, translation_lambda = None):
+        if translation_lambda is None:
+            translation_lambda = lambda c : c
+        shapes = self.get_models_by_colour()
+        for colour in shapes:
+            show_object(translation_lambda(shapes[colour]), options={"color": colour}, name=f"Cosmetic {self.name}: {colour}")
+
     def output_STLs(self, name="clock", path="../out"):
         '''
 

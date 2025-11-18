@@ -76,10 +76,13 @@ class SplitArborType(Enum):
 class PinionType(Enum):
     PLASTIC = "plastic"
     LANTERN = "lantern"
-    THIN_LANTERN = "thin lantern" # lantern but less chunky. Will be more of a faff to put together but useful for some clocks
+    LANTERN_THIN = "thin lantern" # lantern but less chunky. Will be more of a faff to put together but useful for some clocks
+    # couple of ideas: rods only held from one side (like seen done on some wooden clocks) or the lantern assembly is entirely separate from the wheel
+    # plan: Will only work with pinion_extension, and the rods will only be held at one end (like some wooden clocks), using the extension length to hold the rest of the pins
+    LANTERN_LOW_TORQUE = "low torque lantern"
 
     def is_lantern(self):
-        return self in [PinionType.LANTERN, PinionType.THIN_LANTERN]
+        return self in [PinionType.LANTERN, PinionType.LANTERN_THIN, PinionType.LANTERN_LOW_TORQUE]
 
 class GearTrainLayout(Enum):
     '''

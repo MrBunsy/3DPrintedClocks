@@ -178,6 +178,18 @@ class HandGenerator:
         if self.second_thick < 0:
             self.second_thick = self.thick
 
+    def already_has_outline(self):
+        '''
+        some designs the outline will already be included, otherwise we can add it later
+        '''
+        return False
+
+    def outline_is_subtractive(self):
+        '''
+        by default, the outline is cut into the hand shape. If false, the entire hand is expanded to support the outline.
+        '''
+        return True
+
     def get_colours(self):
         return [None]
 
@@ -201,7 +213,7 @@ class HandGenerator:
 
 class KnobHands(HandGenerator):
     '''
-    Mohsin asked, it amuses me so I'm going to try!
+    It amuses me so I'm going to try!
 
     I'd like to have the balls literally dangling off the end, I think just a screw and nyloc nut should be enough for that
     '''
@@ -409,6 +421,9 @@ class FancyWatchHands(HandGenerator):
 
     def get_colours(self):
         return ["white", "black"]
+
+    def already_has_outline(self):
+        return True
 
     def get_colours_which_need_base_r(self):
         return []
@@ -842,6 +857,147 @@ class SmithsPocketWatchHands(HandGenerator):
 
         return hand
 
+
+class XMasTreeHands(HandGenerator):
+
+    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
+        super().__init__(base_r, length, thick, second_base_r, second_thick)
+        self.hour_length = length*0.8
+        self.trunk_width = self.length * 0.075
+
+    def hand_shape(self, length, leafy_width, trunk_length):
+        # leafy_width = length * 0.5
+        trunkEnd = length * 0.4
+        useTinsel = True
+        # if minute:
+        #     leafyWidth *= 0.6
+        # if hour:
+        #     trunkEnd *= 0.9
+
+        base_r = self.base_r
+
+        leaves = cq.Workplane("XY").tag("base")
+        tinsel = cq.Workplane("XY").tag("base")
+        baubles = cq.Workplane("XY").tag("base")
+        bauble_r = self.length * 0.03
+        tinsel_thick = length * 0.02
+
+        hand = cq.Workplane("XY").moveTo(0, trunkEnd / 2).rect(self.trunk_width, trunkEnd).extrude(self.thick)
+
+        # rate of change of leaf width with respect to height from the start of the leaf bit
+        dLeaf = 0.5 * leafy_width / (length - trunkEnd)
+
+        spikes = 4
+        spikeHeight = (length - trunkEnd) / spikes
+        sag = spikeHeight * 0.2
+        ys = [trunkEnd + spikeHeight * spike for spike in range(spikes + 1)]
+        tinselHeight = spikeHeight * 0.3
+
+        for spike in range(spikes):
+            width = leafy_width - dLeaf * spikeHeight * spike
+            left = (-width / 2, ys[spike])
+            right = (width / 2, ys[spike])
+            topLeft = (-width / 4, ys[spike + 1])
+            topRight = (width / 4, ys[spike + 1])
+            tinselTopLeft = (left[0], left[1] + tinselHeight)
+            tinselTopRight = (right[0], right[1] + tinselHeight)
+            if spike == spikes - 1:
+                topLeft = topRight = (0, length)
+            leaves = leaves.workplaneFromTagged("base").moveTo(topLeft[0], topLeft[1]).sagittaArc(endPoint=left, sag=sag / 2).sagittaArc(endPoint=right, sag=-sag). \
+                sagittaArc(endPoint=topRight, sag=sag / 2).close().extrude(thick)
+            # tinsel = tinsel.workplaneFromTagged("base").moveTo(tinselTopLeft[0], tinselTopLeft[1]).lineTo(left[0], left[1]).sagittaArc(endPoint=right, sag=-sag). \
+            #     lineTo(tinselTopRight[0], tinselTopRight[1]).sagittaArc(endPoint=tinselTopLeft, sag=sag).close().extrude(thick)
+
+        tinsel_circle_centres = [(leafy_width * 0.6, length), (-leafy_width * 0.6, length * 1.2), (leafy_width * 0.6, length * 1.4)]
+
+        for circle_centre in tinsel_circle_centres:
+            circle_r = length - trunkEnd
+            tinsel = tinsel.workplaneFromTagged("base").moveTo(circle_centre[0], circle_centre[1]).circle(circle_r).circle(circle_r - tinsel_thick).extrude(thick)
+
+        bauble_positions = [(leafy_width * 0.1, length * 0.5), (-leafy_width * 0.1, length * 0.75)]
+
+        for pos in bauble_positions:
+            baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bauble_r).extrude(thick)
+            baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1] + base_r * 0.3).rect(bauble_r * 0.3, bauble_r).extrude(thick)
+
+        #
+        tinsel = tinsel.intersect(leaves)
+        if useTinsel:
+            leaves = leaves.cut(tinsel)
+            # baubles = baubles.cut(tinsel)
+            tinsel = tinsel.cut(baubles)
+
+        leaves = leaves.cut(baubles)
+
+        if colour is None:
+            hand = hand.union(leaves)
+            hand = hand.union(baubles)
+            if useTinsel:
+                hand = hand.union(tinsel)
+        elif colour == "brown":
+            hand = hand.cut(leaves)
+            if useTinsel:
+                hand = hand.cut(tinsel)
+        elif colour == "green":
+            hand = leaves
+            need_base_r = False
+        elif colour == "red":
+            hand = tinsel
+            need_base_r = False
+        elif colour == "gold":
+            hand = baubles
+            need_base_r = False
+
+    def minute_hand(self, colour = None, thick_override=-1):
+        '''
+
+        '''
+
+
+
+class ComplexHands:
+    '''
+    The Hands class has grown well beyond its original simple design and it's unweldy and hard to debug
+    This new ComplexHands class is intended to use the HandGenerator objects and support multiple colours and generate outlines without the mess of the old Hands
+
+    Plan: start with just implementing get_BOM, show_hands and get_assembled - intended to form the shared API with the old Hands class
+
+    '''
+
+    @staticmethod
+    def from_style(hand_style=HandStyle.FANCY_FRENCH, length=100):
+        '''
+        create a HandGenerator object from hand style, where possible
+        '''
+        raise NotImplemented("TODO: ComplexHands from old HandStyle")
+
+
+    def __init__(self, generator):
+        '''
+        Preferred approach is to take a HandGenerator object directly
+        '''
+        self.generator=generator
+
+
+    def get_BOM(self):
+        '''
+        return a bill of materials for generating STLs and the manual
+        '''
+        bom = BillOfMaterials("Hands")
+
+        return bom
+
+    def show_hands(self, show_object, hand_colours=None, position=None, second_hand_pos=None, hour_hand_slot_height=6,
+                   time_hours=10, time_minutes=10, time_seconds=0, show_second_hand=True, hand_colours_overrides=None):
+        '''
+        render a preview for viewing in cq-editor
+        '''
+
+    def get_assembled(self):
+        '''
+        return a single 3D object of the hands for rendering a model
+        '''
+
 class Hands:
     '''
     this class generates most of the hands entirely internally - but can now use a "hand generator" class like BaroqueHands.
@@ -852,6 +1008,8 @@ class Hands:
     The main benefit of this class is the shared features: cutting fixings and adding outlines.
 
     TODO (long term aspiration) tidy up so this Hands class is more explicitly just teh shared features and the hand styles are all in generators
+
+    DO NOT USE for new designs - use ComplexHands instead
     '''
 
 
@@ -1402,13 +1560,13 @@ class Hands:
 
             for circle_centre in tinsel_circle_centres:
                 circle_r = length - trunkEnd
-                tinsel = tinsel.workplaneFromTagged("base").moveTo(circle_centre[0], circle_centre[1]).circle(circle_r).circle(circle_r - tinsel_thick).extrude(thick)
+                tinsel = tinsel.workplaneFromTagged("base").moveTo(circle_centre[0], circle_centre[1]).circle(circle_r).circle(circle_r - tinsel_thick).extrude(self.outline_thick)
 
             bauble_positions = [(leafyWidth * 0.1, length * 0.5), (-leafyWidth * 0.1, length * 0.75)]
 
             for pos in bauble_positions:
-                baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bauble_r).extrude(thick)
-                baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1] + base_r * 0.3).rect(bauble_r * 0.3, bauble_r).extrude(thick)
+                baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(bauble_r).extrude(self.outline_thick)
+                baubles = baubles.workplaneFromTagged("base").moveTo(pos[0], pos[1] + base_r * 0.3).rect(bauble_r * 0.3, bauble_r).extrude(self.outline_thick)
 
             #
             tinsel = tinsel.intersect(leaves)
@@ -1881,10 +2039,10 @@ class Hands:
                         self.outline_shapes[hand_type] = outline
                         return outline
                 else:
-                    outlineShape = self.get_hand(hand_type, generate_outline=True)
+                    outline_shape = self.get_hand(hand_type, generate_outline=True)
                     #chop out the outline from the shape
-                    if outlineShape is not None:
-                        hand = hand.cut(outlineShape)
+                    if outline_shape is not None:
+                        hand = hand.cut(outline_shape)
             else:#positive shell - outline is outside the shape
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
                 if generate_outline:
@@ -1907,11 +2065,19 @@ class Hands:
                 else:
                     #this is the hand, minus the outline
                     if self.outline_same_as_body:
-                        bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick)
-                        hand = hand.intersect(bigSlab)
+                        bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick-self.outline_thick).translate((0,0,self.outline_thick))
+                        # hand = hand.intersect(bigSlab)
+                        if not self.out_line_is_subtractive():
+                            hand = hand.cut(bigSlab)
+                        else:
+                            try:
+                                outline_shape = self.get_hand(hand_type, generate_outline=True)
+                                hand = hand.cut(outline_shape)
+                            except:
+                                pass
                     else:
                         try:
-                            outlineShape = self.get_hand(hand_type, generate_outline=True)
+                            outline_shape = self.get_hand(hand_type, generate_outline=True)
                             # chop out the outline from the shape
 
                             #make the whole hand bigger by the outline amount
@@ -1920,8 +2086,8 @@ class Hands:
                             bigSlab = cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick)
 
                             hand = hand.union(shell.intersect(bigSlab))
-                            if outlineShape is not None:
-                                hand = hand.cut(outlineShape)
+                            if outline_shape is not None:
+                                hand = hand.cut(outline_shape)
 
 
                         except:

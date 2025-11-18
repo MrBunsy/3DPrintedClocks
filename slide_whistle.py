@@ -85,12 +85,12 @@ train.generate_arbors_dicts([
     {
         #intermediate wheel
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2),
-        "pinion_type": PinionType.THIN_LANTERN
+        "pinion_type": PinionType.LANTERN_THIN
     },
     {
         #cam wheel
         "module":0.9,
-        "pinion_type": PinionType.THIN_LANTERN,
+        "pinion_type": PinionType.LANTERN_THIN,
         "pinion_faces_forwards": True
     },
     {
