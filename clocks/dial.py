@@ -1958,6 +1958,8 @@ class Dial:
             # return self.get_lines_detail(outer_r, width, detail_from_edges, thick_indicators=True, long_indicators=True, outer_ring=outer_ring,
             #                              big_thick=width * 0.25, small_thick=0, long_line_length_fraction=1, short_line_length_fraction=0.35, only=[m for m in range(0,60,5)])
             return self.get_lines_detail(outer_r, width, detail_from_edges, total_lines=total_markers, thick_indicators=True, inner_ring=inner_ring, outer_ring=outer_ring, only=[m for m in range(0,60,5)])
+        elif style == DialStyle.EMPTY:
+            return None
         else:
             raise ValueError("Unsupported dial type")
 
@@ -1994,7 +1996,9 @@ class Dial:
         dial = main_style
 
         if self.outer_edge_style is not None:
-            dial = dial.union(self.get_style_for_dial(self.outer_edge_style, self.outside_d/2, outer_width, 0, outer_ring=True))
+            outer_edge_shape = self.get_style_for_dial(self.outer_edge_style, self.outside_d/2, outer_width, 0, outer_ring=True)
+            if outer_edge_shape is not None:
+                dial = dial.union(outer_edge_shape)
         if self.inner_edge_style is not None:
             dial = dial.union(self.get_style_for_dial(self.inner_edge_style, main_style_outer_r - main_style_dial_width, inner_width, 0, inner_ring=True))
 

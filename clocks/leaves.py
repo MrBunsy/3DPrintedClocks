@@ -644,13 +644,13 @@ class HollySprig:
     def gen_leaves(self):
         leaves = cq.Workplane("XY")
 
-        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1),-50))
-        leaves = leaves.add(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0, 0, 0), (0, 0, 1), 50))
+        leaves = leaves.union(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1),-50))
+        leaves = leaves.union(HollyLeaf(length=self.leaf_length).get_2d().extrude(self.thick).rotate((0, 0, 0), (0, 0, 1), 50))
 
         return leaves
 
     def gen_berries(self):
-        berries = cq.Workplane("XY").tag("base")
+        berries = cq.Workplane("XY")
 
         total_berries = 3
         berry_angle = math.pi*2/total_berries
@@ -660,7 +660,7 @@ class HollySprig:
 
             pos = polar(angle, self.berry_diameter*0.55)
 
-            berries = berries.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
+            berries = berries.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick))
 
         return berries
 
@@ -673,12 +673,12 @@ class Wreath:
     Randomly generated at object creation time, getting leaves and berries after that will always result in the same shapes
     '''
 
-    def __init__(self, diameter=120, thick=5, berry_diameter=8, leaf_offset_from_centre=0.5):
+    def __init__(self, diameter=120, thick=5, berry_diameter=8, leaf_offset_from_centre=0.5, total_leaves=30):
         self.diameter = diameter
         self.thick = thick
         self.leaf_offset_from_centre = leaf_offset_from_centre
         self.leaf_length = diameter*0.2
-        self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(30)]
+        self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(total_leaves)]
         self.berry_diameter = berry_diameter
         self.leaves_shape = self.gen_leaves()
         self.berries_shape = self.gen_berries()
@@ -691,6 +691,9 @@ class Wreath:
     def get_berries(self):
         return self.berries_shape
 
+    def get_cosmetics(self):
+        return {"green": self.get_leaves(),
+                     "red": self.get_berries()}
     def gen_leaves(self):
         wreath = cq.Workplane("XY")
 
@@ -700,7 +703,7 @@ class Wreath:
             angle += math.pi*2 / len(self.leaves)
             leaf_angle = angle + random.uniform(-math.pi*0.05, math.pi*0.05)
             pos = polar(angle, self.diameter/2 + self.leaf_offset_from_centre)
-            wreath = wreath.add(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(-math.pi / 2 + leaf_angle)).translate((pos[0], pos[1])))
+            wreath = wreath.union(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(-math.pi / 2 + leaf_angle)).translate((pos[0], pos[1])))
 
         return wreath
 
@@ -874,3 +877,6 @@ class MistletoeSprig:
             berries = berries.workplaneFromTagged("base").moveTo(pos[0], pos[1]).circle(self.berry_diameter*random.uniform(0.45,0.55)).extrude(self.thick)
 
         return berries
+
+    def get_cosmetics(self):
+        return {"lightgreen": self.get_leaves(), "white": self.get_berries()}

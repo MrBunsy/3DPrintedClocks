@@ -666,6 +666,7 @@ class Colour:
     YELLOW = "yellow"
     GREEN = "green"
     LIME_GREEN = (100, 255, 0)
+    LIGHTGREEN = (50, 255, 50)
     DARK_GREEN = (0, 25, 13)
     LIGHTBLUE = (0, 153, 255)
     BLUE = "blue"
@@ -694,7 +695,12 @@ class Colour:
     def colour_tidier(string):
         '''
         given a colour name (from, for example, cosmetics or hands) return something that cq_editor will display
+        this would be easier if Colour was an Enum - but we then need to use Colour.BLUE.value
         '''
+        acolour = Colour()
+        for colour in [a for a in dir(acolour) if not a.startswith('__')]:
+            if colour == string.upper():
+                return getattr(acolour, colour)
         return string
 
 def get_perpendicular_direction(dir, clockwise=True):

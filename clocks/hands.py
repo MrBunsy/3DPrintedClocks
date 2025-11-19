@@ -1517,7 +1517,9 @@ class Hands:
             trunkEnd = length * 0.4
             useTinsel = True
             if minute:
-                leafyWidth *= 0.6
+                #original
+                #leafyWidth *= 0.6
+                leafyWidth *=0.7
             if hour:
                 trunkEnd *= 0.9
 
@@ -2017,7 +2019,12 @@ class Hands:
                         shell = hand.shell(-outline_wide).translate((0,0,-outline_wide))
                     except Exception as e:
                         print("Unable to give outline to {} {} hand: ".format(hand_type.value, self.style.value), type(e), e)
-                        return None
+                        try:
+                            shell = hand.shell(-outline_wide, kind="intersection").translate((0, 0, -outline_wide))
+                            # shell = hand.shell(-outline_wide/2).shell(-outline_wide/2).translate((0, 0, -outline_wide))
+                        except:
+                            print("Unable to give intersection outline to {} {} hand: ".format(hand_type.value, self.style.value), type(e), e)
+                            return None
                     # hand_minus_shell = hand.cut(shell)
                     # return shell
                     slab_thick = self.outline_thick
@@ -2046,7 +2053,15 @@ class Hands:
             else:#positive shell - outline is outside the shape
                 #for things we can't use a negative shell on, we'll make the whole hand a bit bigger
                 if generate_outline:
-                    shell = hand.shell(outline_wide)
+                    try:
+                        shell = hand.shell(outline_wide)
+                    except:
+                        try:
+                            print(f"unabel to generate positive shell for hand {hand_type}. trying doing it in halfs")
+                            shell = hand.shell(outline_wide/2).shell(outline_wide/2)
+                        except:
+                            print(f"unabel to generate positive shell for hand {hand_type}. trying intersection")
+                            shell = hand.shell(outline_wide, kind="intersection")
                     slabThick = self.outline_thick
                     if self.outline_same_as_body:
                         slabThick = thick

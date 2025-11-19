@@ -153,6 +153,7 @@ class ItemWithCosmetics:
         if offset is None:
             offset = (0,0)
         self.offset = offset
+        #dict of colour names to shapes
         self.cosmetics = cosmetics
         self.colour_thick_overrides = colour_thick_overrides
         if self.colour_thick_overrides is None:
@@ -165,7 +166,7 @@ class ItemWithCosmetics:
         self.final_shapes = {}
         for colour in self.cosmetics:
             cosmetic = self.cosmetics[colour].translate(self.offset)
-            total_shape = total_shape.add(cosmetic)
+            total_shape = total_shape.union(cosmetic)
             thick = self.colour_thick
             if colour in self.colour_thick_overrides:
                 thick = self.colour_thick_overrides[colour]
@@ -205,7 +206,7 @@ class ItemWithCosmetics:
             translation_lambda = lambda c : c
         shapes = self.get_models_by_colour()
         for colour in shapes:
-            show_object(translation_lambda(shapes[colour]), options={"color": colour}, name=f"Cosmetic {self.name}: {colour}")
+            show_object(translation_lambda(shapes[colour]), options={"color": Colour.colour_tidier(colour)}, name=f"Cosmetic {self.name}: {colour}")
 
     def output_STLs(self, name="clock", path="../out"):
         '''
@@ -217,6 +218,17 @@ class ItemWithCosmetics:
             out = os.path.join(path, "{}_{}_{}.stl".format(name, self.name, colour))
             print("Outputting ", out)
             exporters.export(self.final_shapes[colour], out)
+
+    def get_BOM(self):
+        bom = BillOfMaterials(self.name, "A multicolour part")
+
+
+
+        for colour in self.final_shapes:
+            bom.add_printed_part(BillOfMaterials.PrintedPart(colour, self.final_shapes[colour]))
+
+        return bom
+
 
 class ChristmasPudding:
     '''
@@ -284,6 +296,7 @@ class ChristmasPudding:
         return icing
 
     def gen_currents(self):
+        #I think I want to make this slightly less random so they're more evenly distributed
         currents = cq.Workplane("XY")
 
         current_diameter = self.diameter*0.03

@@ -32,7 +32,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "Wall Clock 47"
+clock_name= "Wall Clock 47 Xmas"
 clock_out_dir= "out"
 gear_style=GearStyle.SNOWFLAKE
 
@@ -184,7 +184,7 @@ pendulum_bob = ItemWithCosmetics(pendulum.get_bob(hollow=True), name="bob_pud", 
 # dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
 dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
-                        outer_edge_style=DialStyle.CONCENTRIC_CIRCLES,
+                        outer_edge_style=DialStyle.EMPTY,
                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 plaque = None
@@ -214,19 +214,33 @@ pulley = None
 # hands = Hands(style=HandStyle.XMAS_TREE, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
 #                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length()+5, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
+                    length=79, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
 ]
 
-assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley, specific_instructions=specific_instructions, pretty_bob=pendulum_bob)
+wreath_inner_d = dial_d-dial_width*0.4
+wreath_outer_d = dial_d+dial_width*0.2
+
+wreath = Wreath(diameter=wreath_inner_d, thick=leaf_thick, total_leaves=36)
+cosmetics={"green": wreath.get_leaves(),
+           "red": wreath.get_berries()}
+wreath_base_thick = 1
+wreath_base = cq.Workplane("XY").circle(wreath_outer_d/2).circle(wreath_inner_d/2).extrude(wreath_base_thick).faces(">Z").workplane().moveTo(0,0).circle(wreath_outer_d/2).circle(dial_d/2+0.2).extrude(wreath_base_thick)
+
+dial_wreath = ItemWithCosmetics(shape = wreath_base, name="dial_wreath", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
+
+
+assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley, specific_instructions=specific_instructions,
+                    pretty_bob=pendulum_bob, cosmetics=[pendulum_bob, dial_wreath])
 
 if not outputSTL:
     assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.DARK_GREEN, Colour.BLACK, Colour.BRASS],
-                        dial_colours=[Colour.BROWN, Colour.BLACK], bob_colours=[Colour.BROWN],
+                        dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BROWN],
                         gear_colours=[Colour.ICE_BLUE],
                         motion_works_colours=[Colour.ICE_BLUE],
                         pulley_colour=Colour.ICE_BLUE, plaque_colours=[Colour.WHITE, Colour.BLACK], with_key=True)
-
+    dial_wreath.show(show_object, lambda w:w.rotate((0,0,0),(0,1,0),180).translate((plates.hands_position[0],plates.hands_position[1],plates.dial_z+dial.thick+assembly.front_of_clock_z + wreath_base_thick)))
+    # pendulum_bob.show(show_object)
 if outputSTL:
     assembly.get_BOM().export(clock_out_dir)
