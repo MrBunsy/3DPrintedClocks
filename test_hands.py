@@ -33,12 +33,12 @@ motion_works = MotionWorks(compensate_loose_arbour=True, compact=True)
 # #
 #66.5
 hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=79, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
+                    length=66.5+3, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
 #
 
 
-# hands_bom = hands.get_BOM()
-# hands_bom.export("out/Xmas_hands")
+hands_bom = hands.get_BOM()
+hands_bom.export("out/Xmas_hands_66.5")
 
 hands.show_hands(show_object=show_object, show_second_hand=False)
 

@@ -38,23 +38,29 @@ gear_style=GearStyle.SNOWFLAKE
 
 second_hand_centred = False
 
-escapement_info = AnchorEscapement.get_with_optimal_pallets(20, drop_deg=1.75)
+escapement_info = AnchorEscapement.get_with_optimal_pallets(20, drop_deg=3)#1.75
 # escapement = SilentAnchorEscapement(teeth=escapement.teeth, drop=escapement.drop, lift=escapement.lift,l)
 escapement = SilentPinPalletAnchorEscapement(teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
                                              pin_diameter=1.0, pin_external_length=1.5*2 + 3 + 1)
-spring=True
+spring=False
 if spring:
-    powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, ratchet_at_back=True, style=gear_style, base_thick=BEARING_10x15x4_FLANGED.height,
-                        wall_thick=8, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4_FLANGED, ratchet_screws=MachineScrew(2, grub=True))
+    powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi * 1 / 4, ratchet_at_back=True,
+                                 style=gear_style, base_thick=BEARING_10x15x4_FLANGED.height,
+                                 wall_thick=8, key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4_FLANGED,
+                                 ratchet_screws=MachineScrew(2, grub=True), total_turns=4)
+    powered_wheels = 2
+    runtime_hours = 8*24
 else:
     powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+    powered_wheels = 1
+    runtime_hours = 7.5 * 24
 
 train = GoingTrain(pendulum_length_m=0.2, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
-                         powered_wheels=2, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
+                         powered_wheels=powered_wheels, runtime_hours=runtime_hours, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
-pillar_style = PillarStyle.PLAIN
+pillar_style = PillarStyle.BLOBS
 
 # train.set_ratios([[70, 9], [60, 14], [54, 10]])
 
@@ -68,8 +74,9 @@ train.set_ratios([[63, 10], [56, 10], [49, 10]])
 print(f"Pendulum period: {train.recalculate_pendulum_period()}")#:.2f
 
 
-# train.calculate_powered_wheel_ratios()
-train.set_powered_wheel_ratios([[61, 10], [64, 10]])
+train.calculate_powered_wheel_ratios(prefer_large_second_wheel=False)
+#[[75, 10], [64, 10]]
+# train.set_powered_wheel_ratios([[64, 10], [68, 10]])
 
 
 pendulumSticksOut=10
@@ -99,8 +106,9 @@ arbor_info = [
         "wheel_thick" : 2.5,
         "pinion_thick": 9,
         # "pinion_type": PinionType.LANTERN_LOW_TORQUE,
+
         "style": gear_style,
-        "pinion_extension": 18
+        "pinion_extension": 25
     },
 {
         # third wheel
@@ -118,7 +126,7 @@ arbor_info = [
         "pinion_thick": 6.0,
         # "pinion_type": PinionType.LANTERN_LOW_TORQUE,
         "style": gear_style,
-        "pinion_extension": 8,
+        "pinion_extension": 15,
         "pinion_faces_forwards": True,
     }
 ]
@@ -134,8 +142,10 @@ if spring:
     {
         #intermediate wheel
         "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
-        "pinion_type": PinionType.LANTERN_THIN,
+        "pinion_type": PinionType.LANTERN,#_THIN
         "pinion_thick": barrel_gear_thick*2,
+        #space for stop works?
+        "pinion_extension": 8,
         "wheel_thick": 4,
         "style": gear_style,
 
@@ -153,7 +163,7 @@ else:
 
 train.generate_arbors_dicts(arbor_info)
 
-train.print_info(weight_kg=2)
+train.print_info(weight_kg=2, for_runtime_hours=24*8)
 
 if spring:
     dial_d=180
@@ -201,20 +211,21 @@ gear_train_layout = GearLayout2D.get_compact_layout(train, start_on_right=True, 
 if spring:
     motion_works_angle_deg = 180 - rad_to_deg(gear_train_layout.get_angle_between(2, 1))
 else:
-    motion_works_angle_deg = 360 - 40
+    motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1, 2)) + 180
 
 
 plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=27, fewer_arms=True)
-
-# pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 pulley = None
+if not spring:
+    pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
+
 # hands = Hands(style=HandStyle.XMAS_TREE, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
 #                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=79, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
+                    length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
 ]
@@ -235,7 +246,7 @@ assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendu
                     pretty_bob=pendulum_bob, cosmetics=[pendulum_bob, dial_wreath])
 
 if not outputSTL:
-    assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.DARK_GREEN, Colour.BLACK, Colour.BRASS],
+    assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.DARK_GREEN, Colour.RED, Colour.BRASS],
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BROWN],
                         gear_colours=[Colour.ICE_BLUE],
                         motion_works_colours=[Colour.ICE_BLUE],

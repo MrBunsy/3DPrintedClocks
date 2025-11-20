@@ -1059,9 +1059,12 @@ class SpringBarrel:
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
                  base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
-                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40, ratchet_pawl_screwed_from_front=False):
+                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40, ratchet_pawl_screwed_from_front=False, total_turns=-1):
         '''
-
+        default is fraction_of_max_turns, which will work out the total number of turns the barrel can theoretically make, then that fraction when auto
+        calculating gear train
+        alternatively:
+        total_turns to specify exactly how many turns
         '''
         self.type = PowerType.SPRING_BARREL
 
@@ -1080,6 +1083,8 @@ class SpringBarrel:
         # we can calcualte the theoretical maximum rotations of the barrel, what fraction of this should be used over the runtime of the clock?
         # about half looks to match up with real smiths clocks I've analysed
         self.fraction_of_max_turns = fraction_of_max_turns
+        #or outright specify (if using stopworks)
+        self.total_turns = total_turns
 
         #ratchet is out the back plate, rather than on the front plate?
         self.ratchet_at_back = ratchet_at_back
@@ -1558,8 +1563,10 @@ class SpringBarrel:
 
     def get_turns(self, cord_usage=0):
         '''
-        we can ignore chain drop, this is just a fixed number of turns for the runtime
+        we can ignore chain drop, this is just a fixed number of turns for the total desired runtime
         '''
+        if self.total_turns > 0:
+            return self.total_turns
         return self.get_max_barrel_turns() * self.fraction_of_max_turns
 
     def get_height(self):

@@ -1518,8 +1518,8 @@ class Hands:
             useTinsel = True
             if minute:
                 #original
-                #leafyWidth *= 0.6
-                leafyWidth *=0.7
+                leafyWidth *= 0.6
+                # leafyWidth *=0.7
             if hour:
                 trunkEnd *= 0.9
 
@@ -2057,11 +2057,13 @@ class Hands:
                         shell = hand.shell(outline_wide)
                     except:
                         try:
-                            print(f"unabel to generate positive shell for hand {hand_type}. trying doing it in halfs")
-                            shell = hand.shell(outline_wide/2).shell(outline_wide/2)
-                        except:
+                            # print(f"unabel to generate positive shell for hand {hand_type}. trying doing it in halfs")
+                            # shell = hand.shell(outline_wide/2).shell(outline_wide/2)
                             print(f"unabel to generate positive shell for hand {hand_type}. trying intersection")
                             shell = hand.shell(outline_wide, kind="intersection")
+                        except:
+                            return None
+
                     slabThick = self.outline_thick
                     if self.outline_same_as_body:
                         slabThick = thick
