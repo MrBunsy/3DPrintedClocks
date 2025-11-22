@@ -155,6 +155,8 @@ class ItemWithCosmetics:
         self.offset = offset
         #dict of colour names to shapes
         self.cosmetics = cosmetics
+        #usually every colour is two layers thick - this can override that to make some colours different thicknesses
+        #any shape left over is coloured as background_colour
         self.colour_thick_overrides = colour_thick_overrides
         if self.colour_thick_overrides is None:
             self.colour_thick_overrides = {}
@@ -163,6 +165,8 @@ class ItemWithCosmetics:
 
     def generate_shapes(self):
         total_shape = self.shape
+        if total_shape is None:
+            total_shape = cq.Workplane("XY")
         self.final_shapes = {}
         for colour in self.cosmetics:
             cosmetic = self.cosmetics[colour].translate(self.offset)

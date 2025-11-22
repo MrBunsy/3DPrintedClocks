@@ -36,6 +36,8 @@ clock_name= "Wall Clock 47 Xmas"
 clock_out_dir= "out"
 gear_style=GearStyle.SNOWFLAKE
 
+random.seed(clock_name)
+
 second_hand_centred = False
 
 escapement_info = AnchorEscapement.get_with_optimal_pallets(20, drop_deg=3)#1.75
@@ -60,7 +62,7 @@ train = GoingTrain(pendulum_length_m=0.2, wheels=4, escapement=escapement, max_w
                          powered_wheels=powered_wheels, runtime_hours=runtime_hours, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
-pillar_style = PillarStyle.BLOBS
+pillar_style = PillarStyle.BARLEY_TWIST
 
 # train.set_ratios([[70, 9], [60, 14], [54, 10]])
 
@@ -87,7 +89,7 @@ pinion_extensions={1:16, 3:10}
 # train.gen_gears(module_sizes=[1, 0.95, 0.95], thick=3, thickness_reduction=2 / 2.4, powered_wheel_thick=6, pinion_thick_multiplier=3, style=gear_style,
 #                 powered_wheel_module_sizes=powered_modules, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulum_fixing, lanterns=[0],
 #                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=True)
-barrel_gear_thick = 5
+powered_wheel_thick = 5
 arbor_info = [
 
 
@@ -95,7 +97,7 @@ arbor_info = [
         #centre wheel
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1),
         "wheel_thick" : 3,
-        "pinion_thick": 12,
+        "pinion_thick": powered_wheel_thick + 1.5*2 + 2,
         "pinion_type": PinionType.LANTERN,
         "style": gear_style,
         "pinion_faces_forwards": True
@@ -135,7 +137,7 @@ if spring:
     arbor_info = [{
         #barrel
         "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2),
-        "wheel_thick": barrel_gear_thick,
+        "wheel_thick": powered_wheel_thick,
         "style": gear_style,
 
     },
@@ -143,7 +145,7 @@ if spring:
         #intermediate wheel
         "module":WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
         "pinion_type": PinionType.LANTERN,#_THIN
-        "pinion_thick": barrel_gear_thick*2,
+        "pinion_thick": powered_wheel_thick * 2,
         #space for stop works?
         "pinion_extension": 8,
         "wheel_thick": 4,
@@ -155,7 +157,7 @@ else:
         {
         #great wheel (cord barrel)
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1),
-        "wheel_thick" : 6,
+        "wheel_thick" : powered_wheel_thick,
         "pinion_type": PinionType.LANTERN,
         "style": gear_style,
         "pinion_faces_forwards": True
@@ -196,8 +198,8 @@ pendulum_bob = ItemWithCosmetics(pendulum.get_bob(hollow=True), name="bob_pud", 
 dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
                         outer_edge_style=DialStyle.EMPTY,
                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
-# plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
-plaque = None
+plaque = Plaque(text_lines=["W47#0 {:.1f}cm 2025".format(train.pendulum_length_m * 100), " Xmas for Billy xxx"])
+# plaque = None
 
 if spring:
     extra_anchor_distance = 8
@@ -233,13 +235,18 @@ specific_instructions = [
 wreath_inner_d = dial_d-dial_width*0.4
 wreath_outer_d = dial_d+dial_width*0.2
 
-wreath = Wreath(diameter=wreath_inner_d, thick=leaf_thick, total_leaves=36)
-cosmetics={"green": wreath.get_leaves(),
-           "red": wreath.get_berries()}
+wreath = Wreath(diameter=wreath_inner_d, thick=leaf_thick, total_leaves=36, greens=["green", "lightgreen"])
+# cosmetics={"green": wreath.get_leaves(),
+#            "red": wreath.get_berries()}
 wreath_base_thick = 1
 wreath_base = cq.Workplane("XY").circle(wreath_outer_d/2).circle(wreath_inner_d/2).extrude(wreath_base_thick).faces(">Z").workplane().moveTo(0,0).circle(wreath_outer_d/2).circle(dial_d/2+0.2).extrude(wreath_base_thick)
 
-dial_wreath = ItemWithCosmetics(shape = wreath_base, name="dial_wreath", background_colour="brown", cosmetics=cosmetics, colour_thick_overrides={"green":leaf_thick})
+wreath_cosmetics = wreath.get_cosmetics()
+for colour in wreath_cosmetics:
+    wreath_base = wreath_base.cut(wreath_cosmetics[colour])
+wreath_cosmetics["brown"] = wreath_base
+# dial_wreath = ItemWithCosmetics(shape = wreath_base, name="dial_wreath", background_colour="brown", cosmetics=wreath.get_cosmetics(), colour_thick_overrides={"green":leaf_thick, "lightgreen":leaf_thick})
+dial_wreath = ItemWithCosmetics(shape = None, name="dial_wreath", background_colour="green", cosmetics=wreath_cosmetics, colour_thick_overrides={"green":leaf_thick, "lightgreen":LAYER_THICK, "brown":LAYER_THICK*2})
 
 
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley, specific_instructions=specific_instructions,

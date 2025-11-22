@@ -673,16 +673,30 @@ class Wreath:
     Randomly generated at object creation time, getting leaves and berries after that will always result in the same shapes
     '''
 
-    def __init__(self, diameter=120, thick=5, berry_diameter=8, leaf_offset_from_centre=0.5, total_leaves=30):
+    def __init__(self, diameter=120, thick=5, berry_diameter=8, leaf_offset_from_centre=0.5, total_leaves=30, greens=None):
         self.diameter = diameter
         self.thick = thick
         self.leaf_offset_from_centre = leaf_offset_from_centre
         self.leaf_length = diameter*0.2
+
+        #list of colours of green, leaves will be assigned one randomly
+        self.greens = greens
+        if self.greens is None:
+            self.greens=["green"]
+
         self.leaves = [HollyLeaf(length=self.leaf_length*random.uniform(0.9, 1.1)) for i in range(total_leaves)]
         self.berry_diameter = berry_diameter
+
+        # self.leaves_shapes={}
+        # for green in self.greens:
+        #     self.leaves_shapes[green] = self.gen_leaves(green)
+
+        #dict of colour to shape
         self.leaves_shape = self.gen_leaves()
+        #just shapes
         self.berries_shape = self.gen_berries()
-        self.leaves_shape = self.leaves_shape.cut(self.berries_shape)
+        for green in self.leaves_shape:
+            self.leaves_shape[green] = self.leaves_shape[green].cut(self.berries_shape)
 
 
     def get_leaves(self):
@@ -692,18 +706,28 @@ class Wreath:
         return self.berries_shape
 
     def get_cosmetics(self):
-        return {"green": self.get_leaves(),
-                     "red": self.get_berries()}
+        cosmetics = self.leaves_shape.copy()
+        cosmetics["red"] = self.get_berries()
+        return cosmetics
     def gen_leaves(self):
-        wreath = cq.Workplane("XY")
+        wreath = {}
+        for green in self.greens:
+            wreath[green] = cq.Workplane("XY")
 
         angle = 0
 
         for leaf in self.leaves:
+            green = random.choice(self.greens)
             angle += math.pi*2 / len(self.leaves)
             leaf_angle = angle + random.uniform(-math.pi*0.05, math.pi*0.05)
             pos = polar(angle, self.diameter/2 + self.leaf_offset_from_centre)
-            wreath = wreath.union(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(-math.pi / 2 + leaf_angle)).translate((pos[0], pos[1])))
+            wreath[green] = wreath[green].union(leaf.get_2d().extrude(self.thick).rotate((0,0,0), (0,0,1), rad_to_deg(-math.pi / 2 + leaf_angle)).translate((pos[0], pos[1])))
+
+        #essentially sort them so some are on top
+        for green in wreath:
+            for other_green in wreath:
+                if green != other_green:
+                    wreath[green] = wreath[green].cut(wreath[other_green])
 
         return wreath
 

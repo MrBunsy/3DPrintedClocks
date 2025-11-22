@@ -4434,7 +4434,15 @@ class RoundClockPlates(SimpleClockPlates):
         #         longest_arm=arm_length
         #         longest_arm_index = i
 
-        long_line = Line(self.hands_position, another_point=self.bearing_positions[1][:2])
+        if self.going_train.powered_wheels == 1:
+            second_point = self.bearing_positions[2][:2]
+            long_line = Line(self.hands_position, another_point=second_point)
+            edge = np_to_set(np.add(self.hands_position, polar(long_line.get_angle(), self.radius-self.plate_width/2)))
+        elif self.going_train.powered_wheels == 2:
+            second_point = self.bearing_positions[1][:2]
+            long_line = Line(self.hands_position, another_point=second_point)
+
+
         long_space_length = self.radius
         long_line_length = long_space_length - self.plate_width
         text_height = self.plate_width * 0.9
