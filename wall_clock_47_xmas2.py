@@ -17,6 +17,8 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
+import random
+
 from clocks import *
 import json
 '''
@@ -53,7 +55,8 @@ if spring:
     powered_wheels = 2
     runtime_hours = 8*24
 else:
-    powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
+    #usually use an M4 rod - forgot to set rod diameter correct for the arbor, but I've already printed the plates and don't have a 4x10x4 bearing, so switching to M3
+    powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=3, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
     powered_wheels = 1
     runtime_hours = 7.5 * 24
@@ -110,7 +113,7 @@ arbor_info = [
         # "pinion_type": PinionType.LANTERN_LOW_TORQUE,
 
         "style": gear_style,
-        "pinion_extension": 25
+        "pinion_extension": 25-1
     },
 {
         # third wheel
@@ -128,7 +131,7 @@ arbor_info = [
         "pinion_thick": 6.0,
         # "pinion_type": PinionType.LANTERN_LOW_TORQUE,
         "style": gear_style,
-        "pinion_extension": 15,
+        "pinion_extension": 15-1,
         "pinion_faces_forwards": True,
     }
 ]
@@ -156,6 +159,7 @@ else:
     arbor_info = [
         {
         #great wheel (cord barrel)
+        "rod_diameter":powered_wheel.threaded_rod.metric_thread,
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1),
         "wheel_thick" : powered_wheel_thick,
         "pinion_type": PinionType.LANTERN,
@@ -188,6 +192,7 @@ motion_works.calculate_size(30)
 #pendulum = Pendulum(bob_d=60, bob_thick=10)
 pendulum = Pendulum(bob_d=60, bob_thick=10, hand_avoider_inner_d=120)
 leaf_thick=1
+# random.seed(clock_name + '2')
 pud = ChristmasPudding(thick=leaf_thick, diameter=pendulum.bob_r * 2, cut_rect_width=pendulum.gap_width + 0.1, cut_rect_height=pendulum.gap_height + 0.1)
 
 pendulum_bob = ItemWithCosmetics(pendulum.get_bob(hollow=True), name="bob_pud", background_colour="brown", cosmetics=pud.get_cosmetics(), colour_thick_overrides={"green":leaf_thick})
@@ -216,7 +221,7 @@ else:
     motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1, 2)) + 180
 
 
-plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
+plates = RoundClockPlates(train, motion_works, name="Wall 47 (Xmas)", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=27, fewer_arms=True)
