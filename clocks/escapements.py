@@ -992,7 +992,12 @@ class PinPalletAnchorEscapement(AnchorEscapement):
             # temp with straight lines
             # wheel = wheel.lineTo(inner[0], inner[1]).radiusArc(next_start_pos, self.inner_radius)
             curve_end = polar(end_angle + inner_circle_intersection_relative_angle, self.inner_radius)
-            wheel = wheel.radiusArc(curve_end, -end_distance_from_anchor).radiusArc(next_start_pos, self.inner_radius)
+            #this curve will be correct for entry and wrong for exit - is it best to go straight to get nearly-deadbeat for both?
+            # wheel = wheel.radiusArc(curve_end, -end_distance_from_anchor)
+            straight_line_end = polar(end_angle, self.inner_radius)
+            wheel = wheel.lineTo(straight_line_end[0],straight_line_end[1])
+
+            wheel = wheel.radiusArc(next_start_pos, self.inner_radius)
 
 
         wheel = wheel.close()#.extrude(self.wheel_thick)
