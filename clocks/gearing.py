@@ -3902,3 +3902,48 @@ It's important that the motion works can rotate freely after the friction clip h
         out = os.path.join(path, "{}_motion_hour_holder.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_hour_holder(), out)
+
+
+class GenevaGearPair:
+
+    def __init__(self, distance=20, teeth=4, stop=False):
+        '''
+        distance: distance between centres
+        teeth: number of gaps on the driven wheel
+        stop: if true, the driven wheel can't rotate more than 360 (used for stop works)
+        '''
+        self.distance = distance
+        self.overlap = 1.2
+        self.teeth = teeth
+        self.stop = stop
+        self.wiggle_radius_fraction = 0.05
+        self.calc_geometry()
+
+    def calc_geometry(self):
+        self.radius = self.overlap * self.distance / 2
+        self.radius_with_wiggle = self.radius + self.radius * self.wiggle_radius_fraction
+        # how far into the driven wheel the driving wheel tooth should extend. Trying half the radius as default
+        self.addendum_depth = self.radius / 2
+
+
+
+        #imagining driving wheel on left and driven on right
+        self.intersect_points = get_circle_intersections((0,0), self.radius, (self.distance, 0), self.radius)
+
+        self.driver_gap_points = get_circle_intersections((0,0), self.radius, (self.distance, 0), self.radius_with_wiggle)
+
+        # get_angle_between_two_points()
+
+
+    def debug_diagram(self):
+
+        diagram = cq.Workplane("XY").pushPoints([(0,0), (self.distance,0)]).circle(self.radius)
+        # diagram = cq.Workplane("XY").circle(self.radius)
+
+        diagram = diagram.add(cq.Workplane("XY").pushPoints(self.driver_gap_points).circle(1))
+        return diagram
+
+    def get_driver_2d(self):
+        wheel = cq.Workplane("XY")
+
+        return wheel
