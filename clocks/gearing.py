@@ -3904,16 +3904,29 @@ It's important that the motion works can rotate freely after the friction clip h
         exporters.export(self.get_hour_holder(), out)
 
 
-class GenevaGearPair:
+class GenevaGearPinPair:
+    '''
+    Plan - to support any variant, not just 5 teeth, I think I'll need to make it "more 3d" by using a pin
+    '''
+
+class GenevaGearInlinePair:
     '''
     Found a forum post which suggested Lessons in Horology describes how to design stopwork. I'm following their naming and sizing
     which is:
      - Finger is the driving wheel (going to be called finger_wheel to distinguish from the finger itself)
      - wheel is the driven wheel
 
+
+     this looks promising, but only works for 5 teeth. I'm not sure the Lessons in Horology version can easily be adapter to other numbers of teeth
+     one bodge solution is to make the stop tooth extra wide to reduce tooth count
+     other solution for stop works specifically is to leave it at 5 teeth, and then we'll just have extra runtime. This might actually be an advantage, since
+     we only really want to stop fulling winding the spring, we don't really care about stopping letting the spring down
+
+     However, if I want to do a day of the week I'll need 7 teeth. Maybe I can't do this easily inline - can use a pin?
+
     '''
 
-    def __init__(self, distance=20, teeth=4, stop=False, thick=5):
+    def __init__(self, distance=20, teeth=5, stop=False, thick=5):
         '''
         distance: distance between centres
         teeth: number of gaps on the driven wheel
@@ -3922,6 +3935,8 @@ class GenevaGearPair:
         self.distance = distance
         # self.overlap = 1.2
         self.teeth = teeth
+        if teeth != 5:
+            raise NotImplementedError("Only support 5 teeth")
         self.stop = stop
         # self.wiggle_radius_fraction = 0.05
         self.thick = thick
@@ -3936,7 +3951,7 @@ class GenevaGearPair:
 
         #length of the actual finger itself
         self.finger_radius = self.distance * (3/5)
-        self.wheel_outer_radius = self.finger_radius
+        self.wheel_outer_radius = self.finger_radius# * self.teeth/5
         #the circumference of the finger (meaning circle, I think) is described with a radius equal to half of the distance O O'
         self.finger_wheel_radius = self.distance/2
 

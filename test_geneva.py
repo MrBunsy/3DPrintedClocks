@@ -12,7 +12,7 @@ if 'show_object' not in globals():
 
 
 
-geneva_wheels = GenevaGearPair(stop=True, teeth=5)
+geneva_wheels = GenevaGearInlinePair(stop=True, teeth=5)
 
 show_object(geneva_wheels.debug_diagram())
 show_object(geneva_wheels.get_cross_wheel().translate(geneva_wheels.wheel_pos))
