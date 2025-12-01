@@ -3913,7 +3913,7 @@ class GenevaGearPair:
 
     '''
 
-    def __init__(self, distance=20, teeth=4, stop=False):
+    def __init__(self, distance=20, teeth=4, stop=False, thick=5):
         '''
         distance: distance between centres
         teeth: number of gaps on the driven wheel
@@ -3923,7 +3923,8 @@ class GenevaGearPair:
         # self.overlap = 1.2
         self.teeth = teeth
         self.stop = stop
-        self.wiggle_radius_fraction = 0.05
+        # self.wiggle_radius_fraction = 0.05
+        self.thick = thick
         self.calc_geometry()
 
     def calc_geometry(self):
@@ -3943,7 +3944,7 @@ class GenevaGearPair:
         self.wheel_inner_radius = self.distance*(1.75/5)
 
         self.fillet_r = self.distance*0.01
-
+        self.wheel_pos = (self.distance, 0)
 
         # self.radius = self.overlap * self.distance / 2
         #found a diagram dervived from Lessons in Horology
@@ -3955,19 +3956,30 @@ class GenevaGearPair:
 
 
         #imagining driving wheel on left and driven on right
-        self.intersect_points = get_circle_intersections((0,0), self.finger_wheel_radius, (self.distance, 0), self.wheel_outer_radius)
+        # self.intersect_points = get_circle_intersections((0,0), self.finger_wheel_radius, (self.distance, 0), self.wheel_outer_radius)
 
         # lines = [Line((0,0), another_point=p) for p in self.intersect_points]
         # self.intersect_angle = lines[0].get_angle_between_lines(lines[1], acute=True)
 
 
-        self.outer_curve_intersection_points = get_circle_intersections((0,0), self.wheel_outer_radius, (self.distance, 0), self.distance/2)
+        self.outer_curve_intersection_points = get_circle_intersections((0,0), self.finger_wheel_radius, self.wheel_pos, self.wheel_outer_radius)
         # self.driver_gap_points = get_circle_intersections((0,0), self.radius, (self.distance, 0), self.radius_with_wiggle)
-        lines = [Line((0, 0), another_point=p) for p in self.outer_curve_intersection_points]
+        lines = [Line(self.wheel_pos, another_point=p) for p in self.outer_curve_intersection_points]
         self.outer_curve_intersect_angle = lines[0].get_angle_between_lines(lines[1], acute=True)
 
+        if self.outer_curve_intersection_points[0][1] < self.outer_curve_intersection_points[1][1]:
+            self.lower_intersect_pos = self.outer_curve_intersection_points[0]
+            self.upper_intersect_pos =  self.outer_curve_intersection_points[1]
+        else:
+            self.lower_intersect_pos = self.outer_curve_intersection_points[1]
+            self.upper_intersect_pos = self.outer_curve_intersection_points[0]
         # get_angle_between_two_points()
+        self.arm_angle = math.pi * 2 / self.teeth
+        self.wheel_first_outer_curve_start_angle = math.pi + self.arm_angle/2 - self.outer_curve_intersect_angle/2
 
+
+
+        self.gap_span_angle = self.arm_angle - self.outer_curve_intersect_angle
 
     def debug_diagram(self):
 
@@ -3975,16 +3987,57 @@ class GenevaGearPair:
         diagram = cq.Workplane("XY").circle(self.finger_wheel_radius)
         diagram = diagram.add(cq.Workplane("XY").moveTo(self.distance,0).circle(self.wheel_outer_radius))
 
-        diagram = diagram.add(cq.Workplane("XY").pushPoints(self.intersect_points).circle(1))
+        diagram = diagram.add(cq.Workplane("XY").pushPoints(self.outer_curve_intersection_points).circle(1))
         return diagram
 
-    def get_cross_wheel(self, thick=5):
-        wheel = cq.Workplane("XY")
-        arm_angle = math.pi*2/self.teeth
+    def get_finger(self):
+        finger = (cq.Workplane("XY").moveTo(self.lower_intersect_pos[0], self.lower_intersect_pos[1]).radiusArc((0,-self.finger_wheel_radius), self.finger_wheel_radius)
+                  .radiusArc((0,self.finger_wheel_radius), self.finger_wheel_radius).radiusArc(self.upper_intersect_pos, self.finger_wheel_radius))
 
-        #beginning of arc of bit between first teeth
-        #this is wrong - it should be an imaginary circle from the outer imaginary circle
-        start_angle = math.pi + arm_angle/2 - self.outer_curve_intersect_angle/2
+        #bottom of the gap
+        cross_wheel_curve_start_pos = np_to_set(np.add(self.wheel_pos, polar(self.wheel_first_outer_curve_start_angle, self.wheel_outer_radius)))
+        #top of the gap
+        cross_wheel_curve_end_pos = np_to_set(np.add(self.wheel_pos, polar(self.wheel_first_outer_curve_start_angle-self.gap_span_angle, self.wheel_outer_radius)))
+
+        inner_cut_r = get_distance_between_two_points(cross_wheel_curve_start_pos, self.lower_intersect_pos)
+
+        top_little_circle_intersections = get_circle_intersections(cross_wheel_curve_end_pos, inner_cut_r, self.wheel_pos, self.wheel_outer_radius)
+        lower_top_circle_point = top_little_circle_intersections[0] if top_little_circle_intersections[0][1] < top_little_circle_intersections[1][1] else top_little_circle_intersections[1]
+
+
+        finger = finger.radiusArc(lower_top_circle_point, -inner_cut_r)
+
+        inner_cut_r2 = inner_cut_r*2
+
+        line_top_of_gap = Line(cross_wheel_curve_end_pos, direction=(1,0))
+
+        #point l on the diagram (not that I've been labelling these thus far, probably should have)
+        intersection_l = line_top_of_gap.intersection_with_circle(self.upper_intersect_pos,inner_cut_r2)[0]
+
+        finger = finger.radiusArc(intersection_l, -inner_cut_r2)
+
+        intersection_k = (intersection_l[0], -intersection_l[1])
+
+        finger = finger.radiusArc(intersection_k, self.finger_radius)
+
+        upper_bottom_circle_point = (lower_top_circle_point[0], -lower_top_circle_point[1])
+        finger = finger.radiusArc(upper_bottom_circle_point, -inner_cut_r2)
+        finger = finger.radiusArc(self.lower_intersect_pos, -inner_cut_r)
+
+        finger = finger.close()
+
+        if self.thick == 0:
+            #the 2d version. Will I ever need this? Why am I writing it?
+            return finger
+        finger = finger.extrude(self.thick).edges("|Z").fillet(self.fillet_r)
+
+        return finger
+
+    def get_cross_wheel(self):
+        wheel = cq.Workplane("XY")
+        arm_angle = self.arm_angle#math.pi*2/self.teeth
+
+        start_angle = self.wheel_first_outer_curve_start_angle#math.pi + arm_angle/2 - self.outer_curve_intersect_angle/2
         start_pos = polar(start_angle, self.wheel_outer_radius)
         wheel = wheel.moveTo(start_pos[0], start_pos[1])
         for arm in range(self.teeth):
@@ -3998,7 +4051,7 @@ class GenevaGearPair:
             curve_stop_pos = polar(curve_stop_angle, self.wheel_outer_radius)
             wheel = wheel.radiusArc(curve_stop_pos, curve_r)
 
-            gap_span_angle = arm_angle - self.outer_curve_intersect_angle
+            gap_span_angle = self.gap_span_angle#arm_angle - self.outer_curve_intersect_angle
 
             #TODO draw a line from the centre of the gap into the centre of the wheel - this gives us our direction. then start that line at curve_stop_pos, find
             #the intersection with the inner radius, and bob's your uncle.
@@ -4026,10 +4079,10 @@ class GenevaGearPair:
 
         wheel = wheel.close()
 
-        if thick == 0:
+        if self.thick == 0:
             #the 2d version. Will I ever need this? Why am I writing it?
             return wheel
-        wheel = wheel.extrude(thick).edges("|Z").fillet(self.fillet_r)
+        wheel = wheel.extrude(self.thick).edges("|Z").fillet(self.fillet_r)
 
 
         return wheel
