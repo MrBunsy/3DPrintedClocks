@@ -3905,6 +3905,13 @@ It's important that the motion works can rotate freely after the friction clip h
 
 
 class GenevaGearPair:
+    '''
+    Found a forum post which suggested Lessons in Horology describes how to design stopwork. I'm following their naming and sizing
+    which is:
+     - Finger is the driving wheel (going to be called finger_wheel to distinguish from the finger itself)
+     - wheel is the driven wheel
+
+    '''
 
     def __init__(self, distance=20, teeth=4, stop=False):
         '''
@@ -3913,37 +3920,116 @@ class GenevaGearPair:
         stop: if true, the driven wheel can't rotate more than 360 (used for stop works)
         '''
         self.distance = distance
-        self.overlap = 1.2
+        # self.overlap = 1.2
         self.teeth = teeth
         self.stop = stop
         self.wiggle_radius_fraction = 0.05
         self.calc_geometry()
 
     def calc_geometry(self):
-        self.radius = self.overlap * self.distance / 2
-        self.radius_with_wiggle = self.radius + self.radius * self.wiggle_radius_fraction
+
+        '''
+        Distance between centres is divided into five parts
+        this is the radius of the finger and the outer edge of the cross wheel
+        '''
+
+        #length of the actual finger itself
+        self.finger_radius = self.distance * (3/5)
+        self.wheel_outer_radius = self.finger_radius
+        #the circumference of the finger (meaning circle, I think) is described with a radius equal to half of the distance O O'
+        self.finger_wheel_radius = self.distance/2
+
+        #not explicitly stated, should be enough
+        self.wheel_inner_radius = self.distance*(1.75/5)
+
+        self.fillet_r = self.distance*0.01
+
+
+        # self.radius = self.overlap * self.distance / 2
+        #found a diagram dervived from Lessons in Horology
+        # self.finger_diameter = self.distance * 39/40
+        # self.radius_with_wiggle = self.radius + self.radius * self.wiggle_radius_fraction
         # how far into the driven wheel the driving wheel tooth should extend. Trying half the radius as default
-        self.addendum_depth = self.radius / 2
+        # self.addendum_depth = self.radius / 2
 
 
 
         #imagining driving wheel on left and driven on right
-        self.intersect_points = get_circle_intersections((0,0), self.radius, (self.distance, 0), self.radius)
+        self.intersect_points = get_circle_intersections((0,0), self.finger_wheel_radius, (self.distance, 0), self.wheel_outer_radius)
 
-        self.driver_gap_points = get_circle_intersections((0,0), self.radius, (self.distance, 0), self.radius_with_wiggle)
+        # lines = [Line((0,0), another_point=p) for p in self.intersect_points]
+        # self.intersect_angle = lines[0].get_angle_between_lines(lines[1], acute=True)
+
+
+        self.outer_curve_intersection_points = get_circle_intersections((0,0), self.wheel_outer_radius, (self.distance, 0), self.distance/2)
+        # self.driver_gap_points = get_circle_intersections((0,0), self.radius, (self.distance, 0), self.radius_with_wiggle)
+        lines = [Line((0, 0), another_point=p) for p in self.outer_curve_intersection_points]
+        self.outer_curve_intersect_angle = lines[0].get_angle_between_lines(lines[1], acute=True)
 
         # get_angle_between_two_points()
 
 
     def debug_diagram(self):
 
-        diagram = cq.Workplane("XY").pushPoints([(0,0), (self.distance,0)]).circle(self.radius)
-        # diagram = cq.Workplane("XY").circle(self.radius)
+        # diagram = cq.Workplane("XY").pushPoints([(0,0), (self.distance,0)]).circle(self.radius)
+        diagram = cq.Workplane("XY").circle(self.finger_wheel_radius)
+        diagram = diagram.add(cq.Workplane("XY").moveTo(self.distance,0).circle(self.wheel_outer_radius))
 
-        diagram = diagram.add(cq.Workplane("XY").pushPoints(self.driver_gap_points).circle(1))
+        diagram = diagram.add(cq.Workplane("XY").pushPoints(self.intersect_points).circle(1))
         return diagram
 
-    def get_driver_2d(self):
+    def get_cross_wheel(self, thick=5):
         wheel = cq.Workplane("XY")
+        arm_angle = math.pi*2/self.teeth
+
+        #beginning of arc of bit between first teeth
+        #this is wrong - it should be an imaginary circle from the outer imaginary circle
+        start_angle = math.pi + arm_angle/2 - self.outer_curve_intersect_angle/2
+        start_pos = polar(start_angle, self.wheel_outer_radius)
+        wheel = wheel.moveTo(start_pos[0], start_pos[1])
+        for arm in range(self.teeth):
+            angle = start_angle + arm_angle*arm
+
+            curve_r = self.finger_radius
+            if arm == self.teeth - 1 and self.stop:
+                curve_r *= -1
+
+            curve_stop_angle = angle + self.outer_curve_intersect_angle
+            curve_stop_pos = polar(curve_stop_angle, self.wheel_outer_radius)
+            wheel = wheel.radiusArc(curve_stop_pos, curve_r)
+
+            gap_span_angle = arm_angle - self.outer_curve_intersect_angle
+
+            #TODO draw a line from the centre of the gap into the centre of the wheel - this gives us our direction. then start that line at curve_stop_pos, find
+            #the intersection with the inner radius, and bob's your uncle.
+            centre_of_gap_line_to_centre_of_wheel = Line(polar(curve_stop_angle + gap_span_angle/2), another_point=(0,0))
+
+            line_inwards = Line(curve_stop_pos, direction=centre_of_gap_line_to_centre_of_wheel.get_direction())
+
+            inner_point_0 = line_inwards.intersection_with_circle((0,0), self.wheel_inner_radius, line_length=self.wheel_outer_radius)[0]
+
+            next_curve_start_angle = angle + arm_angle
+            next_curve_start_pos = polar(next_curve_start_angle, self.wheel_outer_radius)
+
+            second_line_inwards = Line(next_curve_start_pos, direction=centre_of_gap_line_to_centre_of_wheel.get_direction())
+
+            inner_point_1 = second_line_inwards.intersection_with_circle((0,0), self.wheel_inner_radius, line_length=self.wheel_outer_radius)[0]
+
+            wheel = wheel.lineTo(inner_point_0[0], inner_point_0[1])
+            wheel = wheel.radiusArc(inner_point_1, -self.wheel_inner_radius)
+            wheel = wheel.lineTo(next_curve_start_pos[0], next_curve_start_pos[1])
+
+            #TEMP
+            # next_curve_start_angle = angle + arm_angle
+            # next_curve_start_pos = polar(next_curve_start_angle, self.wheel_outer_radius)
+            # wheel = wheel.lineTo(next_curve_start_pos[0], next_curve_start_pos[1])
+
+        wheel = wheel.close()
+
+        if thick == 0:
+            #the 2d version. Will I ever need this? Why am I writing it?
+            return wheel
+        wheel = wheel.extrude(thick).edges("|Z").fillet(self.fillet_r)
+
 
         return wheel
