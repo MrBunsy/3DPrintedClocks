@@ -32,7 +32,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "Wall Clock 46"
+clock_name= "Wall Clock 48"
 clock_out_dir= "out"
 gear_style=GearStyle.HONEYCOMB_CHUNKY
 
@@ -96,7 +96,7 @@ train.generate_arbors_dicts([
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1),
         "wheel_thick" : 2.5,
         "pinion_thick": 9,
-        "pinion_type": PinionType.LANTERN_LOW_TORQUE,
+        "pinion_type": PinionType.LANTERN,
         "style": gear_style,
         "pinion_extension": 18
     },
@@ -114,7 +114,7 @@ train.generate_arbors_dicts([
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1),
         "wheel_thick" : 2.0,
         "pinion_thick": 6.0,
-        "pinion_type": PinionType.LANTERN_LOW_TORQUE,
+        "pinion_type": PinionType.LANTERN,#_LOW_TORQUE
         "style": gear_style,
         "pinion_extension": 8,
         "pinion_faces_forwards": True,

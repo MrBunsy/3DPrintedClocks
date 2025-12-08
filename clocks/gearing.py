@@ -35,6 +35,27 @@ from .types import *
 
 from clocks.cq_gears import BevelGearPair
 
+#hacky. For lantern pinions, pinion extensions below this length only make the rods longer
+MIN_PINION_EXTENSION_FOR_LANTERN = 5
+
+
+'''
+Bit of an overview.
+
+Gear is purely geometry and helper functions. A single Gear can be either a wheel or pinion. Gears are held by the WheelPinionPair objects
+
+WheelPinionPair is a meshing pinion and a wheel (both Gear objects). This will be created by a gear train object (eg GoingTrain). These are still just geometry.
+
+Arbor (basically an axle) objects are created by generate_arbors_dicts (or deprecated gen_gears) method of the gear train. These then generates an Arbor object for each
+arbor in the train. These can be wheels and pinions on the arbor, or the escape wheel, or powered wheel, or a handful of other things.
+The Arbor object understands its thicknesses (of wheel and/or pinion) but doesn't know about the geometry of the rest of the clock.
+The Arbor can generate most of its shapes.
+
+ArborForPlate is a wrapper around Arbor and is aware of the geometry of the rest of the clock. This is the highest level class in this file.
+The logic in here is at times messy, and all the different types of arbor really need unifying instead of all being similar but different.
+
+'''
+
 class Gear:
     '''
     A gear represents a wheel or pinion, but holds no information about its thickness, it's largely for generating 2D representations that the Arbor class can turn into
@@ -1023,6 +1044,8 @@ class Gear:
         but with lots of helper functions taht can be used by Arbor, which knows a lot more about the final geometry
         hence why I think I'll keep this lantern knowledge as just "lantern" or not, rather than all the different types.
 
+        in keeping with this I'm planning to refactor all the lantern shapes into Arbor
+
         '''
         self.iswheel = is_wheel
         self.teeth = teeth
@@ -1143,8 +1166,25 @@ class Gear:
 
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
+
+    def get_lantern_trundle_cutter(self, trundle_length=10):
+        '''
+        just the steel rods
+        '''
+        angle_change = math.pi * 2 / self.teeth
+        cutter = cq.Workplane("XY")
+        for angle in [angle_change * i for i in range(self.teeth)]:
+            # 0.1 extra is enough to squeeze in, but I broke the wheel first time trying to assemble.
+            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r + 0.2).extrude(trundle_length).translate(polar(angle, self.pitch_diameter / 2)))
+        return cutter
+
+
     def get_lantern_cutter(self, trundle_offset = 1, trundle_length=100, wheel_hex_hole_offset=0, hole_d=0, trundles_only=False):
         '''
+
+        DEPRECATED: plan is move this logic out of Gear and into Arbor. this is starting to need too much geometry passed in
+        however, then lantern pinions and normal pinions will have two very different code paths.
+        get_lantern_trundle_cutter and get_lantern_inner_fixing both can stay and be used by Arbor
 
         trundle_offset = how far from the back of the wheel the trundle holes end
         wheel_hex_hole_offset = how far from the back of the wheel the hexangle fixing hole ends
@@ -1156,7 +1196,7 @@ class Gear:
         TODO plan is to have a separate vertical hexagonal peice printed sideways (like the key) for strength
 
         '''
-
+        raise DeprecationWarning("get_lantern_cutter is being moved out of Gear and into Arbor")
 
         if trundles_only:
             cutter = cq.Workplane("XY")
@@ -1178,22 +1218,28 @@ class Gear:
         return cutter
 
 
-    def get_lantern_inner_fixing(self, base_thick=5, pinion_height=10, top_thick=5, for_printing=True, hole_d=3):
-        holder_together = cq.Workplane("XY").polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(base_thick)
+    def get_lantern_inner_fixing(self, base_thick=5, pinion_height=10, top_thick=5, for_printing=True, hole_d=3, for_cutting=False):
 
-        holder_together = holder_together.faces(">Z").workplane().circle(self.inner_r).circle(hole_d/2).extrude(pinion_height)
+        inner_r = self.inner_r
+        if for_cutting:
+            #this is being used to cut out from top/bottom shapes
+            inner_r = self.inner_r_for_lantern_fixing_slot
 
-        holder_together = holder_together.faces(">Z").workplane().polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(top_thick)
+        holder_together = cq.Workplane("XY").polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(base_thick)
+
+        holder_together = holder_together.faces(">Z").workplane().circle(inner_r).circle(hole_d/2).extrude(pinion_height)
+
+        holder_together = holder_together.faces(">Z").workplane().polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(top_thick)
         # line up with the base of the hexagon
         holder_together = holder_together.rotate((0, 0, 0), (0, 0, 1), 360 / 12)
-        holder_together = holder_together.rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.inner_r - self.cutoff_height))
+        holder_together = holder_together.rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, inner_r - self.cutoff_height))
 
         # chop off the bottom so this is printable horizontally for maximum strength and no overhangs
         holder_together = holder_together.cut(cq.Workplane("XY").rect(1000, 1000).extrude(100).translate((0, 0, -100)))
 
         if not for_printing:
             holder_together = (holder_together.rotate((0, 0, 0), (0, 1, 0), -90)
-                               .translate((self.inner_r - self.cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), 360 / 12))
+                               .translate((inner_r - self.cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), 360 / 12))
 
         return holder_together
 
@@ -1229,6 +1275,8 @@ class Gear:
 
         if self.lantern:
             #TODO pinion extensions for lantern pinions
+            if pinion_extension > MIN_PINION_EXTENSION_FOR_LANTERN:
+                base = base.faces(">Z").workplane().circle(self.get_max_radius()).extrude(pinion_extension)
             base = base.cut(self.get_lantern_cutter(trundle_offset=lantern_offset, wheel_hex_hole_offset=lantern_fixing_wheel_offset, hole_d=hole_d_for_lantern))
             # base = base.union(cq.Workplane("XY").circle(self.inner_r).circle(hole_d/2).extrude(thick + pinion_thick).faces(">Z").workplane().polygon(self.slot_sides, self.inner_r*2).circle(hole_d/2).extrude(cap_thick))
             return base
@@ -2762,6 +2810,10 @@ To keep this assembly together, use a small amount of superglue between the whee
     def get_total_thickness(self):
         '''
         return total thickness of everything that will be on the rod (between the plates!)
+
+        TODO take into account the top/bottom caps for lantern pinions. Previously this hasn't mattered, but now I'm trying
+        a fully lantern pinion clock one of the pinions will be butted up against the plates so the thickness
+        needs to be properly accounted for
         '''
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
 
@@ -2925,7 +2977,16 @@ To keep this assembly together, use a small amount of superglue between the whee
                 pinion_extension = 0
                 pinion_thick+=self.pinion_extension
             print(f"end_cap_thick: {self.end_cap_thick}")
-            shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+            if self.pinion.lantern:
+                '''
+                messy logic time! This is where we need to decide everything that is added or subtracted from the wheel itself for a lantern pinion
+                '''
+                shape = self.wheel.get3D(thick=self.wheel_thick, holeD=hole_d, style=self.style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                #would it be best to have a separate object which is the lantern pinion? then it can provide wheel cutters and additional parts and have logic about if we
+                #need pinion extensions, etc
+                # shape = shape.cut(self.pinion.get_lantern_trundle_cutter())
+            else:
+                shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                              pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
                                              lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset, hole_d_for_lantern=self.arbor_d)
             if self.pinion_extension > 5:
@@ -3935,8 +3996,8 @@ class GenevaGearInlinePair:
         self.distance = distance
         # self.overlap = 1.2
         self.teeth = teeth
-        if teeth != 5:
-            raise NotImplementedError("Only support 5 teeth")
+        # if teeth != 5:
+        #     raise NotImplementedError("Only support 5 teeth")
         self.stop = stop
         # self.wiggle_radius_fraction = 0.05
         self.thick = thick
@@ -3951,6 +4012,23 @@ class GenevaGearInlinePair:
 
         #length of the actual finger itself
         self.finger_radius = self.distance * (3/5)
+        if self.teeth != 5:
+            #0.95 works for 6,
+            #0.9 works for 7
+            #0.875 works for 8
+            #1.05 works for 4
+            #can probably figure this out properly
+            #cheated, used a spreadsheet to give me a trendline: 1.538*teeth**-0.2717
+            # self.finger_radius *= 0.875
+            '''
+            so, we want the overlap between finger and wheel to be relatively small as the tooth coutn goes up, so the width of the finger isn't too large
+            can I work out an optimal size of that overlap?
+            
+            
+            '''
+            # self.finger_radius *= 1 -(0.05 * (self.teeth - 5))
+            #"works" from 4-9
+            self.finger_radius *= 1.54*(self.teeth**-0.2717)
         self.wheel_outer_radius = self.finger_radius# * self.teeth/5
         #the circumference of the finger (meaning circle, I think) is described with a radius equal to half of the distance O O'
         self.finger_wheel_radius = self.distance/2
