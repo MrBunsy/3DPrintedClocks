@@ -24,7 +24,7 @@ from clocks import *
 '''
 idle thought: can I shrink the mantel moon clock down a bit?
 
-answer: probably but I need to tidy up where the pillars go so it 
+answer: probably but I need to tidy up where the pillars go so works 
 '''
 output_STL = False
 

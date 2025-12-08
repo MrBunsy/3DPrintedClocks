@@ -5177,7 +5177,8 @@ class RoundClockPlates(SimpleClockPlates):
         '''
 
         plate_thick = self.get_plate_thick(standoff=True)
-        wall_fixing_pos = self.get_screwhole_positions()[0][:2]
+        if self.wall_mounted:
+            wall_fixing_pos = self.get_screwhole_positions()[0][:2]
         distance_to_anchor = get_distance_between_two_points(self.bearing_positions[-1][:2], self.hands_position)
 
         if distance_to_anchor > self.radius and not self.power_at_bottom:

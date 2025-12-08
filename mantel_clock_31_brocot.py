@@ -47,10 +47,10 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clockName="mantel_clock_31"
-clockOutDir="out"
-gearStyle=clock.GearStyle.CIRCLES
-pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+clock_name= "mantel_clock_31"
+clock_out_dir= "out"
+gear_style=clock.GearStyle.CIRCLES
+pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 
 #this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
@@ -71,7 +71,7 @@ moduleReduction=0.9#0.85
 # train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, ratchet_at_back=False, style=gearStyle, base_thick=barrel_gear_thick,
 #                         chain_wheel_ratios=[[61, 10], [62, 10]])#[[66, 10], [76,13]])#, [[61, 10], [62, 10]]
 
-train.gen_spring_barrel(spring=clock.MAINSPRING_183535, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gearStyle, base_thick=barrel_gear_thick,
+train.gen_spring_barrel(spring=clock.MAINSPRING_183535, pawl_angle=math.pi, click_angle=0, ratchet_at_back=True, style=gear_style, base_thick=barrel_gear_thick,
                         wall_thick=9)#chain_wheel_ratios=[[67, 10], [61, 10]],
 
 #TODO new option to favour large escape wheel?
@@ -94,13 +94,13 @@ pinion_extensions = {1:30} #{1:25}
 powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), 1]
 #[1.6, 1.25]
 #endshake is 1.5 by default for mantel plates, so double and some more that for pinion extra length
-train.gen_gears(module_size=0.75, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gearStyle,
-                powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0], pinion_thick_extra=3 + 2, rod_diameters=[12,3,3,2,2,2,2,2], escapement_split=clock.SplitArborType.WHEEL_OUT_FRONT)
-# train.print_info(weight_kg=1.5)
+train.gen_gears(module_size=0.75, module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, powered_wheel_thick=barrel_gear_thick, style=gear_style,
+                powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
+                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=3 + 2, rod_diameters=[12,3,3,2,2,2,2,2], escapement_split=clock.SplitArborType.WHEEL_OUT_FRONT)
+train.print_info(for_runtime_hours=8*24)
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=23, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=23, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 motionWorks.calculate_size(arbor_distance=30)
 
@@ -125,7 +125,7 @@ hands = clock.Hands(style=clock.HandStyle.BREGUET, minute_fixing="square", minut
                     length=dial.get_hand_length(), thick=motionWorks.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=True)
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum)#weights=[clock.Weight(height=245,diameter=55)]
+assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clock_name)#weights=[clock.Weight(height=245,diameter=55)]
 
 assembly.get_arbor_rod_lengths()
 plates.get_rod_lengths()
@@ -147,15 +147,16 @@ if not outputSTL or True:
 
 if outputSTL:
 
-    lantern_test = plates.arbors_for_plate[1].get_shapes()["wheel"].intersect(cq.Workplane("XY").circle(plates.arbors_for_plate[1].arbor.pinion.outer_r).extrude(100))
-
-    out = os.path.join(clockOutDir, "{}_lantern_test.stl".format(clockName))
-    print("Outputting ", out)
-    exporters.export(lantern_test, out)
-
-    motionWorks.output_STLs(clockName,clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+    # lantern_test = plates.arbors_for_plate[1].get_shapes()["wheel"].intersect(cq.Workplane("XY").circle(plates.arbors_for_plate[1].arbor.pinion.outer_r).extrude(100))
+    #
+    # out = os.path.join(clockOutDir, "{}_lantern_test.stl".format(clockName))
+    # print("Outputting ", out)
+    # exporters.export(lantern_test, out)
+    #
+    # motionWorks.output_STLs(clockName,clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
+    assembly.get_BOM().export(clock_out_dir)
 

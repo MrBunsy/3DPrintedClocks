@@ -1686,8 +1686,11 @@ class BillOfMaterials:
             return f"{self.quantity} x {self.get_filename()}{blurb_string}"
 
         def export(self, path):
-            self.export_STL(os.path.join(path,BillOfMaterials.PRINTABLES_PATH))
-            self.export_SVG(os.path.join(path,BillOfMaterials.IMAGES_PATH))
+            try:
+                self.export_STL(os.path.join(path,BillOfMaterials.PRINTABLES_PATH))
+                self.export_SVG(os.path.join(path,BillOfMaterials.IMAGES_PATH))
+            except:
+                print(f"Failed to export {self.name}")
 
         def export_STL(self, path):
             export_STL(object=self.object,object_name=self.name, clock_name=self.get_full_name(), path=path, tolerance=self.tolerance)
