@@ -1584,7 +1584,7 @@ class LanternPinion:
 
     aim is to get this class to do all the heavy lifting around the different types and provide one simple API for Arbor to use
     '''
-    def __init__(self, pinion, thick, wheel_thick, extension=0, cap_thick=3, type = PinionType.LANTERN, arbor_rod_d=3):
+    def __init__(self, pinion, thick, wheel_thick, extension=0, cap_thick=3, type = PinionType.LANTERN, arbor_rod_d=3, min_extension= MIN_PINION_EXTENSION_FOR_LANTERN):
         self.pinion = pinion
         self.thick = thick
         self.wheel_thick = wheel_thick
@@ -1592,6 +1592,13 @@ class LanternPinion:
         self.cap_thick = cap_thick
         self.type = type
         self.arbor_rod_d = arbor_rod_d
+
+        #extensions below this will just extend the rods
+        # self.min_extension = min_extension
+
+        if extension < min_extension:
+            self.thick += extension
+            self.extension = 0
 
         self.trundle_hole_sunk_into_wheel = 0
         self.trundle_hole_sunk_into_cap = 0
@@ -1636,7 +1643,7 @@ class LanternPinion:
         '''
         add and subtract everything from the wheel, adding to the top size (+ve Z) as per everything else
         '''
-        if self.extension > MIN_PINION_EXTENSION_FOR_LANTERN:
+        if self.extension > 0:#self.min_extension:
             wheel_shape = wheel_shape.faces(">Z").workplane().circle(self.outer_r).extrude(self.extension)
             cutter = Gear.get_pinion_extension_cutter(self.extension, end_cap_thick=self.cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius() / 2))
             if cutter is not None:
@@ -1655,6 +1662,8 @@ class LanternPinion:
         '''
         base_thick = self.hex_fixing_sunk_into_wheel
         pinion_height = self.thick
+        # if self.extension < self.min_extension:
+        #     pinion_height+=self.extension
         top_thick = self.hex_fixing_sunk_into_cap
         hole_d = self.arbor_rod_d
         inner_r = self.pinion.inner_r
@@ -1737,7 +1746,7 @@ class LanternPinion:
         return extras
 
     def get_assembled(self):
-        whole_pinion = self.get_hex_fixing(for_printing=False,for_cutting=False).translate((0,0,self.wheel_thick - self.hex_fixing_sunk_into_wheel + self.extension))
+        whole_pinion = self.get_hex_fixing(for_printing=False,for_cutting=False).translate((0,0,self.wheel_thick - self.hex_fixing_sunk_into_wheel))
 
         rods = self.pinion.get_lantern_trundle_cutter(self.steel_dowel_length, for_cutting=False)
 
