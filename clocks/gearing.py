@@ -1075,17 +1075,17 @@ class Gear:
             tooth_angle = self.tooth_angle
             self.trundle_r = math.sin(tooth_angle/2)* self.pitch_diameter/2
             print("need trundles of diameter {}mm".format(self.trundle_r*2))
-            self.outer_r = self.outer_r + self.trundle_r*3
-            #this will be a tight fit, but that's good as we don't want it to twist. May well need a vise to squeeze everything together
-            #0.175 worked but I think it resulted in the lantern pinions being at an angle
-            self.inner_r_for_lantern_fixing_slot = self.inner_r + 0.04#0.175
-            self.slot_sides = 6
-            # https://en.wikipedia.org/wiki/Sagitta_(geometry)
-            # assuming hexagon, find how far the flat edge is from the containing diameter
-            r = self.inner_r
-            l = r
-            sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
-            self.cutoff_height = sagitta
+            # self.outer_r = self.outer_r + self.trundle_r*3
+            # #this will be a tight fit, but that's good as we don't want it to twist. May well need a vise to squeeze everything together
+            # #0.175 worked but I think it resulted in the lantern pinions being at an angle
+            # # self.inner_r_for_lantern_fixing_slot = self.inner_r + 0.04#0.175
+            # self.slot_sides = 6
+            # # https://en.wikipedia.org/wiki/Sagitta_(geometry)
+            # # assuming hexagon, find how far the flat edge is from the containing diameter
+            # r = self.inner_r
+            # l = r
+            # sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
+            # self.cutoff_height = sagitta
             # print(f"TEMP inner_r_for_lantern_fixing_slot {self.inner_r_for_lantern_fixing_slot}mm inner_r {self.inner_r}")
 
         '''
@@ -1167,15 +1167,19 @@ class Gear:
         return cq.Workplane("XY").circle(self.get_max_radius()).circle(inner_r).extrude(thick).translate((0, 0, offset_z))
 
 
-    def get_lantern_trundle_cutter(self, trundle_length=10):
+    def get_lantern_trundle_cutter(self, trundle_length=10, for_cutting=True):
         '''
         just the steel rods
         '''
         angle_change = math.pi * 2 / self.teeth
         cutter = cq.Workplane("XY")
+
+        r = self.trundle_r
+        if for_cutting:
+            r += 0.2
         for angle in [angle_change * i for i in range(self.teeth)]:
             # 0.1 extra is enough to squeeze in, but I broke the wheel first time trying to assemble.
-            cutter = cutter.add(cq.Workplane("XY").circle(self.trundle_r + 0.2).extrude(trundle_length).translate(polar(angle, self.pitch_diameter / 2)))
+            cutter = cutter.add(cq.Workplane("XY").circle(r).extrude(trundle_length).translate(polar(angle, self.pitch_diameter / 2)))
         return cutter
 
 
@@ -1217,45 +1221,23 @@ class Gear:
 
         return cutter
 
+    @staticmethod
+    def get_pinion_extension_cutter(pinion_extension, end_cap_thick, max_radius, extension_radius):
+        '''
+        get a shape which can cut away the pinion extension to make it less chunky
+        '''
+        if pinion_extension > 5:
+            pinion_r = max_radius
+            cut_to_r = extension_radius  # pinion_r * 0.7
+            cutter_high = pinion_extension - max(2,end_cap_thick)
+            cutter = cq.Workplane("XY").circle(pinion_r * 1.5).circle(cut_to_r).extrude(cutter_high)#.translate((0, 0, wheel_thick))
+            # trim off the top so this is printable at 45deg
+            cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0, height=pinion_r * 1.5, pnt=(0, 0, cutter_high), dir=(0, 0, -1)))# + wheel_thick
+            return cutter
 
-    def get_lantern_inner_fixing(self, base_thick=5, pinion_height=10, top_thick=5, for_printing=True, hole_d=3, for_cutting=False):
+        return None
 
-        inner_r = self.inner_r
-        if for_cutting:
-            #this is being used to cut out from top/bottom shapes
-            inner_r = self.inner_r_for_lantern_fixing_slot
-
-        holder_together = cq.Workplane("XY").polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(base_thick)
-
-        holder_together = holder_together.faces(">Z").workplane().circle(inner_r).circle(hole_d/2).extrude(pinion_height)
-
-        holder_together = holder_together.faces(">Z").workplane().polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(top_thick)
-        # line up with the base of the hexagon
-        holder_together = holder_together.rotate((0, 0, 0), (0, 0, 1), 360 / 12)
-        holder_together = holder_together.rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, inner_r - self.cutoff_height))
-
-        # chop off the bottom so this is printable horizontally for maximum strength and no overhangs
-        holder_together = holder_together.cut(cq.Workplane("XY").rect(1000, 1000).extrude(100).translate((0, 0, -100)))
-
-        if not for_printing:
-            holder_together = (holder_together.rotate((0, 0, 0), (0, 1, 0), -90)
-                               .translate((inner_r - self.cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), 360 / 12))
-
-        return holder_together
-
-
-
-    def get_lantern_cap(self, offset = 1, cap_thick=5):
-        # offset = self.get_lantern_trundle_offset()
-        cap = cq.Workplane("XY").circle(self.outer_r).polygon(self.slot_sides, self.inner_r_for_lantern_fixing_slot * 2).extrude(cap_thick)
-
-        cap = cap.cut(self.get_lantern_cutter(0, cap_thick-offset))
-
-
-
-        return cap
-
-    def add_to_wheel(self, wheel, hole_d=0, thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True,
+    def add_to_wheel(self, wheel, hole_d=0, wheel_thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True,
                      pinion_extension=0, lantern_offset=1, lantern_fixing_wheel_offset=0, hole_d_for_lantern=0):
         '''
         Intended to add a pinion (self) to a wheel (provided)
@@ -1268,13 +1250,15 @@ class Gear:
         '''
         try:
             #assume that whele is a wheel object
-            base = wheel.get3D(thick=thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
+            base = wheel.get3D(thick=wheel_thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
         except:
             #wheel is a cadquery 3d object
             base = wheel
 
         if self.lantern:
             #TODO pinion extensions for lantern pinions
+            #note - now deprecated, this logic is now in LanternPinion
+            raise DeprecationWarning("Should use LanternPinion class instead")
             if pinion_extension > MIN_PINION_EXTENSION_FOR_LANTERN:
                 base = base.faces(">Z").workplane().circle(self.get_max_radius()).extrude(pinion_extension)
             base = base.cut(self.get_lantern_cutter(trundle_offset=lantern_offset, wheel_hex_hole_offset=lantern_fixing_wheel_offset, hole_d=hole_d_for_lantern))
@@ -1286,19 +1270,22 @@ class Gear:
 
 
         if pinion_extension > 0:
-            base = base.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(pinion_extension).translate((0, 0, thick)))
+            base = base.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(pinion_extension).translate((0, 0, wheel_thick)))
+            cutter = self.get_pinion_extension_cutter(pinion_extension, end_cap_thick=cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius()/2))
+            if cutter is not None:
+                base = base.cut(cutter.translate((0, 0, wheel_thick)))
 
-        top = self.get3D(thick=pinion_thick, holeD=hole_d, style=style).translate((0, 0, thick + pinion_extension))
+        top = self.get3D(thick=pinion_thick, holeD=hole_d, style=style).translate((0, 0, wheel_thick + pinion_extension))
 
-        arbour = base.union(top)
+        arbor = base.union(top)
 
         if cap_thick > 0:
-            arbour = arbour.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(cap_thick).translate((0, 0, thick + pinion_thick + pinion_extension)))
+            arbor = arbor.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(cap_thick).translate((0, 0, wheel_thick + pinion_thick + pinion_extension)))
         if hole_d > 0:
             # arbour = arbour.faces(topFace).workplane().moveTo(0,0).circle(holeD / 2).cutThruAll()
-            arbour = arbour.cut(cq.Workplane("XY").moveTo(0,0).circle(hole_d / 2).extrude(1000).translate((0, 0, -500)))
+            arbor = arbor.cut(cq.Workplane("XY").moveTo(0,0).circle(hole_d / 2).extrude(1000).translate((0, 0, -500)))
 
-        return arbour
+        return arbor
 
     def get2D(self):
         '''
@@ -1590,6 +1577,209 @@ class WheelPinionBeveledPair:
         assembly = self.wheel.add(pinion_in_situ)
 
         return assembly
+
+class LanternPinion:
+    '''
+    There are now more than one type of lantern pinion, and the logic is distributed all over the place
+
+    aim is to get this class to do all the heavy lifting around the different types and provide one simple API for Arbor to use
+    '''
+    def __init__(self, pinion, thick, wheel_thick, extension=0, cap_thick=3, type = PinionType.LANTERN, arbor_rod_d=3):
+        self.pinion = pinion
+        self.thick = thick
+        self.wheel_thick = wheel_thick
+        self.extension = extension
+        self.cap_thick = cap_thick
+        self.type = type
+        self.arbor_rod_d = arbor_rod_d
+
+        self.trundle_hole_sunk_into_wheel = 0
+        self.trundle_hole_sunk_into_cap = 0
+        self.hex_fixing_sunk_into_wheel = self.wheel_thick
+        self.hex_fixing_sunk_into_cap = self.cap_thick
+        self.trundle_hole_end_gap = 0.5
+        self.slot_sides = 6
+
+        self.calc_trundle_length()
+
+        self.outer_r = self.pinion.outer_r + self.pinion.trundle_r*3
+        #this will be a tight fit, but that's good as we don't want it to twist. May well need a vise to squeeze everything together
+        #0.175 worked but I think it resulted in the lantern pinions being at an angle
+        self.inner_r_for_hex_slot_cutter = self.pinion.inner_r + 0.04#0.175
+        self.slot_sides = 6
+        # https://en.wikipedia.org/wiki/Sagitta_(geometry)
+        # assuming hexagon, find how far the flat edge is from the containing diameter
+        r = self.pinion.inner_r
+        l = r
+        sagitta = r - math.sqrt(r ** 2 - (l ** 2) / 4)
+        self.hex_fitting_cutoff_height = sagitta
+
+
+    def arbor_extension_is_part_of_wheel(self):
+        return self.type == PinionType.LANTERN_THIN
+
+    def get_total_thickness(self):
+        '''
+        including top cap, so this could butt up against the plates and plate_distance will be calculated correctly
+        '''
+    def get_lantern_trundle_min_offset(self):
+        '''
+        If +ve then the trundle hole doesn't go all the way through the wheel or cap (for thicker wheels)
+        if 0 then the trundle hole goes all the way through (thinner wheels) and we rely on the arbor extensions and glue to hold everything firmly in place
+        this will then be tidied up to fit the actual lengths of rods?
+        '''
+        if self.wheel_thick <= 3 and not self.type == PinionType.LANTERN_THIN:
+            #hole all the way through
+            return 0
+        return 1
+    def add_to_wheel(self, wheel_shape):
+        '''
+        add and subtract everything from the wheel, adding to the top size (+ve Z) as per everything else
+        '''
+        if self.extension > MIN_PINION_EXTENSION_FOR_LANTERN:
+            wheel_shape = wheel_shape.faces(">Z").workplane().circle(self.outer_r).extrude(self.extension)
+            cutter = Gear.get_pinion_extension_cutter(self.extension, end_cap_thick=self.cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius() / 2))
+            if cutter is not None:
+                wheel_shape = wheel_shape.cut(cutter.translate((0, 0, self.wheel_thick)))
+
+        wheel_shape = wheel_shape.cut(self.pinion.get_lantern_trundle_cutter(self.trundle_cutter_length).translate((0,0,self.wheel_thick + self.extension - self.trundle_hole_sunk_into_wheel)))
+        wheel_shape = wheel_shape.cut(self.get_hex_fixing(for_printing=False, for_cutting=True).translate((0,0, self.wheel_thick - self.hex_fixing_sunk_into_wheel + self.extension)))
+
+        return wheel_shape
+
+    def get_max_radius(self):
+        return self.outer_r
+    def get_hex_fixing(self,  for_printing=True, for_cutting=False):
+        '''
+        hex part, printed sideways, to hold the cap and wheel together
+        '''
+        base_thick = self.hex_fixing_sunk_into_wheel
+        pinion_height = self.thick
+        top_thick = self.hex_fixing_sunk_into_cap
+        hole_d = self.arbor_rod_d
+        inner_r = self.pinion.inner_r
+        if for_cutting:
+            #this is being used to cut out from top/bottom shapes
+            inner_r = self.inner_r_for_hex_slot_cutter
+
+        holder_together = cq.Workplane("XY").polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(base_thick)
+
+        holder_together = holder_together.faces(">Z").workplane().circle(inner_r).circle(hole_d/2).extrude(pinion_height)
+
+        holder_together = holder_together.faces(">Z").workplane().polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(top_thick)
+        # line up with the base of the hexagon
+        holder_together = holder_together.rotate((0, 0, 0), (0, 0, 1), 360 / 12)
+        holder_together = holder_together.rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, inner_r - self.hex_fitting_cutoff_height))
+
+        # chop off the bottom so this is printable horizontally for maximum strength and no overhangs
+        holder_together = holder_together.cut(cq.Workplane("XY").rect(1000, 1000).extrude(100).translate((0, 0, -100)))
+
+        if not for_printing:
+            #put upright
+            holder_together = (holder_together.rotate((0, 0, 0), (0, 1, 0), -90)
+                               .translate((inner_r - self.hex_fitting_cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), 360 / 12))
+
+        return holder_together
+
+
+
+    def get_cap(self):
+        # offset = self.get_lantern_trundle_offset()
+        #note - assumes hex fixing always goes through cap
+        cap = cq.Workplane("XY").circle(self.outer_r).polygon(self.slot_sides, self.inner_r_for_hex_slot_cutter * 2).extrude(self.cap_thick)
+
+        cap = cap.cut(self.pinion.get_lantern_trundle_cutter(self.trundle_cutter_length).translate((0,0,self.cap_thick - self.trundle_hole_sunk_into_cap)))
+
+
+
+        return cap
+    def get_below_wheel_parts(self):
+        '''
+        lower cap? or should this stay done in arbor_exention? or if we move it here, then pinion extension might be able to be more simple?
+        think we'll always have to interact with arbor_extension. Need to think
+        '''
+
+    def calc_trundle_length(self):
+        min_length = self.thick
+        max_length = self.thick + (self.cap_thick - self.get_lantern_trundle_min_offset()) + (self.wheel_thick - self.get_lantern_trundle_min_offset())
+        print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(self.pinion.trundle_r * 2, min_length, max_length))
+        #round down to nearest 2mm so we can buy dowels for the job
+        self.steel_dowel_length = max_length - (max_length % 2)
+
+        self.trundle_hole_end_gap  = (max_length - self.steel_dowel_length )/2
+
+        self.trundle_cutter_length = self.steel_dowel_length + self.trundle_hole_end_gap * 2
+        # self.max_trundle_length = max_length
+        #how much length is inside the end cap or wheel/pinion extension on the wheel?
+        #add some extra just in case
+        self.trundle_hole_sunk_into_cap = self.trundle_hole_sunk_into_wheel = (self.steel_dowel_length - self.thick) / 2 + self.trundle_hole_end_gap
+        if self.trundle_hole_sunk_into_cap > self.cap_thick:
+            print(f"self.trundle_hole_sunk_into_cap > self.cap_thick: {self.trundle_hole_sunk_into_cap} > {self.cap_thick}")
+            self.trundle_hole_sunk_into_wheel += self.trundle_hole_sunk_into_cap - self.cap_thick
+            self.trundle_hole_sunk_into_cap = self.cap_thick
+
+        self.fixing_sunk_into_wheel = self.wheel_thick
+        self.fixing_sunk_into_cap = self.cap_thick
+
+        if self.type == PinionType.LANTERN_THIN:
+            '''
+            fixing can't go all the way into the wheel
+            TODO
+            '''
+            raise NotImplementedError("TODO support thin lanterns again")
+
+        # return trundle_length
+
+    def get_extras(self):
+        extras = {}
+        extras["lantern_pinion_cap"] = self.get_cap()
+        extras["lantern_pinion_fixing"] = self.get_hex_fixing()
+        return extras
+
+    def get_assembled(self):
+        whole_pinion = self.get_hex_fixing(for_printing=False,for_cutting=False).translate((0,0,self.wheel_thick - self.hex_fixing_sunk_into_wheel + self.extension))
+
+        rods = self.pinion.get_lantern_trundle_cutter(self.steel_dowel_length, for_cutting=False)
+
+        whole_pinion = whole_pinion.add(rods.translate((0,0,self.wheel_thick - self.trundle_hole_sunk_into_wheel + self.trundle_hole_end_gap + self.extension)))
+
+        cap = self.get_cap()
+        cap = cap.rotate((0,0,0),(1,0,0),180).translate((0,0,self.wheel_thick + self.thick+self.cap_thick + self.extension))
+
+        whole_pinion = whole_pinion.add(cap)
+
+        return whole_pinion
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Lantern Pinion")
+        diameter = self.pinion.trundle_r * 2
+        trundle_length = self.steel_dowel_length
+
+        trundle_item = BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity=self.pinion.teeth, purpose="Lantern pinion trundles")
+        # wheel_pos = "rear" if self.pinion_at_front else "front"
+        # pinion_pos = "front" if self.pinion_at_front else "rear"
+
+        lantern_pinion_type = "thin" if self.get_lantern_trundle_min_offset() == 0 else "thick"
+        image = f"{lantern_pinion_type}_lantern_pinion.jpg"
+        bom.add_image(image)
+
+        bom.assembly_instructions += f"![Lantern pinion example](./{image} \"Lantern pinion example\")\n\n"
+
+        bom.assembly_instructions += f"""This arbor has a lantern pinion, which means it uses steel rods ({trundle_item.name} x {trundle_item.quantity}) instead of plastic leaves (teeth).
+
+        Three parts must be slotted together with the steel rods between them: 
+         - The wheel 
+         - The pinion fixing (hex rod)
+         - The pinion cap 
+
+        Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit.
+
+        To keep this assembly together, use a small amount of superglue between the wheel and arbor extension, and pinion cap and arbor extension after everything has been threaded onto the rod.
+        """
+
+        bom.add_item(trundle_item)
+
+        return bom
 
 class ArborForPlate:
 
@@ -2104,14 +2294,18 @@ class ArborForPlate:
         else:
             #"normal" wheel-pinion pair (or escape wheel if not on the front/back of the clock)
             arbor = shapes["wheel"]
-            if "lantern_pinion_cap" in shapes:
-                arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick + self.arbor.pinion_extension)))
-            if "lantern_pinion_fixing" in shapes:
-                #messy duplication, just wanted to avoid working out how to undo the rotation from for_printing
-                fixing = self.arbor.pinion.get_lantern_inner_fixing(base_thick=self.arbor.wheel_thick-self.arbor.lantern_fixing_wheel_offset, pinion_height=self.arbor.pinion_thick + self.arbor.pinion_extension, top_thick=self.arbor.end_cap_thick, hole_d=self.arbor.hole_d, for_printing=False)
-                if self.arbor.lantern_fixing_wheel_offset > 0:
-                    fixing = fixing.translate((0,0,self.arbor.lantern_fixing_wheel_offset))
-                arbor = arbor.add(fixing)
+            # if "lantern_pinion_cap" in shapes or "lantern_pinion_fixing" in shapes:
+            if self.arbor.lantern_pinion is not None:
+                arbor = arbor.add(self.arbor.lantern_pinion.get_assembled())
+            #     arbor = arbor.add(shapes["lantern_pinion_cap"].translate((0,0,self.arbor.wheel_thick + self.arbor.pinion_thick + self.arbor.pinion_extension)))
+            # if "lantern_pinion_fixing" in shapes:
+            #     #messy duplication, just wanted to avoid working out how to undo the rotation from for_printing
+            #     # fixing = self.arbor.pinion.get_lantern_inner_fixing(base_thick=self.arbor.wheel_thick-self.arbor.lantern_fixing_wheel_offset, pinion_height=self.arbor.pinion_thick + self.arbor.pinion_extension, top_thick=self.arbor.end_cap_thick, hole_d=self.arbor.hole_d, for_printing=False)
+            #     # if self.arbor.lantern_fixing_wheel_offset > 0:
+            #     #     fixing = fixing.translate((0,0,self.arbor.lantern_fixing_wheel_offset))
+            #     fixing = shapes["lantern_pinion_fixing"]
+            #     fixing = fixing.rotate((0,0,0),)
+            #     arbor = arbor.add(fixing)
 
             if not self.arbor.pinion_at_front:
                 arbor = arbor.rotate((0,0,0),(1,0,0),180).translate((0,0,self.total_thickness))
@@ -2521,10 +2715,8 @@ class ArborForPlate:
                 #front one is longest
                 return front
         #note that if it's PinionType.LANTERN_LOW_TORQUE this is treated like a regular printed pinion
-        if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion_type in [PinionType.LANTERN, PinionType.LANTERN_THIN]:
-            if self.arbor.lantern_fixing_wheel_offset > 0 and front != self.arbor.pinion_at_front:
-                #the arbor extension in this case is part of the wheel because the lantern fixing (the hex bit) is offset from the back of the wheel - so there's a solid
-                #part of the wheel for the extension to be part of
+        if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion_type.is_lantern():
+            if self.arbor.lantern_pinion.arbor_extension_is_part_of_wheel() and front != self.arbor.pinion_at_front:
                 return False
             return True
 
@@ -2592,7 +2784,7 @@ class ArborForPlate:
                 #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
                 #will work out if it ends up clashing with other wheels if it becomes a problem in the future
                 if self.arbor.pinion_type == PinionType.LANTERN or (self.arbor.pinion_type == PinionType.LANTERN_THIN and front == self.arbor.pinion_at_front):
-                    extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
+                    extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.lantern_pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
             #not hole, that's done after it's unioned with something (if it is) as unioning two things with tehse holes cut seems to struggle
             # extendo_arbour = extendo_arbour.cut(self.threaded_rod_cutter)
             return extendo_arbour
@@ -2728,12 +2920,17 @@ class Arbor:
         if self.get_type() == ArborType.ESCAPE_WHEEL:
             self.wheel_thick = self.escapement.get_wheel_thick()
 
-        # for lantern pinions there's a vertical component with a hex base and top which holds the wheel and pinion can together
-        self.lantern_fixing_wheel_offset = 0
+        self.lantern_pinion = None
+        if self.pinion_type.is_lantern() and self.pinion is not None:
+            self.lantern_pinion = LanternPinion(self.pinion, self.pinion_thick, self.wheel_thick, extension=self.pinion_extension, cap_thick=self.end_cap_thick, type =self.pinion_type, arbor_rod_d=arbor_d)
 
-        if self.pinion_type == PinionType.LANTERN_THIN:
-            # on a thin lantern it doesn't go all the way into the wheel
-            self.lantern_fixing_wheel_offset = 1
+        # for lantern pinions there's a vertical component with a hex base and top which holds the wheel and pinion can together
+        #DEPRECATED - this logic all moved to LanternPinion class
+        # self.lantern_fixing_wheel_offset = 0
+        #
+        # if self.pinion_type == PinionType.LANTERN_THIN:
+        #     # on a thin lantern it doesn't go all the way into the wheel
+        #     self.lantern_fixing_wheel_offset = 1
 
 
     def get_type(self):
@@ -2758,36 +2955,15 @@ class Arbor:
         # pretty_name = re.sub(r"(\w)([A-Z])", r"\1 \2", self.get_type().value)
         bom = BillOfMaterials(self.get_type().value)
         if self.pinion is not None and self.pinion.lantern:
-            diameter = self.pinion.trundle_r * 2
-            min_length = self.pinion_thick + self.pinion_extension
-            max_length = self.pinion_thick + self.pinion_extension + (self.end_cap_thick - self.get_lantern_trundle_offset()) + (self.wheel_thick - self.get_lantern_trundle_offset()) - self.lantern_fixing_wheel_offset
-            print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
-            trundle_length = max_length - (max_length%2)
-            trundle_item = BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity=self.pinion.teeth, purpose="Lantern pinion trundles")
-
-            wheel_pos = "rear" if self.pinion_at_front else "front"
-            pinion_pos = "front" if self.pinion_at_front else "rear"
-
-            lantern_pinion_type = "thin" if self.get_lantern_trundle_offset() == 0 else "thick"
-            image = f"{lantern_pinion_type}_lantern_pinion.jpg"
-            bom.add_image(image)
-
-            bom.assembly_instructions+=f"![Lantern pinion example](./{image} \"Lantern pinion example\")\n\n"
+            # diameter = self.pinion.trundle_r * 2
+            # min_length = self.pinion_thick + self.pinion_extension
+            # max_length = self.pinion_thick + self.pinion_extension + (self.end_cap_thick - self.get_lantern_trundle_offset()) + (self.wheel_thick - self.get_lantern_trundle_offset()) - self.lantern_fixing_wheel_offset
+            # print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format( diameter, min_length, max_length))
+            # trundle_length = max_length - (max_length%2)
+            # trundle_item = BillOfMaterials.Item(f"Steel dowel {diameter:.2f}x{trundle_length:.0f}mm", quantity=self.pinion.teeth, purpose="Lantern pinion trundles")
+            bom.combine(self.lantern_pinion.get_BOM())
 
 
-            bom.assembly_instructions+=f"""This arbor has a lantern pinion, which means it uses steel rods ({trundle_item.name} x {trundle_item.quantity}) instead of plastic leaves (teeth).
-            
-Three parts must be slotted together with the steel rods between them: 
- - The wheel 
- - The pinion fixing (hex rod)
- - The pinion cap 
- 
-Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit.
-
-To keep this assembly together, use a small amount of superglue between the wheel and {wheel_pos} extension, and pinion cap and {pinion_pos} extension after everything has been threaded onto the rod.
-"""
-
-            bom.add_item(trundle_item)
 
         if self.type == ArborType.POWERED_WHEEL:
             bom.add_subcomponent(self.powered_wheel.get_BOM())
@@ -2870,6 +3046,8 @@ To keep this assembly together, use a small amount of superglue between the whee
         raise NotImplementedError("Max Radius not yet implemented for arbour type {}".format(self.get_type()))
 
     def get_pinion_max_radius(self):
+        if self.lantern_pinion is not None:
+            return self.lantern_pinion.get_max_radius()
         return self.pinion.get_max_radius()
 
     def get_escape_wheel(self, standalone=False):
@@ -2912,16 +3090,18 @@ To keep this assembly together, use a small amount of superglue between the whee
         #
         # arbor = wheel.union(pinion)
         #note - slightly different logic for pinionthick vs pinion_extension as used on plain wheel-pinion pair. I don't think this will come to matter again as now the thin lantern pinions exist
-        arbor = self.pinion.add_to_wheel(wheel, hole_d=0, hole_d_for_lantern=self.arbor_d, thick=self.escapement.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
-                                         pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
-                                         lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset)
-        if self.end_cap_thick > 0:
-            arbor = arbor.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
+        if self.pinion.lantern:
+            arbor = self.lantern_pinion.add_to_wheel(wheel)
+        else:
+            arbor = self.pinion.add_to_wheel(wheel, hole_d=0, wheel_thick=self.escapement.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
+                                             pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+            if self.end_cap_thick > 0:
+                arbor = arbor.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
-        #improve the extended pinion shape
-        cutter = self.get_pinion_extension_cutter()
-        if cutter is not None:
-            arbor = arbor.cut(cutter)
+            # #improve the extended pinion shape - why is this not done in add_to_wheel?
+            # cutter = self.get_pinion_extension_cutter()
+            # if cutter is not None:
+            #     arbor = arbor.cut(cutter)
 
         return arbor
 
@@ -2949,20 +3129,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 
         return None
 
-    def get_pinion_extension_cutter(self):
-        '''
-        get a shape which can cut away the pinion extension to make it less chunky
-        '''
-        if self.pinion_extension > 5:
-            pinion_r = self.get_pinion_max_radius()
-            cut_to_r = self.get_arbor_extension_r()  # pinion_r * 0.7
-            cutter_high = self.pinion_extension - 2
-            cutter = cq.Workplane("XY").circle(pinion_r * 1.5).circle(cut_to_r).extrude(cutter_high).translate((0, 0, self.wheel_thick))
-            # trim off the top so this is printable at 45deg
-            cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0, height=pinion_r * 1.5, pnt=(0, 0, cutter_high + self.wheel_thick), dir=(0, 0, -1)))
-            return cutter
-
-        return None
+    
 
     def get_shape(self, for_printing=True, hole_d=0):
         '''
@@ -2978,25 +3145,12 @@ To keep this assembly together, use a small amount of superglue between the whee
                 pinion_thick+=self.pinion_extension
             print(f"end_cap_thick: {self.end_cap_thick}")
             if self.pinion.lantern:
-                '''
-                messy logic time! This is where we need to decide everything that is added or subtracted from the wheel itself for a lantern pinion
-                '''
-                shape = self.wheel.get3D(thick=self.wheel_thick, holeD=hole_d, style=self.style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
-                #would it be best to have a separate object which is the lantern pinion? then it can provide wheel cutters and additional parts and have logic about if we
-                #need pinion extensions, etc
-                # shape = shape.cut(self.pinion.get_lantern_trundle_cutter())
+                wheel = self.wheel.get3D(thick=self.wheel_thick, holeD=hole_d, style=self.style, innerRadiusForStyle=self.pinion.get_max_radius() + 1, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                shape = self.lantern_pinion.add_to_wheel(wheel)
             else:
-                shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
-                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
-                                             lantern_offset=self.get_lantern_trundle_offset(), lantern_fixing_wheel_offset=self.lantern_fixing_wheel_offset, hole_d_for_lantern=self.arbor_d)
-            if self.pinion_extension > 5:
-                pinion_r = self.get_pinion_max_radius()
-                cut_to_r = self.get_arbor_extension_r()#pinion_r * 0.7
-                cutter_high = self.pinion_extension - 2
-                cutter = cq.Workplane("XY").circle(pinion_r * 1.5).circle(cut_to_r).extrude(cutter_high).translate((0, 0, self.wheel_thick))
-                # trim off the top so this is printable at 45deg
-                cutter = cutter.cut(cq.Solid.makeCone(radius1=pinion_r, radius2=0, height=pinion_r * 1.5, pnt=(0, 0, cutter_high + self.wheel_thick), dir=(0, 0, -1)))
-                shape = shape.cut(cutter)
+                shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, wheel_thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+                                                 pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                
 
             # shape = self.pinion.get3D
 
@@ -3088,15 +3242,7 @@ To keep this assembly together, use a small amount of superglue between the whee
         pinion = pinion.add(cap).add(cap.translate((0, 0, self.end_cap_thick + self.pinion_thick)))
 
         return pinion
-    def get_lantern_trundle_offset(self):
-        '''
-        If +ve then the trundle hole doesn't go all the way through the wheel or cap (for thicker wheels)
-        if 0 then the trundle hole goes all the way through (thinner wheels) and we rely on the arbor extensions and glue to hold everything firmly in place
-        '''
-        # return self.pinion.get_lantern_trundle_offset()
-        if self.wheel_thick <= 3:
-            return 0
-        return 1
+
     def get_extras(self, to_back_of_back_plate = 0, to_front_of_front_plate = 0, key_length = 0, front_plate_thick=0, ratchet_key_extra_length=0, back_collet_from_back=0):
         '''
         rear_side_extension - how far to extend the spring arbor to the back of the back plates + endshaoe
@@ -3112,8 +3258,9 @@ To keep this assembly together, use a small amount of superglue between the whee
             extras['ratchet']= self.get_extra_ratchet()
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.pinion.lantern:
-            extras["lantern_pinion_cap"] = self.pinion.get_lantern_cap(cap_thick=self.end_cap_thick, offset=self.get_lantern_trundle_offset())
-            extras["lantern_pinion_fixing"] = self.pinion.get_lantern_inner_fixing(base_thick=self.wheel_thick - self.lantern_fixing_wheel_offset, pinion_height=self.pinion_thick + self.pinion_extension, top_thick=self.end_cap_thick, hole_d=self.hole_d)
+            lantern_pinion_extras = self.lantern_pinion.get_extras()
+            for extra in lantern_pinion_extras:
+                extras[extra] = lantern_pinion_extras[extra]
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
             traditional_ratchet = True

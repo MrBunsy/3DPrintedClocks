@@ -78,7 +78,7 @@ train.generate_arbors_dicts([
         #great wheel
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1),
         "wheel_thick" : 6,
-        "pinion_type": PinionType.LANTERN,
+        # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
         "pinion_faces_forwards": True
     },

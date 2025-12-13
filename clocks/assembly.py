@@ -745,11 +745,11 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             beyond_back_of_arbors.append(plain_rod_rear_length)
             if rod_length > 0:
                 print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
-            if arbor.pinion is not None and arbor.pinion.lantern:
-                diameter = arbor.pinion.trundle_r * 2
-                min_length = arbor.pinion_thick + arbor.pinion_extension
-                max_lenth = arbor.pinion_thick  + arbor.pinion_extension + (arbor.end_cap_thick - arbor.get_lantern_trundle_offset()) + (arbor.wheel_thick - arbor.get_lantern_trundle_offset())
-                print("Arbor {} has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i,  diameter, min_length, max_lenth))
+            # if arbor.pinion is not None and arbor.pinion.lantern:
+            #     diameter = arbor.pinion.trundle_r * 2
+            #     min_length = arbor.pinion_thick + arbor.pinion_extension
+            #     max_lenth = arbor.pinion_thick  + arbor.pinion_extension + (arbor.end_cap_thick - arbor.get_lantern_trundle_offset()) + (arbor.wheel_thick - arbor.get_lantern_trundle_offset())
+            #     print("Arbor {} has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(i,  diameter, min_length, max_lenth))
 
 
         return rod_lengths, rod_zs, beyond_back_of_arbors
