@@ -60,6 +60,59 @@ class GearTrainBase:
 
     def generate_arbors_internal(self, arbor_info):
         raise NotImplementedError("Implement generate_arbors_internal in sub classes")
+    def get_dicts(self):
+        '''get a list of dicts that we can use to convert an old gen_gears into generate_arbors_dicts'''
+
+        dicts = []
+        for i,arbor in enumerate(self.get_all_arbors()):
+            info = {
+
+                "wheel_thick": arbor.wheel_thick,
+
+
+                "style": "GearStyle." + arbor.style.name,
+                "pinion_faces_forwards": arbor.pinion_at_front,
+                "wheel_outside_plates":arbor.arbor_split != SplitArborType.NORMAL_ARBOR,
+                "pinion_extension": arbor.pinion_extension,
+                "pinion_type": "PinionType." + arbor.pinion_type.name,
+                "rod_diameter": arbor.arbor_d
+            }
+
+            if arbor.wheel is not None:
+                info["module"] = arbor.wheel.module
+            if arbor.pinion_thick:
+                info["pinion_thick"]= arbor.pinion_thick
+
+            # info["pinion_thick"]= arbor.pinion_thick
+
+            dicts.append(info)
+        stringed = json.dumps(dicts, indent=4)
+        # return dicts
+        stringed = stringed.replace("false", "False")
+        stringed = stringed.replace("true", "True")
+
+        def get_quoted(fromstring):
+            with_first_quote = "\""+fromstring
+            if with_first_quote not in stringed:
+                return None
+            start = stringed.index(with_first_quote)
+            end=stringed.index("\"", start+1)
+            # stringed = stringed.re
+            substring = stringed[start+1:end]
+            print(substring)
+            return substring
+            # # stringed = stringed.replace(f"\"{fromstring}\"", substring)
+            # return "\""+fromstring in stringed
+
+        substring = get_quoted("GearStyle")
+        while substring is not None:
+            stringed = stringed.replace(f"\"{substring}\"", substring)
+            substring = get_quoted("GearStyle")
+        substring = get_quoted("PinionType")
+        while substring is not None:
+            stringed = stringed.replace(f"\"{substring}\"", substring)
+            substring = get_quoted("PinionType")
+        return stringed
 
     def generate_arbors_dicts(self, arbor_info, reduction=-1, pinion_thick_extra=-1):
         '''
@@ -2006,7 +2059,7 @@ class GearLayout2D:
                 if index in self.can_ignore_pinions:
                     return arbors[index].get_arbor_extension_r()
                 else:
-                    return arbors[index].pinion.get_max_radius()
+                    return arbors[index].get_pinion_max_radius()
             #count how many arbors there are before the next centred arbor
             non_vertical_arbors_next = 0
             for next_arbor_index in range(arbor_index + 1, total_arbors):

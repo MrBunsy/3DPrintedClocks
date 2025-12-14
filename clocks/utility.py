@@ -698,9 +698,13 @@ class Colour:
         this would be easier if Colour was an Enum - but we then need to use Colour.BLUE.value
         '''
         acolour = Colour()
-        for colour in [a for a in dir(acolour) if not a.startswith('__')]:
-            if colour == string.upper():
-                return getattr(acolour, colour)
+        try:
+            for colour in [a for a in dir(acolour) if not a.startswith('__')]:
+                if colour == string.upper():
+                    return getattr(acolour, colour)
+        except:
+            #sometimes string isn't a string? not sure what's happened here
+            pass
         return string
 
 def get_perpendicular_direction(dir, clockwise=True):

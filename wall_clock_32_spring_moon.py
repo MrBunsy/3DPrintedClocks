@@ -76,11 +76,96 @@ pinion_extensions = {0:1, 1:15, 2:10,3:18}
 powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
                     WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)
                    ]
-train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, style=gearStyle,
-                powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875, powered_wheel_thicks=[barrel_gear_thick, 4])
+# train.gen_gears(module_sizes=[1, 0.95, 0.95], module_reduction=moduleReduction, thick=3, thickness_reduction=0.85, style=gearStyle,
+#                 powered_wheel_module_sizes=powered_modules, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True,
+#                 pinion_extensions=pinion_extensions, lanterns=[0, 1], pinion_thick_extra=5, powered_wheel_pinion_thick_multiplier=1.875, powered_wheel_thicks=[barrel_gear_thick, 4])
+train.generate_arbors_dicts([
+    {
+        #spring barrel
+        "wheel_thick": 5,
+        "style": GearStyle.CIRCLES,
+        "pinion_faces_forwards": True,
+        "wheel_outside_plates": False,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.LANTERN,
+        "rod_diameter": 11.9,
+        "module": 1.4311998089071878
+    },
+    {
+        #intermediate wheel
+        "wheel_thick": 4,
+        "style": GearStyle.CIRCLES,
+        "pinion_faces_forwards": True,
+        "wheel_outside_plates": False,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.LANTERN_THIN,
+        "rod_diameter": 3,
+        "module": 1.14495984712575,
+        "pinion_thick": 9.375
+    },
+    {
+        #centre wheel
+        "wheel_thick": 3,
+        "style": GearStyle.CIRCLES,
+        "pinion_faces_forwards": True,
+        "wheel_outside_plates": False,
+        "pinion_extension": 1,
+        "pinion_type": PinionType.LANTERN,
+        "rod_diameter": 3,
+        "module": 1,
+        "pinion_thick": 9
+    },
+    {
+        #second wheel
+        "wheel_thick": 2.55,
+        "style": GearStyle.CIRCLES,
+        "pinion_faces_forwards": False,
+        "wheel_outside_plates": False,
+        "pinion_extension": 15,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "module": 0.95,
+        "pinion_thick": 8
+    },
+    {
+        #third wheel
+        "wheel_thick": 2.1674999999999995,
+        "style": GearStyle.CIRCLES,
+        "pinion_faces_forwards": False,
+        "wheel_outside_plates": False,
+        "pinion_extension": 10,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "module": 0.95,
+        "pinion_thick": 7.55
+    },
+    {
+        #escape wheel
+        "wheel_thick": 2.5,
+        "style": GearStyle.CIRCLES,
+        "pinion_faces_forwards": True,
+        # "wheel_outside_plates": False,
+        "pinion_extension": 18,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "pinion_thick": 7.1674999999999995
+    },
+    # {
+    #     "wheel_thick": 12,
+    #     "style": GearStyle.ARCS,
+    #     "pinion_faces_forwards": True,
+    #     # "wheel_outside_plates": False,
+    #     "pinion_extension": 0,
+    #     "pinion_type": PinionType.PLASTIC,
+    #     "rod_diameter": 3
+    # }
+])
 train.print_info(for_runtime_hours=24*7)
 moon_radius=13
+# print(json.dumps(train.get_dicts()))
+# print(train.get_dicts())
+# print(train.get_dicts())
+# train.arbors[1].pinion_type=PinionType.LANTERN_THIN
 
 moon_complication = MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                   bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
