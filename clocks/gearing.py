@@ -1766,7 +1766,7 @@ class LanternPinion:
         return extras
 
     def get_assembled(self):
-        whole_pinion = self.get_hex_fixing(for_printing=False,for_cutting=False).translate((0,0,self.wheel_thick - self.hex_fixing_sunk_into_wheel))
+        whole_pinion = self.get_hex_fixing(for_printing=False,for_cutting=False).translate((0,0,self.wheel_thick - self.hex_fixing_sunk_into_wheel + self.extension))
 
         rods = self.pinion.get_lantern_trundle_cutter(self.steel_dowel_length, for_cutting=False)
 
