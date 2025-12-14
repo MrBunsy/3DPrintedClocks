@@ -1220,11 +1220,7 @@ class SimpleClockPlates(BasePlates):
 
     def calc_bearing_positions(self):
         '''
-        TODO, with an overhaul of GoingTrain this should layout the gears in 2D, then lay them out vertically
-        or maybe just split into 2d layout and 3d layout for now? still unsure how much to offload to goingtrain
-        GoingTrain should then be free from figuring out all the pinion in front/rear and front/back powered wheel stuff
-
-
+        gear_train_layout will layout the gears in 2D, then this method will lay them out vertically
         '''
         positions_2d = self.gear_train_layout.get_positions()
 
@@ -1261,14 +1257,20 @@ class SimpleClockPlates(BasePlates):
                         self.arbor_thicknesses.append(escapement.get_anchor_thick())
 
                 else:
+                    arbor = self.going_train.get_arbor_with_conventional_naming(i)
                     # any of the other wheels
-                    pinion_to_wheel = self.going_train.get_arbor_with_conventional_naming(i).get_pinion_to_wheel_z()
-                    pinion_z = self.going_train.get_arbor_with_conventional_naming(i).get_pinion_centre_z()
+                    pinion_to_wheel = arbor.get_pinion_to_wheel_z()
+                    pinion_z = arbor.get_pinion_centre_z()
                     base_z = driving_z - pinion_z
 
                     driving_z = driving_z + pinion_to_wheel
 
-                    arbor_thick = self.going_train.get_arbor_with_conventional_naming(i).get_total_thickness()
+                    arbor_thick = arbor.get_total_thickness()
+                    #bodgetastic - need to think this over. add teh extras for lantern pinions. would like this to be done in total_thickness
+                    # if arbor.pinion_at_front:
+                    #     arbor_thick += arbor.get_pinion_side_extra_thickness()
+                    # else:
+                    #     arbor_thick += arbor.get_wheel_side_extra_thickness()
                     self.arbor_thicknesses.append(arbor_thick)
 
                 pos = [positions_2d[i][0], positions_2d[i][1], base_z]
@@ -1281,6 +1283,14 @@ class SimpleClockPlates(BasePlates):
         top_zs = [self.arbor_thicknesses[i] + self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
 
         bottom_zs = [self.bearing_positions[i][2] for i in range(len(self.bearing_positions))]
+
+        #bodgetastic for lantern pinions:
+        for i, arbor in enumerate(self.going_train.get_all_arbors()):
+            if arbor.pinion_at_front:
+                bottom_zs[i] -= arbor.get_wheel_side_extra_thickness()
+            else:
+                bottom_zs[i] -= arbor.get_pinion_side_extra_thickness()
+
 
         bottom_z = min(bottom_zs)
         if bottom_z < 0:
