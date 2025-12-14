@@ -1077,7 +1077,8 @@ class Gear:
             print("need trundles of diameter {}mm".format(self.trundle_r*2))
             #bodge - this is duplicated logic with LanternPinion and really shouldn't behere
             #need to update everything to use get_pinion_max_radius() in Arbor
-            self.outer_r = self.outer_r + self.trundle_r*3
+            # self.outer_r = self.outer_r + self.trundle_r*3
+            self.fake_outer_r = self.outer_r + self.trundle_r*3
             # #this will be a tight fit, but that's good as we don't want it to twist. May well need a vise to squeeze everything together
             # #0.175 worked but I think it resulted in the lantern pinions being at an angle
             # # self.inner_r_for_lantern_fixing_slot = self.inner_r + 0.04#0.175
