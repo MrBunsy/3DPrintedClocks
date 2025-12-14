@@ -61,7 +61,7 @@ class GearTrainBase:
     def generate_arbors_internal(self, arbor_info):
         raise NotImplementedError("Implement generate_arbors_internal in sub classes")
     def get_dicts(self):
-        '''get a list of dicts that we can use to convert an old gen_gears into generate_arbors_dicts'''
+        '''get a printout of list of dicts that we can use to convert an old gen_gears into generate_arbors_dicts'''
 
         dicts = []
         for i,arbor in enumerate(self.get_all_arbors()):
@@ -2037,8 +2037,10 @@ class GearLayout2D:
                     #meshes with this one or is this one
                     continue
                 # index 0 doesn't have a pinion, just skip it
+                #ignore the pinion if either arbor has a pinion extension, basically assuming we won't clash
+                ignore_pinion = i in self.can_ignore_pinions or check_index in self.can_ignore_pinions
                 distance = get_distance_between_two_points(positions_relative[i], positions_relative[check_index])
-                min_distance = arbors[check_index].get_max_radius() + get_pinion_r(i) + self.gear_gap
+                min_distance = arbors[check_index].get_max_radius() + get_pinion_r(i, ignore_pinion) + self.gear_gap
                 if distance < min_distance:
                     result['valid'] = False
                     result['clash_distance'] = distance
@@ -2055,8 +2057,8 @@ class GearLayout2D:
         while arbor_index < total_arbors - 1:
             #in this loop the current arbor index is the one that has actually been placed successfully, and the "next arbor" is the one we're current trying to place
 
-            def get_pinion_r(index):
-                if index in self.can_ignore_pinions:
+            def get_pinion_r(index, ignore_pinion=False):
+                if index in self.can_ignore_pinions or ignore_pinion:
                     return arbors[index].get_arbor_extension_r()
                 else:
                     return arbors[index].get_pinion_max_radius()
