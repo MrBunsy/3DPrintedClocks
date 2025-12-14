@@ -3027,21 +3027,25 @@ class Arbor:
             return self.lantern_pinion.get_wheel_side_extra_thickness()
         return 0
 
-    def get_total_thickness(self):
+    def get_total_thickness(self, include_extras = False):
         '''
         return total thickness of everything that will be on the rod (between the plates!)
-
-        TODO take into account the top/bottom caps for lantern pinions. Previously this hasn't mattered, but now I'm trying
-        a fully lantern pinion clock one of the pinions will be butted up against the plates so the thickness
-        needs to be properly accounted for
+        include_extras will include lantern pinion caps (still trying to figure out best way to include these for calculating plate_distance, without
+        invalidating a whole load of assumptions around what this does
         '''
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
 
             if self.get_type() == ArborType.ESCAPE_WHEEL and self.arbor_split != SplitArborType.NORMAL_ARBOR:
                 #just the pinion is within the plates
-                return self.pinion_thick + self.pinion_extension + self.end_cap_thick * 2
+                thick = self.pinion_thick + self.pinion_extension + self.end_cap_thick * 2
+                if include_extras:
+                    thick += self.get_pinion_side_extra_thickness()*2
+                return thick
 
-            return self.wheel_thick + self.pinion_thick + self.pinion_extension + self.end_cap_thick
+            thick = self.wheel_thick + self.pinion_thick + self.pinion_extension + self.end_cap_thick
+            if include_extras:
+                thick += self.get_wheel_side_extra_thickness() + self.get_wheel_side_extra_thickness()
+            return thick
         if self.get_type() == ArborType.POWERED_WHEEL:
             #the chainwheel (or cordwheel) now includes the ratceht thickness
             if self.powered_wheel.type == PowerType.SPRING_BARREL:
