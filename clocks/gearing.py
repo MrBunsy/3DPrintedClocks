@@ -1626,12 +1626,29 @@ class LanternPinion:
 
 
     def arbor_extension_is_part_of_wheel(self):
-        return self.type == PinionType.LANTERN_THIN
+        return not self.need_cap_behind_wheel()
 
-    def get_total_thickness(self):
-        '''
-        including top cap, so this could butt up against the plates and plate_distance will be calculated correctly
-        '''
+    def need_cap_behind_wheel(self):
+        return self.type != PinionType.LANTERN_THIN
+
+    def need_cap_above_pinion(self):
+        return True
+
+    # def get_total_thickness(self):
+    #     '''
+    #     including top cap, so this could butt up against the plates and plate_distance will be calculated correctly
+    #     '''
+
+    def get_pinion_side_extra_thickness(self):
+        if self.need_cap_above_pinion():
+            return self.cap_thick
+        return 0
+
+    def get_wheel_side_extra_thickness(self):
+        if self.need_cap_behind_wheel():
+            return self.cap_thick
+        return 0
+
     def get_lantern_trundle_min_offset(self):
         '''
         If +ve then the trundle hole doesn't go all the way through the wheel or cap (for thicker wheels)
@@ -2999,6 +3016,16 @@ class Arbor:
             #bodge, make 2mm rod stronger
             r = 3.5
         return r
+
+    def get_pinion_side_extra_thickness(self):
+        if self.lantern_pinion is not None:
+            return self.lantern_pinion.get_pinion_side_extra_thickness()
+        return 0
+
+    def get_wheel_side_extra_thickness(self):
+        if self.lantern_pinion is not None:
+            return self.lantern_pinion.get_wheel_side_extra_thickness()
+        return 0
 
     def get_total_thickness(self):
         '''
