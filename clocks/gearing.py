@@ -1796,15 +1796,15 @@ class LanternPinion:
 
         bom.assembly_instructions += f"""This arbor has a lantern pinion, which means it uses steel rods ({trundle_item.name} x {trundle_item.quantity}) instead of plastic leaves (teeth).
 
-        Three parts must be slotted together with the steel rods between them: 
-         - The wheel 
-         - The pinion fixing (hex rod)
-         - The pinion cap 
+Three parts must be slotted together with the steel rods between them: 
+ - The wheel 
+ - The pinion fixing (hex rod)
+ - The pinion cap 
 
-        Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit.
+Make sure the pinion cap is rotated so that the rods are parallel with the arbor. You may need to use a bench vice to squeeze these parts together (be careful to make sure the rods are in the right place first). It is meant to be a tight fit.
 
-        To keep this assembly together, use a small amount of superglue between the wheel and arbor extension, and pinion cap and arbor extension after everything has been threaded onto the rod.
-        """
+To keep this assembly together, use a small amount of superglue between the wheel and arbor extension, and pinion cap and arbor extension after everything has been threaded onto the rod.
+"""
 
         bom.add_item(trundle_item)
 
