@@ -2828,8 +2828,11 @@ class Arbor:
         self.wheel_thick=wheel_thick
         self.pinion=pinion
         self.pinion_type=pinion_type
-        if self.pinion.lantern and not self.pinion_type.is_lantern():
-            raise ValueError("Inconsistent pinion types")
+        if self.pinion is not None and self.pinion.lantern and not self.pinion_type.is_lantern():
+            # raise ValueError("Inconsistent pinion types")
+            print(f"Warning: inconsistent pinion types. Assuming standard lantern pinion")
+            #backwards compatibility with deprecated gen_gears(), which I don't really want to touch unless I have to
+            self.pinion_type = PinionType.LANTERN
         self.pinion_thick=pinion_thick
         #where the pinion is extended (probably to ensure the wheel avoids something) but don't want to treat it just as an extra-thick pinion
         self.pinion_extension = pinion_extension
