@@ -132,7 +132,9 @@ moon = False
 if not moon:
     motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
     moon_complication = None
-    motion_works_angle_deg=360-40
+    # motion_works_angle_deg=360-40
+    motion_works.calculate_size(arbor_distance=27)
+    motion_works_angle_deg = 360 - 40
 else:
     moon_complication = MoonPhaseComplication3D(gear_style=gear_style, first_gear_angle_deg=205, on_left=False, bevel_module=1.0, module=0.8, moon_radius=moon_radius,
                                                       bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 3, moon_inside_dial=True,
@@ -156,6 +158,7 @@ dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numer
 plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False)
 
+motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,2)) + 180
 
 plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,

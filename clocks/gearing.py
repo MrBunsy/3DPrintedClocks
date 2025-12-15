@@ -1626,10 +1626,23 @@ class LanternPinion:
 
 
     def arbor_extension_is_part_of_wheel(self):
-        return not self.need_cap_behind_wheel()
+        '''arbor extension may or may not have a wide cap, this is just about if it's attached to the wheel'''
+        if self.type == PinionType.LANTERN_THIN and self.extension <= self.wheel_thick:
+            return True
+        return False
 
     def need_cap_behind_wheel(self):
-        return self.type != PinionType.LANTERN_THIN
+        if self.type == PinionType.LANTERN_THIN:
+            return False
+        if self.extension > self.wheel_thick:
+            #wheel + pinion extension are enough
+            return False
+        return True
+
+    def need_cap(self, wheel_side):
+        if wheel_side:
+            return self.need_cap_behind_wheel()
+        return self.need_cap_above_pinion()
 
     def need_cap_above_pinion(self):
         return True
@@ -2078,9 +2091,18 @@ class ArborForPlate:
 
             wheel = self.arbor.get_escape_wheel()
 
-            if self.need_arbor_extension(front=self.arbor.pinion_at_front):
+            # if self.need_arbor_extension(front=self.arbor.pinion_at_front):
+            #     #need arbor extension on the pinion
+            #     wheel = wheel.union(self.get_arbor_extension(front=self.arbor.pinion_at_front).translate((0, 0, self.total_thickness)))
+
+            #WARNING COPY PASTED FROM get_shapes for wheel and pinion. need to unify
+            if self.need_arbor_extension(front=self.arbor.pinion_at_front) and not self.need_separate_arbor_extension(front=self.arbor.pinion_at_front):
                 #need arbor extension on the pinion
                 wheel = wheel.union(self.get_arbor_extension(front=self.arbor.pinion_at_front).translate((0, 0, self.total_thickness)))
+            if self.need_arbor_extension(front=not self.arbor.pinion_at_front) and not self.need_separate_arbor_extension(front=not self.arbor.pinion_at_front):
+                #pinion extension at non-pinion side. only valid currently for PinionType.THIN_LANTERN
+                wheel = wheel.union(self.get_arbor_extension(front=not self.arbor.pinion_at_front).rotate((0,0,0),(1,0,0),180))
+
             wheel = wheel.cut(self.threaded_rod_cutter)
 
 
@@ -2643,6 +2665,7 @@ class ArborForPlate:
         if self.arbor.get_type() == ArborType.ANCHOR:
             shapes = self.get_anchor_shapes()
         elif self.arbor.get_type() == ArborType.ESCAPE_WHEEL:
+            #TODO - unify with WHEEL_AND_PINION? need to fix log around arbor extensions for lantern pinions
             shapes = self.get_escape_wheel_shapes()
 
         elif self.arbor.get_type() == ArborType.WHEEL_AND_PINION:
@@ -2803,20 +2826,21 @@ class ArborForPlate:
         if length+0.05 - self.arbor_bearing_standoff_length >= 0:
             # 0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
             if length - self.arbor_bearing_standoff_length > 0.1:
-                extendo_arbour = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length - self.arbor_bearing_standoff_length).faces(">Z").workplane()
+                extendo_arbor = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length - self.arbor_bearing_standoff_length).faces(">Z").workplane()
             else:
-                extendo_arbour=cq.Workplane("XY")
-            extendo_arbour = extendo_arbour.circle(tip_r).extrude(self.arbor_bearing_standoff_length)
+                extendo_arbor=cq.Workplane("XY")
+            extendo_arbor = extendo_arbor.circle(tip_r).extrude(self.arbor_bearing_standoff_length)
 
             if (length - self.arbor_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick) and self.arbor.pinion is not None:# and front is not self.arbor.pinion_at_front):
                 #extra wide flange to help the wheel remain perpendicular
                 #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
                 #will work out if it ends up clashing with other wheels if it becomes a problem in the future
-                if self.arbor.pinion_type == PinionType.LANTERN or (self.arbor.pinion_type == PinionType.LANTERN_THIN and front == self.arbor.pinion_at_front):
-                    extendo_arbour = extendo_arbour.union(cq.Workplane("XY").circle(self.arbor.lantern_pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
+                #future here - it did, and that's what LANTERN_THIN was introduced to avoid without adding too much plate distance
+                if self.arbor.pinion_type == PinionType.LANTERN and self.arbor.lantern_pinion.need_cap(wheel_side=not (front == self.arbor.pinion_at_front)):
+                    extendo_arbor = extendo_arbor.union(cq.Workplane("XY").circle(self.arbor.lantern_pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
             #not hole, that's done after it's unioned with something (if it is) as unioning two things with tehse holes cut seems to struggle
-            # extendo_arbour = extendo_arbour.cut(self.threaded_rod_cutter)
-            return extendo_arbour
+            # extendo_arbor = extendo_arbor.cut(self.threaded_rod_cutter)
+            return extendo_arbor
         return None
 
 
