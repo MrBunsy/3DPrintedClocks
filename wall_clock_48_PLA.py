@@ -167,8 +167,12 @@ plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_
 
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 
-hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length()+dial_width/4, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+# hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+#                     length=dial.get_hand_length()+dial_width/4, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+
+hands = Hands(style=HandStyle.DIAMOND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                    length=dial.get_hand_length()+dial_width/4, thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+
 
 specific_instructions = [
 "The front plate needs flipping over for printing (bug in logic about which way up it should be for exporting the STL)",
@@ -177,11 +181,12 @@ specific_instructions = [
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley, specific_instructions=specific_instructions)
 
 if not outputSTL:
-    assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.DARKER_GREY, Colour.DARKER_GREY, Colour.BLACK],
+    assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BRIGHT_ORANGE],
                         gear_colours=[Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
                         motion_works_colours=[Colour.BRIGHT_ORANGE, Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
-                        pulley_colour=Colour.LIME_GREEN, plaque_colours=[Colour.WHITE, Colour.BLACK], with_key=True)
+                        pulley_colour=Colour.LIME_GREEN, plaque_colours=[Colour.WHITE, Colour.BLACK], with_key=True,
+                        hand_colours=[Colour.GOLD])
 
 if outputSTL:
     assembly.get_BOM().export(clock_out_dir)
