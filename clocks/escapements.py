@@ -1075,7 +1075,7 @@ class SilentPinPalletAnchorEscapement(PinPalletOneSidedAnchorEscapement):
         return bom
         # self.fixing_screw_pos = (0,-gap_size)
     def get_anchor_thick(self):
-        return self.anchor_thick*2 + self.pin_length
+        return self.anchor_thick*2 + self.gap_size
     def get_wheel(self, thick=-1):
         wheel = super().get_wheel(thick)
         #this might be irrelevant unless printing with a really tiny nozzle
