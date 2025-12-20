@@ -191,6 +191,7 @@ class AnchorEscapement:
 
         self.centre_r = self.arbor_d * 2
 
+
         #calculated in calcGeometry() which is called from set_diameter
         self.largest_anchor_r = -1
 
@@ -945,7 +946,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
         self.exit_pin_r = np.linalg.norm(np.subtract(self.exit_pin_pos, self.anchor_centre))
 
         self.largest_anchor_r = max(self.entry_pin_r, self.exit_pin_r) + self.arm_wide / 2
-
+        self.wheel_max_r = get_distance_between_two_points(self.entry_pallet_start_pos, (0,0))
 
 
 
@@ -1028,7 +1029,7 @@ class PinPalletAnchorEscapement(AnchorEscapement):
 
         anchor = anchor.faces(">Z").workplane().pushPoints([self.entry_pin_pos, self.exit_pin_pos]).circle(self.pin_diameter / 2).cutThruAll()
 
-        pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance / 2).rect(self.centre_r * 2, self.anchor_centre_distance).extrude(self.anchor_thick)
+        pillar = cq.Workplane("XY").moveTo(0, self.anchor_centre_distance / 2).rect(self.main_arm_wide, self.anchor_centre_distance).extrude(self.anchor_thick)
         pillar = pillar.cut(cq.Workplane("XY").circle(arm_radius).extrude(self.anchor_thick))
         try:
             anchor = anchor.union(pillar)
@@ -1050,6 +1051,7 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
         super().__init__(*args, **kwargs)
         self.fixing_screws = MachineScrew(metric_thread=2, countersunk=True)
         self.split = True
+        self.main_arm_wide = self.centre_r * 2
 
     def get_BOM_for_combining_with_arbor(self):
         bom = super().get_BOM_for_combining_with_arbor()
@@ -1070,7 +1072,8 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
 
         #elephant's foot doesn't seem to work well for the tooth tips, so reducing radius of first layer
         #because otherwise there are little sharp bits I'm worried will cut the thread
-        cutter = cq.Workplane("XY").circle(self.radius+1).circle(self.radius-0.35).extrude(LAYER_THICK)
+        cutter = cq.Workplane("XY").circle(self.wheel_max_r+1).circle(self.wheel_max_r-0.75).extrude(LAYER_THICK)
+        #.circle(self.radius-0.35).extrude(LAYER_THICK)
 
         wheel = wheel.cut(cutter)
 
@@ -1086,8 +1089,13 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
         print("SilentPinPalletAnchorEscapement anchor")
         #anchor already moved so it's arbor is at 0,0
         anchor = super().get_anchor()
-        gap_size = self.anchor_centre_distance - self.radius
-        fixing_screw_pos = (0, (-gap_size + self.fixing_screws.metric_thread/2 + 2))
+        gap_size = self.anchor_centre_distance - self.wheel_max_r
+        #how far from the tip of the teeth is the edge of the pillar - 1mm is probably fine, just a bit worried about worst case endshake
+        pillar_tooth_gap_size = 1.5
+        #how far from the edge of the pillar the edge of the screwhole is
+        pillar_wall_thick = 2
+        #fixing screw will be same distance from teeth as its diameter
+        fixing_screw_pos = self.fixing_screw_pos = (0, (-gap_size + pillar_tooth_gap_size + pillar_wall_thick + self.fixing_screws.metric_thread/2))
         '''
         Assumption: bottom will be attached to the rod which links anchor to the pendulum, so will be printed upside down
 
@@ -1099,16 +1107,8 @@ class SilentPinPalletAnchorEscapement(PinPalletAnchorEscapement):
                 self.fixing_screws.get_cutter(self_tapping=False, loose=True, ignore_head=False).translate(
                     fixing_screw_pos))
         else:
-            # anchor = anchor.union()
-            # pillar = cq.Workplane("XY").circle(self.centre_r).extrude(self.pin_external_length).translate((0,0,- self.pin_external_length))
-            pillar = get_stroke_line([(0,0),(fixing_screw_pos[0], fixing_screw_pos[1] + (self.centre_r - self.fixing_screws.metric_thread))], wide=self.centre_r*2, thick=self.pin_external_length)
-
-            # pillar = pillar.intersect(cq.Workplane("XY").circle(get_distance_between_two_points((0,0), fixing_screw_pos) + self.fixing_screws.metric_thread).extrude(self.pin_external_length))
-
-
+            pillar = get_stroke_line([(0,0),(fixing_screw_pos[0], fixing_screw_pos[1] + self.main_arm_wide/2 -self.fixing_screws.metric_thread/2 - pillar_wall_thick)], wide=self.main_arm_wide, thick=self.pin_external_length)
             anchor = anchor.union(pillar.translate((0,0,- self.pin_external_length)))
-
-
             anchor = anchor.cut(
                 self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).translate(fixing_screw_pos).translate((0,0,- self.pin_external_length)))
         # anchor = anchor.union(cq.Workplane("XY").rect(30,30).extrude(10))
