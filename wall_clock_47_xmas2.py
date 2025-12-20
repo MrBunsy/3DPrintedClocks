@@ -44,8 +44,8 @@ second_hand_centred = False
 
 escapement_info = AnchorEscapement.get_with_optimal_pallets(20, drop_deg=3)#1.75
 # escapement = SilentAnchorEscapement(teeth=escapement.teeth, drop=escapement.drop, lift=escapement.lift,l)
-escapement = SilentPinPalletAnchorEscapement(teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
-                                             pin_diameter=1.0, pin_external_length=1.5*2 + 3 + 1)
+escapement = SilentPinPalletAnchorEscapement(gap_size=1.5*2 + 3 + 1, teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
+                                             pin_diameter=1.0)#, pin_external_length=1.5*2 + 3 + 1)
 spring=False
 if spring:
     powered_wheel = SpringBarrel(spring=SMITHS_EIGHT_DAY_MAINSPRING, pawl_angle=-math.pi * 3 / 4, click_angle=-math.pi * 1 / 4, ratchet_at_back=True,

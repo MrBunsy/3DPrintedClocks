@@ -1789,22 +1789,32 @@ class BillOfMaterials:
         if self.parent is None:
             return self.tidy_name()
         return f"{self.parent.get_full_name()}_{self.tidy_name()}"
-    def add_thing(self, thing, list):
+    def add_thing(self, thing, list, remove=False):
         found = False
         thing.parent_BOM = self
+        remove_index =-1
         for i, lookup_item in enumerate(list):
             # unlikely to hit this often
             if thing.name == lookup_item.name and thing.purpose == lookup_item.purpose:
                 found = True
-                list[i].quantity += thing.quantity
-        if not found:
+                if remove:
+                    list[i].quantity -= thing.quantity
+                    if list[i].quantity <= 0:
+                        remove_index = i
+                else:
+                    list[i].quantity += thing.quantity
+        if not found and not remove:
             list.append(thing)
 
-    def add_item(self, item):
+        if remove_index >=0:
+            del list[remove_index]
+        return found
+
+    def add_item(self, item, remove=False):
         '''
         add an item to this BOM
         '''
-        self.add_thing(item, self.items)
+        self.add_thing(item, self.items, remove=remove)
 
     def add_printed_part(self, part):
         self.add_thing(part, self.printed_parts)

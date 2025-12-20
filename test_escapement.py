@@ -150,13 +150,17 @@ drop=2.75
 # silent = SilentPinPalletAnchorEscapement(diameter=47.75,pin_diameter=1.4 , teeth=anchor.teeth, drop=anchor.drop_deg, lock=anchor.lock_deg, lift=anchor.lift_deg, run=anchor.run_deg)
 escapement_info = AnchorEscapement.get_with_optimal_pallets(20, drop_deg=3)#1.75
 # escapement = SilentAnchorEscapement(teeth=escapement.teeth, drop=escapement.drop, lift=escapement.lift,l)
-escapement = SilentPinPalletAnchorEscapement(teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
-                                             pin_diameter=1.0, pin_external_length=1.5*2 + 3 + 1, diameter=45)
+# escapement = SilentPinPalletAnchorEscapement(gap_size=8,teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
+#                                              pin_diameter=1.0, diameter=45)#, pin_external_length=1.5*2 + 3 + 1
+
+escapement = PinPalletTwoSidedAnchorEscapement(gap_size=8,teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg,
+                                             pin_diameter=1.0, diameter=45)
+
 # show_object(silent.get_wheel())
 # show_object(silent.get_anchor())
 # show_object(escapement.get_assembled(anchor_angle_deg=2, wheel_angle_deg=1))
 show_object(escapement.get_assembled())
 show_object(cq.Workplane("XY").circle(escapement.wheel_max_r))
-show_object(cq.Workplane("XY").circle(0.5).extrude(100).translate(escapement.fixing_screw_pos).translate(escapement.anchor_centre))
+# show_object(cq.Workplane("XY").circle(0.5).extrude(100).translate(escapement.fixing_screw_pos).translate(escapement.anchor_centre))
 
 # show_object(get_stroke_line([(0,100),(0,0)], wide=20, thick=10))
