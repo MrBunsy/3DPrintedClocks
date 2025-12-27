@@ -415,10 +415,18 @@ class SimpleClockPlates(BasePlates):
     to this class.
 
     TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
+
+    I've been thinking about this - and the only bits we really want are the plate shape, back cock and wall standoffs and pillars.
+    What other funky odd bits need doing?
+    could we abstract out all the stuff done to the plate after getting the shape? Should we split get_basic_plate_shape out from get_plate?
+
+    Really all the myriad of options on simple plates should all be extended classes and the base class should provide lots of helper functions.
+    how many special cases will I discover?
+
     '''
 
 
-    def __init__(self, going_train, motion_works, pendulum, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
+    def __init__(self, going_train, motion_works, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
@@ -577,8 +585,6 @@ class SimpleClockPlates(BasePlates):
 
         self.motion_works = motion_works
 
-        #TODO this is deprecated, remove it
-        self.pendulum=pendulum
         self.plate_thick=plate_thick
         self.back_plate_thick = back_plate_thick
         if self.back_plate_thick is None:
@@ -1134,7 +1140,10 @@ class SimpleClockPlates(BasePlates):
         if self.heavy:
             self.bottom_pillar_r = self.plate_distance / 2
         else:
-            self.bottom_pillar_r = min_distance_for_chain_holes
+            if self.chainThroughPillar:
+                self.bottom_pillar_r = min_distance_for_chain_holes
+            else:
+                self.bottom_pillar_r = self.plate_width
 
         if self.bottom_pillar_r < self.plate_width/2:
             #rare, but can happen
@@ -4275,7 +4284,7 @@ class RoundClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, power_at_bottom=True,
-                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1):
+                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1, **kwargs):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4292,14 +4301,14 @@ class RoundClockPlates(SimpleClockPlates):
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         #was force_escapement_above_hands because the gear train looks better on a circular plate that way ( now got forcing_escape_wheel_slightly_off_centre in bearing placement)
-        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+        super().__init__(going_train, motion_works, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=back_plate_from_wall, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
-                         power_at_bottom=power_at_bottom, escapement_on_back=escapement_on_back)
+                         power_at_bottom=power_at_bottom, escapement_on_back=escapement_on_back, **kwargs)
 
         # if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
         #assume true now
@@ -5426,6 +5435,199 @@ Firmly push all bearings into their slots, a bench vice can help with this. Alte
 
         if self.has_vanity_plate:
             export_STL(self.get_vanity_plate(), "vanity_plate", name, path)
+
+class ChildFriendlySimpleClockPlates(SimpleClockPlates):
+    '''
+    Basically teh same, but designed to be held together with large nylon nuts and bolts
+
+    UNFINISHED - the idea kind of works, but it ends up being very long. Going to try RectangularWallClockPlates instead
+    '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def calc_pillar_info(self, override_bottom_pillar_r=-1):
+        super().calc_pillar_info(override_bottom_pillar_r=override_bottom_pillar_r)
+        self.plate_width*=2
+        old_pillar_r = self.top_pillar_r
+        self.top_pillar_r = self.top_pillar_r*2.5
+        self.top_pillar_positions[0]=(self.top_pillar_positions[0][0], self.top_pillar_positions[0][1]-old_pillar_r+self.top_pillar_r)
+        old_bottom_pillar_r = self.bottom_pillar_r
+        self.bottom_pillar_r = self.top_pillar_r
+        self.bottom_pillar_positions[0] = (self.bottom_pillar_positions[0][0], self.bottom_pillar_positions[0][1] + old_pillar_r - self.bottom_pillar_r)
+        # self.top_pillar_r *= 2
+
+class RectangularWallClockPlates(RoundClockPlates):
+    '''
+    sometimes the round clock plates aren't the most compact vertically
+    this is sort of an amalgamation of the mantel plates, the old simple vertical plates and the round wall clock plates
+    will work best with only one powered wheel - I think
+
+    BARELY STARTED
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, leg_height=0, **kwargs)#bottom_pillars=2, top_pillars=2, pendulum_at_front=False,
+
+    def get_plate_shape(self):
+        return PlateShape.RECTANGLE_WALL
+
+    # def get_pillar(self, top=True, flat=False):
+    #     '''
+    #     they're all the same on this design!
+    #     '''
+    #
+    #     pillar_length = self.plate_distance
+    #
+    #     if self.pillar_style is not PillarStyle.SIMPLE:
+    #         pillar = (fancy_pillar(self.pillar_r, pillar_length, clockwise=top, style=self.pillar_style)
+    #                   .cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)))
+    #     else:
+    #         pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
+    #
+    #     return pillar
+
+    def calc_pillar_info(self, override_bottom_pillar_r=-1):
+        #this is tied to a particular gear train, with one powered wheel to a cord barrel and a 4 wheel train
+        bearing_info = get_bearing_info(self.arbor_d)
+        self.plate_width = bearing_info.outer_d + self.bearing_wall_thick * 2
+        self.min_plate_width = self.plate_width
+        # used in base class
+        self.pillar_r = self.plate_width / 2
+
+        #TODO figure out why these are still needed
+        self.bottom_pillar_width = self.pillar_r*2
+        self.bottom_pillar_height = self.pillar_r * 2
+        self.bottom_arm_wide = self.plate_width
+
+        # various shared bits expect these
+        self.top_pillar_r = self.pillar_r
+        self.bottom_pillar_r = self.pillar_r
+        self.bottom_pillar_positions = []
+        self.top_pillar_positions = []
+        self.all_pillar_positions = []
+
+        #bodge to keep round clock plates happy - need to think about a new base class for wall clocks
+        self.radius = self.bearing_positions[-1][1] - self.bearing_positions[self.going_train.powered_wheels][1]
+
+        dir = (-1,0)
+        if self.gear_train_layout.start_on_right:
+            dir = (1,0)
+
+        bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.gear_gap +  self.pillar_r,
+                                        self.bearing_positions[2][:2], self.arbors_for_plate[2].get_max_radius() + self.gear_gap +  self.pillar_r,
+                                        in_direction=dir)
+
+        self.bottom_pillar_positions = [bottom_pillar_pos, (-bottom_pillar_pos[0], bottom_pillar_pos[1])]
+        self.bottom_pillar_positions.sort(key=lambda x: x[0])
+        #same x as bottom, line up with anchor
+        # self.top_pillar_positions = [(pos[0], self.bearing_positions[-1][1]) for pos in self.bottom_pillar_positions]
+
+        #put the top pillars as low as we can
+        max_y = -1
+        for pos in self.bottom_pillar_positions:
+            line = Line(pos, direction=(0,1))
+            for i in [-3,-2]:
+                r = self.arbors_for_plate[i].get_max_radius() + self.gear_gap + self.pillar_r
+                points = line.intersection_with_circle(self.bearing_positions[i][:2],r)
+                if len(points) > 0:
+                    test_max_y = max([p[1] for p in points])
+                    if test_max_y > max_y:
+                        max_y = test_max_y
+
+        self.top_pillar_positions = [(pos[0], max_y) for pos in self.bottom_pillar_positions]
+        self.all_pillar_positions = self.bottom_pillar_positions + self.top_pillar_positions
+
+
+    def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
+
+        plate_thick = self.get_plate_thick(back=back)
+        if thick_override > 0:
+            plate_thick = thick_override
+
+
+        main_width = self.plate_width
+
+        #sorted left to right already
+        main_points = self.top_pillar_positions[:]
+
+        if self.bearing_positions[-2][0] > self.bearing_positions[-3][0]:
+            right_bearing = self.bearing_positions[-2][:2]
+            left_bearing = self.bearing_positions[-3][:2]
+        else:
+            left_bearing = self.bearing_positions[-2][:2]
+            right_bearing = self.bearing_positions[-3][:2]
+
+        # main_points += [right_bearing, left_bearing]
+        #
+        # plate = get_stroke_line( main_points,wide=main_width, thick = plate_thick, loop=True)
+        #
+        # plate = plate.union(get_stroke_line([left_bearing, self.hands_position, right_bearing],wide=main_width, thick = plate_thick))
+        #
+        # bottom_points = [self.bottom_pillar_positions[0], self.bearing_positions[0][:2], self.bottom_pillar_positions[1], self.hands_position]
+        #
+        # plate = plate.union(get_stroke_line(bottom_points, wide=main_width, thick=plate_thick, loop=True))
+        #
+        # if self.gear_train_layout.start_on_right and self.going_train.wheels == 4:
+        #     plate = plate.union(get_stroke_line([right_bearing, self.bearing_positions[-4][:2], self.bottom_pillar_positions[1]], wide=main_width, thick=plate_thick))
+        #     plate = plate.union(get_stroke_line([left_bearing, (-self.bearing_positions[-4][0], self.bearing_positions[-4][1]), self.bottom_pillar_positions[0]], wide=main_width, thick=plate_thick))
+        # else:
+        #     plate = plate.union(get_stroke_line([left_bearing, self.bearing_positions[-4][:2], self.bottom_pillar_positions[0]], wide=main_width, thick=plate_thick))
+        #     plate = plate.union(get_stroke_line([right_bearing, (-self.bearing_positions[-4][0], self.bearing_positions[-4][1]), self.bottom_pillar_positions[1]], wide=main_width, thick=plate_thick))
+
+        if self.gear_train_layout.start_on_right:
+            right_mid_point = self.bearing_positions[-4][:2]
+            left_mid_point = (-right_mid_point[0], right_mid_point[1])
+        else:
+            left_mid_point = self.bearing_positions[-4][:2]
+            right_mid_point = (-left_mid_point[0], left_mid_point[1])
+
+        if not back:
+            top_point = self.bearing_positions[-1][:2]
+        else:
+            top_point = (self.bearing_positions[-1][0], self.top_pillar_positions[1][1] - (self.bearing_positions[-1][1] - self.top_pillar_positions[1][1]))
+
+        main_points = [self.top_pillar_positions[0], top_point, self.top_pillar_positions[1],
+                       right_mid_point,
+                       self.bottom_pillar_positions[1], self.bearing_positions[0][:2], self.bottom_pillar_positions[0],
+                       left_mid_point
+                       ]
+
+        plate = get_stroke_line( main_points,wide=main_width, thick = plate_thick, loop=True)
+
+        plate = plate.union(get_stroke_line([self.bottom_pillar_positions[0], self.hands_position, self.bottom_pillar_positions[1]], wide=main_width, thick=plate_thick))
+        plate = plate.union(get_stroke_line([self.hands_position, left_bearing, right_bearing], wide=main_width, thick=plate_thick, loop=True))
+        # plate = plate.union(get_stroke_line([(self.top_pillar_positions[0][0], left_bearing[1]), left_bearing], wide=main_width, thick=plate_thick, loop=True))
+        # plate = plate.union(get_stroke_line([(self.top_pillar_positions[1][0], right_bearing[1]), right_bearing], wide=main_width, thick=plate_thick, loop=True))
+        plate = plate.union(get_stroke_line([self.top_pillar_positions[0], left_bearing], wide=main_width, thick=plate_thick))
+        plate = plate.union(get_stroke_line([self.top_pillar_positions[1], right_bearing], wide=main_width, thick=plate_thick))
+
+        if just_basic_shape:
+            return plate
+
+        plate = plate.cut(self.get_fixing_screws_cutter())
+        if back:
+
+            plate = self.rear_additions_to_plate(plate)
+
+        else:
+            plate = self.front_additions_to_plate(plate, moon=True)
+
+        plate = self.punch_bearing_holes(plate, back)
+
+        ratchet_screws_cutter = self.get_spring_ratchet_screws_cutter(back_plate=back)
+        if ratchet_screws_cutter is not None:
+            plate = plate.cut(ratchet_screws_cutter)
+
+        return plate
+
+
+    def get_bottom_wall_standoff(self, for_printing=True):
+        return cq.Workplane("XY").rect(10, 10).extrude(10)
+    def get_back_cock(self, for_printing=True):
+        return cq.Workplane("XY").rect(10, 10).extrude(10)
+
+    def get_fixing_screws_cutter(self):
+        return cq.Workplane("XY").rect(10, 10).extrude(10)
 
 class RollingBallClockPlates(SimpleClockPlates):
     '''

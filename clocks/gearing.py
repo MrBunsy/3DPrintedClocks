@@ -3127,7 +3127,7 @@ class Arbor:
         if standalone returns a clockwise wheel for teh ArborForPlate class to sort out
         if not it returns a wheel pinion pair
         '''
-        arbour_or_pivot_r = self.pinion.get_max_radius()
+        arbour_or_pivot_r = self.pinion.get_max_radius() + 1
         if standalone:
             arbour_or_pivot_r = self.arbor_d * 2
         # wheel = self.escapement.get_wheel_2d()
@@ -3408,6 +3408,8 @@ class Arbor:
 
         This is a mess and really needs looking at - the spring barrel is generally a cleaner implementation, but it is more simple as far as the arbor is concerned.
         '''
+        if arbor_extension_max_radius < 0:
+            raise RuntimeError(f"arbor extension max radius appears to be negative: {arbor_extension_max_radius}. This suggests not enough space between powered wheel and next wheel.  Cannot generate sensible powered wheel")
         style = self.style
         if PowerType.is_weight(self.powered_wheel.type):
 

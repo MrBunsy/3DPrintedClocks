@@ -113,6 +113,7 @@ class PlateShape(Enum):
     SIMPLE_ROUND = "simple_round" # clock 5, offset hands and pendulum. probably won't use again
     MANTEL = "mantel"
     ROUND = "round" #wall or on legs
+    RECTANGLE_WALL = "rectangle_wall"
 
 class PendulumFixing(Enum):
     #the first reliable mechanism, with the anchor and rod-holder both on the same threaded rod held with friction, the pendulum slots into the fixing on the anchor arbour rod

@@ -34,7 +34,7 @@ if 'show_object' not in globals():
 
 clock_name= "Wall Clock 48"
 clock_out_dir= "out"
-gear_style=GearStyle.HONEYCOMB_CHUNKY
+gear_style=GearStyle.ROUNDED_ARMS5
 
 second_hand_centred = False
 
@@ -162,7 +162,7 @@ gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False)
 
 motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,2)) + 180
 
-plates = RoundClockPlates(train, motion_works, name="Wall 40", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
+plates = RoundClockPlates(train, motion_works, name="Wall 48", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, moon_complication=moon_complication,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=27, fewer_arms=True)

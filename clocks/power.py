@@ -2535,9 +2535,11 @@ class CordBarrel(WeightPoweredWheel):
         '''
 
         if bearing is None:
-            bearing = get_bearing_info(15)
+            if self.use_key:
+                bearing = get_bearing_info(15)
+            else:
+                bearing = get_bearing_info(rod_metric_size)
 
-        #only if useKey is true will this be used
         self.key_bearing = bearing
         print("cord wheel bearing:{}".format(self.key_bearing))
         # extra radius to subtract from the bit that goes through the large bearing for a key
@@ -2595,7 +2597,9 @@ class CordBarrel(WeightPoweredWheel):
         if self.use_key:
             fixing_screw_length = self.ratchet.thick + self.cap_thick + self.thick + self.top_cap_thick
         else:
-            raise NotImplementedError("TODO BOM screw length for non-key cord wheel")
+            # raise NotImplementedError("TODO BOM screw length for non-key cord wheel")
+            #TODO check this is correct
+            fixing_screw_length = self.ratchet.thick + self.cap_thick + self.thick + self.cap_thick + self.thick + self.top_cap_thick
         print(f"Cord wheel needs {self.fixing_screw} less than {fixing_screw_length:.1f}mm")
         fixing_screw_length = get_nearest_machine_screw_length(fixing_screw_length, self.fixing_screw)
         return fixing_screw_length

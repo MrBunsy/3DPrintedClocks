@@ -492,22 +492,22 @@ $render{render_with_all_arbors_id}
 
 """
         render_up_to_front_plate = cq.Workplane("XY").add(render_with_all_arbors).add(plate_parts["front_plate"])
-        if self.dial.raised_detail:
-            # dial pillars are already attached to front plate
-            dial_pillars = self.dial.get_supports().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
-            render_up_to_front_plate = render_up_to_front_plate.add(dial_pillars)
-        else:
-            raise NotImplementedError("TODO instructions and renders for non-raised detail dial")
+        if self.dial is not None:
+            if self.dial.raised_detail:
+                # dial pillars are already attached to front plate
+                dial_pillars = self.dial.get_supports().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
+                render_up_to_front_plate = render_up_to_front_plate.add(dial_pillars)
+            else:
+                raise NotImplementedError("TODO instructions and renders for non-raised detail dial")
 
-        render_up_to_front_plate_id = final_assembly_bom.add_render(render_up_to_front_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            render_up_to_front_plate_id = final_assembly_bom.add_render(render_up_to_front_plate, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
+            dial = self.dial.get_dial().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
+            dial_detail = self.dial.get_all_detail().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
 
-        dial = self.dial.get_dial().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
-        dial_detail = self.dial.get_all_detail().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.dial_pos)
+            render_with_dial = cq.Workplane("XY").add(render_up_to_front_plate).add(dial).add(dial_detail)
+            render_with_dial_id = final_assembly_bom.add_render(render_with_dial, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
 
-        render_with_dial = cq.Workplane("XY").add(render_up_to_front_plate).add(dial).add(dial_detail)
-        render_with_dial_id = final_assembly_bom.add_render(render_with_dial, BillOfMaterials.SVG_OPTS_ISOMETRIC_SOLID)
-
-        final_assembly_bom.assembly_instructions += f"""
+            final_assembly_bom.assembly_instructions += f"""
 
 This is easier said than done, but next slot the front plate over the top. Be patient and gentle, lining up one arbor at a time. A pair of tweezers can be very useful to lining up arbors with bearings.
 
@@ -521,7 +521,7 @@ Now is a good time to glue the chapter ring to the dial pillars.
 
 $render{render_with_dial_id}
 
-        """
+            """
     def get_final_assembly_bom(self):
         '''
         get a BOM for a set of instructions and renders on how to assemble the entire clock
