@@ -84,8 +84,8 @@ train.generate_arbors_dicts([
         #spring barrel
         "wheel_thick": 5,
         "style": GearStyle.CIRCLES,
-        "pinion_faces_forwards": True,
-        "wheel_outside_plates": False,
+        "pinion_at_front": True,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 0,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 11.9,
@@ -95,8 +95,8 @@ train.generate_arbors_dicts([
         #intermediate wheel
         "wheel_thick": 4,
         "style": GearStyle.CIRCLES,
-        "pinion_faces_forwards": True,
-        "wheel_outside_plates": False,
+        "pinion_at_front": True,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 0,
         "pinion_type": PinionType.LANTERN_THIN,
         "rod_diameter": 3,
@@ -107,8 +107,8 @@ train.generate_arbors_dicts([
         #centre wheel
         "wheel_thick": 3,
         "style": GearStyle.CIRCLES,
-        "pinion_faces_forwards": True,
-        "wheel_outside_plates": False,
+        "pinion_at_front": True,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 1,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 3,
@@ -119,8 +119,8 @@ train.generate_arbors_dicts([
         #second wheel
         "wheel_thick": 2.55,
         "style": GearStyle.CIRCLES,
-        "pinion_faces_forwards": False,
-        "wheel_outside_plates": False,
+        "pinion_at_front": False,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 15,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
@@ -131,8 +131,8 @@ train.generate_arbors_dicts([
         #third wheel
         "wheel_thick": 2.1674999999999995,
         "style": GearStyle.CIRCLES,
-        "pinion_faces_forwards": False,
-        "wheel_outside_plates": False,
+        "pinion_at_front": False,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 10,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
@@ -143,8 +143,8 @@ train.generate_arbors_dicts([
         #escape wheel
         "wheel_thick": 2.5,
         "style": GearStyle.CIRCLES,
-        "pinion_faces_forwards": True,
-        # "wheel_outside_plates": False,
+        "pinion_at_front": True,
+        # "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 18,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
@@ -153,8 +153,8 @@ train.generate_arbors_dicts([
     # {
     #     "wheel_thick": 12,
     #     "style": GearStyle.ARCS,
-    #     "pinion_faces_forwards": True,
-    #     # "wheel_outside_plates": False,
+    #     "pinion_at_front": True,
+    #     # "arbor_split": SplitArborType.NORMAL_ARBOR,
     #     "pinion_extension": 0,
     #     "pinion_type": PinionType.PLASTIC,
     #     "rod_diameter": 3

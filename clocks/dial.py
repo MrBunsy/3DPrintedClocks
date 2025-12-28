@@ -241,8 +241,8 @@ class MoonPhaseComplication3D:
         if index < 2:
             pinion_length = self.first_pinion_thick if index == 0 else self.pinion_thick
             #TODO pinion should be long enough to reach all the way to the plate so the next arbor can be as close as possible and thus the moon not stick out too much
-            arbor_object = Arbor(arbor_d= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheel_thick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinion_thick=self.pinion_thick,
-                          pinion_extension=pinion_length - self.pinion_thick, pinion_at_front=False, clockwise_from_pinion_side=True, style=self.gear_style, end_cap_thick=0, type=ArborType.WHEEL_AND_PINION)
+            arbor_object = Arbor(rod_diameter= self.arbor_loose_d, wheel=self.pairs[index].wheel, wheel_thick=self.gear_thick, pinion=self.pairs[index + 1].pinion, pinion_thick=self.pinion_thick,
+                                 pinion_extension=pinion_length - self.pinion_thick, pinion_at_front=False, clockwise_from_pinion_side=True, style=self.gear_style, end_cap_thick=0, type=ArborType.WHEEL_AND_PINION)
             arbor = arbor_object.get_shape()
             # if index == 0:
             #     #cut away a bit to improve fitting ext to motion works (woopsee printing clock 32)

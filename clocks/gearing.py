@@ -2847,7 +2847,7 @@ class ArborForPlate:
 
 
 class Arbor:
-    def __init__(self, arbor_d=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
+    def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR, pinion_type=PinionType.PLASTIC,
                  type=ArborType.UNKNOWN, fly=None):
         '''
@@ -2867,7 +2867,8 @@ class Arbor:
         NOTE currently assumes chain/cord is at the front - needs to be controlled by something like pinionAtFront
         '''
         #diameter of the threaded rod. Usually assumed to also be the size of the hole
-        self.arbor_d=arbor_d
+        #note - matching arguments to Arbor up with what makes most sense for generate_gears, but it's still a lot of work to rename all the internal properties, so still TODO
+        self.arbor_d=rod_diameter
         self.wheel=wheel
         self.wheel_thick=wheel_thick
         self.pinion=pinion
@@ -2918,7 +2919,7 @@ class Arbor:
         #         print(f"arbor setting end cap thick to wheel: {self.end_cap_thick}")
         # print(f"end_cap_thick: {self.end_cap_thick}")
 
-        self.hole_d = arbor_d
+        self.hole_d = rod_diameter
         if self.loose_on_rod:
             if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.CORD and self.powered_wheel.use_steel_tube:
                 #6.2 squeezes on and holds tight!
@@ -2980,7 +2981,7 @@ class Arbor:
 
         self.lantern_pinion = None
         if self.pinion_type.is_lantern() and self.pinion is not None:
-            self.lantern_pinion = LanternPinion(self.pinion, self.pinion_thick, self.wheel_thick, extension=self.pinion_extension, cap_thick=self.end_cap_thick, type =self.pinion_type, arbor_rod_d=arbor_d)
+            self.lantern_pinion = LanternPinion(self.pinion, self.pinion_thick, self.wheel_thick, extension=self.pinion_extension, cap_thick=self.end_cap_thick, type =self.pinion_type, arbor_rod_d=rod_diameter)
 
         # for lantern pinions there's a vertical component with a hex base and top which holds the wheel and pinion can together
         #DEPRECATED - this logic all moved to LanternPinion class
@@ -4022,7 +4023,7 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbor(wheel=wheel, pinion=pinion, arbor_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick,
+        return Arbor(wheel=wheel, pinion=pinion, rod_diameter=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick,
                      pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style,
                      clockwise_from_pinion_side=False, type=ArborType.WHEEL_AND_PINION)
 

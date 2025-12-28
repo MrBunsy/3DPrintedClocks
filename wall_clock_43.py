@@ -96,7 +96,7 @@ train.generate_arbors_dicts([
     {
         #centre wheel
         "module": 0.925,
-        "pinion_faces_forwards": True,
+        "pinion_at_front": True,
         # "pinion_thick": 7
         "pinion_type": PinionType.LANTERN,
         "wheel_thick": 2.4,
@@ -111,13 +111,13 @@ train.generate_arbors_dicts([
     {
         #third wheel
         "module": 0.925,
-        "pinion_faces_forwards":False,
+        "pinion_at_front":False,
         "pinion_thick":6
 
     },
     {
         #escape wheel
-        "pinion_faces_forwards": True,
+        "pinion_at_front": True,
         "pinion_extension": 19,
         "pinion_thick":6
     }

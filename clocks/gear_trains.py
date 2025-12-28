@@ -71,11 +71,12 @@ class GearTrainBase:
 
 
                 "style": "GearStyle." + arbor.style.name,
-                "pinion_faces_forwards": arbor.pinion_at_front,
-                "wheel_outside_plates":arbor.arbor_split != SplitArborType.NORMAL_ARBOR,
+                "pinion_at_front": arbor.pinion_at_front,
+                # "wheel_outside_plates":arbor.arbor_split != SplitArborType.NORMAL_ARBOR,
+                "arbor_split": arbor.arbor_split,
                 "pinion_extension": arbor.pinion_extension,
                 "pinion_type": "PinionType." + arbor.pinion_type.name,
-                "rod_diameter": arbor.arbor_d
+                "rod_diameter": arbor.rod_diameter
             }
 
             if arbor.wheel is not None:
@@ -127,8 +128,8 @@ class GearTrainBase:
                 "pinion_thick": float,
                 "pinion_type": PinionType (for the pinion on this arbor, which engages with the previous wheel)
                 "style": GearStyle enum,
-                "pinion_faces_forwards": bool,
-                "wheel_outside_plates":  SplitArborType, #escapement on front or back only one supported currently. Note that if used, both escape wheel and anchor must have this set the same
+                "pinion_at_front": bool,
+                "arbor_split":  SplitArborType, #escapement on front or back only one supported currently. Note that if used, both escape wheel and anchor must have this set the same
                 "pinion_extension": float,
                 "rod_diameter": float
                 },
@@ -146,6 +147,7 @@ class GearTrainBase:
         if reduction < 0:
             reduction = self.default_reduction
         # fill in any missing info
+        #note - no need to set anything where the default value in Arbor is fine, as we'll expand this dict out into arguments and anything missing will just be Arbor's default
         for i, info in enumerate(arbor_info):
             if "module" not in info:
                 if i ==0:
@@ -170,9 +172,9 @@ class GearTrainBase:
                     #the previous wheel thick + extra
                     info["pinion_thick"] = arbor_info[i-1]["wheel_thick"] + pinion_thick_extra
 
-            if "pinion_type" not in info:
-                #previously lantern
-                info["pinion_type"] = PinionType.PLASTIC
+            # if "pinion_type" not in info:
+            #     #previously lantern
+            #     info["pinion_type"] = PinionType.PLASTIC
 
             if "style" not in info:
                 if i == 0:
@@ -180,20 +182,20 @@ class GearTrainBase:
                 else:
                     info["style"] = arbor_info[i-1]["style"]
 
-            if "pinion_faces_forwards" not in info:
+            if "pinion_at_front" not in info:
                 if i <= 1:
                     #default to first two facing forwards
-                    info["pinion_faces_forwards"] = True
+                    info["pinion_at_front"] = True
                 else:
                     #otherwise flip backwards and forwards
-                    info["pinion_faces_forwards"] = not arbor_info[i-1]["pinion_faces_forwards"]
-                print(i,"info[\"pinion_faces_forwards\"]", info["pinion_faces_forwards"])
+                    info["pinion_at_front"] = not arbor_info[i-1]["pinion_at_front"]
+                print(i,"info[\"pinion_at_front\"]", info["pinion_at_front"])
 
-            if "wheel_outside_plates" not in info:
-                info["wheel_outside_plates"] = SplitArborType.NORMAL_ARBOR
+            # if "arbor_split" not in info:
+            #     info["arbor_split"] = SplitArborType.NORMAL_ARBOR
 
-            if "pinion_extension" not in info:
-                info["pinion_extension"] = 0
+            # if "pinion_extension" not in info:
+            #     info["pinion_extension"] = 0
 
         self.generate_arbors_internal(arbor_info)
 
@@ -203,6 +205,8 @@ class GearTrainBase:
                               reduction=None, wheel_outside_plates=None, pinion_extensions=None):
         '''
         New interface idea - lists of all features. However I've realised it probably makes more sense to instead have a list of dicts, so this will be deprecated
+
+        DEPRECATED - use generate_arbors_dicts instead
 
         Base function to take potentially incomplete lists of requirements and fill them all out, then call the class-specific functions
 
@@ -230,6 +234,7 @@ class GearTrainBase:
         if self.lanterns is None:
             self.lanterns = []
 
+        #deprecated and replaced with arbor_split, but I don't think anything which called this used it
         self.wheel_outside_plates = wheel_outside_plates
 
         if self.pinion_extensions is None:
@@ -290,7 +295,7 @@ class GearTrainBase:
                 "wheel_thick": self.thicknesses[i],
                 "rod_diameter": self.rod_diameters[i],
                 "pinion_thick": self.pinion_thicks[i],
-                "pinion_faces_forwards": self.pinions_face_forwards[i],
+                "pinion_at_front": self.pinions_face_forwards[i],
                 #i-1 because we now put pinino type (eg lantern) with the arbor of the pinion, not the wheel which meshes with that pinion. This is consistent with pinion_thick
                 "pinion_type": PinionType.LANTERN if i-1 in self.lanterns else PinionType.PLASTIC,
                 "wheel_outside_plates": self.wheel_outside_plates[i],
@@ -1032,7 +1037,7 @@ class GoingTrain(GearTrainBase):
         all_pairs = powered_pairs + pairs
 
         # make the escape wheel as large as possible, by default
-        escape_wheel_by_arbor_extension = arbor_infos[-2]["pinion_faces_forwards"] == arbor_infos[-3]["pinion_faces_forwards"]
+        escape_wheel_by_arbor_extension = arbor_infos[-2]["pinion_at_front"] == arbor_infos[-3]["pinion_at_front"]
         if escape_wheel_by_arbor_extension or arbor_infos[self.total_wheels - 1]["pinion_extension"] > 0:
             # assume if a pinion extension has been added that the escape wheel doesn't clash with pinion.
             # avoid previous arbour extension (BODGE - this has no knowledge of how thick that is)
@@ -1051,7 +1056,7 @@ class GoingTrain(GearTrainBase):
             # works both +ve and -ve from centre wheel
             arbors_from_centre_wheel = abs(self.powered_wheels - i)
             clockwise = arbors_from_centre_wheel % 2 == 0
-            clockwise_from_pinion_side = clockwise == arbor_infos[i]["pinion_faces_forwards"]
+            clockwise_from_pinion_side = clockwise == arbor_infos[i]["pinion_at_front"]
             powered_wheel = None
             escapement = None
             pinion = None
@@ -1078,23 +1083,21 @@ class GoingTrain(GearTrainBase):
                 # anchor
                 escapement = self.escapement
                 type = ArborType.ANCHOR
+
+            #https://stackoverflow.com/a/11277439 - remove 'module' from dict, fail successfully. we've made use of module above and it's not an argument of Arbor below
+            arbor_infos[i].pop('module', None)
             arbor = Arbor(powered_wheel=powered_wheel,
                           wheel=wheel,
-                          wheel_thick=arbor_infos[i]["wheel_thick"],
-                          arbor_d=arbor_infos[i]["rod_diameter"],
                           pinion=pinion,
-                          pinion_thick=arbor_infos[i]["pinion_thick"],
                           end_cap_thick=-1,
                           escapement=escapement,
                           distance_to_next_arbor=distance_to_next_arbor,
-                          style=arbor_infos[i]["style"],
-                          pinion_at_front=arbor_infos[i]["pinion_faces_forwards"],
                           clockwise_from_pinion_side=clockwise_from_pinion_side,
                           use_ratchet=not self.huygens_maintaining_power,
-                          pinion_extension=arbor_infos[i]["pinion_extension"],
-                          arbor_split=arbor_infos[i]["wheel_outside_plates"],
-                          pinion_type=arbor_infos[i]["pinion_type"],
-                          type = type
+                          type = type,
+                          #better than doing everything by hand, why not just expand this out? anything missing will use Arbor's default value
+                          #also lets us add in new, weirder and whackier, settings without a huge amount of boilerplate work
+                          **arbor_infos[i]
                           )
             arbors.append(arbor)
 
@@ -1318,7 +1321,7 @@ class GoingTrain(GearTrainBase):
                 clockwise_from_powered_side = first_chainwheel_clockwise and power_at_front
                 # the powered wheel
                 pinion_type =PinionType.LANTERN if i in lanterns else PinionType.PLASTIC
-                self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=powered_wheel_thicks[i], arbor_d=self.powered_wheel.arbor_d,
+                self.powered_wheel_arbors.append(Arbor(powered_wheel=self.powered_wheel, wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=powered_wheel_thicks[i], rod_diameter=self.powered_wheel.arbor_d,
                                                        distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, ratchet_screws=ratchet_screws,
                                                        use_ratchet=not self.huygens_maintaining_power, pinion_at_front=power_at_front, clockwise_from_pinion_side=clockwise_from_powered_side,
                                                        pinion_type=pinion_type, type=ArborType.POWERED_WHEEL))
@@ -1334,7 +1337,7 @@ class GoingTrain(GearTrainBase):
                 if self.powered_wheel_pairs[i - 1].pinion.lantern:
                     cap_thick = wheel_thick
                     pinion_type = PinionType.LANTERN
-                self.powered_wheel_arbors.append(Arbor(wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, arbor_d=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
+                self.powered_wheel_arbors.append(Arbor(wheel=self.powered_wheel_pairs[i].wheel, wheel_thick=wheel_thick, rod_diameter=rod_diameters[i], pinion=self.powered_wheel_pairs[i - 1].pinion,
                                                        pinion_thick=pinion_thick, end_cap_thick=cap_thick,
                                                        distance_to_next_arbor=self.powered_wheel_pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front,
                                                        clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_type=pinion_type, type=ArborType.WHEEL_AND_PINION))
@@ -1355,7 +1358,7 @@ class GoingTrain(GearTrainBase):
                 # == centre wheel ==
                 if self.powered_wheels == 0:
                     # the centre wheel also has the chain with ratchet
-                    arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=powered_wheel_thick, arbor_d=self.powered_wheel.arbor_d, distance_to_next_arbor=pairs[i].centre_distance,
+                    arbour = Arbor(powered_wheel=self.powered_wheel, wheel=pairs[i].wheel, wheel_thick=powered_wheel_thick, rod_diameter=self.powered_wheel.arbor_d, distance_to_next_arbor=pairs[i].centre_distance,
                                    style=style, pinion_at_front=not self.chain_at_back, ratchet_screws=ratchet_screws, use_ratchet=not self.huygens_maintaining_power,
                                    clockwise_from_pinion_side=not self.chain_at_back, type=ArborType.POWERED_WHEEL)
                 else:
@@ -1372,8 +1375,8 @@ class GoingTrain(GearTrainBase):
                     # pinion_thick += pinion_extension
 
                     cap_thick = lantern_pinion_end_cap_thick if self.powered_wheel_pairs[-1].pinion.lantern else gear_pinion_end_cap_thick
-                    arbour = Arbor(wheel=pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, arbor_d=rod_diameters[i + self.powered_wheels],
-                                   wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick,distance_to_next_arbor=pairs[i].centre_distance,
+                    arbour = Arbor(wheel=pairs[i].wheel, pinion=self.powered_wheel_pairs[-1].pinion, rod_diameter=rod_diameters[i + self.powered_wheels],
+                                   wheel_thick=thick, pinion_thick=pinion_thick, end_cap_thick=cap_thick, distance_to_next_arbor=pairs[i].centre_distance,
                                    style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side, pinion_extension=pinion_extension,
                                    type=ArborType.WHEEL_AND_PINION)
 
@@ -1397,7 +1400,7 @@ class GoingTrain(GearTrainBase):
                     pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 # intermediate wheels
                 # no need to worry about front and back as they can just be turned around
-                arbours.append(Arbor(wheel=pairs[i].wheel, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], wheel_thick=thick * (thickness_reduction ** i),
+                arbours.append(Arbor(wheel=pairs[i].wheel, pinion=pairs[i - 1].pinion, rod_diameter=rod_diameters[i + self.powered_wheels], wheel_thick=thick * (thickness_reduction ** i),
                                      pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick, pinion_extension=pinion_extension,
                                      distance_to_next_arbor=pairs[i].centre_distance, style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=clockwise_from_pinion_side,
                                      type=ArborType.WHEEL_AND_PINION))
@@ -1412,7 +1415,7 @@ class GoingTrain(GearTrainBase):
                     pinion_thick = arbours[-1].wheel_thick + pinion_thick_extra
                 # last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 # escape wheel has its thickness controlled by the escapement, but we control the arbor diameter
-                arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, arbor_d=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
+                arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, rod_diameter=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
                                      distance_to_next_arbor=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
                                      pinion_extension=pinion_extension, arbor_split=escapement_split, type=ArborType.ESCAPE_WHEEL))
             if not stack_away_from_powered_wheel:
@@ -1421,7 +1424,7 @@ class GoingTrain(GearTrainBase):
         # anchor is the last arbour
         # "pinion" is the direction of the extended arbour for fixing to pendulum
         # this doesn't need arbourD or thickness as this is controlled by the escapement
-        arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise, arbor_d=rod_diameters[self.powered_wheels + self.wheels],
+        arbours.append(Arbor(escapement=self.escapement, pinion_at_front=self.penulum_at_front, clockwise_from_pinion_side=escape_wheel_clockwise, rod_diameter=rod_diameters[self.powered_wheels + self.wheels],
                              type=ArborType.ANCHOR, arbor_split=escapement_split))
 
         self.wheelPinionPairs = pairs
@@ -1806,7 +1809,7 @@ class SlideWhistleTrain(GearTrainBase):
                 "pinion_thick": float,
                 "pinion_type": PinionType (for the pinion on this arbor, which engages with the previous wheel)
                 "style": GearStyle enum,
-                "pinion_faces_forwards": bool,
+                "pinion_at_front": bool,
                 "wheel_outside_plates":  SplitArborType, #escapement on front or back only one supported currently
                 "pinion_extension": float,
                 "rod_diameter": float
@@ -1824,11 +1827,11 @@ class SlideWhistleTrain(GearTrainBase):
 
 
         #TODO check this works - I'm ignoring chain at back/front like in old going train, just using the first pinion face forward to decide instead.
-        clockwise = self.powered_wheel.is_clockwise() and arbor_infos[0]["pinion_faces_forwards"]
+        clockwise = self.powered_wheel.is_clockwise() and arbor_infos[0]["pinion_at_front"]
 
         for i in range(self.total_arbors):
-            pinion_at_front = arbor_infos[i]["pinion_faces_forwards"]
-            print(f"{i}: forwards {arbor_infos[i]['pinion_faces_forwards']}")
+            pinion_at_front = arbor_infos[i]["pinion_at_front"]
+            print(f"{i}: forwards {arbor_infos[i]['pinion_at_front']}")
             arbor_d = arbor_infos[i]["rod_diameter"]
             powered_wheel = None
             fly=None
@@ -1854,7 +1857,7 @@ class SlideWhistleTrain(GearTrainBase):
             clockwise_from_powered_side = clockwise == pinion_at_front
 
 
-            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=arbor_infos[i]["pinion_thick"], wheel_thick=arbor_infos[i]["wheel_thick"], arbor_d=arbor_d,
+            self.arbors.append(Arbor(powered_wheel=powered_wheel, wheel=wheel, pinion=pinion, pinion_thick=arbor_infos[i]["pinion_thick"], wheel_thick=arbor_infos[i]["wheel_thick"], rod_diameter=arbor_d,
                                      distance_to_next_arbor=distance_to_next_arbour, style=arbor_infos[i]["style"], pinion_at_front=pinion_at_front,
                                      clockwise_from_pinion_side=clockwise_from_powered_side, fly=fly, type=type, end_cap_thick=-1, pinion_extension=arbor_infos[i]["pinion_extension"],
                                      pinion_type=arbor_infos[i]["pinion_type"]))

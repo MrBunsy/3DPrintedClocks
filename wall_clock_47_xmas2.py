@@ -103,7 +103,7 @@ arbor_info = [
         "pinion_thick": powered_wheel_thick + 1.5*2 + 2,
         "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #second wheel
@@ -122,7 +122,7 @@ arbor_info = [
         "pinion_thick": 7.5,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True,
+        "pinion_at_front": True,
     },
     {
         # escape wheel
@@ -132,7 +132,7 @@ arbor_info = [
         # "pinion_type": PinionType.LANTERN_LOW_TORQUE,
         "style": gear_style,
         "pinion_extension": 15-1,
-        "pinion_faces_forwards": True,
+        "pinion_at_front": True,
     }
 ]
 
@@ -164,7 +164,7 @@ else:
         "wheel_thick" : powered_wheel_thick,
         "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     }] + arbor_info
 
 train.generate_arbors_dicts(arbor_info)

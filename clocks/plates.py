@@ -679,7 +679,7 @@ class SimpleClockPlates(BasePlates):
 
             self.motion_works.calculate_size(arbor_distance=arbor_distance)
 
-        self.generate_arbours_for_plate()
+        self.generate_arbors_for_plate()
 
         if PowerType.is_weight(self.going_train.powered_wheel.type):
             self.weight_driven = True
@@ -1044,7 +1044,7 @@ class SimpleClockPlates(BasePlates):
 
         return PlateShape.SIMPLE_VERTICAL
 
-    def generate_arbours_for_plate(self):
+    def generate_arbors_for_plate(self):
 
         self.arbors_for_plate = []
 
@@ -1059,24 +1059,24 @@ class SimpleClockPlates(BasePlates):
         # poweredWheel.setArbourExtensionInfo(rearSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
 
         for i,bearingPos in enumerate(self.bearing_positions):
-            arbour = self.going_train.get_arbor_with_conventional_naming(i)
+            arbor = self.going_train.get_arbor_with_conventional_naming(i)
             if i < self.going_train.wheels + self.going_train.powered_wheels - 2:
-                maxR = arbour.distance_to_next_arbor - self.going_train.get_arbor_with_conventional_naming(i + 1).get_max_radius() - self.small_gear_gap
+                maxR = arbor.distance_to_next_arbor - self.going_train.get_arbor_with_conventional_naming(i + 1).get_max_radius() - self.small_gear_gap
             else:
                 maxR = 0
 
             #deprecated way of doing it - passing loads of info to the Arbour class. still used only for the chain wheel
-            # arbour.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbour.get_total_thickness(),
+            # arbor.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbor.get_total_thickness(),
             #                     frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
             #                     plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
 
             try:
-                bearing = get_bearing_info(arbour.arbor_d)
+                bearing = get_bearing_info(arbor.arbor_d)
             except:
                 #mega bodge, TODO
                 #for the spring barrel the arbor isn't a threaded rod, so isn't a nice number for a bearing.
                 #need to work out what to do properly here
-                bearing = get_bearing_info(round(arbour.arbor_d))
+                bearing = get_bearing_info(round(arbor.arbor_d))
             front_anchor_from_plate = -1
 
             if self.escapement_on_front:
@@ -1092,7 +1092,7 @@ class SimpleClockPlates(BasePlates):
 
 
             #new way of doing it, new class for combining all this logic in once place
-            arbourForPlate = ArborForPlate(arbour, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
+            arbourForPlate = ArborForPlate(arbor, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
@@ -1202,7 +1202,7 @@ class SimpleClockPlates(BasePlates):
             ]
         else:
             self.bottom_pillar_positions = [[self.bearing_positions[0][0], self.bearing_positions[0][1] - self.powered_wheel_r - self.bottom_pillar_r + self.reduce_bottom_pillar_height]]
-        
+
         self.top_pillar_positions = [(self.bearing_positions[0][0], topY + self.top_pillar_r)]
 
         if self.bottom_pillars > 1 and self.huygens_maintaining_power:
@@ -5124,7 +5124,7 @@ class RoundClockPlates(SimpleClockPlates):
             else:
                 raise ValueError("Dial isn't far enough away to fit front anchor holder. Extend motion works extra_height by at least {}mm".format(top_z - self.dial_z))
 
-        
+
 
         holder = get_stroke_arc(self.anchor_holder_fixing_points[0], self.anchor_holder_fixing_points[1], anchor_distance, holder_wide, holder_thick)
         if not self.front_anchor_holder_part_of_dial:
@@ -5135,7 +5135,7 @@ class RoundClockPlates(SimpleClockPlates):
             holder = holder.union(cq.Workplane("XY").moveTo(self.bearing_positions[-1][0], self.bearing_positions[-1][1]).circle(bearing_holder_wide/2).extrude(holder_thick))
 
         holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=get_bearing_info(self.arbors_for_plate[-1].arbor.arbor_d)).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1])))
-        
+
         # TODO NUTS - embedded or try slot in from the side?
         for pos in self.anchor_holder_fixing_points:
             #don't need to take into account holder thick because wer're unioning with it
@@ -5622,9 +5622,17 @@ class RectangularWallClockPlates(RoundClockPlates):
 
 
     def get_bottom_wall_standoff(self, for_printing=True):
-        return cq.Workplane("XY").rect(10, 10).extrude(10)
+        standoff = get_stroke_line( [self.bottom_pillar_positions[0], self.bearing_positions[0][:2], self.bottom_pillar_positions[1]],
+                                    wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
+        if not for_printing:
+            standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
+        return standoff
     def get_back_cock(self, for_printing=True):
-        return cq.Workplane("XY").rect(10, 10).extrude(10)
+        standoff = get_stroke_line( [self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]],
+                                    wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
+        if not for_printing:
+            standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
+        return standoff
 
     def get_fixing_screws_cutter(self):
         return cq.Workplane("XY").rect(10, 10).extrude(10)
@@ -6091,7 +6099,7 @@ class SlideWhistlePlates(BasePlates):
         '''
 
         bearing_positions_2d = self.gear_train_layout.get_positions()
-        
+
         arbor_thicknesses = [arbor.get_total_thickness() for arbor in self.going_train.arbors]
 
         # height of the centre of the wheel that will drive the next pinion

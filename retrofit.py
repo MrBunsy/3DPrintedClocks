@@ -169,7 +169,7 @@ pairs = [WheelPinionPair(wheelTeeth=ratios[0][0], pinionTeeth=ratios[0][1], modu
 
 #check pairs[1].centre_distance ==  55.625
 #clockwise_from_pinion_side was wrong, don't think it matters
-arbor = Arbor(arbor_d=3, wheel=pairs[1].wheel, wheel_thick=5.4, pinion=pairs[0].pinion, pinion_thick=12, end_cap_thick=-1, style=GearStyle.FLOWER,
+arbor = Arbor(rod_diameter=3, wheel=pairs[1].wheel, wheel_thick=5.4, pinion=pairs[0].pinion, pinion_thick=12, end_cap_thick=-1, style=GearStyle.FLOWER,
               distance_to_next_arbor=pairs[1].centre_distance, pinion_at_front=True, clockwise_from_pinion_side=True, pinion_type=PinionType.LANTERN_THIN, type=ArborType.WHEEL_AND_PINION)
 
 class FakePlates:

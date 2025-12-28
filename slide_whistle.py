@@ -91,24 +91,24 @@ train.generate_arbors_dicts([
         #cam wheel
         "module":0.9,
         "pinion_type": PinionType.LANTERN_THIN,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #bellows wheel
         "module":0.9,
         #this makes the whole thing bigger but not by much and makes a lot more room for the fan
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #warning wheel
         "module":0.9,
-        "pinion_faces_forwards": False,
+        "pinion_at_front": False,
         "pinion_extension": 24+10
 
     },
     {
         #fly
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     }
 ])
 

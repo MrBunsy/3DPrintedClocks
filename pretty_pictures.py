@@ -10,7 +10,7 @@ pair_ratios = [[82,10],[71,10]]
 
 pairs = [WheelPinionPair(wheelTeeth=p[0], pinionTeeth=p[1]) for p in pair_ratios]
 
-arbor = Arbor(arbor_d=4, wheel=pairs[1].wheel, pinion=pairs[0].pinion, style=GearStyle.ROUNDED_ARMS5,
+arbor = Arbor(rod_diameter=4, wheel=pairs[1].wheel, pinion=pairs[0].pinion, style=GearStyle.ROUNDED_ARMS5,
               distance_to_next_arbor=pairs[1].centre_distance, type=ArborType.WHEEL_AND_PINION, pinion_extension=0,
               pinion_thick=6, wheel_thick=2)
 

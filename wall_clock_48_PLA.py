@@ -82,7 +82,7 @@ train.generate_arbors_dicts([
         "wheel_thick" : 6,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #centre wheel
@@ -91,7 +91,7 @@ train.generate_arbors_dicts([
         "pinion_thick": 12,
         "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #second wheel
@@ -109,7 +109,7 @@ train.generate_arbors_dicts([
         "pinion_thick": 7.5,
         "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True,
+        "pinion_at_front": True,
     },
     {
         # escape wheel
@@ -119,7 +119,7 @@ train.generate_arbors_dicts([
         "pinion_type": PinionType.LANTERN,#_LOW_TORQUE
         "style": gear_style,
         "pinion_extension": 8,
-        "pinion_faces_forwards": True,
+        "pinion_at_front": True,
     }
 ])
 

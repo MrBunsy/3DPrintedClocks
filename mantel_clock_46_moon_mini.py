@@ -144,7 +144,7 @@ train.generate_arbors_dicts([
         "module": 1*scale,
         "pinion_type": PinionType.LANTERN,
         "pinion_thick":4*1.875,
-        "pinion_faces_forwards":True
+        "pinion_at_front":True
     },
     {
         "module":0.9*scale,
@@ -152,13 +152,13 @@ train.generate_arbors_dicts([
     },
     {
         "module":0.9*scale,
-        "pinion_faces_forwards":False
+        "pinion_at_front":False
 
     },
     {
         #escape wheel
         "pinion_extension": 8,
-        "pinion_faces_forwards":False
+        "pinion_at_front":False
     }
 ], pinion_thick_extra=5)
 

@@ -38,6 +38,26 @@ Plan: make a clock a 6 year old could assemble.
      will need to have pinions without caps so they can slot together easily like the motion works
      will need bearing standoffs on the extensions. How will I do the cone recess on teh top plate?
      how will I do the crutch for the motino works? ring magnets?
+     
+     
+     new thoughts - could use nylon bushings instead of bearings?
+     also, if I did have a new design of arbor with bearings (or bushings) on the arbor, and a fixed rod - this means I could have multiple wheels on one rod
+     which would result in a potentially very compact design
+     although, for this to remain a simple clock, easy to understand for a child, is this an advantage or not? might still be worth investigating for future ultra-compact designs?
+     
+     
+     idea for the centre wheel - long rod fixed to back plate, then wheel + arbor with nylon bushings. Reduce diameter on inside of front plate, then reduce diameter (or end?) just outside 
+     front plate, then in that end embed a circular magnet for the crutch. 
+     Then the motion works:
+      - cannon pinion with magnet in base. Will need nylon bushings. End can be square - maybe with a slight lip? or taper?
+      - hour wheel and minute wheel as per normal
+      
+    this whole idea will have a lot more friction - going to have to see how good the nylon bushings are. Most will be nylon busing on threaded rod, but the centre wheel will have 
+    3D printed rod through a nylon bushing in the front plate
+    
+    I think I want to do this as an experiment with nylon bushings, and aim to produce a child friendly clock as a good test case.
+    Key wound? careful two cord? chain?
+    
 
 '''
 outputSTL = False
@@ -93,7 +113,7 @@ train.generate_arbors_dicts([
         "wheel_thick" : 8,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #centre wheel
@@ -102,7 +122,7 @@ train.generate_arbors_dicts([
         "pinion_thick": 12,
         "pinion_type": pinion_type,
         "style": gear_style,
-        "pinion_faces_forwards": True
+        "pinion_at_front": True
     },
     {
         #second wheel
@@ -120,7 +140,7 @@ train.generate_arbors_dicts([
         "pinion_thick": 10,
         "pinion_type": pinion_type,
         "style": gear_style,
-        "pinion_faces_forwards": False,
+        "pinion_at_front": False,
     },
     {
         # escape wheel
@@ -130,7 +150,7 @@ train.generate_arbors_dicts([
         "pinion_type": pinion_type,
         "style": gear_style,
         "pinion_extension": 8,
-        "pinion_faces_forwards": False,
+        "pinion_at_front": False,
     }
 ])
 
@@ -153,7 +173,7 @@ dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numer
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 dial = None
 plaque = None
-gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, support_seconds_hand=False)
+gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False)#, support_second_hand=False)
 
 motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
 motion_works.calculate_size(arbor_distance=30)
