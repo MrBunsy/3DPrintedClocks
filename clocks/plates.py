@@ -1050,25 +1050,12 @@ class SimpleClockPlates(BasePlates):
 
         print("Plate distance", self.plate_distance)
 
-        #configure stuff for the arbours, now we know their absolute positions
-        # poweredWheel=self.goingTrain.getArbourWithConventionalNaming(0)
-        # poweredWheelBracingR = poweredWheel.distanceToNextArbour - self.goingTrain.getArbourWithConventionalNaming(1).getMaxRadius() - self.gearGap
-        #
-        # #no need for it to be massive
-        # poweredWheelBracingR = min(10,poweredWheelBracingR)
-        # poweredWheel.setArbourExtensionInfo(rearSide=self.bearingPositions[0][2], maxR=poweredWheelBracingR)
-
         for i,bearingPos in enumerate(self.bearing_positions):
             arbor = self.going_train.get_arbor_with_conventional_naming(i)
             if i < self.going_train.wheels + self.going_train.powered_wheels - 2:
                 maxR = arbor.distance_to_next_arbor - self.going_train.get_arbor_with_conventional_naming(i + 1).get_max_radius() - self.small_gear_gap
             else:
                 maxR = 0
-
-            #deprecated way of doing it - passing loads of info to the Arbour class. still used only for the chain wheel
-            # arbor.setPlateInfo(rearSideExtension=bearingPos[2], maxR=maxR, frontSideExtension=self.plateDistance - self.endshake - bearingPos[2] - arbor.get_total_thickness(),
-            #                     frontPlateThick=self.getPlateThick(back=False), pendulumSticksOut=self.pendulumSticksOut, backPlateThick=self.getPlateThick(back=True), endshake=self.endshake,
-            #                     plateDistance=self.plateDistance, escapementOnFront=self.escapementOnFront)
 
             try:
                 bearing = get_bearing_info(arbor.arbor_d)
@@ -1092,12 +1079,12 @@ class SimpleClockPlates(BasePlates):
 
 
             #new way of doing it, new class for combining all this logic in once place
-            arbourForPlate = ArborForPlate(arbor, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
+            arborForPlate = ArborForPlate(arbor, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
                                            pendulum_length=self.going_train.pendulum_length_m*1000)
-            self.arbors_for_plate.append(arbourForPlate)
+            self.arbors_for_plate.append(arborForPlate)
 
     def clashes_with_wheel(self, pillar_pos, pillar_r, min_gap=-1):
         if min_gap < 0:

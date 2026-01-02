@@ -374,3 +374,52 @@ class SuspensionSpringPendulumBits:
         holder = cq.Workplane("XY")
 
         return holder
+
+
+class KnifeEdgePendulumBits:
+
+    '''
+    a collet with arm that will attach to the anchor arbor, then a ring with a sticky out triangle to go on the back of the clock
+    '''
+
+    def __init__(self, collet_size, ring_diameter=40, depth=20, slot_distance=40, slot_length=40, wedge_angle_deg=40, pendulum_rod_d=3):
+        #size of teh square in the collet
+        self.collet_size = collet_size
+        #inner diameter
+        self.ring_diameter = ring_diameter
+        self.depth = depth
+        #distance from centre of pivot to the centre of the slot for the threaded rod from the crutch
+        self.slot_distance = slot_distance
+        #length of slot for the crutch's rod
+        self.slot_length = slot_length
+        self.wall_thick = 8
+        self.wedge_angle = deg_to_rad(wedge_angle_deg)
+        #hmm, should the pendulum top actually be part of the pendulum after all? will put it here for now, consider moving it later
+        self.pendulum_rod_d = pendulum_rod_d
+
+    def get_pendulum_top(self):
+        '''
+        ring with triangle, like my very first clock, to be attached to the top of the pendulum rod
+        '''
+        ring = cq.Workplane("XY").circle(self.ring_diameter/2 + self.wall_thick)#.circle(self.wall_thick).extrude(self.depth)
+        left = polar(math.pi/2 + self.wedge_angle/2, self.ring_diameter/2)
+        right = polar(math.pi/2 - self.wedge_angle/2, self.ring_diameter/2)
+        ring = ring.moveTo(left[0], left[1]).radiusArc((0, -self.ring_diameter/2), -self.ring_diameter/2).radiusArc(right, -self.ring_diameter/2)
+        ring = ring.lineTo(0,0).close()
+
+        ring = ring.extrude(self.depth)
+
+        screw = MachineScrew(self.pendulum_rod_d)
+        nut_cutter = screw.get_nut_cutter(height=10).rotate((0,0,0),(1,0,0),-90)
+        rod_cutter = screw.get_cutter(length=self.wall_thick, ignore_head=True).rotate((0,0,0),(1,0,0),-90)
+
+        full_cutter = nut_cutter.translate((0,-self.ring_diameter/2 - 1, self.depth/2))
+        full_cutter = full_cutter.union(rod_cutter.translate((0,-self.ring_diameter/2 - self.wall_thick, self.depth/2)))
+        full_cutter = full_cutter.union(nut_cutter.translate((0, -self.ring_diameter / 2 - self.wall_thick + 1 - 10, self.depth / 2)))
+        ring = ring.cut(full_cutter)
+        # ring = ring.union(cq.Workplane("XY"))
+
+        return ring
+
+
+

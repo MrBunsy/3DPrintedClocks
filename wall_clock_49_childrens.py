@@ -58,7 +58,16 @@ Plan: make a clock a 6 year old could assemble.
     I think I want to do this as an experiment with nylon bushings, and aim to produce a child friendly clock as a good test case.
     Key wound? careful two cord? chain?
     
-
+    wondering about key-wound (maybe with built-in knob rather than separate key?), but will need to add soething under the plate to stop over-winding.
+    
+    plan for pendulum: bring back knife-edge. Can keep anchor arbor almost the same: square arbor behind the anchor, just need to change start and end z. I'll add the crutch with a collet
+    
+    crutch collet idea:
+    
+    () - collet ring that slots over anchor arbor
+    ||
+    || - 3d printed flat plastic
+    |.| - machine screw that  will face out backwareds, so it can go into a slot in the pendulum holder
 '''
 outputSTL = False
 

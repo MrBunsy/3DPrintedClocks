@@ -131,6 +131,7 @@ class PendulumFixing(Enum):
     DIRECT_ARBOR_SMALL_BEARINGS = "direct_arbour_small_bearings"
     #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)
     #since using degreased stainless steel EZO bearings I'm not sure I've got any need to go back to this or even try suspension springs
+    # going to being this back for the childrens clock!
     KNIFE_EDGE = "knife_edge"
     #idea - 3D printed suspension spring, works for the ratchet, might work for this?
     #might try with real steel spring too
@@ -201,6 +202,8 @@ class ArborType(Enum):
     FLY = "Fly"
     #used for special things like fans or flys
     # LONE_PINION = "Lone Pinion"
+    #for a "normal" clock, this is just a standard wheel and pinion, but if it's fixed rods then this is very different. The plates will be the decider
+    CENTRE_WHEEL = "Centre Wheel"
     UNKNOWN = "Unknown"
 
 class PowerType(Enum):

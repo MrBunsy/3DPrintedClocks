@@ -1826,7 +1826,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 class ArborForPlate:
 
     def __init__(self, arbor, plates, arbor_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None,
-                 back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOR, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
+                 back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
                  previous_bearing_position=None, front_anchor_from_plate=-1, pendulum_length=-1):
         '''
         Given a basic Arbour and a specific plate class do the following:
@@ -1919,6 +1919,8 @@ class ArborForPlate:
         self.crutch_thick = crutch_space - self.crutch_holder_slack_space
 
         if self.type == ArborType.ANCHOR:
+            #TODO ... just tidy this up. I've added everything peicemeal and lost track of a bigger picture
+            #I'm not quite sure where all the business logic should live - it's currently mostly in here, but I can't remember why we initiate all possible options
             self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
             self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
             # beat_setter_length = 35
@@ -1926,7 +1928,10 @@ class ArborForPlate:
             #     #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
             #accidentally had pendulum_length in metres so this was always the case. I think I prefer the smaller version so I'm sticking with it
             beat_setter_length = 30
-            self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=self.square_side_length + self.pendulum_fixing_extra_space, length=beat_setter_length)
+            #size of square in the collet
+            collet_size = self.square_side_length + self.pendulum_fixing_extra_space
+            self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=collet_size, length=beat_setter_length)
+            self.knife_edge_pendulum_bits = KnifeEdgePendulumBits(collet_size = collet_size)
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1974,7 +1979,7 @@ class ArborForPlate:
 
     def get_pendulum_crutch(self):
 
-        if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE]:
+        if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.KNIFE_EDGE]:
             return None
         return self.suspension_spring_bits.get_crutch()
 
@@ -2844,12 +2849,24 @@ class ArborForPlate:
         return None
 
 
+class FixedRodArborForPlate(ArborForPlate):
+    '''
+    Plan: fixed threaded rod between the plates, and nylon bushings (or bearings) are on the arbors
+    first iteration will be with nylon bushings for the childrens clock, but I think there may be some value in using bearings so I can put multiple arbors on a single rod for compactness
+
+    vague plan: overriding ArborForPlate I hope to just change the arbor extension methods and leave everything else alone? maybe?
+
+    is it better to just add options to ArborForPlate? Or do I want to movein the direction of mixins for these sorts of features as a very long term goal?
+    '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # if self.centre_wh
 
 
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
-                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR, pinion_type=PinionType.PLASTIC,
-                 type=ArborType.UNKNOWN, fly=None):
+                 distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
+                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - powered wheel is wheel + ratchet (+more logic than there used to be)
@@ -2993,6 +3010,7 @@ class Arbor:
 
 
     def get_type(self):
+        #an ArborType
         return self.type
         # # note to self, why did I do this introspectively? why did I not just make it a requirement up front?
         # # the gear generation knows exactly what it's trying to generate!
@@ -3517,6 +3535,8 @@ class Arbor:
             gear_wheel = gear_wheel.rotate((0,0,0),(1,0,0),180).translate((0,0,self.get_total_thickness()))
 
         return gear_wheel
+
+
 
 class MotionWorks:
 
