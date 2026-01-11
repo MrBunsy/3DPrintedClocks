@@ -2580,7 +2580,7 @@ class Pendulum:
 
         self.support_hollow = support_hollow
 
-        self.knife_edge_angle = knife_edge_angle
+        # self.knife_edge_angle = knife_edge_angle
 
         self.hand_avoider_wide = 5
 

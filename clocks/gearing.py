@@ -1882,6 +1882,9 @@ class ArborForPlate:
         self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
         self.pendulum_fixing = pendulum_fixing
+        if isinstance(pendulum_fixing, Enum):
+            # support old designs which still use the enum
+            self.pendulum_fixing = PendulumHolder.get_from_enum(pendulum_fixing)
         #now fully part of arbor.arbor_split
         # self.escapement_on_front = escapement_on_front
         # self.escapement_on_back = escapement_on_back
@@ -1918,20 +1921,23 @@ class ArborForPlate:
         self.crutch_holder_slack_space = 2
         self.crutch_thick = crutch_space - self.crutch_holder_slack_space
 
-        if self.type == ArborType.ANCHOR:
-            #TODO ... just tidy this up. I've added everything peicemeal and lost track of a bigger picture
-            #I'm not quite sure where all the business logic should live - it's currently mostly in here, but I can't remember why we initiate all possible options
-            self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
-            self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
-            # beat_setter_length = 35
-            # if self.pendulum_length < 20:
-            #     #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
-            #accidentally had pendulum_length in metres so this was always the case. I think I prefer the smaller version so I'm sticking with it
-            beat_setter_length = 30
-            #size of square in the collet
-            collet_size = self.square_side_length + self.pendulum_fixing_extra_space
-            self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=collet_size, length=beat_setter_length)
-            self.knife_edge_pendulum_bits = KnifeEdgePendulumBits(collet_size = collet_size)
+        # if self.type == ArborType.ANCHOR:
+        #     #TODO ... just tidy this up. I've added everything peicemeal and lost track of a bigger picture
+        #     #I'm not quite sure where all the business logic should live - it's currently mostly in here, but I can't remember why we initiate all possible options
+        #     # self.suspension_spring_bits = SuspensionSpringPendulumBits(crutch_thick=self.crutch_thick, square_side_length=self.square_side_length + self.pendulum_fixing_extra_space)
+        #     # self.friction_fit_bits = FrictionFitPendulumBits(arbor_d=self.arbor.arbor_d)
+        #     # beat_setter_length = 35
+        #     # if self.pendulum_length < 20:
+        #     #     #TODO more graceful change? or happy with step change? this is mainly for the mantel clocks
+        #     #accidentally had pendulum_length in metres so this was always the case. I think I prefer the smaller version so I'm sticking with it
+        #     beat_setter_length = 30
+        #     #size of square in the colletpendulum_fixing_extra_space
+        #     collet_size = self.square_side_length + self.pendulum_fixing_extra_space
+        #     self.beat_setting_pendulum_bits = ColletFixingPendulumWithBeatSetting(collet_size=collet_size, length=beat_setter_length)
+        #     self.knife_edge_pendulum_bits = KnifeEdgePendulumBits(collet_size = collet_size)
+        #
+        #     TODO replace pendulum_fixing entirely with this
+        #     self.pendulum_fixing_object = pendulum_fixing_object
 
         #distance between back of back plate and front of front plate (plate_distance is the literal plate distance, including endshake)
         self.total_plate_thickness = self.plate_distance + (self.front_plate_thick + self.back_plate_thick)
@@ -1979,46 +1985,47 @@ class ArborForPlate:
 
     def get_pendulum_crutch(self):
 
-        if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.KNIFE_EDGE]:
-            return None
-        return self.suspension_spring_bits.get_crutch()
+        # if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.KNIFE_EDGE]:
+        #     return None
+        #will return None if this fixing has no crutch
+        return self.pendulum_fixing.get_crutch()
 
-    def get_pendulum_holder_collet(self):
-        '''
-        will slot over square bit of anchor arbour and screw in place
-        for the direct arbours without suspension spring
-        TODO move this out to join ColletFixingPendulumWithBeatSetting in pendulum_holders
-        '''
-        outer_d = self.outer_d
-        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
-            outer_d = self.cylinder_r*4#DIRECT_ARBOR_D*2
-
-        square_size = self.square_side_length + self.pendulum_fixing_extra_space
-
-        extra_distance_from_bearing = + 5
-        #plus extra so it's easier to slot the pendulum out when it's near the bearing holder on the top wall standoff
-        gap_between_square_and_pendulum_hole = self.collet_screws.get_nut_height(half=True) + 1 + self.collet_screws.get_head_height() + extra_distance_from_bearing
-
-        height = outer_d*2.5 + extra_distance_from_bearing
-        print("gap_between_square_and_pendulum_hole (and m2 screw) = ",gap_between_square_and_pendulum_hole)
-        r = outer_d/2
-
-        collet = cq.Workplane("XY").tag("base").circle(r).extrude(self.pendulum_holder_thick)
-        collet = collet.workplaneFromTagged("base").moveTo(0,r - height/2).rect(outer_d, height - outer_d).extrude(self.pendulum_holder_thick)
-        collet = collet.workplaneFromTagged("base").moveTo(0, outer_d - height).circle(r).extrude(self.pendulum_holder_thick)
-
-        #square bit that slots over arbour
-        collet = collet.cut(cq.Workplane("XY").rect(square_size, square_size).extrude(self.pendulum_holder_thick))
-
-        #means to hold end of pendulum made of threaded rod
-        collet = collet.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick/2).translate((0,-self.square_side_length/2-gap_between_square_and_pendulum_hole)))
-
-        #means to hold screw that will hold this in place
-        collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
-        collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.pendulum_holder_thick / 2)))
-
-
-        return collet
+    # def get_pendulum_holder_collet(self):
+    #     '''
+    #     will slot over square bit of anchor arbour and screw in place
+    #     for the direct arbours without suspension spring
+    #     TODO move this out to join ColletFixingPendulumWithBeatSetting in pendulum_holders
+    #     '''
+    #     outer_d = self.outer_d
+    #     if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
+    #         outer_d = self.cylinder_r*4#DIRECT_ARBOR_D*2
+    #
+    #     square_size = self.square_side_length + self.pendulum_fixing_extra_space
+    #
+    #     extra_distance_from_bearing = + 5
+    #     #plus extra so it's easier to slot the pendulum out when it's near the bearing holder on the top wall standoff
+    #     gap_between_square_and_pendulum_hole = self.collet_screws.get_nut_height(half=True) + 1 + self.collet_screws.get_head_height() + extra_distance_from_bearing
+    #
+    #     height = outer_d*2.5 + extra_distance_from_bearing
+    #     print("gap_between_square_and_pendulum_hole (and m2 screw) = ",gap_between_square_and_pendulum_hole)
+    #     r = outer_d/2
+    #
+    #     collet = cq.Workplane("XY").tag("base").circle(r).extrude(self.pendulum_holder_thick)
+    #     collet = collet.workplaneFromTagged("base").moveTo(0,r - height/2).rect(outer_d, height - outer_d).extrude(self.pendulum_holder_thick)
+    #     collet = collet.workplaneFromTagged("base").moveTo(0, outer_d - height).circle(r).extrude(self.pendulum_holder_thick)
+    #
+    #     #square bit that slots over arbour
+    #     collet = collet.cut(cq.Workplane("XY").rect(square_size, square_size).extrude(self.pendulum_holder_thick))
+    #
+    #     #means to hold end of pendulum made of threaded rod
+    #     collet = collet.cut(get_pendulum_holder_cutter(z=self.pendulum_holder_thick/2).translate((0,-self.square_side_length/2-gap_between_square_and_pendulum_hole)))
+    #
+    #     #means to hold screw that will hold this in place
+    #     collet = collet.cut(self.collet_screws.get_cutter(length=outer_d / 2, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -outer_d / 2, self.pendulum_holder_thick / 2)))
+    #     collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -square_size / 2, self.pendulum_holder_thick / 2)))
+    #
+    #
+    #     return collet
 
     def get_standalone_pinion_with_arbor_extension(self, for_printing=True):
         standalone_pinion = self.arbor.get_standalone_pinion()
@@ -2139,7 +2146,7 @@ class ArborForPlate:
             anchor_thick=self.arbor.escapement.anchor_thick
         # flip over so the front is on the print bed
         anchor = anchor.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, anchor_thick))
-        if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
+        if self.pendulum_fixing.needs_square_arbor_section():# in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
 
 
             #direct arbour pendulum fixing - a cylinder that extends from the anchor until it reaches where the pendulum should be and becomes a square rod
@@ -2151,24 +2158,17 @@ class ArborForPlate:
 
             #no need to support direct arbour with large bearings
 
-
-            # if self.pendulum_fixing not in [PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE, PendulumFixing.SUSPENSION_SPRING]:
-            #     shapes["pendulum_holder"]=self.get_pendulum_holder_collet()
-            #     shapes["pendulum_holder_for_beat_setter"] = self.beat_setting_pendulum_bits.get_pendulum_holder()
-            #     shapes["pendulum_collet_for_beat_setter"] = self.beat_setting_pendulum_bits.get_collet()
-                #else TODO suspension spring holder
-
             if not self.pendulum_at_front:
                 rear_bearing_standoff_height = LAYER_THICK * 2
-                if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE:
+                if self.pendulum_fixing.square_arbor_only_inside_plates():# == PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE:
                     #square bit just up to the top back plate
                     square_rod_length = self.distance_from_back - rear_bearing_standoff_height
-                elif self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-                    #round up to the back of the back plate then square out the back
-                    #some extra so the crutch doesn't have to be perfectly aligned
-                    square_rod_length = self.crutch_thick + self.crutch_holder_slack_space - rear_bearing_standoff_height
+                # elif self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                #     #round up to the back of the back plate then square out the back
+                #     #some extra so the crutch doesn't have to be perfectly aligned
+                #     square_rod_length = self.crutch_thick + self.crutch_holder_slack_space - rear_bearing_standoff_height
                 else:
-                    #bits out the back
+                    #square bits out the back
 
                     square_rod_length = self.back_plate_from_wall - self.standoff_plate_thick - self.endshake - rear_bearing_standoff_height
 
@@ -2190,7 +2190,7 @@ class ArborForPlate:
                     #cylinder passes only through the back plate and up to the anchor
                     #no need for collet - still contained within two bearings like a normal arbour
 
-                    if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE:
+                    if self.pendulum_fixing.square_arbor_only_inside_plates():# == PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE:
                         #we put the square section right on the back of the anchor
                         cylinder_length = 0
                     else:
@@ -2276,24 +2276,34 @@ class ArborForPlate:
                     #can be none if the anchor is pressed up against a plate
                     assembly = assembly.add(shapes["arbor_extension"])
             assembly = assembly.translate((0,0,anchor_assembly_end_z))
-            # if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR and self.escapement_on_front and not self.pendulum_at_front:
-            #     collet = shapes["collet"]
-            #     assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
-            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD] and with_extras:
+
+            if with_extras:
+                # if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR and self.escapement_on_front and not self.pendulum_at_front:
+                #     collet = shapes["collet"]
+                #     assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
+                #TODO re-instate
+                # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD] and with_extras:
                 pendulum_z = -self.pendulum_sticks_out
 
                 if self.pendulum_at_front:
                     pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
+                #
+                #     #old non-beat adjustable holder. works, will keep it as part of the output STLs
+                #     # assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
+                #     #.rotate((0,0,0),(0,1,0),180)
+                #     if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
 
-                #old non-beat adjustable holder. works, will keep it as part of the output STLs
-                # assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
-                #.rotate((0,0,0),(0,1,0),180)
-                if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
-                    assembly = assembly.add(self.beat_setting_pendulum_bits.get_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
-                else:
-                    assembly = assembly.add(self.friction_fit_bits.get_pendulum_holder().rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum_holder_thick)).translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)))
-            if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-                assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0, 0, - self.endshake / 2 - self.crutch_holder_slack_space / 2 - self.arbor_bearing_standoff_length / 2)))
+                if "pendulum_holder" in shapes:
+                    assembly = assembly.add(self.pendulum_fixing.get_pendulum_holder_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
+
+                #TODO
+                if "crutch" in shapes:
+                    #TODO translation
+                    assembly = assembly.add(self.pendulum_fixing.get_crutch_assembled())
+                #     else:
+                #         assembly = assembly.add(self.friction_fit_bits.get_pendulum_holder().rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum_holder_thick)).translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)))
+                # if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                #     assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0, 0, - self.endshake / 2 - self.crutch_holder_slack_space / 2 - self.arbor_bearing_standoff_length / 2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
@@ -2539,7 +2549,7 @@ class ArborForPlate:
         #bearings are included in the plate subcomponent
         #could consider pushing some of this down to the arbor, but some bits like pendulum beat setter are only here
         if self.arbor.get_type() == ArborType.ANCHOR:
-            bom.add_subcomponent(self.beat_setting_pendulum_bits.get_BOM())
+            bom.add_subcomponent(self.pendulum_fixing.get_BOM())
             if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
                 bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the flat part of the anchor and the bearing in the clock plate to prevent anything rubbing."))
 

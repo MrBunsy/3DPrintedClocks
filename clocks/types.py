@@ -127,6 +127,7 @@ class PendulumFixing(Enum):
     Same as direct arbour - but avoiding the use of the large (high friction) bearings. Now the recommended solution for all new designs
     TODO remove DIRECT_ARBOR, it was unreliable so I have no reason to ever print again
     ...or would degreased stainless steel large bearings work? might be handy for mantel clocks to avoid having a whole peice to hold the rear bearing
+    answer: no, degreased stainless bearings were a dead end, unreliable after a short period of use. Still no idea why, but was very consistent 
     '''
     DIRECT_ARBOR_SMALL_BEARINGS = "direct_arbour_small_bearings"
     #very first attempt, using a traditional clutch but a knife edge instead of a suspension spring (no longer implemented fully)

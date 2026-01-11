@@ -765,8 +765,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         # assume beat setting holder and m3 threaded rod and pendulum at x=0
         anchor_top_y = self.plates.bearing_positions[-1][1]
         pendulum_rod_d = 3
-        holder = self.plates.arbors_for_plate[-1].beat_setting_pendulum_bits
-        holder_hole_top_y = anchor_top_y + holder.top_of_pendulum_holder_hole_y
+        holder = self.plates.arbors_for_plate[-1].pendulum_fixing
+        holder_hole_top_y = anchor_top_y + holder.get_top_of_pendulum_holder_hole_y()
         # bodgey, copied from get_pendulum_holder_cutter
         hole_height = get_nut_height(pendulum_rod_d, nyloc=True) + get_nut_height(pendulum_rod_d) + 1
         #the slot at the bottom of the hole is designed to be a nyloc nut tall, so we can ignore it and just go for a half nut taller

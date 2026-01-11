@@ -4,7 +4,65 @@ from .types import *
 from .utility import *
 import cadquery as cq
 
-class FrictionFitPendulumBits:
+'''
+Plan: replace PendulumFixing Enum with these objects - like how I've replaced the gear layout enum with an object
+I think they can all be made to fit the same interface and then ArborForPlate can be made nearly entirely agnostic to the pendulum fixing type
+'''
+
+class PendulumHolder:
+    '''
+    base class for all pendulum holders
+    '''
+    @staticmethod
+    def get_default_collet_size():
+        # the circle within which the square section of arbor will fit
+        # logic taken from in Gearing. Originally this was flexible so I could change the bearing size when this went through a bearing.
+        # now it's just constant but I think it's worth keeping consistent as it's a good size and then spare parts are interchangable
+        cylinder_r = DIRECT_ARBOR_D / 2
+        square_side_length = math.sqrt(2) * cylinder_r
+        if cylinder_r < 5:
+            # square with rounded edges, so we can get something as big as possible
+            square_side_length = math.sqrt(2) * cylinder_r * 1.2
+        pendulum_fixing_extra_space = 0.2
+        collet_size = square_side_length + pendulum_fixing_extra_space  # should end up being 6.139696961966999
+
+        return collet_size
+
+    @staticmethod
+    def get_from_enum(old_enum):
+        collet_size = PendulumHolder.get_default_collet_size()
+        if old_enum in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.DIRECT_ARBOR]:
+            #collet size of 6.139696961966999 is the default for a 3mm rod
+            #beat_setter_length = 30 seems to work well for most clocks
+            return ColletFixingPendulumWithBeatSetting(collet_size=collet_size, length=30)
+        if old_enum in [PendulumFixing.SUSPENSION_SPRING, PendulumFixing.SUSPENSION_SPRING_WITH_PLATE_HOLE]:
+            #for now I'll only make one which is between the plates, mayber longer term make one with a small back cock separate to the wall standoff
+            return SuspensionSpringPendulumBits(square_side_length=collet_size)
+        if old_enum in [PendulumFixing.KNIFE_EDGE]:
+            return KnifeEdgePendulumBits(collet_size=collet_size)
+        if old_enum in [PendulumFixing.FRICTION_ROD]:
+            return FrictionFitPendulumBits()
+        raise NotImplementedError("Pendulum fixing type not implemented")
+
+    def get_top_of_pendulum_holder_hole_y(self):
+        raise NotImplementedError()
+
+    def needs_square_arbor_section(self):
+        '''
+        part of teh arbor must be square for a collet and/or pendulum holder to slot over
+        '''
+        raise NotImplementedError()
+
+    def square_arbor_only_inside_plates(self):
+        '''
+        the square section doesn't extend outside the plate
+        '''
+        raise NotImplementedError()
+
+    def get_crutch(self):
+        return None
+
+class FrictionFitPendulumBits(PendulumHolder):
     '''
     Pendulum holder that attaches to a threaded rod by friction, can be manually adjusted to set in beat
     Do not use for new designs - was a pain to set the beat and easy to knock out of beat
@@ -70,7 +128,7 @@ class FrictionFitPendulumBits:
         return pendulum
 
 
-class ColletFixingPendulumWithBeatSetting:
+class ColletFixingPendulumWithBeatSetting(PendulumHolder):
     '''
     The PendulumFixing.DIRECT_ARBOR has a pendulum holder that slots onto a square (or rounded square) rod.
     This works really well, but there's no way to set the beat other than bending the pendulum rod.
@@ -128,6 +186,9 @@ class ColletFixingPendulumWithBeatSetting:
         self.top_of_pendulum_holder_hole_y = -self.length - self.nut_hole_height / 2 - 1.5
 
         print("beat setter needs {} of length {:.1f}".format(self.fixing_screws, self.get_thread_screw_length()))
+
+    def get_top_of_pendulum_holder_hole_y(self):
+        return self.top_of_pendulum_holder_hole_y
 
     def get_BOM(self):
         adjusting_screw_length = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws)
@@ -315,6 +376,13 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
 
         return assembly
 
+    def needs_square_arbor_section(self):
+        return True
+
+    def square_arbor_only_inside_plates(self):
+        #needs to go out the back for the pendulum
+        return False
+
     # def get_exploded_diagram(self):
     #     diagram = self.get_collet(for_printing=False)
     #
@@ -323,7 +391,7 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
     #     return diagram
 
 
-class SuspensionSpringPendulumBits:
+class SuspensionSpringPendulumBits(PendulumHolder):
     '''
     Crutch and pendulum holder for a suspension spring, contained here to avoid making ArborForPlate far too large
 
@@ -376,13 +444,13 @@ class SuspensionSpringPendulumBits:
         return holder
 
 
-class KnifeEdgePendulumBits:
+class KnifeEdgePendulumBits(PendulumHolder):
 
     '''
     a collet with arm that will attach to the anchor arbor, then a ring with a sticky out triangle to go on the back of the clock
     '''
 
-    def __init__(self, collet_size, ring_diameter=40, depth=20, slot_distance=40, slot_length=40, wedge_angle_deg=40, pendulum_rod_d=3):
+    def __init__(self, collet_size, ring_diameter=40, depth=20, slot_distance=50, slot_length=40, wedge_angle_deg=40, pendulum_rod_d=3):
         #size of teh square in the collet
         self.collet_size = collet_size
         #inner diameter
@@ -396,6 +464,7 @@ class KnifeEdgePendulumBits:
         self.wedge_angle = deg_to_rad(wedge_angle_deg)
         #hmm, should the pendulum top actually be part of the pendulum after all? will put it here for now, consider moving it later
         self.pendulum_rod_d = pendulum_rod_d
+        self.crutch_screw = MachineScrew(3, countersunk=True)
 
     def get_pendulum_top(self):
         '''
@@ -410,14 +479,54 @@ class KnifeEdgePendulumBits:
         ring = ring.extrude(self.depth)
 
         screw = MachineScrew(self.pendulum_rod_d)
-        nut_cutter = screw.get_nut_cutter(height=10).rotate((0,0,0),(1,0,0),-90)
-        rod_cutter = screw.get_cutter(length=self.wall_thick, ignore_head=True).rotate((0,0,0),(1,0,0),-90)
 
-        full_cutter = nut_cutter.translate((0,-self.ring_diameter/2 - 1, self.depth/2))
-        full_cutter = full_cutter.union(rod_cutter.translate((0,-self.ring_diameter/2 - self.wall_thick, self.depth/2)))
-        full_cutter = full_cutter.union(nut_cutter.translate((0, -self.ring_diameter / 2 - self.wall_thick + 1 - 10, self.depth / 2)))
-        ring = ring.cut(full_cutter)
+
+        #realised the rod isn't going into the ring directly, instead there's a bit that stick out for the crutch!
+        nut_cutter = screw.get_nut_cutter(height=10).rotate((0, 0, 0), (1, 0, 0), -90)
+        rod_cutter = screw.get_cutter(length=self.wall_thick, ignore_head=True).rotate((0, 0, 0), (1, 0, 0), -90)
+        # full_cutter = nut_cutter.translate((0,-self.ring_diameter/2 - 1, self.depth/2))
+        # full_cutter = full_cutter.union(rod_cutter.translate((0,-self.ring_diameter/2 - self.wall_thick, self.depth/2)))
+        # full_cutter = full_cutter.union(nut_cutter.translate((0, -self.ring_diameter / 2 - self.wall_thick + 1 - 10, self.depth / 2)))
+        # ring = ring.cut(full_cutter)
         # ring = ring.union(cq.Workplane("XY"))
+
+        rod_holder_length = 30
+        extension_width = self.crutch_screw.metric_thread*5
+        extension_bottom_y = -(self.slot_distance + self.slot_length/2 + rod_holder_length)
+
+        extension = get_stroke_line([(0,-self.ring_diameter/2), (0, extension_bottom_y)], wide=extension_width, thick=self.depth, style=StrokeStyle.SQUARE)
+        extension = extension.union(cq.Workplane("XY").moveTo(0, extension_bottom_y).circle(extension_width/2).extrude(self.depth))
+
+        #want cone-line shape to make it easier to slot over rod. lazily using chamfer to do the heaving lifting, but that means we need to cut out from a block, then chamfer that, then use that
+        #to cut to the cutter
+        #create the shape we want the slot to be
+        slot_wide = self.crutch_screw.get_rod_cutter_r(loose=True)*2
+        slot_points = [(0, -self.slot_distance + self.slot_length/2), (0, -self.slot_distance - self.slot_length/2)]
+        # slot_basic_cutter = cq.Workplane("XY").rect(slot_wide, self.slot_length).extrude(self.depth).translate((0,-self.slot_distance))
+        slot_basic_cutter = get_stroke_line(slot_points, wide=slot_wide, thick=self.depth)
+
+        slot_block = cq.Workplane("XY").rect(extension_width, self.slot_length*2).extrude(self.depth).translate((0,-self.slot_distance))
+
+        slot_block = slot_block.cut(slot_basic_cutter)
+        chamfer = self.crutch_screw.metric_thread/2
+        slot_block = slot_block.edges("<Z").chamfer(chamfer, chamfer*1.5)
+
+        slot_cutter = cq.Workplane("XY").rect(slot_wide+chamfer*2, self.slot_length+chamfer*2+slot_wide).extrude(self.depth).translate((0,-self.slot_distance))
+        slot_cutter = slot_cutter.cut(slot_block)
+
+        # extension = extension.cut(slot_cutter)
+
+        ring = ring.union(extension)
+
+        ring = ring.cut(slot_cutter)
+
+        #TODO - way to attach the rod without it being able to rotate
+        #lazy plan - same as usual pendulum holder but I'll thread a couple of nuts underneath to clamp it in
+
+        #same as beat setting pendulum holder, should probably make these the defaults
+        rod_holder_cutter = get_pendulum_holder_cutter(pendulum_rod_d=self.pendulum_rod_d, z=self.depth/2, extra_nut_space=0.4, extra_space_for_rod=0.0)
+
+        ring = ring.cut(rod_holder_cutter.translate((0,-self.slot_distance - self.slot_length/2 - 5)))
 
         return ring
 
