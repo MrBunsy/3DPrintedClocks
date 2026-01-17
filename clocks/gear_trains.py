@@ -172,9 +172,9 @@ class GearTrainBase:
                     #the previous wheel thick + extra
                     info["pinion_thick"] = arbor_info[i-1]["wheel_thick"] + pinion_thick_extra
 
-            # if "pinion_type" not in info:
-            #     #previously lantern
-            #     info["pinion_type"] = PinionType.PLASTIC
+            if "pinion_type" not in info:
+                #previously lantern
+                info["pinion_type"] = PinionType.PLASTIC
 
             if "style" not in info:
                 if i == 0:

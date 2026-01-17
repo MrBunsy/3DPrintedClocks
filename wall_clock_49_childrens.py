@@ -172,7 +172,7 @@ moon_radius=10
 
 pendulum = Pendulum(bob_d=60, bob_thick=12, hand_avoider_inner_d=100)
 # pendulum = FancyPendulum(bob_d=40)
-
+pendulum_fixing = KnifeEdgePendulumBits()
 
 # dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
@@ -198,10 +198,10 @@ motion_works_angle_deg = 90
 #                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
 #                                 gear_train_layout=gear_train_layout, back_plate_from_wall=27, fewer_arms=True)#, default_arbor_d=6)
 
-plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
+plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
-                                gear_train_layout=gear_train_layout, back_plate_from_wall=27)
+                                gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing)
 
 
 # pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)

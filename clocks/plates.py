@@ -116,9 +116,6 @@ class MoonHolder:
         self.lid_thick = 6
         #centre_y is centre of the holding mechanism - this screws to the front plate and holds the steel pipe
 
-
-        plate_shape = self.plates.get_plate_shape()
-
         if self.moon_inside_dial:
             self.moon_extra_space = 1
         #trying to be a bit less plate-dependant, putting that logic into the plates class
@@ -479,6 +476,10 @@ class SimpleClockPlates(BasePlates):
         self.vanity_plate_fixing_positions = []
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulum_fixing = pendulum_fixing
+        if isinstance(pendulum_fixing, Enum):
+            # support old designs which still use the enum
+            self.pendulum_fixing = PendulumHolder.get_from_enum(pendulum_fixing)
+
         self.pendulum_at_front = pendulum_at_front
 
         #if the dial would stick off the top of the front plate the default is to extend the front plate
@@ -637,10 +638,11 @@ class SimpleClockPlates(BasePlates):
         # how thick the bearing holder out the back or front should be
         # can't use bearing from ArborForPlate yet as they haven't been generated
         # bit thicker than the front bearing thick because this may have to be printed with supports
-        if pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-            self.rear_standoff_bearing_holder_thick = get_bearing_info(going_train.get_arbor_with_conventional_naming(-1).arbor_d).height + 2
-        else:
-            self.rear_standoff_bearing_holder_thick = self.plate_thick
+        #TODO if needed?
+        # if pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+        #     self.rear_standoff_bearing_holder_thick = get_bearing_info(going_train.get_arbor_with_conventional_naming(-1).arbor_d).height + 2
+        # else:
+        #     self.rear_standoff_bearing_holder_thick = self.plate_thick
 
         # how much space to leave around the edge of the gears for safety
         self.gear_gap = 3
@@ -1037,6 +1039,9 @@ class SimpleClockPlates(BasePlates):
         '''
         return ([], [])
     def get_plate_shape(self):
+        '''
+        TODO deprecate this - only used in two places and both would be better suited to just call a method on plates which could be overriden
+        '''
 
         if self.gear_train_layout == GearTrainLayout.ROUND:
             # plate classes and gear train layouts are all a bit muddled and closely coupled, needs tidying up
@@ -1159,8 +1164,8 @@ class SimpleClockPlates(BasePlates):
         self.top_pillar_r = self.plate_width / 2
 
         anchorSpace = bearingInfo.outer_d / 2 + self.gear_gap
-        if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
-            anchorSpace = self.direct_arbor_d*2 + self.gear_gap
+        # if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
+        #     anchorSpace = self.direct_arbor_d*2 + self.gear_gap
 
         # find the Y position of the bottom of the top pillar
         topY = self.bearing_positions[0][1]
@@ -1888,7 +1893,8 @@ class SimpleClockPlates(BasePlates):
             #can't decide if to add backThick or not - it recesses the screw which looks nice in some situations but not convinced for teh standoff
             standoff = self.cut_wall_fixing_hole(standoff, screwHolePos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=addExtraSupport, plate_thick=back_thick)#, backThick=screwhole_back_thick)
 
-            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and top:
+            # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and top:
+            if not self.pendulum_fixing.square_arbor_only_inside_plates():
                 # extend a back plate out to the bearing holder and wall fixing
                 #note assumes one top pillar, might not work with two
                 bearingHolder = cq.Workplane("XY").tag("base").moveTo((screwHolePos[0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2). \
@@ -1897,9 +1903,9 @@ class SimpleClockPlates(BasePlates):
                 bearingHolder = self.cut_anchor_bearing_in_standoff(bearingHolder)
 
                 z = 0
-                if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-                    #TODO
-                    z = self.back_plate_from_wall - self.crutch_space - self.rear_standoff_bearing_holder_thick - self.endshake
+                # if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
+                #     #TODO
+                #     z = self.back_plate_from_wall - self.crutch_space - self.rear_standoff_bearing_holder_thick - self.endshake
                 standoff = standoff.union(bearingHolder.translate((0,0,z)))
 
         #we're currently not in the right z position
@@ -2691,7 +2697,8 @@ class SimpleClockPlates(BasePlates):
                     pass
 
             needs_plain_hole = False
-            if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:
+            # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:
+            if not self.pendulum_fixing.square_arbor_only_inside_plates():
                 #if true we just need a hole for the direct arbour to fit through
 
                 if self.escapement_on_front and not back:
@@ -4271,7 +4278,7 @@ class RoundClockPlates(SimpleClockPlates):
                  moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, power_at_bottom=True,
-                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1, **kwargs):
+                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1,pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, **kwargs):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4289,7 +4296,7 @@ class RoundClockPlates(SimpleClockPlates):
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         #was force_escapement_above_hands because the gear train looks better on a circular plate that way ( now got forcing_escape_wheel_slightly_off_centre in bearing placement)
         super().__init__(going_train, motion_works, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
-                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
+                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=pendulum_fixing,
                          pendulum_at_front=False, back_plate_from_wall=back_plate_from_wall, fixing_screws=MachineScrew(4, countersunk=True),
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, screws_from_back=None,
@@ -5453,7 +5460,8 @@ class RectangularWallClockPlates(RoundClockPlates):
     '''
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, leg_height=0, **kwargs)#bottom_pillars=2, top_pillars=2, pendulum_at_front=False,
+        kwargs["leg_height"]=0
+        super().__init__(*args, **kwargs)#bottom_pillars=2, top_pillars=2, pendulum_at_front=False,
 
     def get_plate_shape(self):
         return PlateShape.RECTANGLE_WALL
@@ -5568,7 +5576,9 @@ class RectangularWallClockPlates(RoundClockPlates):
             left_mid_point = self.bearing_positions[-4][:2]
             right_mid_point = (-left_mid_point[0], left_mid_point[1])
 
-        if not back:
+        anchor_bearing_at_top = (not back) or self.pendulum_fixing.square_arbor_only_inside_plates()
+
+        if anchor_bearing_at_top:
             top_point = self.bearing_positions[-1][:2]
         else:
             top_point = (self.bearing_positions[-1][0], self.top_pillar_positions[1][1] - (self.bearing_positions[-1][1] - self.top_pillar_positions[1][1]))

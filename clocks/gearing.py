@@ -1882,9 +1882,7 @@ class ArborForPlate:
         self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
         self.pendulum_fixing = pendulum_fixing
-        if isinstance(pendulum_fixing, Enum):
-            # support old designs which still use the enum
-            self.pendulum_fixing = PendulumHolder.get_from_enum(pendulum_fixing)
+
         #now fully part of arbor.arbor_split
         # self.escapement_on_front = escapement_on_front
         # self.escapement_on_back = escapement_on_back
@@ -2226,7 +2224,8 @@ class ArborForPlate:
                 raise NotImplementedError("Unsuported escapement and pendulum combination!")
         else:
             #friction fitting pendulum
-            shapes["pendulum_holder"] = self.friction_fit_bits.get_pendulum_holder()
+            #TODO
+            # shapes["pendulum_holder"] = self.friction_fit_bits.get_pendulum_holder()
             shapes["arbor_extension"] = self.get_arbor_extension(front=True).cut(self.threaded_rod_cutter)
             anchor = anchor.union(self.get_arbor_extension(front=False).translate((0,0,anchor_thick))).cut(self.threaded_rod_cutter)
             # print("Only direct arbour pendulum fixing supported currently")
@@ -2293,13 +2292,15 @@ class ArborForPlate:
                 #     #.rotate((0,0,0),(0,1,0),180)
                 #     if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
 
-                if "pendulum_holder" in shapes:
-                    assembly = assembly.add(self.pendulum_fixing.get_pendulum_holder_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
+                # if "pendulum_holder" in shapes:
+                #     assembly = assembly.add(self.pendulum_fixing.get_pendulum_holder_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
+
+                assembly = assembly.add(self.pendulum_fixing.get_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
 
                 #TODO
                 if "crutch" in shapes:
                     #TODO translation
-                    assembly = assembly.add(self.pendulum_fixing.get_crutch_assembled())
+                    assembly = assembly.add(self.pendulum_fixing.get_crutch_assembled().translate((0,0,self.back_plate_thick + 1 + self.endshake/2)))
                 #     else:
                 #         assembly = assembly.add(self.friction_fit_bits.get_pendulum_holder().rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum_holder_thick)).translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)))
                 # if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:

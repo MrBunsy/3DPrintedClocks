@@ -14,9 +14,9 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-knife_edge = KnifeEdgePendulumBits(8)
+knife_edge = KnifeEdgePendulumBits(8,full_circle=False)
 
-show_object(knife_edge.get_pendulum_top())
+show_object(knife_edge.get_pendulum_holder())
 
 #holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4, extra_space_for_rod=0.0).translate((0, self.top_of_pendulum_holder_hole_y)).rotate((0, 0, z), (0, 1, z), 180))
 # show_object(get_pendulum_holder_cutter(z=50, extra_nut_space=0.4, extra_space_for_rod=0.0))
