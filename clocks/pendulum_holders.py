@@ -73,6 +73,13 @@ class PendulumHolder:
     def get_crutch_assembled(self):
         return None
 
+    def get_plate_fixing(self, max_size):
+        '''
+        for pendulum holder to be attached to the plates, eg knife edge holder or suspension spring clamp
+        TODO - are we ever going to need to subtract anything? or attach this with screws?
+        '''
+        return None
+
     def get_assembled(self):
         '''
         Just the pendulum holder, not crutch
@@ -80,7 +87,7 @@ class PendulumHolder:
         return None
 
 class PendulumHolderWithCrutch(PendulumHolder):
-    def __init__(self, collet_square_size=-1, crutch_thick=8, crutch_length=40, crutch_screw=None, collet_thick=14.5, collet_screws=None):
+    def __init__(self, collet_square_size=-1, crutch_thick=8, crutch_length=40, crutch_screw=None, collet_thick=14.5, collet_screws=None, beat_setter=True):
         self.collet_square_size = collet_square_size
         if self.collet_square_size < 0:
              self.collet_square_size = self.get_default_collet_square_size()
@@ -95,6 +102,7 @@ class PendulumHolderWithCrutch(PendulumHolder):
         self.collet_screws = collet_screws
 
         self.collet_thick = collet_thick
+        self.beat_setter = beat_setter
 
 
     def get_crutch(self, for_printing=True):
@@ -511,8 +519,8 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
     a collet with arm that will attach to the anchor arbor, then a ring with a sticky out triangle to go on the back of the clock
     '''
 
-    def __init__(self, collet_square_size=-1, ring_diameter=40, depth=20, slot_distance=50, slot_length=40, wedge_angle_deg=40, pendulum_rod_d=3, full_circle=True,  **kwargs):
-        super().__init__(collet_square_size=collet_square_size, **kwargs)
+    def __init__(self, collet_square_size=-1, ring_diameter=40, depth=20, slot_distance=40, slot_length=20, wedge_angle_deg=40, pendulum_rod_d=3, full_circle=True,  **kwargs):
+        super().__init__(collet_square_size=collet_square_size, crutch_length=slot_distance, **kwargs)
         #size of teh square in the collet
         # self.collet_square_size = collet_square_size
         # if self.collet_square_size < 0:
@@ -528,6 +536,7 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
         self.slot_length = slot_length
         self.wall_thick = 8
         self.wedge_angle = deg_to_rad(wedge_angle_deg)
+        self.holder_wedge_angle = self.wedge_angle*2.5
         #hmm, should the pendulum top actually be part of the pendulum after all? will put it here for now, consider moving it later
         self.pendulum_rod_d = pendulum_rod_d
         self.crutch_screw = MachineScrew(3, countersunk=True)
@@ -646,6 +655,17 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
         assembly = self.get_crutch(for_printing=False).rotate((0,0,0),(0,1,0),180).translate((0,0,self.crutch_thick))
 
         return assembly
+
+    def get_plate_fixing(self, max_size):
+
+        radius = max_size/2
+
+        left = polar(math.pi/2 + self.holder_wedge_angle/2, radius)
+        right = polar(math.pi / 2 - self.holder_wedge_angle/2, radius)
+
+        fixing = cq.Workplane("XY").lineTo(left[0], left[1]).radiusArc((0, -radius), -radius).radiusArc(right, -radius).close().extrude(self.depth + 5)
+
+        return fixing
 
     def get_assembled(self):
         return self.get_pendulum_holder(for_printing=False)

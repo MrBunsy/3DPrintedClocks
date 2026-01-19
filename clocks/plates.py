@@ -1810,10 +1810,14 @@ class SimpleClockPlates(BasePlates):
         bearingInfo = self.arbors_for_plate[-1].bearing
 
 
-        # standoff = standoff.cut(self.getBearingPunchDeprecated(bearingOnTop=True, standoff=True, bearingInfo=bearingInfo).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
-        support = self.standoff_pillars_separate
-        standoff = standoff.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(standoff=True), bearing=bearingInfo, bearing_on_top=True, with_support=support)
-                                .translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
+        if self.pendulum_fixing.square_arbor_only_inside_plates():
+            #no bearing!
+            standoff = standoff.union(self.pendulum_fixing.get_plate_fixing(self.plate_width).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], self.get_plate_thick(standoff=True))))
+        else:
+            #bearing in back cock
+            support = self.standoff_pillars_separate
+            standoff = standoff.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(standoff=True), bearing=bearingInfo, bearing_on_top=True, with_support=support)
+                                    .translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1], 0)))
 
         return standoff
 
@@ -5627,6 +5631,8 @@ class RectangularWallClockPlates(RoundClockPlates):
     def get_back_cock(self, for_printing=True):
         standoff = get_stroke_line( [self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]],
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
+
+        standoff = self.cut_anchor_bearing_in_standoff(standoff)
         if not for_printing:
             standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
         return standoff

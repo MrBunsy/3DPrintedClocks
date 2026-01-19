@@ -172,7 +172,7 @@ moon_radius=10
 
 pendulum = Pendulum(bob_d=60, bob_thick=12, hand_avoider_inner_d=100)
 # pendulum = FancyPendulum(bob_d=40)
-pendulum_fixing = KnifeEdgePendulumBits()
+pendulum_fixing = KnifeEdgePendulumBits(full_circle=False)
 
 # dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)

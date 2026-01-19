@@ -643,7 +643,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             rod_z = back_plate_thick - (bearing_thick + spare_rod_length_rear)
 
             #"normal" arbour that does not extend out the front or back
-            simple_arbour_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_rear
+            simple_arbor_length = length_up_to_inside_front_plate + bearing_thick + spare_rod_length_rear
             hand_arbor_length = length_up_to_inside_front_plate + front_plate_thick + (self.minute_hand_z + self.hands.thick - total_plate_thick) + rod_in_front_of_hands
 
             #trying to arrange all the additions from back to front to make it easy to check
@@ -657,7 +657,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                     rod_length=-1
                 else:
                     #assume all other types of powered wheel lack a key and thus are just inside the plates
-                    rod_length = simple_arbour_length
+                    rod_length = simple_arbor_length
 
 
             elif self.plates.second_hand and ((arbor.type == ArborType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (
@@ -705,17 +705,21 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                         rod_length = hand_arbor_length
                 else:
                     # "normal" arbour
-                    rod_length = simple_arbour_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
+                    rod_length = simple_arbor_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
 
             elif arbor.type == ArborType.ESCAPE_WHEEL:
                 if self.plates.escapement_on_front:
                     rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.bearing.inner_d)) + 1
                 else:
                     #"normal" arbour
-                    rod_length = simple_arbour_length
+                    rod_length = simple_arbor_length
             elif arbor.type == ArborType.ANCHOR:
-                #bearing in the back cock
-                rod_z = -self.plates.back_plate_from_wall + (self.plates.get_plate_thick(standoff=True) - bearing_thick - spare_rod_length_rear)
+                #bearing in the back cock?
+                if self.plates.pendulum_fixing.square_arbor_only_inside_plates():
+                    #anchor arbor within plates,
+                    rod_length = simple_arbor_length
+                else:
+                    rod_z = -self.plates.back_plate_from_wall + (self.plates.get_plate_thick(standoff=True) - bearing_thick - spare_rod_length_rear)
                 if self.plates.escapement_on_front:
                     holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].bearing)
                     out_front = self.plates.get_front_anchor_bearing_holder_total_length() - holder_thick
@@ -729,7 +733,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 elif self.plates.escapement_on_back:
                     #just between back cock and back plate
                     rod_length = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + bearing_thick + spare_rod_length_rear
-                elif self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
+                elif not self.plates.pendulum_fixing.square_arbor_only_inside_plates() and self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
+                    #normal fixed arbor anchor - arbor extends out to back cock
                     rod_length_to_back_of_front_plate = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + self.plates.get_plate_thick(back=True) + plate_distance
 
                     if self.dial is not None and self.dial.has_eyes():
@@ -737,7 +742,10 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                         rod_length = rod_length_to_back_of_front_plate + front_plate_thick + self.plates.endshake + 1 + self.dial.get_wire_to_arbor_fixer_thick() + 5
                     else:
                         rod_length = rod_length_to_back_of_front_plate + bearing_thick + spare_rod_length_rear
-
+                elif self.plates.pendulum_fixing.square_arbor_only_inside_plates():
+                    '''
+                    basically same as normal arbor, so fall through with the defaults
+                    '''
                 else:
                     raise ValueError("TODO calculate rod lengths for pendulum on front")
             rod_lengths.append(rod_length)
