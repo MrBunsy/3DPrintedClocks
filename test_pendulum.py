@@ -14,11 +14,11 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-knife_edge = KnifeEdgePendulumBits(8,full_circle=False)
+knife_edge = KnifeEdgePendulumBits(8,full_circle=False, beat_setter=True)
 
 show_object(knife_edge.get_pendulum_holder())
 
-show_object(knife_edge.get_crutch().translate((0,0,30)))
+show_object(knife_edge.get_crutch_assembled().translate((0,0,30)))
 
 show_object(knife_edge.get_plate_fixing(10))
 

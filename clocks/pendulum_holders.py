@@ -70,8 +70,7 @@ class PendulumHolder:
     def uses_crutch(self):
         return self.get_crutch() is not None
 
-    def get_crutch_assembled(self):
-        return None
+
 
     def get_plate_fixing(self, max_size):
         '''
@@ -87,7 +86,7 @@ class PendulumHolder:
         return None
 
 class PendulumHolderWithCrutch(PendulumHolder):
-    def __init__(self, collet_square_size=-1, crutch_thick=8, crutch_length=40, crutch_screw=None, collet_thick=14.5, collet_screws=None, beat_setter=True):
+    def __init__(self, collet_square_size=-1, crutch_thick=7.25, crutch_length=40, crutch_screw=None, collet_thick=14.5, collet_screws=None, beat_setter=True):
         self.collet_square_size = collet_square_size
         if self.collet_square_size < 0:
              self.collet_square_size = self.get_default_collet_square_size()
@@ -104,32 +103,72 @@ class PendulumHolderWithCrutch(PendulumHolder):
         self.collet_thick = collet_thick
         self.beat_setter = beat_setter
 
+        self.crutch_wide = self.crutch_screw.get_head_diameter() + 3
+
+        self.beat_setter_length = 0
+        if self.beat_setter:
+            self.beat_setter_length = crutch_length*0.4
+            self.crutch_length = self.crutch_length - self.beat_setter_length
+
 
     def get_crutch(self, for_printing=True):
         '''
         TODO: make collet thicker (collet_thick) and add beat setter. Thinking a friction fit disc with another screw sticking out, like some real clocks I've seen.
+
         '''
 
 
         outer_radius = self.collet_square_size
-        crutch_wide = self.crutch_screw.get_head_diameter() + 3
+        crutch_wide = self.crutch_wide
 
-        crutch = cq.Workplane("XY").circle(outer_radius).extrude(self.crutch_thick)
+        crutch = cq.Workplane("XY").circle(outer_radius).extrude(self.collet_thick)
         # means to hold screw that will hold this in place
-        crutch = crutch.cut(self.collet_screws.get_cutter(length=outer_radius, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, outer_radius, self.crutch_thick / 2)))
+        crutch = crutch.cut(self.collet_screws.get_cutter(length=outer_radius, head_space_length=5).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, outer_radius, self.collet_thick / 2)))
         # rotating so bridging shouldn't be needed to print
-        crutch = crutch.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.collet_square_size / 2, self.crutch_thick / 2)))
+        crutch = crutch.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, self.collet_square_size / 2, self.collet_thick / 2)))
 
         # arm down to the screw that will link with the pendulum
         crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length / 2).rect(crutch_wide, self.crutch_length).extrude(self.crutch_thick))
         crutch = crutch.union(cq.Workplane("XY").moveTo(0, -self.crutch_length).circle(crutch_wide / 2).extrude(self.crutch_thick))
 
-        # screw to link with pendulum
-        crutch = crutch.cut(self.crutch_screw.get_cutter(with_bridging=True).translate((0, -self.crutch_length)))
-
+        # screw to link with pendulum (or attach beat setter)
+        ignore_head = self.beat_setter
+        crutch = crutch.cut(self.crutch_screw.get_cutter(with_bridging=True, self_tapping=True, ignore_head=ignore_head).rotate((0,0,0),(0,1,0),180).translate((0, -self.crutch_length, self.crutch_thick)))
         crutch = crutch.faces(">Z").workplane().rect(self.collet_square_size, self.collet_square_size).cutThruAll()
 
+        # if self.beat_setter:
+        #
+        #     # crutch = crutch.cut(get_stroke_line([(0, -self.crutch_length), (0, 0.2-self.crutch_length)], wide=crutch_wide, thick=self.crutch_thick/2).translate((0,0,self.crutch_thick/2)))
+        #     crutch = crutch.cut(cq.Workplane("XY").moveTo(0, -self.crutch_length).rect(crutch_wide, crutch_wide).extrude(self.crutch_thick/2).translate((0, 0, self.crutch_thick / 2)))
+
+        # if not for_printing:
+        #     crutch = crutch.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.crutch_thick))
+
         return crutch
+
+    def get_crutch_assembled(self):
+        crutch = self.get_crutch(for_printing=False)
+        if crutch is None:
+            return None
+        assembly = self.get_crutch(for_printing=False)
+
+        if self.beat_setter:
+            assembly = assembly.union(self.get_beat_setter_arm().translate((0,0,self.crutch_thick)))
+
+        return assembly
+
+    def get_beat_setter_arm(self):
+        '''
+
+        '''
+        arm = get_stroke_line([(0,-self.crutch_length), (0, -self.crutch_length -self.beat_setter_length)], wide=self.crutch_wide, thick=self.crutch_thick)
+
+        screw_cutter = self.crutch_screw.get_cutter(self_tapping=True).rotate((0,0,0),(1,0,0),180).translate((0,0,self.crutch_thick))
+
+        arm = arm.cut(screw_cutter.translate((0, -self.crutch_length)))
+        arm = arm.cut(screw_cutter.translate((0, -self.crutch_length-self.beat_setter_length)))
+
+        return arm
 
 class FrictionFitPendulumBits(PendulumHolder):
     '''
@@ -519,7 +558,7 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
     a collet with arm that will attach to the anchor arbor, then a ring with a sticky out triangle to go on the back of the clock
     '''
 
-    def __init__(self, collet_square_size=-1, ring_diameter=40, depth=20, slot_distance=40, slot_length=20, wedge_angle_deg=40, pendulum_rod_d=3, full_circle=True,  **kwargs):
+    def __init__(self, collet_square_size=-1, ring_diameter=40, depth=20, slot_distance=40, slot_length=20, wedge_angle_deg=40, pendulum_rod_d=3, full_circle=True, wedge_perch_depth=-1, **kwargs):
         super().__init__(collet_square_size=collet_square_size, crutch_length=slot_distance, **kwargs)
         #size of teh square in the collet
         # self.collet_square_size = collet_square_size
@@ -536,7 +575,10 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
         self.slot_length = slot_length
         self.wall_thick = 8
         self.wedge_angle = deg_to_rad(wedge_angle_deg)
-        self.holder_wedge_angle = self.wedge_angle*2.5
+        self.wedge_perch_angle = self.wedge_angle * 2.5
+        self.wedge_perch_depth = wedge_perch_depth
+        if self.wedge_perch_depth < 0:
+            self.wedge_perch_depth = self.depth + 5
         #hmm, should the pendulum top actually be part of the pendulum after all? will put it here for now, consider moving it later
         self.pendulum_rod_d = pendulum_rod_d
         self.crutch_screw = MachineScrew(3, countersunk=True)
@@ -631,6 +673,9 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
         ring = ring.cut(slot_cutter)
         ring = ring.cut(rod_holder_cutter.translate((0, self.get_top_of_pendulum_holder_hole_y())))
 
+        if not for_printing:
+            ring = ring.rotate((0,0,0),(0,1,0), 180).translate((0,0,self.depth))
+
         return ring
 
     def get_top_of_pendulum_holder_hole_y(self):
@@ -651,19 +696,16 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
     # def get_crutch(self, for_printing=True):
     #     return self.get_a_crutch(self.collet_square_size)
 
-    def get_crutch_assembled(self):
-        assembly = self.get_crutch(for_printing=False).rotate((0,0,0),(0,1,0),180).translate((0,0,self.crutch_thick))
 
-        return assembly
 
     def get_plate_fixing(self, max_size):
 
         radius = max_size/2
 
-        left = polar(math.pi/2 + self.holder_wedge_angle/2, radius)
-        right = polar(math.pi / 2 - self.holder_wedge_angle/2, radius)
+        left = polar(math.pi / 2 + self.wedge_perch_angle / 2, radius)
+        right = polar(math.pi / 2 - self.wedge_perch_angle / 2, radius)
 
-        fixing = cq.Workplane("XY").lineTo(left[0], left[1]).radiusArc((0, -radius), -radius).radiusArc(right, -radius).close().extrude(self.depth + 5)
+        fixing = cq.Workplane("XY").lineTo(left[0], left[1]).radiusArc((0, -radius), -radius).radiusArc(right, -radius).close().extrude(self.wedge_perch_depth)
 
         return fixing
 

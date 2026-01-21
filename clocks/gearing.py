@@ -2299,7 +2299,6 @@ class ArborForPlate:
 
                 #TODO
                 if "crutch" in shapes:
-                    #TODO translation
                     assembly = assembly.add(self.pendulum_fixing.get_crutch_assembled().translate((0,0,self.back_plate_thick + 1 + self.endshake/2)))
                 #     else:
                 #         assembly = assembly.add(self.friction_fit_bits.get_pendulum_holder().rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum_holder_thick)).translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)))
