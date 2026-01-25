@@ -3051,9 +3051,9 @@ class PocketChainWheel2(WeightPoweredWheel):
     Worth trying on a 30 hour clock if I ever make one again?
     '''
 
-    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchet_outer_d=-1, ratchet_outer_thick=5, wall_thick=2):
+    def __init__(self, ratchet_thick=0, chain=None, max_diameter=30, arbor_d=3, fixing_screws=None, fixings=3, power_clockwise=True, loose_on_rod=False, ratchet_diameter=30, wall_thick=2):
 
-        super().__init__(diameter=max_diameter, arbor_d=arbor_d, power_clockwise=power_clockwise, ratchet_thick=ratchet_thick, loose_on_rod=loose_on_rod)
+        super().__init__(diameter=max_diameter, arbor_d=arbor_d, power_clockwise=power_clockwise, ratchet_thick=ratchet_thick, loose_on_rod=loose_on_rod, ratchet_diameter=ratchet_diameter)
         #no end cap on this one to stop the pawl escaping.
         self.pawl_screwed_from_front = True
         self.type = PowerType.CHAIN2

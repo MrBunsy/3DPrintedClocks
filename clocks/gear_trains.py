@@ -60,11 +60,14 @@ class GearTrainBase:
 
     def generate_arbors_internal(self, arbor_info):
         raise NotImplementedError("Implement generate_arbors_internal in sub classes")
-    def get_dicts(self):
+    def get_dicts_for_updating_to_generate_arbors(self):
         '''get a printout of list of dicts that we can use to convert an old gen_gears into generate_arbors_dicts'''
 
         dicts = []
         for i,arbor in enumerate(self.get_all_arbors()):
+            if i == len(self.get_all_arbors()) - 1:
+                #ignore the anchor
+                continue
             info = {
 
                 "wheel_thick": arbor.wheel_thick,
@@ -73,10 +76,10 @@ class GearTrainBase:
                 "style": "GearStyle." + arbor.style.name,
                 "pinion_at_front": arbor.pinion_at_front,
                 # "wheel_outside_plates":arbor.arbor_split != SplitArborType.NORMAL_ARBOR,
-                "arbor_split": arbor.arbor_split,
+                "arbor_split": "SplitArborType." + arbor.arbor_split.name,
                 "pinion_extension": arbor.pinion_extension,
                 "pinion_type": "PinionType." + arbor.pinion_type.name,
-                "rod_diameter": arbor.rod_diameter
+                "rod_diameter": arbor.arbor_d
             }
 
             if arbor.wheel is not None:
@@ -113,6 +116,9 @@ class GearTrainBase:
         while substring is not None:
             stringed = stringed.replace(f"\"{substring}\"", substring)
             substring = get_quoted("PinionType")
+        while substring is not None:
+            stringed = stringed.replace(f"\"{substring}\"", substring)
+            substring = get_quoted("SplitArborType")
         return stringed
 
     def generate_arbors_dicts(self, arbor_info, reduction=-1, pinion_thick_extra=-1):
@@ -1089,7 +1095,6 @@ class GoingTrain(GearTrainBase):
             arbor = Arbor(powered_wheel=powered_wheel,
                           wheel=wheel,
                           pinion=pinion,
-                          end_cap_thick=-1,
                           escapement=escapement,
                           distance_to_next_arbor=distance_to_next_arbor,
                           clockwise_from_pinion_side=clockwise_from_pinion_side,
@@ -1911,7 +1916,7 @@ class GearLayout2D:
         return GearLayout2D(going_train, centred_arbors, all_offset_same_side=all_offset_same_side, **kwargs)
 
     @staticmethod
-    def get_compact_layout(going_train, start_on_right=True, **kwargs):
+    def get_compact_layout(going_train, start_on_right=True, can_ignore_pinions=True, **kwargs):
         '''
         Roughly the old GearTrainLayout.COMPACT
         '''
@@ -1927,10 +1932,11 @@ class GearLayout2D:
         centred_arbors.append(pendulum_index)
 
         can_ignore_pinions = []
-        #assume we can ignore them if the previous pinion has been extended
-        for i, arbor in enumerate(going_train.get_all_arbors()[:-1]):
-            if arbor.pinion_extension > 0:
-                can_ignore_pinions.append(i+1)
+        if can_ignore_pinions:
+            #assume we can ignore them if the previous pinion has been extended
+            for i, arbor in enumerate(going_train.get_all_arbors()[:-1]):
+                if arbor.pinion_extension > 0:
+                    can_ignore_pinions.append(i+1)
 
         return GearLayout2D(going_train, centred_arbors, can_ignore_pinions=can_ignore_pinions, start_on_right=start_on_right, **kwargs)
 

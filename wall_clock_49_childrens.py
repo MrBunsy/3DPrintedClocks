@@ -85,8 +85,9 @@ second_hand_centred = False
 
 escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2)#, drop_deg=1.75)
 
-powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+# powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
+#                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=6, max_diameter=45, ratchet_diameter=55)
 train = GoingTrain(pendulum_period=1.5, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False,
                          powered_wheels=1, runtime_hours=30, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
@@ -123,7 +124,8 @@ train.generate_arbors_dicts([
         "wheel_thick" : 8,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
-        "pinion_at_front": True
+        "pinion_at_front": True,
+        "end_cap_thick": 0
     },
     {
         #centre wheel
@@ -132,7 +134,8 @@ train.generate_arbors_dicts([
         "pinion_thick": 12,
         "pinion_type": pinion_type,
         "style": gear_style,
-        "pinion_at_front": True
+        "pinion_at_front": True,
+        "end_cap_thick": 0
     },
     {
         #second wheel
@@ -141,7 +144,9 @@ train.generate_arbors_dicts([
         "pinion_thick": 10,
         "pinion_type": pinion_type,
         "style": gear_style,
-        "pinion_extension": 18
+        # "pinion_extension": 18,
+        "pinion_at_front":True,
+        "end_cap_thick": 0
     },
 {
         # third wheel
@@ -151,6 +156,8 @@ train.generate_arbors_dicts([
         "pinion_type": pinion_type,
         "style": gear_style,
         "pinion_at_front": False,
+        "pinion_extension": 8,
+        "end_cap_thick": 0
     },
     {
         # escape wheel
@@ -159,8 +166,9 @@ train.generate_arbors_dicts([
         "pinion_thick": 10,
         "pinion_type": pinion_type,
         "style": gear_style,
-        "pinion_extension": 8,
+        "pinion_extension": 6,
         "pinion_at_front": False,
+        "end_cap_thick": 0
     }
 ])
 
@@ -184,7 +192,7 @@ dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numer
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 dial = None
 plaque = None
-gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False)#, support_second_hand=False)
+gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=False)#, support_second_hand=False)
 
 motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
 motion_works.calculate_size(arbor_distance=30)

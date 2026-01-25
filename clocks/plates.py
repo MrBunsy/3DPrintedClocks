@@ -3515,7 +3515,7 @@ class MantelClockPlates(SimpleClockPlates):
             fixing_screws = MachineScrew(4, countersunk=True)
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
-        super().__init__(going_train, motion_works, pendulum=None, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
+        super().__init__(going_train, motion_works, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=fixing_screws,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
@@ -5454,7 +5454,14 @@ class ChildFriendlySimpleClockPlates(SimpleClockPlates):
         self.bottom_pillar_positions[0] = (self.bottom_pillar_positions[0][0], self.bottom_pillar_positions[0][1] + old_pillar_r - self.bottom_pillar_r)
         # self.top_pillar_r *= 2
 
-class RectangularWallClockPlates(RoundClockPlates):
+class FixedRodsMixin:
+    '''
+    Having a go at mixins, probably got it wrong.
+    '''
+    def get_arbors_for_plate_class(self):
+        return FixedRodArborForPlate
+
+class RectangularWallClockPlates(RoundClockPlates, FixedRodsMixin):
     '''
     sometimes the round clock plates aren't the most compact vertically
     this is sort of an amalgamation of the mantel plates, the old simple vertical plates and the round wall clock plates
@@ -5469,21 +5476,6 @@ class RectangularWallClockPlates(RoundClockPlates):
 
     def get_plate_shape(self):
         return PlateShape.RECTANGLE_WALL
-
-    # def get_pillar(self, top=True, flat=False):
-    #     '''
-    #     they're all the same on this design!
-    #     '''
-    #
-    #     pillar_length = self.plate_distance
-    #
-    #     if self.pillar_style is not PillarStyle.SIMPLE:
-    #         pillar = (fancy_pillar(self.pillar_r, pillar_length, clockwise=top, style=self.pillar_style)
-    #                   .cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)))
-    #     else:
-    #         pillar = cq.Workplane("XY").circle(self.pillar_r).circle(self.fixing_screws.get_rod_cutter_r(layer_thick=self.layer_thick, loose=True)).extrude(pillar_length)
-    #
-    #     return pillar
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         #this is tied to a particular gear train, with one powered wheel to a cord barrel and a 4 wheel train
@@ -5954,7 +5946,7 @@ class SlideWhistlePlates(BasePlates):
         self.gear_train_layout = GearLayout2D(self.going_train, [0, self.going_train.cam_index+1, self.going_train.total_arbors-1])
 
         self.calc_bearing_positions()
-        self.generate_arbours_for_plate()
+        self.generate_arbors_for_plate()
 
         self.pillar_r=10
         self.plate_width = self.pillar_r*2
@@ -6180,7 +6172,9 @@ class SlideWhistlePlates(BasePlates):
 
         self.plate_distance = preliminary_plate_distance + self.endshake + extra_front + extra_back
 
-    def generate_arbours_for_plate(self):
+    def get_arbors_for_plate_class(self):
+        return ArborForPlate
+    def generate_arbors_for_plate(self):
         '''
         copy-pasted and tweaked from SimpleClockPlates
         '''
@@ -6205,8 +6199,9 @@ class SlideWhistlePlates(BasePlates):
                 bearing = get_bearing_info(round(arbor.arbor_d))
             front_anchor_from_plate = -1
 
+            arbor_class = self.get_arbors_for_plate_class()
             #new way of doing it, new class for combining all this logic in once place
-            arbor_for_plate = ArborForPlate(arbor, self,
+            arbor_for_plate = arbor_class(arbor, self,
                                             bearing_position=bearing_pos,
                                             arbor_extension_max_radius=max_r,
                                             bearing=bearing,

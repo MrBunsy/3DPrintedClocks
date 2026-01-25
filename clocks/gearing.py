@@ -2873,8 +2873,73 @@ class FixedRodArborForPlate(ArborForPlate):
         # if self.centre_wh
 
 
+    def need_separate_arbor_extension(self, front=True):
+        '''
+        Need a separate component for teh arbor extension on thsi side
+        '''
+        return False
+
+    def need_arbor_extension(self, front=True):
+        '''
+        Need an arbor extension on this side of the arbor. May or may not end up being combined with the arbor
+        '''
+        #not enough to print
+        #some fudge factor because I've seen it compare 0.39999999 with 0.4
+        if front and self.distance_from_front < self.arbor_bearing_standoff_length-0.05:
+            return False
+        if (not front) and self.distance_from_back < self.arbor_bearing_standoff_length-0.05:
+            return False
+
+        if self.arbor.get_type() == ArborType.POWERED_WHEEL:
+            #assuming chain is at front
+            if front == self.arbor.pinion_at_front:
+                return False
+            else:
+                # the rope wheel is printed in one peice, print the standoff (the arbor extension) on the front
+                return self.arbor.combine_with_powered_wheel
+            #the extension out the back is always needed and calculated elsewhere TODO
+        exists = self.get_arbor_extension(front=front) is not None
+        return exists and not super().need_separate_arbor_extension(front=front)
+
+    def get_arbor_extension(self, front=True):
+        '''
+        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
+
+        Simple logic here, it may produce some which aren't needed
+        '''
+
+        length = self.distance_from_front if front else self.distance_from_back
+        bearing = get_bearing_info(self.arbor.get_rod_d())
+
+        outer_r = self.arbor.get_arbor_extension_r()
+        # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
+        tip_r = bearing.inner_safe_d / 2
+        if tip_r > outer_r:
+            tip_r = outer_r
+
+
+        if length+0.05 - self.arbor_bearing_standoff_length >= 0:
+            # 0.1 to avoid trying to extude a 0.0000x long cylinder which causes CQ to throw a wobbly
+            if length - self.arbor_bearing_standoff_length > 0.1:
+                extendo_arbor = cq.Workplane("XY").tag("base").circle(outer_r).extrude(length - self.arbor_bearing_standoff_length).faces(">Z").workplane()
+            else:
+                extendo_arbor=cq.Workplane("XY")
+            extendo_arbor = extendo_arbor.circle(tip_r).extrude(self.arbor_bearing_standoff_length)
+
+            if (length - self.arbor_bearing_standoff_length > self.lantern_pinion_wheel_holder_thick) and self.arbor.pinion is not None:# and front is not self.arbor.pinion_at_front):
+                #extra wide flange to help the wheel remain perpendicular
+                #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
+                #will work out if it ends up clashing with other wheels if it becomes a problem in the future
+                #future here - it did, and that's what LANTERN_THIN was introduced to avoid without adding too much plate distance
+                if self.arbor.pinion_type == PinionType.LANTERN and self.arbor.lantern_pinion.need_cap(wheel_side=not (front == self.arbor.pinion_at_front)):
+                    extendo_arbor = extendo_arbor.union(cq.Workplane("XY").circle(self.arbor.lantern_pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
+            #not hole, that's done after it's unioned with something (if it is) as unioning two things with tehse holes cut seems to struggle
+            # extendo_arbor = extendo_arbor.cut(self.threaded_rod_cutter)
+            return extendo_arbor
+        return None
+
 class Arbor:
-    def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=1, style=GearStyle.ARCS,
+    def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
                  pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None):
         '''
