@@ -19,7 +19,7 @@ source.
 '''
 import math
 import cadquery as cq
-import clocks as clock
+from clocks import *
 
 '''
 Nothing particularly new, just had an idea for a clock that would look cool:
@@ -52,13 +52,13 @@ if 'show_object' not in globals():
 clock_name= "mantel_clock_33.2"
 # clock_name= "mantel_clock_33_retrofit"
 clock_out_dir= "out"
-gear_style=clock.GearStyle.ARCS
-pendulum_fixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+gear_style=GearStyle.ARCS
+pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
 moon = True
 
 if moon:
-    gear_style = clock.GearStyle.CIRCLES
+    gear_style = GearStyle.CIRCLES
 
 #this much drop is needed to run reliably (I think it's the wiggle room from the m3 rods in 3mm bearings combined with a small escape wheel?) but a 0.25 nozzle is then needed to print well
 lift=2
@@ -72,10 +72,10 @@ lock=2
 #42 as then a quarter span results in exactly the same distance as the old 30 tooth
 #going back to 30 teeth, since it was a bearing problem
 teeth = 30 if moon else 36 # 42
-escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=clock.AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
-                                    type=clock.EscapementType.DEADBEAT)
+escapement = AnchorEscapement(drop=drop, lift=lift, teeth=teeth, lock=lock, tooth_tip_angle=5, tooth_base_angle=4, style=AnchorStyle.CURVED_MATCHING_WHEEL, wheel_thick=2,
+                                    type=EscapementType.DEADBEAT)
 
-train = clock.GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
+train = GoingTrain(pendulum_period=2/3, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,
                          runtime_hours=8 * 24, support_second_hand=not moon, escape_wheel_pinion_at_front=False)
 barrel_gear_thick =5# 8
 if moon:
@@ -140,38 +140,112 @@ else:
 pendulum_sticks_out=10
 back_plate_from_wall=30
 
-# pair = clock.WheelPinionPair(64, 10, 1.2)
+# pair = WheelPinionPair(64, 10, 1.2)
 # distance = pair.centre_distance
 # print("old distance", distance)
 # print("old wheel r", pair.wheel.get_max_radius(), "old pinion r", pair.pinion.get_max_radius())
-# intermediate_wheel_module = clock.WheelPinionPair.get_module_size_for_distance(distance, 61, 10)
+# intermediate_wheel_module = WheelPinionPair.get_module_size_for_distance(distance, 61, 10)
 # print("intermediate_wheel_module", intermediate_wheel_module)
 #
-# newpair = clock.WheelPinionPair(61, 10, intermediate_wheel_module)
+# newpair = WheelPinionPair(61, 10, intermediate_wheel_module)
 # print("new distance", newpair.centre_distance)
 # print("new wheel r", newpair.wheel.get_max_radius(), "new pinion r", newpair.pinion.get_max_radius())
-#this was a mistake, should have been clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2) (but this doesn't fit current design)
+#this was a mistake, should have been WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2) (but this doesn't fit current design)
 intermediate_wheel_module=1.2
 #TODO centre wheel and intemediate wheel can rub against each other.
 pinion_extensions = {0:1, 1:3, 3:8} if moon else {0:1, 1:12, 2:5}
-powered_modules = [clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), clock.WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
+powered_modules = [WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5), WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2)]
 
 old_train = [[72, 10], [70, 12], [60, 14]]
 old_modules = [1,0.9,0.9]
-# last_module = clock.WheelPinionPair.get_replacement_module_size(60,14, 0.9, 45, 14)
+# last_module = WheelPinionPair.get_replacement_module_size(60,14, 0.9, 45, 14)
 last_module = 0.9
 
 #for retrofitting new train to existing plates
-# module_sizes=[clock.WheelPinionPair.get_replacement_module_size(old_train[i][0], old_train[i][1], old_modules[i], train.trains[0]["train"][i][0],  train.trains[0]["train"][i][1]) for i in range(len(old_modules))]
+# module_sizes=[WheelPinionPair.get_replacement_module_size(old_train[i][0], old_train[i][1], old_modules[i], train.trains[0]["train"][i][0],  train.trains[0]["train"][i][1]) for i in range(len(old_modules))]
 #if printing fresh let's have default sizes?
 module_sizes = old_modules
 
 print("module_sizes", module_sizes)
 lanterns=[0, 1]
-train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[barrel_gear_thick, 4],
-                pinion_thick_multiplier=3, style=gear_style,
-                powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
-                pinion_extensions=pinion_extensions, lanterns=lanterns, pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
+# train.gen_gears(module_sizes=module_sizes, module_reduction=module_reduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thicks=[barrel_gear_thick, 4],
+#                 pinion_thick_multiplier=3, style=gear_style,
+#                 powered_wheel_module_increase=1.25, powered_wheel_pinion_thick_multiplier=1.875, pendulum_fixing=pendulum_fixing, stack_away_from_powered_wheel=True,
+#                 pinion_extensions=pinion_extensions, lanterns=lanterns, pinion_thick_extra=5, powered_wheel_module_sizes=powered_modules)
+# 
+# print(train.get_dicts_for_updating_to_generate_arbors())
+
+train.generate_arbors_dicts([
+    {
+        "wheel_thick": 5,
+        "style": GearStyle.CIRCLES,
+        "pinion_at_front": True,
+        "pinion_extension": 0,
+        # "pinion_type": PinionType.LANTERN,
+        "rod_diameter": 11.9,
+        "module": 1.4311998089071878
+    },
+    {
+        "wheel_thick": 4,
+        "style": GearStyle.CIRCLES,
+        "pinion_at_front": True,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.LANTERN_THIN,
+        "rod_diameter": 3,
+        "module": 1.14495984712575,
+        "pinion_thick": 9.375
+    },
+    {
+        "wheel_thick": 2.4,
+        "style": GearStyle.CIRCLES,
+        "pinion_at_front": True,
+        "pinion_extension": 1,
+        "pinion_type": PinionType.LANTERN,
+        "rod_diameter": 3,
+        "module": 1,
+        "pinion_thick": 9
+    },
+    {
+        "wheel_thick": 2.16,
+        "style": GearStyle.CIRCLES,
+        "pinion_at_front": False,
+        "pinion_extension": 3,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "module": 0.9,
+        "pinion_thick": 7.4
+    },
+    {
+        "wheel_thick": 1.944,
+        "style": GearStyle.CIRCLES,
+        "pinion_at_front": False,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "module": 0.9,
+        "pinion_thick": 7.16
+    },
+    {
+        "wheel_thick": 2,
+        "style": GearStyle.CIRCLES,
+        "pinion_at_front": False,
+        "pinion_extension": 8,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "pinion_thick": 6.944
+    },
+    # {
+    #     "wheel_thick": 12,
+    #     "style": GearStyle.ARCS,
+    #     "pinion_at_front": True,
+    #     "arbor_split": "SplitArborType.NORMAL_ARBOR",
+    #     "pinion_extension": 0,
+    #     "pinion_type": PinionType.PLASTIC,
+    #     "rod_diameter": 3
+    # }
+])
+
+
 # train.powered_wheel_arbors[1].wheel.fake_outer_r = pair.wheel.get_max_radius()
 print("train.powered_wheel_arbors[0].centre_distance, ", train.powered_wheel_arbors[0].distance_to_next_arbor)
 print("train.powered_wheel_arbors[1].centre_distance, ", train.powered_wheel_arbors[1].distance_to_next_arbor)
@@ -179,29 +253,29 @@ print("train.powered_wheel_arbors[1].centre_distance, ", train.powered_wheel_arb
 train.print_info(for_runtime_hours=24*7)
 
 #had been using the leftover bob from wall clock 32 before I made it thicker, so bumping up to 10 from 8 and 8 was a bit fiddly to get any weight into
-pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
-pillar_style=clock.PillarStyle.CLASSIC
+pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=10)
+pillar_style=PillarStyle.CLASSIC
 
 # if not output_STL:
 #     #hack to make preview render faster
-#     pillar_style = clock.PillarStyle.SIMPLE
+#     pillar_style = PillarStyle.SIMPLE
 
 dial_d=205
 dial_width=25
 moon_radius=13
 if moon:
-    dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=clock.DialStyle.DOTS, dial_width=dial_width, pillar_style=pillar_style)
-    moon_complication = clock.MoonPhaseComplication3D(gear_style=gear_style, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
+    dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.DOTS, dial_width=dial_width, pillar_style=pillar_style)
+    moon_complication = MoonPhaseComplication3D(gear_style=gear_style, first_gear_angle_deg=205, on_left=False, bevel_module=1.1, module=0.9, moon_radius=moon_radius,
                                                       bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d / 2 - dial_width) - moon_radius - 5, moon_inside_dial=True)
 else:
-    dial = clock.Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=clock.RomanNumeralStyle.SIMPLE_SQUARE, style=clock.DialStyle.ROMAN_NUMERALS,
-                  outer_edge_style=clock.DialStyle.DOTS, seconds_style=clock.DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
+    dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
+                  outer_edge_style=DialStyle.DOTS, seconds_style=DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, pillar_style=pillar_style)
     moon_complication = None
 
 motion_works_height = 22 if moon else 10
 
 #tiny bit extra gap as the brass PETG seems to need it
-motion_works = clock.MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
+motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
                                  cannon_pinion_to_hour_holder_gap_size=0.6)
 
 motion_works_angle_deg=180+90
@@ -211,24 +285,24 @@ if moon:
     motion_works.calculate_size(arbor_distance=30)
     moon_complication.set_motion_works_sizes(motion_works)
 
-plaque = clock.Plaque(text_lines=["M33#2 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
+plaque = Plaque(text_lines=["M33#2 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
 
-plates = clock.MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=clock.PlateStyle.RAISED_EDGING,
+plates = MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=21,
-                                 standoff_pillars_separate=True, fixing_screws=clock.MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
+                                 standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
                                  plaque=plaque, split_detailed_plate=True)
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
-hand_style = clock.HandStyle.MOON if moon else clock.HandStyle.SPADE
-hands = clock.Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+hand_style = HandStyle.MOON if moon else HandStyle.SPADE
+hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.outside_d*0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                     second_length=dial.second_hand_mini_dial_d * 0.45 if not moon else 1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
 
 
-assembly = clock.Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True)
-dial_colours =  [clock.Colour.WHITE, clock.Colour.BLACK]
+assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True, name="Mantel Clock 33")
+dial_colours =  [Colour.WHITE, Colour.BLACK]
 if moon:
-    dial_colours =  [clock.Colour.BLUE, clock.Colour.WHITE]
+    dial_colours =  [Colour.BLUE, Colour.WHITE]
 
 
 if moon and False:
@@ -238,7 +312,7 @@ if moon and False:
     extra = 0.6
     thick = plates.get_plate_thick(back=False)
     centre = plates.bearing_positions[train.powered_wheels][:2]
-    holder = clock.get_stroke_line([plates.motion_works_pos, centre], wide=mini_arm_width, thick=thick+extra)
+    holder = get_stroke_line([plates.motion_works_pos, centre], wide=mini_arm_width, thick=thick+extra)
     holder = holder.cut(cq.Workplane("XY").moveTo(centre[0], centre[1]).circle(plates.arbors_for_plate[train.powered_wheels].bearing.outer_d).extrude(thick+extra))
     holder = holder.cut(plates.motion_works_screws.get_cutter().translate(plates.motion_works_pos))
     holder = holder.translate((0,0,-extra))
@@ -246,40 +320,50 @@ if moon and False:
 
 
     show_object(holder.translate((0,0, plates.get_plate_thick(True) + plates.plate_distance)))
-    clock.export_STL(holder, "motion_works_holder_retrofit", clock_name=clock_name, path=clock_out_dir)
+    export_STL(holder, "motion_works_holder_retrofit", clock_name=clock_name, path=clock_out_dir)
 
 # show_object(plates.get_plate(back=True))
-# show_object(plaque.get_plaque().rotate((0,0,0), (0,0,1), clock.rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-plaque.thick)))
+# show_object(plaque.get_plaque().rotate((0,0,0), (0,0,1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-plaque.thick)))
 
 # show_object(plates.get_plate(back=False))
 # for a, arbor in enumerate(assembly.plates.arbors_for_plate):
 #         show_object(arbor.get_assembled(), name="Arbour {}".format(a))
-assembly.show_clock(show_object, hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK], motion_works_colours=[clock.Colour.BRASS],
-                    bob_colours=[clock.Colour.GOLD], with_rods=True, with_key=True, ratchet_colour=clock.Colour.GOLD, dial_colours=dial_colours,
-                    plate_colours=[clock.Colour.DARK_GREEN, clock.Colour.BRASS, clock.Colour.BRASS])#, gear_colours=[clock.Colour.GOLD])
-#plate_colours=[clock.Colour.BLACK, clock.Colour.SILVER, clock.Colour.BRASS]
+assembly.show_clock(show_object,
+                    hand_colours=[Colour.WHITE, Colour.BLACK],
+                    # motion_works_colours=[Colour.BRASS],
+                    motion_works_colours=[Colour.BLUE, Colour.LIGHTBLUE],
+                    moon_complication_colours=[Colour.GREEN, Colour.YELLOW, Colour.RED, Colour.ORANGE],
+                    bob_colours=[Colour.GOLD],
+                    with_rods=True,
+                    with_key=True,
+                    ratchet_colour=Colour.GOLD,
+                    dial_colours=dial_colours,
+                    plate_colours=[Colour.DARK_GREEN, Colour.BRASS, Colour.BRASS]
+                    )#, gear_colours=[Colour.GOLD])
+#plate_colours=[Colour.BLACK, Colour.SILVER, Colour.BRASS]
 # show_object(plates.getDrillTemplate(6))
 
 if output_STL:
-
-    a = clock.polar(0, 100)
-    b = clock.polar(math.pi * 2 / 3, 100)
-    wedge_height = plates.plate_distance / 2 + 2
-    wedge = cq.Workplane("XY").lineTo(a[0], a[1]).lineTo(b[0], b[1]).close().extrude(wedge_height).translate((0, 0, plates.plate_distance - wedge_height))
-    special_pillar = plates.get_pillar(top=True).cut(wedge)
-
-    clock.export_STL(special_pillar, "special_pillar", clock_name, clock_out_dir)
-
-    plaque.output_STLs(clock_name, clock_out_dir)
-    if moon:
-        moon_complication.output_STLs(clock_name, clock_out_dir)
-    motion_works.output_STLs(clock_name, clock_out_dir)
-    pendulum.output_STLs(clock_name, clock_out_dir)
-    plates.output_STLs(clock_name, clock_out_dir)
-    hands.output_STLs(clock_name, clock_out_dir)
-    assembly.output_STLs(clock_name, clock_out_dir)
-    # clock.export_STL(mat, "mat", clock_name, clock_out_dir)
-    # clock.export_STL(mat_detail, "mat_detail", clock_name, clock_out_dir)
+    assembly.get_BOM().export(clock_out_dir)
+    #
+    # a = polar(0, 100)
+    # b = polar(math.pi * 2 / 3, 100)
+    # wedge_height = plates.plate_distance / 2 + 2
+    # wedge = cq.Workplane("XY").lineTo(a[0], a[1]).lineTo(b[0], b[1]).close().extrude(wedge_height).translate((0, 0, plates.plate_distance - wedge_height))
+    # special_pillar = plates.get_pillar(top=True).cut(wedge)
+    #
+    # export_STL(special_pillar, "special_pillar", clock_name, clock_out_dir)
+    #
+    # plaque.output_STLs(clock_name, clock_out_dir)
+    # if moon:
+    #     moon_complication.output_STLs(clock_name, clock_out_dir)
+    # motion_works.output_STLs(clock_name, clock_out_dir)
+    # pendulum.output_STLs(clock_name, clock_out_dir)
+    # plates.output_STLs(clock_name, clock_out_dir)
+    # hands.output_STLs(clock_name, clock_out_dir)
+    # assembly.output_STLs(clock_name, clock_out_dir)
+    # export_STL(mat, "mat", clock_name, clock_out_dir)
+    # export_STL(mat_detail, "mat_detail", clock_name, clock_out_dir)
 
 
 
