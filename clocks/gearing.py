@@ -2870,7 +2870,15 @@ class FixedRodArborForPlate(ArborForPlate):
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # if self.centre_wh
+
+        length = (self.distance_from_front if self.arbor.pinion_at_front else self.distance_from_back) + self.arbor.get_total_thickness()
+
+        #larger diameter in the middle, smaller at the ends
+        contact_length = 5
+        centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(length - contact_length*2).translate((0,0,contact_length))
+        centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
+
+        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
 
 
     def need_separate_arbor_extension(self, front=True):
@@ -2881,8 +2889,16 @@ class FixedRodArborForPlate(ArborForPlate):
 
     def need_arbor_extension(self, front=True):
         '''
-        Need an arbor extension on this side of the arbor. May or may not end up being combined with the arbor
+        Need an arbor extension on this side of the arbor. in this case only if it can be combined in one single print
         '''
+
+        # if self.arbor.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL] and self.arbor.pinion_type.is_lantern():
+        #     if self.arbor.lantern_pinion.arbor_extension_is_part_of_wheel() and front != self.arbor.pinion_at_front:
+        #         return False
+
+        if front != self.arbor.pinion_at_front:
+            return False
+
         #not enough to print
         #some fudge factor because I've seen it compare 0.39999999 with 0.4
         if front and self.distance_from_front < self.arbor_bearing_standoff_length-0.05:
@@ -2899,7 +2915,9 @@ class FixedRodArborForPlate(ArborForPlate):
                 return self.arbor.combine_with_powered_wheel
             #the extension out the back is always needed and calculated elsewhere TODO
         exists = self.get_arbor_extension(front=front) is not None
-        return exists and not super().need_separate_arbor_extension(front=front)
+
+
+        return exists
 
     def get_arbor_extension(self, front=True):
         '''
@@ -2908,10 +2926,12 @@ class FixedRodArborForPlate(ArborForPlate):
         Simple logic here, it may produce some which aren't needed
         '''
 
+
+
         length = self.distance_from_front if front else self.distance_from_back
         bearing = get_bearing_info(self.arbor.get_rod_d())
 
-        outer_r = self.arbor.get_arbor_extension_r()
+        outer_r = self.arbor.get_arbor_extension_r() + 0.5
         # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
@@ -2941,7 +2961,7 @@ class FixedRodArborForPlate(ArborForPlate):
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
-                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None):
+                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - powered wheel is wheel + ratchet (+more logic than there used to be)
@@ -2994,6 +3014,10 @@ class Arbor:
         self.type = type
         if self.get_type() == ArborType.UNKNOWN:
             raise ValueError("Not a valid arbor")
+
+        self.arbor_class_for_plate = arbor_class_for_plate
+        if self.arbor_class_for_plate is None:
+            self.arbor_class_for_plate = ArborForPlate
 
         self.ratchet = None
         if self.powered_wheel is not None:

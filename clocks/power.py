@@ -3106,6 +3106,12 @@ class PocketChainWheel2(WeightPoweredWheel):
         self.chain_length = -1
 
     def get_BOM(self):
+        bom = BillOfMaterials("Chain Pocket Wheel")
+        model = self.get_assembled()
+        bom.add_model(model)
+        return bom
+
+    def get_BOM_for_combining_with_arbor(self, wheel_thick=0):
         return BillOfMaterials("Chain Pocket Wheel")
 
     def get_parts_for_arbor(self, wheel_thick):

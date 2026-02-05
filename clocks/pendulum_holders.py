@@ -716,5 +716,8 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
         #
         # return assembly
 
-
+    def get_BOM(self):
+        bom = BillOfMaterials("Knife Edge Pendulum Holder")
+        #TODO
+        return bom
 

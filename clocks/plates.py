@@ -473,6 +473,10 @@ class SimpleClockPlates(BasePlates):
         self.plaque_pos = (0,0)
         self.plaque_angle = 0
 
+        # self.arbor_class = arbor_class
+        # if self.arbor_class is None:
+        #     self.arbor_class = ArborForPlate
+
         self.vanity_plate_fixing_positions = []
         #how the pendulum is fixed to the anchor arbour. TODO centralise this
         self.pendulum_fixing = pendulum_fixing
@@ -1048,7 +1052,8 @@ class SimpleClockPlates(BasePlates):
             return PlateShape.SIMPLE_ROUND
 
         return PlateShape.SIMPLE_VERTICAL
-
+    # def get_arbors_for_plate_class(self):
+    #     return ArborForPlate
     def generate_arbors_for_plate(self):
 
         self.arbors_for_plate = []
@@ -1082,9 +1087,9 @@ class SimpleClockPlates(BasePlates):
                     #so stick the escapement out a bit further
                     front_anchor_from_plate = 5 - self.going_train.escapement.get_wheel_base_to_anchor_base_z() - self.going_train.escapement.wheel_thick
 
-
+            arbor_class = arbor.arbor_class_for_plate
             #new way of doing it, new class for combining all this logic in once place
-            arborForPlate = ArborForPlate(arbor, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
+            arborForPlate = arbor_class(arbor, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
@@ -5454,14 +5459,16 @@ class ChildFriendlySimpleClockPlates(SimpleClockPlates):
         self.bottom_pillar_positions[0] = (self.bottom_pillar_positions[0][0], self.bottom_pillar_positions[0][1] + old_pillar_r - self.bottom_pillar_r)
         # self.top_pillar_r *= 2
 
-class FixedRodsMixin:
-    '''
-    Having a go at mixins, probably got it wrong.
-    '''
-    def get_arbors_for_plate_class(self):
-        return FixedRodArborForPlate
+# class FixedRodsMixin:
+#     '''
+#     Having a go at mixins, probably got it wrong.
+#     '''
+#     # def __init__(self, *args, **kwargs):
+#     #     super().__init__(*args, **kwargs)
+#     def get_arbors_for_plate_class(self):
+#         return FixedRodArborForPlate
 
-class RectangularWallClockPlates(RoundClockPlates, FixedRodsMixin):
+class RectangularWallClockPlates(RoundClockPlates):
     '''
     sometimes the round clock plates aren't the most compact vertically
     this is sort of an amalgamation of the mantel plates, the old simple vertical plates and the round wall clock plates
@@ -6172,8 +6179,6 @@ class SlideWhistlePlates(BasePlates):
 
         self.plate_distance = preliminary_plate_distance + self.endshake + extra_front + extra_back
 
-    def get_arbors_for_plate_class(self):
-        return ArborForPlate
     def generate_arbors_for_plate(self):
         '''
         copy-pasted and tweaked from SimpleClockPlates
@@ -6199,7 +6204,7 @@ class SlideWhistlePlates(BasePlates):
                 bearing = get_bearing_info(round(arbor.arbor_d))
             front_anchor_from_plate = -1
 
-            arbor_class = self.get_arbors_for_plate_class()
+            arbor_class = arbor.arbor_class_for_plate
             #new way of doing it, new class for combining all this logic in once place
             arbor_for_plate = arbor_class(arbor, self,
                                             bearing_position=bearing_pos,
