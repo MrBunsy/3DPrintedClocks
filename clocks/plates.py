@@ -1812,7 +1812,7 @@ class SimpleClockPlates(BasePlates):
         return template
 
     def cut_anchor_bearing_in_standoff(self, standoff):
-        bearingInfo = self.arbors_for_plate[-1].bearing
+        bearingInfo = self.arbors_for_plate[-1].get_bearing(front=False)
 
 
         if self.pendulum_fixing.square_arbor_only_inside_plates():
@@ -2696,14 +2696,8 @@ class SimpleClockPlates(BasePlates):
 
     def punch_bearing_holes(self, plate, back, make_plate_bigger=True):
         for i, pos in enumerate(self.bearing_positions):
-            bearing = self.arbors_for_plate[i].bearing
+            bearing = self.arbors_for_plate[i].get_bearing(front=not back)
             bearing_on_top = back
-
-            if not back and i == 0:
-                try:
-                    bearing = self.going_train.powered_wheel.key_bearing
-                except:
-                    pass
 
             needs_plain_hole = False
             # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:

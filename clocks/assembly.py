@@ -634,7 +634,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
             arbor_for_plate = self.plates.arbors_for_plate[i]
             arbor = arbor_for_plate.arbor
-            bearing = arbor_for_plate.bearing
+            #TODO front and back
+            bearing = arbor_for_plate.get_bearing()
             bearing_thick = bearing.height
 
             rod_in_front_of_hands = WASHER_THICK_M3 + get_nut_height(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
@@ -755,7 +756,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             rod_zs.append(rod_z)
             beyond_back_of_arbors.append(plain_rod_rear_length)
             if rod_length > 0:
-                print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].bearing.inner_d, rod_length, plain_rod_rear_length))
+                print("Arbor {} rod (M{}) length: {:.1f}mm with {:.1f}mm plain rod rear of arbor".format(i, self.plates.arbors_for_plate[i].back_bearing.inner_d, rod_length, plain_rod_rear_length))
             # if arbor.pinion is not None and arbor.pinion.lantern:
             #     diameter = arbor.pinion.trundle_r * 2
             #     min_length = arbor.pinion_thick + arbor.pinion_extension

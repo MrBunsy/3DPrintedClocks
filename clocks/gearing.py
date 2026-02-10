@@ -1866,12 +1866,14 @@ class ArborForPlate:
         self.pendulum_at_front = pendulum_at_front
         self.back_plate_from_wall = back_from_wall
         self.endshake = endshake
-        self.bearing = bearing
-        if self.bearing is None:
-            self.bearing = get_bearing_info(self.arbor_d)
+        # self.bearing = bearing
+        if bearing is None:
+            bearing = get_bearing_info(self.arbor_d)
         #(x,y,z) from the clock plate. z is the base of the arbour, ignoring arbour extensions (this is from the days when the bearings were raised on little pillars, but is still useful for
         #calculating where the arbour should be)
         self.bearing_position = bearing_position
+        self.back_bearing = self.front_bearing = bearing
+
         #only used for the anchor, to get the angle correct for non-vertical layouts
         self.previous_bearing_position = previous_bearing_position
         #from the top of the back plate to the bottom of the wheel/anchor
@@ -1907,7 +1909,7 @@ class ArborForPlate:
         #diameter of the bit taht links anchor and pendulum holder
         self.direct_arbor_d = direct_arbor_d
         #for the collet
-        self.outer_d = (self.bearing.inner_safe_d + self.bearing.outer_d) / 2
+        self.outer_d = (self.back_bearing.inner_safe_d + self.back_bearing.outer_d) / 2
 
         self.cylinder_r = self.direct_arbor_d / 2
         self.square_side_length = math.sqrt(2) * self.cylinder_r
@@ -1945,11 +1947,17 @@ class ArborForPlate:
         self.lantern_pinion_wheel_holder_thick = 2
 
         if self.type == ArborType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
-            self.bearing = self.arbor.powered_wheel.key_bearing
+            # self.bearing = self.arbor.powered_wheel.key_bearing
+            self.front_bearing = self.arbor.powered_wheel.key_bearing
 
         #for powered wheels with keys, the plates calculates this
         self.key_length = 0
 
+
+    def get_bearing(self, front=True):
+        if front:
+            return self.front_bearing
+        return self.back_bearing
 
     def get_max_radius(self, above=False):
         if self.arbor.type == ArborType.ANCHOR:
@@ -2201,7 +2209,7 @@ class ArborForPlate:
 
 
 
-                wall_bearing = self.bearing
+                wall_bearing = self.back_bearing
 
                 # circular bit
                 anchor = anchor.union(cq.Workplane("XY").circle(self.cylinder_r).extrude(cylinder_length + anchor_thick))
@@ -2867,6 +2875,9 @@ class FixedRodArborForPlate(ArborForPlate):
     vague plan: overriding ArborForPlate I hope to just change the arbor extension methods and leave everything else alone? maybe?
 
     is it better to just add options to ArborForPlate? Or do I want to movein the direction of mixins for these sorts of features as a very long term goal?
+
+    update: first attempt will be pure printed PETG. It's coefficient of friction is nearly as low as nylon and I can't find nylon
+    bushings for much cheaper than ball bearings.
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -2957,6 +2968,68 @@ class FixedRodArborForPlate(ArborForPlate):
             # extendo_arbor = extendo_arbor.cut(self.threaded_rod_cutter)
             return extendo_arbor
         return None
+
+class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
+    '''
+    Fixed threaded rods makes using the clutch mechanism tricky. Idea is to use two ring magnets - one in the top of the centre arbor
+    and one in the bottom of the cannon pinion. Then motion works will be like normal, but hopefully we won't need an end-nut
+    and the magnets will be enough for the fixed rod to be entirely contained within the arbor and cannon pinion
+
+    May need to use a real bearing for the arbor to fit through. Shame I haven't got a supply of those cheap plastic bearings anymore.
+    Aha - you can still get them on ebay! perfect. Nylon cage, glass balls.
+
+    this assumes pinion at front - not sure how printable it will be otherwise
+    '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.arbor.pinion_at_front:
+            raise NotImplementedError("TODO support FixedRodMagneticClutchArborForPlate with pinion at back")
+
+        self.extra_out_front = 2
+        length = self.arbor.get_total_thickness() + self.distance_from_front  + self.plates.get_plate_thick(back=False) + self.plates.endshake + self.extra_out_front
+
+        #larger diameter in the middle, smaller at the ends
+        contact_length = 5
+        centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(length - contact_length*2).translate((0,0,contact_length))
+        centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
+
+        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
+
+        self.full_length = length
+
+        self.front_bearing=BEARING_12x21x5
+
+        self.magnet = RING_MAGNET_10x4x2MM
+
+    def get_arbor_extension(self, front=True):
+        '''
+        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
+
+        Simple logic here, it may produce some which aren't needed
+        '''
+
+        #length from top of pinion to outside the front plate where we meet the cannon pinion
+        length = self.full_length - self.arbor.get_total_thickness()
+
+        outer_r = (self.front_bearing.inner_d - 0.4)/2
+        #TODO if more than the pinion max radius, need a cone shape to be printable
+        # outer_r = self.arbor.pinion.get_max_radius()
+
+        extendo_arbor = cq.Workplane("XY").circle(outer_r).extrude(length)
+
+        top_gap = 0.4
+        ring_magnet_cutter = (cq.Workplane("XY").circle(self.magnet.outer_d/2 + self.magnet.wiggle_room).extrude(self.magnet.thick + top_gap)
+                       .union(get_hole_with_hole(self.arbor_d/2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate((0,0,self.magnet.thick + top_gap))))
+        cutter_height = self.magnet.thick + top_gap + LAYER_THICK*2
+
+        top_layer_thick = 0.6
+
+        extendo_arbor = extendo_arbor.cut(ring_magnet_cutter.translate((0,0,length - cutter_height - top_layer_thick)))
+
+        return extendo_arbor
+
+
 
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
@@ -4305,6 +4378,14 @@ It's important that the motion works can rotate freely after the friction clip h
         print("Outputting ", out)
         exporters.export(self.get_hour_holder(), out)
 
+class MotionWorksForMagnetClutch(MotionWorks):
+
+    def __init__(self, *args, magnet=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.magnet = magnet
+        if self.magnet is None:
+            self.magnet = RING_MAGNET_10x4x2MM
+
 
 class GenevaGearPinPair:
     '''
@@ -4326,12 +4407,14 @@ class GenevaGearInlinePair:
 
      However, if I want to do a day of the week I'll need 7 teeth. Maybe I can't do this easily inline - can use a pin?
 
+     update: managed a bodge which means this can support a wider, albeit not very wide, range of teeth (4 to 9)
+
     '''
 
     def __init__(self, distance=20, teeth=5, stop=False, thick=5):
         '''
         distance: distance between centres
-        teeth: number of gaps on the driven wheel
+        teeth: number of gaps on the driven wheel (currently only supports 4-9)
         stop: if true, the driven wheel can't rotate more than 360 (used for stop works)
         '''
         self.distance = distance

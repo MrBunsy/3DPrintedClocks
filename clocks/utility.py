@@ -1166,6 +1166,25 @@ FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.1
 # 595.5/94
 REGULA_8_DAY_1_05MM_CHAIN = ChainInfo(wire_thick=1.05, width=4.4, inside_length=595.5 / 94)  # , outside_length=8.4)
 
+
+
+class RingMagnet:
+
+    def __init__(self, outer_d, inner_d, thick):
+        self.outer_d = outer_d
+        self.inner_d = inner_d
+        self.thick = thick
+        self.wiggle_room = 0.2
+        # self.extra_height = 0.4
+        # self.get_cutter_height = self.thick+self.extra_height + LAYER_THICK*2
+    #too application specific, leave to where more is known
+    # def get_cutter(self, embedded=True):
+    #     #can we get away without a hole-in-hole cutter?
+    #     # probably not as that would require printing a ring floating in the fcentre of the hole of a ring magnet
+    #     cutter = cq.Workplane("XY").circle(self.outer_d/2 + self.wiggle_room).extrude(self.thick+self.extra_height).union(get_hole_with_hole(o))
+
+RING_MAGNET_10x4x2MM = RingMagnet(10, 4, 2)
+
 class PlainBushing:
     '''
     Fake bearing that's just a hole in the plate

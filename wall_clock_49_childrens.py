@@ -137,7 +137,7 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate
+        "arbor_class_for_plate" : FixedRodMagneticClutchArborForPlate
     },
     {
         #second wheel
