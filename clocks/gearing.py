@@ -3904,15 +3904,24 @@ class MotionWorks:
         self.friction_ring_r = self.pairs[0].pinion.get_max_radius()
         self.friction_ring_base_r = self.friction_ring_r + 2
 
-    def calculate_size(self, arbor_distance=-1):
+    def get_min_cannon_pinion_r(self):
+        min_cannon_pinion_r = 0
+        if self.bearing is not None:
+            min_cannon_pinion_r = self.bearing.outer_d / 2
+        if self.inset_at_base > 0:
+            min_cannon_pinion_r = self.inset_at_base_r
+
+        return min_cannon_pinion_r
+
+    def calculate_size(self, arbor_distance=-1, aim_for_module_size = True):
         '''
         If no arbour distance, use module size to calculate arbour distance, and set it.
         If arbour distance provided, use it to calculate module size and set that
         changes properties of this object
         '''
 
-        #experiment, if true aim to keep module size aproximately same as self.module by adjusting number of teeth
-        aim_for_module_size = True
+        #aim_for_module_size: experiment, if true aim to keep module size aproximately same as self.module by adjusting number of teeth
+
 
         wheel0_teeth = 36
         pinion0_teeth = 12
@@ -3951,12 +3960,7 @@ class MotionWorks:
                                 module0 = arbor_distance / ((w0 + p0) / 2)
                                 module1 = arbor_distance / ((w1 + p1) / 2)
 
-                                min_cannon_pinion_r = 0
-
-                                if self.bearing is not None:
-                                    min_cannon_pinion_r = self.bearing.outer_d / 2
-                                if self.inset_at_base > 0:
-                                    min_cannon_pinion_r = self.inset_at_base_r
+                                min_cannon_pinion_r = self.get_min_cannon_pinion_r()
 
                                 #v.slow
                                 potential_pair = WheelPinionPair(w0, p0, module0, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming)
@@ -4386,11 +4390,28 @@ class MotionWorksForMagnetClutch(MotionWorks):
         if self.magnet is None:
             self.magnet = RING_MAGNET_10x4x2MM
 
+    def get_min_cannon_pinion_r(self):
+        return self.magnet.outer_d/2
 
-class GenevaGearPinPair:
-    '''
-    Plan - to support any variant, not just 5 teeth, I think I'll need to make it "more 3d" by using a pin
-    '''
+    def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
+        pinion = super().get_cannon_pinion(hand_holder_radius_adjustment)
+
+        #copy-pasted from ArborForPlate, haven't decided if it's worth abstracting out into the ring magnet class itself
+        top_gap = 0.4
+        ring_magnet_cutter = (cq.Workplane("XY").circle(self.magnet.outer_d / 2 + self.magnet.wiggle_room).extrude(
+            self.magnet.thick + top_gap)
+                              .union(
+            get_hole_with_hole(self.arbor_d / 2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate(
+                (0, 0, self.magnet.thick + top_gap))))
+
+        pinion = pinion.cut(ring_magnet_cutter.translate((0,0,0.4)))
+
+        return pinion
+
+# class GenevaGearPinPair:
+#     '''
+#     Plan - to support any variant, not just 5 teeth, I think I'll need to make it "more 3d" by using a pin
+#     '''
 
 class GenevaGearInlinePair:
     '''

@@ -205,8 +205,8 @@ dial = None
 plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=False)#, support_second_hand=False)
 
-motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
-motion_works.calculate_size(arbor_distance=30)
+motion_works = MotionWorksForMagnetClutch(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
+motion_works.calculate_size(arbor_distance=45)
 
 motion_works_angle_deg = 90
 
