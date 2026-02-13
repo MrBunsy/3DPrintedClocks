@@ -224,7 +224,8 @@ motion_works_angle_deg = 90
 plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
-                                gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing)
+                                gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing,
+                                    fixing_screws=MachineScrew(6, type=MachineScrewType.HEX_HEAD))
 # plates = SimpleClockPlates(train, motion_works, gear_train_layout=gear_train_layout, plate_thick=plate_thick, pendulum_sticks_out=pendulum_sticks_out,
 #                            pendulum_fixing=pendulum_fixing, back_plate_from_wall=back_plate_from_wall, dial=dial, motion_works_angle_deg=motion_works_angle_deg,
 #                            pillar_style=pillar_style, plaque=plaque, pendulum_at_front=False, name=clock_name)

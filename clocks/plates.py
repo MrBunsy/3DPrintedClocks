@@ -4308,12 +4308,14 @@ class RoundClockPlates(SimpleClockPlates):
         self.fewer_arms = fewer_arms
         if back_plate_from_wall < 0:
             back_plate_from_wall = pendulum_sticks_out + 10 + plate_thick
+        if 'fixing_screws' not in kwargs:
+            kwargs['fixing_screws'] = MachineScrew(4, countersunk=True)
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         #was force_escapement_above_hands because the gear train looks better on a circular plate that way ( now got forcing_escape_wheel_slightly_off_centre in bearing placement)
         super().__init__(going_train, motion_works, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
                          pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=pendulum_fixing,
-                         pendulum_at_front=False, back_plate_from_wall=back_plate_from_wall, fixing_screws=MachineScrew(4, countersunk=True),
+                         pendulum_at_front=False, back_plate_from_wall=back_plate_from_wall,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, screws_from_back=None,
                          layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, style=style,
@@ -5635,6 +5637,9 @@ class RectangularWallClockPlates(RoundClockPlates):
     def get_bottom_wall_standoff(self, for_printing=True):
         standoff = get_stroke_line( [self.bottom_pillar_positions[0], self.bearing_positions[0][:2], self.bottom_pillar_positions[1]],
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
+
+        standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0, self.back_plate_from_wall)))
+
         if not for_printing:
             standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
         return standoff
@@ -5643,13 +5648,17 @@ class RectangularWallClockPlates(RoundClockPlates):
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
 
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
+        standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0, 0, self.back_plate_from_wall)))
         if not for_printing:
             standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
         return standoff
 
     def get_fixing_screws_cutter(self):
-        #TODO
-        return cq.Workplane("XY").rect(10, 10).extrude(10)
+
+        cutter = cq.Workplane("XY")
+        for pos in self.all_pillar_positions:
+            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True).translate(pos).translate((0,0,-self.back_plate_from_wall)))
+        return cutter
 
 class RollingBallClockPlates(SimpleClockPlates):
     '''

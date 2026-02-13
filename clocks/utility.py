@@ -182,6 +182,35 @@ def get_screw_head_height(metric_thread, countersunk=False):
 
     return metric_thread * 0.85
 
+def get_hex_head_dimensions(metric_thread, diameter=False, depth=False,):
+    #https://itafasteners.com/products-bolts-hex-head-anchor-bolts.php
+    dimensions = {
+        #thread: [head depth, max width (diameter), side-to-side]
+        3: [2, 6.01, 5.5],
+        4: [2.8, 7.66, 7],
+        5: [3.5, 8.79, 8],
+        6: [4, 11.05, 10],
+        8: [5.3, 14.38, 13],
+        10: [6.4, 18.9, 17],
+        12: [7.5, 21.1, 19],
+        14: [8.8, 24.49, 22],
+        16: [10, 26.75, 24],
+        18: [11.5, 30.14, 27],
+        20: [12.5, 33.53, 30],
+        22: [14, 35.72, 32],
+        24: [15, 39.98, 36],
+        27: [17, 45.2, 41],
+        30: [18.7, 50.85, 46],
+        33: [21, 55.37, 50],
+        36: [22.5, 60.79, 55],
+        42: [26, 71.3, 65],
+        48: [30, 82.6, 75]
+    }
+    if diameter:
+        return dimensions[metric_thread][1]
+    if depth:
+        return dimensions[metric_thread][0]
+
 
 def get_screw_head_diameter(metric_thread, countersunk=False):
 
@@ -296,9 +325,10 @@ Shoulder Length (Thin Type) - 0.5mm
 '''
 
 class MachineScrewType(Enum):
-    PAN_HEAD = "pan"
+    PAN_HEAD = "Pan"
     COUNTERSUNK = "CS"
-    GRUB = "grub"
+    GRUB = "Grub"
+    HEX_HEAD = "Hex"
 
 class MachineScrew:
     '''
@@ -308,7 +338,7 @@ class MachineScrew:
     TODO include layer thickness as part of screw or keep it as input to the cutters?
     '''
 
-    def __init__(self, metric_thread=3, countersunk=False, length=-1, grub=False):
+    def __init__(self, metric_thread=3, countersunk=None, length=-1, grub=False, type=None):
 
         '''
         countersunk - head is countersunk
@@ -319,10 +349,23 @@ class MachineScrew:
         self contained in this class now?
         '''
         self.metric_thread = metric_thread
+        #deprecated (but still widely used) - use type instead
         self.countersunk = countersunk
         self.grub = grub
         # if length is provided, this represents a specific screw
         self.length = length
+        self.type = type
+        #backwards compatibility:
+        if countersunk is None and type is None:
+            #original default
+            self.countersunk = False
+            self.type = MachineScrewType.PAN_HEAD
+        if countersunk and type is None:
+            #old countersunk
+            self.type = MachineScrewType.COUNTERSUNK
+        if grub and type is None:
+            #old grub screw
+            self.type = MachineScrewType.GRUB
 
 
     def get_nut_for_die_cutting(self):
@@ -362,6 +405,9 @@ class MachineScrew:
 
         return r
 
+    def head_depth_not_included_in_screw_length(self):
+        return self.type in [MachineScrewType.PAN_HEAD, MachineScrewType.HEX_HEAD]
+
     def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False, ignore_head=False):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
@@ -379,9 +425,10 @@ class MachineScrew:
         space_for_pan_head: include a sunken space for the pan head
         '''
 
-        if self.grub:
+        if self.type in [MachineScrewType.GRUB]:
             #simple way to add support for grub screws
-            ignore_head = True
+            head_space_length = 0
+            # ignore_head = True
 
         if length < 0:
             if self.length < 0:
@@ -390,6 +437,10 @@ class MachineScrew:
             else:
                 # use the length that this screw represents, plus some wiggle
                 length = self.length + SCREW_LENGTH_EXTRA
+
+        if space_for_pan_head and self.head_depth_not_included_in_screw_length():
+            # pan head screw lengths do not include the head
+            length += self.get_head_height()
         #override loose here if we're self-tapping because that should only affect teh size of the inner nubs
         r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose if not self_tapping else False, for_tap_die=False, sideways=sideways)
 
@@ -408,24 +459,44 @@ class MachineScrew:
             for angle in angles:
                 pos = polar(angle, r + inner_r - overlap)
                 screw = screw.cut(cq.Workplane("XY").circle(inner_r).extrude(length).translate(pos))
-        if not ignore_head:
-            if self.countersunk:
-                #countersink angle for ANSI metric machine screws is 90deg, so this means edges sloping at 45deg. Therefore cut a code of height same as radius
-                screw = screw.add(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=0,
-                                            height=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL))
-                # # countersunk screw lengths seem to include the head
-                # screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
+
+        if ignore_head:
+            '''
+            don't add the head
+            '''
+        elif self.type in [MachineScrewType.COUNTERSUNK]:
+            #countersink angle for ANSI metric machine screws is 90deg, so this means edges sloping at 45deg. Therefore cut a code of height same as radius
+            screw = screw.union(cq.Solid.makeCone(radius1=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL, radius2=0,
+                                        height=self.get_head_diameter() / 2 + COUNTERSUNK_HEAD_WIGGLE_SMALL))
+            # # countersunk screw lengths seem to include the head
+            # screw = screw.union(cq.Workplane("XY").circle(r).extrude(length))
+        elif self.type in [MachineScrewType.PAN_HEAD, MachineScrewType.HEX_HEAD]:
+
+            head_shape = cq.Workplane("XY")
+            sides = 1
+            if self.type == MachineScrewType.HEX_HEAD:
+                sides = 6
+
+            if not with_bridging:
+                if sides == 1:
+                    head_shape = cq.Workplane("XY").circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
+                else:
+                    head_shape = cq.Workplane("XY").polygon(sides, self.get_head_diameter() + NUT_WIGGLE_ROOM/2).extrude(self.get_head_height())
             else:
-                if space_for_pan_head:
-                    length += self.get_head_height()
-                    # pan head screw lengths do not include the head
-                    if not with_bridging:
-                        screw = screw.union(cq.Workplane("XY").circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height()))
-                    else:
-                        screw = screw.union(get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(), layer_thick=layer_thick))
-            # extend out from the headbackwards too
-            if head_space_length > 0:
-                screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
+
+                head_shape = get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(),
+                                                layer_thick=layer_thick, sides = sides)
+
+            if not space_for_pan_head:
+                head_shape = head_shape.translate((0,0, - self.get_head_height()))
+
+            screw = screw.union(head_shape)
+
+
+        #note no grub screw as it has no head
+        # extend out from the headbackwards too
+        if head_space_length > 0:
+            screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
 
         return screw
 
@@ -455,20 +526,26 @@ class MachineScrew:
         return nut
 
     def get_type(self):
-        if self.grub:
-            return MachineScrewType.GRUB
-        if self.countersunk:
-            return MachineScrewType.COUNTERSUNK
-        return MachineScrewType.PAN_HEAD
+        return self.type
+        # if self.grub:
+        #     return MachineScrewType.GRUB
+        # if self.countersunk:
+        #     return MachineScrewType.COUNTERSUNK
+        # return MachineScrewType.PAN_HEAD
 
     def get_string(self):
         return f"Machine screw M{self.metric_thread} ({self.get_type().value})"
+
+    def is_countersunk(self):
+        return self.type in [MachineScrewType.COUNTERSUNK]
 
     def __str__(self):
         return self.get_string()
 
     def get_head_height(self, ):
-        return get_screw_head_height(self.metric_thread, countersunk=self.countersunk)
+        if self.type == MachineScrewType.HEX_HEAD:
+            return get_hex_head_dimensions(self.metric_thread, depth=True)
+        return get_screw_head_height(self.metric_thread, countersunk=self.is_countersunk())
 
     def get_total_length(self):
         '''
@@ -477,7 +554,7 @@ class MachineScrew:
         if self.length < 0:
             return -1
 
-        if self.countersunk:
+        if self.is_countersunk():
             return self.length
         else:
             return self.length + self.get_head_height()
@@ -489,7 +566,10 @@ class MachineScrew:
         if self.grub:
             #TODO
             return self.metric_thread/2
-        return get_screw_head_diameter(self.metric_thread, countersunk=self.countersunk)
+        if self.type == MachineScrewType.HEX_HEAD:
+            return get_hex_head_dimensions(self.metric_thread, diameter=True)
+
+        return get_screw_head_diameter(self.metric_thread, countersunk=self.is_countersunk())
 
 
 def np_to_set(npVector):
@@ -1001,7 +1081,7 @@ def rad_to_deg(rad):
     return rad * 180 / math.pi
 
 
-def polar(angle, radius=1):
+def polar(angle, radius=1.0):
     return (math.cos(angle) * radius, math.sin(angle) * radius)
 
 
