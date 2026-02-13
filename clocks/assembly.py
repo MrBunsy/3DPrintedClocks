@@ -616,7 +616,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         front_plate_thick = self.plates.get_plate_thick(back=False)
         back_plate_thick = self.plates.get_plate_thick(back=True)
 
-
+        machine_screw = False
 
         #how much extra to extend out the bearing
         #used to be 3mm, but when using thinner plates this isn't ideal.
@@ -635,7 +635,20 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             arbor_for_plate = self.plates.arbors_for_plate[i]
             arbor = arbor_for_plate.arbor
             #TODO front and back
-            bearing = arbor_for_plate.get_bearing()
+            bearing = arbor_for_plate.get_bearing(front=False)
+            if bearing is None:
+                #fixed rods for this arbor
+                machine_screw = True
+                rod_length = total_plate_thick
+
+                if i == self.going_train.powered_wheels:
+                    #centre wheel
+                    rod_length += self.minute_hand_z + self.hands.thick
+
+                rod_lengths.append(rod_length)
+                rod_zs.append(0)
+                beyond_back_of_arbors.append(0)
+                continue
             bearing_thick = bearing.height
 
             rod_in_front_of_hands = WASHER_THICK_M3 + get_nut_height(arbor.arbor_d) + M3_DOMED_NUT_THREAD_DEPTH - 1
@@ -699,7 +712,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + self.hands.second_fixing_thick + self.hands.second_thick
             elif arbor.type == ArborType.WHEEL_AND_PINION:
                 if i == self.going_train.powered_wheels:
-                    #minute wheel
+                    #centre wheel
                     if self.plates.centred_second_hand:
                         #only goes up to the canon pinion with hand turner
                         minimum_rod_length = (length_up_to_inside_front_plate + front_plate_thick + self.plates.endshake / 2 + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT +

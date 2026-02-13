@@ -115,12 +115,12 @@ plate_thick=8
 
 rod_size=1.2
 module = WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(rod_size)
-module = 1.2
+module = 1.0#1.2
 pinion_type=PinionType.PLASTIC
 train.generate_arbors_dicts([
     {
         #great wheel
-        "module": 1.3,
+        "module": 1.1,
         "wheel_thick" : 8,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
@@ -222,10 +222,12 @@ motion_works_angle_deg = 90
 
 
 plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
-                                motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
+                                motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing)
-
+# plates = SimpleClockPlates(train, motion_works, gear_train_layout=gear_train_layout, plate_thick=plate_thick, pendulum_sticks_out=pendulum_sticks_out,
+#                            pendulum_fixing=pendulum_fixing, back_plate_from_wall=back_plate_from_wall, dial=dial, motion_works_angle_deg=motion_works_angle_deg,
+#                            pillar_style=pillar_style, plaque=plaque, pendulum_at_front=False, name=clock_name)
 
 # pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley(), rope_diameter=2, use_steel_rod=False, style=gear_style)
 
@@ -240,7 +242,7 @@ hands = Hands(style=HandStyle.SIMPLE_ROUND, minute_fixing="square", minute_fixin
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=None)
 
 if not outputSTL:
-    assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
+    assembly.show_clock(show_object, with_rods=True,# plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BRIGHT_ORANGE],
                         # gear_colours=[Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
                         motion_works_colours=[Colour.BRIGHT_ORANGE, Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],

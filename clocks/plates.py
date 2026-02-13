@@ -980,17 +980,20 @@ class SimpleClockPlates(BasePlates):
 
         #decided that it makes more sense if the bearings are part of the plate subcomponent
         for arbor in self.arbors_for_plate:
-            bearings = 2
-
-            if arbor.arbor.get_type() == ArborType.POWERED_WHEEL:
-                try:
-                    # the key bearing is included in the wheel BOM, if this power doens't have a key_bearing catch the exception and do nothing
-                    key_bearing = arbor.arbor.powered_wheel.key_bearing
-                    bom.add_item(BillOfMaterials.Item(f"{key_bearing}", object=key_bearing, purpose="Bearing for winding key"))
-                    bearings = 1
-                except:
-                    pass
-            bom.add_item(BillOfMaterials.Item(f"{arbor.bearing}", quantity=bearings, purpose="Arbor bearings"))
+            # bearings = 2
+            #
+            # if arbor.arbor.get_type() == ArborType.POWERED_WHEEL:
+            #     try:
+            #         # the key bearing is included in the wheel BOM, if this power doens't have a key_bearing catch the exception and do nothing
+            #         key_bearing = arbor.arbor.powered_wheel.key_bearing
+            #         bom.add_item(BillOfMaterials.Item(f"{key_bearing}", object=key_bearing, purpose="Bearing for winding key"))
+            #         bearings = 1
+            #     except:
+            #         pass
+            # bom.add_item(BillOfMaterials.Item(f"{arbor.bearing}", quantity=bearings, purpose="Arbor bearings"))
+            for front in [True, False]:
+                words = "front" if front else "back"
+                bom.add_item(BillOfMaterials.Item(f"{arbor.get_bearing(front=front)}", purpose=f"Arbor {words} bearing"))
 
         if self.huygens_maintaining_power:
             #TODO
@@ -1423,7 +1426,7 @@ class SimpleClockPlates(BasePlates):
         full length (including bit that holds bearing) of the peice that sticks out the front of the clock to hold the bearing for a front mounted escapment
         '''
         if bearing_holder_thick < 0:
-            bearing_holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing)
+            bearing_holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
         if self.need_front_anchor_bearing_holder():
             holder_long = self.arbors_for_plate[-1].front_anchor_from_plate + self.arbors_for_plate[-1].arbor.escapement.get_anchor_thick() \
@@ -2004,8 +2007,8 @@ class SimpleClockPlates(BasePlates):
             chain_pos = self.bearing_positions[0][:2]
             first_arbour_pos = self.bearing_positions[1][:2]
 
-            chain_space = self.arbors_for_plate[0].bearing.outer_d / 2
-            arbour_space = self.arbors_for_plate[1].bearing.outer_d / 2
+            chain_space = self.arbors_for_plate[0].get_bearing(front=False).outer_d / 2
+            arbour_space = self.arbors_for_plate[1].get_bearing(front=False).outer_d / 2
 
             if self.heavy:
                 text_height = self.bottom_pillar_r * 2 * 0.3
@@ -2724,29 +2727,39 @@ class SimpleClockPlates(BasePlates):
                         bearing_on_top=False
                         needs_plain_hole=False
 
+            if bearing is None:
+                #assuming this is a fixed rod arbor
+                screw = self.arbors_for_plate[i].fixed_arbor_screw
+                if back:
+                    plate = plate.cut(screw.get_cutter(with_bridging=True, self_tapping=True).translate((pos[0], pos[1], 0)))
+                else:
+                    #using the countersink hole as a little guide cone
+                    plate = plate.cut(
+                        screw.get_cutter(with_bridging=True).translate((pos[0], pos[1], 0)))
 
-            outer_d =  bearing.outer_d
-            if needs_plain_hole:
-                outer_d = self.direct_arbor_d + 3
-
-            if outer_d > self.plate_width - self.bearing_wall_thick*2 and make_plate_bigger and not needs_plain_hole:
-                #this is a chunkier bearing, make the plate bigger
-                try:
-                    plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(outer_d / 2 + self.bearing_wall_thick).extrude(self.get_plate_thick(back=back)))
-                except:
-                    print("wasn't able to make plate bigger for bearing")
-
-            if needs_plain_hole:
-                plate = plate.cut(cq.Workplane("XY").circle(outer_d/2).extrude(self.get_plate_thick(back=back)).translate((pos[0], pos[1], 0)))
             else:
-                bridging = False
-                if not back and not self.front_plate_printed_front_face_down():
-                    bridging = True
-                if back and not bearing_on_top:
-                    #so far only the bearing on the back plate for an escapement on the back
-                    bridging = True
-                plate = plate.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(back=back),bearing=bearing, bearing_on_top=bearing_on_top, with_support=bridging)
-                                  .translate((pos[0], pos[1], 0)))
+                outer_d =  bearing.outer_d
+                if needs_plain_hole:
+                    outer_d = self.direct_arbor_d + 3
+
+                if outer_d > self.plate_width - self.bearing_wall_thick*2 and make_plate_bigger and not needs_plain_hole:
+                    #this is a chunkier bearing, make the plate bigger
+                    try:
+                        plate = plate.union(cq.Workplane("XY").moveTo(pos[0], pos[1]).circle(outer_d / 2 + self.bearing_wall_thick).extrude(self.get_plate_thick(back=back)))
+                    except:
+                        print("wasn't able to make plate bigger for bearing")
+
+                if needs_plain_hole:
+                    plate = plate.cut(cq.Workplane("XY").circle(outer_d/2).extrude(self.get_plate_thick(back=back)).translate((pos[0], pos[1], 0)))
+                else:
+                    bridging = False
+                    if not back and not self.front_plate_printed_front_face_down():
+                        bridging = True
+                    if back and not bearing_on_top:
+                        #so far only the bearing on the back plate for an escapement on the back
+                        bridging = True
+                    plate = plate.cut(self.get_bearing_punch(plate_thick=self.get_plate_thick(back=back),bearing=bearing, bearing_on_top=bearing_on_top, with_support=bridging)
+                                      .translate((pos[0], pos[1], 0)))
         return plate
 
     def cut_wall_fixing_hole(self, plate, screwhole_pos, screw_head_d = 9, screw_body_d = 6, slot_length = 7, back_thick = -1, add_extra_support=False, plate_thick=-1):
@@ -5071,8 +5084,12 @@ class RoundClockPlates(SimpleClockPlates):
         top_y = self.hands_position[1] + self.radius
         #HACK TODO tidy up screwhole cutting and calculate size in the same place (use newish WoodScrew?)
         screwhole_length =  self.wall_fixing_screw_head_d/2 + 7# + 6/2
-        if top_y - self.bearing_positions[-1][1] < self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 2:
-            top_y = self.bearing_positions[-1][1] + self.arbors_for_plate[-1].bearing.outer_d/2 + screwhole_length + 2
+        bearing = self.arbors_for_plate[-1].get_bearing(front=False)
+        if bearing is None:
+            #mega bodge that I need to fix up - this is a fixed rod so there is no bearing
+            bearing = get_bearing_info(3)
+        if top_y - self.bearing_positions[-1][1] < bearing.outer_d/2 + screwhole_length + 2:
+            top_y = self.bearing_positions[-1][1] + bearing.outer_d/2 + screwhole_length + 2
 
         distance_to_anchor = get_distance_between_two_points(self.bearing_positions[-1][:2], self.hands_position)
         if distance_to_anchor > self.radius and not self.power_at_bottom:
@@ -5631,6 +5648,7 @@ class RectangularWallClockPlates(RoundClockPlates):
         return standoff
 
     def get_fixing_screws_cutter(self):
+        #TODO
         return cq.Workplane("XY").rect(10, 10).extrude(10)
 
 class RollingBallClockPlates(SimpleClockPlates):

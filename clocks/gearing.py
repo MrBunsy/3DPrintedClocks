@@ -2210,14 +2210,18 @@ class ArborForPlate:
 
 
                 wall_bearing = self.back_bearing
-
+                if wall_bearing is not None:
+                    standoff_r = wall_bearing.inner_safe_d / 2
+                else:
+                    #this is a fixed rod arbor. TODO decide if we're still doing standoffs?
+                    standoff_r = self.cylinder_r*0.99
                 # circular bit
                 anchor = anchor.union(cq.Workplane("XY").circle(self.cylinder_r).extrude(cylinder_length + anchor_thick))
                 # square bit
                 anchor = anchor.union(cq.Workplane("XY").rect(self.square_side_length, self.square_side_length).extrude(square_rod_length).intersect(cq.Workplane("XY").circle(self.cylinder_r).extrude(square_rod_length)).translate(
                     (0, 0, anchor_thick + cylinder_length)))
                 # bearing standoff
-                anchor = anchor.union(cq.Workplane("XY").circle(wall_bearing.inner_safe_d / 2).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
+                anchor = anchor.union(cq.Workplane("XY").circle(standoff_r).extrude(rear_bearing_standoff_height).translate((0, 0, anchor_thick + cylinder_length + square_rod_length)))
                 # cut hole through the middle
                 # anchor = anchor.cut(cq.Workplane("XY").0circle(self.arbor.arbor_d / 2 + ARBOUR_WIGGLE_ROOM/2).extrude(anchor_thick + cylinder_length + square_rod_length + rear_bearing_standoff_height))
                 anchor = anchor.cut(self.threaded_rod_cutter)
@@ -2881,6 +2885,7 @@ class FixedRodArborForPlate(ArborForPlate):
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.back_bearing = self.front_bearing = None
 
         length = (self.distance_from_front if self.arbor.pinion_at_front else self.distance_from_back) + self.arbor.get_total_thickness()
 
@@ -2890,6 +2895,8 @@ class FixedRodArborForPlate(ArborForPlate):
         centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
 
         self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
+
+        self.fixed_arbor_screw = MachineScrew(self.arbor_d, countersunk=True)
 
 
     def need_separate_arbor_extension(self, front=True):
