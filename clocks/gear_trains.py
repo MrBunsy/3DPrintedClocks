@@ -1916,7 +1916,7 @@ class GearLayout2D:
         return GearLayout2D(going_train, centred_arbors, all_offset_same_side=all_offset_same_side, **kwargs)
 
     @staticmethod
-    def get_compact_layout(going_train, start_on_right=True, can_ignore_pinions=True, **kwargs):
+    def get_compact_layout(going_train, start_on_right=True, can_ignore_pinions=None, **kwargs):
         '''
         Roughly the old GearTrainLayout.COMPACT
         '''
@@ -1930,13 +1930,13 @@ class GearLayout2D:
             centred_arbors.append(pendulum_index - 2)
 
         centred_arbors.append(pendulum_index)
-
-        can_ignore_pinions = []
-        if can_ignore_pinions:
-            #assume we can ignore them if the previous pinion has been extended
-            for i, arbor in enumerate(going_train.get_all_arbors()[:-1]):
-                if arbor.pinion_extension > 0:
-                    can_ignore_pinions.append(i+1)
+        if can_ignore_pinions is None:
+            can_ignore_pinions = []
+            if can_ignore_pinions:
+                #assume we can ignore them if the previous pinion has been extended
+                for i, arbor in enumerate(going_train.get_all_arbors()[:-1]):
+                    if arbor.pinion_extension > 0:
+                        can_ignore_pinions.append(i+1)
 
         return GearLayout2D(going_train, centred_arbors, can_ignore_pinions=can_ignore_pinions, start_on_right=start_on_right, **kwargs)
 
@@ -2184,9 +2184,7 @@ class GearLayout2D:
                     else:
                         # choosing mirror of escape wheel for penultimate arbor
                         positions_relative[penultimate_wheel_index] = (-positions_relative[last_wheel_index][0], positions_relative[last_wheel_index][1])
-                        positions_relative[first_wheel_index] = get_point_two_circles_intersect(positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
-                                                                                                positions_relative[penultimate_wheel_index], arbors[first_wheel_index].distance_to_next_arbor,
-                                                                                                in_direction=(on_side, 0))
+
                     #positions_relative[anchor_index] = (0, positions_relative[escape_wheel_index][1] + math.sqrt(escape_wheel_to_anchor ** 2 - (penultimate_wheel_to_escape_wheel / 2) ** 2))
 
                     last_wheel_to_next_centred = arbors[last_wheel_index].distance_to_next_arbor
@@ -2196,15 +2194,31 @@ class GearLayout2D:
 
                     clash_info = check_valid_position(penultimate_wheel_index, check_until=next_centred_index)
                     if not clash_info['valid']:
-                        #penultimate wheel crashes into the next centred
-                        penultimate_wheel_to_next_centred = get_pinion_r(next_centred_index) + self.gear_gap + arbors[penultimate_wheel_index].get_max_radius()
-                        penultimate_wheel_x = positions_relative[penultimate_wheel_index][0]
-                        penultimate_wheel_y = positions_relative[penultimate_wheel_index][1]
-                        positions_relative[next_centred_index] = (0, penultimate_wheel_y + math.sqrt(penultimate_wheel_to_next_centred ** 2 - penultimate_wheel_x ** 2))
+                        if clash_info['clash_index'] == next_centred_index:
+                            #penultimate wheel crashes into the next centred
+                            penultimate_wheel_to_next_centred = get_pinion_r(next_centred_index) + self.gear_gap + arbors[penultimate_wheel_index].get_max_radius()
+                            penultimate_wheel_x = positions_relative[penultimate_wheel_index][0]
+                            penultimate_wheel_y = positions_relative[penultimate_wheel_index][1]
+                            positions_relative[next_centred_index] = (0, penultimate_wheel_y + math.sqrt(penultimate_wheel_to_next_centred ** 2 - penultimate_wheel_x ** 2))
 
-                        positions_relative[last_wheel_index] = get_point_two_circles_intersect(positions_relative[penultimate_wheel_index], arbors[penultimate_wheel_index].distance_to_next_arbor,
+                            positions_relative[last_wheel_index] = get_point_two_circles_intersect(positions_relative[penultimate_wheel_index], arbors[penultimate_wheel_index].distance_to_next_arbor,
                                                                                                       positions_relative[next_centred_index], arbors[last_wheel_index].distance_to_next_arbor, in_direction=(-on_side, 0))
-
+                        elif clash_info['clash_index'] == arbor_index:
+                            #penultimate wheel clashes into the previous centred wheel (probably the centre wheel)
+                            #raise them both up and then figure out where to put the first wheel again
+                            #TODO the escape wheel could just rotate further around the centre wheel for maximum space efficiency?
+                            #but that may well result in something clashing with the anchor, so don't do that for now
+                            penultimate_wheel_to_last_centred = get_pinion_r(penultimate_wheel_index) + self.gear_gap + arbors[arbor_index].get_max_radius()
+                            #that's the hypotenuse
+                            x = horizontal_distance/2
+                            y = math.sqrt(penultimate_wheel_to_last_centred**2 - x**2) + positions_relative[arbor_index][1]
+                            positions_relative[penultimate_wheel_index] = (on_side * x, y)
+                            positions_relative[last_wheel_index] = (-on_side * x, y)
+                    if non_vertical_arbors_next == 3:
+                        positions_relative[first_wheel_index] = get_point_two_circles_intersect(
+                            positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,
+                            positions_relative[penultimate_wheel_index], arbors[first_wheel_index].distance_to_next_arbor,
+                            in_direction=(on_side, 0))
 
                 else:
                     raise NotImplementedError(f"TODO support {non_vertical_arbors_next} non_vertical_arbors_next in GearLayout2D")

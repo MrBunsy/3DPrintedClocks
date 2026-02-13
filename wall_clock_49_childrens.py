@@ -68,6 +68,17 @@ Plan: make a clock a 6 year old could assemble.
     ||
     || - 3d printed flat plastic
     |.| - machine screw that  will face out backwareds, so it can go into a slot in the pendulum holder
+    
+    
+    
+remaining TODOs:
+
+ - round base to the clock plates so we can have holes for the chain to go through to prevent chain escaping
+ - dial
+ - top plate needs to extend inwards so teh arbors are held in place (as the arbors are now going to be printed in one peice)
+ - fix the gear layout AGAIN so escape wheel doesn't intersect centre wheel
+ - tweaks to motion works to limit contact with rod (so it only touches at each end, like the arbors)
+ - think about if the threaded rod should stick out the end of the motion works or not
 '''
 outputSTL = False
 
@@ -203,7 +214,7 @@ dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numer
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 dial = None
 plaque = None
-gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=False)#, support_second_hand=False)
+gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=[])#, support_second_hand=False)
 
 motion_works = MotionWorksForMagnetClutch(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
 motion_works.calculate_size(arbor_distance=45)
