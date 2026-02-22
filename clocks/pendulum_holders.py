@@ -235,6 +235,14 @@ class FrictionFitPendulumBits(PendulumHolder):
 
         return pendulum
 
+    def get_assembled(self):
+        '''
+        Just the pendulum holder, not crutch
+        '''
+        return self.get_pendulum_holder(for_printing=False)
+
+    def needs_square_arbor_section(self):
+        return False
 
 class ColletFixingPendulumWithBeatSetting(PendulumHolder):
     '''

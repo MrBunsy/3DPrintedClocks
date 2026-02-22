@@ -2704,7 +2704,7 @@ class SimpleClockPlates(BasePlates):
 
             needs_plain_hole = False
             # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:
-            if not self.pendulum_fixing.square_arbor_only_inside_plates():
+            if not (self.pendulum_fixing.needs_square_arbor_section() and self.pendulum_fixing.square_arbor_only_inside_plates()):
                 #if true we just need a hole for the direct arbour to fit through
 
                 if self.escapement_on_front and not back:
