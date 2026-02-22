@@ -78,7 +78,8 @@ remaining TODOs:
  - top plate needs to extend inwards so teh arbors are held in place (as the arbors are now going to be printed in one peice)
  - fix the gear layout AGAIN so escape wheel doesn't intersect centre wheel
  - tweaks to motion works to limit contact with rod (so it only touches at each end, like the arbors)
- - think about if the threaded rod should stick out the end of the motion works or not
+  - BETTER IDEA: why not scrap the rod inside the motion works entirely - use flat magnets and have a cylinder from the end of the centre arbor that extends inside the cannon pinion
+ - think about if the threaded rod should stick out the end of the motion works or not - abandon
 '''
 outputSTL = False
 
@@ -208,11 +209,11 @@ pendulum_fixing = KnifeEdgePendulumBits(full_circle=False, wedge_perch_depth=bac
 
 # dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
-dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
-                        outer_edge_style=DialStyle.CONCENTRIC_CIRCLES,
-                  seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
+dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8,
+            font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None,
+            dial_width=30, pillar_style=pillar_style)
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
-dial = None
+# dial = None
 plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=[])#, support_second_hand=False)
 
@@ -247,7 +248,7 @@ plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=di
 #                     length=dial.get_hand_length()+dial_width/4, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 
 hands = Hands(style=HandStyle.SIMPLE_ROUND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=200, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
+                    length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 #dial.get_hand_length()+dial_width/4
 
 

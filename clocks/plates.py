@@ -5494,6 +5494,30 @@ class RectangularWallClockPlates(RoundClockPlates):
         kwargs["leg_height"]=0
         super().__init__(*args, **kwargs)#bottom_pillars=2, top_pillars=2, pendulum_at_front=False,
 
+        if self.dial is not None:
+            #TODO more general purpose support for different relative sizes of plates and dial and different pillar locations.
+            #this works for now
+
+            #not evenly space so we don't clash with pillars
+            angles = [math.pi/2 + math.pi/8, math.pi/2 - math.pi/8, math.pi*1.5 + math.pi/8, math.pi*1.5 - math.pi/8]
+            if self.gear_train_layout == GearTrainLayout.COMPACT and not self.escapement_on_front and self.no_upper_wheel_in_centre:
+                #line up dial supports with the little arms
+                for i in range(2):
+                    bearing_relative_pos = np_to_set(np.subtract(self.bearing_positions[-3 + i][:2], self.hands_position))
+                    bearing_angle = math.atan2(bearing_relative_pos[1], bearing_relative_pos[0])
+                    angles[i] = bearing_angle
+
+            dial_fixings_relative_to_dial = [polar(angle, self.radius) for angle in angles]
+
+            self.dial_fixing_positions = [np_to_set(np.add(pos, self.hands_position)) for pos in dial_fixings_relative_to_dial]
+
+            # array of arrays because we only want one screw per pillar here
+            #invert x because dial is constructed upside down
+            self.dial.override_fixing_positions([[(-pos[0], pos[1])] for pos in dial_fixings_relative_to_dial])
+            self.dial.support_d = 15
+            if self.style == PlateStyle.RAISED_EDGING:
+                self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
+
     def get_plate_shape(self):
         return PlateShape.RECTANGLE_WALL
 

@@ -3010,20 +3010,19 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
         self.magnet = RING_MAGNET_10x4x2MM
 
     def get_arbor_extension(self, front=True):
-        '''
-        Get little cylinders we can use as spacers to keep the gears in the right place on the rod
-
-        Simple logic here, it may produce some which aren't needed
-        '''
 
         #length from top of pinion to outside the front plate where we meet the cannon pinion
         length = self.full_length - self.arbor.get_total_thickness()
 
-        outer_r = (self.front_bearing.inner_d - 0.4)/2
+        inside_length = self.distance_from_front
+
+        inside_plates_r = self.front_bearing.inner_safe_d/2
+
+        outside_plates_r = (self.front_bearing.inner_d - 0.4)/2
         #TODO if more than the pinion max radius, need a cone shape to be printable
         # outer_r = self.arbor.pinion.get_max_radius()
 
-        extendo_arbor = cq.Workplane("XY").circle(outer_r).extrude(length)
+        extendo_arbor = cq.Workplane("XY").circle(inside_plates_r).extrude(inside_length).faces(">Z").workplane().circle(outside_plates_r).extrude(length - inside_length)
 
         top_gap = 0.4
         ring_magnet_cutter = (cq.Workplane("XY").circle(self.magnet.outer_d/2 + self.magnet.wiggle_room).extrude(self.magnet.thick + top_gap)
