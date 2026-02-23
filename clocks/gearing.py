@@ -584,7 +584,7 @@ class Gear:
             print("petal inner radius: ", petal_inner_radius)
             petal_inner_radius = 6
 
-        min_arm_width=1.8
+        min_arm_width=2.4#1.8
 
         if petal_inner_radius < 0:
             return gear
@@ -3676,6 +3676,7 @@ class Arbor:
             gear_wheel = gear_wheel.union(extended_arbor.rotate((0,0,0),(1,0,0),180))
 
         if self.get_extra_ratchet() is not None or not self.use_ratchet and self.weight_driven:
+            #old style wibble arms ratchet - deprecated
             #need screwholes to attach the rest of the ratchet or the chain wheel (the boltPositions have alreayd been adjusted accordingly)
             # either to hold on the outer part of the ratchet or the powered wheel itself
             for hole_pos in self.bolt_positions:

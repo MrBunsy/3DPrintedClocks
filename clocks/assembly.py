@@ -21,7 +21,7 @@ class Assembly:
         self.dial= plates.dial
         self.going_train = plates.going_train
         #+1 for the anchor
-        self.arbour_count = self.going_train.powered_wheels + self.going_train.wheels + 1
+        self.arbor_count = self.going_train.powered_wheels + self.going_train.wheels + 1
         self.pendulum = pendulum
         self.motion_works = self.plates.motion_works
         self.time_mins = time_mins
@@ -628,7 +628,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
 
 
-        for i in range(self.arbour_count):
+        for i in range(self.arbor_count):
 
             rod_length = -1
 
@@ -665,16 +665,21 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
             #trying to arrange all the additions from back to front to make it easy to check
             if arbor.type == ArborType.POWERED_WHEEL:
-                powered_wheel = arbor.powered_wheel
-                if powered_wheel.type == PowerType.CORD:
-                    if powered_wheel.use_key:
-                        square_bit_out_front = powered_wheel.key_square_bit_height - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
-                elif powered_wheel.type == PowerType.SPRING_BARREL:
-                    rod_length=-1
+                if i == self.going_train.powered_wheels:
+                    # also the centre wheel
+                    rod_length = hand_arbor_length
                 else:
-                    #assume all other types of powered wheel lack a key and thus are just inside the plates
-                    rod_length = simple_arbor_length
+                    powered_wheel = arbor.powered_wheel
+                    if powered_wheel.type == PowerType.CORD:
+                        if powered_wheel.use_key:
+                            square_bit_out_front = powered_wheel.key_square_bit_height - (front_plate_thick - powered_wheel.key_bearing.height) - self.plates.endshake / 2
+                            rod_length = length_up_to_inside_front_plate + front_plate_thick + square_bit_out_front
+                    elif powered_wheel.type == PowerType.SPRING_BARREL:
+                        rod_length=-1
+                    else:
+                        #assume all other types of powered wheel lack a key and thus are just inside the plates
+                        rod_length = simple_arbor_length
+
 
 
             elif self.plates.second_hand and ((arbor.type == ArborType.ESCAPE_WHEEL and self.plates.going_train.has_seconds_hand_on_escape_wheel()) or (

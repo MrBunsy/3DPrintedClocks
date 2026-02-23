@@ -3057,7 +3057,7 @@ class PocketChainWheel2(WeightPoweredWheel):
         #no end cap on this one to stop the pawl escaping.
         self.pawl_screwed_from_front = True
         self.type = PowerType.CHAIN2
-        # if false, the powered wheel is fixed to the rod and the gear wheel is loose.
+        #loose_on_rod: if false, the powered wheel is fixed to the rod and the gear wheel is loose.
         self.arbor_d = arbor_d
 
         self.chain = chain
@@ -3107,12 +3107,22 @@ class PocketChainWheel2(WeightPoweredWheel):
 
     def get_BOM(self):
         bom = BillOfMaterials("Chain Pocket Wheel")
+        fixing_screw_length = self.get_fixing_screw_length()
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws} {fixing_screw_length:.0f}mm", quantity=len(self.fixing_positions), object=self.fixing_screws, purpose="Sprocket fixing"))
+        bom.add_item(BillOfMaterials.Item(f"M{self.fixing_screws.metric_thread} nut", quantity=len(self.fixing_positions), purpose="Insert into ratchet gear to fix to bottom of cord barrel"))
+        bom.add_printed_part(BillOfMaterials.PrintedPart("sprocket_base", self.get_bottom_half()))
+        bom.add_printed_part(BillOfMaterials.PrintedPart("sprocket_top", self.get_top_half()))
+
         model = self.get_assembled()
         bom.add_model(model)
         return bom
 
     def get_BOM_for_combining_with_arbor(self, wheel_thick=0):
-        return BillOfMaterials("Chain Pocket Wheel")
+        bom = BillOfMaterials("Chain Pocket Wheel")
+
+
+
+        return bom
 
     def get_parts_for_arbor(self, wheel_thick):
         return []
@@ -3208,9 +3218,11 @@ class PocketChainWheel2(WeightPoweredWheel):
             bottom = bottom.translate((0,0,self.ratchet.thick))
             bottom = bottom.union(self.ratchet.get_inner_wheel())
 
+            nut_hole_height = self.get_height() - self.get_fixing_screw_length() + self.fixing_screws.get_nut_height()
+
             for pos in self.fixing_positions:
                 bottom = bottom.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.get_height()).translate(pos))
-                bottom = bottom.cut(self.fixing_screws.get_nut_cutter(height=self.ratchet.thick, with_bridging=True).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
+                bottom = bottom.cut(self.fixing_screws.get_nut_cutter(height=nut_hole_height, with_bridging=True).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
             bottom = bottom.faces(">Z").workplane().circle(self.hole_d / 2).cutThruAll()
 
         return bottom
@@ -3325,6 +3337,10 @@ class PocketChainWheel2(WeightPoweredWheel):
             return
         minScrewLength = self.ratchet.thick + self.wheel_thick*0.75 + self.fixing_screws.get_nut_height()
         print("Chain wheel screws: {} max length {}mm min length {}mm".format(self.fixing_screws.get_string(), self.get_height(), minScrewLength))
+
+    def get_fixing_screw_length(self):
+        max_length = self.ratchet.thick + self.wheel_thick
+        return self.fixing_screws.get_nearest_length(max_length, allow_longer=False)
 
     def get_rod_radius(self):
         '''

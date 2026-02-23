@@ -45,7 +45,8 @@ lift =3
 lock=1.5
 escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
 
-power = PocketChainWheel2(ratchet_thick=4, chain=REGULA_30_HOUR_CHAIN, max_diameter=22, ratchet_diameter=28, wall_thick=(13.2-11.82)-0.07)
+power = PocketChainWheel2(ratchet_thick=4, chain=REGULA_30_HOUR_CHAIN, max_diameter=22, ratchet_diameter=28, wall_thick=(13.2-11.82)-0.07, loose_on_rod=True)
+
 
 print("chain wheel thick", power.get_height())
 
@@ -114,6 +115,9 @@ dial = Dial(120)
 
 plates = SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Granny", gear_train_layout=GearTrainLayout.VERTICAL)
 
+#old Plate distance 31.07
+#Plate distance 31.069999999999997
+print("plate distance", plates.plate_distance)
 
 hands = Hands(style=HandStyle.SIMPLE, second_length=40, minute_fixing="square",
                     minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
@@ -136,7 +140,7 @@ weight.printInfo()
 # show_object(train.getArbourWithConventionalNaming(0).poweredWheel.get_assembled())
 
 # show_object(assembly.getClock())
-assembly.show_clock(show_object, motion_works_colours=[Colour.LIGHTBLUE])
+assembly.show_clock(show_object, motion_works_colours=[Colour.LIGHTBLUE], with_rods=True)
 
 if outputSTL:
     # train.output_STLs(clockName, clockOutDir)

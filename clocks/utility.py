@@ -368,6 +368,9 @@ class MachineScrew:
             self.type = MachineScrewType.GRUB
 
 
+    def get_nearest_length(self, length, allow_longer=False, prefer_longer=False):
+        return get_nearest_machine_screw_length(length, self, allow_longer=allow_longer, prefer_longer=prefer_longer)
+
     def get_nut_for_die_cutting(self):
         '''
         Not sure I ever really need this, just curious
