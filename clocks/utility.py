@@ -356,7 +356,7 @@ class MachineScrew:
         self.length = length
         self.type = type
         #backwards compatibility:
-        if countersunk is None and type is None:
+        if (countersunk is None or countersunk == False) and type is None:
             #original default
             self.countersunk = False
             self.type = MachineScrewType.PAN_HEAD

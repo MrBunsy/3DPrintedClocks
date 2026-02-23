@@ -60,6 +60,10 @@ class PendulumHolder:
         '''
         raise NotImplementedError()
 
+
+    def arbor_entirely_within_plates(self):
+        raise NotImplementedError()
+
     def get_pendulum_holder(self, for_printing=True):
         raise NotImplementedError()
 
@@ -110,6 +114,8 @@ class PendulumHolderWithCrutch(PendulumHolder):
             self.beat_setter_length = crutch_length*0.4
             self.crutch_length = self.crutch_length - self.beat_setter_length
 
+    def arbor_entirely_within_plates(self):
+        return True
 
     def get_crutch(self, for_printing=True):
         '''
@@ -243,6 +249,36 @@ class FrictionFitPendulumBits(PendulumHolder):
 
     def needs_square_arbor_section(self):
         return False
+
+    # def square_arbor_only_inside_plates(self):
+    #     '''
+    #     bodge - this one doesn't ahve a square arbor at all, but I need to fix all the logic which assumes it always does
+    #     '''
+    #     return True
+
+    def arbor_entirely_within_plates(self):
+        return True
+
+    def get_top_of_pendulum_holder_hole_y(self):
+        #TODO
+        return 0
+
+    def get_printed_parts(self):
+        return [
+            BillOfMaterials.PrintedPart("holder", self.get_pendulum_holder(), purpose="Holds pendulum"),
+        ]
+
+    def get_BOM(self):
+
+        bom = BillOfMaterials("Pendulum Holder", "instructions TODO")
+
+        #assuming m3 TODO
+        bom.add_item(BillOfMaterials.Item(f"M3 nut", purpose="Add extra friction"))
+        bom.add_item(BillOfMaterials.Item(f"M3 nyloc nut", purpose="Add extra friction"))
+
+        bom.add_printed_parts(self.get_printed_parts())
+
+        return bom
 
 class ColletFixingPendulumWithBeatSetting(PendulumHolder):
     '''
@@ -494,6 +530,9 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
 
     def needs_square_arbor_section(self):
         return True
+
+    def arbor_entirely_within_plates(self):
+        return False
 
     def square_arbor_only_inside_plates(self):
         #needs to go out the back for the pendulum

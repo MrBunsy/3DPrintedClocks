@@ -732,7 +732,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                     rod_length = simple_arbor_length
             elif arbor.type == ArborType.ANCHOR:
                 #bearing in the back cock?
-                if self.plates.pendulum_fixing.square_arbor_only_inside_plates():
+                if self.plates.pendulum_fixing.arbor_entirely_within_plates():
                     #anchor arbor within plates,
                     rod_length = simple_arbor_length
                 else:
@@ -750,7 +750,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 elif self.plates.escapement_on_back:
                     #just between back cock and back plate
                     rod_length = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + bearing_thick + spare_rod_length_rear
-                elif not self.plates.pendulum_fixing.square_arbor_only_inside_plates() and self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
+                elif not self.plates.pendulum_fixing.arbor_entirely_within_plates() and self.plates.back_plate_from_wall > 0 and not self.plates.pendulum_at_front:
                     #normal fixed arbor anchor - arbor extends out to back cock
                     rod_length_to_back_of_front_plate = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + self.plates.get_plate_thick(back=True) + plate_distance
 
@@ -759,7 +759,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                         rod_length = rod_length_to_back_of_front_plate + front_plate_thick + self.plates.endshake + 1 + self.dial.get_wire_to_arbor_fixer_thick() + 5
                     else:
                         rod_length = rod_length_to_back_of_front_plate + bearing_thick + spare_rod_length_rear
-                elif self.plates.pendulum_fixing.square_arbor_only_inside_plates():
+                elif self.plates.pendulum_fixing.arbor_entirely_within_plates():
                     '''
                     basically same as normal arbor, so fall through with the defaults
                     '''
@@ -941,8 +941,9 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                     #centre between the hands and the winding key
                     ringY = (self.plates.bearing_positions[self.going_train.powered_wheels][1] + self.plates.bearing_positions[0][1]) / 2
 
-
-                handAvoiderExtraZ = (self.pendulum.pendulumTopThick - self.pendulum.hand_avoider_thick) / 2
+                #if self.plates.pendulum_fixing.
+                #note, assumes pendulum_fixing is FrictionFitPendulumBits
+                handAvoiderExtraZ = (self.plates.pendulum_fixing.pendulumTopThick - self.pendulum.hand_avoider_thick) / 2
                 #ring is over the minute wheel/hands
                 clock = clock.add(ring.translate((self.plates.bearing_positions[self.going_train.powered_wheels][0], ringY, self.plates.get_plate_thick(back=True) + self.plates.get_plate_thick(back=False) + self.plates.plate_distance + self.plates.pendulum_sticks_out + handAvoiderExtraZ)))
             else:

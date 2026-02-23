@@ -1906,7 +1906,7 @@ class SimpleClockPlates(BasePlates):
             standoff = self.cut_wall_fixing_hole(standoff, screwHolePos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=addExtraSupport, plate_thick=back_thick)#, backThick=screwhole_back_thick)
 
             # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and top:
-            if not self.pendulum_fixing.square_arbor_only_inside_plates():
+            if not self.pendulum_fixing.arbor_entirely_within_plates():
                 # extend a back plate out to the bearing holder and wall fixing
                 #note assumes one top pillar, might not work with two
                 bearingHolder = cq.Workplane("XY").tag("base").moveTo((screwHolePos[0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2). \
@@ -2704,7 +2704,7 @@ class SimpleClockPlates(BasePlates):
 
             needs_plain_hole = False
             # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:
-            if not (self.pendulum_fixing.needs_square_arbor_section() and self.pendulum_fixing.square_arbor_only_inside_plates()):
+            if not self.pendulum_fixing.arbor_entirely_within_plates():
                 #if true we just need a hole for the direct arbour to fit through
 
                 if self.escapement_on_front and not back:

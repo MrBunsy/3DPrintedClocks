@@ -387,6 +387,8 @@ class GoingTrain(GearTrainBase):
         self.huygens_maintaining_power = huygens_maintaining_power
         self.arbors = []
 
+        #sets of ratios from the centre wheel to the great wheel (powered wheel, or previous chain wheel, in this codebase)
+        self.chain_wheel_ratios = []
 
         # note - this has become assumed in many places and will require work to the plates and layout of gears to undo
         self.chain_at_back = chain_at_back
