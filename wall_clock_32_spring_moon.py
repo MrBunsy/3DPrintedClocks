@@ -44,7 +44,8 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "wall_clock_32.2_postrefactor"
+#for .3, use "fewer_arms" to make wheels more visible
+clock_name= "wall_clock_32.3"
 clock_out_dir= "out"
 gearStyle=GearStyle.CIRCLES
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -178,20 +179,20 @@ moon_complication.set_motion_works_sizes(motion_works)
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
-plaque = Plaque(text_lines=["W32#2 {:.1f}cm L.Wallin 2025".format(train.pendulum_length_m * 100), "Happy Birthday Mum"])
+plaque = Plaque(text_lines=["W32#2 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
 
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.DOTS, dial_width=dial_width, pillar_style=PillarStyle.BARLEY_TWIST)
-plates = RoundClockPlates(train, motion_works, name="Wall Clock 32#2", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
+plates = RoundClockPlates(train, motion_works, name="Wall Clock 32#3", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
                                 motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=PillarStyle.BARLEY_TWIST,
-                                moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True)
+                                moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True)
 
 
 hands = Hands(style=HandStyle.MOON, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
 
-assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 32#2 (Moon) refactor")
+assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name="Wall Clock 32#3 (Moon)")
 
 assembly.get_arbor_rod_lengths()
 plates.get_rod_lengths()

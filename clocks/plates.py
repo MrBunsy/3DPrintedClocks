@@ -1664,7 +1664,7 @@ class SimpleClockPlates(BasePlates):
         #for screw to hold motion arbor
         holder = holder.cut(self.motion_works_screws.get_cutter().translate(self.hands_position).translate(self.motion_works_relative_pos))
 
-        outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].bearing.outer_d - self.motion_works.cannon_pinion_to_hour_holder_gap_size
+        outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].get_bearing(front=True).outer_d - self.motion_works.cannon_pinion_to_hour_holder_gap_size
         inner_diameter = outer_diameter - 2
 
         holder = holder.faces(">Z").workplane().moveTo(self.hands_position[0], self.hands_position[1]).circle(inner_diameter/2).cutThruAll()
@@ -3575,7 +3575,7 @@ class MantelClockPlates(SimpleClockPlates):
                 #mirror because the dial is printed upside down
                 bearing_relative_to_dial = (-bearing_relative_to_dial[0], bearing_relative_to_dial[1])
                 self.dial.subtract_from_supports = self.dial.subtract_from_supports.add(cq.Workplane("XY").moveTo(bearing_relative_to_dial[0], bearing_relative_to_dial[1])\
-                    .circle(arbor.bearing.outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall)))
+                    .circle(arbor.get_bearing(front=True).outer_safe_d / 2).extrude(tall).translate((0, 0, self.dial.thick + self.dial.support_length - tall)))
 
             if self.centred_second_hand or True:
                 #I'm not sure why this was only for centred second hand, it makes a lot of sense for all mantel dials?
@@ -3909,7 +3909,7 @@ class MantelClockPlates(SimpleClockPlates):
 
         for i, pos in enumerate(self.bearing_positions):
 
-            bearing_info = self.arbors_for_plate[i].bearing
+            bearing_info = self.arbors_for_plate[i].get_bearing(front=not back)
 
             if not (i == len(self.bearing_positions)-1 and back):
                 #only if not the back plate and the hole for the anchor arbor
@@ -5145,7 +5145,7 @@ class RoundClockPlates(SimpleClockPlates):
         holder = get_stroke_arc(self.anchor_holder_fixing_points[0], self.anchor_holder_fixing_points[1], anchor_distance, holder_wide, holder_thick)
         if not self.front_anchor_holder_part_of_dial:
             #line to the bearing
-            bearing_holder_wide = self.arbors_for_plate[-1].bearing.outer_d + 4
+            bearing_holder_wide = self.arbors_for_plate[-1].get_bearing(front=True).outer_d + 4
             holder = holder.union(get_stroke_line([self.bearing_positions[-1][:2], (0, self.radius + self.hands_position[1])], wide = bearing_holder_wide,
                                                   thick=holder_thick, style=StrokeStyle.SQUARE))
             holder = holder.union(cq.Workplane("XY").moveTo(self.bearing_positions[-1][0], self.bearing_positions[-1][1]).circle(bearing_holder_wide/2).extrude(holder_thick))

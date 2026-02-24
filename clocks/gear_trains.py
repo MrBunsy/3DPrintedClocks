@@ -304,7 +304,7 @@ class GearTrainBase:
                 "pinion_at_front": self.pinions_face_forwards[i],
                 #i-1 because we now put pinino type (eg lantern) with the arbor of the pinion, not the wheel which meshes with that pinion. This is consistent with pinion_thick
                 "pinion_type": PinionType.LANTERN if i-1 in self.lanterns else PinionType.PLASTIC,
-                "wheel_outside_plates": self.wheel_outside_plates[i],
+                "arbor_split": self.wheel_outside_plates[i],
                 "pinion_extension": self.pinion_extensions[i],
                 "style": self.styles[i]
             })
