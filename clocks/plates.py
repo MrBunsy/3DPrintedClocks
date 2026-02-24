@@ -3305,7 +3305,7 @@ class SimpleClockPlates(BasePlates):
         '''
         if self.split_detailed_plate divide the front plate into two parts to be printed seperately to avoid needing bridging
         '''
-        tallest_bearing = max([arbor.bearing.height for arbor in self.arbors_for_plate])
+        tallest_bearing = max([arbor.get_bearing(front=True).height for arbor in self.arbors_for_plate])
 
         plate_thick = self.get_plate_thick(back=False)
 
@@ -4569,7 +4569,7 @@ class RoundClockPlates(SimpleClockPlates):
         self.top_pillar_r = self.pillar_r
         self.bottom_pillar_r = self.pillar_r
         #limiting max size because i think it was excessive for spring clocks and looks much better thinner. Shame I've already made three clock 32s.
-        self.bottom_arm_wide = min(self.arbors_for_plate[0].bearing.outer_d + self.bearing_wall_thick * 2, 20)
+        self.bottom_arm_wide = min(self.arbors_for_plate[0].get_bearing(front=True).outer_d + self.bearing_wall_thick * 2, 20)
 
         if self.centred_second_hand:
             #assume between first two wheels is further point
@@ -4872,7 +4872,7 @@ class RoundClockPlates(SimpleClockPlates):
             if i > self.going_train.powered_wheels:
                 line_wide = small_arm_wide
 
-            bearing_distance = get_distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].bearing.outer_d / 2
+            bearing_distance = get_distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].get_bearing(front=not back).outer_d / 2
             if self.radius - self.pillar_r < bearing_distance < self.radius + self.pillar_r:
                 #this bearing will be in the outer circle
                 continue
@@ -4892,7 +4892,7 @@ class RoundClockPlates(SimpleClockPlates):
                 #extends out of the circle
                 end = bearing_pos[:2]
 
-            bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].bearing.outer_d
+            bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].get_bearing(front=not back).outer_d
             bearing_from_radius = abs(get_distance_between_two_points(bearing_pos[:2], centre) - self.radius)
             if i == len(self.bearing_positions) - 1:
                 if back and not self.escapement_on_back:
