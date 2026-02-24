@@ -1910,8 +1910,8 @@ class SimpleClockPlates(BasePlates):
                 # extend a back plate out to the bearing holder and wall fixing
                 #note assumes one top pillar, might not work with two
                 bearingHolder = cq.Workplane("XY").tag("base").moveTo((screwHolePos[0] + self.bearing_positions[-1][0]) / 2, (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2). \
-                    rect(self.top_pillar_r * 2, self.top_pillar_positions[0][1] - self.bearing_positions[-1][1]).extrude(self.rear_standoff_bearing_holder_thick)
-                bearingHolder = bearingHolder.workplaneFromTagged("base").moveTo(self.bearing_positions[-1][0], self.bearing_positions[-1][1]).circle(screwHoleSupportR).extrude(self.rear_standoff_bearing_holder_thick)
+                    rect(self.top_pillar_r * 2, self.top_pillar_positions[0][1] - self.bearing_positions[-1][1]).extrude(self.get_plate_thick(standoff=True))
+                bearingHolder = bearingHolder.workplaneFromTagged("base").moveTo(self.bearing_positions[-1][0], self.bearing_positions[-1][1]).circle(screwHoleSupportR).extrude(self.get_plate_thick(standoff=True))
                 bearingHolder = self.cut_anchor_bearing_in_standoff(bearingHolder)
 
                 z = 0
