@@ -1946,9 +1946,12 @@ class ArborForPlate:
         self.arbor_bearing_standoff_length = LAYER_THICK * 2
         self.lantern_pinion_wheel_holder_thick = 2
 
-        if self.type == ArborType.POWERED_WHEEL and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
+        if self.type == ArborType.POWERED_WHEEL:# and self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
             # self.bearing = self.arbor.powered_wheel.key_bearing
-            self.front_bearing = self.arbor.powered_wheel.key_bearing
+            try:
+                self.front_bearing = self.arbor.powered_wheel.key_bearing
+            except:
+                print("no key bearing")
 
         #for powered wheels with keys, the plates calculates this
         self.key_length = 0
