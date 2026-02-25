@@ -4394,9 +4394,12 @@ It's important that the motion works can rotate freely after the friction clip h
 
 class MotionWorksForMagnetClutch(MotionWorks):
 
-    def __init__(self, *args, magnet=None, **kwargs):
+    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, **kwargs):
         super().__init__(*args, **kwargs)
         self.magnet = magnet
+        self.clutch_hole_d = clutch_hole_d
+        self.clutch_hole_deep = clutch_hole_deep
+        self.magnet_wall_thick = LAYER_THICK*2
         if self.magnet is None:
             self.magnet = DiscMagnet(6, 4)
 
@@ -4405,10 +4408,12 @@ class MotionWorksForMagnetClutch(MotionWorks):
 
     def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
         pinion = super().get_cannon_pinion(hand_holder_radius_adjustment)
-
+        clutch_hole = cq.Workplane("XY").circle(self.clutch_hole_d/2).extrude(self.clutch_hole_deep)
+        pinion = pinion.cut(clutch_hole)
         #copy-pasted from ArborForPlate, haven't decided if it's worth abstracting out into the ring magnet class itself
         top_gap = 0.4
-        ring_magnet_cutter = cq.Workplane("XY").circle(self.magnet.outer_d / 2 + self.magnet.wiggle_room).extrude(self.magnet.thick + top_gap)
+        ring_magnet_cutter = (cq.Workplane("XY").circle(self.magnet.outer_d / 2 + self.magnet.wiggle_room).extrude(self.magnet.thick + top_gap).
+                              translate((0,0,self.clutch_hole_deep + self.magnet_wall_thick)))
             #                   .union(
             # get_hole_with_hole(self.arbor_d / 2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate(
             #     (0, 0, self.magnet.thick + top_gap))))
