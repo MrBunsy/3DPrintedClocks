@@ -14,7 +14,7 @@ pendulum = Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3, anch
 
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = ClockPlates(train, motionWorks, pendulum, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
+plates = ClockPlates(train, motionWorks, plateThick=8, pendulumSticksOut=pendulumSticksOut, name="Wall 05", style="round")
 
 # plate = plates.getPlate(True)
 # #

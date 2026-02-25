@@ -731,7 +731,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
             elif arbor.type == ArborType.ESCAPE_WHEEL:
                 if self.plates.escapement_on_front:
-                    rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.bearing.inner_d)) + 1
+                    rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.get_bearing(front=True).inner_d)) + 1
                 else:
                     #"normal" arbour
                     rod_length = simple_arbor_length
@@ -743,15 +743,15 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 else:
                     rod_z = -self.plates.back_plate_from_wall + (self.plates.get_plate_thick(standoff=True) - bearing_thick - spare_rod_length_rear)
                 if self.plates.escapement_on_front:
-                    holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].bearing)
+                    holder_thick = self.plates.get_lone_anchor_bearing_holder_thick(self.plates.arbors_for_plate[-1].get_bearing(front=True))
                     out_front = self.plates.get_front_anchor_bearing_holder_total_length() - holder_thick
                     out_back = self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)
                     extra = spare_rod_length_rear
                     if self.plates.dial is not None:
                         #make smaller since there's not much space on the front
                         extra = self.plates.endshake
-                    rod_length = out_back + total_plate_thick + out_front + self.plates.arbors_for_plate[-1].bearing.height*2 + extra*2
-                    rod_z = -out_back - self.plates.arbors_for_plate[-1].bearing.height - extra
+                    rod_length = out_back + total_plate_thick + out_front + self.plates.arbors_for_plate[-1].get_bearing(front=True).height*2 + extra*2
+                    rod_z = -out_back - self.plates.arbors_for_plate[-1].get_bearing(front=True).height - extra
                 elif self.plates.escapement_on_back:
                     #just between back cock and back plate
                     rod_length = spare_rod_length_rear + bearing_thick + (self.plates.back_plate_from_wall - self.plates.get_plate_thick(standoff=True)) + bearing_thick + spare_rod_length_rear

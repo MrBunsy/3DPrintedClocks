@@ -109,7 +109,7 @@ pendulum = clock.Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
 dial = clock.Dial(120)
 
 #rear plate super thick mainly just to ensure there's enough space for the weight to not bump into the wall!
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, back_plate_thick=15, pendulum_sticks_out=pendulumSticksOut,
+plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=8, back_plate_thick=15, pendulum_sticks_out=pendulumSticksOut,
                                  name="Wall 10", gear_train_layout=clock.GearTrainLayout.VERTICAL, motion_works_angle_deg=90, heavy=True, extra_heavy=True)
 
 

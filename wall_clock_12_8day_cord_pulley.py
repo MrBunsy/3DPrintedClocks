@@ -123,7 +123,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)#, ha
 
 dial = clock.Dial(120)
 
-# plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 12",style=ClockPlateStyle.VERTICAL,
+# plates = clock.SimpleClockPlates(train, motionWorks, plateThick=9, backPlateThick=11, pendulumSticksOut=pendulumSticksOut, name="Wall 12",style=ClockPlateStyle.VERTICAL,
 #                                  motionWorksAbove=False, heavy=True, extraHeavy=True, pendulumFixing=pendulumFixing, pendulumAtFront=False,
 #                                  backPlateFromWall=pendulumSticksOut*2, fixingScrews=clock.MachineScrew(metric_thread=3, countersunk=True, length=40),
 #                                  chainThroughPillar=False, dial_diameter=250, second_hand_mini_dial_d=65)#, centred_second_hand=True
@@ -137,7 +137,7 @@ use a rounded square shape for the minute hand, then the minute hand can be used
 or just stick with original plan of arm on top with rounded suqare for hand?
 '''
 dial = clock.Dial(outside_d=180, bottom_fixing=False, top_fixing=True)
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 12", gear_train_layout=clock.GearTrainLayout.VERTICAL,
+plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 12", gear_train_layout=clock.GearTrainLayout.VERTICAL,
                                  motion_works_angle_deg=0, heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True)

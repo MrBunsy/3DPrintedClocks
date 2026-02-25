@@ -83,7 +83,7 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=50, bob_d=60, bob_thick=10)
 # dial = clock.Dial(110, support_length=pendulumSticksOut + 20)
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Wall 04")#, dial=dial)
+plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Wall 04")#, dial=dial)
 
 
 hands = clock.Hands(style="simple_rounded", minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=80, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False)

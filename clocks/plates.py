@@ -1447,7 +1447,7 @@ class SimpleClockPlates(BasePlates):
 
     def get_front_anchor_bearing_holder(self, for_printing=True):
 
-        holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing)
+        holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
         if self.top_pillars > 1:
@@ -1986,7 +1986,7 @@ class SimpleClockPlates(BasePlates):
             #along the bottom of the plate between the two pillars
 
             pillar_wide_half = self.bottom_pillar_width / 2 if self.narrow_bottom_pillar else self.bottom_pillar_r
-            bearing_wide_half = self.arbors_for_plate[0].bearing.outer_d / 2
+            bearing_wide_half = self.arbors_for_plate[0].get_bearing(front=False).outer_d / 2
 
             for pillarPos in self.bottom_pillar_positions:
 
@@ -5128,7 +5128,7 @@ class RoundClockPlates(SimpleClockPlates):
         anchor_distance = get_distance_between_two_points(self.hands_position, self.bearing_positions[-1][:2])
         anchor_holder_fixing_points = self.anchor_holder_fixing_points
 
-        holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].bearing)
+        holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
         top_z = self.get_front_anchor_bearing_holder_total_length()
         if self.dial is not None and self.front_anchor_holder_part_of_dial:
@@ -5847,7 +5847,7 @@ class RollingBallClockPlates(SimpleClockPlates):
 
         for i, pos in enumerate(self.bearing_positions):
 
-            bearing_info = self.arbors_for_plate[i].bearing
+            bearing_info = self.arbors_for_plate[i].get_bearing(front=not back)
 
             if not (i == len(self.bearing_positions) - 1 and back):
                 # only if not the back plate and the hole for the anchor arbor

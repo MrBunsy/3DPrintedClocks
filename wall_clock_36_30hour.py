@@ -73,7 +73,7 @@ pendulum = Pendulum(hand_avoider_inner_d=90, bob_d=70, bob_thick=10)
 dial_diameter = 140
 dial = Dial(outside_d=dial_diameter, bottom_fixing=False, top_fixing=True)
 
-plates = SimpleClockPlates(train, motionWorks, pendulum, plate_thick=7, pendulum_sticks_out=pendulumSticksOut, name="clock 36",
+plates = SimpleClockPlates(train, motionWorks, plate_thick=7, pendulum_sticks_out=pendulumSticksOut, name="clock 36",
                            gear_train_layout=GearTrainLayout.VERTICAL, back_plate_from_wall=40, pendulum_fixing=pendulumFixing, pendulum_at_front=False, centred_second_hand=False, chain_through_pillar_required=True,
                            dial=dial, pillars_separate=True, escapement_on_front=True)
 pulley_no_pipe = LightweightPulley(diameter=plates.get_diameter_for_pulley(), use_steel_rod=False)

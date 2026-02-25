@@ -72,7 +72,7 @@ pendulum = clock.Pendulum(bob_d=70, bob_thick=10, hand_avoider_inner_d=100)
 dial = clock.Dial(120)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, back_plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="Wall 07", gear_train_layout=clock.GearTrainLayout.VERTICAL,
+plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=6, back_plate_thick=8, pendulum_sticks_out=pendulumSticksOut, name="Wall 07", gear_train_layout=clock.GearTrainLayout.VERTICAL,
                                  embed_nuts_in_plate=True, pillars_separate=True, fixing_screws=clock.MachineScrew(4))#, screws_from_back=[[True, True], [True, True]])
 
 

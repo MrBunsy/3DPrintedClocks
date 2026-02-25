@@ -4398,7 +4398,7 @@ class MotionWorksForMagnetClutch(MotionWorks):
         super().__init__(*args, **kwargs)
         self.magnet = magnet
         if self.magnet is None:
-            self.magnet = RING_MAGNET_10x4x2MM
+            self.magnet = DiscMagnet(6, 4)
 
     def get_min_cannon_pinion_r(self):
         return self.magnet.outer_d/2
@@ -4408,11 +4408,10 @@ class MotionWorksForMagnetClutch(MotionWorks):
 
         #copy-pasted from ArborForPlate, haven't decided if it's worth abstracting out into the ring magnet class itself
         top_gap = 0.4
-        ring_magnet_cutter = (cq.Workplane("XY").circle(self.magnet.outer_d / 2 + self.magnet.wiggle_room).extrude(
-            self.magnet.thick + top_gap)
-                              .union(
-            get_hole_with_hole(self.arbor_d / 2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate(
-                (0, 0, self.magnet.thick + top_gap))))
+        ring_magnet_cutter = cq.Workplane("XY").circle(self.magnet.outer_d / 2 + self.magnet.wiggle_room).extrude(self.magnet.thick + top_gap)
+            #                   .union(
+            # get_hole_with_hole(self.arbor_d / 2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate(
+            #     (0, 0, self.magnet.thick + top_gap))))
 
         pinion = pinion.cut(ring_magnet_cutter.translate((0,0,0.4)))
 

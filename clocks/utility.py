@@ -1268,6 +1268,15 @@ class RingMagnet:
 
 RING_MAGNET_10x4x2MM = RingMagnet(10, 4, 2)
 
+class DiscMagnet:
+    def __init__(self, outer_d, thick):
+        self.outer_d = outer_d
+        self.thick = thick
+        self.wiggle_room = 0.2
+
+DISC_MAGNET_6X4MM = DiscMagnet(6, 4)
+
+
 class PlainBushing:
     '''
     Fake bearing that's just a hole in the plate

@@ -75,7 +75,7 @@ motionWorks = MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=
 
 pendulum = Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
 
-plates = SimpleClockPlates(train, motionWorks, pendulum, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", gear_train_layout=GearTrainLayout.VERTICAL, pendulum_at_front=False,
+plates = SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", gear_train_layout=GearTrainLayout.VERTICAL, pendulum_at_front=False,
                                  back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, direct_arbor_d=6)
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))

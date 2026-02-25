@@ -42,7 +42,7 @@ clockOutDir="out"
 
 # train=clock.GoingTrain(pendulum_period=1.5,fourth_wheel=False,escapement_teeth=40, maxChainDrop=2100)
 #pendulum period of 1.25 actually results in larger clock than period of 1
-train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement_teeth=30, max_weight_drop=2100, chain_at_back=False, max_wheel_teeth=120, min_pinion_teeth=9)
+train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement_teeth=30, max_weight_drop=2100, chain_at_back=False)#
 
 # train.calculateRatios()
 train.set_ratios([[81, 12], [80, 9]])
@@ -71,7 +71,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 pendulum.output_STLs(clockName, clockOutDir)
 
 #printed the base in 10, seems much chunkier than needed at the current width. Adjusting to 8 for the front plate
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum, plate_thick=8, pendulum_sticks_out=pendulumSticksOut)
+plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=8, pendulum_sticks_out=pendulumSticksOut)
 plates.output_STLs(clockName, clockOutDir)
 
 hands = clock.Hands(minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=100, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False)
