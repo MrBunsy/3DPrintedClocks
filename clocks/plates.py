@@ -2730,12 +2730,43 @@ class SimpleClockPlates(BasePlates):
             if bearing is None:
                 #assuming this is a fixed rod arbor
                 screw = self.arbors_for_plate[i].fixed_arbor_screw
+
+                front_plate_arbor_end_z = self.plate_distance - pos[2] - self.arbors_for_plate[i].arbor.get_total_thickness() - self.endshake
+
+                if self.arbors_for_plate[i].arbor.pinion_at_front == back:
+                    #need to extend plate towards arbor
+                    if back:
+                        extension_height = pos[2]
+                    else:
+                        extension_height = front_plate_arbor_end_z
+                    tip_r = screw.metric_thread/2 + 0.5
+                    if not back:
+                        tip_r+=1.5
+                    base_r = screw.metric_thread + 1
+                    cone_height = base_r - tip_r
+                    if extension_height > cone_height:
+                        full_extendybob = cq.Workplane("XY").circle(base_r).extrude(extension_height - cone_height)
+
+                        full_extendybob = full_extendybob.union(cq.Solid.makeCone(radius2=tip_r, radius1=base_r, height=cone_height).translate((0,0,extension_height - cone_height)))
+
+                        # full_extendybob = full_extendybob.translate((pos[0], pos[1], self.get_plate_thick(back=back)))
+                    else:
+                        full_extendybob = cq.Solid.makeCone(radius2=tip_r, radius1=base_r * extension_height/cone_height, height=extension_height)
+                    if bearing_on_top:
+                        full_extendybob = full_extendybob.translate((0,0,self.get_plate_thick(back=back)))
+                    else:
+                        full_extendybob = full_extendybob.rotate((0,0,0),(1,0,0),180)
+                    plate = plate.union(full_extendybob.translate((pos[0], pos[1])))
+                else:
+                    #only the arbor extension will butt up against the front plate
+                    front_plate_arbor_end_z = 0
                 if back:
                     plate = plate.cut(screw.get_cutter(with_bridging=True, self_tapping=True).translate((pos[0], pos[1], 0)))
                 else:
-                    #using the countersink hole as a little guide cone
+                    #little guide cone?
                     plate = plate.cut(
-                        screw.get_cutter(with_bridging=True).translate((pos[0], pos[1], 0)))
+                        screw.get_cutter(ignore_head=True).translate((pos[0], pos[1], -self.plate_distance)))
+                    plate = plate.cut(cq.Solid.makeCone(radius2=screw.metric_thread/2, radius1=screw.metric_thread/2+1, height=2).translate((pos[0], pos[1], -front_plate_arbor_end_z)))
 
             else:
                 outer_d =  bearing.outer_d

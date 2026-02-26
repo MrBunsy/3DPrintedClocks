@@ -2997,7 +2997,10 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
             raise NotImplementedError("TODO support FixedRodMagneticClutchArborForPlate with pinion at back")
 
         self.extra_out_front = 2
-        length = self.arbor.get_total_thickness() + self.distance_from_front  + self.plates.get_plate_thick(back=False) + self.plates.endshake + self.extra_out_front
+        self.magnet = magnet
+        self.clutch_hole_d = clutch_hole_d
+        self.clutch_hole_deep = clutch_hole_deep
+        length = self.arbor.get_total_thickness() + self.distance_from_front  + self.plates.get_plate_thick(back=False) + self.plates.endshake + self.extra_out_front + self.clutch_hole_deep
 
         #larger diameter in the middle, smaller at the ends
         contact_length = 5
@@ -3010,9 +3013,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 
 
 
-        self.magnet = magnet
-        self.clutch_hole_d = clutch_hole_d
-        self.clutch_hole_deep =clutch_hole_deep
+
 
         self.front_bearing = front_bearing
         if self.front_bearing is None:
@@ -3028,20 +3029,20 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 
         inside_plates_r = self.front_bearing.inner_safe_d/2
 
-        outside_plates_r = (self.front_bearing.inner_d - 0.4)/2
+        outside_plates_r = self.clutch_hole_d/2# (self.front_bearing.inner_d - 0.4)/2
         #TODO if more than the pinion max radius, need a cone shape to be printable
         # outer_r = self.arbor.pinion.get_max_radius()
 
         extendo_arbor = cq.Workplane("XY").circle(inside_plates_r).extrude(inside_length).faces(">Z").workplane().circle(outside_plates_r).extrude(length - inside_length)
 
         top_gap = 0.4
-        ring_magnet_cutter = (cq.Workplane("XY").circle(self.magnet.outer_d/2 + self.magnet.wiggle_room).extrude(self.magnet.thick + top_gap)
-                       .union(get_hole_with_hole(self.arbor_d/2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate((0,0,self.magnet.thick + top_gap))))
-        cutter_height = self.magnet.thick + top_gap + LAYER_THICK*2
+        cutter_height = self.magnet.thick + top_gap
+        magnet_cutter = cq.Workplane("XY").circle(self.magnet.outer_d/2 + self.magnet.wiggle_room).extrude(cutter_height)
+
 
         top_layer_thick = 0.6
 
-        extendo_arbor = extendo_arbor.cut(ring_magnet_cutter.translate((0,0,length - cutter_height - top_layer_thick)))
+        extendo_arbor = extendo_arbor.cut(magnet_cutter.translate((0,0,length + self.clutch_hole_deep - cutter_height - top_layer_thick)))
 
         return extendo_arbor
 

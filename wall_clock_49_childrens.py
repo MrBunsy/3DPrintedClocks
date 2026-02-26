@@ -75,11 +75,13 @@ remaining TODOs:
 
  - round base to the clock plates so we can have holes for the chain to go through to prevent chain escaping
  - dial
- - top plate needs to extend inwards so teh arbors are held in place (as the arbors are now going to be printed in one peice)
- - fix the gear layout AGAIN so escape wheel doesn't intersect centre wheel
+ - top plate needs to extend inwards so teh arbors are held in place (as the arbors are now going to be printed in one peice) DONE
+ - fix the gear layout AGAIN so escape wheel doesn't intersect centre wheel DONE
  - tweaks to motion works to limit contact with rod (so it only touches at each end, like the arbors)
   - BETTER IDEA: why not scrap the rod inside the motion works entirely - use flat magnets and have a cylinder from the end of the centre arbor that extends inside the cannon pinion
  - think about if the threaded rod should stick out the end of the motion works or not - abandon
+ 
+ - reduce size of escape wheel slightly so it doens't clash with the rod-extension-thingie
 '''
 outputSTL = False
 
@@ -161,7 +163,7 @@ train.generate_arbors_dicts([
             "magnet":magnet,
             "clutch_hole_d" : 8 - 0.4,
             "clutch_hole_deep": 10,
-            "front_bearing": BEARING_10x15x4
+            "front_bearing": BEARING_8x16x5
         }
     },
     {
@@ -230,7 +232,7 @@ dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0
 plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=[])#, support_second_hand=False)
 
-motion_works = MotionWorksForMagnetClutch(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
+motion_works = MotionWorksForMagnetClutch(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, pinion_thick=clutch_hole_deep+1)
 motion_works.calculate_size(arbor_distance=32.5)
 
 motion_works_angle_deg = 90
@@ -266,7 +268,8 @@ hands = Hands(style=HandStyle.SIMPLE_ROUND, minute_fixing="square", minute_fixin
 
 
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=None)
-
+#bodge for now
+assembly.motion_works_z = assembly.front_of_clock_z +  plates.endshake/2 + plates.arbors_for_plate[1].extra_out_front
 if not outputSTL:
     assembly.show_clock(show_object, with_rods=True,# plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BRIGHT_ORANGE],
