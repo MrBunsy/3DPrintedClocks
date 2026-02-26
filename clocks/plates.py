@@ -1096,7 +1096,7 @@ class SimpleClockPlates(BasePlates):
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
-                                           pendulum_length=self.going_train.pendulum_length_m*1000)
+                                           pendulum_length=self.going_train.pendulum_length_m*1000, **arbor.arbor_class_for_plate_args)
             self.arbors_for_plate.append(arborForPlate)
 
     def clashes_with_wheel(self, pillar_pos, pillar_r, min_gap=-1):

@@ -129,6 +129,13 @@ rod_size=1.2
 module = WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(rod_size)
 module = 1.0#1.2
 pinion_type=PinionType.PLASTIC
+
+#bits for magnetic clutch
+magnet = DISC_MAGNET_6X4MM
+clutch_hole_d=8
+clutch_hole_deep=10
+
+
 train.generate_arbors_dicts([
     {
         #great wheel
@@ -149,7 +156,13 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodMagneticClutchArborForPlate
+        "arbor_class_for_plate" : FixedRodMagneticClutchArborForPlate,
+        "arbor_class_for_plate_args": {
+            "magnet":magnet,
+            "clutch_hole_d" : 8 - 0.4,
+            "clutch_hole_deep": 10,
+            "front_bearing": BEARING_10x15x4
+        }
     },
     {
         #second wheel
@@ -218,7 +231,7 @@ plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=[])#, support_second_hand=False)
 
 motion_works = MotionWorksForMagnetClutch(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
-motion_works.calculate_size(arbor_distance=30)
+motion_works.calculate_size(arbor_distance=32.5)
 
 motion_works_angle_deg = 90
 

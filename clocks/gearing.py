@@ -2990,7 +2990,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 
     this assumes pinion at front - not sure how printable it will be otherwise
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args,magnet=None, clutch_hole_d=8, clutch_hole_deep=10, front_bearing=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if not self.arbor.pinion_at_front:
@@ -3008,9 +3008,16 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 
         self.full_length = length
 
-        self.front_bearing=BEARING_12x21x5
 
-        self.magnet = RING_MAGNET_10x4x2MM
+
+        self.magnet = magnet
+        self.clutch_hole_d = clutch_hole_d
+        self.clutch_hole_deep =clutch_hole_deep
+
+        self.front_bearing = front_bearing
+        if self.front_bearing is None:
+            self.front_bearing = BEARING_12x21x5
+
 
     def get_arbor_extension(self, front=True):
 
@@ -3043,7 +3050,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
-                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None):
+                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - powered wheel is wheel + ratchet (+more logic than there used to be)
@@ -3100,6 +3107,11 @@ class Arbor:
         self.arbor_class_for_plate = arbor_class_for_plate
         if self.arbor_class_for_plate is None:
             self.arbor_class_for_plate = ArborForPlate
+
+        #any specific arguments to be passed through to this class. This way any special features can be configured at the top level
+        self.arbor_class_for_plate_args = arbor_class_for_plate_args
+        if self.arbor_class_for_plate_args is None:
+            self.arbor_class_for_plate_args = {}
 
         self.ratchet = None
         if self.powered_wheel is not None:
@@ -4404,7 +4416,7 @@ class MotionWorksForMagnetClutch(MotionWorks):
             self.magnet = DiscMagnet(6, 4)
 
     def get_min_cannon_pinion_r(self):
-        return self.magnet.outer_d/2
+        return self.clutch_hole_d + 1
 
     def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
         pinion = super().get_cannon_pinion(hand_holder_radius_adjustment)
