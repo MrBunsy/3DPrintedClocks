@@ -2007,8 +2007,13 @@ class SimpleClockPlates(BasePlates):
             chain_pos = self.bearing_positions[0][:2]
             first_arbour_pos = self.bearing_positions[1][:2]
 
-            chain_space = self.arbors_for_plate[0].get_bearing(front=False).outer_d / 2
-            arbour_space = self.arbors_for_plate[1].get_bearing(front=False).outer_d / 2
+            back_bearing = self.arbors_for_plate[0].get_bearing(front=False)
+            if back_bearing is None:
+                chain_space = self.arbors_for_plate[0].arbor_d
+                arbor_space =self.arbors_for_plate[0].arbor_d
+            else:
+                chain_space = back_bearing.outer_d / 2
+                arbor_space = back_bearing.outer_d / 2
 
             if self.heavy:
                 text_height = self.bottom_pillar_r * 2 * 0.3
@@ -2017,7 +2022,7 @@ class SimpleClockPlates(BasePlates):
                 spaces.append(TextSpace(bottom_pos[0], (bottom_pos[1] + (chain_pos[1]-chain_space)) / 2, text_height, chain_pos[1] - chain_space - bottom_pos[1], horizontal=False))
                 spaces.append(TextSpace(bottom_pos[0] + self.bottom_pillar_r - self.bottom_pillar_r / 3, (bottom_pos[1] + chain_pos[1]) / 2, text_height, chain_pos[1] - bottom_pos[1], horizontal=False))
 
-                spaces.append(TextSpace(chain_pos[0], (first_arbour_pos[1]-arbour_space + chain_pos[1] + chain_space) / 2, self.plate_width * 0.9, first_arbour_pos[1] - arbour_space - (chain_pos[1] + chain_space), horizontal=False))
+                spaces.append(TextSpace(chain_pos[0], (first_arbour_pos[1]-arbor_space + chain_pos[1] + chain_space) / 2, self.plate_width * 0.9, first_arbour_pos[1] - arbor_space - (chain_pos[1] + chain_space), horizontal=False))
             else:
                 #two and two
                 spaces.append(TextSpace(bottom_pos[0] - self.plate_width / 4, (bottom_pos[1] + chain_pos[1]) / 2, self.plate_width / 2, chain_pos[1] - bottom_pos[1], horizontal=False))
@@ -2594,7 +2599,7 @@ class SimpleClockPlates(BasePlates):
 
     def get_chain_holes(self):
         '''
-        These chain holes are relative to the front of the back plate - they do NOT take plate thickness or wobble into account
+        These chain holes are relative to the front of the back plate - they do NOT take plate thickness or wobble into account (...update - except htey do take endshake into accoutn? TODO what do they do?)
         '''
 
         holePositions = self.going_train.powered_wheel.get_chain_positions_from_top()
@@ -2734,7 +2739,7 @@ class SimpleClockPlates(BasePlates):
                 front_plate_arbor_end_z = self.plate_distance - pos[2] - self.arbors_for_plate[i].arbor.get_total_thickness() - self.endshake
 
                 if self.arbors_for_plate[i].arbor.pinion_at_front == back and i != 0 or (i == 0 and not back):
-                    #bodge for first abor - the power wheel is special
+                    #bodge for first abor - the power wheel is special TODO switch this to proper logic around attached arbor extensions?
                     #need to extend plate towards arbor
                     if back:
                         extension_height = pos[2]
@@ -2743,7 +2748,9 @@ class SimpleClockPlates(BasePlates):
                     if i ==0 and self.arbors_for_plate[i].arbor.powered_wheel.type == PowerType.CHAIN2:
                         #horribly hacky here - height of chain wheel included a washer, which I don't want to use on this specific fixed rod clock
                         #this is goign to need to change if I actually make use of fixed rods more generally, but for now a hack.
+                        #TODO add a with_washer argument to get_height for all weight powered wheels
                         extension_height = SMALL_WASHER_THICK_M3
+                        front_plate_arbor_end_z= extension_height
                     tip_r = screw.metric_thread/2 + 0.5
                     if not back:
                         tip_r+=1.5
@@ -5683,6 +5690,43 @@ class RectangularWallClockPlates(RoundClockPlates):
             plate = self.rear_additions_to_plate(plate)
 
         else:
+            #front plate
+
+            #bit for the chain to go through
+            #TODO logic aroudn when this is applied (not chain, not needed, etc)
+            try:
+                wall_thick = 5
+                powered_wheel =self.arbors_for_plate[0].arbor.powered_wheel
+
+                outer_r = powered_wheel.radius + self.gear_gap + 20 + wall_thick
+                chain_hole_positions = self.going_train.powered_wheel.get_chain_positions_from_top()
+                leftmost = min([pos[0][0] for pos in chain_hole_positions])
+                rightmost = max([pos[0][0] for pos in chain_hole_positions])
+
+                zmost = -min([min([pos[1] for pos in hole_ends]) for hole_ends in chain_hole_positions])
+                width = max([leftmost, rightmost]) * 2 + self.chain_hole_d*2.5
+
+                depth = zmost + powered_wheel.wheel_thick/2
+
+                round_bit = cq.Workplane("XY").circle(outer_r).extrude(plate_thick).translate(self.bearing_positions[0][:2])
+
+
+                round_bit = round_bit.union(cq.Workplane("XY").circle(outer_r).circle(outer_r - wall_thick).extrude(plate_thick + depth).translate([0,0,-depth]).translate(self.bearing_positions[0][:2]))
+
+
+                round_bit = round_bit.intersect(cq.Workplane("XY").rect(width, outer_r).extrude(plate_thick + depth).translate([0,-outer_r/2,-depth]).translate(self.bearing_positions[0][:2]))
+
+                chain_hole_punch = self.get_chain_holes()
+                chain_hole_punch = chain_hole_punch.translate((0,0,-self.plate_distance + self.endshake/2))# - plate_thick
+
+                round_bit = round_bit.cut(chain_hole_punch)
+
+                plate = plate.union(round_bit)
+
+
+            except Exception as e:
+                print("Unable to add chain-hole-round-thingy: " + e)
+
             plate = self.front_additions_to_plate(plate, moon=True)
 
         plate = self.punch_bearing_holes(plate, back)

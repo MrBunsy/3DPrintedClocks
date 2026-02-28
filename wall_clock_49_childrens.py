@@ -242,17 +242,6 @@ motion_works.calculate_size(arbor_distance=32.5)
 
 motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
 
-# plates = ChildFriendlySimpleClockPlates(going_train=train, motion_works=motion_works, pendulum=pendulum, gear_train_layout=gear_train_layout, plate_thick=8,
-#                            back_plate_thick=10, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,back_plate_from_wall=30, fixing_screws=MachineScrew(8, countersunk=True),
-#                            dial=dial, pendulum_at_front=False, name=clock_name,chain_through_pillar_required=False, heavy=False, allow_bottom_pillar_height_reduction=True)
-
-# plates = RoundClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=9,
-#                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-#                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
-#                                 gear_train_layout=gear_train_layout, back_plate_from_wall=27, fewer_arms=True)#, default_arbor_d=6)
-
-
-
 plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
