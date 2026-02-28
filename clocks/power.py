@@ -3094,6 +3094,12 @@ class PocketChainWheel2(WeightPoweredWheel):
             self.radius = self.pocket_long*0.5
             # raise ValueError("Radius too small to generate chain wheel for this chain")
         self.fixing_positions = [polar(f*math.pi*2/fixings, self.radius*0.475) for f in range(fixings)]
+
+        base_of_flat_hole = math.sqrt(self.radius**2 - (self.pocket_long/2)**2)
+        fixing_r = (base_of_flat_hole + self.arbor_d/2)/2
+        angle_offset = math.pi*2/n
+        self.fixing_positions = [polar(f * math.pi * 2 / fixings + angle_offset, fixing_r) for f in range(fixings)]
+
         self.outer_radius = self.radius+self.chain.wire_thick
 
         self.diameter = self.radius*2

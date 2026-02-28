@@ -1034,8 +1034,9 @@ class GoingTrain(GearTrainBase):
         replacement for gen_gears. Everything has been specified for each arbor and is customisable via generate_arbors, as inherited from GearTrainBase
         '''
 
-        # this has been assumed for a while
-        self.pendulum_fixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+        # # this has been assumed for a while
+        #no longer assumed, and it's not set from here
+        # self.pendulum_fixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
         arbors = []
 
         pairs = [WheelPinionPair(wheel[0], wheel[1], arbor_infos[i + self.powered_wheels]["module"], lantern=arbor_infos[i + self.powered_wheels + 1]["pinion_type"].is_lantern()) for i, wheel in enumerate(self.trains[0]["train"])]

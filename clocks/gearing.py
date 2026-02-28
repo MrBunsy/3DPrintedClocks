@@ -3051,7 +3051,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
-                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None):
+                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None, pinion_extension_min=4):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - powered wheel is wheel + ratchet (+more logic than there used to be)
@@ -3083,6 +3083,8 @@ class Arbor:
         self.pinion_thick=pinion_thick
         #where the pinion is extended (probably to ensure the wheel avoids something) but don't want to treat it just as an extra-thick pinion
         self.pinion_extension = pinion_extension
+        # if pinion_extension is less than this, just treat it as an elongated pinion
+        self.pinion_extension_min = pinion_extension_min
         self.escapement=escapement
         self.end_cap_thick=end_cap_thick
         #the pocket chain wheel or cord wheel (needed to calculate full height and a few tweaks)
@@ -3378,8 +3380,13 @@ class Arbor:
         if self.pinion.lantern:
             arbor = self.lantern_pinion.add_to_wheel(wheel)
         else:
-            arbor = self.pinion.add_to_wheel(wheel, hole_d=0, wheel_thick=self.escapement.wheel_thick, style=self.style, pinion_thick=self.pinion_thick,
-                                             pinion_extension=self.pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+            pinion_extension = self.pinion_extension
+            pinion_thick = self.pinion_thick
+            if self.pinion_extension < self.pinion_extension_min:
+                pinion_thick+=pinion_extension
+                pinion_extension = 0
+            arbor = self.pinion.add_to_wheel(wheel, hole_d=0, wheel_thick=self.escapement.wheel_thick, style=self.style, pinion_thick=pinion_thick,
+                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
             if self.end_cap_thick > 0:
                 arbor = arbor.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
@@ -3424,7 +3431,7 @@ class Arbor:
         if self.get_type() == ArborType.WHEEL_AND_PINION:
             pinion_thick = self.pinion_thick
             pinion_extension = self.pinion_extension
-            if pinion_extension < 3:
+            if pinion_extension < self.pinion_extension_min:
                 #just print small pinion extensions as longer pinions
                 pinion_extension = 0
                 pinion_thick+=self.pinion_extension

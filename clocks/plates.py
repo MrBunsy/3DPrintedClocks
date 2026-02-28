@@ -2733,12 +2733,17 @@ class SimpleClockPlates(BasePlates):
 
                 front_plate_arbor_end_z = self.plate_distance - pos[2] - self.arbors_for_plate[i].arbor.get_total_thickness() - self.endshake
 
-                if self.arbors_for_plate[i].arbor.pinion_at_front == back:
+                if self.arbors_for_plate[i].arbor.pinion_at_front == back and i != 0 or (i == 0 and not back):
+                    #bodge for first abor - the power wheel is special
                     #need to extend plate towards arbor
                     if back:
                         extension_height = pos[2]
                     else:
                         extension_height = front_plate_arbor_end_z
+                    if i ==0 and self.arbors_for_plate[i].arbor.powered_wheel.type == PowerType.CHAIN2:
+                        #horribly hacky here - height of chain wheel included a washer, which I don't want to use on this specific fixed rod clock
+                        #this is goign to need to change if I actually make use of fixed rods more generally, but for now a hack.
+                        extension_height = SMALL_WASHER_THICK_M3
                     tip_r = screw.metric_thread/2 + 0.5
                     if not back:
                         tip_r+=1.5

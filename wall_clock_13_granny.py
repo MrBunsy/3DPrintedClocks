@@ -45,7 +45,7 @@ lift =3
 lock=1.5
 escapement = AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
 
-power = PocketChainWheel2(ratchet_thick=4, chain=REGULA_30_HOUR_CHAIN, max_diameter=22, ratchet_diameter=28, wall_thick=(13.2-11.82)-0.07, loose_on_rod=True)
+power = PocketChainWheel2(ratchet_thick=4, chain=REGULA_30_HOUR_CHAIN_older, max_diameter=21, ratchet_diameter=28, wall_thick=(13.2-11.82)-0.07, loose_on_rod=True)
 
 
 print("chain wheel thick", power.get_height())

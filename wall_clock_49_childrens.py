@@ -97,11 +97,11 @@ gear_style=GearStyle.BENT_ARMS5
 
 second_hand_centred = False
 
-escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2)#, drop_deg=1.75)
+escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2, force_diameter=True, diameter=88-12)#, drop_deg=1.75)
 
 # powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
 #                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
-powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=10, max_diameter=45, ratchet_diameter=55)
+powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=10, max_diameter=25, ratchet_diameter=35)# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
 train = GoingTrain(pendulum_period=1.5, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False,
                          powered_wheels=1, runtime_hours=30, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
@@ -114,8 +114,9 @@ train.set_ratios([[100, 11], [90, 10], [88, 10]])
 # train.set_ratios([[88, 10], [75, 11], [80, 10]])
 # train.calculate_powered_wheel_ratios()
 # train.set_powered_wheel_ratios([[48*2, 10*2]])
-train.set_powered_wheel_ratios([[43*2, 10*2]])
-
+# train.set_powered_wheel_ratios([[43*2, 10*2]])
+# train.calculate_powered_wheel_ratios()
+train.set_powered_wheel_ratios([[22*3, 10*3]])
 
 back_plate_from_wall=40
 pendulum_sticks_out = 20
@@ -141,8 +142,8 @@ clutch_hole_deep=10
 train.generate_arbors_dicts([
     {
         #great wheel
-        "module": 1.1,
-        "wheel_thick" : 8,
+        "module": 1.25,
+        "wheel_thick" : 7.5,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
         "pinion_at_front": True,
@@ -153,7 +154,9 @@ train.generate_arbors_dicts([
         #centre wheel
         "module": module,
         "wheel_thick" : 4,
-        "pinion_thick": 12,
+        "pinion_thick": 7.5,
+        "pinion_extension": 5,
+        "pinion_extension_min":6,
         "pinion_type": pinion_type,
         "style": gear_style,
         "pinion_at_front": True,
@@ -171,6 +174,8 @@ train.generate_arbors_dicts([
         "module": module,
         "wheel_thick" : 4,
         "pinion_thick": 10,
+        #we've got a lot of endshake on this design, can't let the wheels clash
+        "pinion_extension":2,
         "pinion_type": pinion_type,
         "style": gear_style,
         # "pinion_extension": 18,
@@ -186,7 +191,7 @@ train.generate_arbors_dicts([
         "pinion_type": pinion_type,
         "style": gear_style,
         "pinion_at_front": False,
-        "pinion_extension": 12,
+        "pinion_extension": 12+15,
         "end_cap_thick": 0,
         "arbor_class_for_plate" : FixedRodArborForPlate
     },
@@ -197,8 +202,8 @@ train.generate_arbors_dicts([
         "pinion_thick": 10,
         "pinion_type": pinion_type,
         "style": gear_style,
-        "pinion_extension": 6,
-        "pinion_at_front": False,
+        "pinion_extension": 9,
+        "pinion_at_front": True,
         "end_cap_thick": 0,
         "arbor_class_for_plate" : FixedRodArborForPlate
     },
@@ -235,7 +240,7 @@ gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, c
 motion_works = MotionWorksForMagnetClutch(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, pinion_thick=clutch_hole_deep+1)
 motion_works.calculate_size(arbor_distance=32.5)
 
-motion_works_angle_deg = 90
+motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
 
 # plates = ChildFriendlySimpleClockPlates(going_train=train, motion_works=motion_works, pendulum=pendulum, gear_train_layout=gear_train_layout, plate_thick=8,
 #                            back_plate_thick=10, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,back_plate_from_wall=30, fixing_screws=MachineScrew(8, countersunk=True),

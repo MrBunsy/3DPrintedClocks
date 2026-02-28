@@ -1222,6 +1222,8 @@ class ChainInfo:
 # consistently reliable results have been obtained by laying out and pulling tight) a stretch of chain against a ruler to calculate inside_length (half chain pitch)
 
 REGULA_30_HOUR_CHAIN = ChainInfo(wire_thick=0.85, width=3.6, outside_length=6.65)
+#the old one that's been on granny's clock for a few years is definitely nearer 62 links a foot
+REGULA_30_HOUR_CHAIN_older = ChainInfo(wire_thick=0.95, width=3.8, inside_length=12*25.4/62)
 # claims a max load of 5kg, looks promising for an eight day
 # 129 links in 1m = 7.75 inside length
 # 38.5 in 30cm = 7.79 inside length
