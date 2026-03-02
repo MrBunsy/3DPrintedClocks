@@ -620,6 +620,9 @@ def average_of_two_points(a, b):
 def get_distance_between_two_points(a, b):
     return math.sqrt(math.pow(a[0] - b[0], 2) + math.pow(a[1] - b[1], 2))
 
+def get_difference_of_two_points(a,b):
+    return (b[0] - a[0], b[1] - a[1])
+
 def get_angle_between_two_points(a, b):
     #angle from a -> b
     return math.atan2(b[1] - a[1], b[0] - a[0])
@@ -1248,9 +1251,10 @@ COUSINS_1_2_BRASS_CHAIN = ChainInfo(wire_thick=1.2, width=5.5, inside_length=597
 # TODO measure a long stretch, 10.15 is just a rough estimate
 FAITHFULL_1_6MM_CHAIN = ChainInfo(wire_thick=1.6, width=6.35, inside_length=10.15)
 
-# 595.5/94
+# 595.5/94 (nearly 50 links/foot ... beginning to distrust Cousin's descriptions)
 REGULA_8_DAY_1_05MM_CHAIN = ChainInfo(wire_thick=1.05, width=4.4, inside_length=595.5 / 94)  # , outside_length=8.4)
-
+#really is 47 links/foot
+REGULA_8_DAY_1_2MM_CHAIN = ChainInfo(wire_thick=1.2, width=4.7, inside_length=12*25.4 / 47)
 
 
 class RingMagnet:

@@ -3007,7 +3007,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
         centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(length - contact_length*2).translate((0,0,contact_length))
         centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
 
-        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
+        # self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
 
         self.full_length = length
 
@@ -4168,9 +4168,11 @@ class MotionWorks:
         return self.pairs[0].pinion.get_STL_modifier_shape(thick=self.cannon_pinion_pinion_thick, offset_z=self.pinion_cap_thick, nozzle_size=nozzle_size)
 
 
-    def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
+    def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0, hole_d=-1):
 
         pinion_max_r = self.pairs[0].pinion.get_max_radius()
+        if hole_d < 0:
+            hole_d = self.hole_d
 
         # base = cq.Workplane("XY")
         #
@@ -4222,7 +4224,8 @@ class MotionWorks:
 
             pinion = pinion.union(holder)
 
-        pinion = pinion.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(self.get_cannon_pinion_total_height()))
+        if hole_d > 0:
+            pinion = pinion.cut(cq.Workplane("XY").circle(hole_d / 2).extrude(self.get_cannon_pinion_total_height()))
 
 
         # if self.bearing is not None:
@@ -4414,12 +4417,14 @@ It's important that the motion works can rotate freely after the friction clip h
 
 class MotionWorksForMagnetClutch(MotionWorks):
 
-    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, **kwargs):
+    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, hand_screwhole_deep=8, **kwargs):
         super().__init__(*args, **kwargs)
         self.magnet = magnet
         self.clutch_hole_d = clutch_hole_d
         self.clutch_hole_deep = clutch_hole_deep
         self.magnet_wall_thick = LAYER_THICK*2
+        self.hand_screw = MachineScrew(3, type=MachineScrewType.PAN_HEAD)
+        self.hand_screwhole_deep = hand_screwhole_deep
         if self.magnet is None:
             self.magnet = DiscMagnet(6, 4)
 
@@ -4427,7 +4432,7 @@ class MotionWorksForMagnetClutch(MotionWorks):
         return self.clutch_hole_d + 1
 
     def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
-        pinion = super().get_cannon_pinion(hand_holder_radius_adjustment)
+        pinion = super().get_cannon_pinion(hand_holder_radius_adjustment, hole_d=0)
         clutch_hole = cq.Workplane("XY").circle(self.clutch_hole_d/2).extrude(self.clutch_hole_deep)
         pinion = pinion.cut(clutch_hole)
         #copy-pasted from ArborForPlate, haven't decided if it's worth abstracting out into the ring magnet class itself
@@ -4439,6 +4444,10 @@ class MotionWorksForMagnetClutch(MotionWorks):
             #     (0, 0, self.magnet.thick + top_gap))))
 
         pinion = pinion.cut(ring_magnet_cutter.translate((0,0,0.4)))
+
+        #screw in front to hold hands on?
+        pinion = pinion.cut(self.hand_screw.get_cutter(length=self.hand_screwhole_deep, self_tapping=True, ignore_head=True)
+                            .translate((0,0,self.get_cannon_pinion_total_height() - self.hand_screwhole_deep)))
 
         return pinion
 

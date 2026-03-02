@@ -3040,6 +3040,13 @@ class PocketChainWheel2(WeightPoweredWheel):
     The PocketChainWheel was one of the first classes I wrote for the clocks, it's a mess and also the chain wheel doesn't cope well with heavy weights
     So this is an attempt to produce an improved pocket chain wheel and a tidier class
 
+    General observations:
+    Works well if the pitch of the chain is very consistent and accurately measured. Lay a chain out on a ruler and hold tight, then count the loops.
+    This gives the inside_length. Exagerate width and wire thicknss slightly.
+    Try and keep the diameter of the pocket wheel small (5 or 6 pockets), I think this makes it better at coping in variations of pitch.
+
+
+    old comments:
     still got a 'clunk' from this, which looked like it was due to teh chain twisting slightly so it ended up in the gap. Might try making that gap smaller.
     Also possible that the chainproducts chain is just not very high quality as it seems to hang twisted
 

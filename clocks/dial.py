@@ -1418,7 +1418,7 @@ class Dial:
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
                  minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2, raised_detail=False,
-                 seconds_dial_width=-1):
+                 seconds_dial_width=-1, screwed_from_front=False):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -1428,7 +1428,10 @@ class Dial:
         raised_detail - if true then there is no in-layer colour change (should result in less smudging, at the cost of needed to glue pillars)
 
         '''
+        #will be printed right way up with a colour change for the numbers
         self.raised_detail = raised_detail
+        #if true then the dial is held on with screws from the front to the pillars. The default is the pillars are attached if not raised detail, and pillars are glued if raised detail
+        self.screwed_from_front = screwed_from_front
         #used to be 3 before made configurable
         self.hand_space_z = hand_space_z
         self.style = style
@@ -1640,7 +1643,7 @@ class Dial:
         ]
         For some dials we might want more choice over where to put the fixings (eg Tony, which is fully filled in)
 
-        this is if the dial is face-down (as that was the only way the dial could be before raised_detail)
+        this is if the dial is face-down (as that was the only way the dial could be before raised_detail) so it's inverted from the plates, where the front plate is outside up
         '''
         self.fixing_positions = fixing_positions
 
@@ -2113,6 +2116,9 @@ class Dial:
         return support_positions
 
     def get_dial(self, for_printing=False):
+        '''
+        dial is generated face-down (even if raised_detail)
+        '''
         r = self.outside_d / 2
 
         if self.style == DialStyle.TONY_THE_CLOCK:
@@ -2127,33 +2133,50 @@ class Dial:
         self.inner_r = self.outside_d / 2 - self.dial_width
 
 
+
         if self.support_length > 0:
 
             # if self.top_fixing:
             #     dial = dial.union(support.translate((0,r - self.dial_width/2, self.thick)))
             # if self.bottom_fixing:
             #     dial = dial.union(support.translate((0, -(r - self.dial_width / 2), self.thick)))
-            if not self.raised_detail:
-                support_positions = self.get_support_positions()
-                for i,fixing_pos_set in enumerate(self.get_fixing_positions()):
-                    support_pos = (sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
 
-                    if self.pillar_style == PillarStyle.SIMPLE:
-                        support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
-                    else:
-                        support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
-                    try:
-                        dial = dial.union(support.translate(support_pos))
-                    except:
-                        print("exception putting dial support on")
-                    for fixing_pos in fixing_pos_set:
-                        # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
-                        dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
-            else:
+            for fixing_pos in self.get_support_positions():
+                distance = get_distance_between_two_points((0,0), fixing_pos)
+                if self.outside_d/2 - self.dial_width > distance or distance > self.outside_d/2:
+                    angle = get_angle_between_two_points((0,0), fixing_pos)
+                    start_pos = polar(angle, self.outside_d/2 - self.dial_width/2)
+
+                    dial = dial.union(get_stroke_line([start_pos, fixing_pos[:2]], wide=self.support_d, thick=self.thick))
+
+            if not self.raised_detail:
+                # support_positions = self.get_support_positions()
+                # for i,fixing_pos_set in enumerate(self.get_fixing_positions()):
+                #     support_pos = (sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
+                #
+                #     if self.pillar_style == PillarStyle.SIMPLE:
+                #         support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
+                #     else:
+                #         support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
+                #     try:
+                #         dial = dial.union(support.translate(support_pos))
+                #     except:
+                #         print("exception putting dial support on")
+                #     for fixing_pos in fixing_pos_set:
+                #         # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
+                #         dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
+                dial = dial.union(self.get_supports())
+            elif not self.screwed_from_front:
                 #raised detail, slots in back to glue supports
                 cutter = cq.Workplane("XY").pushPoints([pos[:2] for pos in self.get_support_positions()]).circle(self.support_slot_r).extrude(self.nib_hole_deep).translate((0,0,self.thick-self.nib_hole_deep))#.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.detail_thick)
                 # return cutter
                 dial = dial.cut(cutter)
+
+        if self.screwed_from_front:
+            for fixing_pos_list in self.get_fixing_positions():
+                for fixing_pos in fixing_pos_list:
+                    dial = dial.cut(self.fixing_screws.get_cutter(with_bridging=True, length=self.thick).translate(fixing_pos))
+
         if self.second_hand_mini_dial_d > 0:
             dial = dial.union(cq.Workplane("XY").circle(self.second_hand_mini_dial_d/2).circle(self.second_hand_mini_dial_d/2-self.seconds_dial_width).extrude(self.thick).translate(self.second_hand_relative_pos))
             if not self.raised_detail:
@@ -2268,9 +2291,14 @@ class Dial:
         supports = cq.Workplane("XY")
         screwhole_length = self.support_length
         z_offset = self.thick
-        if self.raised_detail:
+        ignore_screwcutter_head = True
+        if self.raised_detail and not self.screwed_from_front:
             screwhole_length = max(0, self.support_length-5)
             z_offset = self.thick + (self.support_length - screwhole_length)
+        if self.screwed_from_front:
+            ignore_screwcutter_head = False
+            z_offset = 0
+            screwhole_length+= self.thick
         support_positions = self.get_support_positions()
         for i, fixing_pos_set in enumerate(self.get_fixing_positions()):
 
@@ -2291,7 +2319,7 @@ class Dial:
             for fixing_pos in fixing_pos_set:
                 # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
                 # supports = supports.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread / 2).extrude(screwhole_length).translate((fixing_pos[0], fixing_pos[1], z_offset)))
-                supports = supports.cut(self.fixing_screws.get_cutter(self_tapping=True, length=screwhole_length, ignore_head=True).translate((fixing_pos[0], fixing_pos[1], z_offset)))
+                supports = supports.cut(self.fixing_screws.get_cutter(self_tapping=True, length=screwhole_length, ignore_head=ignore_screwcutter_head).translate((fixing_pos[0], fixing_pos[1], z_offset)))
 
             if index > -1:
                 #put back in the centre and upright

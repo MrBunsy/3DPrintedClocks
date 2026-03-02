@@ -5539,25 +5539,22 @@ class RectangularWallClockPlates(RoundClockPlates):
 
         if self.dial is not None:
             #TODO more general purpose support for different relative sizes of plates and dial and different pillar locations.
-            #this works for now
 
-            #not evenly space so we don't clash with pillars
-            angles = [math.pi/2 + math.pi/8, math.pi/2 - math.pi/8, math.pi*1.5 + math.pi/8, math.pi*1.5 - math.pi/8]
-            if self.gear_train_layout == GearTrainLayout.COMPACT and not self.escapement_on_front and self.no_upper_wheel_in_centre:
-                #line up dial supports with the little arms
-                for i in range(2):
-                    bearing_relative_pos = np_to_set(np.subtract(self.bearing_positions[-3 + i][:2], self.hands_position))
-                    bearing_angle = math.atan2(bearing_relative_pos[1], bearing_relative_pos[0])
-                    angles[i] = bearing_angle
+            centre = self.hands_position
 
-            dial_fixings_relative_to_dial = [polar(angle, self.radius) for angle in angles]
+            # top_dirs = [get_difference_of_two_points(centre, pos) for pos in self.top_pillar_positions]
+            angles = [get_angle_between_two_points(centre, pos) for pos in self.top_pillar_positions + self.bottom_pillar_positions]
+            top_distances = self.dial.outside_d/2 + self.dial.fixing_screws.get_head_diameter()/2 + 1
+            bottom_distance = self.dial.outside_d/2 - self.dial.dial_width - self.dial.fixing_screws.get_head_diameter()/2 - 1
 
-            self.dial_fixing_positions = [np_to_set(np.add(pos, self.hands_position)) for pos in dial_fixings_relative_to_dial]
+            dial_relative_fixing_positions = [polar(angle, top_distances) for angle in angles[:2]] + [polar(angle, bottom_distance) for angle in angles[2:]]
+
+            self.dial_fixing_positions = [np_to_set(np.add(centre, pos)) for pos in dial_relative_fixing_positions]
 
             # array of arrays because we only want one screw per pillar here
             #invert x because dial is constructed upside down
-            self.dial.override_fixing_positions([[(-pos[0], pos[1])] for pos in dial_fixings_relative_to_dial])
-            self.dial.support_d = 15
+            self.dial.override_fixing_positions([[(-pos[0], pos[1])] for pos in dial_relative_fixing_positions])
+            self.dial.support_d = self.plate_width
             if self.style == PlateStyle.RAISED_EDGING:
                 self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
 
@@ -5716,6 +5713,7 @@ class RectangularWallClockPlates(RoundClockPlates):
 
                 round_bit = round_bit.intersect(cq.Workplane("XY").rect(width, outer_r).extrude(plate_thick + depth).translate([0,-outer_r/2,-depth]).translate(self.bearing_positions[0][:2]))
 
+                round_bit = round_bit.edges("|Z").fillet(2)
                 chain_hole_punch = self.get_chain_holes()
                 chain_hole_punch = chain_hole_punch.translate((0,0,-self.plate_distance + self.endshake/2))# - plate_thick
 

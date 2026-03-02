@@ -73,15 +73,20 @@ Plan: make a clock a 6 year old could assemble.
     
 remaining TODOs:
 
- - round base to the clock plates so we can have holes for the chain to go through to prevent chain escaping
- - dial
+ - round base to the clock plates so we can have holes for the chain to go through to prevent chain escaping - DONE
+ - dial - DONE
  - top plate needs to extend inwards so teh arbors are held in place (as the arbors are now going to be printed in one peice) DONE
  - fix the gear layout AGAIN so escape wheel doesn't intersect centre wheel DONE
- - tweaks to motion works to limit contact with rod (so it only touches at each end, like the arbors)
+ - tweaks to motion works to limit contact with rod (so it only touches at each end, like the arbors) - WONTFIX
   - BETTER IDEA: why not scrap the rod inside the motion works entirely - use flat magnets and have a cylinder from the end of the centre arbor that extends inside the cannon pinion
  - think about if the threaded rod should stick out the end of the motion works or not - abandon
  
- - reduce size of escape wheel slightly so it doens't clash with the rod-extension-thingie
+ - reduce size of escape wheel slightly so it doens't clash with the rod-extension-thingie - DONE
+ 
+ - Finish motion works - need to remove rod through the middle
+ - fix dial and motion works heights
+ - make sure front bearing is snug or have something inside to keep it in place
+ - text/plaque
 '''
 outputSTL = False
 
@@ -101,7 +106,8 @@ escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2, force_dia
 
 # powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
 #                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
-powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_05MM_CHAIN, ratchet_thick=10, max_diameter=25, ratchet_diameter=35)# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
+powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=8.5, max_diameter=25, ratchet_diameter=35,
+                                  fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK))# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
 train = GoingTrain(pendulum_period=1.5, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False,
                          powered_wheels=1, runtime_hours=30, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
@@ -138,6 +144,7 @@ magnet = DISC_MAGNET_6X4MM
 clutch_hole_d=8
 clutch_hole_deep=10
 
+train.print_info(weight_kg=0.750,for_runtime_hours=30)
 
 train.generate_arbors_dicts([
     {
@@ -231,7 +238,7 @@ pendulum_fixing = KnifeEdgePendulumBits(full_circle=False, wedge_perch_depth=bac
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
 dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8,
             font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None,
-            dial_width=30, pillar_style=pillar_style)
+            dial_width=30, pillar_style=pillar_style, screwed_from_front=True, raised_detail=True)
 # plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
 # dial = None
 plaque = None
