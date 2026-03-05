@@ -1361,15 +1361,16 @@ class SimpleClockPlates(BasePlates):
         '''
         relative to the front of the front plate
         '''
-        extra = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT
+        extra = self.motion_works.get_distance_from_front_plate()
 
         if self.needs_motion_works_holder():
             extra = self.motion_works_holder_thick
         if self.motion_works is None:
             #TODO
+            #uh, how do we ever get here again? was this a special case for a dual-dial clock?
             return 5
         else:
-            return  self.motion_works.get_hand_holder_height() + extra - self.motion_works.inset_at_base
+            return  self.motion_works.get_hand_holder_height() + extra
 
 
     def front_of_motion_works_wheels_z(self):

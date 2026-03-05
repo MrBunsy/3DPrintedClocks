@@ -3,6 +3,8 @@ import sys
 
 import cadquery as cq
 from cadquery import exporters
+
+from .gearing import FixedRodMagneticClutchArborForPlate
 from .cq_svg import exportSVG
 
 from .types import *
@@ -68,7 +70,8 @@ class Assembly:
         self.hands_pos = self.plates.bearing_positions[self.going_train.powered_wheels][:2]
 
         # where the nylock nut and spring washer would be (6mm = two half size m3 nuts and a spring washer + some slack)
-        self.motion_works_z_offset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.plates.endshake / 2
+        #self.motion_works_z_offset = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.plates.endshake / 2
+        self.motion_works_z_offset = self.motion_works.get_distance_from_front_plate() + self.plates.endshake/2
         if self.plates.needs_motion_works_holder():
             self.motion_works_z_offset = self.plates.motion_works_holder_thick
         self.motion_works_z = self.front_of_clock_z + self.motion_works_z_offset
@@ -610,6 +613,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
     def get_arbor_rod_lengths(self):
         '''
         Calculate the lengths to cut the steel rods - stop me just guessing wrong all the time!
+        A lot of business logic lives in here when it really shouldn't, but it's not obvious where else to put it
+        The model with_rods at least makes it very easy to check these are right
         '''
         total_plate_thick = self.plates.plate_distance + self.plates.get_plate_thick(True) + self.plates.get_plate_thick(False)
         plate_distance =self.plates.plate_distance
@@ -641,7 +646,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 machine_screw = True
                 rod_length = total_plate_thick
 
-                if i == self.going_train.powered_wheels:
+                if i == self.going_train.powered_wheels and not isinstance(arbor_for_plate, FixedRodMagneticClutchArborForPlate):
                     #centre wheel
                     rod_length += self.minute_hand_z + self.hands.thick
 
@@ -725,6 +730,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                         rod_length = minimum_rod_length
                     else:
                         rod_length = hand_arbor_length
+
                 else:
                     # "normal" arbour
                     rod_length = simple_arbor_length#length_up_to_inside_front_plate + bearing_thick + spare_rod_length_beyond_bearing
@@ -1055,7 +1061,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 show_object(self.plates.get_text(top_standoff=False), options={"color": text_colour}, name="Bottom Standoff Text")
 
         for a, arbor in enumerate(self.plates.arbors_for_plate):
-            show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbour {}".format(a))
+            show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbor {}".format(a))
 
         # return
         # # motionWorksModel = self.motionWorks.get_assembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)

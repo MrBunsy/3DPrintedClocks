@@ -159,8 +159,11 @@ escapement = PinPalletTwoSidedAnchorEscapement(gap_size=8,teeth=escapement_info.
 # show_object(silent.get_wheel())
 # show_object(silent.get_anchor())
 # show_object(escapement.get_assembled(anchor_angle_deg=2, wheel_angle_deg=1))
-show_object(escapement.get_assembled())
-show_object(cq.Workplane("XY").circle(escapement.wheel_max_r))
+# show_object(escapement.get_assembled())
+# show_object(cq.Workplane("XY").circle(escapement.wheel_max_r))
 # show_object(cq.Workplane("XY").circle(0.5).extrude(100).translate(escapement.fixing_screw_pos).translate(escapement.anchor_centre))
 
 # show_object(get_stroke_line([(0,100),(0,0)], wide=20, thick=10))
+
+
+show_object(escapement_info.get_assembled())

@@ -2890,11 +2890,11 @@ class FixedRodArborForPlate(ArborForPlate):
         super().__init__(*args, **kwargs)
         self.back_bearing = self.front_bearing = None
 
-        length = (self.distance_from_front if self.arbor.pinion_at_front else self.distance_from_back) + self.arbor.get_total_thickness()
+        self.length = (self.distance_from_front if self.arbor.pinion_at_front else self.distance_from_back) + self.arbor.get_total_thickness()
 
         #larger diameter in the middle, smaller at the ends
         contact_length = 5
-        centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(length - contact_length*2).translate((0,0,contact_length))
+        centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(self.length - contact_length*2).translate((0,0,contact_length))
         centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
 
         self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
@@ -2990,29 +2990,30 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 
     this assumes pinion at front - not sure how printable it will be otherwise
     '''
+
+    DISTANCE_FROM_FRONT_PLATE = 2
+
     def __init__(self, *args,magnet=None, clutch_hole_d=8, clutch_hole_deep=10, front_bearing=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if not self.arbor.pinion_at_front:
             raise NotImplementedError("TODO support FixedRodMagneticClutchArborForPlate with pinion at back")
 
-        self.extra_out_front = 2
+        self.extra_out_front = self.DISTANCE_FROM_FRONT_PLATE
         self.magnet = magnet
         self.clutch_hole_d = clutch_hole_d
         self.clutch_hole_deep = clutch_hole_deep
-        length = self.arbor.get_total_thickness() + self.distance_from_front  + self.plates.get_plate_thick(back=False) + self.plates.endshake + self.extra_out_front + self.clutch_hole_deep
-
+        self.full_length = self.arbor.get_total_thickness() + self.distance_from_front  + self.plates.get_plate_thick(back=False) + self.plates.endshake + self.extra_out_front + self.clutch_hole_deep
+        inner_hole_length =self.arbor.get_total_thickness() + self.distance_from_front  + self.plates.get_plate_thick(back=False)
         #larger diameter in the middle, smaller at the ends
         contact_length = 5
-        centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(length - contact_length*2).translate((0,0,contact_length))
+        centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(inner_hole_length - contact_length*2).translate((0,0,contact_length))
         centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
 
-        # self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
-
-        self.full_length = length
+        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(inner_hole_length + self.plates.endshake*2))
 
 
-
+        # self.threaded_rod_cutter = self.threaded_rod_cutter.cut(cq.Workplane("XY").rect(self.arbor_d*2, self.arbor_d*2).extrude(1000).translate((0,0,inner_hole_length)))
 
 
         self.front_bearing = front_bearing
@@ -3042,7 +3043,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 
         top_layer_thick = 0.6
 
-        extendo_arbor = extendo_arbor.cut(magnet_cutter.translate((0,0,length + self.clutch_hole_deep - cutter_height - top_layer_thick)))
+        extendo_arbor = extendo_arbor.cut(magnet_cutter.translate((0,0,length - cutter_height - top_layer_thick)))
 
         return extendo_arbor
 
@@ -3885,6 +3886,8 @@ class MotionWorks:
         #thick for thickness of hour holder wheel
         self.cannon_pinion_total_height_above_base = extra_height + self.minute_hand_slot_height + self.space + self.hour_hand_slot_height + self.thick# + self.cannonPinionBaseHeight
 
+    def get_distance_from_front_plate(self):
+        return TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.inset_at_base
 
     def get_hour_wheel_teeth(self):
         return self.pairs[1].wheel.teeth
@@ -4417,7 +4420,7 @@ It's important that the motion works can rotate freely after the friction clip h
 
 class MotionWorksForMagnetClutch(MotionWorks):
 
-    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, hand_screwhole_deep=8, **kwargs):
+    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, hand_screwhole_deep=8, distance_from_front_plate=2, **kwargs):
         super().__init__(*args, **kwargs)
         self.magnet = magnet
         self.clutch_hole_d = clutch_hole_d
@@ -4425,8 +4428,12 @@ class MotionWorksForMagnetClutch(MotionWorks):
         self.magnet_wall_thick = LAYER_THICK*2
         self.hand_screw = MachineScrew(3, type=MachineScrewType.PAN_HEAD)
         self.hand_screwhole_deep = hand_screwhole_deep
+        self.distance_from_front_plate = distance_from_front_plate
         if self.magnet is None:
             self.magnet = DiscMagnet(6, 4)
+
+    def get_distance_from_front_plate(self):
+        return self.distance_from_front_plate
 
     def get_min_cannon_pinion_r(self):
         return self.clutch_hole_d + 1
