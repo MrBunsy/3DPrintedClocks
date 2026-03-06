@@ -127,6 +127,7 @@ train.set_powered_wheel_ratios([[22*3, 10*3]])
 back_plate_from_wall=40
 pendulum_sticks_out = 20
 plate_thick=8
+back_plate_thick = 10
 
 # pinion_extensions={1:16, 3:10}
 # powered_modules=[WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
@@ -232,16 +233,16 @@ moon_radius=10
 pendulum = Pendulum(bob_d=60, bob_thick=12, hand_avoider_inner_d=100)
 # pendulum = FancyPendulum(bob_d=40)
 
-pendulum_fixing = KnifeEdgePendulumBits(full_circle=False, wedge_perch_depth=back_plate_from_wall - plate_thick-0.5)
+pendulum_fixing = KnifeEdgePendulumBits(full_circle=False, wedge_perch_depth=back_plate_from_wall - back_plate_thick-0.5)
 
 # dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
 dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8,
             font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None,
             dial_width=30, pillar_style=pillar_style, screwed_from_front=True, raised_detail=True)
-# plaque = Plaque(text_lines=["W40#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2025 PLA Test"])
+plaque = Plaque(text_lines=["W49#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2026 Childrens Clock Test"])
 # dial = None
-plaque = None
+# plaque = None
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=[])#, support_second_hand=False)
 
 motion_works = MotionWorksForMagnetClutch(extra_height=15, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, pinion_thick=clutch_hole_deep+1,
@@ -250,7 +251,7 @@ motion_works.calculate_size(arbor_distance=32.5)
 
 motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
 
-plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
+plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing,

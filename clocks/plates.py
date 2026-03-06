@@ -339,6 +339,19 @@ class BasePlates:
         self.beefed_up_pawl_thickness = 7.5
         self.plate_width=10
         self.bearing_positions=[]
+        self.all_pillar_positions = []
+        self.hands_position = (0,0)
+
+    def get_pillar_in_position(self, x=-1, y=-1):
+        '''
+        given a +ve or +ve x and y find the pillar in that direction
+        assumes all pillars are in distinct quadrants from teh hands
+        '''
+        for pos in self.all_pillar_positions:
+            relative_pos = get_difference_of_two_points(self.hands_position, pos)
+            if ((relative_pos[0] < 0) == (x < 0)) and ((relative_pos[1] < 0) == (y < 0)):
+                return pos
+        raise FileNotFoundError("Can't find suitable pillar")
 
     def get_ratchet_pawl_beefer_upper(self):
         '''
@@ -2048,6 +2061,23 @@ class SimpleClockPlates(BasePlates):
         '''
 
         raise NotImplementedError("TODO implement plaque for this clock plate")
+
+    def _calc_plaque_config(self, from_pos, to_pos, from_space, to_space, height):
+        '''
+        internal - given a from and to, with space around each to avoid, and a height (width of plate arm) calculate plaque position
+        '''
+
+        long_line = Line(from_pos, another_point=to_pos)
+        long_space_length = np.linalg.norm(np.subtract(from_pos, to_pos))
+        #TODO actually find centre taking into account different spaces
+        long_line_length = long_space_length - max(from_space,to_space)*2 - 1
+        long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
+        long_angle = long_line.get_angle()
+
+        self.plaque.set_dimensions(long_line_length, height)
+
+        self.plaque_pos = long_centre
+        self.plaque_angle = long_angle
 
     def get_plate_detail(self, back=True, for_printing=False, for_this_shape=None):
         '''
@@ -5561,6 +5591,13 @@ class RectangularWallClockPlates(RoundClockPlates):
 
     def get_plate_shape(self):
         return PlateShape.RECTANGLE_WALL
+
+    def calc_plaque_config(self):
+
+        from_pos = (-self.bearing_positions[self.going_train.powered_wheels+1][0], self.bearing_positions[self.going_train.powered_wheels+1][1])
+        to_pos = self.get_pillar_in_position(from_pos[0], +1)
+
+        self._calc_plaque_config(from_pos, to_pos, 1, self.top_pillar_r + 1, self.plate_width)
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         #this is tied to a particular gear train, with one powered wheel to a cord barrel and a 4 wheel train
