@@ -2308,7 +2308,7 @@ class Dial:
 
             support_pos = support_positions[i]
             support = self.get_support(clockwise=support_pos[0] < 0)
-            if self.raised_detail:
+            if self.raised_detail and not self.screwed_from_front:
                 #little nib on the end
                 nib = cq.Workplane("XY").circle(self.support_slot_r - 0.1).extrude(self.nib_thick).translate((0, 0, -self.nib_thick))
 

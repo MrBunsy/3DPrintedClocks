@@ -2740,7 +2740,7 @@ class SimpleClockPlates(BasePlates):
 
             needs_plain_hole = False
             # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR, PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.SUSPENSION_SPRING] and i == len(self.bearing_positions)-1:
-            if not self.pendulum_fixing.arbor_entirely_within_plates():
+            if i == len(self.bearing_positions)-1 and not self.pendulum_fixing.arbor_entirely_within_plates():
                 #if true we just need a hole for the direct arbour to fit through
 
                 if self.escapement_on_front and not back:
@@ -4643,7 +4643,11 @@ class RoundClockPlates(SimpleClockPlates):
         self.top_pillar_r = self.pillar_r
         self.bottom_pillar_r = self.pillar_r
         #limiting max size because i think it was excessive for spring clocks and looks much better thinner. Shame I've already made three clock 32s.
-        self.bottom_arm_wide = min(self.arbors_for_plate[0].get_bearing(front=True).outer_d + self.bearing_wall_thick * 2, 20)
+        bearing = self.arbors_for_plate[0].get_bearing(front=True)
+        if bearing is None:
+            #bodge it just for a decent default size
+            bearing = bearing_info
+        self.bottom_arm_wide = min(bearing.outer_d + self.bearing_wall_thick * 2, 20)
 
         if self.centred_second_hand:
             #assume between first two wheels is further point
@@ -4946,7 +4950,14 @@ class RoundClockPlates(SimpleClockPlates):
             if i > self.going_train.powered_wheels:
                 line_wide = small_arm_wide
 
-            bearing_distance = get_distance_between_two_points(centre, bearing_pos[:2]) - self.arbors_for_plate[i].get_bearing(front=not back).outer_d / 2
+            bearing = self.arbors_for_plate[i].get_bearing(front=not back)
+            if bearing is not None:
+                bearing_r = bearing.outer_d / 2
+            else:
+                #fixed rods
+                bearing_r = MachineScrew(self.arbors_for_plate[i].arbor.arbor_d, countersunk=True).get_head_diameter()/2
+
+            bearing_distance = get_distance_between_two_points(centre, bearing_pos[:2]) - bearing_r
             if self.radius - self.pillar_r < bearing_distance < self.radius + self.pillar_r:
                 #this bearing will be in the outer circle
                 continue
@@ -4966,7 +4977,7 @@ class RoundClockPlates(SimpleClockPlates):
                 #extends out of the circle
                 end = bearing_pos[:2]
 
-            bearing_in_plate_space = self.plate_width - self.arbors_for_plate[i].get_bearing(front=not back).outer_d
+            bearing_in_plate_space = self.plate_width - bearing_r*2
             bearing_from_radius = abs(get_distance_between_two_points(bearing_pos[:2], centre) - self.radius)
             if i == len(self.bearing_positions) - 1:
                 if back and not self.escapement_on_back:
@@ -5574,20 +5585,30 @@ class RectangularWallClockPlates(RoundClockPlates):
             centre = self.hands_position
 
             # top_dirs = [get_difference_of_two_points(centre, pos) for pos in self.top_pillar_positions]
-            angles = [get_angle_between_two_points(centre, pos) for pos in self.top_pillar_positions + self.bottom_pillar_positions]
-            top_distances = self.dial.outside_d/2 + self.dial.fixing_screws.get_head_diameter()/2 + 1
-            bottom_distance = self.dial.outside_d/2 - self.dial.dial_width - self.dial.fixing_screws.get_head_diameter()/2 - 1
+            # angles = [get_angle_between_two_points(centre, pos) for pos in self.top_pillar_positions + self.bottom_pillar_positions]
+            # top_distances = self.dial.outside_d/2 + self.dial.fixing_screws.get_head_diameter()/2 + 1
+            # bottom_distance = self.dial.outside_d/2 - self.dial.dial_width - self.dial.fixing_screws.get_head_diameter()/2 - 1
+            #
+            # dial_relative_fixing_positions = [polar(angle, top_distances) for angle in angles[:2]] + [polar(angle, bottom_distance) for angle in angles[2:]]
 
-            dial_relative_fixing_positions = [polar(angle, top_distances) for angle in angles[:2]] + [polar(angle, bottom_distance) for angle in angles[2:]]
+            angles = [get_angle_between_two_points(centre, pos) for pos in self.top_pillar_positions ] + [math.pi*1.5]
+            distances = self.dial.outside_d / 2 + self.dial.fixing_screws.get_head_diameter() / 2 + 1
+
+            dial_relative_fixing_positions = [polar(angle, distances) for angle in angles]
 
             self.dial_fixing_positions = [np_to_set(np.add(centre, pos)) for pos in dial_relative_fixing_positions]
 
             # array of arrays because we only want one screw per pillar here
             #invert x because dial is constructed upside down
             self.dial.override_fixing_positions([[(-pos[0], pos[1])] for pos in dial_relative_fixing_positions])
-            self.dial.support_d = self.plate_width
+            self.dial.support_d = self.plate_width#*0.75
             if self.style == PlateStyle.RAISED_EDGING:
                 self.dial.support_d = self.plate_width - self.edging_wide * 2 - 1
+
+
+            self.standoff_width = self.plate_width
+            if self.standoff_width < self.fixing_screws.get_head_diameter() * 1.5:
+                self.standoff_width = self.fixing_screws.get_head_diameter() * 1.5
 
     def get_plate_shape(self):
         return PlateShape.RECTANGLE_WALL
@@ -5710,7 +5731,9 @@ class RectangularWallClockPlates(RoundClockPlates):
         plate = get_stroke_line( main_points,wide=main_width, thick = plate_thick, loop=True)
 
         plate = plate.union(get_stroke_line([self.bottom_pillar_positions[0], self.hands_position, self.bottom_pillar_positions[1]], wide=main_width, thick=plate_thick))
-        plate = plate.union(get_stroke_line([self.hands_position, left_bearing, right_bearing], wide=main_width, thick=plate_thick, loop=True))
+        #this would clash with the clutch with the current gear layout
+        # plate = plate.union(get_stroke_line([self.hands_position, left_bearing, right_bearing], wide=main_width, thick=plate_thick, loop=True))
+        plate = plate.union(get_stroke_line([left_bearing, self.hands_position, right_bearing], wide=main_width, thick=plate_thick, loop=False))
         # plate = plate.union(get_stroke_line([(self.top_pillar_positions[0][0], left_bearing[1]), left_bearing], wide=main_width, thick=plate_thick, loop=True))
         # plate = plate.union(get_stroke_line([(self.top_pillar_positions[1][0], right_bearing[1]), right_bearing], wide=main_width, thick=plate_thick, loop=True))
         plate = plate.union(get_stroke_line([self.top_pillar_positions[0], left_bearing], wide=main_width, thick=plate_thick))
@@ -5778,6 +5801,9 @@ class RectangularWallClockPlates(RoundClockPlates):
         standoff = get_stroke_line( [self.bottom_pillar_positions[0], self.bearing_positions[0][:2], self.bottom_pillar_positions[1]],
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
 
+        for pos in self.bottom_pillar_positions:
+            standoff = standoff.union(cq.Workplane("XY").circle(self.standoff_width/2).extrude(self.get_plate_thick(standoff=True)).translate(pos))
+
         standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0, self.back_plate_from_wall)))
 
         if not for_printing:
@@ -5787,11 +5813,22 @@ class RectangularWallClockPlates(RoundClockPlates):
         standoff = get_stroke_line( [self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]],
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
 
+        for pos in self.top_pillar_positions:
+            standoff = standoff.union(cq.Workplane("XY").circle(self.standoff_width/2).extrude(self.get_plate_thick(standoff=True)).translate(pos))
+
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
         standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0, 0, self.back_plate_from_wall)))
         if not for_printing:
             standoff = standoff.translate((0, 0, -self.back_plate_from_wall))
         return standoff
+    def get_screwhole_positions(self):
+        '''
+        returns [(x,y, supported),]
+        '''
+
+        top_pos = np_to_set(self.bearing_positions[-1][:2], (0, self.plate_width*1.5))
+
+        return [top_pos,self.bearing_positions[0][:2]]
 
     def get_fixing_screws_cutter(self):
 

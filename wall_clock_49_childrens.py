@@ -106,13 +106,14 @@ escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2, force_dia
 
 # powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
 #                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
-powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=8.5, max_diameter=25, ratchet_diameter=35,
-                                  fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK))# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
+powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=7, max_diameter=25, ratchet_diameter=35,
+                                  fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK), wall_thick=1.5)# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
 train = GoingTrain(pendulum_period=1.5, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False,
                          powered_wheels=1, runtime_hours=30, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
 pillar_style = PillarStyle.PLAIN
+endshake = 1.0
 
 
 # train.calculate_ratios(module_reduction=1.0, pinion_max_teeth=20, min_pinion_teeth=15, wheel_min_teeth=80, max_wheel_teeth=120, max_error=0.1, loud=True)
@@ -126,8 +127,8 @@ train.set_powered_wheel_ratios([[22*3, 10*3]])
 
 back_plate_from_wall=40
 pendulum_sticks_out = 20
-plate_thick=8
-back_plate_thick = 10
+plate_thick=7
+back_plate_thick = 9
 
 # pinion_extensions={1:16, 3:10}
 # powered_modules=[WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1)]
@@ -141,7 +142,7 @@ module = 1.0#1.2
 pinion_type=PinionType.PLASTIC
 
 #bits for magnetic clutch
-magnet = DISC_MAGNET_6X4MM
+magnet = DiscMagnet(6,3)#DISC_MAGNET_6X4MM
 clutch_hole_d=8
 clutch_hole_deep=10
 
@@ -151,7 +152,7 @@ train.generate_arbors_dicts([
     {
         #great wheel
         "module": 1.25,
-        "wheel_thick" : 7.5,
+        "wheel_thick" : 7,
         # "pinion_type": PinionType.LANTERN,
         "style": gear_style,
         "pinion_at_front": True,
@@ -180,10 +181,10 @@ train.generate_arbors_dicts([
     {
         #second wheel
         "module": module,
-        "wheel_thick" : 4,
+        "wheel_thick" : 3.5,
         "pinion_thick": 10,
         #we've got a lot of endshake on this design, can't let the wheels clash
-        "pinion_extension":2,
+        "pinion_extension":1,
         "pinion_type": pinion_type,
         "style": gear_style,
         # "pinion_extension": 18,
@@ -194,20 +195,20 @@ train.generate_arbors_dicts([
 {
         # third wheel
         "module": module,
-        "wheel_thick" : 4,
-        "pinion_thick": 10,
+        "wheel_thick" : 3,
+        "pinion_thick": 9,
         "pinion_type": pinion_type,
         "style": gear_style,
         "pinion_at_front": False,
-        "pinion_extension": 12+15,
+        "pinion_extension": 12+15-2,
         "end_cap_thick": 0,
         "arbor_class_for_plate" : FixedRodArborForPlate
     },
     {
         # escape wheel
         "module": module,
-        "wheel_thick" : 4,
-        "pinion_thick": 10,
+        "wheel_thick" : 3,
+        "pinion_thick": 9,
         "pinion_type": pinion_type,
         "style": gear_style,
         "pinion_extension": 9,
@@ -216,7 +217,7 @@ train.generate_arbors_dicts([
         "arbor_class_for_plate" : FixedRodArborForPlate
     },
     {
-        #achor
+        #anchor
         "arbor_class_for_plate" : FixedRodArborForPlate,
         #bodge to make the fixed rod friction bits work
         "pinion_at_front": False
@@ -237,7 +238,7 @@ pendulum_fixing = KnifeEdgePendulumBits(full_circle=False, wedge_perch_depth=bac
 
 # dial = Dial(outside_d=dial_d, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL,
 #                   seconds_style=DialStyle.LINES_ARC, pillar_style=pillar_style, raised_detail=True, dial_width=dial_width)
-dial = Dial(180, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8,
+dial = Dial(172, DialStyle.ARABIC_NUMBERS, font="Gill Sans Medium", font_scale=0.8,
             font_path="../fonts/GillSans/Gill Sans Medium.otf", outer_edge_style=DialStyle.LINES_ARC, inner_edge_style=None,
             dial_width=30, pillar_style=pillar_style, screwed_from_front=True, raised_detail=True)
 plaque = Plaque(text_lines=["W49#0 {:.1f}cm L.Wallin".format(train.pendulum_length_m * 100), "2026 Childrens Clock Test"])
@@ -246,7 +247,7 @@ plaque = Plaque(text_lines=["W49#0 {:.1f}cm L.Wallin".format(train.pendulum_leng
 gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, can_ignore_pinions=[])#, support_second_hand=False)
 
 motion_works = MotionWorksForMagnetClutch(extra_height=15, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, pinion_thick=clutch_hole_deep+1,
-                                          magnet=DiscMagnet(6,3), distance_from_front_plate=FixedRodMagneticClutchArborForPlate.DISTANCE_FROM_FRONT_PLATE)
+                                          magnet=magnet, distance_from_front_plate=FixedRodMagneticClutchArborForPlate.DISTANCE_FROM_FRONT_PLATE)
 motion_works.calculate_size(arbor_distance=32.5)
 
 motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
@@ -255,7 +256,16 @@ plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=di
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing,
-                                    fixing_screws=MachineScrew(6, type=MachineScrewType.HEX_HEAD))
+                                    fixing_screws=MachineScrew(8, type=MachineScrewType.HEX_HEAD))
+
+#works but because the top of teh train is so large and power side of train is so small looks pretty ugly and I think it'll be too big to fit on the pritn bed
+# plates = RoundClockPlates(train, motion_works,name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
+#                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
+#                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque,
+#                                 gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing,
+#                                     fixing_screws=MachineScrew(8, type=MachineScrewType.HEX_HEAD), fully_round=True)
+
+#would need work for the knife edge pendulum fixing to function, but it is nice how you can see the escapement
 # plates = SimpleClockPlates(train, motion_works, gear_train_layout=gear_train_layout, plate_thick=plate_thick, pendulum_sticks_out=pendulum_sticks_out,
 #                            pendulum_fixing=pendulum_fixing, back_plate_from_wall=back_plate_from_wall, dial=dial, motion_works_angle_deg=motion_works_angle_deg,
 #                            pillar_style=pillar_style, plaque=plaque, pendulum_at_front=False, name=clock_name)
