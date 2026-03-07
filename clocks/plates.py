@@ -342,6 +342,10 @@ class BasePlates:
         self.all_pillar_positions = []
         self.hands_position = (0,0)
 
+        # for fixing to teh wall
+        self.wall_fixing_screw_head_d = 11
+
+
     def get_pillar_in_position(self, x=-1, y=-1):
         '''
         given a +ve or +ve x and y find the pillar in that direction
@@ -612,8 +616,7 @@ class SimpleClockPlates(BasePlates):
         #how chunky to make the bearing holders
         self.bearing_wall_thick = 4
 
-        #for fixing to teh wall
-        self.wall_fixing_screw_head_d = 11
+
 
         self.pendulum_at_top = pendulum_at_top
         #how far away from the relevant plate (front if pendulumAtFront) the pendulum should be
@@ -5579,6 +5582,15 @@ class RectangularWallClockPlates(RoundClockPlates):
         kwargs["leg_height"]=0
         super().__init__(*args, **kwargs)#bottom_pillars=2, top_pillars=2, pendulum_at_front=False,
 
+        self.top_screw_fixing_on_loop = False
+        self.top_screw_fixing_loop_radius = -1
+        try:
+            #assume it's a knife edge, with a big loop out the top
+            self.top_screw_fixing_loop_radius = self.pendulum_fixing.ring_diameter/2 + self.plate_width
+            self.top_screw_fixing_on_loop = True
+        except:
+            self.top_screw_fixing_on_loop = False
+
         if self.dial is not None:
             #TODO more general purpose support for different relative sizes of plates and dial and different pillar locations.
 
@@ -5797,12 +5809,22 @@ class RectangularWallClockPlates(RoundClockPlates):
         return plate
 
 
+    def add_stronger_ends_to_standoff(self, standoff, positions):
+        # thicken the ends where the screws go in as this design may well have chunky screws
+        if self.standoff_width > self.plate_width:
+            for pos in positions:
+                extra_blob = cq.Workplane("XY").circle(self.standoff_width / 2).extrude(self.get_plate_thick(standoff=True)).faces(">Z").chamfer((self.standoff_width - self.plate_width) / 2)
+                standoff = standoff.union(extra_blob.translate(pos))
+
+        return standoff
+
     def get_bottom_wall_standoff(self, for_printing=True):
         standoff = get_stroke_line( [self.bottom_pillar_positions[0], self.bearing_positions[0][:2], self.bottom_pillar_positions[1]],
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
 
-        for pos in self.bottom_pillar_positions:
-            standoff = standoff.union(cq.Workplane("XY").circle(self.standoff_width/2).extrude(self.get_plate_thick(standoff=True)).translate(pos))
+        standoff = self.add_stronger_ends_to_standoff(standoff, self.bottom_pillar_positions)
+
+        standoff = self.cut_wall_fixing_hole(standoff, self.get_screwhole_positions()[1], screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
 
         standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0, self.back_plate_from_wall)))
 
@@ -5813,8 +5835,23 @@ class RectangularWallClockPlates(RoundClockPlates):
         standoff = get_stroke_line( [self.top_pillar_positions[0], self.bearing_positions[-1][:2], self.top_pillar_positions[1]],
                                     wide=self.plate_width, thick = self.get_plate_thick(standoff=True))
 
-        for pos in self.top_pillar_positions:
-            standoff = standoff.union(cq.Workplane("XY").circle(self.standoff_width/2).extrude(self.get_plate_thick(standoff=True)).translate(pos))
+        standoff = self.add_stronger_ends_to_standoff(standoff, self.top_pillar_positions)
+
+        if self.top_screw_fixing_on_loop:
+            loop = cq.Workplane("XY").circle(self.top_screw_fixing_loop_radius+self.plate_width/2).circle(self.top_screw_fixing_loop_radius - self.plate_width/2).extrude(self.get_plate_thick(standoff=True))
+
+            loop = loop.translate(self.bearing_positions[-1][:2])
+
+            loop_cutter = (cq.Workplane("XY").moveTo(self.top_pillar_positions[0][0], self.top_pillar_positions[0][1]).lineTo(self.bearing_positions[-1][0], self.bearing_positions[-1][1])
+                           .lineTo(self.top_pillar_positions[1][0], self.top_pillar_positions[1][1])
+                           .lineTo(self.top_pillar_positions[1][0], self.top_pillar_positions[1][1]-self.top_screw_fixing_loop_radius*2)
+                           .lineTo(self.top_pillar_positions[0][0], self.top_pillar_positions[0][1]-self.top_screw_fixing_loop_radius*2).close().extrude(self.get_plate_thick(standoff=True)))
+
+            loop = loop.cut(loop_cutter)
+            standoff = standoff.union(loop)
+
+
+        standoff = self.cut_wall_fixing_hole(standoff, self.get_screwhole_positions()[0], screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True, plate_thick=self.get_plate_thick(standoff=True))
 
         standoff = self.cut_anchor_bearing_in_standoff(standoff)
         standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0, 0, self.back_plate_from_wall)))
@@ -5826,7 +5863,11 @@ class RectangularWallClockPlates(RoundClockPlates):
         returns [(x,y, supported),]
         '''
 
-        top_pos = np_to_set(self.bearing_positions[-1][:2], (0, self.plate_width*1.5))
+        top_pos_distance = self.plate_distance
+        if self.top_screw_fixing_on_loop:
+            top_pos_distance = self.top_screw_fixing_loop_radius
+
+        top_pos = np_to_set(np.add(self.bearing_positions[-1][:2], (0, top_pos_distance)))
 
         return [top_pos,self.bearing_positions[0][:2]]
 
