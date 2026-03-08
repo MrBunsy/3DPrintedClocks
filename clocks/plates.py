@@ -5582,14 +5582,17 @@ class RectangularWallClockPlates(RoundClockPlates):
         kwargs["leg_height"]=0
         super().__init__(*args, **kwargs)#bottom_pillars=2, top_pillars=2, pendulum_at_front=False,
 
+        self.standoffs_printed_nut_side_down = False
         self.top_screw_fixing_on_loop = False
         self.top_screw_fixing_loop_radius = -1
         try:
             #assume it's a knife edge, with a big loop out the top
             self.top_screw_fixing_loop_radius = self.pendulum_fixing.ring_diameter/2 + self.plate_width
             self.top_screw_fixing_on_loop = True
+            self.standoffs_printed_nut_side_down = True
         except:
             self.top_screw_fixing_on_loop = False
+            self.standoffs_printed_nut_side_down = False
 
         if self.dial is not None:
             #TODO more general purpose support for different relative sizes of plates and dial and different pillar locations.
@@ -5824,7 +5827,7 @@ class RectangularWallClockPlates(RoundClockPlates):
 
         standoff = self.add_stronger_ends_to_standoff(standoff, self.bottom_pillar_positions)
 
-        standoff = self.cut_wall_fixing_hole(standoff, self.get_screwhole_positions()[1], screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
+        standoff = self.cut_wall_fixing_hole(standoff, self.get_screwhole_positions()[1], screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True, plate_thick=self.get_plate_thick(standoff=True))
 
         standoff = standoff.cut(self.get_fixing_screws_cutter().translate((0,0, self.back_plate_from_wall)))
 
@@ -5875,7 +5878,7 @@ class RectangularWallClockPlates(RoundClockPlates):
 
         cutter = cq.Workplane("XY")
         for pos in self.all_pillar_positions:
-            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True).translate(pos).translate((0,0,-self.back_plate_from_wall)))
+            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=self.standoffs_printed_nut_side_down).translate(pos).translate((0,0,-self.back_plate_from_wall)))
         return cutter
 
 class RollingBallClockPlates(SimpleClockPlates):

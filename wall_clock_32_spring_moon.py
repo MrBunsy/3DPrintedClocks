@@ -181,10 +181,11 @@ pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
 plaque = Plaque(text_lines=["W32#2 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
-
+#motion_works_angle_deg=180+45
+motion_works_angle_deg=205
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.DOTS, dial_width=dial_width, pillar_style=PillarStyle.BARLEY_TWIST)
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 32#3", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=20,
-                                motion_works_angle_deg=180+45, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=PillarStyle.BARLEY_TWIST,
+                                motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=PillarStyle.BARLEY_TWIST,
                                 moon_complication=moon_complication, second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True)
 
 
