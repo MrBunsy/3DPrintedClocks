@@ -4914,9 +4914,11 @@ class RoundClockPlates(SimpleClockPlates):
                 top_of_circle_y = self.hands_position[1] - self.radius + main_arm_wide/2
                 if bottom_of_arm_y - top_of_circle_y < 4:
                     extra_width_at_bottom=5
-
-                bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide + extra_width_at_bottom).extrude(plate_thick).translate(self.bearing_positions[0][:2]).translate((0,-extra_width_at_bottom))
-                plate = plate.union(bottom_arm.intersect(cq.Workplane("XY").circle(self.radius + main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)))
+                try:
+                    bottom_arm = cq.Workplane("XY").rect(self.radius * 2, self.bottom_arm_wide + extra_width_at_bottom).extrude(plate_thick).translate(self.bearing_positions[0][:2]).translate((0,-extra_width_at_bottom))
+                    plate = plate.union(bottom_arm.intersect(cq.Workplane("XY").circle(self.radius + main_arm_wide/2).extrude(plate_thick).translate(self.hands_position)))
+                except:
+                    print("Unable to add bottom arm to round clock plates - check geometry?")
             else:
                 #two angled arms
                 angles = [-math.pi/4, -math.pi*3/4]
