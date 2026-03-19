@@ -175,7 +175,7 @@ train.generate_arbors_dicts([
             "magnet":magnet,
             "clutch_hole_d" : 8 - 0.4,
             "clutch_hole_deep": 10,
-            "front_bearing": BEARING_8x16x5
+            "front_bearing": BearingInfo(inner_d=10, outer_d=19, height=5, inner_safe_d=12, outer_safe_d=16, cutter_wiggle_room=0.05)#BearingInfo(outer_d = 16, inner_d=8, height=5, outer_safe_d=13, inner_safe_d=10, cutter_wiggle_room=0.05)
         }
     },
     {

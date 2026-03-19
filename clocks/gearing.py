@@ -1700,6 +1700,8 @@ class LanternPinion:
         top_thick = self.hex_fixing_sunk_into_cap
         hole_d = self.arbor_rod_d
         inner_r = self.pinion.inner_r
+        if inner_r*2 < hole_d:
+            raise ValueError("Module size too small to possibly make lantern pinion")
         if for_cutting:
             #this is being used to cut out from top/bottom shapes
             inner_r = self.inner_r_for_hex_slot_cutter
@@ -4438,7 +4440,7 @@ class MotionWorksForMagnetClutch(MotionWorks):
     def get_min_cannon_pinion_r(self):
         return self.clutch_hole_d + 1
 
-    def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0):
+    def get_cannon_pinion(self, hand_holder_radius_adjustment=1.0, hole_d=None):
         pinion = super().get_cannon_pinion(hand_holder_radius_adjustment, hole_d=0)
         clutch_hole = cq.Workplane("XY").circle(self.clutch_hole_d/2).extrude(self.clutch_hole_deep)
         pinion = pinion.cut(clutch_hole)
@@ -4453,7 +4455,7 @@ class MotionWorksForMagnetClutch(MotionWorks):
         pinion = pinion.cut(ring_magnet_cutter.translate((0,0,0.4)))
 
         #screw in front to hold hands on?
-        pinion = pinion.cut(self.hand_screw.get_cutter(length=self.hand_screwhole_deep, self_tapping=True, ignore_head=True)
+        pinion = pinion.cut(self.hand_screw.get_cutter(length=self.hand_screwhole_deep, self_tapping=True, ignore_head=True, head_space_length=0)
                             .translate((0,0,self.get_cannon_pinion_total_height() - self.hand_screwhole_deep)))
 
         return pinion

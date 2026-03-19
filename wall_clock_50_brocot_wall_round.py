@@ -1,0 +1,138 @@
+'''
+Copyright Luke Wallin 2023
+
+This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
+
+You may redistribute and modify this source and make products using it under
+the terms of the CERN-OHL-S v2 or any later version (https://ohwr.org/cern_ohl_s_v2.txt).
+
+This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY,
+INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A
+PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.
+
+Source location: https://github.com/MrBunsy/3DPrintedClocks
+
+As per CERN-OHL-S v2 section 4, should you produce hardware based on this
+source, You must where practicable maintain the Source Location visible
+on the external case of the clock or other products you make using this
+source.
+'''
+from clocks import *
+
+'''
+Eight day cord wheel clock with "big cogs" that mum might like. 
+Original plan was escapement on the front, but mum has since suggested she'd like one with a centred second hand
+
+I'm going back to escapement on the front because I can make it a brocot and give it real rubies!
+'''
+outputSTL = False
+
+if 'show_object' not in globals():
+    #don't output STL when we're in cadquery editor
+    outputSTL = True
+    def show_object(*args, **kwargs):
+        pass
+
+clockName="wall_clock_24_dialfix_jamfix"
+clockOutDir="out"
+gearStyle=GearStyle.CURVES
+pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+
+#for period 1.5
+# drop =1.5
+# lift =3
+# lock=1.5
+pendulum_period=1.5
+
+#from paul's clock with period 2.0
+drop =3
+lift =3
+lock=1.25
+pendulum_period=2.0
+
+escapement = BrocotEscapment(drop=drop, lift=lift, teeth=30, lock=lock, diameter=55)#,anchor_teeth=10
+
+# show_object(escapement.get_wheel_2d())
+#
+#
+train = GoingTrain(pendulum_period=pendulum_period, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False, powered_wheels=1, runtime_hours=7.5 * 24, support_second_hand=False)#, huygensMaintainingPower=True)
+
+moduleReduction=0.85
+
+# train.calculate_ratios(max_wheel_teeth=120, min_pinion_teeth=9, wheel_min_teeth=20, pinion_max_teeth=15, max_error=0.1, module_reduction=moduleReduction, loud=True, favour_smallest=False)
+#this is what was calculated, just saving time
+train.set_ratios([[80, 9], [81, 12]])
+
+#from paul's clock
+train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=26,
+                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
+
+
+
+pendulumSticksOut=10
+back_plate_from_wall=30
+
+train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=6.25, pinion_thick_multiplier=3, style=gearStyle,
+                powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2, pendulum_fixing=pendulumFixing, stack_away_from_powered_wheel=True, pinion_extensions={1:10}, escapement_split=True)
+train.print_info(weight_kg=2.5)
+train.get_arbor_with_conventional_naming(0).print_screw_length()
+
+
+#increasing cannon_pinion_to_hour_holder_gap_size slightly because the brass filament seems to always be a tight fit (possibly because it has to be printed at a lower temperature?)
+motion_works = MotionWorks(extra_height=15, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True,
+                           module=1, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1, cannon_pinion_to_hour_holder_gap_size=0.6)#, bearing=get_bearing_info(3)
+#make furtehr apart so we get a big enough cannon pinion for the inset_at_base, which we want so we don't clash with the escape wheel
+motion_works.calculate_size(arbor_distance=35)
+pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=10, bob_text=["F & P", "40"])
+
+motion_works_angle_deg = 360 - 30
+
+dial = Dial(outside_d=205, bottom_fixing=True, top_fixing=False, style=DialStyle.LINES_ARC, inner_edge_style=None, outer_edge_style=None, detail_thick=LAYER_THICK*2)
+# dial = None
+
+#dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
+# plates = SimpleClockPlates(train, motionWorks, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 50", gear_train_layout=GearTrainLayout.VERTICAL_COMPACT,
+#                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+#                                  back_plate_from_wall=backPlateFromWall, fixing_screws=MachineScrew(metric_thread=4, countersunk=True),
+#                                  chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=360-30,
+#                                  allow_bottom_pillar_height_reduction=False, endshake=1.5, second_hand=False, centred_second_hand=False, escapement_on_front=True)
+pillar_style = PillarStyle.SIMPLE
+plates = RoundClockPlates(train, motion_works, name="Wall 50", dial=dial, plate_thick=8, back_plate_thick=10, layer_thick=0.2, pendulum_sticks_out=back_plate_from_wall - 20,
+                          motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
+                          second_hand=False, standoff_pillars_separate=True,
+                          gear_train_layout=GearTrainLayout.VERTICAL_COMPACT, back_plate_from_wall=40,
+                          fully_round=True)
+
+
+# hands = Hands(style=HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),
+#                     length=plates.dial_diameter*0.45, thick=motionWorks.minuteHandSlotHeight, outline=1, outlineSameAsBody=False, secondLength=plates.second_hand_mini_dial_d*0.45)
+hands = Hands(style=HandStyle.SIMPLE_ROUND, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+              length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=False)
+# hands = Hands(style="cuckoo", minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(), length=60, thick=motionWorks.minuteHandSlotHeight, outlineSameAsBody=False)
+
+pulley = BearingPulley(diameter=train.powered_wheel.diameter, bearing=get_bearing_info(4), wheel_screws=MachineScrew(2, countersunk=True, length=8))
+print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.get_hook_total_thick()))
+
+
+assembly = Assembly(plates, hands=hands, time_seconds=30, pulley = pulley, pendulum=pendulum)#, timeHours=12, timeMins=0)#weights=[Weight(height=245,diameter=55)]
+
+# show_object(plates.getPlate(back=True))
+# show_object(assembly.getClock(with_key=False, with_pendulum=True))
+
+assembly.show_clock(show_object, motion_works_colours=[Colour.BRASS], bob_colours=[Colour.PURPLE, Colour.RED, Colour.RED], plate_colours=Colour.LIGHTGREY,
+                    hand_colours=[Colour.WHITE, Colour.BLACK, Colour.RED], dial_colours=[Colour.WHITE, Colour.RED], with_rods=True)
+
+# show_object(plates.getDrillTemplate(6))
+
+if outputSTL:
+    #
+    #
+    # train.output_STLs(clockName,clockOutDir)
+    motion_works.output_STLs(clockName, clockOutDir)
+    pendulum.output_STLs(clockName, clockOutDir)
+    plates.output_STLs(clockName, clockOutDir)
+    hands.output_STLs(clockName, clockOutDir)
+    pulley.output_STLs(clockName, clockOutDir)
+    assembly.output_STLs(clockName, clockOutDir)
+
+    # outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)
