@@ -5880,12 +5880,15 @@ class RectangularWallClockPlates(RoundClockPlates):
     def get_fixing_screws_cutter(self):
 
         cutter = cq.Workplane("XY")
+        loose = False
+        if self.fixing_screws.type == MachineScrewType.HEX_HEAD:
+            loose = True
         for pos in self.top_pillar_positions + self.bottom_pillar_positions:
             bridging = False
             if pos in self.top_pillar_positions and self.standoffs_printed_nut_side_down:
                 bridging = True
             #extra 1mm so the head defintely doesn't stick out the back
-            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=bridging).translate(pos)
+            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=bridging, loose=loose).translate(pos)
                                   .translate((0,0,-self.back_plate_from_wall + 1)))
         return cutter
 

@@ -102,7 +102,7 @@ gear_style=GearStyle.BENT_ARMS5
 
 second_hand_centred = False
 
-escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2, force_diameter=True, diameter=88-12)#, drop_deg=1.75)
+escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2, force_diameter=True, diameter=88-12, anchor_thick=10)#, drop_deg=1.75)
 
 # powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
 #                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
@@ -256,7 +256,7 @@ plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=di
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing,
-                                    fixing_screws=MachineScrew(6, type=MachineScrewType.HEX_HEAD, head_extra_r=0.25))
+                                    fixing_screws=MachineScrew(6, type=MachineScrewType.HEX_HEAD, head_extra_r=0.6))
 
 #works but because the top of teh train is so large and power side of train is so small looks pretty ugly and I think it'll be too big to fit on the pritn bed
 # plates = RoundClockPlates(train, motion_works,name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,

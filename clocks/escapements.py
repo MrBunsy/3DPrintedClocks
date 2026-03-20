@@ -34,7 +34,7 @@ class AnchorEscapement:
 
     @staticmethod
     def get_with_optimal_pallets(teeth=30, drop_deg=2, type=EscapementType.DEADBEAT, lock_deg=2, anchor_teeth=None, force_diameter=False, style=AnchorStyle.CURVED_MATCHING_WHEEL, diameter=100,
-                                 anchor_thick=12, wheel_thick=3):
+                                 **kwargs):
         '''
         Good drops: 3 with 30 teeth, 1.5 with 40 teeth
         Generate an anchor with pallets at 45 degrees, based only on the number of teeth and desired drop
@@ -88,7 +88,7 @@ class AnchorEscapement:
         if best_lift < 0:
             raise RuntimeError("Unable to calculate good anchor")
         best_anchor = AnchorEscapement(teeth=teeth, type=type, lift=best_lift, drop=drop_deg, lock=lock_deg, style=style, diameter=diameter, force_diameter=force_diameter,
-                                       anchor_thick=anchor_thick, wheel_thick=wheel_thick, anchor_teeth=anchor_teeth)
+                                       anchor_teeth=anchor_teeth, **kwargs)
         print(f"lift {best_lift:.2f} drop {drop_deg:.2f} teeth {teeth} entry angle {rad_to_deg(best_anchor.pallet_angles[0]):.1f}deg exit angle {-rad_to_deg(best_anchor.pallet_angles[1]):.1f}deg")
         return best_anchor
 
