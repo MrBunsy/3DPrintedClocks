@@ -4422,12 +4422,12 @@ It's important that the motion works can rotate freely after the friction clip h
 
 class MotionWorksForMagnetClutch(MotionWorks):
 
-    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, hand_screwhole_deep=8, distance_from_front_plate=2, **kwargs):
+    def __init__(self, *args, magnet=None, clutch_hole_d=8, clutch_hole_deep=10, hand_screwhole_deep=20, distance_from_front_plate=2, **kwargs):
         super().__init__(*args, **kwargs)
         self.magnet = magnet
         self.clutch_hole_d = clutch_hole_d
         self.clutch_hole_deep = clutch_hole_deep
-        self.magnet_wall_thick = LAYER_THICK*2
+        self.magnet_wall_thick = 0.4#LAYER_THICK*2
         self.hand_screw = MachineScrew(3, type=MachineScrewType.PAN_HEAD)
         self.hand_screwhole_deep = hand_screwhole_deep
         self.distance_from_front_plate = distance_from_front_plate
@@ -4452,7 +4452,7 @@ class MotionWorksForMagnetClutch(MotionWorks):
             # get_hole_with_hole(self.arbor_d / 2, outer_d=self.magnet.outer_d + self.magnet.wiggle_room).translate(
             #     (0, 0, self.magnet.thick + top_gap))))
 
-        pinion = pinion.cut(ring_magnet_cutter.translate((0,0,0.4)))
+        pinion = pinion.cut(ring_magnet_cutter)
 
         #screw in front to hold hands on?
         pinion = pinion.cut(self.hand_screw.get_cutter(length=self.hand_screwhole_deep, self_tapping=True, ignore_head=True, head_space_length=0)

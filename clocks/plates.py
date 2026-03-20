@@ -441,7 +441,7 @@ class SimpleClockPlates(BasePlates):
 
 
     def __init__(self, going_train, motion_works, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
-                 pendulum_sticks_out=20, name="", heavy=False, extra_heavy=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
+                 standoff_plate_thick = None, pendulum_sticks_out=20, name="Unnamed Clock", heavy=False, extra_heavy=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
                  pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, escapement_on_back=False, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1.0,
@@ -611,6 +611,9 @@ class SimpleClockPlates(BasePlates):
         self.back_plate_thick = back_plate_thick
         if self.back_plate_thick is None:
             self.back_plate_thick = self.plate_thick
+        self.standoff_plate_thick = standoff_plate_thick
+        if self.standoff_plate_thick is None:
+            self.standoff_plate_thick = plate_thick
         #default for anchor, overriden by most arbours
         self.arbor_d=default_arbor_d
         #how chunky to make the bearing holders
@@ -1723,7 +1726,7 @@ class SimpleClockPlates(BasePlates):
     def get_plate_thick(self, back=True, standoff=False):
         if standoff:
             #TODO separate value
-            return self.plate_thick
+            return self.standoff_plate_thick
         if back:
             return self.back_plate_thick
         return self.plate_thick
@@ -5575,7 +5578,7 @@ class RectangularWallClockPlates(RoundClockPlates):
     this is sort of an amalgamation of the mantel plates, the old simple vertical plates and the round wall clock plates
     will work best with only one powered wheel - I think
 
-    BARELY STARTED
+    being used with childrens clock. Inheriting from round clocks plates may be the wrong choice, will need tidying up properly
     '''
 
     def __init__(self, *args, **kwargs):
@@ -5877,8 +5880,13 @@ class RectangularWallClockPlates(RoundClockPlates):
     def get_fixing_screws_cutter(self):
 
         cutter = cq.Workplane("XY")
-        for pos in self.all_pillar_positions:
-            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=self.standoffs_printed_nut_side_down).translate(pos).translate((0,0,-self.back_plate_from_wall)))
+        for pos in self.top_pillar_positions + self.bottom_pillar_positions:
+            bridging = False
+            if pos in self.top_pillar_positions and self.standoffs_printed_nut_side_down:
+                bridging = True
+            #extra 1mm so the head defintely doesn't stick out the back
+            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=bridging).translate(pos)
+                                  .translate((0,0,-self.back_plate_from_wall + 1)))
         return cutter
 
 class RollingBallClockPlates(SimpleClockPlates):

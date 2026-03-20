@@ -252,11 +252,11 @@ motion_works.calculate_size(arbor_distance=32.5)
 
 motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
 
-plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
+plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, standoff_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True,
                                 gear_train_layout=gear_train_layout, back_plate_from_wall=40, pendulum_fixing=pendulum_fixing,
-                                    fixing_screws=MachineScrew(6, type=MachineScrewType.HEX_HEAD))
+                                    fixing_screws=MachineScrew(6, type=MachineScrewType.HEX_HEAD, head_extra_r=0.25))
 
 #works but because the top of teh train is so large and power side of train is so small looks pretty ugly and I think it'll be too big to fit on the pritn bed
 # plates = RoundClockPlates(train, motion_works,name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
@@ -287,7 +287,7 @@ if not outputSTL:
     assembly.show_clock(show_object, with_rods=True,# plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BRIGHT_ORANGE],
                         # gear_colours=[Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
-                        motion_works_colours=[Colour.BRIGHT_ORANGE, Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],
+                        motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.ORANGE],
                         pulley_colour=Colour.LIME_GREEN, plaque_colours=[Colour.WHITE, Colour.BLACK], with_key=True,
                         # hand_colours=[Colour.GOLD]
                         )

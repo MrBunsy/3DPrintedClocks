@@ -338,7 +338,7 @@ class MachineScrew:
     TODO include layer thickness as part of screw or keep it as input to the cutters?
     '''
 
-    def __init__(self, metric_thread=3, countersunk=None, length=-1, grub=False, type=None):
+    def __init__(self, metric_thread=3, countersunk=None, length=-1, grub=False, type=None, head_extra_r=NUT_WIGGLE_ROOM/2):
 
         '''
         countersunk - head is countersunk
@@ -355,6 +355,7 @@ class MachineScrew:
         # if length is provided, this represents a specific screw
         self.length = length
         self.type = type
+        self.head_extra_r = head_extra_r
         #backwards compatibility:
         if (countersunk is None or countersunk == False) and type is None:
             #original default
@@ -482,24 +483,27 @@ class MachineScrew:
 
             if not with_bridging:
                 if sides == 1:
-                    head_shape = cq.Workplane("XY").circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(self.get_head_height())
+                    head_shape = cq.Workplane("XY").circle(self.get_head_diameter() / 2 + self.head_extra_r ).extrude(self.get_head_height())
                 else:
-                    head_shape = cq.Workplane("XY").polygon(sides, self.get_head_diameter() + NUT_WIGGLE_ROOM/2).extrude(self.get_head_height())
+                    head_shape = cq.Workplane("XY").polygon(sides, self.get_head_diameter() + self.head_extra_r ).extrude(self.get_head_height())
             else:
 
-                head_shape = get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + NUT_WIGGLE_ROOM, deep=self.get_head_height(),
+                head_shape = get_hole_with_hole(inner_d=r * 2, outer_d=self.get_head_diameter() + self.head_extra_r , deep=self.get_head_height(),
                                                 layer_thick=layer_thick, sides = sides)
 
             if not space_for_pan_head:
                 head_shape = head_shape.translate((0,0, - self.get_head_height()))
 
             screw = screw.union(head_shape)
+        # note no grub screw as it has no head
 
 
-        #note no grub screw as it has no head
         # extend out from the headbackwards too
         if head_space_length > 0:
-            screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
+            if self.type == MachineScrewType.HEX_HEAD:
+                screw = screw.faces("<Z").workplane().polygon(6, self.get_head_diameter() + self.head_extra_r).extrude(head_space_length)
+            else:
+                screw = screw.faces("<Z").workplane().circle(self.get_head_diameter() / 2 + NUT_WIGGLE_ROOM / 2).extrude(head_space_length)
 
         return screw
 
