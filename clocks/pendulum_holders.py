@@ -765,6 +765,11 @@ class KnifeEdgePendulumBits(PendulumHolderWithCrutch):
 
     def get_BOM(self):
         bom = BillOfMaterials("Knife Edge Pendulum Holder")
+
+        bom.add_printed_parts([
+            BillOfMaterials.PrintedPart("beat_setter", self.get_beat_setter_arm()),
+            BillOfMaterials.PrintedPart("pendulum_holder", self.get_pendulum_holder(for_printing=True))
+        ])
         #TODO
         return bom
 

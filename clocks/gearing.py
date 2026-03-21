@@ -2219,7 +2219,7 @@ class ArborForPlate:
                     standoff_r = wall_bearing.inner_safe_d / 2
                 else:
                     #this is a fixed rod arbor. TODO decide if we're still doing standoffs?
-                    standoff_r = self.cylinder_r*0.99
+                    standoff_r = self.cylinder_r*0.5
                 # circular bit
                 anchor = anchor.union(cq.Workplane("XY").circle(self.cylinder_r).extrude(cylinder_length + anchor_thick))
                 # square bit
@@ -2846,7 +2846,7 @@ class ArborForPlate:
         '''
 
         length = self.distance_from_front if front else self.distance_from_back
-        bearing = get_bearing_info(self.arbor.get_rod_d())
+        bearing = self.get_bearing(front=front)#get_bearing_info(self.arbor.get_rod_d())
 
         outer_r = self.arbor.get_arbor_extension_r()
         # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
@@ -2959,6 +2959,9 @@ class FixedRodArborForPlate(ArborForPlate):
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
             tip_r = outer_r
+
+        # if self.type == ArborType.ANCHOR:
+        #     tip_r = self.arbor.arbor_d*0.3
 
 
         if length+0.05 - self.arbor_bearing_standoff_length >= 0:
