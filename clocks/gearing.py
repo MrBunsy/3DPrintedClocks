@@ -2899,7 +2899,7 @@ class FixedRodArborForPlate(ArborForPlate):
         centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(self.length - contact_length*2).translate((0,0,contact_length))
         centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
 
-        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(1000).translate((0, 0, -500)))
+        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2+LOOSE_FIT_ON_ROD/2).extrude(1000).translate((0, 0, -500)))
 
         self.fixed_arbor_screw = MachineScrew(self.arbor_d, countersunk=True)
 
