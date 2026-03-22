@@ -2955,6 +2955,10 @@ class FixedRodArborForPlate(ArborForPlate):
         bearing = get_bearing_info(self.arbor.get_rod_d())
 
         outer_r = self.arbor.get_arbor_extension_r() + 0.5
+        try:
+            outer_r = self.arbor.pinion.get_min_radius()
+        except:
+            print("No pinion")
         # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
         if tip_r > outer_r:
