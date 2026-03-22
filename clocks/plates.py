@@ -711,7 +711,7 @@ class SimpleClockPlates(BasePlates):
             self.chain_hole_d = self.going_train.powered_wheel.get_chain_hole_diameter()
         else:
             self.weight_driven = False
-        self.chain_hole_d =0
+            self.chain_hole_d =0
 
         if self.chain_hole_d < 4:
             self.chain_hole_d = 4
@@ -5782,7 +5782,7 @@ class RectangularWallClockPlates(RoundClockPlates):
                 zmost = -min([min([pos[1] for pos in hole_ends]) for hole_ends in chain_hole_positions])
                 width = max([leftmost, rightmost]) * 2 + self.chain_hole_d*2.5
 
-                depth = zmost + powered_wheel.wheel_thick/2
+                depth = zmost + powered_wheel.wheel_thick/2 + self.chain_hole_d/2
 
                 round_bit = cq.Workplane("XY").circle(outer_r).extrude(plate_thick).translate(self.bearing_positions[0][:2])
 
