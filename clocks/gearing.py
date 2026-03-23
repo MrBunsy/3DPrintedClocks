@@ -3019,7 +3019,8 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
         centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(inner_hole_length - contact_length*2).translate((0,0,contact_length))
         centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
 
-        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2).extrude(inner_hole_length + self.plates.endshake*2))
+        #extra loose as I won't have an easy way to drill out the centre as it's entirely inside
+        self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2 + LOOSE_FIT_ON_ROD*0.75).extrude(inner_hole_length + self.plates.endshake*2))
 
 
         # self.threaded_rod_cutter = self.threaded_rod_cutter.cut(cq.Workplane("XY").rect(self.arbor_d*2, self.arbor_d*2).extrude(1000).translate((0,0,inner_hole_length)))
