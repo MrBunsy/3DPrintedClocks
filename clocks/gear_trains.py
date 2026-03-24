@@ -2217,6 +2217,8 @@ class GearLayout2D:
                             y = math.sqrt(penultimate_wheel_to_last_centred**2 - x**2) + positions_relative[arbor_index][1]
                             positions_relative[penultimate_wheel_index] = (on_side * x, y)
                             positions_relative[last_wheel_index] = (-on_side * x, y)
+                            #duplicated from above
+                            positions_relative[next_centred_index] = (0, positions_relative[last_wheel_index][1] + math.sqrt(last_wheel_to_next_centred ** 2 - (last_wheel_x) ** 2))
                     if non_vertical_arbors_next == 3:
                         positions_relative[first_wheel_index] = get_point_two_circles_intersect(
                             positions_relative[arbor_index], arbors[arbor_index].distance_to_next_arbor,

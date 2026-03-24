@@ -346,7 +346,24 @@ class AnchorEscapement:
     def get_distance_beteen_arbours(self):
         return self.anchor_centre_distance
 
+
+    def set_diameter_from_anchor_distance(self, anchor_distance, force=False):
+        '''
+        anchor_centre_distance = self.radius / math.cos(self.wheel_angle / 2)
+
+        self.anchor_centre_distance = anchor_centre_distance
+
+        d = r/cos(angle/2)
+        r = d*cos(angle/2)
+        '''
+        radius = anchor_distance * math.cos(self.wheel_angle/2)
+
+        self.set_diameter(radius*2, force=force)
+
+
+
     def set_diameter(self, diameter, force=False):
+
 
         if self.force_diameter and not force:
             #diameter has been set manually, so don't override it unless we're forcing it because this is being used internally by this object

@@ -104,6 +104,9 @@ second_hand_centred = False
 
 escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=2, force_diameter=True, diameter=88-12, anchor_thick=10)#, drop_deg=1.75)
 
+escapement.set_diameter_from_anchor_distance(51.27651526151809, force=True)
+
+
 # powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
 #                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
 powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=7, max_diameter=25, ratchet_diameter=35,
@@ -279,6 +282,10 @@ hands = Hands(style=HandStyle.SIMPLE_ROUND, minute_fixing="square", minute_fixin
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True, second_hand_centred=second_hand_centred)#, secondLength=dial.second_hand_mini_dial_d*0.45, seconds_hand_thick=1.5)
 #dial.get_hand_length()+dial_width/4
 
+#53.7401153701776
+distance_should_be = escapement.anchor_centre_distance
+#51.27651526151809
+distance_is = get_distance_between_two_points(plates.bearing_positions[-1][:2], plates.bearing_positions[-2][:2])
 
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=None)
 #bodge for now
