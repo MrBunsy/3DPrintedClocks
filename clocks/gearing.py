@@ -1225,11 +1225,11 @@ class Gear:
         return cutter
 
     @staticmethod
-    def get_pinion_extension_cutter(pinion_extension, end_cap_thick, max_radius, extension_radius):
+    def get_pinion_extension_cutter(pinion_extension, end_cap_thick, max_radius, extension_radius, min_length_to_trim=5):
         '''
         get a shape which can cut away the pinion extension to make it less chunky
         '''
-        if pinion_extension > 5:
+        if pinion_extension > min_length_to_trim:
             pinion_r = max_radius
             cut_to_r = extension_radius  # pinion_r * 0.7
             cutter_high = pinion_extension - max(2,end_cap_thick)
@@ -1241,7 +1241,7 @@ class Gear:
         return None
 
     def add_to_wheel(self, wheel, hole_d=0, wheel_thick=4, style=GearStyle.ARCS, pinion_thick=8, cap_thick=2, clockwise_from_pinion_side=True,
-                     pinion_extension=0, lantern_offset=1, lantern_fixing_wheel_offset=0, hole_d_for_lantern=0):
+                     pinion_extension=0, min_length_to_trim_extension=5):
         '''
         Intended to add a pinion (self) to a wheel (provided)
         if front is true ,added onto the top (+ve Z) of the wheel, else to -ve Z. Only really affects the escape wheel
@@ -1274,7 +1274,7 @@ class Gear:
 
         if pinion_extension > 0:
             base = base.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(pinion_extension).translate((0, 0, wheel_thick)))
-            cutter = self.get_pinion_extension_cutter(pinion_extension, end_cap_thick=cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius()/2))
+            cutter = self.get_pinion_extension_cutter(pinion_extension, end_cap_thick=cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius()/2), min_length_to_trim=min_length_to_trim_extension)
             if cutter is not None:
                 base = base.cut(cutter.translate((0, 0, wheel_thick)))
 
@@ -1672,13 +1672,13 @@ class LanternPinion:
             #hole all the way through
             return 0
         return 1
-    def add_to_wheel(self, wheel_shape):
+    def add_to_wheel(self, wheel_shape, min_length_to_trim_extension=5):
         '''
         add and subtract everything from the wheel, adding to the top size (+ve Z) as per everything else
         '''
         if self.extension > 0:#self.min_extension:
             wheel_shape = wheel_shape.faces(">Z").workplane().circle(self.outer_r).extrude(self.extension)
-            cutter = Gear.get_pinion_extension_cutter(self.extension, end_cap_thick=self.cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius() / 2))
+            cutter = Gear.get_pinion_extension_cutter(self.extension, end_cap_thick=self.cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius() / 2), min_length_to_trim=min_length_to_trim_extension)
             if cutter is not None:
                 wheel_shape = wheel_shape.cut(cutter.translate((0, 0, self.wheel_thick)))
 
@@ -2961,6 +2961,8 @@ class FixedRodArborForPlate(ArborForPlate):
             print("No pinion")
         # inner_r = self.arbor.get_rod_d() / 2 + ARBOUR_WIGGLE_ROOM / 2
         tip_r = bearing.inner_safe_d / 2
+        #to stop it dissapearing into the cone which guides the rods into the top plate
+        tip_r = outer_r*0.9
         if tip_r > outer_r:
             tip_r = outer_r
 
@@ -3062,7 +3064,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
-                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None, pinion_extension_min=4):
+                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None, pinion_extension_min=4, min_length_to_trim_extension=5):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - powered wheel is wheel + ratchet (+more logic than there used to be)
@@ -3115,6 +3117,8 @@ class Arbor:
         #is this screwed (and optionally glued) to the threaded rod?
         self.loose_on_rod = False
         self.type = type
+        #pinion extensions above this length will have their radius trimmed down
+        self.min_length_to_trim_extension = min_length_to_trim_extension
         if self.get_type() == ArborType.UNKNOWN:
             raise ValueError("Not a valid arbor")
 
@@ -3389,7 +3393,7 @@ class Arbor:
         # arbor = wheel.union(pinion)
         #note - slightly different logic for pinionthick vs pinion_extension as used on plain wheel-pinion pair. I don't think this will come to matter again as now the thin lantern pinions exist
         if self.pinion.lantern:
-            arbor = self.lantern_pinion.add_to_wheel(wheel)
+            arbor = self.lantern_pinion.add_to_wheel(wheel, min_length_to_trim_extension=self.min_length_to_trim_extension)
         else:
             pinion_extension = self.pinion_extension
             pinion_thick = self.pinion_thick
@@ -3397,7 +3401,7 @@ class Arbor:
                 pinion_thick+=pinion_extension
                 pinion_extension = 0
             arbor = self.pinion.add_to_wheel(wheel, hole_d=0, wheel_thick=self.escapement.wheel_thick, style=self.style, pinion_thick=pinion_thick,
-                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                                             pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side, min_length_to_trim_extension=self.min_length_to_trim_extension)
             if self.end_cap_thick > 0:
                 arbor = arbor.union(cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick).translate((0, 0, self.wheel_thick + self.pinion_thick + self.pinion_extension)))
 
@@ -3449,10 +3453,11 @@ class Arbor:
             print(f"end_cap_thick: {self.end_cap_thick}")
             if self.pinion.lantern:
                 wheel = self.wheel.get3D(thick=self.wheel_thick, holeD=hole_d, style=self.style, innerRadiusForStyle=self.pinion.get_max_radius() + 1, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
-                shape = self.lantern_pinion.add_to_wheel(wheel)
+                shape = self.lantern_pinion.add_to_wheel(wheel, min_length_to_trim_extension=self.min_length_to_trim_extension)
             else:
                 shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, wheel_thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
-                                                 pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                                                 pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
+                                                 min_length_to_trim_extension=self.min_length_to_trim_extension)
                 
 
             # shape = self.pinion.get3D

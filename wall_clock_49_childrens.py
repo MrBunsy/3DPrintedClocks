@@ -160,7 +160,8 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate
+        "arbor_class_for_plate" : FixedRodArborForPlate,
+        "min_length_to_trim_extension": 100,
     },
     {
         #centre wheel
@@ -173,6 +174,7 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "end_cap_thick": 0,
+        "min_length_to_trim_extension": 100,
         "arbor_class_for_plate" : FixedRodMagneticClutchArborForPlate,
         "arbor_class_for_plate_args": {
             "magnet":magnet,
@@ -193,7 +195,8 @@ train.generate_arbors_dicts([
         # "pinion_extension": 18,
         "pinion_at_front":True,
         "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate
+        "arbor_class_for_plate" : FixedRodArborForPlate,
+        "min_length_to_trim_extension": 100,
     },
 {
         # third wheel
@@ -205,7 +208,8 @@ train.generate_arbors_dicts([
         "pinion_at_front": False,
         "pinion_extension": 12+15-2,
         "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate
+        "arbor_class_for_plate" : FixedRodArborForPlate,
+        "min_length_to_trim_extension": 100,
     },
     {
         # escape wheel
@@ -217,7 +221,8 @@ train.generate_arbors_dicts([
         "pinion_extension": 9,
         "pinion_at_front": True,
         "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate
+        "arbor_class_for_plate" : FixedRodArborForPlate,
+        "min_length_to_trim_extension": 100,
     },
     {
         #anchor
