@@ -1147,7 +1147,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             bob_colour = bob_colours[0]
             nut_colour = bob_colours[ 1 % len(bob_colours)]
             text_colour = bob_colours[ 2 % len(bob_colours)]
-            bob = self.pendulum.get_bob(hollow=False)
+            bob = self.pendulum.get_bob(hollow=True)
 
             # if self.pretty_bob is not None:
             #     # bob = self.pretty_bob.get_model()

@@ -42,9 +42,13 @@ escapement = AnchorEscapement.get_with_optimal_pallets(24, drop_deg=4)#, drop_de
 #gap size - wheel think + twice endshake + some
 escapement = PinPalletTwoSidedAnchorEscapement(teeth=24, gap_size=1.5*2 + 3 + 1, drop=escapement.drop_deg, lock=escapement.lock_deg, lift=escapement.lock_deg, pin_diameter=1.0)
 
-powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
-train = GoingTrain(pendulum_length_m=0.2, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
+# powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
+#                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+
+powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=7, max_diameter=25, ratchet_diameter=35,
+                                  fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK), wall_thick=1.5)
+
+train = GoingTrain(pendulum_length_m=0.2, wheels=4, escapement=escapement, max_weight_drop=1500, use_pulley=False, chain_at_back=False,
                          powered_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
@@ -182,7 +186,7 @@ specific_instructions = [
 
 assembly = Assembly(plates, name=clock_name, hands=hands, time_seconds=30, pendulum=pendulum, pulley=pulley, specific_instructions=specific_instructions)
 
-if not outputSTL:
+if not outputSTL or True:
     assembly.show_clock(show_object, with_rods=True, plate_colours=[Colour.BROWN, Colour.BLACK, Colour.BLACK],
                         dial_colours=[Colour.WHITE, Colour.BLACK], bob_colours=[Colour.BRIGHT_ORANGE],
                         gear_colours=[Colour.BRIGHT_ORANGE, Colour.LIME_GREEN],

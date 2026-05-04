@@ -2835,7 +2835,7 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
             bob = bob.cut(weightHole)
 
             for pos in self.bob_lid_nut_positions:
-                bob = bob.cut(self.lid_screws.get_cutter(self_tapping=True, ignore_head=True).translate((pos[0],pos[1],self.wall_thick)))
+                bob = bob.cut(self.lid_screws.get_cutter(self_tapping=True, ignore_head=True, head_space_length=0).translate((pos[0],pos[1],self.wall_thick)))
 
 
         #add a little S <--> F text

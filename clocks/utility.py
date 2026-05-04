@@ -412,7 +412,7 @@ class MachineScrew:
     def head_depth_not_included_in_screw_length(self):
         return self.type in [MachineScrewType.PAN_HEAD, MachineScrewType.HEX_HEAD]
 
-    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False, ignore_head=False):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False, ignore_head=False, extra_r=0):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z
@@ -446,7 +446,7 @@ class MachineScrew:
             # pan head screw lengths do not include the head
             length += self.get_head_height()
         #override loose here if we're self-tapping because that should only affect teh size of the inner nubs
-        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose if not self_tapping else False, for_tap_die=False, sideways=sideways)
+        r = self.get_rod_cutter_r(layer_thick=layer_thick, loose=loose if not self_tapping else False, for_tap_die=False, sideways=sideways) + extra_r
 
         screw = cq.Workplane("XY").circle(r).extrude(length)
 
@@ -499,7 +499,8 @@ class MachineScrew:
 
 
         # extend out from the headbackwards too
-        if head_space_length > 0:
+        #added "not ignore_head" logic recently. need to be sure it hasn't broken anything - can't imagine it would
+        if head_space_length > 0 and not ignore_head:
             if self.type == MachineScrewType.HEX_HEAD:
                 screw = screw.faces("<Z").workplane().polygon(6, self.get_head_diameter() + self.head_extra_r).extrude(head_space_length)
             else:

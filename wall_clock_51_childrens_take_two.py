@@ -20,83 +20,9 @@ source.
 from clocks import *
 import json
 '''
-Plan: make a clock a 6 year old could assemble.
-
- - nylon M8ish machine screws to hold plates together - can get nylon dome nuts for front. hex head so it can slot into the back
- - old double cord barrel - if the lengths are correct it won't be possible to overwind the weight, so we don't need the cords to go through a hole in the bottom pillar, making the plates easier
- - will need a counterweight for the winding up cord, but can fashion this as a handle
- - ideas for the arbors:
-    - make them mega-chunky. Still an M3 rod, but with a 6mm diameter plastic bit around it for a 6mm bearing?
-    - Or, put bearings into the arbors itself and then then simply slot over fixed machine screws/printed parts that stick out the back plate. Then how to make it easy to line up the front plate? Cone holes on the inside?
-    cone holes would be easy to line up, but then how do we stop arbors rubbing agsint the inside of the front plate? do we have a special nut we can screw on? or a plastic part we can slot over the ends?
-     will this be a small part that is too small?
-     what if the top ends of the arbors have a much larger bearing, and then there's an insert on the inside of this bearing with a cone, then the top plate can have a cone for the rod but also a standoff for the bearing?
-     could even have cone-inserts into larger bearings on both ends, making it easy to slot together? 
-     
-     new idea - bearings attached to the arbors, and fixed rods on teh back plate, but with the arbor extensions threaded over the rods, like my very first clock
-     then the top plate can have arbor extensions too, but with cone shaped recesses and holes slightly larger than the threaded rods, so it can slot over cleanly
-     will need to have pinions without caps so they can slot together easily like the motion works
-     will need bearing standoffs on the extensions. How will I do the cone recess on teh top plate?
-     how will I do the crutch for the motino works? ring magnets?
-     
-     
-     new thoughts - could use nylon bushings instead of bearings?
-     also, if I did have a new design of arbor with bearings (or bushings) on the arbor, and a fixed rod - this means I could have multiple wheels on one rod
-     which would result in a potentially very compact design
-     although, for this to remain a simple clock, easy to understand for a child, is this an advantage or not? might still be worth investigating for future ultra-compact designs?
-     
-     
-     idea for the centre wheel - long rod fixed to back plate, then wheel + arbor with nylon bushings. Reduce diameter on inside of front plate, then reduce diameter (or end?) just outside 
-     front plate, then in that end embed a circular magnet for the crutch. 
-     Then the motion works:
-      - cannon pinion with magnet in base. Will need nylon bushings. End can be square - maybe with a slight lip? or taper?
-      - hour wheel and minute wheel as per normal
-      
-    this whole idea will have a lot more friction - going to have to see how good the nylon bushings are. Most will be nylon busing on threaded rod, but the centre wheel will have 
-    3D printed rod through a nylon bushing in the front plate
-    
-    I think I want to do this as an experiment with nylon bushings, and aim to produce a child friendly clock as a good test case.
-    Key wound? careful two cord? chain?
-    
-    wondering about key-wound (maybe with built-in knob rather than separate key?), but will need to add soething under the plate to stop over-winding.
-    
-    plan for pendulum: bring back knife-edge. Can keep anchor arbor almost the same: square arbor behind the anchor, just need to change start and end z. I'll add the crutch with a collet
-    
-    crutch collet idea:
-    
-    () - collet ring that slots over anchor arbor
-    ||
-    || - 3d printed flat plastic
-    |.| - machine screw that  will face out backwareds, so it can go into a slot in the pendulum holder
-    
-    
-    
-remaining TODOs:
-
- - round base to the clock plates so we can have holes for the chain to go through to prevent chain escaping - DONE
- - dial - DONE
- - top plate needs to extend inwards so teh arbors are held in place (as the arbors are now going to be printed in one peice) DONE
- - fix the gear layout AGAIN so escape wheel doesn't intersect centre wheel DONE
- - tweaks to motion works to limit contact with rod (so it only touches at each end, like the arbors) - WONTFIX
-  - BETTER IDEA: why not scrap the rod inside the motion works entirely - use flat magnets and have a cylinder from the end of the centre arbor that extends inside the cannon pinion
- - think about if the threaded rod should stick out the end of the motion works or not - abandon
- 
- - reduce size of escape wheel slightly so it doens't clash with the rod-extension-thingie - DONE
- 
- - Finish motion works - need to remove rod through the middle
- - fix dial and motion works heights
- - make sure front bearing is snug or have something inside to keep it in place
- - text/plaque
- 
- 
- 
-Results:
-as designed, jams easily. I added washers on the sides of the arbors that will butt up against the plates when rotating, and that seems to have fixed the jams,
-but it still doesn't have enough power even with 2kg.
-
-magnets hold together well, but not enough friction! added some masking tape to bodge it.
-
+Clock 49 failed -- without adding washers it jammed, and even with washers it had too much friction
 thoughts:
+ - have no reduced diameter on the ends so it can't get stuck
  - reduce arbor count? 3 wheel train would help
  - put chain wheel on the BACK of the centre wheel, would reduce arbor count again. Would need more chain drop?
  - reduce length of arbor in contact with teh rod - maybe configurable so it can be more lower on the train and less higher?
@@ -127,22 +53,22 @@ escapement.set_diameter_from_anchor_distance(51.27651526151809, force=True)
 #                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
 powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=7, max_diameter=25, ratchet_diameter=35,
                                   fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK), wall_thick=1.5)# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
-train = GoingTrain(pendulum_period=1.5, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False,
-                         powered_wheels=1, runtime_hours=30, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
+train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=False, chain_at_back=False,
+                         powered_wheels=0, runtime_hours=28, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)
 
 moduleReduction=0.85
 pillar_style = PillarStyle.PLAIN
 endshake = 1.0
 
 
-# train.calculate_ratios(module_reduction=1.0, pinion_max_teeth=20, min_pinion_teeth=15, wheel_min_teeth=80, max_wheel_teeth=120, max_error=0.1, loud=True)
-train.set_ratios([[100, 11], [90, 10], [88, 10]])
+train.calculate_ratios(module_reduction=1.0, pinion_max_teeth=20, min_pinion_teeth=15, wheel_min_teeth=50, max_wheel_teeth=150, max_error=0.1, loud=True)
+# train.set_ratios([[100, 11], [90, 10], [88, 10]])
 # train.set_ratios([[88, 10], [75, 11], [80, 10]])
 # train.calculate_powered_wheel_ratios()
 # train.set_powered_wheel_ratios([[48*2, 10*2]])
 # train.set_powered_wheel_ratios([[43*2, 10*2]])
 # train.calculate_powered_wheel_ratios()
-train.set_powered_wheel_ratios([[22*3, 10*3]])
+# train.set_powered_wheel_ratios([[22*3, 10*3]])
 
 back_plate_from_wall=40
 pendulum_sticks_out = 20
@@ -168,17 +94,17 @@ clutch_hole_deep=10
 train.print_info(weight_kg=0.750,for_runtime_hours=30)
 
 train.generate_arbors_dicts([
-    {
-        #great wheel
-        "module": 1.25,
-        "wheel_thick" : 7,
-        # "pinion_type": PinionType.LANTERN,
-        "style": gear_style,
-        "pinion_at_front": True,
-        "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate,
-        "min_length_to_trim_extension": 100,
-    },
+    # {
+    #     #great wheel
+    #     "module": 1.25,
+    #     "wheel_thick" : 7,
+    #     # "pinion_type": PinionType.LANTERN,
+    #     "style": gear_style,
+    #     "pinion_at_front": True,
+    #     "end_cap_thick": 0,
+    #     "arbor_class_for_plate" : FixedRodArborForPlate,
+    #     "min_length_to_trim_extension": 100,
+    # },
     {
         #centre wheel
         "module": module,
@@ -214,19 +140,19 @@ train.generate_arbors_dicts([
         "arbor_class_for_plate" : FixedRodArborForPlate,
         "min_length_to_trim_extension": 100,
     },
-{
-        # third wheel
-        "module": module,
-        "wheel_thick" : 3,
-        "pinion_thick": 9,
-        "pinion_type": pinion_type,
-        "style": gear_style,
-        "pinion_at_front": False,
-        "pinion_extension": 12+15-2,
-        "end_cap_thick": 0,
-        "arbor_class_for_plate" : FixedRodArborForPlate,
-        "min_length_to_trim_extension": 100,
-    },
+# {
+#         # third wheel
+#         "module": module,
+#         "wheel_thick" : 3,
+#         "pinion_thick": 9,
+#         "pinion_type": pinion_type,
+#         "style": gear_style,
+#         "pinion_at_front": False,
+#         "pinion_extension": 12+15-2,
+#         "end_cap_thick": 0,
+#         "arbor_class_for_plate" : FixedRodArborForPlate,
+#         "min_length_to_trim_extension": 100,
+#     },
     {
         # escape wheel
         "module": module,
@@ -273,8 +199,8 @@ gear_train_layout=GearLayout2D.get_compact_layout(train, start_on_right=False, c
 motion_works = MotionWorksForMagnetClutch(extra_height=15, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, pinion_thick=clutch_hole_deep+1,
                                           magnet=magnet, distance_from_front_plate=FixedRodMagneticClutchArborForPlate.DISTANCE_FROM_FRONT_PLATE)
 motion_works.calculate_size(arbor_distance=32.5)
-
-motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
+motion_works_angle_deg = 90
+# motion_works_angle_deg = rad_to_deg(gear_train_layout.get_angle_between(1,4))
 
 plates = RectangularWallClockPlates(train, motion_works, name="Wall 49", dial=dial, plate_thick=plate_thick, back_plate_thick=back_plate_thick, standoff_plate_thick=back_plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, style=PlateStyle.SIMPLE, pillar_style=pillar_style,

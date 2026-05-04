@@ -2897,7 +2897,10 @@ class FixedRodArborForPlate(ArborForPlate):
         #larger diameter in the middle, smaller at the ends
         contact_length = 5
         centre = cq.Workplane("XY").circle(self.arbor_d/2+0.5).extrude(self.length - contact_length*2).translate((0,0,contact_length))
-        centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
+        try:
+            centre = centre.edges(">Z or <Z").chamfer(self.arbor_d*0.75, self.arbor_d*0.5)
+        except:
+            print("unable to chamfer threaded rod cutter")
 
         self.threaded_rod_cutter = centre.union(cq.Workplane("XY").circle(self.arbor_d/2+LOOSE_FIT_ON_ROD/2).extrude(1000).translate((0, 0, -500)))
 
@@ -3038,7 +3041,7 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
         #length from top of pinion to outside the front plate where we meet the cannon pinion
         length = self.full_length - self.arbor.get_total_thickness()
 
-        inside_length = self.distance_from_front
+        inside_length = self.distance_from_front + self.plates.get_plate_thick(back=False)
 
         inside_plates_r = self.front_bearing.inner_safe_d/2
 
@@ -4689,3 +4692,10 @@ class GenevaGearInlinePair:
 
 
         return wheel
+
+
+class DayOfWeekComplication:
+    def __init__(self, motion_works):
+        '''
+        
+        '''

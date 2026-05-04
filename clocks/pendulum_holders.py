@@ -140,7 +140,8 @@ class PendulumHolderWithCrutch(PendulumHolder):
         # screw to link with pendulum (or attach beat setter)
         ignore_head = self.beat_setter
         crutch = crutch.cut(self.crutch_screw.get_cutter(with_bridging=True, self_tapping=True, ignore_head=ignore_head).rotate((0,0,0),(0,1,0),180).translate((0, -self.crutch_length, self.crutch_thick)))
-        crutch = crutch.faces(">Z").workplane().rect(self.collet_square_size, self.collet_square_size).cutThruAll()
+        wiggle = 0.2
+        crutch = crutch.faces(">Z").workplane().rect(self.collet_square_size + wiggle, self.collet_square_size + wiggle).cutThruAll()
 
         # if self.beat_setter:
         #
@@ -433,7 +434,8 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         # might put countersunk head in teh pendulum holder arm instead
         collet = collet.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).extrude(thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((self.hinge_point[0], self.hinge_point[1], self.pendulum_holder_thick)))
         # cut out square bit that slots over arbour
-        collet = collet.cut(cq.Workplane("XY").rect(self.collet_square_size, self.collet_square_size).extrude(thick))
+        wiggle = 0.2
+        collet = collet.cut(cq.Workplane("XY").rect(self.collet_square_size + wiggle, self.collet_square_size + wiggle).extrude(thick))
 
         # return thread_cutter
         collet = collet.cut(self.get_thread_cutter())

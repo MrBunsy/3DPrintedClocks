@@ -44,7 +44,10 @@ drop =1.5
 lift =3
 lock=1.5
 escapement = clock.AnchorEscapement(drop=drop, lift=lift, teeth=40, lock=lock, tooth_tip_angle=5, tooth_base_angle=4)
-
+#originally printed size, something has changed, probably gear generation
+# escapement.set_diameter_from_anchor_distance(54.924530866165185, force=True)
+print(escapement.anchor_centre_distance)
+#
 train=clock.GoingTrain(pendulum_period=1.5, fourth_wheel=False, escapement=escapement, max_weight_drop=1700, chain_at_back=False, powered_wheels=0, runtime_hours=30)
 
 #, toothTipAngle=5, toothBaseAngle=4
@@ -91,6 +94,15 @@ bigweight = clock.Weight(height=125, diameter=45)
 bigweight.printInfo()
 
 assembly = clock.Assembly(plates, hands=hands, weights=[weight], pendulum=pendulum)
+
+# show_object(escapement.get_assembled(anchor_angle_deg=-0.5, wheel_angle_deg=-0.75))
+# show_object(escapement.get_assembled(anchor_angle_deg=-1, wheel_angle_deg=-1.25))
+# show_object(escapement.get_assembled(anchor_angle_deg=-1.5, wheel_angle_deg=-1.5))
+# show_object(escapement.get_assembled(anchor_angle_deg=-2, wheel_angle_deg=-2))
+# show_object(escapement.get_assembled(anchor_angle_deg=-2.5, wheel_angle_deg=-2.5))
+
+# show_object(escapement.get_assembled(anchor_angle_deg=2, wheel_angle_deg=-6.5))
+
 # show_object(assembly.getClock())
 assembly.show_clock(show_object, motion_works_colours=[clock.Colour.LIGHTBLUE], bob_colours=[clock.Colour.BLUE, clock.Colour.PURPLE], plate_colours=clock.Colour.DARKGREY,
                     hand_colours=[clock.Colour.WHITE, clock.Colour.DARKGREY])

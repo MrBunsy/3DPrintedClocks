@@ -2814,7 +2814,7 @@ class SimpleClockPlates(BasePlates):
                 else:
                     #little guide cone?
                     plate = plate.cut(
-                        screw.get_cutter(ignore_head=True).translate((pos[0], pos[1], -self.plate_distance)))
+                        screw.get_cutter(ignore_head=True, loose=True).translate((pos[0], pos[1], -self.plate_distance)))
                     plate = plate.cut(cq.Solid.makeCone(radius2=screw.metric_thread/2, radius1=screw.metric_thread/2+1, height=2).translate((pos[0], pos[1], -front_plate_arbor_end_z)))
 
             else:
@@ -5760,7 +5760,7 @@ class RectangularWallClockPlates(RoundClockPlates):
         if just_basic_shape:
             return plate
 
-        plate = plate.cut(self.get_fixing_screws_cutter())
+        plate = plate.cut(self.get_fixing_screws_cutter(for_plate=True))
         if back:
 
             plate = self.rear_additions_to_plate(plate)
@@ -5877,7 +5877,7 @@ class RectangularWallClockPlates(RoundClockPlates):
 
         return [top_pos,self.bearing_positions[0][:2]]
 
-    def get_fixing_screws_cutter(self):
+    def get_fixing_screws_cutter(self, for_plate=False):
 
         cutter = cq.Workplane("XY")
         loose = False
@@ -5887,8 +5887,13 @@ class RectangularWallClockPlates(RoundClockPlates):
             bridging = False
             if pos in self.top_pillar_positions and self.standoffs_printed_nut_side_down:
                 bridging = True
+
+            extra_r = 0
+            if for_plate:
+                #hard to get the plate on, so a little more slop will make it much easier
+                extra_r += 0.15
             #extra 1mm so the head defintely doesn't stick out the back
-            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=bridging, loose=loose).translate(pos)
+            cutter = cutter.union(self.fixing_screws.get_cutter(space_for_pan_head=True, with_bridging=bridging, loose=loose, extra_r=extra_r).translate(pos)
                                   .translate((0,0,-self.back_plate_from_wall + 1)))
         return cutter
 
