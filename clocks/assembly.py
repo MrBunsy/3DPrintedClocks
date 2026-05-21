@@ -31,6 +31,7 @@ class Assembly:
         self.time_seconds = time_seconds
         self.pulley=pulley
         self.moon_complication = self.plates.moon_complication
+        self.days_complication = self.plates.days_complication
         self.plaque = self.plates.plaque
         self.name = name
         #weights is a list of weights, first in the list is the main weight and second is the counterweight (if needed)

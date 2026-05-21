@@ -45,15 +45,18 @@ if 'show_object' not in globals():
 
 clock_name= "wall_clock_52"
 clock_out_dir= "out"
-gearStyle=GearStyle.CIRCLES
+gear_style=GearStyle.ARCS
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
+
 
 #after a huge amount of faffing about, the problem was the bearings, not the escapement. So I've used the new auto-calculated efficient escapement for a retrofit.
 #was a drop of 2.75, but I think that was excessive
-escapement = AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2, wheel_thick=2.5)
+escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2, wheel_thick=2.5)
+#nylon wire only 0.15, but need a hole big enough to print well
+escapement = SilentPinPalletAnchorEscapement(teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.0)
 
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=4, barrel_bearing=BEARING_12x18x4_FLANGED,
-                     style=GearStyle.SNOWFLAKE_06_NOZZLE, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
+                     style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
                      ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True)
 
 
@@ -81,7 +84,7 @@ train.generate_arbors_dicts([
     {
         #spring barrel
         "wheel_thick": 5,
-        "style": GearStyle.CIRCLES,
+        "style": gear_style,
         "pinion_at_front": True,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 0,
@@ -92,7 +95,7 @@ train.generate_arbors_dicts([
     {
         #intermediate wheel
         "wheel_thick": 4,
-        "style": GearStyle.CIRCLES,
+        "style": gear_style,
         "pinion_at_front": True,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 0,
@@ -104,7 +107,7 @@ train.generate_arbors_dicts([
     {
         #centre wheel
         "wheel_thick": 3,
-        "style": GearStyle.CIRCLES,
+        "style": gear_style,
         "pinion_at_front": True,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 1,
@@ -116,7 +119,7 @@ train.generate_arbors_dicts([
     {
         #second wheel
         "wheel_thick": 2.5,
-        "style": GearStyle.CIRCLES,
+        "style": gear_style,
         "pinion_at_front": False,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 15,
@@ -128,7 +131,7 @@ train.generate_arbors_dicts([
     {
         #third wheel
         "wheel_thick": 2.5,
-        "style": GearStyle.CIRCLES,
+        "style": gear_style,
         "pinion_at_front": False,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 10,
@@ -140,7 +143,7 @@ train.generate_arbors_dicts([
     {
         #escape wheel
         "wheel_thick": 2.5,
-        "style": GearStyle.CIRCLES,
+        "style": gear_style,
         "pinion_at_front": True,
         # "arbor_split": SplitArborType.NORMAL_ARBOR,
         "pinion_extension": 18,
@@ -150,10 +153,12 @@ train.generate_arbors_dicts([
     },
 ])
 
-motion_works = MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True,
-                                 cannon_pinion_to_hour_holder_gap_size=0.6)
+days_complication = DayOfWeekComplication(module=0.8)
 
-motion_works.calculate_size(arbor_distance=30)
+motion_works = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
+                           cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
+#WANT a small motion works to provide more space for the days of week prism to fit behind the dial
+# motion_works.calculate_size(arbor_distance=30)
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
@@ -166,7 +171,8 @@ dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialS
 
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
-                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1)
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
+                          days_complication = days_complication)
 
 
 hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),

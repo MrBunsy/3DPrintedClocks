@@ -447,7 +447,7 @@ class SimpleClockPlates(BasePlates):
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1.0,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True, days_complication=None):
         '''
 
         gear_train_layout: used to be an enum, now a GearTrainLayout2D object, supports enum for backwards compat
@@ -532,6 +532,7 @@ class SimpleClockPlates(BasePlates):
 
         #None or a MoonComplication object
         self.moon_complication = moon_complication
+        self.days_complication = days_complication
 
         #if escapementOnFront then extend out the front plate to hold the bearing - reduces wobble when platedistance is low
         self.extra_support_for_escape_wheel = extra_support_for_escape_wheel

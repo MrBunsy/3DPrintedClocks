@@ -1123,15 +1123,15 @@ class Gear:
         # dedendum_height = self.dedendum_factor * self.module
         # return self.pitch_diameter/2 - dedendum_height
 
-    def get3D(self, holeD=0, thick=0, style=GearStyle.ARCS, innerRadiusForStyle=-1, clockwise_from_pinion_side=True):
+    def get3D(self, hole_d=0, thick=0, style=GearStyle.ARCS, inner_radius_for_style=-1, clockwise_from_pinion_side=True):
         gear = self.get2D()
 
         if thick == 0:
             thick = round(self.pitch_diameter*0.05)
         gear = gear.extrude(thick)
 
-        if holeD > 0:
-            gear = gear.faces(">Z").workplane().moveTo(0,0).circle(holeD/2).cutThruAll()
+        if hole_d > 0:
+            gear = gear.faces(">Z").workplane().moveTo(0,0).circle(hole_d / 2).cutThruAll()
 
         if self.iswheel:
             # rimThick = max(self.pitch_diameter * 0.035, 3)
@@ -1148,7 +1148,7 @@ class Gear:
             #     #     innerRadius = self.
             #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
             try:
-                gear = Gear.cut_style(gear, outer_radius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, inner_radius=innerRadiusForStyle, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
+                gear = Gear.cut_style(gear, outer_radius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, inner_radius=inner_radius_for_style, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
             except:
                 print("Failed to cut gear style")
 
@@ -1251,9 +1251,15 @@ class Gear:
         hole_d is usually zero as we cut out the threaded rod self-tapping hole later. However for thin lantern pinions we need to pritn a hole-with-hole to provide supports
         so we need to know what the hole size would be, hence hole_d_for_lantern
         '''
+        extension_radius = max(3, self.get_max_radius() / 2)
         try:
+            #cut style closer to centre if there's a long enough pinion extension
+            inner_radius_for_style = self.get_max_radius() + 1
+            if pinion_extension > self.get_max_radius() - self.get_max_radius():
+                #bodge calculation TODO properly
+                inner_radius_for_style = extension_radius + 1
             #assume that whele is a wheel object
-            base = wheel.get3D(thick=wheel_thick, holeD=hole_d, style=style, innerRadiusForStyle=self.get_max_radius() + 1, clockwise_from_pinion_side=clockwise_from_pinion_side)
+            base = wheel.get3D(thick=wheel_thick, hole_d=hole_d, style=style, inner_radius_for_style=inner_radius_for_style, clockwise_from_pinion_side=clockwise_from_pinion_side)
         except:
             #wheel is a cadquery 3d object
             base = wheel
@@ -1274,11 +1280,11 @@ class Gear:
 
         if pinion_extension > 0:
             base = base.union(cq.Workplane("XY").circle(self.get_max_radius()).extrude(pinion_extension).translate((0, 0, wheel_thick)))
-            cutter = self.get_pinion_extension_cutter(pinion_extension, end_cap_thick=cap_thick, max_radius=self.get_max_radius(), extension_radius=max(3, self.get_max_radius()/2), min_length_to_trim=min_length_to_trim_extension)
+            cutter = self.get_pinion_extension_cutter(pinion_extension, end_cap_thick=cap_thick, max_radius=self.get_max_radius(), extension_radius=extension_radius, min_length_to_trim=min_length_to_trim_extension)
             if cutter is not None:
                 base = base.cut(cutter.translate((0, 0, wheel_thick)))
 
-        top = self.get3D(thick=pinion_thick, holeD=hole_d, style=style).translate((0, 0, wheel_thick + pinion_extension))
+        top = self.get3D(thick=pinion_thick, hole_d=hole_d, style=style).translate((0, 0, wheel_thick + pinion_extension))
 
         arbor = base.union(top)
 
@@ -3360,16 +3366,24 @@ class Arbor:
         if standalone returns a clockwise wheel for teh ArborForPlate class to sort out
         if not it returns a wheel pinion pair
         '''
-        arbour_or_pivot_r = self.pinion.get_max_radius() + 1
+        pinion_extension = self.pinion_extension
+        pinion_thick = self.pinion_thick
+        if self.pinion_extension < self.pinion_extension_min:
+            pinion_thick += pinion_extension
+            pinion_extension = 0
+
+        arbor_or_pivot_r = self.pinion.get_max_radius() + 1
         if standalone:
-            arbour_or_pivot_r = self.arbor_d * 2
+            arbor_or_pivot_r = self.arbor_d * 2
+        if pinion_extension > self.pinion.get_max_radius() - arbor_or_pivot_r:
+            arbor_or_pivot_r = self.arbor_d
         # wheel = self.escapement.get_wheel_2d()
 
         clockwise = True if standalone else self.clockwise_from_pinion_side
 
 
         wheel = self.escapement.get_wheel()
-        wheel = Gear.cut_style(wheel, outer_radius=self.escapement.get_wheel_inner_r(), inner_radius=arbour_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise, lightweight=True)
+        wheel = Gear.cut_style(wheel, outer_radius=self.escapement.get_wheel_inner_r(), inner_radius=arbor_or_pivot_r, style = self.style, clockwise_from_pinion_side=clockwise, lightweight=True)
 
         if standalone:
             return wheel
@@ -3398,11 +3412,7 @@ class Arbor:
         if self.pinion.lantern:
             arbor = self.lantern_pinion.add_to_wheel(wheel, min_length_to_trim_extension=self.min_length_to_trim_extension)
         else:
-            pinion_extension = self.pinion_extension
-            pinion_thick = self.pinion_thick
-            if self.pinion_extension < self.pinion_extension_min:
-                pinion_thick+=pinion_extension
-                pinion_extension = 0
+
             arbor = self.pinion.add_to_wheel(wheel, hole_d=0, wheel_thick=self.escapement.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                              pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side, min_length_to_trim_extension=self.min_length_to_trim_extension)
             if self.end_cap_thick > 0:
@@ -3455,9 +3465,11 @@ class Arbor:
                 pinion_thick+=self.pinion_extension
             print(f"end_cap_thick: {self.end_cap_thick}")
             if self.pinion.lantern:
-                wheel = self.wheel.get3D(thick=self.wheel_thick, holeD=hole_d, style=self.style, innerRadiusForStyle=self.pinion.get_max_radius() + 1, clockwise_from_pinion_side=self.clockwise_from_pinion_side)
+                wheel = self.wheel.get3D(thick=self.wheel_thick, hole_d=hole_d, style=self.style, inner_radius_for_style=self.pinion.get_max_radius() + 1,
+                                         clockwise_from_pinion_side=self.clockwise_from_pinion_side)
                 shape = self.lantern_pinion.add_to_wheel(wheel, min_length_to_trim_extension=self.min_length_to_trim_extension)
             else:
+                # innerRadiusForStyle = self.pinion.get_max_radius() + 1
                 shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, wheel_thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                                  pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
                                                  min_length_to_trim_extension=self.min_length_to_trim_extension)
@@ -3548,7 +3560,7 @@ class Arbor:
 
         '''
 
-        pinion = self.pinion.get3D(thick=self.pinion_thick, holeD=0).translate((0, 0, self.end_cap_thick))
+        pinion = self.pinion.get3D(thick=self.pinion_thick, hole_d=0).translate((0, 0, self.end_cap_thick))
         cap = cq.Workplane("XY").circle(self.pinion.get_max_radius()).extrude(self.end_cap_thick)
         pinion = pinion.add(cap).add(cap.translate((0, 0, self.end_cap_thick + self.pinion_thick)))
 
@@ -3662,7 +3674,7 @@ class Arbor:
             style = None
         #the "pinion" is used for the side of the powered wheel
         #TODO review logic if I ever get chain at back working again
-        gear_wheel = self.wheel.get3D(holeD=0, thick=self.wheel_thick, style=style, innerRadiusForStyle=inner_radius_for_style,
+        gear_wheel = self.wheel.get3D(hole_d=0, thick=self.wheel_thick, style=style, inner_radius_for_style=inner_radius_for_style,
                                       clockwise_from_pinion_side=self.clockwise_from_pinion_side)
 
         if self.combine_with_powered_wheel:
@@ -3766,7 +3778,7 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 moon_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0,
+                 drives_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0,
                  distance_between_hands=2, reduced_jamming=False):
         '''
 
@@ -3786,7 +3798,7 @@ class MotionWorks:
         the the minute wheel is fixed to the arbour, and the motion works must only be friction-connected to the minute arbour.
 
         if bearing is not none, it expects a BearingInfo object. This will provide space at the top and bottom of the cannon pinion for such a bearing
-        in order for a seconds hand to pass through the centre of the motion works.
+        in order for a seconds hand to pass through the centre of the motion works. DEPRECATED
 
         NOTE hour hand is very loose when motion works arbour is mounted above the cannon pinion.
          compensateLooseArbour attempts to compensate for this
@@ -3826,7 +3838,10 @@ class MotionWorks:
         self.inset_at_base = inset_at_base
         self.lone_pinion_inset_at_base = lone_pinion_inset_at_base
 
-        self.moon_complication = moon_complication
+        #used to be moon_complication, but there's no reason why it can't be any complication
+        #this will add an extra pinion on the hour holder, which will drive the first arbor of the complication (moon, day of week, etc)
+        #complication needs: get_pinion_for_motion_works_max_radius(), hour_hand_pinion_thick, get_pinion_for_motion_works_shape()
+        self.drives_complication = drives_complication
 
         self.strike_trigger=strike_trigger
         #angle the hour strike should be at
@@ -4043,10 +4058,10 @@ class MotionWorks:
             else:
                 self.module = arbor_distance / ((wheel0_teeth + pinion0_teeth) / 2)
                 self.arbor_distance = arbor_distance
-        secondModule = 2 * self.arbor_distance / (wheel1_teeth + pinion1_teeth)
-        print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, secondModule,wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
+        second_module = 2 * self.arbor_distance / (wheel1_teeth + pinion1_teeth)
+        print("Motion works module0: {}, module1: {}. wheel0_teeth {}, pinion0_teeth {}, wheel1_teeth {}, pinion1_teeth {}".format(self.module, second_module,wheel0_teeth, pinion0_teeth, wheel1_teeth, pinion1_teeth))
         self.pairs = [WheelPinionPair(wheel0_teeth, pinion0_teeth, self.module, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming),
-                      WheelPinionPair(wheel1_teeth, pinion1_teeth, secondModule, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming)]
+                      WheelPinionPair(wheel1_teeth, pinion1_teeth, second_module, looseArbours=self.compensate_loose_arbour, reduced_jamming=self.reduced_jamming)]
 
 
         self.friction_ring_r = self.pairs[0].pinion.get_max_radius()
@@ -4305,8 +4320,8 @@ class MotionWorks:
         bottom_r = self.get_widest_radius()
 
         bottom_r_for_style = bottom_r
-        if self.moon_complication is not None:
-            bottom_r_for_style = self.moon_complication.get_pinion_for_motion_works_max_radius()
+        if self.drives_complication is not None:
+            bottom_r_for_style = self.drives_complication.get_pinion_for_motion_works_max_radius()
 
         #minute holder is -0.2 and is pretty snug, but this needs to be really snug
         #-0.1 almost works but is still a tiny tiny bit loose (with amazon blue PETG, wonder if that makes a difference?)
@@ -4314,7 +4329,7 @@ class MotionWorks:
         holder_r_base = self.hour_hand_holder_d / 2 + 0.05 # was 0.1
         holder_r_top = self.hour_hand_holder_d / 2 - 0.2
 
-        hour = self.pairs[1].wheel.get3D(holeD=self.hole_d, thick=self.thick, style=style, innerRadiusForStyle=bottom_r_for_style, clockwise_from_pinion_side=True)
+        hour = self.pairs[1].wheel.get3D(hole_d=self.hole_d, thick=self.thick, style=style, inner_radius_for_style=bottom_r_for_style, clockwise_from_pinion_side=True)
 
         if self.snail is not None:
             hour = hour.union(self.snail.get3D(self.thick))
@@ -4339,10 +4354,10 @@ class MotionWorks:
 
         hour = hour.add(shape)
 
-        if self.moon_complication is not None:
+        if self.drives_complication is not None:
             # experiment, cut out a chunk
-            hour = hour.cut(cq.Workplane("XY").circle(bottom_r_for_style).extrude(self.moon_complication.hour_hand_pinion_thick).translate((0, 0, self.thick)))
-            hour = hour.union(self.moon_complication.get_pinion_for_motion_works_shape().translate((0, 0, self.thick)))
+            hour = hour.cut(cq.Workplane("XY").circle(bottom_r_for_style).extrude(self.drives_complication.hour_hand_pinion_thick).translate((0, 0, self.thick)))
+            hour = hour.union(self.drives_complication.get_pinion_for_motion_works_shape().translate((0, 0, self.thick)))
 
         hole = cq.Workplane("XY").circle(hole_r).extrude(self.get_cannon_pinion_total_height())
         hour = hour.cut(hole)
@@ -4695,7 +4710,59 @@ class GenevaGearInlinePair:
 
 
 class DayOfWeekComplication:
-    def __init__(self, motion_works):
+    def __init__(self, gear_thick=2.5, module=1.5, style=None):
         '''
-        
+        Based on MoonComplication3D
+
+        really would like this to auto calculate its module based on the motion works, but the motion works needs its sizes to calcualte itself
+        if I'd done more calculation of maths on demand rather than in the constructor this would be easier.
+
+        plan: add a pinion to the hour holder, then we have an arbor with a wheel (that meshes with the hour holder pinion) and a driving wheel for the geneva works.
+        the driven wheel of the geneva works will be on an arbor with a bevelled pinion
+        then the matching bevelled wheel will be on the 7sided prism which has the days of the week.
+
+        need to work out if it's possible to arrange with the prism roughly inline with the first arbor, so it doesn't stick out too much
+        otherwise it'll have to go in front and be massive.
         '''
+        self.hour_hand_pinion_thick = gear_thick*2
+        self.gear_thick = gear_thick
+        self.module = module
+        self.fixing_screws = MachineScrew(3)
+        self.style = style
+
+        self.pair = WheelPinionPair(60, 30, module=self.module, reduced_jamming=True)
+
+    #
+    # def generate_arbors(self):
+    #
+    #     self.pair = WheelPinionPair(60, 30,module=self.module, reduced_jamming=True)
+
+    def get_pinion_for_motion_works_max_radius(self):
+        return self.pair.pinion.get_max_radius()
+
+    def get_pinion_for_motion_works_shape(self):
+        return self.pair.pinion.get3D(thick=self.hour_hand_pinion_thick)
+
+    def set_motion_works_sizes(self, motion_works):
+        self.cannon_pinion_max_r = motion_works.get_cannon_pinion_max_r()
+        self.plate_to_top_of_hour_holder_wheel = motion_works.get_cannon_pinion_base_thick() + motion_works.thick + motion_works.get_distance_from_front_plate()
+        #from moon complication
+        self.base_of_wheel_from_base_of_pinion = self.plate_to_top_of_hour_holder_wheel + self.hour_hand_pinion_thick / 2 - self.gear_thick / 2 - WASHER_THICK_M3
+
+    def get_arbor_positions_relative_to_motion_works(self):
+        return []
+
+    def get_arbor_shape(self, index, for_printing=True):
+
+        if index == 0:
+            #TODO innerradius for style
+            arbor = self.pair.wheel.get3D(hole_d=self.fixing_screws.get_rod_cutter_r(loose=True), thick=self.gear_thick, style=self.style)
+
+    def get_parts_in_situ(self):
+        '''
+        for rendering a preview with colours
+        '''
+        parts = {}
+        positions = self.get_arbor_positions_relative_to_motion_works()
+        for i in range(3):
+            parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))

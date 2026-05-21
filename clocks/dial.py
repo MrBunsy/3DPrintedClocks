@@ -217,7 +217,7 @@ class MoonPhaseComplication3D:
     def set_motion_works_sizes(self, motion_works):
 
         self.cannon_pinion_max_r = motion_works.get_cannon_pinion_max_r()
-        self.plate_to_top_of_hour_holder_wheel = motion_works.get_cannon_pinion_base_thick() + motion_works.thick + TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - motion_works.inset_at_base
+        self.plate_to_top_of_hour_holder_wheel = motion_works.get_cannon_pinion_base_thick() + motion_works.thick + motion_works.get_distance_from_front_plate()
         self.first_pinion_thick = self.plate_to_top_of_hour_holder_wheel + self.hour_hand_pinion_thick/2 - self.gear_thick/2 - WASHER_THICK_M3
 
     def get_pinion_for_motion_works_shape(self):
@@ -260,7 +260,7 @@ class MoonPhaseComplication3D:
 
         elif index == 2:
             #arbour with bevel#
-            arbor = self.pairs[index].wheel.get3D(holeD=self.arbor_loose_d, thick=self.gear_thick, style = self.gear_style, innerRadiusForStyle=self.bevel_pair.get_pinion_max_radius())
+            arbor = self.pairs[index].wheel.get3D(hole_d=self.arbor_loose_d, thick=self.gear_thick, style = self.gear_style, inner_radius_for_style=self.bevel_pair.get_pinion_max_radius())
             arbor = arbor.union(self.bevel_pair.pinion.cut(cq.Workplane("XY").circle(self.arbor_loose_d / 2).extrude(1000)).translate((0, 0, self.gear_thick)))
 
             return arbor

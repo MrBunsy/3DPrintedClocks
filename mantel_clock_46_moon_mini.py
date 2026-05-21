@@ -185,8 +185,8 @@ else:
 motion_works_height = 22 if moon else 10
 
 #tiny bit extra gap as the brass PETG seems to need it
-motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, moon_complication=moon_complication,
-                                 cannon_pinion_to_hour_holder_gap_size=0.6, module=1*scale)
+motion_works = MotionWorks(extra_height=motion_works_height, style=gear_style, thick=3, compensate_loose_arbour=True, compact=True, drives_complication=moon_complication,
+                           cannon_pinion_to_hour_holder_gap_size=0.6, module=1*scale)
 
 motion_works_angle_deg=180+90
 

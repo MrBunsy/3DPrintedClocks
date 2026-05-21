@@ -87,7 +87,7 @@ else:
     moon_complication = MoonPhaseComplication3D(gear_style=gear_style, first_gear_angle_deg=205, on_left=False, bevel_module=1.0, module=0.8, moon_radius=moon_radius,
                                                       bevel_angle_from_hands_deg=90, moon_from_hands=(dial_d/2 - dial_width) - moon_radius - 3, moon_inside_dial=True,
                                                       lone_bevel_min_height=13)
-    motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compact=True, moon_complication=moon_complication)
+    motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compact=True, drives_complication=moon_complication)
     moon_complication.set_motion_works_sizes(motion_works)
     motion_works_angle_deg=180+40
 
