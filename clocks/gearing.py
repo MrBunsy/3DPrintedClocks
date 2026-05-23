@@ -1552,9 +1552,13 @@ class WheelPinionBeveledPair:
         self.face_width = module*8
 
         #I've manually overridden trim_bottom in my fork TODO work out how to use the build_params
-        self.bevel_gear_pair = BevelGearPair(module=module, gear_teeth=wheel_teeth, pinion_teeth=pinion_teeth, face_width=self.face_width, build_params={"trim_bottom":False})
+        #update 2026 - no, I don't appear to have actually overriden behaviour of trim_bottom, but I do cut off extra bits in the lines below. is that what I was referring to?
+        #I think I actually learned out to use build_params and removed my hack?
+        # my fork only seems to add pinion_cone_angle and gear_cone_angle as properties
+        self.bevel_gear_pair = BevelGearPair(module=module, gear_teeth=wheel_teeth, pinion_teeth=pinion_teeth, face_width=self.face_width)#, build_params={"trim_bottom":False})
 
         #chop off the top bits that cq_gears generates - they'll just produce stringy mess when printing
+        #it appear that there's always a gap between teeth lined up with -ve x axis.
         self.wheel =  cq.Workplane("XY").add(self.bevel_gear_pair.gear.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.face_width * math.sin(self.bevel_gear_pair.pinion_cone_angle)))
         self.pinion = cq.Workplane("XY").add(self.bevel_gear_pair.pinion.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.face_width * math.sin(self.bevel_gear_pair.gear_cone_angle)))
 
@@ -1570,6 +1574,14 @@ class WheelPinionBeveledPair:
     def get_centre_of_wheel_to_back_of_pinion(self):
         return self.bevel_gear_pair.pinion.cone_h
 
+    def get_pinion_with_tooth_at(self, angle):
+        # the gap is always at -ve x axis, so rotate half a tooth to get a tooth at -ve x axis, then rotate by pi to get tooth at +ve x axis, then rotate by angle
+        # could simplify maths but this is hopefully easier for future me to understand
+        return self.pinion.rotate((0,0,0),(0,0,1), rad_to_deg(0.5*math.pi*2/self.pinion_teeth + math.pi + angle))
+
+    def get_wheel_with_gap_at(self, angle):
+        return self.wheel.rotate((0,0,0), (0,0,1), rad_to_deg(angle))
+
     def get_centre_of_pinion_to_back_of_wheel(self):
         return self.bevel_gear_pair.gear.cone_h
 
@@ -1581,9 +1593,15 @@ class WheelPinionBeveledPair:
         return (self.module * self.wheel_teeth)/2 + self.module
 
 
+    def get_pinion_base_radius(self):
+        return self.bevel_gear_pair.pinion.get_bottom_radius()
+
+    def get_wheel_base_radius(self):
+        return self.bevel_gear_pair.gear.get_bottom_radius()
+
     def get_assembled(self):
-        pinion_in_situ = self.pinion.rotate((0,0,0),(1,0,0),90).translate((0,self.get_centre_of_wheel_to_back_of_pinion(),self.get_centre_of_pinion_to_back_of_wheel()))
-        assembly = self.wheel.add(pinion_in_situ)
+        pinion_in_situ = self.get_pinion_with_tooth_at(-math.pi/2).rotate((0,0,0),(1,0,0),90).translate((0,self.get_centre_of_wheel_to_back_of_pinion(),self.get_centre_of_pinion_to_back_of_wheel()))
+        assembly = self.get_wheel_with_gap_at(math.pi/2).add(pinion_in_situ)
 
         return assembly
 
@@ -4515,7 +4533,7 @@ class GenevaGearInlinePair:
 
     '''
 
-    def __init__(self, distance=20, teeth=5, stop=False, thick=5):
+    def __init__(self, distance=20, teeth=5, stop=False, thick=5.0, wiggle_room=0.2):
         '''
         distance: distance between centres
         teeth: number of gaps on the driven wheel (currently only supports 4-9)
@@ -4529,6 +4547,8 @@ class GenevaGearInlinePair:
         self.stop = stop
         # self.wiggle_radius_fraction = 0.05
         self.thick = thick
+        #make the cross wheel a tiny bit smaller to be more reliable in real world conditions?
+        self.wiggle_room = wiggle_room
         self.calc_geometry()
 
     def calc_geometry(self):
@@ -4602,6 +4622,20 @@ class GenevaGearInlinePair:
 
         self.gap_span_angle = self.arm_angle - self.outer_curve_intersect_angle
 
+
+        #bottom of the gap
+        cross_wheel_curve_start_pos = np_to_set(np.add(self.wheel_pos, polar(self.wheel_first_outer_curve_start_angle, self.wheel_outer_radius)))
+        #top of the gap
+        self.cross_wheel_curve_end_pos = np_to_set(np.add(self.wheel_pos, polar(self.wheel_first_outer_curve_start_angle-self.gap_span_angle, self.wheel_outer_radius)))
+
+        self.inner_cut_r = get_distance_between_two_points(cross_wheel_curve_start_pos, self.lower_intersect_pos)
+
+        top_little_circle_intersections = get_circle_intersections(self.cross_wheel_curve_end_pos, self.inner_cut_r, self.wheel_pos, self.wheel_outer_radius)
+        self.lower_top_circle_point = top_little_circle_intersections[0] if top_little_circle_intersections[0][1] < top_little_circle_intersections[1][1] else top_little_circle_intersections[1]
+
+
+
+
     def debug_diagram(self):
 
         # diagram = cq.Workplane("XY").pushPoints([(0,0), (self.distance,0)]).circle(self.radius)
@@ -4611,26 +4645,23 @@ class GenevaGearInlinePair:
         diagram = diagram.add(cq.Workplane("XY").pushPoints(self.outer_curve_intersection_points).circle(1))
         return diagram
 
+    def get_finger_inner_solid_radius(self):
+        '''
+        get the radius of a circle that can be used to cut a style in the finger wheel
+        '''
+
+        return np.linalg.norm(self.cross_wheel_curve_end_pos) - self.inner_cut_r
+
     def get_finger(self):
         finger = (cq.Workplane("XY").moveTo(self.lower_intersect_pos[0], self.lower_intersect_pos[1]).radiusArc((0,-self.finger_wheel_radius), self.finger_wheel_radius)
                   .radiusArc((0,self.finger_wheel_radius), self.finger_wheel_radius).radiusArc(self.upper_intersect_pos, self.finger_wheel_radius))
 
-        #bottom of the gap
-        cross_wheel_curve_start_pos = np_to_set(np.add(self.wheel_pos, polar(self.wheel_first_outer_curve_start_angle, self.wheel_outer_radius)))
-        #top of the gap
-        cross_wheel_curve_end_pos = np_to_set(np.add(self.wheel_pos, polar(self.wheel_first_outer_curve_start_angle-self.gap_span_angle, self.wheel_outer_radius)))
 
-        inner_cut_r = get_distance_between_two_points(cross_wheel_curve_start_pos, self.lower_intersect_pos)
+        finger = finger.radiusArc(self.lower_top_circle_point, -self.inner_cut_r)
 
-        top_little_circle_intersections = get_circle_intersections(cross_wheel_curve_end_pos, inner_cut_r, self.wheel_pos, self.wheel_outer_radius)
-        lower_top_circle_point = top_little_circle_intersections[0] if top_little_circle_intersections[0][1] < top_little_circle_intersections[1][1] else top_little_circle_intersections[1]
+        inner_cut_r2 = self.inner_cut_r*2
 
-
-        finger = finger.radiusArc(lower_top_circle_point, -inner_cut_r)
-
-        inner_cut_r2 = inner_cut_r*2
-
-        line_top_of_gap = Line(cross_wheel_curve_end_pos, direction=(1,0))
+        line_top_of_gap = Line(self.cross_wheel_curve_end_pos, direction=(1,0))
 
         #point l on the diagram (not that I've been labelling these thus far, probably should have)
         intersection_l = line_top_of_gap.intersection_with_circle(self.upper_intersect_pos,inner_cut_r2)[0]
@@ -4641,9 +4672,9 @@ class GenevaGearInlinePair:
 
         finger = finger.radiusArc(intersection_k, self.finger_radius)
 
-        upper_bottom_circle_point = (lower_top_circle_point[0], -lower_top_circle_point[1])
+        upper_bottom_circle_point = (self.lower_top_circle_point[0], -self.lower_top_circle_point[1])
         finger = finger.radiusArc(upper_bottom_circle_point, -inner_cut_r2)
-        finger = finger.radiusArc(self.lower_intersect_pos, -inner_cut_r)
+        finger = finger.radiusArc(self.lower_intersect_pos, -self.inner_cut_r)
 
         finger = finger.close()
 
@@ -4659,17 +4690,17 @@ class GenevaGearInlinePair:
         arm_angle = self.arm_angle#math.pi*2/self.teeth
 
         start_angle = self.wheel_first_outer_curve_start_angle#math.pi + arm_angle/2 - self.outer_curve_intersect_angle/2
-        start_pos = polar(start_angle, self.wheel_outer_radius)
+        start_pos = polar(start_angle, self.wheel_outer_radius - self.wiggle_room)
         wheel = wheel.moveTo(start_pos[0], start_pos[1])
         for arm in range(self.teeth):
             angle = start_angle + arm_angle*arm
 
-            curve_r = self.finger_radius
+            curve_r = self.finger_wheel_radius + self.wiggle_room
             if arm == self.teeth - 1 and self.stop:
                 curve_r *= -1
 
             curve_stop_angle = angle + self.outer_curve_intersect_angle
-            curve_stop_pos = polar(curve_stop_angle, self.wheel_outer_radius)
+            curve_stop_pos = polar(curve_stop_angle, self.wheel_outer_radius - self.wiggle_room)
             wheel = wheel.radiusArc(curve_stop_pos, curve_r)
 
             gap_span_angle = self.gap_span_angle#arm_angle - self.outer_curve_intersect_angle
@@ -4683,7 +4714,7 @@ class GenevaGearInlinePair:
             inner_point_0 = line_inwards.intersection_with_circle((0,0), self.wheel_inner_radius, line_length=self.wheel_outer_radius)[0]
 
             next_curve_start_angle = angle + arm_angle
-            next_curve_start_pos = polar(next_curve_start_angle, self.wheel_outer_radius)
+            next_curve_start_pos = polar(next_curve_start_angle, self.wheel_outer_radius - self.wiggle_room)
 
             second_line_inwards = Line(next_curve_start_pos, direction=centre_of_gap_line_to_centre_of_wheel.get_direction())
 
@@ -4710,7 +4741,7 @@ class GenevaGearInlinePair:
 
 
 class DayOfWeekComplication:
-    def __init__(self, gear_thick=2.5, module=1.5, style=None):
+    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20, angle_deg=45, extra_z_height=0, cylinder_length=40):
         '''
         Based on MoonComplication3D
 
@@ -4726,11 +4757,38 @@ class DayOfWeekComplication:
         '''
         self.hour_hand_pinion_thick = gear_thick*2
         self.gear_thick = gear_thick
+        self.geneva_gear_thick = geneva_gear_thick
+        self.right_side = right_side
         self.module = module
         self.fixing_screws = MachineScrew(3)
         self.style = style
+        #how far extra to raise up the centre of the day rotation cylinder
+        self.extra_z_height = extra_z_height
+        # let's start by assuming we want the days themselves in line with the hands
+        # if angle_deg is None:
+        #     pass
+        self.cylinder_length = cylinder_length
+        self.first_pair = WheelPinionPair(60, 30, module=self.module, reduced_jamming=True)
 
-        self.pair = WheelPinionPair(60, 30, module=self.module, reduced_jamming=True)
+
+
+        # distance =
+
+        self.geneva_pair = GenevaGearInlinePair(thick=self.geneva_gear_thick, distance=self.first_pair.centre_distance, teeth=7)
+
+        self.extension_r = self.fixing_screws.metric_thread
+        self.wiggle_room = 0.1
+
+        self.angle = deg_to_rad(angle_deg)
+
+        self.bevel_module = bevel_module
+        if self.bevel_module < 0:
+            self.bevel_module = self.module
+
+        self.bevel_pair = WheelPinionBeveledPair(bevel_teeth, bevel_teeth, module=self.bevel_module)
+
+        self.base_of_wheel_from_base_of_pinion = None
+        # self.pinion_fixing_square_size = get_incircle_for_regular_polygon()
 
     #
     # def generate_arbors(self):
@@ -4738,10 +4796,10 @@ class DayOfWeekComplication:
     #     self.pair = WheelPinionPair(60, 30,module=self.module, reduced_jamming=True)
 
     def get_pinion_for_motion_works_max_radius(self):
-        return self.pair.pinion.get_max_radius()
+        return self.first_pair.pinion.get_max_radius()
 
     def get_pinion_for_motion_works_shape(self):
-        return self.pair.pinion.get3D(thick=self.hour_hand_pinion_thick)
+        return self.first_pair.pinion.get3D(thick=self.hour_hand_pinion_thick)
 
     def set_motion_works_sizes(self, motion_works):
         self.cannon_pinion_max_r = motion_works.get_cannon_pinion_max_r()
@@ -4750,13 +4808,73 @@ class DayOfWeekComplication:
         self.base_of_wheel_from_base_of_pinion = self.plate_to_top_of_hour_holder_wheel + self.hour_hand_pinion_thick / 2 - self.gear_thick / 2 - WASHER_THICK_M3
 
     def get_arbor_positions_relative_to_motion_works(self):
-        return []
+        #could make more compact? just do 45 degrees for now and see how that comes out
 
-    def get_arbor_shape(self, index, for_printing=True):
+        extra = 0
+        if not self.right_side:
+            extra = math.pi
 
-        if index == 0:
-            #TODO innerradius for style
-            arbor = self.pair.wheel.get3D(hole_d=self.fixing_screws.get_rod_cutter_r(loose=True), thick=self.gear_thick, style=self.style)
+        first_pos = polar(extra-self.angle, self.first_pair.centre_distance)
+        return [
+            first_pos
+            ,
+            np_to_set(np.add(first_pos, polar(extra+self.angle, self.geneva_pair.distance)))
+        ]
+
+    def get_first_arbor(self):
+        if self.base_of_wheel_from_base_of_pinion is None:
+            raise RuntimeError("Haven't called set_motion_works_sizes yet")
+        wheel = self.first_pair.wheel.get3D(thick=self.gear_thick, style=self.style, inner_radius_for_style=self.extension_r)
+        arbor = wheel.translate((0, 0, self.base_of_wheel_from_base_of_pinion))
+        arbor = arbor.union(cq.Workplane("XY").circle(self.extension_r).extrude(self.base_of_wheel_from_base_of_pinion - self.geneva_gear_thick).translate((0, 0, self.geneva_gear_thick)))
+        arbor = arbor.union(cq.Workplane("XY").polygon(6, self.extension_r * 2).extrude(self.geneva_gear_thick))
+        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(self.base_of_wheel_from_base_of_pinion + self.gear_thick))
+
+        return arbor
+
+    def get_second_arbor(self):
+        wheel = self.geneva_pair.get_cross_wheel()
+
+        positions = self.get_arbor_positions_relative_to_motion_works()
+        angle = get_angle_between_two_points(positions[1], positions[0])
+
+        #get a tooth pointed at the first arbor so we can get the days perfectly lined up
+        #rotate so gap is on the right, then rotate so tooth is on the right, then finally roate by angle
+        wheel = wheel.rotate((0,0,0), (0,0,1), 180 + 0.5*360/7 + rad_to_deg(angle))
+
+        if self.extra_z_height > 0:
+
+            wheel = wheel.faces(">Z").workplane().circle(self.bevel_pair.get_wheel_base_radius()).extrude(self.extra_z_height)
+
+        arbor = wheel.union(self.bevel_pair.get_wheel_with_gap_at(0).translate((0,0,self.geneva_gear_thick + self.extra_z_height))).cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(1000))
+        return arbor
+
+    def get_first_arbor_pinion(self):
+        pinion = self.geneva_pair.get_finger().faces(">Z").workplane().polygon(6, self.extension_r*2+self.wiggle_room*2).cutThruAll()
+
+        pinion = Gear.cut_style(pinion, self.geneva_pair.get_finger_inner_solid_radius(), self.extension_r, style = self.style)
+
+        return pinion
+
+
+    def get_day_cylinder_bevel(self):
+        '''constructed rotating along z axis and base of bevel gear is on X-Y plane
+        #question - should the days be friction fitted so they can then be perfectly lined up and set independently?
+        #might make both "loose" on rod and then use nuts on rod to provide friction
+        # further thoughts - if it's a single unit which can be loose on the rod then it's much easier to construct something
+        to hold it in place.
+        So I need to get the exact relationship between the bevel gear and the flat surface of the days correct
+        '''
+        arbor = self.bevel_pair.get_pinion_with_tooth_at(math.pi)
+
+
+
+        cylinder = cq.Workplane("XY").polygon(7, self.bevel_pair.get_pinion_base_radius()*2).extrude(self.cylinder_length).rotate((0,0,0),(0,0,1),0.5*360/7)
+        arbor = arbor.union(cylinder.translate((0,0,-self.cylinder_length)))
+
+        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).extrude(1000))
+
+        return arbor
 
     def get_parts_in_situ(self):
         '''
@@ -4764,5 +4882,18 @@ class DayOfWeekComplication:
         '''
         parts = {}
         positions = self.get_arbor_positions_relative_to_motion_works()
-        for i in range(3):
-            parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
+        parts["arbor_0"] = self.get_first_arbor().translate(positions[0])
+        parts["arbor_0_pinion"] = self.get_first_arbor_pinion().translate(positions[0])
+
+        parts["arbor_1"] = self.get_second_arbor().translate(positions[1])
+        x = 1
+        if not self.right_side:
+            x*=-1
+        parts["arbor_2"] = (self.get_day_cylinder_bevel().rotate((0, 0, 0), (0, 1, 0), -90).translate(positions[1])
+                            .translate((self.bevel_pair.get_centre_of_wheel_to_back_of_pinion(),
+                                        0,
+                                        self.bevel_pair.get_centre_of_pinion_to_back_of_wheel() + self.geneva_gear_thick + self.extra_z_height)))
+        # for i in range(3):
+        #     parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
+
+        return parts

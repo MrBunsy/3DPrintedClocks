@@ -991,7 +991,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
-                   moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45, hand_colours_overrides=None):
+                   moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45, hand_colours_overrides=None,
+                   day_complication_colours=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -1027,6 +1028,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             plate_colours = [Colour.LIGHTGREY]
         if moon_complication_colours is None:
             moon_complication_colours = [Colour.BRASS]
+        if day_complication_colours is None:
+            day_complication_colours = Colour.RAINBOW
 
         if not isinstance(plate_colours, list):
             #backwards compatibility
@@ -1096,6 +1099,13 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i,holder in enumerate(holder_parts):
                 show_object(holder.translate((0, 0, self.front_of_clock_z)), name="moon_holder_part{}".format(i), options={"color":plate_colours[0]})
+
+        if self.days_complication is not None:
+            day_parts = self.days_complication.get_parts_in_situ()
+            for i, day_part in enumerate(day_parts):
+                friendly_name = string.capwords(day_part.replace("_", " "))
+                show_object(day_parts[day_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name=f"Day Complication {friendly_name}",
+                            options={"color": day_complication_colours[i % len(day_complication_colours)]})
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)

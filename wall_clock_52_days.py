@@ -153,12 +153,13 @@ train.generate_arbors_dicts([
     },
 ])
 
-days_complication = DayOfWeekComplication(module=0.8)
+days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=-70, extra_z_height=0)
 
-motion_works = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
+motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
                            cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
 #WANT a small motion works to provide more space for the days of week prism to fit behind the dial
 # motion_works.calculate_size(arbor_distance=30)
+days_complication.set_motion_works_sizes(motion_works)
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 

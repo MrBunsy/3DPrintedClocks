@@ -374,6 +374,7 @@ def get_point_two_circles_intersect(pos0, distance0, pos1, distance1, anticlockw
 
         return np_to_set(np.add(pos0, polar(point_angle, distance0)))
 
+# circle that fits snugly inside a polygon
 def get_incircle_for_regular_polygon(outer_radius, sides):
     polygon_side_length = 2 * outer_radius * math.sin(math.pi / sides)
     incircle_radius = polygon_side_length / (2 * math.tan(math.pi/sides))

@@ -266,10 +266,18 @@ class BevelGear(GearBase):
                    .revolve(combine=False))
 
         body = cq.Workplane('XY').add(body).cut(trimmer)
-
         return body.val()
 
+    def get_bottom_radius(self):
+        '''
+        copied from _trim_bottom. find the radius of the inner circle of the bottom trimmer - meaning that this is the largest radius the base of the gear is in contact with anything below
+        '''
 
+        r = self.gs_r
+
+        p1 = sphere_to_cartesian(r, self.gamma_r * 0.99, np.pi / 2.0)
+
+        return p1[0]
     def _trim_top(self, body, do_trim=False):
         if not do_trim:
             return body
