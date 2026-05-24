@@ -20,16 +20,18 @@ motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensat
 
 days_complication.set_motion_works_sizes(motion_works)
 
-parts = days_complication.get_parts_in_situ()
+# parts = days_complication.get_parts_in_situ()
 
-motion_works_parts = motion_works.get_parts_in_situ(motion_works_relative_pos=polar(math.pi, motion_works.get_arbor_distance()))
+# motion_works_parts = motion_works.get_parts_in_situ(motion_works_relative_pos=polar(math.pi, motion_works.get_arbor_distance()))
 
-for part in motion_works_parts:
-    show_object(motion_works_parts[part].translate((0,0,motion_works.get_distance_from_front_plate())))
+# for part in motion_works_parts:
+#     show_object(motion_works_parts[part].translate((0,0,motion_works.get_distance_from_front_plate())))
+#
+#
+# for part in parts:
+#     show_object(parts[part])
 
-
-for part in parts:
-    show_object(parts[part].translate((0,0, WASHER_THICK_M3)))
+show_object(days_complication.get_day_cylinder_parts()[0])
 
 # show_object(days_complication.get_arbor_shapes(0)[0])
 # show_object(days_complication.get_arbor_shapes(0)[1])

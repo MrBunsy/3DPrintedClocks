@@ -4770,6 +4770,8 @@ class DayOfWeekComplication:
         self.cylinder_length = cylinder_length
         self.first_pair = WheelPinionPair(60, 30, module=self.module, reduced_jamming=True)
 
+        self.days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
 
 
         # distance =
@@ -4788,6 +4790,8 @@ class DayOfWeekComplication:
         self.bevel_pair = WheelPinionBeveledPair(bevel_teeth, bevel_teeth, module=self.bevel_module)
 
         self.base_of_wheel_from_base_of_pinion = None
+
+        self.slides_thick = 0.4
         # self.pinion_fixing_square_size = get_incircle_for_regular_polygon()
 
     #
@@ -4857,7 +4861,87 @@ class DayOfWeekComplication:
         return pinion
 
 
-    def get_day_cylinder_bevel(self):
+    def get_day_cylinder_parts(self):
+        #separate function for just the cylinder as the bevel takes longer to process the preview
+        radius = self.bevel_pair.get_pinion_base_radius()
+        cylinder = cq.Workplane("XY").polygon(7, radius * 2).extrude(self.cylinder_length)
+        # as created, the flat side is on the left (-ve x axis)
+
+        wall_thick = 0.5
+        slot_depth = self.slides_thick + 0.4
+        slot_overhang_thick = 0.4
+        slot_wiggle = 0.3
+        slot_overhang = 0.6
+
+        # '''
+        # not sure how to describe this one without the diagram.
+        # '''
+        # y = wall_thick/2
+        alpha = math.pi / 7
+        beta = math.pi/2 - alpha
+
+        # a = math.cos(math.acos(slot_depth)/betadash)
+        # # z = (math.acos(slot_depth)
+        # #      *math.sin(betadash)/betadash)
+        # z = a * math.sin(betadash)
+
+        b = slot_depth*math.sin(beta)/math.sin(alpha)
+
+        from_edge = wall_thick/2 + b
+
+        #so at the outside, if we're z away from the corner, the end of the slot will still have the right wall thickness
+        polygon_side_length = 2 * radius * math.sin(math.pi*0.5/7)
+        slot_width = polygon_side_length - from_edge*2
+
+        slot_cutter = (cq.Workplane("XY").moveTo(0,-slot_depth).lineTo(slot_width/2, -slot_depth)
+                       .lineTo(slot_width/2,-slot_overhang_thick).lineTo(slot_width/2-slot_overhang, -slot_overhang_thick)
+                       .lineTo(slot_width/2-slot_overhang, 0).lineTo(0,0).close().extrude(self.cylinder_length))
+
+        slot_cutter = slot_cutter.union(slot_cutter.mirror("YZ"))
+        edge_distance = get_incircle_for_regular_polygon(radius, 7)
+
+        #this is just too tiny. try a differetn idea?
+        # for side in range(7):
+        #     angle = math.pi/2 + side*math.pi*2/7
+        #     cutter = slot_cutter.translate((0,edge_distance)).rotate((0,0,0), (0,0,1), rad_to_deg(angle))
+        #     cylinder = cylinder.cut(cutter)
+
+        '''
+        number_spaces = [TextSpace(x=0, y=0, width=numeral_height*2.5, height=numeral_height, horizontal=True, text=number, thick=self.detail_thick, font=self.font) for number in numbers]
+
+            max_text_size = min([text_space.get_text_max_size() for text_space in number_spaces])
+
+            for space in number_spaces:
+                space.set_size(max_text_size)
+        '''
+        textspaces = [TextSpace(x=0,y=0, width = self.cylinder_length-1 , height=polygon_side_length,
+                                text=day, thick=LAYER_THICK*2, font="Gill Sans Medium", font_path="../fonts/GillSans/Gill Sans Medium.otf", inverted=False) for day in self.days]
+
+        max_text_side = min([textspace.get_text_max_size() for textspace in textspaces])
+
+        for space in textspaces:
+            space.set_size(max_text_side)
+        texts = []
+        #works, put text on outside but it's teh wrong way up when assembled
+        # for side in range(len(self.days)):
+        #     angle = side * math.pi * 2 / 7
+        #     text = textspaces[side].get_text_shape().rotate((0,0,0),(0,1,0),-90).translate((-edge_distance,0,self.cylinder_length/2)).rotate((0,0,0),(0,0,1), rad_to_deg(angle))
+        #     # return [text]
+        #     texts.append(text)
+        #     cylinder = cylinder.add(text)
+        for side in range(len(self.days)):
+            angle = -side * math.pi * 2 / 7
+            text = textspaces[side].get_text_shape().rotate((0,0,0),(0,0,1),180).rotate((0,0,0),(0,1,0),-90).translate((-edge_distance,0,self.cylinder_length/2)).rotate((0,0,0),(0,0,1), rad_to_deg(angle))
+            # return [text]
+            texts.append(text)
+            cylinder = cylinder.add(text)
+
+        if self.right_side:
+            #get flat side so it's at the front
+            cylinder = cylinder.rotate((0, 0, 0), (0, 0, 1), 0.5 * 360 / 7)
+
+        return cylinder, texts
+    def get_day_cylinder(self):
         '''constructed rotating along z axis and base of bevel gear is on X-Y plane
         #question - should the days be friction fitted so they can then be perfectly lined up and set independently?
         #might make both "loose" on rod and then use nuts on rod to provide friction
@@ -4868,11 +4952,11 @@ class DayOfWeekComplication:
         arbor = self.bevel_pair.get_pinion_with_tooth_at(math.pi)
 
 
+        cylinder, texts = self.get_day_cylinder_parts()
 
-        cylinder = cq.Workplane("XY").polygon(7, self.bevel_pair.get_pinion_base_radius()*2).extrude(self.cylinder_length).rotate((0,0,0),(0,0,1),0.5*360/7)
         arbor = arbor.union(cylinder.translate((0,0,-self.cylinder_length)))
 
-        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).extrude(1000))
+        # arbor = arbor.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).cutThruAll()
 
         return arbor
 
@@ -4889,11 +4973,14 @@ class DayOfWeekComplication:
         x = 1
         if not self.right_side:
             x*=-1
-        parts["arbor_2"] = (self.get_day_cylinder_bevel().rotate((0, 0, 0), (0, 1, 0), -90).translate(positions[1])
+        parts["arbor_2"] = (self.get_day_cylinder().rotate((0, 0, 0), (0, 1, 0), -90).translate(positions[1])
                             .translate((self.bevel_pair.get_centre_of_wheel_to_back_of_pinion(),
                                         0,
                                         self.bevel_pair.get_centre_of_pinion_to_back_of_wheel() + self.geneva_gear_thick + self.extra_z_height)))
         # for i in range(3):
         #     parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
+
+        for part in parts:
+            parts[part] = parts[part].translate((0,0, WASHER_THICK_M3))
 
         return parts

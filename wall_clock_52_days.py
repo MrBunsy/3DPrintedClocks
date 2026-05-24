@@ -153,7 +153,7 @@ train.generate_arbors_dicts([
     },
 ])
 
-days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=-70, extra_z_height=0)
+days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=-60, extra_z_height=0, cylinder_length=25)
 
 motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
                            cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
