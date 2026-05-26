@@ -275,7 +275,8 @@ class BevelGear(GearBase):
 
         r = self.gs_r
 
-        p1 = sphere_to_cartesian(r, self.gamma_r * 0.99, np.pi / 2.0)
+        # p1 = sphere_to_cartesian(r, self.gamma_r * 0.99, np.pi / 2.0)
+        p1 = sphere_to_cartesian(r, self.gamma_r , np.pi / 2.0)
 
         return p1[0]
     def _trim_top(self, body, do_trim=False):

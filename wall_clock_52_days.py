@@ -155,7 +155,9 @@ train.generate_arbors_dicts([
 
 gear_layout =  GearLayout2D.get_old_gear_train_layout(train, GearTrainLayout.COMPACT)
 #angle_deg=-60
-days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=-rad_to_deg(gear_layout.get_angle_between(2,5)), extra_z_height=0, cylinder_length=25)
+days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=60, extra_z_height=0, cylinder_length=28)
+# days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=rad_to_deg(gear_layout.get_angle_between(2,5)), extra_z_height=0, cylinder_length=25)
+# days_complication = DayOfWeekComplication(module=0.6, style=gear_style, bevel_module=1.1, angle_deg=rad_to_deg(gear_layout.get_angle_between(2,1)), extra_z_height=0, cylinder_length=25)
 
 motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
                            cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
