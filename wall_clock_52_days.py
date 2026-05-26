@@ -153,7 +153,9 @@ train.generate_arbors_dicts([
     },
 ])
 
-days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=-60, extra_z_height=0, cylinder_length=25)
+gear_layout =  GearLayout2D.get_old_gear_train_layout(train, GearTrainLayout.COMPACT)
+#angle_deg=-60
+days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=-rad_to_deg(gear_layout.get_angle_between(2,5)), extra_z_height=0, cylinder_length=25)
 
 motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
                            cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
@@ -165,7 +167,7 @@ pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
 plaque = Plaque(text_lines=["W32#2 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
-gear_layout =  GearLayout2D.get_old_gear_train_layout(train, GearTrainLayout.COMPACT)
+
 pillar_style=PillarStyle.CLASSIC
 motion_works_angle_deg=rad_to_deg(gear_layout.get_angle_between(2,3))
 dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)

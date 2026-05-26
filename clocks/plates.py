@@ -325,12 +325,62 @@ The moon on its threaded rod slots through a steel tube.
 
         return [holder, lid]
 
+class DayOfWeekHolder:
+    def __init__(self, plates, day_of_week_complication, fixing_screws=None, support_width=12):
+        '''
+        assuming round clock plates, will need extending to support other plate shapes
+        '''
+        self.plates = plates
+        self.day_of_week_complication = day_of_week_complication
+        self.fixing_screws = fixing_screws
+        if self.fixing_screws is None:
+            self.fixing_screws = MachineScrew(3, type=MachineScrewType.COUNTERSUNK)
+
+        self.support_width = support_width
+
+
+    def get_holder(self):
+
+        height = self.day_of_week_complication.get_cylinder_z_from_plate() + self.day_of_week_complication.fixing_screws.metric_thread*2
+        centre_angle = 0
+        if not self.day_of_week_complication.right_side:
+            centre_angle = math.pi
+        spans_angle = math.pi/12
+
+        holder = get_stroke_arc(polar(centre_angle+spans_angle/2, self.plates.radius), polar(centre_angle-spans_angle/2, self.plates.radius), -self.plates.radius, self.support_width, height)
+
+        rotate = -90 if self.day_of_week_complication.right_side else 90
+
+        # little arm to keep the cylinder in roughly the right place
+        cylinder_end = self.day_of_week_complication.get_end_of_cylinder_distance() + WASHER_THICK_M3 + 0.5
+
+        little_arm = cq.Workplane("XY").circle(self.day_of_week_complication.fixing_screws.metric_thread).extrude(self.plates.radius - cylinder_end)
+        little_arm = little_arm.rotate((0,0,0), (0,1,0), rotate).translate(polar(centre_angle, self.plates.radius)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate()))
+
+        holder = holder.union(little_arm)
+
+        holder = (holder.cut(self.day_of_week_complication.fixing_screws.get_cutter(self_tapping=True, sideways=True).rotate((0,0,0),(0,1,0), rotate)
+                             .translate(polar(centre_angle, self.plates.radius + self.support_width/2)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate())))
+                  )
+
+
+        return holder
+
+    def get_parts_in_situ(self):
+        '''
+        positions will be relative to the motion works
+        '''
+        parts = {}
+        parts["holder"] = self.get_holder()
+
+        return parts
+
 class BasePlates:
     '''
     Basic bits shared by all types of plates
     TODO expand and consolidate as needed
     '''
-    def __init__(self, layer_thick=LAYER_THICK):
+    def __init__(self, layer_thick=LAYER_THICK, days_complication=None):
         self.layer_thick = layer_thick
         self.little_plate_for_pawl=False
         self.going_train = None
@@ -344,6 +394,14 @@ class BasePlates:
 
         # for fixing to teh wall
         self.wall_fixing_screw_head_d = 11
+
+        self.days_complication = days_complication
+
+        self.days_complication_holder = None
+
+        # although I'm doing this in base clock plates, it only currently supports RoundClockPlates
+        if self.days_complication is not None:
+            self.days_complication_holder = DayOfWeekHolder(self, self.days_complication)
 
 
     def get_pillar_in_position(self, x=-1, y=-1):
@@ -419,6 +477,27 @@ class BasePlates:
         return None
 
 
+    def add_day_complication_arms(self, plate, plate_thick, cut_holes=False):
+
+        if self.days_complication is not None:
+            mini_arm_width = self.days_complication.fixing_screws.get_nut_containing_diameter() * 2
+
+            #screw holes for the moon complication arbors
+            for i, pos in enumerate(self.days_complication.get_arbor_positions_relative_to_motion_works()):
+                # extra bits of plate to hold the screw holes for extra arbors
+
+                # #skip the second one if it's in the same place as the extra arm for the extraheavy compact plates (old very specific logic...)
+                # if i != 1 or (self.gear_train_layout != GearTrainLayout.COMPACT and self.extra_heavy) or not self.moon_complication.on_left:
+                absolute_pos = np_to_set(np.add(self.hands_position, pos))
+
+                plate = plate.union(get_stroke_line([self.hands_position, absolute_pos], wide=mini_arm_width, thick=plate_thick))
+
+                if cut_holes:
+                    plate = plate.cut(self.days_complication.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(absolute_pos))
+
+        return plate
+
+
 class SimpleClockPlates(BasePlates):
     '''
     This took a while to settle - clocks before wall_clock_4 will be unlikely to work anymore.
@@ -447,7 +526,7 @@ class SimpleClockPlates(BasePlates):
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1.0,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True, days_complication=None):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True, **kwargs):
         '''
 
         gear_train_layout: used to be an enum, now a GearTrainLayout2D object, supports enum for backwards compat
@@ -464,7 +543,7 @@ class SimpleClockPlates(BasePlates):
         off_centre_escape_wheel - if true, permit escape wheel off centre where default settings wouldn't assume this
         '''
 
-        super().__init__(layer_thick=layer_thick)
+        super().__init__(layer_thick=layer_thick, **kwargs)
 
         self.pillar_style = pillar_style
         self.style = style
@@ -532,7 +611,7 @@ class SimpleClockPlates(BasePlates):
 
         #None or a MoonComplication object
         self.moon_complication = moon_complication
-        self.days_complication = days_complication
+
 
         #if escapementOnFront then extend out the front plate to hold the bearing - reduces wobble when platedistance is low
         self.extra_support_for_escape_wheel = extra_support_for_escape_wheel
@@ -950,6 +1029,8 @@ class SimpleClockPlates(BasePlates):
 
         if self.moon_complication is not None:
             self.moon_holder = MoonHolder(self, self.moon_complication, self.motion_works_screws)
+
+
 
         #cache stuff that's needed multiple times to speed up generating clock
         self.fixing_screws_cutter = None
@@ -2986,6 +3067,7 @@ class SimpleClockPlates(BasePlates):
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
 
         plate = self.add_motion_works_arm(plate, plate_thick, cut_holes=True)
+        plate = self.add_day_complication_arms(plate, plate_thick, cut_holes=True)
 
         if self.motion_works.cannon_pinion_friction_ring:
             for pos in self.cannon_pinion_friction_clip_fixings_pos:
@@ -5022,6 +5104,7 @@ class RoundClockPlates(SimpleClockPlates):
 
             #add these arms here so they're included in the detailing
             plate = self.add_motion_works_arm(plate, plate_thick, cut_holes=False)
+            plate = self.add_day_complication_arms(plate, plate_thick, cut_holes = False)
             plate = self.add_moon_complication_arms(plate, plate_thick, cut_holes=False)
             return plate
 

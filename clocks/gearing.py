@@ -4634,6 +4634,22 @@ class GenevaGearInlinePair:
         self.lower_top_circle_point = top_little_circle_intersections[0] if top_little_circle_intersections[0][1] < top_little_circle_intersections[1][1] else top_little_circle_intersections[1]
 
 
+    def get_demo_platform_bits(self):
+        base_thick = 6
+        platform = cq.Workplane("XY").rect(self.distance+15, 15).extrude(base_thick)
+
+        screws = MachineScrew(3, type=MachineScrewType.COUNTERSUNK)
+        positions = [(-self.distance/2,0), (self.distance/2,0)]
+        # platform.faces(">Z").workplane().pushPoints([(-self.distance/2,0), (self.distance/2,0)]).
+
+        for pos in positions:
+            platform = platform.cut(screws.get_cutter(self_tapping=True).translate(pos))
+
+        finger = self.get_finger().faces(">Z").workplane().circle(screws.get_rod_cutter_r(loose=True)).cutThruAll()
+        finger = finger.cut(screws.get_cutter(self_tapping=True, ignore_head=True).translate((-self.distance/4,0)))
+        cross = self.get_cross_wheel().faces(">Z").workplane().circle(screws.get_rod_cutter_r(loose=True)).cutThruAll()
+
+        return [platform, finger.translate(positions[0]).translate((0,0,base_thick)), cross.translate(positions[1]).translate((0,0,base_thick))]
 
 
     def debug_diagram(self):
@@ -4760,7 +4776,7 @@ class DayOfWeekComplication:
         self.geneva_gear_thick = geneva_gear_thick
         self.right_side = right_side
         self.module = module
-        self.fixing_screws = MachineScrew(3)
+        self.fixing_screws = MachineScrew(3, type=MachineScrewType.COUNTERSUNK)
         self.style = style
         #how far extra to raise up the centre of the day rotation cylinder
         self.extra_z_height = extra_z_height
@@ -4818,11 +4834,11 @@ class DayOfWeekComplication:
         if not self.right_side:
             extra = math.pi
 
-        first_pos = polar(extra-self.angle, self.first_pair.centre_distance)
+        first_pos = polar(extra+self.angle, self.first_pair.centre_distance)
         return [
             first_pos
             ,
-            np_to_set(np.add(first_pos, polar(extra+self.angle, self.geneva_pair.distance)))
+            np_to_set(np.add(first_pos, polar(extra-self.angle, self.geneva_pair.distance)))
         ]
 
     def get_first_arbor(self):
@@ -4956,9 +4972,22 @@ class DayOfWeekComplication:
 
         arbor = arbor.union(cylinder.translate((0,0,-self.cylinder_length)))
 
-        # arbor = arbor.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).cutThruAll()
+        arbor = arbor.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
 
         return arbor
+
+    def get_cylinder_z_from_plate(self):
+        #plus washer thick?
+        return self.bevel_pair.get_centre_of_pinion_to_back_of_wheel() + self.geneva_gear_thick + self.extra_z_height + WASHER_THICK_M3
+
+    def get_end_of_cylinder_distance(self):
+        #how far the end of the cylinder is from the motion works
+        first_bevel_pos = self.get_arbor_positions_relative_to_motion_works()[1]
+        first_bevel_distance = np.linalg.norm(first_bevel_pos)
+
+        cylinder_top = self.bevel_pair.get_centre_of_wheel_to_back_of_pinion()
+
+        return first_bevel_distance + cylinder_top + self.cylinder_length
 
     def get_parts_in_situ(self):
         '''
@@ -4976,7 +5005,8 @@ class DayOfWeekComplication:
         parts["arbor_2"] = (self.get_day_cylinder().rotate((0, 0, 0), (0, 1, 0), -90).translate(positions[1])
                             .translate((self.bevel_pair.get_centre_of_wheel_to_back_of_pinion(),
                                         0,
-                                        self.bevel_pair.get_centre_of_pinion_to_back_of_wheel() + self.geneva_gear_thick + self.extra_z_height)))
+                                        #remove washer thick becuase adding it to all parts below
+                                        self.get_cylinder_z_from_plate() - WASHER_THICK_M3)))
         # for i in range(3):
         #     parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
 

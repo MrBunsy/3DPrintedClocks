@@ -1107,6 +1107,11 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 show_object(day_parts[day_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name=f"Day Complication {friendly_name}",
                             options={"color": day_complication_colours[i % len(day_complication_colours)]})
 
+            holder_parts = self.plates.days_complication_holder.get_parts_in_situ()
+            for i, holder_part in enumerate(holder_parts):
+                friendly_name = string.capwords(holder_part.replace("_", " "))
+                show_object(holder_parts[holder_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)),name=f"Day Complication Holder {friendly_name}")
+
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
             detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
