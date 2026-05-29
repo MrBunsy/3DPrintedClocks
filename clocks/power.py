@@ -1059,7 +1059,8 @@ class SpringBarrel:
 
     def __init__(self, spring = None, key_bearing=None, lid_bearing=None, barrel_bearing=None, clockwise = True, pawl_angle=math.pi/2, click_angle=-math.pi/2,
                  base_thick=5, ratchet_at_back=True, style=GearStyle.SOLID, fraction_of_max_turns=0.5, wall_thick=12, spring_hook_screws=None, extra_barrel_height=1.5,
-                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40, ratchet_pawl_screwed_from_front=False, total_turns=-1):
+                 ratchet_thick=8, ratchet_screws=None, seed_for_gear_styles=-1, default_key_length=40, ratchet_pawl_screwed_from_front=False, total_turns=-1,
+                 stop_works=False):
         '''
         default is fraction_of_max_turns, which will work out the total number of turns the barrel can theoretically make, then that fraction when auto
         calculating gear train
@@ -1073,6 +1074,11 @@ class SpringBarrel:
         self.default_key_length = default_key_length
 
         self.ratchet_pawl_screwed_from_front = ratchet_pawl_screwed_from_front
+
+        # if true we'll embed geneva stop works in the base of the barrel
+        self.stop_works = stop_works
+
+
 
         self.style = style
         #if the style has a random component, ensure we get teh same on teh lid and base
@@ -1137,6 +1143,7 @@ class SpringBarrel:
 
 
 
+
         self.arbor_d_spring = self.arbor_d + 1
         print("arbor d inside spring: {}mm".format(self.arbor_d_spring))
 
@@ -1177,12 +1184,21 @@ class SpringBarrel:
         if self.spring_hook_screws is None:
             self.spring_hook_screws = MachineScrew(3, length=16, countersunk=True)
 
+        self.geneva_fixing_screws = MachineScrew(3, countersunk=True)
+
         # calculate this given we know the spring length+thickness and arbor diameter
         self.barrel_diameter = self.get_inner_diameter()
 
         self.spring_hook_space=2
 
-
+        self.geneva_pair = None
+        # leaves this much solid base behind
+        self.geneva_screw_base_gap = 0.5
+        if self.stop_works:
+            # going for 7 teeth. I think 5 would be sufficient to stop it at about eight days (assuming normal smithsish spring, etc)
+            # but I don't actually want it to stop after eight days, what I really want is just something to prevent it winding up too much.
+            # I'd rather it carries on running, even if innacurate, if I forget to wind it.
+            self.geneva_pair = GenevaGearInlinePair(self.barrel_diameter*0.4, teeth=7, stop=True, thick = self.base_thick*0.75)
 
         self.ratchet_collet_thick = 0
         if not self.ratchet_screws.grub:
@@ -1424,17 +1440,25 @@ class SpringBarrel:
 
         return washer
 
+    def get_arbor_collet_centre_cutout(self, thick):
+        inner_r = self.arbor_d / 2 + self.collet_wiggle_room / 2
+        cutoff_height = self.cutoff_height - self.collet_wiggle_room / 2
+        centre_cutout = cq.Workplane("XY").circle(inner_r).extrude(thick).cut(cq.Workplane("XY").rect(self.collet_diameter, cutoff_height * 2).extrude(thick).translate((0, -self.arbor_d / 2)))
+
+        return centre_cutout
+
     def get_inner_collet(self):
         '''
-        if the ratchet is at the back (and barrely at front, still assumed), need a collet inside so the arbor can't just slip out backwards
+        if the ratchet is at the back (and barrel at front, still assumed), need a collet inside so the arbor can't just slip out backwards
         '''
 
         inner_r = self.arbor_d/2+self.collet_wiggle_room/2
         collet = cq.Workplane("XY").circle(self.collet_diameter / 2).extrude(self.back_collet_thick - self.back_bearing_standoff)
         collet = collet.faces(">Z").workplane().circle(self.key_bearing.inner_safe_d/2).extrude(self.back_bearing_standoff)
 
-        cutoff_height = self.cutoff_height - self.collet_wiggle_room/2
-        centre_cutout = cq.Workplane("XY").circle(inner_r).extrude(self.back_collet_thick).cut(cq.Workplane("XY").rect(self.collet_diameter, cutoff_height*2).extrude(self.back_collet_thick ).translate((0,-self.arbor_d/2)))
+        # cutoff_height = self.cutoff_height - self.collet_wiggle_room/2
+        # centre_cutout = cq.Workplane("XY").circle(inner_r).extrude(self.back_collet_thick).cut(cq.Workplane("XY").rect(self.collet_diameter, cutoff_height*2).extrude(self.back_collet_thick ).translate((0,-self.arbor_d/2)))
+        centre_cutout = self.get_arbor_collet_centre_cutout(self.back_collet_thick)
 
         collet =collet.cut(centre_cutout)
 
@@ -1443,11 +1467,42 @@ class SpringBarrel:
         collet = collet.cut(screwshape)
 
         return collet
+
+
+    def get_stop_works_finger(self):
+        '''
+        this is a collet for the arbor
+        '''
+        if not self.stop_works:
+            return None
+        finger = self.geneva_pair.get_finger().rotate((0,0,0), (0,0,1), 90).cut(self.get_arbor_collet_centre_cutout(self.geneva_pair.thick))
+
+        #think grub screw will be easiest
+        screwshape = self.collet_screws.get_cutter(ignore_head=True, self_tapping=True).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.collet_diameter / 2, self.geneva_pair.thick / 2))
+
+        finger = finger.cut(screwshape)
+
+        return finger
+
+    def get_stop_works_cross_wheel(self):
+        if not self.stop_works:
+            return None
+        wheel = self.geneva_pair.get_cross_wheel()
+        #.rotate((0,0,0),(1,0,0),180).translate((0,0,self.geneva_pair.thick))
+        cutter = self.geneva_fixing_screws.get_cutter(loose=True)
+
+        return wheel.cut(cutter)
+
     def get_barrel(self):
         barrel = cq.Workplane("XY").circle(self.barrel_diameter/2 + self.wall_thick).extrude(self.base_thick)#.circle(self.key_bearing.outer_safe_d/2)#why was this here?
 
-        barrel = Gear.cut_style(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
-                                clockwise_from_pinion_side=self.clockwise, rim_thick=0, random_seed=self.seed_for_gear_styles)
+        if not self.stop_works:
+            #leave barrel solid if using stopworks, so we have somewhere to fix them
+            barrel = Gear.cut_style(barrel, outer_radius=self.outer_radius_for_style, inner_radius=self.inner_radius_for_style, style=self.style,
+                                    clockwise_from_pinion_side=self.clockwise, rim_thick=0, random_seed=self.seed_for_gear_styles)
+
+        else:
+            barrel = barrel.cut(self.geneva_fixing_screws.get_cutter(self_tapping=True, ignore_head=True, length=self.base_thick-self.geneva_screw_base_gap).translate((-self.geneva_pair.distance,0)))
 
         barrel = barrel.faces(">Z").workplane().circle(self.barrel_diameter/2 + self.wall_thick).circle(self.barrel_diameter/2).extrude(self.barrel_height)
 
@@ -1545,9 +1600,15 @@ class SpringBarrel:
             ratchet_screwhole_x = [ratchet_x, back_collet_screwhole_x]
         else:
             ratchet_screwhole_x = [self.barrel_height + self.internal_endshake + self.lid_thick + self.front_bearing_standoff + extra_in_front + self.ratchet.thick + self.ratchet_collet_thick / 2]
+
+        if self.stop_works:
+            #the finger wheel collet
+            stop_works_screwhole_x = -self.internal_endshake - self.base_thick - self.geneva_pair.thick/2
+            arbor = arbor.cut(self.collet_screws.get_cutter(self_tapping=True, ignore_head=True, length = top_z/2).translate((stop_works_screwhole_x, 0)))
+
         collet_screwhole = cq.Workplane("XY")
         for x in ratchet_screwhole_x:
-            collet_screwhole = collet_screwhole.add(cq.Workplane("XY").circle(self.lid_fixing_screws.metric_thread/2).extrude(self.arbor_d/2).translate((x,0,top_z/2 )))
+            collet_screwhole = collet_screwhole.add(cq.Workplane("XY").circle(self.collet_screws.metric_thread/2).extrude(self.arbor_d/2).translate((x,0,top_z/2 )))
         arbor = arbor.cut(collet_screwhole)
 
         #so it should line up better with the barrel
@@ -1578,7 +1639,13 @@ class SpringBarrel:
         '''
         this is assembled such that it can be combined with the powered wheel, cord wheel conflates this a bit as it can't be combined
         '''
-        return self.get_barrel()
+        assembly = self.get_barrel()
+
+        if self.stop_works:
+            assembly = assembly.add(self.get_stop_works_finger().translate((0,0,-self.geneva_pair.thick)))
+            assembly = assembly.add(self.get_stop_works_cross_wheel().translate((-self.geneva_pair.distance, 0, -self.geneva_pair.thick)))
+
+        return assembly
 
     def get_model(self):
         model = self.get_barrel()
@@ -1638,6 +1705,9 @@ class SpringBarrel:
         else:
             return get_nearest_machine_screw_length(self.collet_diameter/2, self.ratchet_screws)
 
+    def get_geneva_fixing_screw_length(self):
+        return self.base_thick + self.geneva_pair.thick-self.geneva_screw_base_gap
+
     def get_BOM_for_combining_with_arbor(self, wheel_thick=-1):
         '''
         doesn't include the printed parts as these all make their way in via ArborForPlate
@@ -1654,6 +1724,8 @@ Screw the lid onto the barrel after putting the bearings, mainspring, and arbor 
         bom.add_item(BillOfMaterials.Item(f"{self.ratchet_screws} {self.get_ratchet_screw_length()}mm", purpose="Ratchet wheel fixing screw"))
         collet_screw_length = get_nearest_machine_screw_length(self.collet_diameter/2, self.ratchet_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} {collet_screw_length}mm", purpose="Rear collet fixing screw"))
+        if self.stop_works:
+            bom.add_item(BillOfMaterials.Item(f"{self.geneva_fixing_screws} {get_nearest_machine_screw_length(self.geneva_fixing_screws, self.get_geneva_fixing_screw_length())}"))
         return bom
 
     def get_parts_for_arbor(self, wheel_thick=-1):

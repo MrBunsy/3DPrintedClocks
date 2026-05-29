@@ -326,7 +326,7 @@ The moon on its threaded rod slots through a steel tube.
         return [holder, lid]
 
 class DayOfWeekHolder:
-    def __init__(self, plates, day_of_week_complication, fixing_screws=None, support_width=12):
+    def __init__(self, plates, day_of_week_complication, fixing_screws=None, support_width=11):
         '''
         assuming round clock plates, will need extending to support other plate shapes
         '''
