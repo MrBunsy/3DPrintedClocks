@@ -258,6 +258,12 @@ def get_stroke_line(original_points, wide, thick, style=StrokeStyle.ROUND, loop=
 
     return line
 
+def get_teardrop(base_r, tip_r, length, thick):
+    '''
+    get a teardrop with the base centre at (0,0) and tip centre at (0,length)
+    '''
+    return cq.Workplane("XY").sketch().arc((0,0), base_r*2, 0., 360.).arc((0,length), tip_r*2, 0., 360.) \
+        .hull().finalize().extrude(thick)
 def get_angle_of_chord(radius, chord_length):
     '''
     In many places I've assumed that the arc length ~= chord length and just run with it, but occasionally I need accuracy

@@ -32,15 +32,16 @@ motion_works = MotionWorks(compensate_loose_arbour=True, compact=True)
 #               second_length=dial.get_hand_length(HandType.SECOND), second_fixing_thick=3, include_seconds_hand=True)
 # #
 #66.5
-hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=66.5, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
+# hands = Hands(style=HandStyle.XMAS_TREE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+#                     length=66.5, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=True)
 #
-
+hands = Hands(style=HandStyle.ART_DECO, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                    length=80, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False)
 
 # hands_bom = hands.get_BOM()
 # hands_bom.export("out/Xmas_hands_66.5")
 
-hands.show_hands(show_object=show_object, show_second_hand=False)
+hands.show_hands(show_object=show_object, show_second_hand=False)#, time_minutes=0, time_hours=12)
 
 # show_object(hands.get_hand(hand_type=HandType.MINUTE, generate_outline=True, ))
 #
@@ -50,3 +51,5 @@ hands.show_hands(show_object=show_object, show_second_hand=False)
 
 # show_object(spade_hand(hand_width=5, thick=3,length=100))
 # show_object(diamond_hand(base_r=15, hand_width=5, thick=3,length=100))
+
+# show_object(get_teardrop(10,2,40, 3).cut(get_teardrop(9,1,40,3)))

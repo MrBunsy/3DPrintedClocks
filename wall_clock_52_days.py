@@ -43,6 +43,8 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
+art_deco = True
+
 clock_name= "wall_clock_52"
 clock_out_dir= "out"
 gear_style=GearStyle.ARCS
@@ -191,16 +193,24 @@ motion_works_angle_deg=rad_to_deg(gear_layout.get_angle_between(2,3))
 
 if moon:
     motion_works_angle_deg = -90
-
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
+if art_deco:
+    dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
+                font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
+                dial_width=dial_width, pillar_style=pillar_style)
+else:
+    dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
 
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
                           days_complication = days_complication, moon_complication=moon_complication)
 
-
-hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+if art_deco:
+    hands = Hands(style=HandStyle.ART_DECO, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                  length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
+                  outline_on_seconds=0, second_hand_centred=False)
+else:
+    hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=False,
                     outline_on_seconds=0, second_hand_centred=False)
 
@@ -209,12 +219,20 @@ assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, nam
 # assembly.get_arbor_rod_lengths()
 # plates.get_rod_lengths()
 
+dial_colours=[Colour.WHITE, Colour.BLACK]
+hand_colours=[Colour.RED]
+plate_colours = [Colour.DARKBLUE, Colour.BRASS, Colour.BRASS, Colour.BRASS]
+if art_deco:
+    dial_colours = [Colour.WHITE, Colour.BRASS]
+    hand_colours = [Colour.WHITE, Colour.BRASS]
+    plate_colours = [Colour.BLACK, Colour.BRASS, Colour.BRASS, Colour.BRASS]
+
 if not outputSTL:
-    assembly.show_clock(show_object, hand_colours=[Colour.RED],#, Colour.DARKBLUE
+    assembly.show_clock(show_object, hand_colours=hand_colours,#, Colour.DARKBLUE
                         motion_works_colours=[Colour.GREEN, Colour.LIGHTBLUE],
                         bob_colours=[Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE,
-                        dial_colours=[Colour.WHITE, Colour.BLACK], key_colour=Colour.PURPLE,
-                        plate_colours=[Colour.DARKBLUE, Colour.BRASS, Colour.BRASS, Colour.BRASS])
+                        dial_colours=dial_colours, key_colour=Colour.PURPLE,
+                        plate_colours=plate_colours)
 
 
 if outputSTL:

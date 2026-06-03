@@ -19,7 +19,7 @@ source.
 '''
 import math
 
-from .geometry import get_stroke_line
+from .geometry import get_stroke_line, get_teardrop
 from .utility import *
 import cadquery as cq
 import os
@@ -857,9 +857,57 @@ class SmithsPocketWatchHands(HandGenerator):
 
         return hand
 
+class ArtDecoHands(HandGenerator):
+    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
+        super().__init__(base_r, length, thick, second_base_r, second_thick)
+        self.hour_length = length*0.8
+        self.trunk_width = self.length * 0.075
+
+        self.minute_base_circle_r = self.length*0.04
+        self.hour_base_circle_r = self.length*0.06
+        self.hour_edge_thick = 2
+
+        self.tip_r = 2.1
+    def hour_hand(self, colour = None, thick_override=-1):
+        thick = self.thick
+        if thick_override > 0:
+            thick = thick_override
+
+        teardrop_length = self.hour_length*0.6
+
+        teardrop = get_teardrop(self.hour_base_circle_r, self.tip_r, teardrop_length, thick).cut(get_teardrop(self.hour_base_circle_r-self.hour_edge_thick, self.tip_r-self.hour_edge_thick, teardrop_length, thick))
+
+        hand = teardrop.translate((0,self.hour_length - teardrop_length))
+
+        gap_length = self.hour_length - teardrop_length - self.hour_base_circle_r - self.tip_r
+
+        hand = hand.union(cq.Workplane("XY").rect(self.hour_edge_thick*2.5, gap_length).extrude(thick).translate((0,gap_length/2)))
+
+        return hand
+
+    def minute_hand(self, colour = None, thick_override=-1):
+        thick = self.thick
+        if thick_override > 0:
+            thick = thick_override
+        teardrop_length = self.length * 0.75
+
+        teardrop = get_teardrop(self.minute_base_circle_r, self.tip_r*0.4, teardrop_length, thick)
+
+        hand = teardrop.translate((0, self.length - teardrop_length))
+
+        gap_length = self.length - teardrop_length - self.minute_base_circle_r
+
+        hand = hand.union(cq.Workplane("XY").rect(self.hour_edge_thick*2.5, gap_length).extrude(thick).translate((0, gap_length / 2)))
+
+        return hand
+
+    def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, fixing_thick=-1):
+        raise NotImplemented()
 
 class XMasTreeHands(HandGenerator):
-
+    '''
+    unfinished extraction of this from Hands
+    '''
     def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
         super().__init__(base_r, length, thick, second_base_r, second_thick)
         self.hour_length = length*0.8
@@ -962,6 +1010,8 @@ class ComplexHands:
 
     Plan: start with just implementing get_BOM, show_hands and get_assembled - intended to form the shared API with the old Hands class
 
+
+    NOT FINISHED (barely started)
     '''
 
     @staticmethod
@@ -1176,6 +1226,9 @@ class Hands:
             self.generator = FancyWatchHands(base_r=self.length*0.1, thick = self.thick, total_length= self.length, outline= self.outline, detail_thick=self.outline_thick)
         if self.style == HandStyle.FANCY_FRENCH:
             self.generator = FancyClockHands(base_r=self.length*0.1, thick = self.thick, length= self.length)
+
+        if self.style == HandStyle.ART_DECO:
+            self.generator = ArtDecoHands(base_r=self.length*0.1, thick = self.thick, length = self.length)
 
 
 
@@ -2138,7 +2191,11 @@ class Hands:
         for colour in self.get_extra_colours():
             #None means the main hand colour
             for type in HandType:
-                hand = self.get_hand(hand_type=type, colour=colour)
+                hand = None
+                try:
+                    hand = self.get_hand(hand_type=type, colour=colour)
+                except Exception as e:
+                    print(f"Can't generate hand type {type.value} {e}")
                 if hand is not None:
                     hands[type][colour] = hand
 
