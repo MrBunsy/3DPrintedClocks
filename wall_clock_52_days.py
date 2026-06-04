@@ -201,7 +201,7 @@ else:
     dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
 
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
-                                motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.RAISED_EDGING, pillar_style=pillar_style,
+                                motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.DOUBLE_RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
                           days_complication = days_complication, moon_complication=moon_complication)
 

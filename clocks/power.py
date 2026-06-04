@@ -1725,7 +1725,7 @@ Screw the lid onto the barrel after putting the bearings, mainspring, and arbor 
         collet_screw_length = get_nearest_machine_screw_length(self.collet_diameter/2, self.ratchet_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} {collet_screw_length}mm", purpose="Rear collet fixing screw"))
         if self.stop_works:
-            bom.add_item(BillOfMaterials.Item(f"{self.geneva_fixing_screws} {get_nearest_machine_screw_length(self.geneva_fixing_screws, self.get_geneva_fixing_screw_length())}"))
+            bom.add_item(BillOfMaterials.Item(f"{self.geneva_fixing_screws} {get_nearest_machine_screw_length(self.get_geneva_fixing_screw_length(), self.geneva_fixing_screws)}"))
         return bom
 
     def get_parts_for_arbor(self, wheel_thick=-1):

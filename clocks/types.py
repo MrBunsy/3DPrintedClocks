@@ -108,6 +108,7 @@ class PlateStyle(Enum):
     SIMPLE = "simple"
     #based on a clock I saw on ebay with raised brass edging and black plates
     RAISED_EDGING = "raised_edging"
+    DOUBLE_RAISED_EDGING = "double_raised_edging"
 
 class PlateShape(Enum):
     SIMPLE_VERTICAL = "simple_vertical"

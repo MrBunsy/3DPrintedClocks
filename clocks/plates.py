@@ -1489,7 +1489,7 @@ class SimpleClockPlates(BasePlates):
         #     #arm that holds the bearing (old designs) #that arm no longer exists
         #     # return False
         #
-        if self.style in [PlateStyle.RAISED_EDGING]:
+        if self.style in [PlateStyle.RAISED_EDGING, PlateStyle.DOUBLE_RAISED_EDGING]:
             return False
 
         if self.huygens_maintaining_power:
@@ -2172,19 +2172,27 @@ class SimpleClockPlates(BasePlates):
         For styles of clock plate which might have ornate detailing. Similar to dial detail or text, this is a separate 3d shape
         designed to be sliced as a multicolour object
         '''
+        edging = None
+        if for_this_shape is not None:
+            plate = for_this_shape
+        else:
+            # not for printing so we know it's got its back on the plane with bearing holes facing up
+            plate = self.get_plate(back=back, for_printing=False, just_basic_shape=True, thick_override=self.edging_wide * 10)
+
+        def raised_edge(edge_wide, plate):
+            shell = plate.shell(-edge_wide)
+            tempedging = shell.translate((0, 0, -self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
+            return tempedging
 
         #undecided - might be easier to just not put this on the back plate? it's going to be hard to see and makes it harder to print and work out how to do standoffs
         if self.style == PlateStyle.RAISED_EDGING and not back:
-            if for_this_shape is not None:
-                plate = for_this_shape
-            else:
-                #not for printing so we know it's got its back on the plane with bearing holes facing up
-                plate = self.get_plate(back = back, for_printing=False, just_basic_shape=True, thick_override=self.edging_wide*10)
 
-            shell = plate.shell(-self.edging_wide)
-            # return shell
-            # return cq.Workplane("XY").rect(50000, 50000).extrude(self.edging_thick)
-            edging = shell.translate((0,0,-self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
+
+            # shell = plate.shell(-self.edging_wide)
+            # # return shell
+            # # return cq.Workplane("XY").rect(50000, 50000).extrude(self.edging_thick)
+            # edging = shell.translate((0,0,-self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
+            edging = raised_edge(self.edging_wide, plate)
 
             if self.moon_complication is not None:
                 #not for printing we actually want this in the position it will be when assembled
@@ -2192,13 +2200,20 @@ class SimpleClockPlates(BasePlates):
 
             # this is on the xy plane sticking up +ve z, will need translating to be useful
 
-            if for_printing and not back:
-                edging = edging.translate((0,0,self.get_plate_thick(back=False)))
 
-            return edging
+        if self.style == PlateStyle.DOUBLE_RAISED_EDGING and not back:
+            '''
+            '''
+            full_wide = self.edging_wide
+            strip_wide = full_wide/3
+            edging = raised_edge(full_wide, plate).cut(raised_edge(full_wide-strip_wide, plate)).union(raised_edge(strip_wide, plate))
+
             # return edging.translate((0,0,self.get_plate_thick(back=back)))
+        if for_printing and not back and edging is not None:
+            edging = edging.translate((0,0,self.get_plate_thick(back=False)))
 
-        return None
+        return edging
+        # return None
     def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
         '''
         Two plates that are almost idential, with pillars at the very top and bottom to hold them together.
@@ -2371,7 +2386,7 @@ class SimpleClockPlates(BasePlates):
     def apply_style_to_plate(self, plate, back=True, addition_allowed=False):
         #assuming here that plates are in the default orentation, with back plate back down and front plate front up
 
-        if self.style == PlateStyle.RAISED_EDGING:
+        if self.style in [PlateStyle.RAISED_EDGING, PlateStyle.DOUBLE_RAISED_EDGING]:
             if not addition_allowed:
                 return plate
             detail = self.get_plate_detail(back=back)
@@ -3435,7 +3450,7 @@ class SimpleClockPlates(BasePlates):
             shapes["motion_works_holder"] = motion_works_holder
 
         detail = None
-        if self.style in [PlateStyle.RAISED_EDGING]:
+        if self.style in [PlateStyle.RAISED_EDGING, PlateStyle.DOUBLE_RAISED_EDGING]:
             detail = self.apply_style_to_plate(cq.Workplane("XY"), back=True, addition_allowed=True).add(self.apply_style_to_plate(cq.Workplane("XY"), back=False, addition_allowed=True)
                                                                                                          .translate((0, 0, self.get_plate_thick(back=True) + self.plate_distance)))
             shapes["detail"] = detail
