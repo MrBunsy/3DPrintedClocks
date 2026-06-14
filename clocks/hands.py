@@ -2242,7 +2242,10 @@ class Hands:
         for colour in self.get_extra_colours():
             minuteHand = minuteHand.add(self.get_hand(hand_type=HandType.MINUTE, colour=colour))
             hourHand = hourHand.add(self.get_hand(hand_type=HandType.HOUR, colour=colour))
-            secondHand = secondHand.add(self.get_hand(hand_type=HandType.SECOND, colour = colour))
+            try:
+                secondHand = secondHand.add(self.get_hand(hand_type=HandType.SECOND, colour = colour))
+            except:
+                pass
 
         if self.outline > 0:
             minuteHand = minuteHand.add(self.get_hand(hand_type=HandType.MINUTE, generate_outline=True))

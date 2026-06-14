@@ -302,6 +302,8 @@ The larger bearings are further down the train where there is more torque, so th
         #I think this belongs better here than as a sub assembly of plates
         if self.plates.moon_complication is not None:
             bom.add_subcomponent(self.plates.moon_complication.get_BOM())
+        if self.days_complication is not None:
+            bom.add_subcomponent(self.days_complication.get_BOM(self.plates.get_plate_thick(back=False)))
 
         rod_lengths, rod_zs, beyond_back_of_arbors = self.get_arbor_rod_lengths()
         arbor_assembly_instructions="""The arbors (horological term for what is basically an axle) are assembled by threading two or more parts onto a length of threaded rod.
@@ -837,6 +839,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
     def get_clock(self, with_rods=False, with_key=False, with_pendulum=False, moon_angle_deg=90):
         '''
         Probably fairly intimately tied in with the specific clock plates, which is fine while there's only one used in anger
+        update - getting better at coping with different plate types
         '''
 
         clock = self.plates.get_assembled()
@@ -863,6 +866,10 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             holder_parts = self.plates.moon_holder.get_moon_holder_parts(for_printing=False)
             for i, holder in enumerate(holder_parts):
                 clock = clock.add(holder.translate((0, 0, self.front_of_clock_z)))
+
+        if self.days_complication is not None:
+            clock = clock.add(self.days_complication.get_assembled().translate(self.plates.hands_position).translate((0,0,self.front_of_clock_z)))
+            clock = clock.add(self.plates.days_complication_holder.get_holder().translate(self.plates.hands_position).translate((0,0,self.front_of_clock_z)))
 
         if self.plates.centred_second_hand:
             #the bit with a knob to set the time
@@ -1110,7 +1117,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             holder_parts = self.plates.days_complication_holder.get_parts_in_situ()
             for i, holder_part in enumerate(holder_parts):
                 friendly_name = string.capwords(holder_part.replace("_", " "))
-                show_object(holder_parts[holder_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)),name=f"Day Complication Holder {friendly_name}")
+                show_object(holder_parts[holder_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)),name=f"Day Complication Holder {friendly_name}",
+                            options={"color": day_complication_colours[len(day_parts) % len(day_complication_colours)]})
 
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)

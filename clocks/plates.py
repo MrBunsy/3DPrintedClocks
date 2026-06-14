@@ -326,7 +326,7 @@ The moon on its threaded rod slots through a steel tube.
         return [holder, lid]
 
 class DayOfWeekHolder:
-    def __init__(self, plates, day_of_week_complication, fixing_screws=None, support_width=11):
+    def __init__(self, plates, day_of_week_complication, fixing_screws=None, support_width=12):
         '''
         assuming round clock plates, will need extending to support other plate shapes
         '''
@@ -338,30 +338,55 @@ class DayOfWeekHolder:
 
         self.support_width = support_width
 
+        self.centre_angle = 0
+        if not self.day_of_week_complication.right_side:
+            self.centre_angle = math.pi
+
+
+
+    def get_screw_positions_relative(self):
+        #relative to the hands
+        #not done in constructor as this assumes RoundClockPlates and when the constructor is called the radius isn't set yet.
+        spans_angle = math.pi / 12
+        screw_positions = [polar(self.centre_angle+spans_angle/2, self.plates.radius), polar(self.centre_angle-spans_angle/2, self.plates.radius)]
+        return screw_positions
+
 
     def get_holder(self):
 
-        height = self.day_of_week_complication.get_cylinder_z_from_plate() + self.day_of_week_complication.fixing_screws.metric_thread*2
-        centre_angle = 0
-        if not self.day_of_week_complication.right_side:
-            centre_angle = math.pi
-        spans_angle = math.pi/12
+        screw_positions = self.get_screw_positions_relative()
 
-        holder = get_stroke_arc(polar(centre_angle+spans_angle/2, self.plates.radius), polar(centre_angle-spans_angle/2, self.plates.radius), -self.plates.radius, self.support_width, height)
+        height = self.day_of_week_complication.get_cylinder_z_from_plate() + self.day_of_week_complication.fixing_screws.metric_thread*2
+
+        #round plates specific
+        holder_centre_x = self.plates.radius
+
+        holder = get_stroke_arc(screw_positions[0], screw_positions[1], -self.plates.radius, self.support_width, height)
 
         rotate = -90 if self.day_of_week_complication.right_side else 90
 
         # little arm to keep the cylinder in roughly the right place
         cylinder_end = self.day_of_week_complication.get_end_of_cylinder_distance() + WASHER_THICK_M3 + 0.5
+        cylinder_z = self.day_of_week_complication.get_cylinder_z_from_plate()
+        cylinder_r = self.day_of_week_complication.fixing_screws.metric_thread
 
-        little_arm = cq.Workplane("XY").circle(self.day_of_week_complication.fixing_screws.metric_thread).extrude(self.plates.radius - cylinder_end)
-        little_arm = little_arm.rotate((0,0,0), (0,1,0), rotate).translate(polar(centre_angle, self.plates.radius)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate()))
+        little_arm = cq.Workplane("XY").circle(cylinder_r).extrude(self.plates.radius - cylinder_end)
+        little_arm = little_arm.rotate((0,0,0), (0,1,0), rotate).translate(polar(self.centre_angle, self.plates.radius)).translate((0,0,cylinder_z))
+
+        #45deg support so the arm can be printed without supports
+        little_arm_printable = cq.Workplane("XZ").moveTo(cylinder_end, cylinder_z).line(0, -cylinder_r).line(holder_centre_x-cylinder_end,-(holder_centre_x-cylinder_end)).line(0,holder_centre_x-cylinder_end + cylinder_r).close().extrude(cylinder_r*0.8*2).translate((0, cylinder_r*0.8))
+
+        holder = holder.union(little_arm_printable)
 
         holder = holder.union(little_arm)
 
         holder = (holder.cut(self.day_of_week_complication.fixing_screws.get_cutter(self_tapping=True, sideways=True).rotate((0,0,0),(0,1,0), rotate)
-                             .translate(polar(centre_angle, self.plates.radius + self.support_width/2)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate())))
+                             .translate(polar(self.centre_angle, self.plates.radius + self.support_width/2)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate())))
                   )
+
+        for pos in screw_positions:
+            holder = holder.cut(self.fixing_screws.get_cutter(ignore_head=True, self_tapping=True).translate(pos))
+
 
 
         return holder
@@ -374,6 +399,25 @@ class DayOfWeekHolder:
         parts["holder"] = self.get_holder()
 
         return parts
+
+    def get_cylinder_holder_screw_length(self):
+        centre_end = self.day_of_week_complication.get_end_of_cylinder_distance() - self.day_of_week_complication.cylinder_length
+
+        min_length =  self.plates.radius + self.support_width/2 - centre_end
+
+        return get_nearest_machine_screw_length(min_length, self.fixing_screws, allow_longer=True, prefer_longer=True)
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Day of week holder")
+
+        bom.add_printed_part(BillOfMaterials.PrintedPart("day_cylinder_holder", self.get_holder()))
+
+        fixing_screw_length = get_nearest_machine_screw_length(self.day_of_week_complication.get_cylinder_z_from_plate() + self.plates.get_plate_thick(back=False), self.fixing_screws)
+
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws}{self.get_cylinder_holder_screw_length()}mm", purpose="Holds cylinder"))
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws}{fixing_screw_length}mm", 2, purpose="Fixes cylinder holder to plate"))
+
+        return bom
 
 class BasePlates:
     '''
@@ -496,6 +540,13 @@ class BasePlates:
                     plate = plate.cut(self.days_complication.fixing_screws.get_cutter(with_bridging=True, layer_thick=self.layer_thick).translate(absolute_pos))
 
         return plate
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Plates")
+
+        if self.days_complication is not None:
+            bom.add_subcomponent(self.days_complication_holder.get_BOM())
+        return bom
 
 
 class SimpleClockPlates(BasePlates):
@@ -1062,7 +1113,8 @@ class SimpleClockPlates(BasePlates):
             hands_pos = [self.bearing_positions[seconds_arbor][0], self.bearing_positions[seconds_arbor][1]]
         return hands_pos
     def get_BOM(self):
-        bom = BillOfMaterials("Plates")
+        #TODO try and move as much as we can out of simple plates and into base plates
+        bom = super().get_BOM()
         motion_works_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + self.bottom_of_hour_hand_z(), self.motion_works_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.motion_works_screws} {motion_works_screw_length:.0f}mm", purpose="Motion works fixing", object=self.motion_works_screws))
         bom.add_item(BillOfMaterials.Item(f"M{self.motion_works_screws.metric_thread} nut", purpose="Motion works backstop", quantity=2))
@@ -2194,9 +2246,7 @@ class SimpleClockPlates(BasePlates):
             # edging = shell.translate((0,0,-self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
             edging = raised_edge(self.edging_wide, plate)
 
-            if self.moon_complication is not None:
-                #not for printing we actually want this in the position it will be when assembled
-                edging = edging.cut(self.moon_holder.get_moon_holder_parts(for_printing=False)[0])
+
 
             # this is on the xy plane sticking up +ve z, will need translating to be useful
 
@@ -2204,9 +2254,33 @@ class SimpleClockPlates(BasePlates):
         if self.style == PlateStyle.DOUBLE_RAISED_EDGING and not back:
             '''
             '''
-            full_wide = self.edging_wide
+            plate_thick = self.get_plate_thick(back=back)
+
+
+            full_wide = self.edging_wide + 2
             strip_wide = full_wide/3
-            edging = raised_edge(full_wide, plate).cut(raised_edge(full_wide-strip_wide, plate)).union(raised_edge(strip_wide, plate))
+
+            edge_plate = cq.Workplane("XY").add(plate)
+
+            # if full_wide*2.5 < self.get_plate_thick(back=back):
+            #make it thicker so we can definitely make the shell in raised_edge
+            #TODO bit more sophisticated than just always double it up?
+            edge_plate = plate.union(plate.translate((0,0,-plate_thick)))
+
+
+            edging = raised_edge(full_wide, edge_plate).cut(raised_edge(full_wide-strip_wide, edge_plate)).union(raised_edge(strip_wide, edge_plate))
+
+        if edging is not None:
+            if self.moon_complication is not None:
+                #not for printing we actually want this in the position it will be when assembled
+                edging = edging.cut(self.moon_holder.get_moon_holder_parts(for_printing=False)[0])
+
+            if self.days_complication is not None:
+                edging = edging.cut(self.days_complication_holder.get_holder().translate(self.hands_position))
+                #cut out space for washers - the heights have to be precise for this for the days cylinder to be in the right place
+                for arbor_pos in self.days_complication.get_arbor_positions_relative_to_motion_works():
+                    absolute_pos = np_to_set(np.add(self.hands_position, arbor_pos))
+                    edging = edging.cut(cq.Workplane("XY").circle(get_washer_diameter(self.days_complication.fixing_screws.metric_thread)/2+1).extrude(self.edging_thick).translate(absolute_pos))
 
             # return edging.translate((0,0,self.get_plate_thick(back=back)))
         if for_printing and not back and edging is not None:
@@ -3237,7 +3311,14 @@ class SimpleClockPlates(BasePlates):
                 # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
                 plate = plate.cut(self.moon_holder.fixing_screws.get_nut_cutter(with_bridging=bridging).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.moon_holder.fixing_screws.get_rod_cutter_r()).extrude(1000).translate(pos))
-
+        print(f"days_complication: {self.days_complication}")
+        if self.days_complication is not None:
+            screw_positions = self.days_complication_holder.get_screw_positions_relative()
+            print(f"days_complication screw_positions: {screw_positions}")
+            for pos in screw_positions:
+                absolute_position = np_to_set(np.add(pos, self.hands_position))
+                bridging = not self.front_plate_printed_front_face_down()
+                plate = plate.cut(self.days_complication_holder.fixing_screws.get_cutter(with_bridging=bridging, loose=True).translate(absolute_position))
 
         return plate
 

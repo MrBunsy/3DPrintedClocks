@@ -1557,10 +1557,12 @@ class WheelPinionBeveledPair:
         # my fork only seems to add pinion_cone_angle and gear_cone_angle as properties
         self.bevel_gear_pair = BevelGearPair(module=module, gear_teeth=wheel_teeth, pinion_teeth=pinion_teeth, face_width=self.face_width)#, build_params={"trim_bottom":False})
 
+        self.wheel_thick = self.face_width * math.sin(self.bevel_gear_pair.pinion_cone_angle)
+        self.pinion_thick = self.face_width * math.sin(self.bevel_gear_pair.gear_cone_angle)
         #chop off the top bits that cq_gears generates - they'll just produce stringy mess when printing
         #it appear that there's always a gap between teeth lined up with -ve x axis.
-        self.wheel =  cq.Workplane("XY").add(self.bevel_gear_pair.gear.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.face_width * math.sin(self.bevel_gear_pair.pinion_cone_angle)))
-        self.pinion = cq.Workplane("XY").add(self.bevel_gear_pair.pinion.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.face_width * math.sin(self.bevel_gear_pair.gear_cone_angle)))
+        self.wheel =  cq.Workplane("XY").add(self.bevel_gear_pair.gear.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.wheel_thick))
+        self.pinion = cq.Workplane("XY").add(self.bevel_gear_pair.pinion.build()).intersect(cq.Workplane("XY").rect(100, 100).extrude(self.pinion_thick))
 
         #chop off edge bits - I've disabled trim_bottom but I won't want them to stick out sideways. This limits them to a cylinder - bit ugly but should print cleanly without overhang
         #note - I'm uncertain about this - will this cause the gears to bind? am I better off with the overhang?
@@ -4987,7 +4989,7 @@ class DayOfWeekComplication:
 
     def get_cylinder_z_from_plate(self):
         #plus washer thick?
-        return self.bevel_pair.get_centre_of_pinion_to_back_of_wheel() + self.geneva_gear_thick + self.extra_z_height + WASHER_THICK_M3
+        return self.bevel_pair.get_centre_of_pinion_to_back_of_wheel() + self.geneva_gear_thick + self.extra_z_height +  self.fixing_screws.get_washer_thick()
 
     def get_end_of_cylinder_distance(self):
         #how far the end of the cylinder is from the motion works
@@ -5025,3 +5027,36 @@ class DayOfWeekComplication:
             parts[part] = parts[part].translate((0,0, WASHER_THICK_M3))
 
         return parts
+
+    def get_assembled(self):
+        model = cq.Workplane("XY")
+        parts = self.get_parts_in_situ()
+
+        for part_name in parts:
+            model = model.add(parts[part_name])
+
+        return model
+    def get_BOM(self, plate_thick):
+        '''
+        need the plate thickness to calculate screw lengths
+        '''
+        bom = BillOfMaterials("Day of Week Complication")
+
+        parts = self.get_parts_in_situ()
+
+        printed_parts = [BillOfMaterials.PrintedPart(name, parts[name]) for name in parts]
+
+        first_arbor_rod_length = get_nearest_machine_screw_length(plate_thick + self.base_of_wheel_from_base_of_pinion + self.fixing_screws.get_washer_thick() + self.fixing_screws.get_nut_height()*2, self.fixing_screws, prefer_longer=True)
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws}{first_arbor_rod_length}mm", purpose="First arbor rod"))
+
+        second_arbor_rod_length = get_nearest_machine_screw_length(plate_thick + self.fixing_screws.get_washer_thick() + self.geneva_gear_thick + self.bevel_pair.wheel_thick , self.fixing_screws, prefer_longer=True)
+
+        bom.add_item(BillOfMaterials.Item(f"{self.fixing_screws}{second_arbor_rod_length}mm", purpose="Second arbor rod"))
+
+        bom.add_printed_parts(printed_parts)
+
+        bom.add_model(self.get_assembled())
+
+
+
+        return bom

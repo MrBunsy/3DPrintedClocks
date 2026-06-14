@@ -55,8 +55,8 @@ pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 #was a drop of 2.75, but I think that was excessive
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2, wheel_thick=2.5)
 #nylon wire only 0.15, but need a hole big enough to print well
-escapement = SilentPinPalletAnchorEscapement(teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.0)
-
+# escapement = SilentPinPalletAnchorEscapement(teeth=escapement_info.teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.0)
+escapement = escapement_info
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=5, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
                      ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, stop_works=True)
@@ -185,7 +185,7 @@ if moon:
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
-plaque = Plaque(text_lines=["W32#2 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
+plaque = Plaque(text_lines=["W52#0 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
 
 pillar_style=PillarStyle.CLASSIC
@@ -208,7 +208,7 @@ plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial
 if art_deco:
     hands = Hands(style=HandStyle.ART_DECO, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                   length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
-                  outline_on_seconds=0, second_hand_centred=False)
+                  outline_on_seconds=0, second_hand_centred=False, include_seconds_hand=False)
 else:
     hands = Hands(style=HandStyle.INDUSTRIAL, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=0, outline_same_as_body=False, chunky=False,
