@@ -1613,7 +1613,8 @@ class LanternPinion:
 
     aim is to get this class to do all the heavy lifting around the different types and provide one simple API for Arbor to use
     '''
-    def __init__(self, pinion, thick, wheel_thick, extension=0, cap_thick=3, type = PinionType.LANTERN, arbor_rod_d=3, min_extension= MIN_PINION_EXTENSION_FOR_LANTERN):
+    def __init__(self, pinion, thick, wheel_thick, extension=0, cap_thick=3, type = PinionType.LANTERN, arbor_rod_d=3, min_extension= MIN_PINION_EXTENSION_FOR_LANTERN,
+                 max_trundle_length=-1):
         self.pinion = pinion
         self.thick = thick
         self.wheel_thick = wheel_thick
@@ -1629,6 +1630,12 @@ class LanternPinion:
             self.thick += extension
             self.extension = 0
 
+        # print(f"lantern pinion trundle_hole_sunk_into_wheel: {trundle_hole_sunk_into_wheel}")
+
+        #usually best to leave it to do its thing, but occasionally might want to override
+        self.max_trundle_length = max_trundle_length
+
+        #calculated in calc_trundle_length
         self.trundle_hole_sunk_into_wheel = 0
         self.trundle_hole_sunk_into_cap = 0
         self.hex_fixing_sunk_into_wheel = self.wheel_thick
@@ -1636,7 +1643,7 @@ class LanternPinion:
         self.trundle_hole_end_gap = 0.5
         self.slot_sides = 6
 
-        self.calc_trundle_length()
+        self.calc_trundle_length(max_trundle_length)
 
         self.outer_r = self.pinion.outer_r + self.pinion.trundle_r*3
         #this will be a tight fit, but that's good as we don't want it to twist. May well need a vise to squeeze everything together
@@ -1732,9 +1739,20 @@ class LanternPinion:
             #this is being used to cut out from top/bottom shapes
             inner_r = self.inner_r_for_hex_slot_cutter
 
-        holder_together = cq.Workplane("XY").polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(base_thick)
+        holder_together = cq.Workplane("XY").polygon(self.slot_sides, inner_r*2)
 
-        holder_together = holder_together.faces(">Z").workplane().circle(inner_r).circle(hole_d/2).extrude(pinion_height)
+        #only add the inner hole if this is for printed, if for cutting we want this solid
+        if not for_cutting:
+            holder_together = holder_together.circle(hole_d/2)
+
+        holder_together = holder_together.extrude(base_thick)
+
+        holder_together = holder_together.faces(">Z").workplane().circle(inner_r)
+
+        if not for_cutting:
+            holder_together = holder_together.circle(hole_d/2)
+
+        holder_together = holder_together.extrude(pinion_height)
 
         holder_together = holder_together.faces(">Z").workplane().polygon(self.slot_sides, inner_r*2).circle(hole_d/2).extrude(top_thick)
         # line up with the base of the hexagon
@@ -1769,9 +1787,10 @@ class LanternPinion:
         think we'll always have to interact with arbor_extension. Need to think
         '''
 
-    def calc_trundle_length(self):
+    def calc_trundle_length(self, max_length):
         min_length = self.thick
-        max_length = self.thick + (self.cap_thick - self.get_lantern_trundle_min_offset()) + (self.wheel_thick - self.get_lantern_trundle_min_offset())
+        if max_length < 0:
+            max_length = self.thick + (self.cap_thick - self.get_lantern_trundle_min_offset()) + (self.wheel_thick - self.get_lantern_trundle_min_offset())
         print("Arbor has a lantern pinion and needs steel rod of diameter {:.2f}mm and length {:.1f}-{:.1f}mm".format(self.pinion.trundle_r * 2, min_length, max_length))
         #round down to nearest 2mm so we can buy dowels for the job
         self.steel_dowel_length = max_length - (max_length % 2)
@@ -2289,8 +2308,10 @@ class ArborForPlate:
         with_extras - if true include: power mechanism (if detached from wheel), pendulum hanger
         Get a model that is relative to the back of the back plate of the clock and already in position (so you should just be able to add it straight to the model)
 
-        This is slowly refactoring the complex logic from the Arbour class to here. the ultimate aim is for the arbour class to be unaware of the plates
+        This is slowly refactoring the complex logic from the Arbor class to here. the ultimate aim is for the arbour class to be unaware of the plates
         and this class be the only one with interactions with the plates
+
+        TODO - proper distinction between model and assembly?
         '''
 
         assembly = cq.Workplane("XY")
@@ -2394,8 +2415,11 @@ class ArborForPlate:
                 #deliberately not including back bearing standoff as that's taken out of the distance_from_back
                 arbor = shapes["spring_arbor"].rotate((0, 0, 0), (0, 1, 0), -90).translate((spring_barrel.arbor_d/2 - spring_barrel.cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), -90)
                 assembly = assembly.add(arbor)
-                assembly = assembly.add(spring_barrel.get_lid(for_printing=False).translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
-                assembly = assembly.add(spring_barrel.get_front_bearing_standoff_washer().translate((0,0,spring_barrel.get_height() - spring_barrel.front_bearing_standoff)))
+                # assembly = assembly.add(spring_barrel.get_lid(for_printing=False).translate((0,0,spring_barrel.base_thick + spring_barrel.barrel_height)))
+                # assembly = assembly.add(spring_barrel.get_front_bearing_standoff_washer().translate((0,0,spring_barrel.get_height() - spring_barrel.front_bearing_standoff)))
+                assembly = assembly.add(spring_barrel.get_model(without_barrel=True))
+
+                #can't be done in model because it doesn't know the plate sizes
                 if spring_barrel.ratchet_at_back:
                     assembly = assembly.add(spring_barrel.get_inner_collet().rotate((0,0,0),(0,1,0),180).translate((0, 0, -self.bearing_position[2] + spring_barrel.back_collet_thick)))
 
@@ -3093,7 +3117,8 @@ class FixedRodMagneticClutchArborForPlate(FixedRodArborForPlate):
 class Arbor:
     def __init__(self, rod_diameter=None, wheel=None, wheel_thick=None, pinion=None, pinion_thick=None, pinion_extension=0, powered_wheel=None, escapement=None, end_cap_thick=-1, style=GearStyle.ARCS,
                  distance_to_next_arbor=-1, pinion_at_front=True, ratchet_screws=None, use_ratchet=True, clockwise_from_pinion_side=True, arbor_split=SplitArborType.NORMAL_ARBOR,
-                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None, pinion_extension_min=4, min_length_to_trim_extension=5):
+                 pinion_type=PinionType.PLASTIC, type=ArborType.UNKNOWN, fly=None, arbor_class_for_plate = None, arbor_class_for_plate_args = None,
+                 pinion_extension_min=4, min_length_to_trim_extension=5, max_trundle_length=-1):
         '''
         This represents a combination of wheel and pinion. But with special versions:
         - powered wheel is wheel + ratchet (+more logic than there used to be)
@@ -3238,7 +3263,8 @@ class Arbor:
 
         self.lantern_pinion = None
         if self.pinion_type.is_lantern() and self.pinion is not None:
-            self.lantern_pinion = LanternPinion(self.pinion, self.pinion_thick, self.wheel_thick, extension=self.pinion_extension, cap_thick=self.end_cap_thick, type =self.pinion_type, arbor_rod_d=rod_diameter)
+            self.lantern_pinion = LanternPinion(self.pinion, self.pinion_thick, self.wheel_thick, extension=self.pinion_extension, cap_thick=self.end_cap_thick,
+                                                type =self.pinion_type, arbor_rod_d=rod_diameter, max_trundle_length=max_trundle_length)
 
         # for lantern pinions there's a vertical component with a hex base and top which holds the wheel and pinion can together
         #DEPRECATED - this logic all moved to LanternPinion class

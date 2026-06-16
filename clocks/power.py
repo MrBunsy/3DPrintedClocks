@@ -1641,17 +1641,27 @@ class SpringBarrel:
         '''
         assembly = self.get_barrel()
 
-        if self.stop_works:
-            assembly = assembly.add(self.get_stop_works_finger().translate((0,0,-self.geneva_pair.thick)))
-            assembly = assembly.add(self.get_stop_works_cross_wheel().translate((-self.geneva_pair.distance, 0, -self.geneva_pair.thick)))
+        #can't be here because this will form the actual printable shape
+        # if self.stop_works:
+        #     assembly = assembly.add(self.get_stop_works_finger().translate((0,0,-self.geneva_pair.thick)))
+        #     assembly = assembly.add(self.get_stop_works_cross_wheel().translate((-self.geneva_pair.distance, 0, -self.geneva_pair.thick)))
 
         return assembly
 
-    def get_model(self):
-        model = self.get_barrel()
+    def get_model(self, without_barrel=False):
+        if not without_barrel:
+            model = self.get_barrel()
+        else:
+            model = cq.Workplane("XY")
 
         model = model.add(self.get_lid(for_printing=False).translate((0,0,self.base_thick + self.barrel_height)))
         model = model.add(self.get_arbor(for_printing=False))
+
+        model = model.add(self.get_front_bearing_standoff_washer().translate((0,0,self.get_height() - self.front_bearing_standoff)))
+
+        if self.stop_works:
+            model = model.add(self.get_stop_works_finger().translate((0,0,-self.geneva_pair.thick)))
+            model = model.add(self.get_stop_works_cross_wheel().translate((-self.geneva_pair.distance, 0, -self.geneva_pair.thick)))
 
         return model
 
@@ -1722,10 +1732,16 @@ Screw the lid onto the barrel after putting the bearings, mainspring, and arbor 
         bom.add_item(BillOfMaterials.Item(f"{self.lid_fixing_screws} {self.lid_fixing_screws.length}mm", quantity=self.lid_fixing_screws_count, purpose="Lid fixing screws"))
 
         bom.add_item(BillOfMaterials.Item(f"{self.ratchet_screws} {self.get_ratchet_screw_length()}mm", purpose="Ratchet wheel fixing screw"))
-        collet_screw_length = get_nearest_machine_screw_length(self.collet_diameter/2, self.ratchet_screws)
+        collet_screw_length = get_nearest_machine_screw_length(self.collet_diameter/2, self.collet_screws)
         bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} {collet_screw_length}mm", purpose="Rear collet fixing screw"))
         if self.stop_works:
-            bom.add_item(BillOfMaterials.Item(f"{self.geneva_fixing_screws} {get_nearest_machine_screw_length(self.get_geneva_fixing_screw_length(), self.geneva_fixing_screws)}"))
+            bom.add_item(BillOfMaterials.Item(f"{self.geneva_fixing_screws} {get_nearest_machine_screw_length(self.get_geneva_fixing_screw_length(), self.geneva_fixing_screws)}mm", purpose="Stop works wheel fixing screw (in base of barrel)"))
+            bom.add_printed_parts([BillOfMaterials.PrintedPart("stop_works_collet", self.get_stop_works_finger()),
+                                   BillOfMaterials.PrintedPart("stop_works_wheel", self.get_stop_works_cross_wheel())])
+            stop_works_collet_screw_length = get_nearest_machine_screw_length(self.geneva_pair.wheel_outer_radius, self.collet_screws)
+            bom.add_item(BillOfMaterials.Item(f"{self.collet_screws} {stop_works_collet_screw_length}mm", purpose="Stop works collet fixing screw"))
+            stop_works_wheel_fixing_screw_length = get_nearest_machine_screw_length(self.base_thick-self.geneva_screw_base_gap + self.geneva_pair.thick, self.geneva_fixing_screws)
+            # bom.add_item(BillOfMaterials.Item(f"{self.geneva_fixing_screws} {stop_works_wheel_fixing_screw_length}mm", purpose="Stop works wheel fixing screw (in base of barrel)"))
         return bom
 
     def get_parts_for_arbor(self, wheel_thick=-1):
@@ -1792,7 +1808,7 @@ class WeightPoweredWheel:
         '''
         get an assembled model that can be combined with the arbor for previews
         '''
-        return None
+        return self.get_assembled()
 
     def get_encasing_radius(self):
         '''
@@ -3044,8 +3060,7 @@ Screw the pawl screw into the wheel by itself, the pawl will sit loose on this s
 
         return model
 
-    def get_model(self):
-        return self.get_assembled()
+
 
     def get_height(self):
         '''

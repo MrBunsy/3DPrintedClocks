@@ -116,7 +116,9 @@ train.generate_arbors_dicts([
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 3,
         "module": 1.14,
-        "pinion_thick": 8
+        "pinion_thick": 8,
+        #haven't got 14mm dowels, so support 12mm
+        "max_trundle_length": 13,
     },
     {
         #second wheel
@@ -128,7 +130,8 @@ train.generate_arbors_dicts([
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "module": 1.14,#1.14,
-        "pinion_thick": 7
+        #there appears to be a bug which has left this pinion butted right up to the back plate - temp fix, try and force it to produce a standoff without changing full plate distance
+        "pinion_thick": 7-0.4
     },
     {
         #third wheel
@@ -154,6 +157,7 @@ train.generate_arbors_dicts([
         "pinion_thick": 7
     },
 ])
+
 
 #wanted to see if we could fit both complications on the same clock. Not easily and I'm not sure I'm desperate enough to do the work to make it happen
 moon = False
@@ -196,7 +200,7 @@ if moon:
 if art_deco:
     dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
                 font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
-                dial_width=dial_width, pillar_style=pillar_style)
+                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)
 else:
     dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)
 
@@ -204,7 +208,7 @@ plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.DOUBLE_RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
                           days_complication = days_complication, moon_complication=moon_complication)
-
+print(f"Plate distance: {plates.plate_distance}")#50.5
 if art_deco:
     hands = Hands(style=HandStyle.ART_DECO, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                   length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
@@ -230,9 +234,13 @@ if art_deco:
 if not outputSTL:
     assembly.show_clock(show_object, hand_colours=hand_colours,#, Colour.DARKBLUE
                         motion_works_colours=[Colour.GREEN, Colour.LIGHTBLUE],
+                        # motion_works_colours=[Colour.DARKGREY],
                         bob_colours=[Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE,
                         dial_colours=dial_colours, key_colour=Colour.PURPLE,
-                        plate_colours=plate_colours)
+                        plate_colours=plate_colours,
+                        day_complication_colours=[Colour.ORANGE, Colour.ORANGE, Colour.DARKBLUE, Colour.WHITE, Colour.BRASS]
+                        # day_complication_colours=[Colour.DARKGREY]
+                        )
 
 
 if outputSTL:

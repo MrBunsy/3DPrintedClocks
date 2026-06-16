@@ -3311,14 +3311,14 @@ class SimpleClockPlates(BasePlates):
                 # putting nuts in the back of the plate so we can screw the moon holder on after the clock is mostly assembled
                 plate = plate.cut(self.moon_holder.fixing_screws.get_nut_cutter(with_bridging=bridging).rotate((0, 0, 0), (0, 0, 1), 360 / 12).translate(pos))
                 plate = plate.cut(cq.Workplane("XY").circle(self.moon_holder.fixing_screws.get_rod_cutter_r()).extrude(1000).translate(pos))
-        print(f"days_complication: {self.days_complication}")
+        # print(f"days_complication: {self.days_complication}")
         if self.days_complication is not None:
             screw_positions = self.days_complication_holder.get_screw_positions_relative()
-            print(f"days_complication screw_positions: {screw_positions}")
+            # print(f"days_complication screw_positions: {screw_positions}")
             for pos in screw_positions:
                 absolute_position = np_to_set(np.add(pos, self.hands_position))
                 bridging = not self.front_plate_printed_front_face_down()
-                plate = plate.cut(self.days_complication_holder.fixing_screws.get_cutter(with_bridging=bridging, loose=True).translate(absolute_position))
+                plate = plate.cut(self.days_complication_holder.fixing_screws.get_cutter(with_bridging=bridging, self_tapping=True).translate(absolute_position))
 
         return plate
 
