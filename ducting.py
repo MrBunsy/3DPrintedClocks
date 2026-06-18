@@ -1,3 +1,5 @@
+import math
+
 import os
 
 from clocks.utility import *
@@ -233,63 +235,206 @@ class WindowVent:
 
         return holder
 
+class WindowVentImproved():
+    def __init__(self, wood_thick=5, seal_effective_thick=2):
+        '''
+        The previous one required fixing things to the inside of the window. This didn't work very well.
+        New idea - have something that hooks onto the bottom of the window and then a rotating bit at top which can hook in there too!
+        This should be much more secure and reliable.
 
-ducting = Ducting(screw=MachineScrew(4, countersunk=True))
+        Might even work with using some sort of seal around the edge to make it properly air-tight, then this could be reused with an air condition in future
+        '''
+        self.wood_thick = wood_thick
+        #how much space to allow the seal once its squished slightly in place
+        self.seal_effective_thick = seal_effective_thick
+        self.fixing_screws = MachineScrew(3, type=MachineScrewType.COUNTERSUNK)
+
+        self.hook_thick = 15
+
+        self.window_frame_thick = 15
+        self.window_frame_angled_length=9
+        self.window_frame_rubber_seal_thick_unsquished = 5
+        self.window_frame_rubber_seal_thick_squished = 3
+        self.window_frame_inner_deep = 23
+
+        self.hook_squisher_taper_length = 20
+
+        self.knob_thick = 10
+
+
+    def get_bottom_hook(self, short=False):
+
+        #(0,0) will be the top tip of the bottom ledge. left is the window and outside and right is the inside
+
+        #turns out there's some bits on the inside of the window frame, I think to help align the window. to avoid screwing another hole, I'm making
+        # a shorter hook to go over that bit
+
+        length = self.hook_squisher_taper_length
+        extra_bottom_gap = 5
+
+        if short:
+            length = 12.5
+            extra_bottom_gap=0
+
+
+        hook = (cq.Workplane("XY").moveTo(self.window_frame_thick, 0)
+                .lineTo(-self.window_frame_rubber_seal_thick_squished, 0)
+                #angling a bit more, not sure how easy it will be to slot into window
+                .lineTo(-self.window_frame_rubber_seal_thick_unsquished-extra_bottom_gap,-length)
+                .lineTo(-self.window_frame_rubber_seal_thick_unsquished-self.hook_thick, -length)
+                .lineTo(-self.window_frame_rubber_seal_thick_unsquished-self.hook_thick, self.hook_thick*2)
+                .lineTo(self.window_frame_thick, self.hook_thick*2).close().extrude(self.hook_thick))
+
+        # hook = hook.edges().chamfer(1,1)
+        hook = hook.edges("|Z").chamfer(1)
+
+        screw = self.fixing_screws.get_cutter().rotate((0,0,0),(0,1,0),90)
+        screwcutter = screw.translate((-self.window_frame_rubber_seal_thick_unsquished-self.hook_thick,self.hook_thick/2, self.hook_thick/2)).add(screw.translate((-self.window_frame_rubber_seal_thick_unsquished-self.hook_thick,self.hook_thick*1.5, self.hook_thick/2)))
+
+        hook = hook.cut(screwcutter)
+
+        return hook
+
+    def get_top_hook(self):
+        ''' (0,0) will be the bottom tip of the top ledge. left is the window and outside and right is the inside
+
+        plan is this hook will rotate into the top of the window slot. There will be a knob on the inside of the wood. Will rely on glue/self-tapping to keep
+        the hook firmly attached to the screw
+
+        TODO get hold of some hex head set screws (and a slot for the nut) then I can be sure the hook will rotate with teh screw
+
+        '''
+
+        top_hook_thick = 8
+
+        hook = (cq.Workplane("XY").moveTo(self.window_frame_thick, 0)
+                .lineTo(-self.window_frame_rubber_seal_thick_squished, 0)
+                .lineTo(-self.window_frame_rubber_seal_thick_squished - top_hook_thick, 0)
+                # .lineTo(-self.window_frame_rubber_seal_thick_squished - top_hook_thick, -self.hook_squisher_taper_length)
+                .lineTo(-self.window_frame_rubber_seal_thick_squished - top_hook_thick, self.hook_thick)
+                .lineTo(self.window_frame_thick, self.hook_thick).close().extrude(self.hook_thick))
+        hook = hook.edges("|Z").chamfer(1)
+        #TODO proper radius for the squisher bit (or would a wedge shape be better?)
+        #making longer than needed so the filleted ends will be inside the top or chopped off by the containing cylinder
+        half_cylinder = (cq.Workplane("XZ").moveTo(-self.window_frame_rubber_seal_thick_squished - top_hook_thick, 0)
+                          .lineTo(-self.window_frame_rubber_seal_thick_unsquished, 0)
+                          # .radiusArc((-self.window_frame_rubber_seal_thick_squished , self.hook_thick), -self.hook_thick)
+                          .lineTo(-self.window_frame_rubber_seal_thick_squished, self.hook_thick*0.3)
+                         .lineTo(-self.window_frame_rubber_seal_thick_squished, self.hook_thick * 0.7)
+                         .lineTo(-self.window_frame_rubber_seal_thick_unsquished,  self.hook_thick)
+                          .lineTo(-self.window_frame_rubber_seal_thick_squished - top_hook_thick, self.hook_thick).close().extrude(self.hook_squisher_taper_length*1.5))
+
+        half_cylinder = half_cylinder.edges(">X").fillet(1.5)
+        # return half_cylinder
+
+        containing_cylinder = cq.Workplane("YZ").moveTo(0, self.hook_thick/2).circle(self.hook_squisher_taper_length).extrude(100).translate((-self.window_frame_rubber_seal_thick_squished - top_hook_thick,0))
+        # return containing_cylinder
+        hook = hook.union(half_cylinder.translate((0,self.hook_squisher_taper_length*0.25)))
+
+        hook = hook.intersect(containing_cylinder)
+
+        screw = self.fixing_screws.get_cutter(self_tapping=True).rotate((0, 0, 0), (0, 1, 0), 90)
+        screwcutter = screw.translate((-self.window_frame_rubber_seal_thick_squished - top_hook_thick, self.hook_thick / 2, self.hook_thick / 2))
+
+        hook = hook.cut(screwcutter)
+
+        return hook
+
+    def get_top_knob(self):
+
+        radius = 20
+
+        knob = cq.Workplane("XY").circle(radius).extrude(self.knob_thick)
+
+        knibs = 20
+        knib_r = radius/20
+
+        for knib in range(knibs):
+            angle = knib*math.pi*2/knibs
+            knob = knob.union(cq.Workplane("XY").circle(knib_r).extrude(self.knob_thick).translate(polar(angle, radius - knib_r*0.2)))
+
+        #not working
+        # knob = knob.edges(">Z").chamfer(0.1)
+        # knob = knob.edges(">Z").fillet(0.1)
+        
+        chamfer = 0.8
+        manual_chamfer_cone = cq.Solid.makeCone(radius + knib_r*chamfer, radius2=radius - knib_r*chamfer, height=knib_r*chamfer*2)
+        manual_chamfer = cq.Workplane("XY").circle(radius + knib_r*chamfer).extrude(self.knob_thick - knib_r*chamfer*1.5).union(manual_chamfer_cone.translate((0,0,self.knob_thick - knib_r*chamfer*1.5)))
+        # return manual_chamfer
+        knob = knob.intersect(manual_chamfer)
+
+        knob = knob.cut(self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True))
+        knob = knob.cut(self.fixing_screws.get_nut_cutter(with_bridging=True))
+
+        return knob
+
+# ducting = Ducting(screw=MachineScrew(4, countersunk=True))
 
 # show_object(ducting.get_fan_fixing())
 # show_object(ducting.get_flat_surface_fixing().translate((120,120,0)))
 # show_object(ducting.get_fan_fixing_template().translate((-120,-120,0)))
 
-windowVent = WindowVent()
-
-show_object(windowVent.get_handle(foldupable=True), options={"color": Colour.RED, "alpha":0.1}, name="handle")
+# windowVent = WindowVent()
+#
+# show_object(windowVent.get_handle(foldupable=True), options={"color": Colour.RED, "alpha":0.1}, name="handle")
 # show_object(windowVent.get_pad())
 # show_object(windowVent.get_handle_holder())
 # show_object(windowVent.get_knob().translate((0, windowVent.handle_length, windowVent.holder_thick)))
 
+new_window_vent = WindowVentImproved()
+
+show_object(new_window_vent.get_bottom_hook(short=True))
+show_object(new_window_vent.get_top_hook().translate((0, 200)))
+show_object(new_window_vent.get_top_knob().rotate((0,0,0),(0,1,0),90).translate((new_window_vent.window_frame_thick+new_window_vent.wood_thick, 200+new_window_vent.hook_thick/2, new_window_vent.hook_thick/2)))
+
 if outputSTL:
     path = "out"
     name="duct_fixing"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(ducting.get_flat_surface_fixing(), out)
 
-    name = "duct_fan_fixing"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(ducting.get_fan_fixing(), out)
-
-    name = "duct_fan_fixing_template"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(ducting.get_fan_fixing_template(), out)
-
-    name = "window_fixing_left"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(windowVent.get_corner_holder(left=True), out)
-
-    name = "window_fixing_right"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(windowVent.get_corner_holder(left=False), out)
-
-    name = "window_fixing_handle"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(windowVent.get_handle(), out)
-
-    name = "window_fixing_handle_foldupable"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(windowVent.get_handle(foldupable=True), out)
-
-    name = "window_fixing_pad"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(windowVent.get_pad(), out)
-
-    name = "window_fixing_handle_holder"
-    out = os.path.join(path, "{}.stl".format(name))
-    print("Outputting ", out)
-    exporters.export(windowVent.get_handle_holder(), out)
+    export_STL(new_window_vent.get_bottom_hook(),"bottom_hook", name, path)
+    export_STL(new_window_vent.get_bottom_hook(short=True), "bottom_hook_short", name, path)
+    export_STL(new_window_vent.get_top_hook(), "top_hook", name, path)
+    export_STL(new_window_vent.get_top_knob(), "top_knob", name, path)
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(ducting.get_flat_surface_fixing(), out)
+    #
+    # name = "duct_fan_fixing"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(ducting.get_fan_fixing(), out)
+    #
+    # name = "duct_fan_fixing_template"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(ducting.get_fan_fixing_template(), out)
+    #
+    # name = "window_fixing_left"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(windowVent.get_corner_holder(left=True), out)
+    #
+    # name = "window_fixing_right"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(windowVent.get_corner_holder(left=False), out)
+    #
+    # name = "window_fixing_handle"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(windowVent.get_handle(), out)
+    #
+    # name = "window_fixing_handle_foldupable"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(windowVent.get_handle(foldupable=True), out)
+    #
+    # name = "window_fixing_pad"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(windowVent.get_pad(), out)
+    #
+    # name = "window_fixing_handle_holder"
+    # out = os.path.join(path, "{}.stl".format(name))
+    # print("Outputting ", out)
+    # exporters.export(windowVent.get_handle_holder(), out)
