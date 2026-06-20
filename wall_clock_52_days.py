@@ -235,7 +235,7 @@ if not outputSTL:
     assembly.show_clock(show_object, hand_colours=hand_colours,#, Colour.DARKBLUE
                         motion_works_colours=[Colour.GREEN, Colour.LIGHTBLUE],
                         # motion_works_colours=[Colour.DARKGREY],
-                        bob_colours=[Colour.SILVER], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE,
+                        bob_colours=[Colour.BRASS], with_rods=True, with_key=True, ratchet_colour=Colour.PURPLE,
                         dial_colours=dial_colours, key_colour=Colour.PURPLE,
                         plate_colours=plate_colours,
                         day_complication_colours=[Colour.ORANGE, Colour.ORANGE, Colour.DARKBLUE, Colour.WHITE, Colour.BRASS]

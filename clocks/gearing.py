@@ -4963,8 +4963,10 @@ class DayOfWeekComplication:
             for space in number_spaces:
                 space.set_size(max_text_size)
         '''
-        textspaces = [TextSpace(x=0,y=0, width = self.cylinder_length-1 - cone_height , height=polygon_side_length,
-                                text=day, thick=LAYER_THICK*2, font="Gill Sans Medium", font_path="../fonts/GillSans/Gill Sans Medium.otf", inverted=False) for day in self.days]
+        # textspaces = [TextSpace(x=0,y=0, width = self.cylinder_length-1 - cone_height , height=polygon_side_length,
+        #                         text=day, thick=LAYER_THICK*2, font="Gill Sans Medium", font_path="../fonts/GillSans/Gill Sans Medium.otf", inverted=False) for day in self.days]
+        textspaces = [TextSpace(x=0, y=0, width=self.cylinder_length - 1 - cone_height, height=polygon_side_length,
+                                text=day, thick=LAYER_THICK * 2, font="Gill Sans Bold", font_path="../fonts/GillSans/Gill Sans Bold.otf", inverted=False) for day in self.days]
 
         max_text_side = min([textspace.get_text_max_size() for textspace in textspaces])
 

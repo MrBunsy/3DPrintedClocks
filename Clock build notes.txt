@@ -246,3 +246,10 @@ Clock 12:
 
 Clock 30:
 I think the ratchet pawl screw is liable to break and will need some re-enforcement. A small mini front-front plate so it's held from both sides? Could this place slot ontop of the screws holding the clock spring, or does it need to be a separate peice held to the front? DONE
+
+
+Clock 52:
+M2 Grub screws can get stuck far too easily, so I haven't even tried to set up the stop works yet. grub screw is stuck in the ratchet on the spring arbor.
+Try shorter grub screws? Try and remember to always screw in a normal m2 first? Also not sure the stop works will be strong enough - might want to make thicker and support a normal m2 screw anyway?
+Maybe I should just do the same with the ratchet. No idea how I'll be able to remove that ratchet now if the clock doesn't work.
+I think the best thing to do would be to saw in the half the spring arbor, then just reprint it and the ratchet
