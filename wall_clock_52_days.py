@@ -33,6 +33,16 @@ Plan:
 
  - stop works to see if spring driven silent can be more accurate
  - geneva gearing for day of week
+ 
+ 
+thing which need fixing before re-printing:
+
+ - grub screws are a bit too fragile. Can I get away with M3 grub screws or countersunk head m2s? (I've tweaked design to attempt m3 grubs, will try on the next clock)
+ if I do need to dismantle the clock and can't get the grub screw out, I should be able to saw the spring arbor in half, then reprint with the various parts to use the new m3 grub screws
+ no point doing this until necessary.
+ - Barely any space between centre wheel and first arbor
+ - consider cutting out more bits of the front plate detail for dial pillars and fixing washers?
+ - there was no space for a washer between the day cylinder and its holder. It works fine without a washer - but what went wrong?
 
 '''
 outputSTL = False
@@ -59,7 +69,9 @@ escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2
 escapement = escapement_info
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=5, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
-                     ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, stop_works=True)
+                     ratchet_screws=MachineScrew(3, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, stop_works=True,
+                     stop_works_screws=MachineScrew(3, type=MachineScrewType.GRUB))
+
 
 
 train = GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=1000, use_pulley=False, chain_at_back=False, powered_wheels=2,

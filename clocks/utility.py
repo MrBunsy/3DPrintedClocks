@@ -571,9 +571,8 @@ class MachineScrew:
         return get_nut_containing_diameter(self.metric_thread, wiggle, thumb=thumb)
 
     def get_head_diameter(self):
-        if self.grub:
-            #TODO
-            return self.metric_thread/2
+        if self.type == MachineScrewType.GRUB:
+            return self.metric_thread
         if self.type == MachineScrewType.HEX_HEAD:
             return get_hex_head_dimensions(self.metric_thread, diameter=True)
 
