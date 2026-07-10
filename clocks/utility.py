@@ -1529,6 +1529,7 @@ SANS_GILL_HEAVY_FONT = Font(name="Gill Sans Heavy", dial_scale=0.9, filepath="..
 SANS_GILL_BOLD_FONT = Font(name="Gill Sans Bold", dial_scale=0.9, filepath="../fonts/GillSans/Gill Sans Bold.otf")
 ARIAL_FONT = Font(name="Arial")
 DEFAULT_FONT = SANS_GILL_FONT
+NUMBER_PLATE_FONT = Font(name="UKNumberPlate", filepath="../fonts/uk_number_plate/UKNumberPlate.ttf")
 
 class TextSpace:
     def __init__(self, x, y, width, height, horizontal=None, inverted=True, text=None, thick=LAYER_THICK, font="Arial", angle_rad=0, font_path = None):
