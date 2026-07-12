@@ -3676,7 +3676,7 @@ class Arbor:
         if self.ratchet.thick <= 0:
             return None
 
-        ratchet_wheel = self.ratchet.getOuterWheel()
+        ratchet_wheel = self.ratchet.get_outer_wheel()
 
         #add holes
         for hole_pos in self.bolt_positions:

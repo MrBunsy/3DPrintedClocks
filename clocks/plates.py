@@ -3234,7 +3234,7 @@ class SimpleClockPlates(BasePlates):
             extraHeight = relevantChainHoles[0][1] + self.huygens_wheel.get_height() - self.huygens_wheel.ratchet.thick + chainholeD / 2 + minThickAroundChainHole
             ratchetD = self.huygens_wheel.ratchet.get_max_radius()*2
             # ratchet for the chainwheel on the front of the clock
-            ratchet = self.huygens_wheel.ratchet.getOuterWheel(extraThick=WASHER_THICK_M3)
+            ratchet = self.huygens_wheel.ratchet.get_outer_wheel(extraThick=WASHER_THICK_M3)
 
             ratchet = ratchet.faces(">Z").workplane().circle(ratchetD/2).circle(self.huygens_wheel.ratchet.toothRadius).extrude(extraHeight)
 

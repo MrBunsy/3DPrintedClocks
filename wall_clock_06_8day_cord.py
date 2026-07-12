@@ -18,7 +18,7 @@ on the external case of the clock or other products you make using this
 source.
 '''
 import clocks as clock
-
+import math
 '''
 Another attempt at an eight day, this time symetric and using a cord wheel
 
@@ -76,7 +76,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=29.5, loose_on_rod=False)
+train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=29.5, loose_on_rod=False, traditional_ratchet=False)
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s
@@ -94,23 +94,34 @@ runtime: 180.0hours. Chain wheel multiplier: 10.3
 # train.calculatePoweredWheelRatios()
 train.set_powered_wheel_ratios([103, 10])
 # train.printInfo(weight_kg=2.5)
-
+# train.powered_wheel.ratchet = clock.Ratchet2(totalD=56, innerRadius=train.powered_wheel.diameter / 2, thick=5, blocks_clockwise=train.powered_wheel.power_clockwise,
+#                                     screws_radius=train.powered_wheel.fixing_distance, offset_angle=math.pi/4, click_screw_angle=math.pi/2, pawl_offset_angle=math.pi*0.25, click_teeth=16, outer_thick=5.6)
 pendulumSticksOut=28
 
 train.gen_gears(module_size=1, module_reduction=0.875, thick=2, powered_wheel_thick=6, pinion_thick_multiplier=4, style=gearStyle, powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2)#, chainModuleIncrease=1.1)
 
-
+'''
+retrofitted ratchet
+outer_thick = 5.6000000000000005
+outersideDiamter = 56
+ratchetTeeth=16
+thick=5
+'''
+train.powered_wheel.ratchet = clock.Ratchet2(totalD=56+3, innerRadius=train.powered_wheel.diameter / 2, thick=5, blocks_clockwise=train.powered_wheel.power_clockwise,
+                                    screws_radius=train.powered_wheel.fixing_distance, offset_angle=math.pi/4, click_screw_angle=math.pi/2, pawl_offset_angle=math.pi*0.25, click_teeth=16, outer_thick=5.6+3/2)
+train.powered_wheel_arbors[0].ratchet = train.powered_wheel.ratchet
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2)
 
 
 #trying a thicker anchor and glue rather than nyloc
-pendulum = clock.Pendulum(bob_d=80, bob_thick=10)
+pendulum = clock.Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
+
 
 
 
 dial = clock.Dial(120)
 
-plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=8, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 06", gear_train_layout=clock.GearTrainLayout.VERTICAL, motion_works_above=True, heavy=True)
+plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=8, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 06", gear_train_layout=clock.GearTrainLayout.VERTICAL, motion_works_angle_deg=90, heavy=True)
 
 
 hands = clock.Hands(style=clock.HandStyle.CIRCLES, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(),
@@ -121,7 +132,7 @@ hands = clock.Hands(style=clock.HandStyle.CIRCLES, minute_fixing="square", minut
 
 #no weight for this clock, as it's going to probably be too heavy to make myself.
 
-assembly = clock.Assembly(plates, hands=hands, time_mins=0, time_seconds=00, pendulum=pendulum)
+assembly = clock.Assembly(plates, hands=hands, time_mins=0, time_seconds=00, pendulum=pendulum, name=clockName)
 
 assembly.print_info()
 train.print_info(weight_kg=2.5)
@@ -135,12 +146,15 @@ print("Plate distance: ", plates.plate_distance)
 #
 # show_object(assembly.getClock())
 #
-assembly.show_clock(show_object, plate_colours=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.YELLOW])
+# assembly.show_clock(show_object, plate_colours=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.YELLOW])
+show_object(train.powered_wheel.get_assembled())
+show_object(train.powered_wheel.ratchet.get_outer_wheel())
 if outputSTL:
-    train.output_STLs(clockName, clockOutDir)
-    motionWorks.output_STLs(clockName,clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    dial.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+    # train.output_STLs(clockName, clockOutDir)
+    # motionWorks.output_STLs(clockName,clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # dial.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
+    assembly.get_BOM().export()
