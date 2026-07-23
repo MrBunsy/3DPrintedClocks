@@ -76,7 +76,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
-train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=29.5, loose_on_rod=False, traditional_ratchet=False)
+train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=29.5, loose_on_rod=False, ratchet_has_external_pawl=False)
 '''
 with drop of 1.8m and max d of 28:
 pendulum length: 0.9939608115313336m period: 2s
@@ -94,7 +94,7 @@ runtime: 180.0hours. Chain wheel multiplier: 10.3
 # train.calculatePoweredWheelRatios()
 train.set_powered_wheel_ratios([103, 10])
 # train.printInfo(weight_kg=2.5)
-# train.powered_wheel.ratchet = clock.Ratchet2(totalD=56, innerRadius=train.powered_wheel.diameter / 2, thick=5, blocks_clockwise=train.powered_wheel.power_clockwise,
+# train.powered_wheel.ratchet = clock.Ratchet2(outer_diameter=56, inner_radius=train.powered_wheel.diameter / 2, thick=5, blocks_clockwise=train.powered_wheel.power_clockwise,
 #                                     screws_radius=train.powered_wheel.fixing_distance, offset_angle=math.pi/4, click_screw_angle=math.pi/2, pawl_offset_angle=math.pi*0.25, click_teeth=16, outer_thick=5.6)
 pendulumSticksOut=28
 
@@ -104,11 +104,11 @@ train.gen_gears(module_size=1, module_reduction=0.875, thick=2, powered_wheel_th
 retrofitted ratchet
 outer_thick = 5.6000000000000005
 outersideDiamter = 56
-ratchetTeeth=16
+ratchet_teeth=16
 thick=5
 '''
-train.powered_wheel.ratchet = clock.Ratchet2(totalD=56+3, innerRadius=train.powered_wheel.diameter / 2, thick=5, blocks_clockwise=train.powered_wheel.power_clockwise,
-                                    screws_radius=train.powered_wheel.fixing_distance, offset_angle=math.pi/4, click_screw_angle=math.pi/2, pawl_offset_angle=math.pi*0.25, click_teeth=16, outer_thick=5.6+3/2)
+train.powered_wheel.ratchet = clock.InvertedRatchet(outer_diameter=56 + 3, inner_radius=train.powered_wheel.diameter / 2, thick=5, blocks_clockwise=train.powered_wheel.power_clockwise,
+                                                    screws_radius=train.powered_wheel.fixing_distance, offset_angle=math.pi/4, click_screw_angle=math.pi/2, pawl_offset_angle=math.pi*0.25, click_teeth=16, outer_thick=5.6+3/2)
 train.powered_wheel_arbors[0].ratchet = train.powered_wheel.ratchet
 motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 30, style=gearStyle, thick=2)
 
@@ -146,9 +146,9 @@ print("Plate distance: ", plates.plate_distance)
 #
 # show_object(assembly.getClock())
 #
-# assembly.show_clock(show_object, plate_colours=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.YELLOW])
-show_object(train.powered_wheel.get_assembled())
-show_object(train.powered_wheel.ratchet.get_outer_wheel())
+assembly.show_clock(show_object, plate_colours=clock.Colour.DARKGREY, motion_works_colours=[clock.Colour.GREEN, clock.Colour.GREEN, clock.Colour.YELLOW])
+# show_object(train.powered_wheel.get_assembled())
+# show_object(train.powered_wheel.ratchet.get_outer_wheel())
 if outputSTL:
     # train.output_STLs(clockName, clockOutDir)
     # motionWorks.output_STLs(clockName,clockOutDir)

@@ -79,14 +79,14 @@ click inner d = 22.281692032865347
 outer_thick = 4.45633840657307
 outer d = 44.563384065730695
 click_teeth = 8
-totalD=ratchetOuterD, innerRadius=0.9999 * self.outerDiameter / 2, thick=ratchet_thick, blocks_clockwise=power_clockwise, outer_thick=ratchetOuterThick,
+outer_diameter=ratchetOuterD, inner_radius=0.9999 * self.outerDiameter / 2, thick=ratchet_thick, blocks_clockwise=power_clockwise, outer_thick=ratchetOuterThick,
                                     screws_radius=self.outerRadius*0.5, pawl_screws=MachineScrew(2, type=MachineScrewType.COUNTERSUNK), offset_angle=math.pi*0.25
 '''
-powered_wheel.ratchet = clock.Ratchet2(totalD=44.563384065730695, innerRadius=powered_wheel.ratchet.get_inner_radius(), thick=powered_wheel.ratchet.thick,
-                                       blocks_clockwise=powered_wheel.ratchet.is_clockwise(), outer_thick=4.45633840657307,
-                                    screws_radius=powered_wheel.ratchet.screws_radius, pawl_screws=clock.MachineScrew(2, type=clock.MachineScrewType.COUNTERSUNK),
-                                       offset_angle=math.pi*0.25, click_teeth = 8)
-motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 20, )
+powered_wheel.ratchet = clock.InvertedRatchet(outer_diameter=44.563384065730695, inner_radius=powered_wheel.ratchet.get_inner_radius(), thick=powered_wheel.ratchet.thick,
+                                              blocks_clockwise=powered_wheel.ratchet.is_clockwise(), outer_thick=4.45633840657307,
+                                              screws_radius=powered_wheel.ratchet.screws_radius, pawl_screws=clock.MachineScrew(2, type=clock.MachineScrewType.COUNTERSUNK),
+                                              offset_angle=math.pi*0.25, click_teeth = 8, click_wide=1.7/2)
+motionWorks = clock.MotionWorks(extra_height=pendulumSticksOut + 20)
 # motionWorks.output_STLs(clockName,clockOutDir)
 
 #trying using same bearings and having the pendulum rigidly fixed to the anchor's arbour

@@ -64,7 +64,7 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 
 #total ratchet + cord wheel thick = 12.5 so a 12mm countersunk m3 screw will work to hold the pawl
 train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=1, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
-                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
+                      loose_on_rod=False, prefer_small=True, ratchet_has_external_pawl=True)#, ratchet_diameter=29 + 27.5)
 
 # train.set_chain_wheel_ratio([67, 11])
 

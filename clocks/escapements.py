@@ -343,7 +343,7 @@ class AnchorEscapement:
         '''
         return -(self.get_anchor_thick() - self.wheel_thick)/2
 
-    def get_distance_beteen_arbours(self):
+    def get_distance_beteen_arbors(self):
         return self.anchor_centre_distance
 
 
@@ -1213,7 +1213,7 @@ class EscapmentInterface:
         '''
         raise NotImplementedError()
 
-    def get_distance_beteen_arbours(self):
+    def get_distance_beteen_arbors(self):
         '''
         return distance between centre of escape wheel and the centre of the anchor/frame pivot point
         '''
@@ -1259,7 +1259,7 @@ class EscapmentInterface:
         TODO how to standardise this between grasshopper and anchor? for now it's going to have different arguments to both
         '''
 
-    # def get3D(self, holeD=0, thick=0, style="HAC", innerRadiusForStyle=-1):
+    # def get3D(self, holeD=0, thick=0, style="HAC", inner_radiusForStyle=-1):
     #     '''
     #     old bodge, pretend to be a gear wheel and return the wheel
     #     '''
@@ -1317,6 +1317,9 @@ class GrasshopperEscapement:
 
         self.skip_failed_checks = skip_failed_checks
         self.xmas = xmas
+
+        #TODO work out how this applies to the grasshopper
+        self.split = False
 
         self.pendulum_length=pendulum_length_m*1000
         self.teeth=teeth
@@ -1412,12 +1415,18 @@ class GrasshopperEscapement:
         self.checkGeometry(loud=loud_checks)
         self.clockwise = True
 
+    def get_BOM_for_combining_with_arbor(self):
+        '''
+        returns a BOM which will be combined with the arbor BOM, instead of a subcomponent
+        '''
+        return BillOfMaterials("Anchor")
+
     def set_diameter(self, diameter):
         '''
         do nothing, we can't readjust the diameter of this escape wheel from teh gear train generation like we can with an anchor
         '''
 
-    def get_distance_beteen_arbours(self):
+    def get_distance_beteen_arbors(self):
         return get_distance_between_two_points(self.geometry["Z"], self.geometry["O"])
 
     def get_wheel_max_r(self):
@@ -2494,7 +2503,7 @@ class GrasshopperEscapement:
 
         return wheel
 
-    def getWheel(self, style=GearStyle.HONEYCOMB):
+    def get_wheel(self, style=GearStyle.SOLID):
         #I think this is just for models, so fudge the inner radius
         return Gear.cut_style(self.get_wheel_2d().extrude(self.wheel_thick), self.get_wheel_inner_r(), inner_radius=10, style=style)
 
@@ -2512,7 +2521,7 @@ class GrasshopperEscapement:
             return anchor_part
 
         if not leave_out_wheel_and_frame:
-            grasshopper = grasshopper.add(self.getWheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
+            grasshopper = grasshopper.add(self.get_wheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
             grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(self.getFrame(leave_in_situ=True))))
 
         pivot_extenders = self.getFramePivotArmExtenders()
@@ -2543,7 +2552,7 @@ class GrasshopperEscapement:
     def output_STLs(self, name="clock", path="../out"):
         out = os.path.join(path, "{}_grasshopper_wheel.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getWheel(), out)
+        exporters.export(self.get_wheel(), out)
 
         out = os.path.join(path, "{}_grasshopper_frame.stl".format(name))
         print("Outputting ", out)

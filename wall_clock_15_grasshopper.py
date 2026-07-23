@@ -32,6 +32,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
+retrofit_chain_wheels = True
 
 clockName="wall_clock_15_grasshopper_retrofit"
 clockOutDir="out"
@@ -45,7 +46,13 @@ need_space = SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + WASHER_T
 #also -1 from frame_thick because I've reduced front_anchor_from_plate by one
 escapement = GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, frame_thick=10 - need_space+1, composer_min_distance=need_space)#GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10-need_space)#(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
 
-power = PocketChainWheel2(ratchet_thick=4, loose_on_rod=False)
+
+#was first printed with regula 30 hour chain, but this has stretched a bit over a couple of years on some clocks
+power = PocketChainWheel2(ratchet_thick=4, loose_on_rod=False, no_ratchet=True, chain=REGULA_8_DAY_1_05MM_CHAIN, max_diameter=24)
+
+if retrofit_chain_wheels:
+    power.fixing_positions = [(0, -6.402338129606117), (0, 6.402338129606117)]
+
 
 #TODO fix chain at back, there's some work to do in the arbours (and maybe plates)
 train=GoingTrain(pendulum_period=2, fourth_wheel=False, escapement=escapement, max_weight_drop=1200, use_pulley=True,
@@ -77,15 +84,21 @@ pendulum = Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
 
 plates = SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", gear_train_layout=GearTrainLayout.VERTICAL, pendulum_at_front=False,
                                  back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, direct_arbor_d=6)
+if retrofit_chain_wheels:
+    #retrofitting the original design
+    # what size to make it? bigger is better for the ratchet, smaller is better for the sprocket
+    # note - don't need the holes to line up because this was printed before there was a shield aroudn the huygens wheel
+    plates.huygens_wheel = PocketChainWheel2(ratchet_thick=5, chain=plates.huygens_wheel.chain, max_diameter=24, loose_on_rod=True,
+                                             ratchet_extra_args={"pawl_screws": MachineScrew(2, type=MachineScrewType.COUNTERSUNK)}, ratchet_has_external_pawl=False)
+    plates.huygens_wheel.ratchet = InvertedRatchet(outer_diameter=33.88122956220406, outer_thick=3, thick=5, click_teeth=16, pawl_screws=MachineScrew(2, type=MachineScrewType.COUNTERSUNK))
+
 pulley = LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 
-hands = Hands(style=HandStyle.SPADE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
+hands = Hands(style=HandStyle.SIMPLE, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(),
                     length=120, thick=motionWorks.minute_hand_slot_height, outline=1, outline_same_as_body=False)
 assembly = Assembly(plates, hands=hands, time_hours=12, pulley=pulley, pendulum=pendulum)
-#
-# assembly.print_info()
-#
+
 #
 #
 # weight = Weight(height=130, diameter=50)
@@ -97,12 +110,13 @@ assembly = Assembly(plates, hands=hands, time_hours=12, pulley=pulley, pendulum=
 assembly.show_clock(show_object)
 #
 if outputSTL:
+    assembly.get_BOM().export()
     # train.output_STLs(clockName, clockOutDir)
-    motionWorks.output_STLs(clockName,clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    # weight.output_STLs(clockName, clockOutDir)
-    # bigweight.output_STLs(clockName+"_big", clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
-    pulley.output_STLs(clockName, clockOutDir)
+    # motionWorks.output_STLs(clockName,clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # # weight.output_STLs(clockName, clockOutDir)
+    # # bigweight.output_STLs(clockName+"_big", clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
+    # pulley.output_STLs(clockName, clockOutDir)

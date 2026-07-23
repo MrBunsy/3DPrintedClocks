@@ -1073,17 +1073,17 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
         for a, arbor in enumerate(self.plates.arbors_for_plate):
             show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbor {}".format(a))
-
+        print("generated arbors for plate")
         # return
         # # motionWorksModel = self.motionWorks.get_assembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)
         # #
         # # show_object(motionWorksModel.translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motionWorksZ)), options={"color":motion_works_colour})
         motion_works_parts = self.motion_works.get_parts_in_situ(motion_works_relative_pos=self.plates.motion_works_relative_pos, minute_angle=self.minuteAngle, time_setter_relative_pos=self.plates.time_setter_relative_pos)
-
+        print("motion_works_parts")
         for i,part in enumerate(motion_works_parts):
             colour = motion_works_colours[i % len(motion_works_colours)]
             show_object(motion_works_parts[part].translate((self.plates.hands_position[0], self.plates.hands_position[1], self.motion_works_z)), options={"color":colour}, name="Motion Works {}".format(i))
-
+        print("motion_works_parts shown")
         if self.motion_works.cannon_pinion_friction_ring:
             show_object(self.plates.get_cannon_pinion_friction_clip(for_printing=False).translate(self.plates.cannon_pinion_friction_clip_pos).translate((0,0,self.front_of_clock_z + self.plates.motion_works_holder_thick )), options={"color":plate_colours[0]}, name="Friction Clip")
 
@@ -1119,7 +1119,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 friendly_name = string.capwords(holder_part.replace("_", " "))
                 show_object(holder_parts[holder_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)),name=f"Day Complication Holder {friendly_name}",
                             options={"color": day_complication_colours[len(day_parts) % len(day_complication_colours)]})
-
+        print("before dial")
         if self.dial is not None:
             dial = self.dial.get_dial().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
             detail = self.dial.get_all_detail().rotate((0,0,0),(0,1,0),180).translate(self.dial_pos)
@@ -1145,7 +1145,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
         if self.vanity_plate is not None:
             show_object(self.vanity_plate, options={"color": vanity_plate_colour}, name="Vanity Plate")
-
+        print("before showing hands")
         #hands on the motion work, showing the time
         #mirror them so the outline is visible (consistent with second hand)
         hands_position = (self.plates.hands_position[0], self.plates.hands_position[1], self.minute_hand_z - self.motion_works.hour_hand_slot_height)
@@ -1158,11 +1158,12 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             #why does ring colour not work?
             show_object(self.pendulum.get_hand_avoider().translate(self.ring_pos), options={"color": Colour.PURPLE }, name="Pendulum Ring")
         # return
+        print("before huygens_maintaining_power")
         if self.plates.huygens_maintaining_power:
             #assumes one pillar
             show_object(self.plates.huygens_wheel.get_assembled().translate(self.plates.bottom_pillar_positions[0]).
                         translate((0, self.plates.huygens_wheel_y_offset, self.front_of_clock_z + WASHER_THICK_M3)), options={"color": huygens_colour}, name="Huygens Wheel")
-
+        print("before ratchet_on_plates")
         if self.ratchet_on_plates is not None:
             show_object(self.ratchet_on_plates, options={"color": ratchet_colour}, name="Ratchet")
 

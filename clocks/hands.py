@@ -178,6 +178,12 @@ class HandGenerator:
         if self.second_thick < 0:
             self.second_thick = self.thick
 
+    def get_thick(self, thick_override=-1):
+        thick = self.thick
+        if thick_override > 0:
+            thick = thick_override
+        return thick
+
     def already_has_outline(self):
         '''
         some designs the outline will already be included, otherwise we can add it later
@@ -858,6 +864,9 @@ class SmithsPocketWatchHands(HandGenerator):
         return hand
 
 class ArtDecoHands(HandGenerator):
+    '''
+    two teardrop hands, hour hand is hollow
+    '''
     def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
         super().__init__(base_r, length, thick, second_base_r, second_thick)
         self.hour_length = length*0.8
@@ -903,6 +912,20 @@ class ArtDecoHands(HandGenerator):
 
     def second_hand(self, total_length=30, base_r=6, thick=3, colour = None, balanced=False, fixing_thick=-1):
         raise NotImplemented()
+
+class ArtDecoHands2(ArtDecoHands):
+    def hour_hand(self, colour=None, thick_override=-1):
+        thick = self.get_thick(thick_override)
+        hand = get_stroke_line([(0,0), (0, self.hour_length)], wide=self.tip_r*2, thick=thick)
+
+        circle_r = self.hour_length*0.2
+
+        circle_y = self.hour_length*0.6
+
+        hand = hand.union(cq.Workplane("XY").circle(circle_r).extrude(thick).translate((0,circle_y))).cut(cq.Workplane("XY").circle(circle_r - self.tip_r*2).extrude(thick).translate((0,circle_y)))
+
+        return hand
+
 
 class XMasTreeHands(HandGenerator):
     '''
@@ -1229,6 +1252,9 @@ class Hands:
 
         if self.style == HandStyle.ART_DECO:
             self.generator = ArtDecoHands(base_r=self.length*0.1, thick = self.thick, length = self.length)
+
+        if self.style == HandStyle.ART_DECO2:
+            self.generator = ArtDecoHands2(base_r=self.length*0.1, thick = self.thick, length = self.length)
 
 
 

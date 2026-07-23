@@ -887,7 +887,8 @@ class SimpleClockPlates(BasePlates):
                                                       tolerance=self.going_train.powered_wheel.tolerance, ratchetOuterD=self.bottom_pillar_r * 2, ratchetOuterThick=ratchetOuterThick)
             elif self.going_train.powered_wheel.type == PowerType.CHAIN2:
                 self.huygens_wheel = PocketChainWheel2(ratchet_thick=5, max_diameter=max_diameter, chain=self.going_train.powered_wheel.chain, loose_on_rod=True,
-                                                       ratchet_outer_d=ratchetOuterD, ratchet_outer_thick=ratchetOuterThick, arbor_d=self.going_train.powered_wheel.arbor_d)
+                                                       ratchet_diameter=ratchetOuterD, ratchet_extra_args={'outer_thick':ratchetOuterThick, "pawl_screws": MachineScrew(2, type=MachineScrewType.COUNTERSUNK)},
+                                                       arbor_d=self.going_train.powered_wheel.arbor_d, ratchet_has_external_pawl=False)
             elif self.going_train.powered_wheel.type == PowerType.ROPE:
                 huygens_diameter = max_diameter*0.95
                 print("Huygens wheel diameter",huygens_diameter)
@@ -1259,7 +1260,8 @@ class SimpleClockPlates(BasePlates):
             arbor = self.arbors_for_plate[i]
             distance = get_distance_between_two_points(pillar_pos, bearing_pos[:2])
             space = arbor.get_max_radius() + pillar_r + min_gap
-            if distance < space:
+            if distance < space and arbor.arbor.arbor_split == SplitArborType.NORMAL_ARBOR:
+                # can safely ignore if wheel out front or back?
                 # print(f"clashes by", distance - space )
                 return True
 
@@ -3277,7 +3279,7 @@ class SimpleClockPlates(BasePlates):
             thick = 3
 
 
-            # outer_r = powered_wheel.ratchet.outsideDiameter / 2 + self.gear_gap + thick
+            # outer_r = powered_wheel.ratchet.outside_diameter / 2 + self.gear_gap + thick
             outer_r = powered_wheel.get_encasing_radius() + self.gear_gap
             deep = powered_wheel.get_height()-powered_wheel.ratchet.thick/2
 
@@ -5722,6 +5724,12 @@ Firmly push all bearings into their slots, a bench vice can help with this. Alte
 
         if self.has_vanity_plate:
             export_STL(self.get_vanity_plate(), "vanity_plate", name, path)
+
+
+class GrasshopperRoundPlates(RoundClockPlates):
+    '''
+    basicalyl same as round, but with the grasshopper sticking out hte top
+    '''
 
 class ChildFriendlySimpleClockPlates(SimpleClockPlates):
     '''

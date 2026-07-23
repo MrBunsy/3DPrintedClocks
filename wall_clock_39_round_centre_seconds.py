@@ -72,7 +72,7 @@ big_escapement = AnchorEscapement(teeth, diameter=radius*2, drop=escapement.drop
                                         tooth_height_fraction=0.15, tooth_tip_angle=2, tooth_base_angle=1.5, force_diameter=True, wheel_thick=2, run=5)
 
 powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
+                                 loose_on_rod=False, ratchet_has_external_pawl=True, power_clockwise=False, use_steel_tube=False)
 if chain:
     powered_wheel = PocketChainWheel2(ratchet_thick=6, chain=COUSINS_1_5MM_CHAIN, max_diameter=25)
 max_weight_drop = 1000

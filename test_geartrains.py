@@ -17,7 +17,7 @@ train.set_ratios([[54, 12], [54, 12], [54, 12]])
 
 
 # train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=1, cord_coil_thick=32, style=None, use_key=True, prefered_diameter=25.4,
-#                       loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
+#                       loose_on_rod=False, prefer_small=True, ratchet_has_external_pawl=True)#, ratchet_diameter=29 + 27.5)
 
 train.gen_spring_barrel(pawl_angle=-math.pi*3/4, click_angle=-math.pi/4, base_thick=barrel_gear_thick,
                         style=None, wall_thick=10, chain_wheel_ratios=[[66, 10], [76, 13]])#fraction_of_max_turns=0.35)#  chain_wheel_ratios=[[62, 10], [61, 10]]fraction_of_max_turns=0.35)#,, spring=clock.MAINSPRING_183535,

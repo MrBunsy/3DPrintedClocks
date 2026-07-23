@@ -43,7 +43,7 @@ escapement = AnchorEscapement.get_with_optimal_pallets(24, drop_deg=4)#, drop_de
 escapement = PinPalletTwoSidedAnchorEscapement(teeth=24, gap_size=1.5*2 + 3 + 1, drop=escapement.drop_deg, lock=escapement.lock_deg, lift=escapement.lock_deg, pin_diameter=1.0)
 
 # powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-#                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+#                                  loose_on_rod=False, ratchet_has_external_pawl=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
 
 powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=7, max_diameter=25, ratchet_diameter=35,
                                   fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK), wall_thick=1.5)

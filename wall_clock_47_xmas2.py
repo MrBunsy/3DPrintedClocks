@@ -57,7 +57,7 @@ if spring:
 else:
     #usually use an M4 rod - forgot to set rod diameter correct for the arbor, but I've already printed the plates and don't have a 4x10x4 bearing, so switching to M3
     powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=3, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+                                 loose_on_rod=False, ratchet_has_external_pawl=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
     powered_wheels = 1
     runtime_hours = 7.5 * 24
 

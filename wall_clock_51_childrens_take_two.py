@@ -50,7 +50,7 @@ escapement.set_diameter_from_anchor_distance(51.27651526151809, force=True)
 
 
 # powered_wheel = CordBarrel(diameter=45, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=False,
-#                                  loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
+#                                  loose_on_rod=False, ratchet_has_external_pawl=True, power_clockwise=False, use_steel_tube=False, pawl_screwed_from_front=True)
 powered_wheel = PocketChainWheel2(chain=REGULA_8_DAY_1_2MM_CHAIN, ratchet_thick=7, max_diameter=25, ratchet_diameter=35,
                                   fixing_screws=MachineScrew(3, type=MachineScrewType.COUNTERSUNK), wall_thick=1.5)# max_diameter=45, ratchet_diameter=55)#max_diameter=25, ratchet_diameter=35)
 train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement, max_weight_drop=1500, use_pulley=False, chain_at_back=False,

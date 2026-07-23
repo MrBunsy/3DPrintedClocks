@@ -6,7 +6,7 @@ from clocks import *
 gear_style = None
 escapement = AnchorEscapement.get_with_optimal_pallets()
 power = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
+                                 loose_on_rod=False, ratchet_has_external_pawl=True, power_clockwise=False, use_steel_tube=False)
 # train=clock.GoingTrain(pendulum_period=1/3, fourth_wheel=True, escapement_teeth=30, max_weight_drop=1800, chain_at_back=False, powered_wheels=1, runtime_hours=180)
 train = GoingTrain(pendulum_period=2 / 3, wheels=4, escapement=escapement, powered_wheels=2, runtime_hours=8 * 24, support_second_hand=False, powered_wheel=power)
 

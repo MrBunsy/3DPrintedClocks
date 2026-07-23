@@ -50,7 +50,7 @@ pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 escapement = clock.AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2.75, lock_deg=1.5, wheel_thick=2.5)
 
 power = clock.CordBarrel(ratchet_thick=6, rod_metric_size=4, cord_thick=1, thick=15, style=gearStyle,
-                         use_key=True, diameter=45, loose_on_rod=False, ratchet_diameter=30, traditional_ratchet=True, cap_diameter=65)
+                         use_key=True, diameter=45, loose_on_rod=False, ratchet_diameter=30, ratchet_has_external_pawl=True, cap_diameter=65)
 
 
 # train = clock.GoingTrain(pendulum_period=1, wheels=4, escapement=escapement, max_weight_drop=500, use_pulley=True, chain_at_back=False, chain_wheels=2,
@@ -74,7 +74,7 @@ train.calculate_powered_weight_wheel_info()
 #TODO one screw goes straight through the hole used to tie the cord! printed clock is assembled with just three screws
 #also reduced ratchet diameter slightly after initial print as the pawl looks like it can bump into the next pinion
 # train.gen_cord_wheels(ratchet_thick=8, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14, style=gearStyle, use_key=True, prefered_diameter=55, loose_on_rod=False, prefer_small=True,
-#                       min_wheel_teeth=70, traditional_ratchet=True, cap_diameter=65, ratchet_diameter=30)
+#                       min_wheel_teeth=70, ratchet_has_external_pawl=True, cap_diameter=65, ratchet_diameter=30)
 
 # train.calculate_powered_wheel_ratios(pinion_min=10, pinion_max=12, wheel_min=50, wheel_max=120, prefer_large_second_wheel=False)
 train.chain_wheel_ratios = [[55, 10], [64, 10]]

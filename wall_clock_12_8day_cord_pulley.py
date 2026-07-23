@@ -83,7 +83,7 @@ train.set_ratios([[72, 10], [75, 9]])
 
 #smaller diameter than the original as I'll need to make it thinner in order to fit new ratchet in
 train.gen_cord_wheels(ratchet_thick=4+1, rod_metric_thread=4, cord_thick=1, cord_coil_thick=14-1, style=gearStyle, use_key=True, prefered_diameter=24,
-                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)
+                      loose_on_rod=False, prefer_small=True, ratchet_has_external_pawl=True)
 #the 1.2mm 47links/ft regula chain
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)
 

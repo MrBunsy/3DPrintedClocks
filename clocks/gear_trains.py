@@ -326,7 +326,7 @@ class GoingTrain(GearTrainBase):
 
     '''
 
-    def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, powered_wheels=0, runtime_hours=30, chain_at_back=True, max_weight_drop=1800,
+    def __init__(self, pendulum_period=-1, pendulum_length_m=-1, wheels=3, fourth_wheel=None, escapement_teeth=30, powered_wheels=0, runtime_hours=30, chain_at_back=False, max_weight_drop=1800,
                  escapement=None, escape_wheel_pinion_at_front=None, use_pulley=False, huygens_maintaining_power=False, minute_wheel_ratio=1, support_second_hand=False, powered_wheel=None):
         '''
 
@@ -335,7 +335,7 @@ class GoingTrain(GearTrainBase):
         escapement_teeth: number of teeth on the escape wheel DEPRECATED, provide entire escapement instead
         chain_wheels: if 0 the minute wheel is also the chain wheel, if >0, this many gears between the minute wheel and chain wheel (say for 8 day clocks)
         hours: intended hours to run for (dictates diameter of chain wheel)
-        chain_at_back: Where the chain and ratchet mechanism should go relative to the minute wheel
+        chain_at_back: Where the chain and ratchet mechanism should go relative to the minute wheel NOTE - THIS IS LIKELY BROKEN every working clock has had chain_at_back = False
         max_weight_drop: maximum length of chain drop to meet hours required, in mm
         max_chain_wheel_d: Desired diameter of the chain wheel, only used if chainWheels > 0. If chainWheels is 0 there is no flexibility here
         escapement: Escapement object. If not provided, falls back to defaults with esacpement_teeth
@@ -907,7 +907,7 @@ class GoingTrain(GearTrainBase):
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small)
 
     def gen_cord_wheels(self, ratchet_thick=7.5, rod_metric_thread=3, cord_coil_thick=10, use_key=False, cord_thick=2, style=GearStyle.ARCS, prefered_diameter=-1, loose_on_rod=True, prefer_small=False,
-                        ratchet_diameter=-1, traditional_ratchet=True, min_wheel_teeth=20, cap_diameter=-1):
+                        ratchet_diameter=-1, ratchet_has_external_pawl=True, min_wheel_teeth=20, cap_diameter=-1):
         '''
         If preferred diameter is provided, use that rather than the min diameter
 
@@ -927,7 +927,7 @@ class GoingTrain(GearTrainBase):
         bearing = get_bearing_info(15) if use_key else get_bearing_info(3)
         self.powered_wheel = CordBarrel(self.powered_wheel_diameter, ratchet_thick=ratchet_thick, power_clockwise=self.powered_wheel_clockwise,
                                         rod_metric_size=rod_metric_thread, thick=cord_coil_thick, use_key=use_key, cord_thick=cord_thick, style=style, loose_on_rod=loose_on_rod,
-                                        cap_diameter=cap_diameter, traditional_ratchet=traditional_ratchet, ratchet_diameter=ratchet_diameter, bearing=bearing)
+                                        cap_diameter=cap_diameter, ratchet_has_external_pawl=ratchet_has_external_pawl, ratchet_diameter=ratchet_diameter, bearing=bearing)
         self.calculate_powered_wheel_ratios(prefer_small=prefer_small, wheel_min=min_wheel_teeth, prefer_large_second_wheel=False)  # prefer_large_second_wheel=False,
 
     def gen_rope_wheels(self, ratchetThick=3, arbor_d=3, ropeThick=2.2, wallThick=1.2, preferedDiameter=-1, use_steel_tube=True, o_ring_diameter=2, prefer_small=False):
@@ -1086,7 +1086,7 @@ class GoingTrain(GearTrainBase):
                 # escape wheel
                 pinion = all_pairs[i - 1].pinion
                 escapement = self.escapement
-                distance_to_next_arbor = escapement.anchor_centre_distance
+                distance_to_next_arbor = escapement.get_distance_beteen_arbors()
                 type = ArborType.ESCAPE_WHEEL
             else:
                 # anchor
@@ -1241,7 +1241,7 @@ class GoingTrain(GearTrainBase):
         # this was an attempt to put the second wheel over the top of the powered wheel, if it fits, but now there are so many different setups I'm just disabling it
         second_wheel_r = pairs[1].wheel.get_max_radius()
         first_wheel_r = pairs[0].wheel.get_max_radius() + pairs[0].pinion.get_max_radius()
-        powered_wheel_encasing_radius = self.powered_wheel.get_encasing_radius()  # .ratchet.outsideDiameter/2
+        powered_wheel_encasing_radius = self.powered_wheel.get_encasing_radius()  # .ratchet.outside_diameter/2
         space = first_wheel_r - powered_wheel_encasing_radius
         # logic is flawed and doesn't work with multiple powered wheels (eg 8 day spring)
         if second_wheel_r < space - 3:
@@ -1424,7 +1424,7 @@ class GoingTrain(GearTrainBase):
                 # last pinion + escape wheel, the escapment itself knows which way the wheel will turn
                 # escape wheel has its thickness controlled by the escapement, but we control the arbor diameter
                 arbours.append(Arbor(escapement=self.escapement, pinion=pairs[i - 1].pinion, rod_diameter=rod_diameters[i + self.powered_wheels], pinion_thick=pinion_thick, end_cap_thick=gear_pinion_end_cap_thick,
-                                     distance_to_next_arbor=self.escapement.get_distance_beteen_arbours(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
+                                     distance_to_next_arbor=self.escapement.get_distance_beteen_arbors(), style=style, pinion_at_front=pinion_at_front, clockwise_from_pinion_side=escape_wheel_clockwise_from_pinion_side,
                                      pinion_extension=pinion_extension, arbor_split=escapement_split, type=ArborType.ESCAPE_WHEEL))
             if not stack_away_from_powered_wheel:
                 pinion_at_front = not pinion_at_front
@@ -1450,6 +1450,9 @@ class GoingTrain(GearTrainBase):
         if i < 0:
             i = i + len(self.arbors) + len(self.powered_wheel_arbors)
         return self.get_arbor(i - self.powered_wheels)
+
+    def get_centre_arbor_index(self):
+        return self.powered_wheels
 
     def get_all_arbors(self):
         return self.powered_wheel_arbors + self.arbors
@@ -1898,6 +1901,11 @@ class GearLayout2D:
         return GearLayout2D(going_train, centred_arbors=[i for i in range(len(going_train.get_all_arbors()))], **kwargs)
 
     @staticmethod
+    def get_eight_day_grasshopper(going_train, **kwargs):
+        #compact power train, vertical otherwise
+        return GearLayout2D(going_train, centred_arbors=[i for i in range(going_train.get_centre_arbor_index(), len(going_train.get_all_arbors()))], **kwargs)
+
+    @staticmethod
     def get_compact_vertical_layout(going_train,  all_offset_same_side=True, **kwargs):
         '''
         Most wheels in a line upright, with alternate wheels after the centre wheel offset.
@@ -1985,7 +1993,7 @@ class GearLayout2D:
 
         if self.centred_arbors is None:
             # power source, centre wheel, and anchor
-            self.centred_arbors = [0, self.going_train.powered_wheels,self.total_arbors - 1]
+            self.centred_arbors = [0, self.going_train.get_centre_arbor_index(),self.total_arbors - 1]
 
         if self.can_ignore_pinions is None:
             # which arbors will be orentated so we don't need to worry about crashing into their pinions
@@ -2241,6 +2249,14 @@ class GearLayout2D:
         for position,arbor in zip(self.get_positions(), self.arbors):
             demo = demo.add(arbor.get_assembled().translate(position))
         return demo
+
+
+# class GearLayoutGrasshopper(GearLayout2D):
+#     '''
+#     eight day dual pivot grasshopper - usual compact for the power train then vertical for the rest
+#     '''
+#
+#     def get_positions(self):
 
 
 class GearLayout2DCentreSeconds(GearLayout2D):

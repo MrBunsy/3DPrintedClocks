@@ -51,6 +51,7 @@ class HandStyle(Enum):
     FANCY_FRENCH = "fancy clock" # inspired by an ebay clock
     DIAMOND = "diamond" # inspired by black forest clock
     ART_DECO = "art deco"
+    ART_DECO2 = "art deco 2" # a different art-deco-y style
 
 class BobStyle(Enum):
     SIMPLE = "Simple"

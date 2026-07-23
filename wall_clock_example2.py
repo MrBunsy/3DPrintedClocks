@@ -48,7 +48,7 @@ escapement = AnchorEscapement.get_with_optimal_pallets(30, drop_deg=1.75)
 
 # Choose and configure the power source of the clock, a cord barrel (cord that is wound up with a key) is the easiest and most reliable mechanism
 powered_wheel = CordBarrel(diameter=26, ratchet_thick=6, rod_metric_size=4, screw_thread_metric=3, cord_thick=1, thick=15, style=gear_style, use_key=True,
-                                 loose_on_rod=False, traditional_ratchet=True, power_clockwise=False, use_steel_tube=False)
+                                 loose_on_rod=False, ratchet_has_external_pawl=True, power_clockwise=False, use_steel_tube=False)
 # This represents the gear train that tells the time from the power source, to the minute hand (centre arbor) to the escapement
 train = GoingTrain(pendulum_period=2, wheels=3, escapement=escapement, max_weight_drop=1000, use_pulley=True, chain_at_back=False,
                          powered_wheels=1, runtime_hours=7.5 * 24, powered_wheel=powered_wheel, escape_wheel_pinion_at_front=True)

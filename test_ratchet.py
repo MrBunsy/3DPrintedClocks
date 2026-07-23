@@ -14,7 +14,7 @@ if 'show_object' not in globals():
 diameter = 40
 thick = 4
 
-ratchet = Ratchet2(totalD=diameter, thick=thick, blocks_clockwise=True)
+ratchet = InvertedRatchet(outer_diameter=diameter, thick=thick, blocks_clockwise=True)
 
 show_object(ratchet.get_outer_wheel())
 show_object(ratchet.get_inner_wheel().translate((0,0,ratchet.thick - ratchet.pawl_and_click_thick)))

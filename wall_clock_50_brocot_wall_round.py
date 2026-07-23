@@ -65,7 +65,7 @@ train.set_ratios([[80, 9], [81, 12]])
 
 #from paul's clock
 train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=26,
-                      loose_on_rod=False, prefer_small=True, traditional_ratchet=True)#, ratchet_diameter=29 + 27.5)
+                      loose_on_rod=False, prefer_small=True, ratchet_has_external_pawl=True)#, ratchet_diameter=29 + 27.5)
 
 
 

@@ -73,7 +73,7 @@ class Gear:
         rim_thick: override default rim to leave around the outside of the gear. Need some for strength, but want less to make gears lighter
         lightweight: cut out more if possible (up to each style) to make the gear lighter. Primarily for large escape wheels
         Could still do with a little more tidying up, outerRadius should be a few mm shy of the edge of teh gear to give a solid rim,
-        but innerRadius should be at the edge of whatever can't be cut into
+        but inner_radius should be at the edge of whatever can't be cut into
 
         I keep changing my mind whether or not to give the cutter the full size of the gear or just the area to cut.
 
@@ -102,31 +102,31 @@ class Gear:
         if style == GearStyle.CIRCLES_HOLLOW:
             return Gear.cut_circles_style(gear, outer_radius=outer_radius, inner_radius=inner_radius + 2, hollow=True)
         if style == GearStyle.SIMPLE4:
-            return Gear.cutSimpleStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, arms=4)
+            return Gear.cutSimpleStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2, arms=4)
         if style == GearStyle.SIMPLE5:
-            return Gear.cutSimpleStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, arms=5)
+            return Gear.cutSimpleStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2, arms=5)
         if style == GearStyle.SPOKES:
-            return Gear.cutSpokesStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2)
+            return Gear.cutSpokesStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2)
         if style == GearStyle.STEAMTRAIN:
-            return Gear.cutSteamTrainStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2)
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2)
         if style == GearStyle.CARTWHEEL:
-            return Gear.cutSteamTrainStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, withWeight=False)
+            return Gear.cutSteamTrainStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2, withWeight=False)
         if style == GearStyle.FLOWER:
-            return Gear.cutFlowerStyle2(gear, outerRadius=outer_radius, innerRadius=inner_radius)
+            return Gear.cutFlowerStyle2(gear, outerRadius=outer_radius, inner_radius=inner_radius)
         if style == GearStyle.HONEYCOMB:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2)
         if style == GearStyle.HONEYCOMB_SMALL:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2, big=False)
         if style == GearStyle.HONEYCOMB_CHUNKY:
-            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, innerRadius=inner_radius + 2, big=False, chunky=True)
+            return Gear.cutHoneycombStyle(gear, outerRadius=outer_radius, inner_radius=inner_radius + 2, big=False, chunky=True)
         if style == GearStyle.SNOWFLAKE:
-            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2, seed=random_seed)
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, inner_radius =inner_radius + 2, seed=random_seed)
         if style == GearStyle.SNOWFLAKE_06_NOZZLE:
-            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, innerRadius =inner_radius + 2, seed=random_seed, nozzle_size=0.6)
+            return Gear.cutSnowflakeStyle(gear, outerRadius= outer_radius-0.01, inner_radius =inner_radius + 2, seed=random_seed, nozzle_size=0.6)
         if style == GearStyle.CURVES:
-            return Gear.cutCurvesStyle(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), clockwise=clockwise_from_pinion_side)
+            return Gear.cutCurvesStyle(gear, outerRadius=outer_radius, inner_radius=max(inner_radius * 1.05, inner_radius + 1), clockwise=clockwise_from_pinion_side)
         if style == GearStyle.DIAMONDS:
-            return Gear.cut_diamonds_style(gear, outerRadius=outer_radius, innerRadius=max(inner_radius * 1.05, inner_radius + 1), lightweight=lightweight)
+            return Gear.cut_diamonds_style(gear, outerRadius=outer_radius, inner_radius=max(inner_radius * 1.05, inner_radius + 1), lightweight=lightweight)
         if style == GearStyle.BENT_ARMS4:
             return Gear.cut_configurable_arms_style(gear, outer_radius=outer_radius, inner_radius=inner_radius, arms=4, clockwise = clockwise_from_pinion_side, arms_offset=True, rounded=True)
         if style == GearStyle.BENT_ARMS5:
@@ -224,18 +224,18 @@ class Gear:
         return rim_thick
 
     @staticmethod
-    def cut_diamonds_style(gear, outerRadius, innerRadius, lightweight=False):
-        arm_thick = Gear.get_thick_arm_thickness(outerRadius, innerRadius, lightweight)
+    def cut_diamonds_style(gear, outerRadius, inner_radius, lightweight=False):
+        arm_thick = Gear.get_thick_arm_thickness(outerRadius, inner_radius, lightweight)
         # arm_thick=2.7
         diamonds = 7
 
         # if lightweight:
         #     diamonds=9
 
-        centre_r = (outerRadius + innerRadius)/2
+        centre_r = (outerRadius + inner_radius)/2
 
-        centre_gap = outerRadius - innerRadius
-        ratio = innerRadius/outerRadius
+        centre_gap = outerRadius - inner_radius
+        ratio = inner_radius/outerRadius
 
         if centre_gap < 2:
             #don't bother trying to cut diamonds in a tiny space
@@ -251,7 +251,7 @@ class Gear:
             # if arm_thick < 3:
             #     arm_thick = 1.9
             # diamond_width*=0.5
-        # if innerRadius/outerRadius < 0.
+        # if inner_radius/outerRadius < 0.
 
         diamond_width = math.pi * centre_r * 2 / diamonds
 
@@ -260,7 +260,7 @@ class Gear:
         if narrow_gap:
             cutter = cq.Workplane("XY")
         else:
-            cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+            cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutter_thick)
 
 
 
@@ -275,13 +275,13 @@ class Gear:
             left_point = polar(diamond_angle - diamond_wide_angle / 2, centre_r)
             right_point = polar(diamond_angle + diamond_wide_angle / 2, centre_r)
             top_point = polar(diamond_angle, outerRadius)
-            bottom_point = polar(diamond_angle, innerRadius)
+            bottom_point = polar(diamond_angle, inner_radius)
 
 
             if narrow_gap:
-                arm_angle = arm_thick / ((outerRadius + innerRadius)/2)
+                arm_angle = arm_thick / ((outerRadius + inner_radius)/2)
                 # top_point = polar(diamond_angle, outerRadius + arm_thick)
-                # bottom_point = polar(diamond_angle, innerRadius - arm_thick)
+                # bottom_point = polar(diamond_angle, inner_radius - arm_thick)
                 left_point = polar(diamond_angle - diamond_wide_angle / 2 + arm_angle/2, centre_r)
                 right_point = polar(diamond_angle + diamond_wide_angle / 2 - arm_angle/2, centre_r)
 
@@ -300,9 +300,9 @@ class Gear:
 
             # diamond = cq.Workplane("XY").moveTo(left_point[0], left_point[1]).lineTo(top_point[0], top_point[1]).lineTo(right_point[0], right_point[1]).lineTo(bottom_point[0],bottom_point[1]).close().extrude(cutter_thick)
             #
-            # arm_thick_angle_inner_r = arm_thick/innerRadius
-            # inner_shape_right = polar(next_diamond_angle - arm_thick_angle_inner_r, innerRadius)
-            # inner_shape_left = polar(diamond_angle + arm_thick_angle_inner_r, innerRadius)
+            # arm_thick_angle_inner_r = arm_thick/inner_radius
+            # inner_shape_right = polar(next_diamond_angle - arm_thick_angle_inner_r, inner_radius)
+            # inner_shape_left = polar(diamond_angle + arm_thick_angle_inner_r, inner_radius)
             # # inner_shape_top =
             # # inner_shape =
             #
@@ -321,9 +321,9 @@ class Gear:
         return gear.cut(cutter)
 
     @staticmethod
-    def cutCurvesStyle(gear, outerRadius, innerRadius, clockwise=True):
+    def cutCurvesStyle(gear, outerRadius, inner_radius, clockwise=True):
 
-        gap_size = outerRadius - innerRadius
+        gap_size = outerRadius - inner_radius
 
         arm_thick = outerRadius*0.15
         #thin arms can result in the wheel warping to be non-circular. I don't fancy taking my chances!
@@ -331,7 +331,7 @@ class Gear:
             arm_thick = 3
         cutter_thick = 100
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutter_thick)
         # cutter = cq.Workplane("XY")
         arms = 6
 
@@ -351,7 +351,7 @@ class Gear:
             # return square
             arm = arm.cut(square)
             # return arm
-            arm = arm.translate((0,innerRadius + gap_size/2 )).rotate((0,0,0), (0,0,1), rad_to_deg(angle))
+            arm = arm.translate((0,inner_radius + gap_size/2 )).rotate((0,0,0), (0,0,1), rad_to_deg(angle))
             # return arm
             cutter = cutter.cut(arm)
             # cutter = cutter.add(arm)
@@ -364,12 +364,12 @@ class Gear:
 
 
     @staticmethod
-    def cutSnowflakeStyle(gear, outerRadius, innerRadius, seed=-1, nozzle_size=0.4):
+    def cutSnowflakeStyle(gear, outerRadius, inner_radius, seed=-1, nozzle_size=0.4):
         '''
         Just random branching arms until I can think of something better
         '''
-        middleOfGapR = (outerRadius + innerRadius)/2
-        gapSize = outerRadius - innerRadius
+        middleOfGapR = (outerRadius + inner_radius)/2
+        gapSize = outerRadius - inner_radius
 
         if seed != -1:
             state = random.getstate()
@@ -400,7 +400,7 @@ class Gear:
         snowflake=cq.Workplane("XY")
 
         branchesPerArm = random.randrange(3,6)
-        possibleBranchYs = [(branch+0.5) * gapSize/branchesPerArm + innerRadius + random.randrange(-1,1)*gapSize/(branchesPerArm*2) for branch in range(branchesPerArm)]
+        possibleBranchYs = [(branch+0.5) * gapSize/branchesPerArm + inner_radius + random.randrange(-1,1)*gapSize/(branchesPerArm*2) for branch in range(branchesPerArm)]
 
         branchYs = [possibleBranchYs[0]]
 
@@ -475,7 +475,7 @@ class Gear:
             snowflake = snowflake.union(armShape.rotate((0,0,0), (0,0,1),arm * 360/6))
 
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutterThick)
 
         cutter = cutter.cut(snowflake)
 
@@ -485,13 +485,13 @@ class Gear:
         return gear.cut(cutter)
 
     @staticmethod
-    def cutHoneycombStyle(gear, outerRadius, innerRadius, big=True, chunky=False):
+    def cutHoneycombStyle(gear, outerRadius, inner_radius, big=True, chunky=False):
         hexagonDiameter = 10
         if big:
             hexagonDiameter = outerRadius / 3
-            if hexagonDiameter < innerRadius*2 and innerRadius*2 < outerRadius*0.75:
+            if hexagonDiameter < inner_radius*2 and inner_radius*2 < outerRadius*0.75:
                 # keep hexagon larger than the inner radius (looks better), unless that would result in a hexagon too big
-                hexagonDiameter = innerRadius*2
+                hexagonDiameter = inner_radius*2
             if hexagonDiameter > 25:
                 #too big looks like it's just spokes
                 hexagonDiameter = 25
@@ -551,7 +551,7 @@ class Gear:
 
                 honeycomb = honeycomb.add(cq.Workplane("XY").polygon(nSides=6,diameter=hexagonDiameter-padding).extrude(cutterThick).translate((x, y)))
         try:
-            honeycomb = honeycomb.cut(cq.Workplane("XY").circle(innerRadius).extrude(cutterThick))
+            honeycomb = honeycomb.cut(cq.Workplane("XY").circle(inner_radius).extrude(cutterThick))
         except:
             '''
             *shrug*
@@ -565,7 +565,7 @@ class Gear:
         return gear.cut(honeycomb)
 
     @staticmethod
-    def cutFlowerStyle2(gear, outerRadius, innerRadius):
+    def cutFlowerStyle2(gear, outerRadius, inner_radius):
         '''
         same idea as cutFlowerStyle but with the arm width consistent
         '''
@@ -573,13 +573,13 @@ class Gear:
 
         armToHoleRatio = 0.5
 
-        innerCircumference = math.pi * 2 * innerRadius
+        innerCircumference = math.pi * 2 * inner_radius
 
         # width at inner radius
         pairWidth = innerCircumference / petals
         armWidth = armToHoleRatio * pairWidth
         petalWidth = pairWidth * (1 - armToHoleRatio)
-        petal_inner_radius = (outerRadius - innerRadius) * 0.75
+        petal_inner_radius = (outerRadius - inner_radius) * 0.75
         if petal_inner_radius < 6:
             print("petal inner radius: ", petal_inner_radius)
             petal_inner_radius = 6
@@ -605,21 +605,21 @@ class Gear:
 
         #calculate centre of the circle based on sagitta (again)
         angle_per_flower = math.pi*2/petals
-        angle_over_arm = armWidth/innerRadius
+        angle_over_arm = armWidth/inner_radius
         angle_for_sagitta = angle_per_flower*2 - angle_over_arm
         angle_for_sagitta_deg = rad_to_deg(angle_for_sagitta)
-        l_old = np.linalg.norm(np.subtract(polar(0, innerRadius), polar(angle_for_sagitta, innerRadius)))
-        l = 2*innerRadius*math.sin(angle_for_sagitta/2)
+        l_old = np.linalg.norm(np.subtract(polar(0, inner_radius), polar(angle_for_sagitta, inner_radius)))
+        l = 2*inner_radius*math.sin(angle_for_sagitta/2)
         r = petal_inner_radius
         try:
             sagitta = r - math.sqrt(r**2 - (l/2)**2)
         except:
-            print("unable to cut flower gear. innerR:{} outerR:{}, petals:{}".format(innerRadius, outerRadius, petals))
-            # return Gear.cutFlowerStyle(gear, innerRadius, outerRadius)
-            # return Gear.cutSimpleStyle(gear, innerRadius, outerRadius,15)
-            return Gear.cutSemicirclesStyle(gear, outerRadius, innerRadius)
-        circle_centre_distance = r - sagitta + innerRadius*math.cos(angle_for_sagitta/2)
-        # circle_centre_distance = math.sqrt(innerRadius**2 - (l/2)**2) + math.sin(petal_inner_radius**2 - (l/2)**2)
+            print("unable to cut flower gear. innerR:{} outerR:{}, petals:{}".format(inner_radius, outerRadius, petals))
+            # return Gear.cutFlowerStyle(gear, inner_radius, outerRadius)
+            # return Gear.cutSimpleStyle(gear, inner_radius, outerRadius,15)
+            return Gear.cutSemicirclesStyle(gear, outerRadius, inner_radius)
+        circle_centre_distance = r - sagitta + inner_radius*math.cos(angle_for_sagitta/2)
+        # circle_centre_distance = math.sqrt(inner_radius**2 - (l/2)**2) + math.sin(petal_inner_radius**2 - (l/2)**2)
 
         def get_circle(petal, hollow=True, inner_only=False):
             r = petal_inner_radius + armWidth
@@ -634,7 +634,7 @@ class Gear:
             circle_cutter = circle_cutter.translate(polar(petal * math.pi * 2 / petals, circle_centre_distance))
             return circle_cutter
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick)
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutter_thick)
         # debug = cq.Workplane("XY")
         for p in range(petals):
             # circle_cutter = cq.Workplane("XY").circle(petal_inner_radius + armWidth).circle(petal_inner_radius).extrude(cutter_thick)
@@ -652,20 +652,20 @@ class Gear:
         return gear.cut(cutter)
 
     @staticmethod
-    def cutFlowerStyle(gear, outerRadius, innerRadius):
+    def cutFlowerStyle(gear, outerRadius, inner_radius):
 
         petals = 5
 
         armToHoleRatio = 0.5
 
-        innerCircumference=math.pi*2*innerRadius
+        innerCircumference=math.pi*2*inner_radius
 
         #width at inner radius
         pairWidth = innerCircumference/petals
         armWidth = armToHoleRatio*pairWidth
         petalWidth = pairWidth*(1-armToHoleRatio)
         #
-        petalRadius = (outerRadius - innerRadius)*0.75
+        petalRadius = (outerRadius - inner_radius)*0.75
 
         if petalRadius < 0:
             return gear
@@ -682,7 +682,7 @@ class Gear:
 
         cutterThick = 1000
 
-        outerTipR = innerRadius + (outerRadius - innerRadius)*0.4
+        outerTipR = inner_radius + (outerRadius - inner_radius)*0.4
 
         for p in range(petals):
 
@@ -691,14 +691,14 @@ class Gear:
 
             tipAngle = (startAngle + endAngle)/2
 
-            startPos = polar(startAngle,innerRadius)
+            startPos = polar(startAngle,inner_radius)
             tipPos = polar(tipAngle, outerRadius)
-            endPos = polar(endAngle, innerRadius)
+            endPos = polar(endAngle, inner_radius)
             try:
                 #cut out the hole in the middle
-                cutter = cutter.add(cq.Workplane("XY").moveTo(startPos[0], startPos[1]).radiusArc(tipPos, -petalRadius).radiusArc(endPos, -petalRadius).radiusArc(startPos,innerRadius).close().extrude(cutterThick))
+                cutter = cutter.add(cq.Workplane("XY").moveTo(startPos[0], startPos[1]).radiusArc(tipPos, -petalRadius).radiusArc(endPos, -petalRadius).radiusArc(startPos,inner_radius).close().extrude(cutterThick))
             except:
-                print("unable to produce flower cutter:", innerRadius, outerRadius)
+                print("unable to produce flower cutter:", inner_radius, outerRadius)
 
             if petalWidth < 4 and petals > 10:
                 #the extra cut out bits will look messy, so don't bother with them
@@ -724,12 +724,12 @@ class Gear:
         return gear.cut(cutter)
 
     @staticmethod
-    def cutSteamTrainStyle(gear, outerRadius, innerRadius, spokes=20, withWeight=True):
+    def cutSteamTrainStyle(gear, outerRadius, inner_radius, spokes=20, withWeight=True):
         '''
         Without the weight this could be a cartwheel
         '''
         armThick = outerRadius * 0.05
-        # weightR = (outerRadius + innerRadius)*0.8
+        # weightR = (outerRadius + inner_radius)*0.8
         weightWide = outerRadius*0.3
         spokesShape = cq.Workplane("XY")
         cutterThick = 100
@@ -738,23 +738,23 @@ class Gear:
             spoke = cq.Workplane("XY").moveTo(0, outerRadius / 2).rect(armThick, outerRadius).extrude(cutterThick)
             spokesShape = spokesShape.add(spoke.rotate((0, 0, 0), (0, 0, 1), i * 360 / spokes))
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutterThick)
 
-        if withWeight and outerRadius/innerRadius > 2:
+        if withWeight and outerRadius/inner_radius > 2:
             #infilled bit off to the left (in reality a counterweight to the bit that holds the rod)
             spokesShape = spokesShape.add(cq.Workplane("XY").moveTo(-outerRadius,0).rect(weightWide*2, outerRadius*2).extrude(cutterThick))
             # angle = degToRad(10)
-            smallCircleR = innerRadius*0.75
-            smallCircleDistance = (innerRadius + outerRadius)*0.3
-            # spokesShape = spokesShape.add(cq.Sketch()..circle(innerRadius).located())
+            smallCircleR = inner_radius*0.75
+            smallCircleDistance = (inner_radius + outerRadius)*0.3
+            # spokesShape = spokesShape.add(cq.Sketch()..circle(inner_radius).located())
 
-            # start = polar(math.pi/2 - angle, innerRadius)
+            # start = polar(math.pi/2 - angle, inner_radius)
             # middleRelative = polar(math.pi/2 - angle, smallCircleR)
             # #circularish bit that would hold a rod!
             # spokesShape = spokesShape.add(cq.Workplane("XY").mo)
             #I really don't understand CQ sketches it turns out, but from copy-pasting and bodging an example I can hull two circles by magic:
             spokesShape = spokesShape.add(cq.Workplane("XY").sketch()
-            .arc((0, 0), innerRadius, 0., 360.)
+            .arc((0, 0), inner_radius, 0., 360.)
             .arc((smallCircleDistance, 0), smallCircleR, 0., 360.)
             .hull().finalize().extrude(cutterThick))
 
@@ -767,17 +767,17 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutSpokesStyle(gear, outerRadius, innerRadius, pairs = 11):
+    def cutSpokesStyle(gear, outerRadius, inner_radius, pairs = 11):
         armThick = outerRadius * 0.05
 
         spokes = cq.Workplane("XY")
         cutterThick = 100
 
         for i in range(pairs):
-            pair = cq.Workplane("XY").moveTo(-innerRadius, outerRadius/2).rect(armThick, outerRadius).mirrorY().extrude(cutterThick)
+            pair = cq.Workplane("XY").moveTo(-inner_radius, outerRadius/2).rect(armThick, outerRadius).mirrorY().extrude(cutterThick)
             spokes = spokes.add(pair.rotate((0,0,0), (0,0,1),i*360/pairs))
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutterThick)
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutterThick)
 
         cutter = cutter.cut(spokes)
 
@@ -786,19 +786,19 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutSimpleStyle(gear, outerRadius, innerRadius, arms=4):
+    def cutSimpleStyle(gear, outerRadius, inner_radius, arms=4):
         armThick = outerRadius*0.2#0.15
 
         thick = 100
 
-        cutter = cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(thick)
+        cutter = cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(thick)
 
         dA=math.pi*2/arms
 
         for arm in range(arms):
             angle = arm*dA
             #cut out arms
-            cutter = cutter.cut(cq.Workplane("XY").moveTo((outerRadius+innerRadius)/2,0).rect((outerRadius-innerRadius)*1.1,armThick).extrude(thick).rotate((0,0,1), (0,0,0), rad_to_deg(angle)))
+            cutter = cutter.cut(cq.Workplane("XY").moveTo((outerRadius+inner_radius)/2,0).rect((outerRadius-inner_radius)*1.1,armThick).extrude(thick).rotate((0,0,1), (0,0,0), rad_to_deg(angle)))
 
         gear = gear.cut(cutter)
 
@@ -843,7 +843,7 @@ class Gear:
             # gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos, -outer_r).spline([midPos, startPos], tangents=[endDir, midDir, startDir], includeCurrent=True).close().cutThruAll()
             cutter = cutter.add(cq.Workplane("XY").moveTo(startPos[0], startPos[1]).radiusArc(endPos, -outer_r).spline([midPos, startPos], tangents=[endDir, midDir, startDir], includeCurrent=True).close().extrude(100))
             # gear = gear.moveTo(startPos[0], startPos[1]).spline([startPos, endPos], tangents=[npToSet(np.multiply(startPos, -1)), endPos]).radiusArc(startPos, outer_r).close().cutThruAll()
-            # .radiusArc(startPos,-innerRadius)\
+            # .radiusArc(startPos,-inner_radius)\
             # .close().cutThruAll()
 
         # return cutter
@@ -892,7 +892,7 @@ class Gear:
             gear = gear.faces(">Z").workplane()
             gear = gear.moveTo(startPos[0], startPos[1]).radiusArc(endPos, -outer_r).sagittaArc(startPos, -sagitta).close().cutThruAll()
             # gear = gear.moveTo(startPos[0], startPos[1]).spline([startPos, endPos], tangents=[npToSet(np.multiply(startPos, -1)), endPos]).radiusArc(startPos, outer_r).close().cutThruAll()
-            # .radiusArc(startPos,-innerRadius)\
+            # .radiusArc(startPos,-inner_radius)\
             # .close().cutThruAll()
         return gear
 
@@ -932,7 +932,7 @@ class Gear:
 
 
         # #TEMP
-        # gear = gear.faces(">Z").workplane().circle(innerRadius).cutThruAll()
+        # gear = gear.faces(">Z").workplane().circle(inner_radius).cutThruAll()
         # return gear
 
         #sopme slight fudging occurs with minGap as using the diameter (gapSize) as a measure of how much circumference the circle takes up isn't accurate
@@ -1010,19 +1010,19 @@ class Gear:
         return gear
 
     @staticmethod
-    def cutSemicirclesStyle(gear, outerRadius, innerRadius):
+    def cutSemicirclesStyle(gear, outerRadius, inner_radius):
         '''
         used when the gap is too narrow for flowers to work - cut a series of circles that are larger than the gap
         '''
 
-        circle_r = (outerRadius - innerRadius)#*0.6
+        circle_r = (outerRadius - inner_radius)#*0.6
         arm_wide=3
 
-        r = (innerRadius + outerRadius)/2
+        r = (inner_radius + outerRadius)/2
 
-        # circle_r = outerRadius - innerRadius
+        # circle_r = outerRadius - inner_radius
 
-        circles = floor(math.pi*2*innerRadius / (circle_r*2 + arm_wide))
+        circles = floor(math.pi*2*inner_radius / (circle_r*2 + arm_wide))
 
         cutter_thick = 1000
         cutter = cq.Workplane("XY")
@@ -1030,9 +1030,9 @@ class Gear:
         for c in range(circles):
             angle = c*math.pi*2/circles
 
-            cutter = cutter.add(cq.Workplane("XY").circle(circle_r).extrude(cutter_thick).translate(polar(angle,innerRadius)))
+            cutter = cutter.add(cq.Workplane("XY").circle(circle_r).extrude(cutter_thick).translate(polar(angle,inner_radius)))
 
-        cutter = cutter.intersect(cq.Workplane("XY").circle(outerRadius).circle(innerRadius).extrude(cutter_thick))
+        cutter = cutter.intersect(cq.Workplane("XY").circle(outerRadius).circle(inner_radius).extrude(cutter_thick))
 
         return gear.cut(cutter)
 
@@ -1101,7 +1101,7 @@ class Gear:
         self.is_crown = is_crown
 
         #purely for the fancy styling, is there anyhting in the centre (like a pinion or ratchet) to avoid?
-        # self.innerRadiusForStyle=innerRadiusForStyle
+        # self.inner_radiusForStyle=inner_radiusForStyle
 
         # # via practical addendum factor
         # self.addendum_height = 0.95 * addendum_factor * module
@@ -1141,12 +1141,12 @@ class Gear:
             # if style == "HAC":
             #
             #
-            #     gear = Gear.cutHACStyle(gear, armThick, rimRadius, innerRadius=innerRadiusForStyle)
+            #     gear = Gear.cutHACStyle(gear, armThick, rimRadius, inner_radius=inner_radiusForStyle)
             # elif style == "circles":
-            #     # innerRadius = self.innerRadiusForStyle
-            #     # if innerRadius < 0:
-            #     #     innerRadius = self.
-            #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, innerRadius=innerRadiusForStyle)
+            #     # inner_radius = self.inner_radiusForStyle
+            #     # if inner_radius < 0:
+            #     #     inner_radius = self.
+            #     gear = Gear.cutCirclesStyle(gear, outerRadius = self.pitch_diameter / 2 - rimThick, inner_radius=inner_radiusForStyle)
             try:
                 gear = Gear.cut_style(gear, outer_radius=self.pitch_diameter / 2 - self.dedendum_factor * self.module, inner_radius=inner_radius_for_style, style=style, clockwise_from_pinion_side=clockwise_from_pinion_side)
             except:
@@ -2015,7 +2015,7 @@ class ArborForPlate:
             if above:
                 return self.outer_d / 2
             else:
-                return self.arbor.escapement.largest_anchor_r
+                return self.arbor.escapement.get_anchor_max_r()
 
         else:
             return self.arbor.get_max_radius()
@@ -3167,6 +3167,7 @@ class Arbor:
         #used for cutting the gear style and getting teh escapement the right way around. Mild bodge: for the Anchor this means clockwise from front
         self.clockwise_from_pinion_side = clockwise_from_pinion_side
         #if using hyugens maintaining power then the chain wheel is directly fixed to the wheel, without a ratchet.
+        #update: this is now set in "no_ratchet" in the powered wheel itself
         self.use_ratchet=use_ratchet
         #is this screwed (and optionally glued) to the threaded rod?
         self.loose_on_rod = False
@@ -3216,6 +3217,12 @@ class Arbor:
         if self.get_type() == ArborType.POWERED_WHEEL:
             #chain/cord wheel specific bits:
             self.weight_driven = PowerType.is_weight(self.powered_wheel.type)
+            self.use_ratchet = not self.powered_wheel.no_ratchet
+
+            if not self.weight_driven:
+                # bodge, need to rethink this a bit
+                #ratchet isn't part of the spring barrel.
+                self.use_ratchet = False
             #remove support for not bolt on ratchet and inset ratchet as they're never used anymore - the bolt on ratchet has proven to be a good design
             if self.weight_driven:
                 self.ratchet_screws = ratchet_screws
@@ -3224,19 +3231,19 @@ class Arbor:
 
                 if self.use_ratchet:
                     #could do with not having to care about the innards of the ratchet here
-                    if self.powered_wheel.traditional_ratchet:
+                    if self.powered_wheel.ratchet_has_external_pawl:
                         self.bolt_positions = self.powered_wheel.ratchet.get_screw_positions()
                         self.pawl_screw_positions = self.powered_wheel.ratchet.get_screw_positions(pawl=True)
                         self.click_screw_positions =  self.powered_wheel.ratchet.get_screw_positions(pawl=False)
                         self.ratchet_screws = self.powered_wheel.ratchet.fixing_screws
                     else:
                         bolts = 4
-                        outer_r = self.ratchet.outsideDiameter / 2
+                        outer_r = self.ratchet.outside_diameter / 2
                         inner_r = self.ratchet.toothRadius
                         bolt_distance = (outer_r + inner_r) / 2
 
                         #offsetting so it's in the middle of a click (where it's slightly wider)
-                        self.bolt_positions=[polar(i * math.pi * 2 / bolts + math.pi / self.ratchet.ratchetTeeth, bolt_distance) for i in range(bolts)]
+                        self.bolt_positions=[polar(i * math.pi * 2 / bolts + math.pi / self.ratchet.ratchet_teeth, bolt_distance) for i in range(bolts)]
                 else:
                     #bolting powered wheel on without a ratchet
                     self.bolt_positions = self.powered_wheel.get_screw_positions()
@@ -3251,7 +3258,6 @@ class Arbor:
                 self.combine_with_powered_wheel = True
                 if self.powered_wheel.type == PowerType.SPRING_BARREL:
                     self.hole_d = self.powered_wheel.get_barrel_hole_d()
-                    self.use_ratchet = False
 
         if self.get_type() == ArborType.ANCHOR:
             #the anchor now controls its own thickness and arbour thickness, so get dimensions from that
@@ -3515,7 +3521,7 @@ class Arbor:
                                          clockwise_from_pinion_side=self.clockwise_from_pinion_side)
                 shape = self.lantern_pinion.add_to_wheel(wheel, min_length_to_trim_extension=self.min_length_to_trim_extension)
             else:
-                # innerRadiusForStyle = self.pinion.get_max_radius() + 1
+                # inner_radiusForStyle = self.pinion.get_max_radius() + 1
                 shape = self.pinion.add_to_wheel(self.wheel, hole_d=hole_d, wheel_thick=self.wheel_thick, style=self.style, pinion_thick=pinion_thick,
                                                  pinion_extension=pinion_extension, cap_thick=self.end_cap_thick, clockwise_from_pinion_side=self.clockwise_from_pinion_side,
                                                  min_length_to_trim_extension=self.min_length_to_trim_extension)
@@ -3621,8 +3627,7 @@ class Arbor:
         returns {'name': shape,}
         '''
         extras = {}
-        #messy logic needs tidying up with different powered wheels and ratchets more unified
-        traditional_ratchet = False
+
         if self.get_type() == ArborType.POWERED_WHEEL and self.get_extra_ratchet() is not None:
             extras['ratchet']= self.get_extra_ratchet()
 
@@ -3631,10 +3636,10 @@ class Arbor:
             for extra in lantern_pinion_extras:
                 extras[extra] = lantern_pinion_extras[extra]
 
-        if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.traditional_ratchet:
-            traditional_ratchet = True
-            #skipping this here because now it's in the BOM for the powered wheel itself, so doesn't need to be duplicated here
-            # extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
+        # if self.get_type() == ArborType.POWERED_WHEEL and self.weight_driven and self.powered_wheel.ratchet_has_external_pawl:
+        #     # ratchet_has_external_pawl = True
+        #     #skipping this here because now it's in the BOM for the powered wheel itself, so doesn't need to be duplicated here
+        #     # extras['ratchet_gear'] = self.powered_wheel.get_ratchet_wheel_for_cord()
 
         if self.get_type() == ArborType.POWERED_WHEEL and self.powered_wheel.type == PowerType.SPRING_BARREL:
             #back_collet_from_back only used if the ratchet is at the back (and barrel at front, still assumed for now)
@@ -3646,9 +3651,9 @@ class Arbor:
             extras['front_washer'] = self.powered_wheel.get_front_bearing_standoff_washer()
             #only needed if ratchet at back and barrel at front
             extras['back_collet'] = self.powered_wheel.get_inner_collet()
-            traditional_ratchet = True
+            # ratchet_has_external_pawl = True
 
-        if traditional_ratchet:
+        if self.get_type() == ArborType.POWERED_WHEEL and self.use_ratchet and self.powered_wheel.ratchet_has_external_pawl:
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
             extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
             #not needed on all designs (note - not needed on any new designs? we beef up the plate for the pawl screw now)
@@ -3670,7 +3675,7 @@ class Arbor:
         Note: shape is returned translated into the position relative to the chain wheel
 
         '''
-        if not self.use_ratchet or self.powered_wheel.traditional_ratchet:
+        if not self.use_ratchet or self.powered_wheel.ratchet_has_external_pawl:
             return None
 
         if self.ratchet.thick <= 0:
@@ -3786,7 +3791,7 @@ class Arbor:
                     cutter = self.ratchet_screws.get_nut_cutter(with_bridging=False, half=True).translate(hole_pos)
                 # else screwing straight into the wheel seemed surprisingly secure, and if the wheel is that thin it probably isn't holding much weight anyway
                 gear_wheel = gear_wheel.cut(cutter)
-        if self.use_ratchet and self.powered_wheel.traditional_ratchet:
+        if self.use_ratchet and self.powered_wheel.ratchet_has_external_pawl:
             for hole_pos in self.pawl_screw_positions:
                     #if self.powered_wheel.ratchet.pawl_screwed_from_frontjust a hole
                 gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True,ignore_head = self.powered_wheel.ratchet.pawl_screwed_from_front).translate(hole_pos))
