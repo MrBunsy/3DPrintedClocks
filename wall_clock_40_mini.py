@@ -74,7 +74,7 @@ moon_radius=10
 moon = False
 
 if not moon:
-    motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
+    motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True)
     moon_complication = None
     motion_works_angle_deg=360-40
 else:

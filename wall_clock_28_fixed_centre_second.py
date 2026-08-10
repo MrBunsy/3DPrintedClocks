@@ -81,8 +81,8 @@ print("powered wheel distance: {}".format(train.arbors[0].distance_to_next_arbor
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
 # motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
 #                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1)
-motionWorks = clock.MotionWorks(extra_height=10-3.5+3, style=clock.GearStyle.DIAMONDS, thick=3, compensate_loose_arbour=False, compact=True, module=1.5,
-                          bearing=clock.get_bearing_info(3),
+motionWorks = clock.MotionWorks(extra_height=10-3.5+3, style=clock.GearStyle.DIAMONDS, thick=3, compensate_loose_arbor=False, compact=True, module=1.5,
+                                bearing=clock.get_bearing_info(3),
                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1, reduced_jamming=True)
 # motionWorks.calculate_size(35)#was 35, trying reducing size of motion works just a fraction to see
 # motionWorks.calculate_size(35)

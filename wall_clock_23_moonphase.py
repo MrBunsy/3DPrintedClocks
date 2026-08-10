@@ -74,7 +74,7 @@ train.get_arbor_with_conventional_naming(0).print_screw_length()
 moon_complication = clock.MoonPhaseComplication3D(gear_style=gearStyle, first_gear_angle_deg=205, on_left=False, bevel_module=1.2)
 
 #not inset at base as there's not enough space for the moon complication to fit behind it
-motion_works = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, drives_complication=moon_complication)
+motion_works = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbor=False, compact=True, drives_complication=moon_complication)
 
 moon_complication.set_motion_works_sizes(motion_works)
 

@@ -926,6 +926,22 @@ class ArtDecoHands2(ArtDecoHands):
 
         return hand
 
+    def minute_hand(self, colour=None, thick_override=-1):
+        # hand = super().minute_hand(colour, thick_override)
+        thick = self.get_thick(thick_override)
+
+        teardrop_length = self.length * 0.6
+
+        teardrop = get_teardrop(self.minute_base_circle_r, self.tip_r, teardrop_length, thick).cut(get_teardrop(self.minute_base_circle_r - self.hour_edge_thick, self.tip_r - self.hour_edge_thick, teardrop_length, thick))
+
+        hand = teardrop.translate((0, self.length - teardrop_length))
+
+        gap_length = self.length - teardrop_length - self.minute_base_circle_r - self.tip_r
+
+        hand = hand.union(cq.Workplane("XY").rect(self.hour_edge_thick * 2.5, gap_length).extrude(thick).translate((0, gap_length / 2)))
+
+        return hand
+
 
 class XMasTreeHands(HandGenerator):
     '''

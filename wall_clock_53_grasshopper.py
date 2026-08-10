@@ -104,7 +104,7 @@ train.generate_arbors_dicts([
         #escape wheel
         "wheel_thick": 8,
         "pinion_at_front": False,
-        "arbor_split": SplitArborType.WHEEL_OUT_FRONT,
+        "arbor_split": SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE,
         "pinion_extension": 9,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
@@ -112,12 +112,13 @@ train.generate_arbors_dicts([
     },
     {
         #anchor
-        "arbor_split": SplitArborType.WHEEL_OUT_FRONT,
+        "arbor_split": SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE,
     }
 ])
 
 
-motion_works = MotionWorks(extra_height=30, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
+motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-3)
+motion_works.calculate_size(30)
 
 plaque = None
 dial_d=180
@@ -129,8 +130,10 @@ dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0
 
 gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
+motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi*1.5)
+
 plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
-                                motion_works_angle_deg=90, leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
+                                motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1)
 
 

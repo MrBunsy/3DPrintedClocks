@@ -14,9 +14,9 @@ dial.second_hand_mini_dial_d=50
 
 
 #centred second
-motion_works = MotionWorks(compensate_loose_arbour=True, compact=True, bearing=get_bearing_info(3), cannon_pinion_friction_ring=True, minute_hand_thick=2.1)
+motion_works = MotionWorks(compensate_loose_arbor=True, compact=True, bearing=get_bearing_info(3), cannon_pinion_friction_ring=True, minute_hand_thick=2.1)
 
-motion_works = MotionWorks(compensate_loose_arbour=True, compact=True)
+motion_works = MotionWorks(compensate_loose_arbor=True, compact=True)
 
 # hands = Hands(style=HandStyle.SIMPLE_POINTED, minute_fixing="circle", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
 #                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,

@@ -60,7 +60,7 @@ def gen_gear_previews(out_path="autoclock", module=1):
 
     train.gen_gears(module_size=module, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=4, pinion_thick_multiplier=3, style=None, powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2)
 
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbor=True)
 
     demoArboursNums = [0, 1, 3]
 
@@ -127,7 +127,7 @@ def gen_shape_preview(demo, name, out_path="autoclock", size=300):
     exportSVG(demo, os.path.join(out_path, file_name), opts=opts)
 
 def gen_hand_previews(out_path="autoclock", length=120, size=600, only_these=None):
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbor=True)
 
     for style in HandStyle:
         if only_these is None or style in only_these:
@@ -362,7 +362,7 @@ class AutoWallClock:
         if self.centred_second_hand:
             bearing = get_bearing_info(3)
 
-        self.motionWorks = MotionWorks(style=self.gear_style, thick=3, compensate_loose_arbour=False, bearing=bearing, compact=True, module=1)
+        self.motionWorks = MotionWorks(style=self.gear_style, thick=3, compensate_loose_arbor=False, bearing=bearing, compact=True, module=1)
 
         self.pendulum = Pendulum(self.train.escapement, self.train.pendulum_length, anchorHoleD=3, anchorThick=12, nutMetricSize=3, crutchLength=0, hand_avoider_inner_d=self.ring_d,
                                  bob_d=self.bob_d, bob_thick=10, useNylocForAnchor=False)

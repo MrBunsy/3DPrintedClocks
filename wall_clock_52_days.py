@@ -191,7 +191,7 @@ if moon:
 else:
     moon_complication = None
 
-motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
+motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True,
                            cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
 #WANT a small motion works to provide more space for the days of week prism to fit behind the dial
 # motion_works.calculate_size(arbor_distance=30)

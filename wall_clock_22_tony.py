@@ -92,7 +92,7 @@ train.print_info(weight_kg=1.5)
 train.get_arbor_with_conventional_naming(0).print_screw_length()
 
 
-motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=25, style=gearStyle, thick=3, compensate_loose_arbor=False, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 # motionWorks.calculateGears(arbourDistance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=10)

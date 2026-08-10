@@ -108,17 +108,24 @@ class GearTrainBase:
             # # stringed = stringed.replace(f"\"{fromstring}\"", substring)
             # return "\""+fromstring in stringed
 
-        substring = get_quoted("GearStyle")
-        while substring is not None:
-            stringed = stringed.replace(f"\"{substring}\"", substring)
-            substring = get_quoted("GearStyle")
-        substring = get_quoted("PinionType")
-        while substring is not None:
-            stringed = stringed.replace(f"\"{substring}\"", substring)
-            substring = get_quoted("PinionType")
-        while substring is not None:
-            stringed = stringed.replace(f"\"{substring}\"", substring)
-            substring = get_quoted("SplitArborType")
+        #this treats the enum values as strings, I want to put them back to enums. probably a better way but this works
+        for fix_enum in ["GearStyle", "PinionType", "SplitArborType"]:
+            substring = get_quoted(fix_enum)
+            while substring is not None:
+                stringed = stringed.replace(f"\"{substring}\"", substring)
+                substring = get_quoted(fix_enum)
+        #
+        # substring = get_quoted("GearStyle")
+        # while substring is not None:
+        #     stringed = stringed.replace(f"\"{substring}\"", substring)
+        #     substring = get_quoted("GearStyle")
+        # substring = get_quoted("PinionType")
+        # while substring is not None:
+        #     stringed = stringed.replace(f"\"{substring}\"", substring)
+        #     substring = get_quoted("PinionType")
+        # while substring is not None:
+        #     stringed = stringed.replace(f"\"{substring}\"", substring)
+        #     substring = get_quoted("SplitArborType")
         return stringed
 
     def generate_arbors_dicts(self, arbor_info, reduction=-1, pinion_thick_extra=-1):

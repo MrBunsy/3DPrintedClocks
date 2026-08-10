@@ -51,6 +51,8 @@ clockName="wall_clock_06b"
 clockOutDir="out"
 gearStyle=clock.GearStyle.CIRCLES
 
+retrofit = True
+
 # drop =1.5
 # lift =3
 # lock=1.5
@@ -76,6 +78,9 @@ train.calculate_ratios(max_wheel_teeth=130, min_pinion_teeth=9, wheel_min_teeth=
 # train.genChainWheels(ratchetThick=5, wire_thick=1.2,width=4.5, inside_length=8.75-1.2*2, tolerance=0.075)#, wire_thick=0.85, width=3.6, inside_length=6.65-0.85*2, tolerance=0.1)
 
 #thickness of 17 works well for using 25mm countersunk screws to hold it together, not being too much space between plates and a not-awful gear ratio
+diameter = 29.5
+if retrofit:
+    diameter=28
 train.gen_cord_wheels(ratchet_thick=5, rod_metric_thread=4, cord_thick=2, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=29.5, loose_on_rod=False, ratchet_has_external_pawl=False)
 '''
 with drop of 1.8m and max d of 28:

@@ -87,7 +87,7 @@ train.gen_gears(module_size=1, module_reduction=moduleReduction, thick=2.4, thic
 train.print_info(for_runtime_hours=24*7)
 
 #although I can make really compact motion works now for the dial to be close, this results in a key that looks too short, so extending just so the key might be more stable
-motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbor=True, compact=True)#, inset_at_base=clock.MotionWorks.STANDARD_INSET_DEPTH)
 #slightly larger allows for the inset and thus dial and hands closer to the plate
 # motionWorks.calculateGears(arbourDistance=30)
 

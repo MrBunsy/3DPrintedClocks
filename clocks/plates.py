@@ -572,13 +572,14 @@ class SimpleClockPlates(BasePlates):
 
     def __init__(self, going_train, motion_works, gear_train_layout=GearTrainLayout.VERTICAL, default_arbor_d=3, pendulum_at_top=True, plate_thick=5, back_plate_thick=None,
                  standoff_plate_thick = None, pendulum_sticks_out=20, name="Unnamed Clock", heavy=False, extra_heavy=False, pendulum_fixing = PendulumFixing.FRICTION_ROD,
-                 pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, escapement_on_front=False, escapement_on_back=False, chain_through_pillar_required=True,
+                 pendulum_at_front=True, back_plate_from_wall=0, fixing_screws=None, chain_through_pillar_required=True,
                  centred_second_hand=False, pillars_separate=True, dial=None, direct_arbor_d=DIRECT_ARBOR_D, huygens_wheel_min_d=15, allow_bottom_pillar_height_reduction=False,
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1.0,
                  embed_nuts_in_plate=False, extra_support_for_escape_wheel=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
                  standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True, **kwargs):
         '''
+        escapement_on_front=None, escapement_on_back=None,
 
         gear_train_layout: used to be an enum, now a GearTrainLayout2D object, supports enum for backwards compat
 
@@ -586,8 +587,8 @@ class SimpleClockPlates(BasePlates):
         No idea if it will work nicely!
         - answer: it didn't work nicely. See calc_bearing_positions for how this is now done
 
-        escapement_on_front: if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
-        escapement_on_back: if true, escapement is on the back of the clock!
+        escapement_on_front: DEPRECATED - set arbor_split property of arbors instead. if true the escapement is mounted on the front of teh clock (helps with laying out a grasshopper) and if false, inside the plates like the rest of the train
+        escapement_on_back: DEPRECATED - set arbor_split property of arbors instead. if true, escapement is on the back of the clock!
         vanity_plate_radius - if >0 then there's an extra "plate" on the front to hide the motion works
         split_detailed_plate - if the detail is raised on the front plate we'd have to print using hole-in-hole supports for the bearing holes. Some filaments this isn't as clean as others
         so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
@@ -694,8 +695,16 @@ class SimpleClockPlates(BasePlates):
         self.little_arm_to_motion_works = True
 
         #escapement is on top of the front plate
-        self.escapement_on_front = escapement_on_front
-        self.escapement_on_back = escapement_on_back
+        #deprecate saying this explicitly here
+        # self.escapement_on_front = escapement_on_front
+        # self.escapement_on_back = escapement_on_back
+
+        self.escapement_on_front = going_train.arbors[-1].arbor_split.wheel_out_front()
+        self.escapement_on_back = going_train.arbors[-1].arbor_split.wheel_out_back()
+        # if escapement_on_front is not None:
+        #     self.escapement_on_front
+
+
         self.front_anchor_holder_part_of_dial = False
 
         self.going_train = going_train
@@ -1601,17 +1610,24 @@ class SimpleClockPlates(BasePlates):
             bearing = get_bearing_info(3)
         return bearing.height + 1
 
-    def get_front_anchor_bearing_holder(self, for_printing=True):
+    def get_front_anchor_bearing_holder(self, held_from_pos=None, for_printing=True):
+
+
 
         holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
-        if self.top_pillars > 1:
+        if self.top_pillars > 1 and held_from_pos is None:
             raise ValueError("front anchor bearing holder only supports one top pillar TODO")
-        holder = cq.Workplane("XY").moveTo(-self.top_pillar_r, self.top_pillar_positions[0][1]).radiusArc((self.top_pillar_r, self.top_pillar_positions[0][1]), self.top_pillar_r)\
+
+
+        if held_from_pos is None:
+            # default for simple plates, but when re-using with different plates it might not be attached to a pillar
+            held_from_pos = self.top_pillar_positions[0]
+        holder = cq.Workplane("XY").moveTo(-self.top_pillar_r, held_from_pos[1]).radiusArc((self.top_pillar_r, held_from_pos[1]), self.top_pillar_r)\
             .lineTo(self.top_pillar_r, self.bearing_positions[-1][1]).radiusArc((-self.top_pillar_r, self.bearing_positions[-1][1]), self.top_pillar_r).close().extrude(holder_thick)
 
-        holder = holder.union(cq.Workplane("XY").moveTo(self.top_pillar_positions[0][0], self.top_pillar_positions[0][1]).circle(self.plate_width / 2 + 0.0001).extrude(pillar_tall + holder_thick))
+        holder = holder.union(cq.Workplane("XY").moveTo(held_from_pos[0], held_from_pos[1]).circle(self.plate_width / 2 + 0.0001).extrude(pillar_tall + holder_thick))
 
 
         holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=get_bearing_info(self.arbors_for_plate[-1].arbor.arbor_d)).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1])))
@@ -1622,7 +1638,7 @@ class SimpleClockPlates(BasePlates):
         if for_printing:
             #rotate back
             holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
-            holder = holder.translate(np_to_set(np.multiply(self.top_pillar_positions[0], -1)))
+            holder = holder.translate(np_to_set(np.multiply(held_from_pos, -1)))
         else:
             holder = holder.translate((0,0, self.front_z))
 
@@ -3769,7 +3785,7 @@ class MantelClockPlates(SimpleClockPlates):
     Skeleton mantel clock
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK, escapement_on_front=False,
+                 moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
                  plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, gears_start_on_right=True, feet_extension=0):
         self.symetrical = symetrical
@@ -3793,7 +3809,7 @@ class MantelClockPlates(SimpleClockPlates):
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=fixing_screws,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, screws_from_back=screws_from_back,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
+                         layer_thick=layer_thick, style=style, pillar_style= pillar_style,
                          standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
                          split_detailed_plate=split_detailed_plate)
         self.narrow_bottom_pillar = False
@@ -4504,7 +4520,7 @@ class RoundMantelClockPlates(MantelClockPlates):
     parking for now
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", dial=None,
-                 motion_works_angle_deg=-1, layer_thick=LAYER_THICK, escapement_on_front=False,
+                 motion_works_angle_deg=-1, layer_thick=LAYER_THICK,
                  style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, fixing_screws=None, embed_nuts_in_plate=True,
                  plaque = None, vanity_plate_radius=-1, split_detailed_plate=False):
 
@@ -4516,7 +4532,7 @@ class RoundMantelClockPlates(MantelClockPlates):
                          fixing_screws=fixing_screws,
                          centred_second_hand=False, dial=dial,
                          second_hand=True, motion_works_angle_deg=motion_works_angle_deg, screws_from_back=None,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, style=style, pillar_style= pillar_style,
+                         layer_thick=layer_thick, style=style, pillar_style= pillar_style,
                          standoff_pillars_separate = True, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
                          split_detailed_plate=split_detailed_plate, symetrical=True)
 
@@ -4552,10 +4568,10 @@ class RoundClockPlates(SimpleClockPlates):
     This was based on a copy of MantelClockPlates - I think it's going to be similar, but not similar enough to warrant extending or being a set of options
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK, escapement_on_front=False, vanity_plate_radius=-1, motion_works_angle_deg=-1,
+                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK,  vanity_plate_radius=-1, motion_works_angle_deg=-1,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, power_at_bottom=True,
-                 escapement_on_back=False, gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1,pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, **kwargs):
+                 gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1,pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, **kwargs):
         '''
         only want endshake of about 1.25, but it's really hard to push the bearings in all the way because they can't be reached with the clamp, so
         bumping up the default to 1.5
@@ -4579,9 +4595,9 @@ class RoundClockPlates(SimpleClockPlates):
                          pendulum_at_front=False, back_plate_from_wall=back_plate_from_wall,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, top_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=endshake, screws_from_back=None,
-                         layer_thick=layer_thick, escapement_on_front=escapement_on_front, vanity_plate_radius=vanity_plate_radius, style=style,
+                         layer_thick=layer_thick, vanity_plate_radius=vanity_plate_radius, style=style,
                          pillar_style=pillar_style, standoff_pillars_separate=standoff_pillars_separate, plaque=plaque, split_detailed_plate=split_detailed_plate,
-                         power_at_bottom=power_at_bottom, escapement_on_back=escapement_on_back, **kwargs)
+                         power_at_bottom=power_at_bottom, **kwargs)
 
         # if self.gear_train_layout == GearTrainLayout.COMPACT_CENTRE_SECONDS:
         #assume true now
@@ -5390,6 +5406,10 @@ class RoundClockPlates(SimpleClockPlates):
 
         note assumes that anchor_holder_fixing_points are symetric
         '''
+
+
+
+
         holder = cq.Workplane("XY")
 
 
@@ -5520,9 +5540,17 @@ class RoundClockPlates(SimpleClockPlates):
             # standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
 
             #using sagitta to work out radius of curve that links all points
+            #note that if the anchor is much much higher up (eg grasshopper) this doesn't work
             l = get_distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
             s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
             r_anchor_bearing = s/2 + (l**2)/(8*s)
+
+            use_extendy_arm = False
+            #TODO calculate actual distance that an arc isn't possible
+            if s > self.radius:
+                #don't try, just follow the radius of the rest of the plates and we'll send a little arm up instead
+                r_anchor_bearing = self.radius
+                use_extendy_arm = True
 
             cock = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
 
@@ -5535,6 +5563,12 @@ class RoundClockPlates(SimpleClockPlates):
                 if get_distance_between_two_points(wall_fixing_pos, self.hands_position) > self.radius +5:
                     #the screwhole sticks out the top of the clock, just jut out a little bit
                     holdy_bit_wide=self.plate_width*1.2
+
+                    if use_extendy_arm:
+                        base = (self.hands_position[0], self.hands_position[1] + self.radius)
+                        cock = cock.union(get_stroke_line([base, self.bearing_positions[-1][:2]], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
+
+
                     cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], wall_fixing_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
                     cock = cock.union(cq.Workplane("XY").moveTo(wall_fixing_pos[0],wall_fixing_pos[1]).circle(holdy_bit_wide/2).extrude(plate_thick))
 
@@ -5730,6 +5764,32 @@ class GrasshopperRoundPlates(RoundClockPlates):
     '''
     basicalyl same as round, but with the grasshopper sticking out hte top
     '''
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.top_top_pillar_pos = np_to_set(np.add(self.bearing_positions[-1][:2], (0,self.plate_width)))
+
+    def get_front_anchor_bearing_holder(self, for_printing=True):
+        # we want the old grasshopper style version
+        return SimpleClockPlates.get_front_anchor_bearing_holder(self, for_printing=for_printing, held_from_pos=self.top_top_pillar_pos)
+
+    def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
+        plate = super().get_plate(back=back, for_printing=for_printing, just_basic_shape=just_basic_shape, thick_override=thick_override)
+
+        thick = self.get_plate_thick(back=back)
+        if thick_override > 0:
+            thick = thick_override
+
+        # extend arm to the front anchor holder
+        # if just_basic_shape:
+        if not back:
+            plate = plate.union(get_stroke_line([self.bearing_positions[-2][:2], self.top_top_pillar_pos], wide=self.plate_width, thick=thick))
+
+            if not just_basic_shape:
+                plate = self.punch_bearing_holes(plate, back)
+
+        return plate
 
 class ChildFriendlySimpleClockPlates(SimpleClockPlates):
     '''

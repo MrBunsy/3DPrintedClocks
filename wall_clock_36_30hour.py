@@ -63,7 +63,7 @@ train.gen_gears(module_size=1.25, module_reduction=moduleReduction, thick=2, pow
 # train.printInfo(weight_kg=0.75-0.15)
 train.print_info(weight_kg=0.32)
 
-motionWorks = MotionWorks(extra_height=0, style=gearStyle, module=1, compensate_loose_arbour=False, compact=True, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
+motionWorks = MotionWorks(extra_height=0, style=gearStyle, module=1, compensate_loose_arbor=False, compact=True, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
 motionWorks.calculate_size(30)
 
 

@@ -11,7 +11,7 @@ from .gear_trains import *
 def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True):
     demo = cq.Workplane("XY")
 
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbor=True)
     print("motion works r", motionWorks.get_widest_radius())
 
     space = length
@@ -73,7 +73,7 @@ def get_hand_demo(just_style=None, length = 120, per_row=3, assembled=False, tim
 
 def show_hand_demo(show_object, length = 120, per_row=3, time_min=10, time_hour=10, time_sec=0, chunky=False, outline=1, include_seconds=True, second_length=25,
                    just_style = None):
-    motion_works = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
+    motion_works = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbor=True)
     print("motion works r", motion_works.get_widest_radius())
 
     space = length * 2
@@ -130,7 +130,7 @@ def get_gear_demo(module=1, just_style=None, one_gear=False):
 
     train.gen_gears(module_size=module, module_reduction=moduleReduction, thick=2.4, thickness_reduction=0.9, powered_wheel_thick=4, pinion_thick_multiplier=3, style=None, powered_wheel_module_increase=1, powered_wheel_pinion_thick_multiplier=2)
 
-    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbour=True)
+    motionWorks = MotionWorks(extra_height=30 + 30, style=GearStyle.ARCS, thick=2, compensate_loose_arbor=True)
 
     demoArboursNums = [0, 1, 3]
 

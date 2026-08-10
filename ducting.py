@@ -239,7 +239,7 @@ class WindowVentImproved():
     def __init__(self, wood_thick=5, seal_effective_thick=2):
         '''
         The previous one required fixing things to the inside of the window. This didn't work very well.
-        New idea - have something that hooks onto the bottom of the window and then a rotating bit at top which can hook in there too!
+        New idea - have something that fixes to the plywood and hooks onto the bottom of the window and then a rotating bit at top which can hook in there too!
         This should be much more secure and reliable.
 
         Might even work with using some sort of seal around the edge to make it properly air-tight, then this could be reused with an air condition in future

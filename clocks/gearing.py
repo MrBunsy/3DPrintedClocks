@@ -1639,6 +1639,9 @@ class LanternPinion:
         self.trundle_hole_sunk_into_wheel = 0
         self.trundle_hole_sunk_into_cap = 0
         self.hex_fixing_sunk_into_wheel = self.wheel_thick
+        if self.type == PinionType.LANTERN_THIN:
+            # so the arbor extension, which now has to be attached to the wheel to provide some stability, has something to attach to.
+            self.hex_fixing_sunk_into_wheel-=1
         self.hex_fixing_sunk_into_cap = self.cap_thick
         self.trundle_hole_end_gap = 0.5
         self.slot_sides = 6
@@ -2122,7 +2125,7 @@ class ArborForPlate:
         '''
         if escapement_on_front this is a standalone escape wheel, otherwise it's a fairly standard abor
         '''
-        if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
+        if self.arbor.arbor_split not in [SplitArborType.NORMAL_ARBOR, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
             #it's just teh wheel for now, but extended a bit to make it more sturdy
             #TODO extend back towards the front plate by the distance dictacted by the escapement
 
@@ -2180,7 +2183,7 @@ class ArborForPlate:
 
         shapes = {}
 
-        if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
+        if self.arbor.arbor_split not in [SplitArborType.NORMAL_ARBOR, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
 
             shapes["pinion"] = self.get_standalone_pinion_with_arbor_extension()
         shapes["wheel"] = self.get_escape_wheel()
@@ -2235,7 +2238,7 @@ class ArborForPlate:
                 '''
                 Esacpement on teh front and pendulum at the back (like grasshopper)
                 '''
-                if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
+                if self.arbor.arbor_split in [SplitArborType.WHEEL_OUT_FRONT, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
                     #cylinder passes through plates and out the front
                     cylinder_length = self.front_anchor_from_plate + self.total_plate_thickness
                 elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
@@ -2327,7 +2330,7 @@ class ArborForPlate:
                 assembly = assembly.add(self.arbor.escapement.get_assembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0, 0, -self.arbor.escapement.frame_thick)))
 
 
-            if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
+            if self.arbor.arbor_split in [SplitArborType.WHEEL_OUT_FRONT, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
                 #minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
                 anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.get_anchor_thick() - self.endshake / 2
             elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
@@ -2369,7 +2372,7 @@ class ArborForPlate:
                 # if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
                 #     assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0, 0, - self.endshake / 2 - self.crutch_holder_slack_space / 2 - self.arbor_bearing_standoff_length / 2)))
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
-        elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
+        elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split not in [SplitArborType.NORMAL_ARBOR, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
             pinion = pinion.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
             assembly = assembly.add(pinion)
@@ -2918,7 +2921,7 @@ class ArborForPlate:
                 #first just did this to help the wheel remain perpendicular, but now doing it for front and back as it makes it much easier to glue everything together.
                 #will work out if it ends up clashing with other wheels if it becomes a problem in the future
                 #future here - it did, and that's what LANTERN_THIN was introduced to avoid without adding too much plate distance
-                if self.arbor.pinion_type == PinionType.LANTERN and self.arbor.lantern_pinion.need_cap(wheel_side=not (front == self.arbor.pinion_at_front)):
+                if self.arbor.pinion_type.is_lantern() and self.arbor.lantern_pinion.need_cap(wheel_side=not (front == self.arbor.pinion_at_front)):
                     extendo_arbor = extendo_arbor.union(cq.Workplane("XY").circle(self.arbor.lantern_pinion.get_max_radius()).extrude(self.lantern_pinion_wheel_holder_thick))
             #not hole, that's done after it's unioned with something (if it is) as unioning two things with tehse holes cut seems to struggle
             # extendo_arbor = extendo_arbor.cut(self.threaded_rod_cutter)
@@ -3828,7 +3831,7 @@ class MotionWorks:
     STANDARD_INSET_DEPTH = 4.5
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
-                 style=GearStyle.ARCS, compensate_loose_arbour=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
+                 style=GearStyle.ARCS, compensate_loose_arbor=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
                  drives_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0,
                  distance_between_hands=2, reduced_jamming=False):
         '''
@@ -3904,7 +3907,7 @@ class MotionWorks:
             self.pinion_cap_thick = 0
 
         self.module = module
-        self.compensate_loose_arbour = compensate_loose_arbour
+        self.compensate_loose_arbour = compensate_loose_arbor
         self.reduced_jamming = reduced_jamming
 
         self.bearing = bearing

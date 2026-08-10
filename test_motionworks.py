@@ -11,9 +11,9 @@ if 'show_object' not in globals():
 # spur_gear = SpurGear(module=1.0, teeth_number=19, width=5.0, bore_d=5.0)
 
 
-motionWorks = MotionWorks(extra_height=10, style=GearStyle.DIAMONDS, thick=3, compensate_loose_arbour=False, compact=True, module=1.5,
+motionWorks = MotionWorks(extra_height=10, style=GearStyle.DIAMONDS, thick=3, compensate_loose_arbor=False, compact=True, module=1.5,
                           bearing=get_bearing_info(3),
-                                minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1, reduced_jamming=True)
+                          minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1, reduced_jamming=True)
 motionWorks.calculate_size(42.01250000000002)
 
 

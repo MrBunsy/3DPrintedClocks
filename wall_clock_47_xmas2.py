@@ -181,7 +181,7 @@ else:
 
 
 
-motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
+motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True)
 moon_complication = None
 
 motion_works.calculate_size(30)

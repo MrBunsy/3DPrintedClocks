@@ -72,7 +72,7 @@ train.gen_gears(module_size=0.675, module_reduction=moduleReduction, thick=2.4, 
                 powered_wheel_module_sizes=powered_modules, lanterns=lanterns, pinion_extensions=pinion_extensions, rod_diameters=rod_diameters, escapement_split=clock.SplitArborType.WHEEL_OUT_FRONT)
 train.print_info(weight_kg=6)
 
-motionWorks = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True, cannon_pinion_to_hour_holder_gap_size=0.75)
+motionWorks = clock.MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, reduced_jamming=True, cannon_pinion_to_hour_holder_gap_size=0.75)
 motionWorks.calculate_size(arbor_distance=30)
 
 pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=15)

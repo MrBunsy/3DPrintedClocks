@@ -95,8 +95,8 @@ train.gen_gears(module_sizes=[0.9, 0.8, 0.8], thick=3, thickness_reduction=2 / 2
                 pinion_extensions=pinion_extensions, stack_away_from_powered_wheel=False, escapement_split=SplitArborType.WHEEL_OUT_BACK)
 train.print_info(weight_kg=2.0)
 
-motion_works = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
-                                 cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=get_bearing_info(3), reduced_jamming=True)
+motion_works = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True,
+                           cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=get_bearing_info(3), reduced_jamming=True)
 
 # retrofit_motion_works_test = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True,
 #                                  cannon_pinion_friction_ring=True, minute_hand_thick=2, bearing=get_bearing_info(3))#, reduced_jamming=True)

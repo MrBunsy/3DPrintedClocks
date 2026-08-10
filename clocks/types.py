@@ -71,9 +71,19 @@ class EscapementType(Enum):
     NOT_IMPLEMENTED = None
 
 class SplitArborType(Enum):
+    # trying to turn OUT_FRONT/BACK into ones which still have the bearings in the normal front and back plates,
+    # at the moment all anchors need an extra supporting plate
     WHEEL_OUT_FRONT = "front"
     WHEEL_OUT_BACK = "back"
     NORMAL_ARBOR = "normal"
+    # wheel sticks out the front, but there's an extra supporting plate, so the arbor is basically normal but a different length
+    WHEEL_OUT_FRONT_WITH_PLATE = "front_with_plate"
+
+    def wheel_out_front(self):
+        return self in [SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE, SplitArborType.WHEEL_OUT_FRONT]
+
+    def wheel_out_back(self):
+        return self in [SplitArborType.WHEEL_OUT_BACK]
 
 class PinionType(Enum):
     PLASTIC = "plastic"

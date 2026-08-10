@@ -125,8 +125,8 @@ train.generate_arbors_dicts([
 # motion_works = MotionWorks(extra_height=0, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True)
 
 
-motion_works = MotionWorks(extra_height=8, style=gear_style, thick=3, compensate_loose_arbour=False, compact=True, reduced_jamming=True,
-                                module=1, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1)#, cannon_pinion_to_hour_holder_gap_size=0.6)#, bearing=clock.get_bearing_info(3)
+motion_works = MotionWorks(extra_height=8, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, reduced_jamming=True,
+                           module=1, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1)#, cannon_pinion_to_hour_holder_gap_size=0.6)#, bearing=clock.get_bearing_info(3)
 #make furtehr apart so we get a big enough cannon pinion for the inset_at_base, which we want so we don't clash with the escape wheel
 motion_works.calculate_size(arbor_distance=35)
 
