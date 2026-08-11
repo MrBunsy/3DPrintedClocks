@@ -38,8 +38,13 @@ clock_out_dir= "out"
 gear_style=GearStyle.BENT_ARMS5
 pillar_style=PillarStyle.CLASSIC
 
+
+#copied from clock 15, make sure there's space for the front anchor bearing holder to not clash with the arms
+need_space = SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + WASHER_THICK_M3
+#also -1 from frame_thick because I've reduced front_anchor_from_plate by one
+
 #although we're planning to stick this on a shorter pendulum, so it won't meet harrison's stipulations, but should work fine. I'm not going for mega accuracy
-escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper()
+escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thick=10 - need_space+1, composer_min_distance=need_space)
 
 #hoping that a slightly thicker spring and using more of its turns we can pull just enough extra power for the grasshopper
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=6, barrel_bearing=BEARING_12x18x4_FLANGED,
@@ -105,7 +110,7 @@ train.generate_arbors_dicts([
         "wheel_thick": 8,
         "pinion_at_front": False,
         "arbor_split": SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE,
-        "pinion_extension": 9,
+        # "pinion_extension": 9,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "pinion_thick": 7
@@ -115,7 +120,6 @@ train.generate_arbors_dicts([
         "arbor_split": SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE,
     }
 ])
-
 
 motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-3)
 motion_works.calculate_size(30)
@@ -136,7 +140,7 @@ plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dia
                                 motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1)
 
-
+print(plates.bearing_positions)
 
 hands = Hands(style=HandStyle.ART_DECO2, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
                   length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,

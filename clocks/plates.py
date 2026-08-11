@@ -1226,7 +1226,7 @@ class SimpleClockPlates(BasePlates):
 
         print("Plate distance", self.plate_distance)
 
-        for i,bearingPos in enumerate(self.bearing_positions):
+        for i,bearing_pos in enumerate(self.bearing_positions):
             arbor = self.going_train.get_arbor_with_conventional_naming(i)
             if i < self.going_train.wheels + self.going_train.powered_wheels - 2:
                 maxR = arbor.distance_to_next_arbor - self.going_train.get_arbor_with_conventional_naming(i + 1).get_max_radius() - self.small_gear_gap
@@ -1239,23 +1239,41 @@ class SimpleClockPlates(BasePlates):
                 #mega bodge, TODO
                 #for the spring barrel the arbor isn't a threaded rod, so isn't a nice number for a bearing.
                 #need to work out what to do properly here
+                # UPDATE: there should be bearing info in the spring barrel powered wheel object, could this be extended to all powered wheels?
                 bearing = get_bearing_info(round(arbor.arbor_d))
+                
+            #front_anchor_from_plate is the base of the front anchor
             front_anchor_from_plate = -1
 
             if self.escapement_on_front:
-                front_anchor_from_plate = 8 + self.endshake - self.going_train.escapement.get_anchor_thick()/2
-                # if self.style in [PlateStyle.RAISED_EDGING]:
-                #     front_anchor_from_plate += self.edging_thick
+                #why 8?
+                # front_anchor_from_plate = 8 + self.endshake - self.going_train.escapement.get_anchor_thick()/2
+                front_anchor_from_plate = 1 + self.endshake  #
+                #this was commented out, why?
+                # what was I up to and why didn't I leave a comment :(
+                if self.style in [PlateStyle.RAISED_EDGING]:
+                    front_anchor_from_plate += self.edging_thick
                 if self.has_vanity_plate:
                     front_anchor_from_plate = self.vanity_plate_base_z + self.vanity_plate_thick + self.endshake + 2
-                if front_anchor_from_plate + self.going_train.escapement.get_wheel_base_to_anchor_base_z() + self.going_train.escapement.wheel_thick < 5:
+                if (self.going_train.arbors[-2].arbor_split != SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE
+                        and front_anchor_from_plate + self.going_train.escapement.get_wheel_base_to_anchor_base_z() + self.going_train.escapement.wheel_thick < 5):
                     #this won't be thick enough for the escape wheel to have much of a cylinder to grip the rod - so it might be wonky.
                     #so stick the escapement out a bit further
+                    # if it's WHEEL_OUT_FRONT_WITH_PLATE then the wheel is connected to a long arbor extension to the pinion, so it's nice and stable
                     front_anchor_from_plate = 5 - self.going_train.escapement.get_wheel_base_to_anchor_base_z() - self.going_train.escapement.wheel_thick
+
+                if arbor.get_type() == ArborType.ESCAPE_WHEEL and arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE:
+                    #we're going to set the pinion extension length here so the wheel will line up perfectly with the anchor
+                    wheel_base_z = self.plate_distance + self.get_plate_thick(back=False) + front_anchor_from_plate - self.going_train.escapement.get_wheel_base_to_anchor_base_z()
+                    # this assumes pinion was at the back, which it kind of has to be for the wheel to be out the front.
+                    pinion_total_thick = arbor.get_total_thickness() - arbor.wheel_thick
+                    arbor.pinion_extension = wheel_base_z -  (bearing_pos[2] + pinion_total_thick)
+
+
 
             arbor_class = arbor.arbor_class_for_plate
             #new way of doing it, new class for combining all this logic in once place
-            arborForPlate = arbor_class(arbor, self, bearing_position=bearingPos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
+            arborForPlate = arbor_class(arbor, self, bearing_position=bearing_pos, arbor_extension_max_radius=maxR, pendulum_sticks_out=self.pendulum_sticks_out,
                                            pendulum_at_front=self.pendulum_at_front, bearing=bearing, back_from_wall=self.back_plate_from_wall,
                                            endshake=self.endshake, pendulum_fixing=self.pendulum_fixing, direct_arbor_d=self.direct_arbor_d, crutch_space=self.crutch_space,
                                            previous_bearing_position=self.bearing_positions[i - 1], front_anchor_from_plate=front_anchor_from_plate,
@@ -1416,6 +1434,7 @@ class SimpleClockPlates(BasePlates):
                 self.arbor_thicknesses.append(self.going_train.get_arbor_with_conventional_naming(i).get_total_thickness())
             else:
                 # all the other going wheels up to and including the escape wheel
+
                 if i == self.going_train.powered_wheels + self.going_train.wheels:
                     # the anchor
                     if self.escapement_on_front or self.escapement_on_back:
@@ -1514,7 +1533,7 @@ class SimpleClockPlates(BasePlates):
 
         self.plate_distance = max(top_zs) + self.endshake + extra_front + extra_back
 
-
+        print("bearing positions",  self.bearing_positions)
         if not self.power_at_bottom:
             #quick bodge, reverse the y
             #TODO move this to GearLayout2D

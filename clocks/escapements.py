@@ -1268,7 +1268,7 @@ class EscapmentInterface:
 class GrasshopperEscapement:
 
     @staticmethod
-    def get_harrison_compliant_grasshopper():
+    def get_harrison_compliant_grasshopper(**kwargs):
         '''
         Return a grasshopper escapement which meets Harrison's stipulations as determined by David Heskin:
         9.75 escaping arc
@@ -1278,7 +1278,7 @@ class GrasshopperEscapement:
         '''
 
         #pre-calculated good values for a 9.75 escaping arc
-        return GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361)
+        return GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, **kwargs)
 
 
     def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
@@ -2459,7 +2459,7 @@ class GrasshopperEscapement:
 
     def get_anchor_thick(self):
         '''
-        Just the thickness of the bit which is on the arbour (in case I ever put the grasshopper between the plates)
+        Just the thickness of the bit which is on the arbor (in case I ever put the grasshopper between the plates)
         '''
         return self.frame_thick# + self.composer_z_distance_from_frame + self.composer_thick + self.pallet_thick + self.composer_thick + self.composer_pivot_space
 

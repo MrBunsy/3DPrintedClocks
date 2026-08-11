@@ -74,16 +74,58 @@ pendulumSticksOut=20
 #trying to reduce plate size as much as possible - works, but means I don't think I have anywhere to attach an extra front plate
 # train.genGears(module_size=1,moduleReduction=1.4, thick=3, chainWheelThick=4, style=gearStyle, pinionThickMultiplier=2.5, chainWheelPinionThickMultiplier=2.5)
 #just big enough module size that the escape wheel can be on the front and not clash with the hands arbour
-train.gen_gears(module_size=1.1, module_reduction=1.1, thick=3, powered_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, powered_wheel_pinion_thick_multiplier=2,
-                pendulum_fixing=pendulumFixing, escapement_split=True)
-train.print_info(weight_kg=1)
+# train.gen_gears(module_size=1.1, module_reduction=1.1, thick=3, powered_wheel_thick=4, style=gearStyle, pinion_thick_multiplier=2, powered_wheel_pinion_thick_multiplier=2,
+#                 pendulum_fixing=pendulumFixing, escapement_split=True)
+# train.print_info(weight_kg=1)
+
+#updated to new API after I changed how escapement on front is configured
+# print(train.get_dicts_for_updating_to_generate_arbors())
+
+train.generate_arbors_dicts([
+    {
+        "wheel_thick": 4,
+        "style": GearStyle.HONEYCOMB,
+        "pinion_at_front": True,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "module": 1.1
+    },
+    {
+        "wheel_thick": 3,
+        "style": GearStyle.HONEYCOMB,
+        "pinion_at_front": True,
+        "arbor_split": SplitArborType.NORMAL_ARBOR,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "module": 1.2100000000000002,
+        "pinion_thick": 8
+    },
+    {
+        "wheel_thick": 5,
+        "style": GearStyle.HONEYCOMB,
+        "pinion_at_front": False,
+        "arbor_split": SplitArborType.WHEEL_OUT_FRONT,
+        "pinion_extension": 0,
+        "pinion_type": PinionType.PLASTIC,
+        "rod_diameter": 3,
+        "pinion_thick": 6
+    },
+    {
+        "arbor_split": SplitArborType.WHEEL_OUT_FRONT,
+    }
+])
+
+
 
 motionWorks = MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=2)
 
 pendulum = Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
 
 plates = SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", gear_train_layout=GearTrainLayout.VERTICAL, pendulum_at_front=False,
-                                 back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, direct_arbor_d=6)
+                                 back_plate_from_wall=40, pendulum_fixing=pendulumFixing, direct_arbor_d=6) #  escapement_on_front is deprecated
 if retrofit_chain_wheels:
     #retrofitting the original design
     # what size to make it? bigger is better for the ratchet, smaller is better for the sprocket

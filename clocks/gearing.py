@@ -3353,7 +3353,7 @@ class Arbor:
         '''
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
 
-            if self.get_type() == ArborType.ESCAPE_WHEEL and self.arbor_split != SplitArborType.NORMAL_ARBOR:
+            if self.get_type() == ArborType.ESCAPE_WHEEL and self.arbor_split not in [SplitArborType.NORMAL_ARBOR, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
                 #just the pinion is within the plates
                 thick = self.pinion_thick + self.pinion_extension + self.end_cap_thick * 2
                 if include_extras:
