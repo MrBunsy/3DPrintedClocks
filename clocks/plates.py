@@ -424,10 +424,13 @@ class BasePlates:
     Basic bits shared by all types of plates
     TODO expand and consolidate as needed
     '''
-    def __init__(self, layer_thick=LAYER_THICK, days_complication=None):
+    def __init__(self, going_train, layer_thick=LAYER_THICK, days_complication=None):
         self.layer_thick = layer_thick
         self.little_plate_for_pawl=False
-        self.going_train = None
+        self.going_train = going_train
+
+        self.escapement_on_front = going_train.arbors[-1].arbor_split.wheel_out_front()
+        self.escapement_on_back = going_train.arbors[-1].arbor_split.wheel_out_back()
 
         # if spring powered and little_plate_for_pawl is false (only in sub-classes so far)
         self.beefed_up_pawl_thickness = 7.5
@@ -595,7 +598,7 @@ class SimpleClockPlates(BasePlates):
         off_centre_escape_wheel - if true, permit escape wheel off centre where default settings wouldn't assume this
         '''
 
-        super().__init__(layer_thick=layer_thick, **kwargs)
+        super().__init__(going_train, layer_thick=layer_thick, **kwargs)
 
         self.pillar_style = pillar_style
         self.style = style
@@ -608,7 +611,7 @@ class SimpleClockPlates(BasePlates):
 
         self.split_detailed_plate = split_detailed_plate and style != PlateStyle.SIMPLE
 
-        #powered wheel at base of clock.
+        #powered wheel at base of clock. TODO deprecate this, we can do it via the gear layout instead
         self.power_at_bottom = power_at_bottom
 
 
@@ -699,15 +702,13 @@ class SimpleClockPlates(BasePlates):
         # self.escapement_on_front = escapement_on_front
         # self.escapement_on_back = escapement_on_back
 
-        self.escapement_on_front = going_train.arbors[-1].arbor_split.wheel_out_front()
-        self.escapement_on_back = going_train.arbors[-1].arbor_split.wheel_out_back()
+
         # if escapement_on_front is not None:
         #     self.escapement_on_front
 
 
         self.front_anchor_holder_part_of_dial = False
 
-        self.going_train = going_train
         #we can have the escape wheel and wheel before that at same y level and both same distance from y axis
         #IDEA - why not with 3 wheels as well? would be less wide
         #TODO fix this logic and tie up properly with new gear train layouts
@@ -1267,7 +1268,11 @@ class SimpleClockPlates(BasePlates):
                     wheel_base_z = self.plate_distance + self.get_plate_thick(back=False) + front_anchor_from_plate - self.going_train.escapement.get_wheel_base_to_anchor_base_z()
                     # this assumes pinion was at the back, which it kind of has to be for the wheel to be out the front.
                     pinion_total_thick = arbor.get_total_thickness() - arbor.wheel_thick
-                    arbor.pinion_extension = wheel_base_z -  (bearing_pos[2] + pinion_total_thick)
+                    # as per logic in gearing, minus half endshake because otherwise that's too far forwards. I think.
+                    # wheel_z = self.total_plate_thickness + self.front_anchor_from_plate - self.arbor.escapement.get_wheel_base_to_anchor_base_z() - self.endshake / 2
+                    #seem to need to remove full endshake for it to line up. I think this is because this is actualy a pinion extension rather than relative to the front plate
+                    # to the preview shows the arbor as half an endshake under the front plate? or half an endshake forwards from the rear plate.
+                    arbor.pinion_extension = wheel_base_z -  (bearing_pos[2] + pinion_total_thick)  - self.endshake
 
 
 
@@ -5579,17 +5584,26 @@ class RoundClockPlates(SimpleClockPlates):
                 # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
                 # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
                 # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
-                if get_distance_between_two_points(wall_fixing_pos, self.hands_position) > self.radius +5:
+
+                screwhole_y = get_distance_between_two_points(wall_fixing_pos, self.hands_position)
+                bearing_y = self.bearing_positions[-1][1]
+                top_y = screwhole_y
+                if bearing_y > screwhole_y:
+                    top_y = bearing_y
+
+                if top_y > self.radius +5:
                     #the screwhole sticks out the top of the clock, just jut out a little bit
                     holdy_bit_wide=self.plate_width*1.2
+
+                    top_pos = (0, top_y)
 
                     if use_extendy_arm:
                         base = (self.hands_position[0], self.hands_position[1] + self.radius)
                         cock = cock.union(get_stroke_line([base, self.bearing_positions[-1][:2]], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
 
 
-                    cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], wall_fixing_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
-                    cock = cock.union(cq.Workplane("XY").moveTo(wall_fixing_pos[0],wall_fixing_pos[1]).circle(holdy_bit_wide/2).extrude(plate_thick))
+                    cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], top_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
+                    cock = cock.union(cq.Workplane("XY").moveTo(top_pos[0],top_pos[1]).circle(holdy_bit_wide/2).extrude(plate_thick))
 
                 else:
                     #arc to join up the screw hole
@@ -5809,6 +5823,14 @@ class GrasshopperRoundPlates(RoundClockPlates):
                 plate = self.punch_bearing_holes(plate, back)
 
         return plate
+
+    def get_screwhole_positions(self):
+        '''
+        returns [(x,y, supported),]
+        '''
+        top_y = self.hands_position[1] + self.radius
+
+        return [(0, top_y, True), (0, self.bottom_pillar_positions[0][1], True)]
 
 class ChildFriendlySimpleClockPlates(SimpleClockPlates):
     '''
@@ -6464,8 +6486,7 @@ class SlideWhistlePlates(BasePlates):
 
     '''
     def __init__(self, going_train, plate_thick=6, style=PlateStyle.SIMPLE, first_wheel_angle_deg=45, endshake = 1, pillar_style=PillarStyle.SIMPLE, fixing_screws=None):
-        super().__init__()
-        self.going_train = going_train
+        super().__init__(going_train)
         self.plate_thick = plate_thick
         self.style = style
         self.endshake = endshake

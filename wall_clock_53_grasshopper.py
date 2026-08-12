@@ -136,7 +136,7 @@ gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
 motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi*1.5)
 
-plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
+plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=40,
                                 motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1)
 

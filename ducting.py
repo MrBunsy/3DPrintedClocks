@@ -368,6 +368,45 @@ class WindowVentImproved():
 
         return knob
 
+class AirconWindowFixing:
+    #diameter inside lip is 121
+    #lip thick of 1mm was the right measurement, but it didn't fit without a lot of filing and it's still a tight squeeze
+    def __init__(self, inner_diameter=122, lip_thick=0.5, lip_deep=3.5, screw_pos_radius=140/2):
+        self.inner_diameter =inner_diameter
+        self.lip_thick = lip_thick
+
+        self.depth = 10
+
+        self.lip_deep = lip_deep
+
+        self.wall_thick=2.4
+        self.rim_wide = (screw_pos_radius - (inner_diameter/2 + self.wall_thick))*2
+        self.rim_thick = 2.4
+
+        self.screw_pos_radius = screw_pos_radius
+
+        self.screws = 4
+        self.screwhole_d = 3
+
+    def get_fixing(self):
+        fixing = cq.Workplane("XY").circle(self.inner_diameter/2 + self.wall_thick + self.rim_wide).circle(self.inner_diameter/2).extrude(self.rim_thick)
+
+        fixing = fixing.union(cq.Workplane("XY").circle(self.inner_diameter/2 + self.wall_thick).circle(self.inner_diameter/2).extrude(self.depth))
+
+        circle = cq.Workplane("XY").circle(self.inner_diameter/2)
+        lip = cq.Workplane("XZ").moveTo(self.inner_diameter/2, self.lip_deep).lineTo(self.inner_diameter/2 - self.lip_thick, self.lip_deep + self.lip_thick).line(0, self.lip_thick/3).line(self.lip_thick, self.lip_thick/3).close().sweep(
+            circle)
+
+
+        fixing = fixing.union(lip)
+
+        for screw in range(self.screws):
+            angle = screw * math.pi*2/self.screws
+            fixing = fixing.cut(cq.Workplane("XY").circle(self.screwhole_d/2).extrude(self.rim_thick).translate(polar(angle,self.screw_pos_radius)))
+
+
+        return fixing
+
 # ducting = Ducting(screw=MachineScrew(4, countersunk=True))
 
 # show_object(ducting.get_fan_fixing())
@@ -381,20 +420,26 @@ class WindowVentImproved():
 # show_object(windowVent.get_handle_holder())
 # show_object(windowVent.get_knob().translate((0, windowVent.handle_length, windowVent.holder_thick)))
 
-new_window_vent = WindowVentImproved()
 
-show_object(new_window_vent.get_bottom_hook(short=True))
-show_object(new_window_vent.get_top_hook().translate((0, 200)))
-show_object(new_window_vent.get_top_knob().rotate((0,0,0),(0,1,0),90).translate((new_window_vent.window_frame_thick+new_window_vent.wood_thick, 200+new_window_vent.hook_thick/2, new_window_vent.hook_thick/2)))
+
+# new_window_vent = WindowVentImproved()
+#
+# show_object(new_window_vent.get_bottom_hook(short=True))
+# show_object(new_window_vent.get_top_hook().translate((0, 200)))
+# show_object(new_window_vent.get_top_knob().rotate((0,0,0),(0,1,0),90).translate((new_window_vent.window_frame_thick+new_window_vent.wood_thick, 200+new_window_vent.hook_thick/2, new_window_vent.hook_thick/2)))
+
+airconvent = AirconWindowFixing()
+
+show_object(airconvent.get_fixing())
 
 if outputSTL:
     path = "out"
     name="duct_fixing"
-
-    export_STL(new_window_vent.get_bottom_hook(),"bottom_hook", name, path)
-    export_STL(new_window_vent.get_bottom_hook(short=True), "bottom_hook_short", name, path)
-    export_STL(new_window_vent.get_top_hook(), "top_hook", name, path)
-    export_STL(new_window_vent.get_top_knob(), "top_knob", name, path)
+    export_STL(airconvent.get_fixing(), "aircon_vent", name, path, tolerance=0.01)
+    # export_STL(new_window_vent.get_bottom_hook(),"bottom_hook", name, path)
+    # export_STL(new_window_vent.get_bottom_hook(short=True), "bottom_hook_short", name, path)
+    # export_STL(new_window_vent.get_top_hook(), "top_hook", name, path)
+    # export_STL(new_window_vent.get_top_knob(), "top_knob", name, path)
     # out = os.path.join(path, "{}.stl".format(name))
     # print("Outputting ", out)
     # exporters.export(ducting.get_flat_surface_fixing(), out)
