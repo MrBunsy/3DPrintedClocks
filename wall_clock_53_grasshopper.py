@@ -120,12 +120,22 @@ train.generate_arbors_dicts([
         "arbor_split": SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE,
     }
 ])
+#would love to have this on the clock, but it really doesn't fit. Might still have another go later
+days = False
+if days:
+    #module=0.8
+    days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.1, angle_deg=-60, extra_z_height=0, cylinder_length=28)
+else:
+    days_complication = None
 
-motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-3)
+motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-3, drives_complication=days_complication)
 motion_works.calculate_size(30)
 
+if days_complication is not None:
+    days_complication.set_motion_works_sizes(motion_works)
+
 plaque = None
-dial_d=180
+dial_d=185
 dial_width = 30
 
 dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
@@ -138,9 +148,15 @@ motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi
 
 print(f"dial support lengths: {dial.support_length}")
 
+
+
+
+
+
 plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=40,
                                 motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
-                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1)
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
+                                days_complication = days_complication)
 print(f"dial support lengths: {dial.support_length}")
 print(plates.bearing_positions)
 

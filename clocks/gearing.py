@@ -4885,7 +4885,7 @@ class DayOfWeekComplication:
     def get_first_arbor(self):
         if self.base_of_wheel_from_base_of_pinion is None:
             raise RuntimeError("Haven't called set_motion_works_sizes yet")
-        wheel = self.first_pair.wheel.get3D(thick=self.gear_thick, style=self.style, inner_radius_for_style=self.extension_r)
+        wheel = self.first_pair.wheel.get3D(thick=self.gear_thick, style=self.style, inner_radius_for_style=self.extension_r, clockwise_from_pinion_side=False)
         arbor = wheel.translate((0, 0, self.base_of_wheel_from_base_of_pinion))
         arbor = arbor.union(cq.Workplane("XY").circle(self.extension_r).extrude(self.base_of_wheel_from_base_of_pinion - self.geneva_gear_thick).translate((0, 0, self.geneva_gear_thick)))
         arbor = arbor.union(cq.Workplane("XY").polygon(6, self.extension_r * 2).extrude(self.geneva_gear_thick))
@@ -4913,7 +4913,7 @@ class DayOfWeekComplication:
     def get_first_arbor_pinion(self):
         pinion = self.geneva_pair.get_finger().faces(">Z").workplane().polygon(6, self.extension_r*2+self.wiggle_room*2).cutThruAll()
 
-        pinion = Gear.cut_style(pinion, self.geneva_pair.get_finger_inner_solid_radius(), self.extension_r, style = self.style)
+        pinion = Gear.cut_style(pinion, self.geneva_pair.get_finger_inner_solid_radius(), self.extension_r, style = self.style, clockwise_from_pinion_side=False)
 
         return pinion
 
