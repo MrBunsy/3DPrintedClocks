@@ -5835,6 +5835,8 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         self.escapement_holder_fixing_points = self.get_front_escape_wheel_holder_pillar_positions()
 
+        #the following is a big encapsulation breaking, delve into various depths to refiddle the dial height and pillars
+
         #make dial exactly right height so it fits in front of the escape wheel holder
         new_dial_z = self.get_front_escape_wheel_holder_pillar_height() + self.get_plate_thick(escape_wheel_support=True)
         dial_z_difference = new_dial_z - self.dial_z
@@ -5844,6 +5846,11 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         #only keep the fixings in the plate for the lower half
         # this will keep any dimples on the back of the dial which can be used to glue it to the escape wheel holder
+        #turn top ones into nubs
+        self.dial.extra_nubs_positions = [poslist[0] for poslist in self.dial.fixing_positions if poslist[0][1] > self.hands_position[1]]
+        #keep only bottom ones
+        self.dial.override_fixing_positions([poslist for poslist in self.dial.fixing_positions if poslist[0][1] < self.hands_position[1]])
+        #do the same for our screwholes in the front plate
         self.dial_fixing_positions = [pos for pos in self.dial_fixing_positions if pos[1] < self.hands_position[1]]
 
     def get_rod_lengths(self):
@@ -5868,7 +5875,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
         #got a little screw to keep it in the right place, as this clock plate is only held together with a single M4 rod in each pillar
 
         # pos = np_to_set(np.subtract(self.get_anchor_holder_little_screw_pos(), self.top_top_pillar_pos))
-        screw_cutter = (self.anchor_holder_little_screw.get_cutter(length = self.get_anchor_holder_little_screw_length() - self.get_plate_thick(back=False), self_tapping=True)
+        screw_cutter = (self.anchor_holder_little_screw.get_cutter(length = self.get_anchor_holder_little_screw_length() - self.get_plate_thick(back=False), self_tapping=True, ignore_head=True)
                         .translate(self.get_anchor_holder_little_screw_pos()).translate((0,0,self.front_z)))
 
         # if for_printing:
@@ -5947,6 +5954,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
             if not just_basic_shape:
                 plate = self.punch_bearing_holes(plate, back)
                 plate = plate.cut(self.anchor_holder_little_screw.get_cutter(length = self.get_anchor_holder_little_screw_length(), head_space_length=0).translate(self.get_anchor_holder_little_screw_pos()))
+                plate = plate.cut(self.get_fixing_screws_cutter())
 
         return plate
 

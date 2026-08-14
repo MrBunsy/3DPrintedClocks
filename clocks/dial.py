@@ -1479,6 +1479,9 @@ class Dial:
 
         #overrides for the default fixing screw and pillar positions DEPRECATED, switching to configuring whole pillars instead
         self.fixing_positions = []
+        #for detail on front we have little inset circles on the back of the dial to be used to glue the dial into nibs on the top of pillars
+        #for some situations (like gluing to front of escape wheel holder) we want the inset without the pillar
+        self.extra_nubs_positions = []
         self.pillars = []
         self.romain_numerals_style = romain_numerals_style
 
@@ -2150,25 +2153,10 @@ class Dial:
                     dial = dial.union(get_stroke_line([start_pos, fixing_pos[:2]], wide=self.support_d, thick=self.thick))
 
             if not self.raised_detail:
-                # support_positions = self.get_support_positions()
-                # for i,fixing_pos_set in enumerate(self.get_fixing_positions()):
-                #     support_pos = (sum([x for x, y in fixing_pos_set]) / len(fixing_pos_set), sum([y for x, y in fixing_pos_set])/len(fixing_pos_set), self.thick)
-                #
-                #     if self.pillar_style == PillarStyle.SIMPLE:
-                #         support = cq.Workplane("XY").circle(self.support_d / 2).extrude(self.support_length)
-                #     else:
-                #         support = fancy_pillar(r=self.support_d / 2, length=self.support_length, clockwise=support_pos[0] < 0, style=self.pillar_style)
-                #     try:
-                #         dial = dial.union(support.translate(support_pos))
-                #     except:
-                #         print("exception putting dial support on")
-                #     for fixing_pos in fixing_pos_set:
-                #         # centre = (sum([x for x,y in fixing_pos_set])/2, sum([y for x,y in fixing_pos_set]))
-                #         dial = dial.cut(cq.Workplane("XY").circle(self.fixing_screws.metric_thread/2).extrude(self.support_length).translate((fixing_pos[0], fixing_pos[1], self.thick)))
                 dial = dial.union(self.get_supports())
             elif not self.screwed_from_front:
                 #raised detail, slots in back to glue supports
-                cutter = cq.Workplane("XY").pushPoints([pos[:2] for pos in self.get_support_positions()]).circle(self.support_slot_r).extrude(self.nib_hole_deep).translate((0,0,self.thick-self.nib_hole_deep))#.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.detail_thick)
+                cutter = cq.Workplane("XY").pushPoints([pos[:2] for pos in self.get_support_positions() + self.extra_nubs_positions]).circle(self.support_slot_r).extrude(self.nib_hole_deep).translate((0,0,self.thick-self.nib_hole_deep))#.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.detail_thick)
                 # return cutter
                 dial = dial.cut(cutter)
 
