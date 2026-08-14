@@ -3970,6 +3970,11 @@ class MotionWorks:
             #to ensure hour hand can't hit the top of the arbour
             extra_height = self.thick*2
 
+        self.set_extra_height(extra_height)
+
+    def set_extra_height(self, extra_height):
+        #self.extra_height is never used in this class, but for a bodge where we re-adjust dial height it's useful to find out what it was
+        self.extra_height = extra_height
         #thick for thickness of hour holder wheel
         self.cannon_pinion_total_height_above_base = extra_height + self.minute_hand_slot_height + self.space + self.hour_hand_slot_height + self.thick# + self.cannonPinionBaseHeight
 

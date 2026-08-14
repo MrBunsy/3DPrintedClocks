@@ -1899,12 +1899,14 @@ class SimpleClockPlates(BasePlates):
         return holder
 
 
-    def get_plate_thick(self, back=True, standoff=False):
+    def get_plate_thick(self, back=True, standoff=False, escape_wheel_support=False):
         if standoff:
-            #TODO separate value
             return self.standoff_plate_thick
         if back:
             return self.back_plate_thick
+        if escape_wheel_support:
+            #TODO
+            return self.standoff_plate_thick
         return self.plate_thick
 
     def get_plate_distance(self):
@@ -5833,6 +5835,17 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         self.escapement_holder_fixing_points = self.get_front_escape_wheel_holder_pillar_positions()
 
+        #make dial exactly right height so it fits in front of the escape wheel holder
+        new_dial_z = self.get_front_escape_wheel_holder_pillar_height() + self.get_plate_thick(escape_wheel_support=True)
+        dial_z_difference = new_dial_z - self.dial_z
+        self.motion_works.set_extra_height(self.motion_works.extra_height + dial_z_difference)
+        self.dial.support_length = new_dial_z
+        self.dial_z = new_dial_z
+
+        #only keep the fixings in the plate for the lower half
+        # this will keep any dimples on the back of the dial which can be used to glue it to the escape wheel holder
+        self.dial_fixing_positions = [pos for pos in self.dial_fixing_positions if pos[1] < self.hands_position[1]]
+
     def get_rod_lengths(self):
         '''
         returns ([rod lengths, in same order as all_pillar_positions] , [base of rod z])
@@ -5872,13 +5885,17 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         return holder
 
+    def get_front_escape_wheel_holder_pillar_height(self):
+        pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness() + WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
+
+        return pillar_height
 
     def get_front_escape_wheel_holder(self, for_printing=False):
         # mini plate out front to hold the bearing for the escape wheel
         #this assumes the plate radius is in the right place to hold the escape wheel without confirming
         # in-situ
-        pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness() + WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
-        thick = self.get_plate_thick(standoff=True)
+        pillar_height = self.get_front_escape_wheel_holder_pillar_height()
+        thick = self.get_plate_thick(escape_wheel_support=True)
 
         left = self.escapement_holder_fixing_points[0]
         right = self.escapement_holder_fixing_points[1]

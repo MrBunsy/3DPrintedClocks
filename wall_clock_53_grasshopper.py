@@ -136,10 +136,12 @@ gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
 motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi*1.5)
 
+print(f"dial support lengths: {dial.support_length}")
+
 plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=40,
                                 motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1)
-
+print(f"dial support lengths: {dial.support_length}")
 print(plates.bearing_positions)
 
 hands = Hands(style=HandStyle.ART_DECO2, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
@@ -150,7 +152,7 @@ pendulum = Pendulum(bob_d=80, bob_thick=15)
 
 
 assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clock_name)
-
+print(f"dial support lengths: {dial.support_length}")
 assembly.show_clock(show_object)
 
 if export_stls:

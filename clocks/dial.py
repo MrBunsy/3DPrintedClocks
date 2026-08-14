@@ -2288,6 +2288,7 @@ class Dial:
         if detail is raised on top, supports must be separate
         also can return just one support (for generating STLs) if index is provided
         '''
+        print(f"get support length {self.support_length}")
         supports = cq.Workplane("XY")
         screwhole_length = self.support_length
         z_offset = self.thick
