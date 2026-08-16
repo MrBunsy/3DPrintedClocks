@@ -845,7 +845,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         clock = self.plates.get_assembled()
 
         for a,arbor in enumerate(self.plates.arbors_for_plate):
-            clock = clock.add(arbor.get_assembled())
+            clock = clock.add(arbor.get_assembled(with_extras=True))
 
 
         time_min = self.time_mins
@@ -999,7 +999,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
                    moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45, hand_colours_overrides=None,
-                   day_complication_colours=None):
+                   day_complication_colours=None, grasshopper_parts_colours=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -1047,6 +1047,16 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         if plaque_colours is None:
             plaque_colours = [Colour.GOLD, Colour.BLACK]
 
+        if grasshopper_parts_colours is None:
+            grasshopper_parts_colours = {
+                "pivot_extender_0": Colour.RED,
+                "pivot_extender_1": Colour.RED,
+                "exit_pallet_arm": Colour.YELLOW,
+                "entry_pallet_arm": Colour.YELLOW,
+                "entry_composer": Colour.ORANGE,
+                "exit_composer": Colour.ORANGE,
+            }
+
         plate_parts = self.plates.get_parts_in_situ()#plates, pillars, plate_detail, standoff_pillars, standoffs = self.plates.get_assembled(one_peice=False)
         pillar_colour = plate_colours[1 % len(plate_colours)]
         show_object(plate_parts["plates"], options={"color":plate_colours[0]}, name= "Plates")
@@ -1074,8 +1084,25 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 show_object(self.plates.get_text(top_standoff=True), options={"color": text_colour}, name="Top Standoff Text")
                 show_object(self.plates.get_text(top_standoff=False), options={"color": text_colour}, name="Bottom Standoff Text")
 
-        for a, arbor in enumerate(self.plates.arbors_for_plate):
-            show_object(arbor.get_assembled(), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - a) % len(gear_colours)]}, name="Arbor {}".format(a))
+        arbor_colour_index = 0
+        unique_grasshopper_colours = [gear_colours[0]]
+        for a, arbor in reversed(list(enumerate(self.plates.arbors_for_plate))):
+            # show_object(arbor.get_assembled(with_extras=False), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - arbor_colour_index) % len(gear_colours)]}, name="Arbor {}".format(a))
+            show_object(arbor.get_assembled(with_extras=False), options={"color": gear_colours[arbor_colour_index % len(gear_colours)]}, name="Arbor {}".format(a))
+
+            arbor_colour_index+=1
+
+            if arbor.arbor.get_type() == ArborType.ANCHOR and arbor.arbor.escapement.type == EscapementType.GRASSHOPPER:
+                parts =  arbor.arbor.escapement.get_parts_in_situ(leave_out_wheel_and_frame=True, centre_on_anchor=True)
+                pos = ((self.plates.bearing_positions[a][0], self.plates.bearing_positions[a][1], arbor.get_anchor_assembly_end_z() -arbor.arbor.escapement.frame_thick))
+                for part in parts:
+                    colour = grasshopper_parts_colours[part]
+                    fancy_name = part.replace("_", " ").title()
+                    show_object(parts[part].translate(pos), options={"color": colour}, name=f"Grasshopper {fancy_name}")
+                    if colour not in unique_grasshopper_colours:
+                        unique_grasshopper_colours.append(colour)
+                        arbor_colour_index += 1
+
         print("generated arbors for plate")
         # return
         # # motionWorksModel = self.motionWorks.get_assembled(motionWorksRelativePos=self.plates.motionWorksRelativePos, minuteAngle=self.minuteAngle)

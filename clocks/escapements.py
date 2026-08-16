@@ -202,7 +202,8 @@ class AnchorEscapement:
         returns a BOM which will be combined with the arbor BOM, instead of a subcomponent
         '''
         return BillOfMaterials("Anchor")
-
+    def get_BOM_for_subcomponent(self):
+        return None
     def calc_geometry(self):
         '''
         calculate all the relevant maths for dimensions
@@ -1283,7 +1284,7 @@ class GrasshopperEscapement:
 
     def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
                  mean_torque_arm_length=-1, d=-1, ax_deg=-1, diameter=-1, acceptableError=0.01, frame_thick=10, wheel_thick=5, pallet_thick=7, screws=None, arbourD=3,
-                 loud_checks=False, skip_failed_checks=False, xmas=False, composer_min_distance=0, frame_screw_fixing_min_thick=10):
+                 loud_checks=False, skip_failed_checks=False, xmas=False, composer_min_distance=0, frame_screw_fixing_min_thick=10, tooth_height =-1):
         '''
         From Computer Aided Design of Harrison Twin Pivot and Twin Balance Grasshopper Escapement Geometries by David Heskin
 
@@ -1348,6 +1349,10 @@ class GrasshopperEscapement:
         self.nib_offset_angle = deg_to_rad(8)
         self.pallet_arm_wide=3
         self.screws = screws
+        # only a small sample size it appears that stainless screws and threaded rod are near-as-damnit 3mm (or 2.95) diameter and
+        # bright zinc are 2.85
+        # so when choosing screws for the composer arms (for the rests) try and use stainless? or at least check they really are 3mm diameter threads
+        # so the geometry will be more accurate
         if self.screws is None:
             self.screws = MachineScrew(3)
         self.arbourD=arbourD
@@ -1415,11 +1420,40 @@ class GrasshopperEscapement:
         self.checkGeometry(loud=loud_checks)
         self.clockwise = True
 
+        #previously:
+        # self.tooth_height = self.radius * 0.1
+        self.tooth_height = self.radius * 0.05
+        if tooth_height > 0:
+            self.tooth_height = tooth_height
+
+
     def get_BOM_for_combining_with_arbor(self):
         '''
         returns a BOM which will be combined with the arbor BOM, instead of a subcomponent
         '''
-        return BillOfMaterials("Anchor")
+
+        bom = BillOfMaterials("Anchor")
+
+
+
+        return bom
+    def get_BOM_for_subcomponent(self):
+        bom = BillOfMaterials("Grashopper Escapement")
+
+        bom.add_printed_parts(self.get_printed_parts())
+        bom.assembly_instructions=f"""
+TODO add screw lengths to attach commutors and arms to frame
+"""
+
+        return bom
+
+    def get_printed_parts(self):
+        parts = []
+        parts_dict = self.get_parts_in_situ(leave_out_wheel_and_frame=True)
+        for part in parts:
+            parts.append(BillOfMaterials.PrintedPart(part, parts_dict[part]))
+        return parts
+
 
     def set_diameter(self, diameter):
         '''
@@ -2356,7 +2390,8 @@ class GrasshopperEscapement:
             #0.7 still sliiightly grazes the previous tooth sometimes, but smaller was having problems with skipping teeth - sometimes the exit pallet would lift away by itself
             #may or may not have been a specific printing problem, but not sure how many attempts to want to make, so leaving this at 0.7
             #0.65 didn't graze the previous tooth. Revisit this in the future.
-            nib_base_end_r = self.pallet_arm_wide*0.7
+            #back to 0.65 for clock 53 with escape wheel and anchor both held at either end, so they should be the correct distance from each other
+            nib_base_end_r = self.pallet_arm_wide*0.6#5
 
 
         arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
@@ -2464,19 +2499,23 @@ class GrasshopperEscapement:
         return self.frame_thick# + self.composer_z_distance_from_frame + self.composer_thick + self.pallet_thick + self.composer_thick + self.composer_pivot_space
 
     def get_wheel_inner_r(self):
-        tooth_height = self.radius * 0.1
-        return self.radius - tooth_height
+
+        return self.radius - self.tooth_height
 
     def get_wheel_2d(self):
-
+        # was 1.2, anchor's wheel tip is 1, but I think with a 0.3mm nozzle we can do better
+        # we really want it as thin as possible to make the pallet ends as big as possible
+        # tooth_tip_width=1.2
+        tooth_tip_width = 0.8
 
         #angles from O
-        tooth_base_angle=(math.pi*2/self.teeth)*0.3
+        #tooth_base_angle=(math.pi*2/self.teeth)*0.3
+        tooth_base_angle =  get_angle_of_chord(self.diameter/2-self.tooth_height, tooth_tip_width)
         tooth_tip_angle=(math.pi*2/self.teeth)/2
-        tooth_tip_width=1.2
-        tooth_tip_width_angle = tooth_tip_width/self.diameter
+
+        tooth_tip_width_angle = get_angle_of_chord(self.diameter/2, tooth_tip_width)#tooth_tip_width/self.diameter
         inner_r = self.get_wheel_inner_r()
-        tooth_height = self.radius - inner_r
+        # tooth_height = self.radius - inner_r
         tooth_angle = math.pi * 2 / self.teeth
 
         wheel = cq.Workplane("XY")
@@ -2507,8 +2546,11 @@ class GrasshopperEscapement:
         #I think this is just for models, so fudge the inner radius
         return Gear.cut_style(self.get_wheel_2d().extrude(self.wheel_thick), self.get_wheel_inner_r(), inner_radius=10, style=style)
 
-    def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False, mid_pendulum_swing=False):
-        grasshopper = cq.Workplane("XY")
+    def get_parts_in_situ(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False):
+        #all parts in situ for pendulum vertical
+
+        # grasshopper = cq.Workplane("XY")
+        parts = {}
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
 
@@ -2521,24 +2563,68 @@ class GrasshopperEscapement:
             return anchor_part
 
         if not leave_out_wheel_and_frame:
-            grasshopper = grasshopper.add(self.get_wheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
-            grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(self.getFrame(leave_in_situ=True))))
+            parts["escape_wheel"]=self.get_wheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2))
+            parts["anchor"]=self.rotateToUpright(rotate_anchor(self.getFrame(leave_in_situ=True)))
 
         pivot_extenders = self.getFramePivotArmExtenders()
         if pivot_extenders is not None:
-            grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick)))))
-            grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick)))))
+            parts["pivot_extender_0"]=self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick))))
+            parts["pivot_extender_1"]=self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick))))
 
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z)))))
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z)))))
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryComposer(for_printing=False)).translate((0, 0, composer_z)))))
-        grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitComposer(for_printing=False)).translate((0, 0, composer_z)))))
+        parts["exit_pallet_arm"]=self.rotateToUpright(rotate_anchor((self.getExitPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z))))
+        parts["entry_pallet_arm"]=self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z))))
+        parts["entry_composer"]=self.rotateToUpright(rotate_anchor((self.getEntryComposer(for_printing=False)).translate((0, 0, composer_z))))
+        parts["exit_composer"]=self.rotateToUpright(rotate_anchor((self.getExitComposer(for_printing=False)).translate((0, 0, composer_z))))
 
         if centre_on_anchor:
-            grasshopper = grasshopper.translate((0,-np.linalg.norm(self.geometry["Z"]),0))
+            for part in parts:
+                parts[part] = parts[part].translate((0, -np.linalg.norm(self.geometry["Z"]), 0))
 
+
+        return parts
+
+
+    def get_assembled(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False):
+
+        parts = self.get_parts_in_situ(style = style, leave_out_wheel_and_frame=leave_out_wheel_and_frame, centre_on_anchor=centre_on_anchor)
+
+        grasshopper = cq.Workplane("XY")
+        for part in parts:
+            grasshopper.add(parts[part])
 
         return grasshopper
+
+        # grasshopper = cq.Workplane("XY")
+        # composer_z = self.frame_thick + self.composer_z_distance_from_frame
+        # pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
+        #
+        # def rotate_anchor(anchor_part):
+        #     # centre = (0, 0)
+        #     # if not centre_on_anchor:
+        #     # return anchor_part
+        #     centre = self.geometry["Z"]
+        #     anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), rad_to_deg(-self.escaping_arc / 2))
+        #     return anchor_part
+        #
+        # if not leave_out_wheel_and_frame:
+        #     grasshopper = grasshopper.add(self.get_wheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2)))
+        #     grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(self.getFrame(leave_in_situ=True))))
+        #
+        # pivot_extenders = self.getFramePivotArmExtenders()
+        # if pivot_extenders is not None:
+        #     grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick)))))
+        #     grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick)))))
+        #
+        # grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z)))))
+        # grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z)))))
+        # grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getEntryComposer(for_printing=False)).translate((0, 0, composer_z)))))
+        # grasshopper = grasshopper.add(self.rotateToUpright(rotate_anchor((self.getExitComposer(for_printing=False)).translate((0, 0, composer_z)))))
+        #
+        # if centre_on_anchor:
+        #     grasshopper = grasshopper.translate((0,-np.linalg.norm(self.geometry["Z"]),0))
+        #
+        #
+        # return grasshopper
 
     def getComposerZThick(self):
         return self.pallet_thick + self.composer_pivot_space + self.composer_thick*2

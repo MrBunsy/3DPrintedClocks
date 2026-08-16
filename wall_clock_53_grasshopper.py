@@ -135,7 +135,7 @@ if days_complication is not None:
     days_complication.set_motion_works_sizes(motion_works)
 
 plaque = None
-dial_d=185
+dial_d=190
 dial_width = 30
 
 dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
@@ -167,9 +167,9 @@ hands = Hands(style=HandStyle.ART_DECO2, minute_fixing="square", minute_fixing_d
 pendulum = Pendulum(bob_d=80, bob_thick=15)
 
 
-assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clock_name)
+assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clock_name, key_angle_deg=360/12)
 print(f"dial support lengths: {dial.support_length}")
-assembly.show_clock(show_object)
+assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True)
 
 if export_stls:
     assembly.get_BOM().export()

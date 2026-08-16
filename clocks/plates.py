@@ -5893,7 +5893,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
         return holder
 
     def get_front_escape_wheel_holder_pillar_height(self):
-        pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness() + WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
+        pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness()+ WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
 
         return pillar_height
 

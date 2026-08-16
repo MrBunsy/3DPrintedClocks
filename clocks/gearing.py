@@ -2306,6 +2306,18 @@ class ArborForPlate:
 
         return shapes
 
+    def get_anchor_assembly_end_z(self):
+        if self.arbor.arbor_split in [SplitArborType.WHEEL_OUT_FRONT, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
+            # minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
+            anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.get_anchor_thick() - self.endshake / 2
+        elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
+            # back of back plate
+            anchor_assembly_end_z = -self.endshake / 2 - SMALL_WASHER_THICK_M3
+        else:
+            anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake / 2 + self.arbor.escapement.get_anchor_thick()
+
+        return anchor_assembly_end_z
+
     def get_assembled(self, with_extras=True):
         '''
         with_extras - if true include: power mechanism (if detached from wheel), pendulum hanger
@@ -2325,23 +2337,29 @@ class ArborForPlate:
             if self.arbor.escapement.split:
                 assembly = assembly.translate((0,0, - (self.arbor.escapement.get_anchor_thick()-self.arbor.escapement.anchor_thick)))
                 assembly = assembly.add(shapes["anchor_second_half"])
-            if self.arbor.escapement.type == EscapementType.GRASSHOPPER:
+            #moving this to show clock so we can have it in differnet colours
+            if self.arbor.escapement.type == EscapementType.GRASSHOPPER and with_extras:
                 # move 'down' by frame thick because we've just rotated the frame above
-                assembly = assembly.add(self.arbor.escapement.get_assembled(leave_out_wheel_and_frame=True, centre_on_anchor=True, mid_pendulum_swing=True).translate((0, 0, -self.arbor.escapement.frame_thick)))
+                assembly = assembly.add(self.arbor.escapement.get_assembled(leave_out_wheel_and_frame=True, centre_on_anchor=True).translate((0, 0, -self.arbor.escapement.frame_thick)))
 
 
-            if self.arbor.arbor_split in [SplitArborType.WHEEL_OUT_FRONT, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
-                #minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
-                anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.get_anchor_thick() - self.endshake / 2
-            elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
-                #back of back plate
-                anchor_assembly_end_z = -self.endshake/2 - SMALL_WASHER_THICK_M3
-            else:
-                anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbor.escapement.get_anchor_thick()
+            # if self.arbor.arbor_split in [SplitArborType.WHEEL_OUT_FRONT, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
+            #     #minus half the endshake is very much deliberate, because otherwise with total_plate_thickness included we're putting the arbor as far forwards as it can go. We want it to be modelled in the centre
+            #     anchor_assembly_end_z = self.total_plate_thickness + self.front_anchor_from_plate + self.arbor.escapement.get_anchor_thick() - self.endshake / 2
+            # elif self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
+            #     #back of back plate
+            #     anchor_assembly_end_z = -self.endshake/2 - SMALL_WASHER_THICK_M3
+            # else:
+            #     anchor_assembly_end_z = self.back_plate_thick + self.bearing_position[2] + self.endshake/2 + self.arbor.escapement.get_anchor_thick()
+            #     if "arbor_extension" in shapes and shapes["arbor_extension"] is not None:
+            #         #can be none if the anchor is pressed up against a plate
+            #         assembly = assembly.add(shapes["arbor_extension"])
+            if self.arbor.arbor_split in [SplitArborType.NORMAL_ARBOR]:
                 if "arbor_extension" in shapes and shapes["arbor_extension"] is not None:
-                    #can be none if the anchor is pressed up against a plate
-                    assembly = assembly.add(shapes["arbor_extension"])
-            assembly = assembly.translate((0,0,anchor_assembly_end_z))
+                        #can be none if the anchor is pressed up against a plate
+                        assembly = assembly.add(shapes["arbor_extension"])
+
+            assembly = assembly.translate((0,0,self.get_anchor_assembly_end_z()))
 
             if with_extras:
                 # if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR and self.escapement_on_front and not self.pendulum_at_front:
@@ -3322,6 +3340,7 @@ class Arbor:
             bom.combine(self.powered_wheel.get_BOM_for_combining_with_arbor(wheel_thick=self.wheel_thick))
         elif self.type == ArborType.ANCHOR:
             bom.combine(self.escapement.get_BOM_for_combining_with_arbor())
+            bom.add_subcomponent(self.escapement.get_BOM_for_subcomponent())
 
         return bom
 
@@ -3487,7 +3506,7 @@ class Arbor:
 
         if self.get_type() in [ArborType.WHEEL_AND_PINION, ArborType.ESCAPE_WHEEL]:
             offset_z = self.wheel_thick + self.pinion_extension
-            if self.arbor_split != SplitArborType.NORMAL_ARBOR and self.get_type() == ArborType.ESCAPE_WHEEL:
+            if self.arbor_split not in [SplitArborType.NORMAL_ARBOR,SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE] and self.get_type() == ArborType.ESCAPE_WHEEL:
                 #lone pinion
                 offset_z = self.end_cap_thick
             return self.pinion.get_STL_modifier_shape(thick=self.pinion_thick, offset_z=offset_z, min_inner_r=self.arbor_d / 2, nozzle_size=nozzle_size)
