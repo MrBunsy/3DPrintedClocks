@@ -994,6 +994,9 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
         return clock
 
+    # def safe_show(self, object, options, name):
+    #     if object is not None:
+    #
 
     def show_clock(self, show_object, gear_colours=None, dial_colours=None, plate_colours=None, hand_colours=None,
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
@@ -1087,8 +1090,17 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         arbor_colour_index = 0
         unique_grasshopper_colours = [gear_colours[0]]
         for a, arbor in reversed(list(enumerate(self.plates.arbors_for_plate))):
+            colour = gear_colours[arbor_colour_index % len(gear_colours)]
             # show_object(arbor.get_assembled(with_extras=False), options={"color": gear_colours[(len(self.plates.arbors_for_plate) - 1 - arbor_colour_index) % len(gear_colours)]}, name="Arbor {}".format(a))
-            show_object(arbor.get_assembled(with_extras=False), options={"color": gear_colours[arbor_colour_index % len(gear_colours)]}, name="Arbor {}".format(a))
+            show_object(arbor.get_assembled(with_extras=False), options={"color": colour}, name="Arbor {}".format(a))
+
+            #could support these different colours, haven't yet
+            if arbor.arbor.get_type() == ArborType.ANCHOR:
+                crutch = arbor.get_crutch_in_situ()
+                if crutch is not None:
+                    show_object(crutch, options={"color": colour}, name=f"Pendulum Crutch")
+
+                show_object(arbor.get_pendulum_holder_in_situ(), options={"color": colour}, name=f"Pendulum Holder")
 
             arbor_colour_index+=1
 
@@ -1099,9 +1111,13 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                     colour = grasshopper_parts_colours[part]
                     fancy_name = part.replace("_", " ").title()
                     show_object(parts[part].translate(pos), options={"color": colour}, name=f"Grasshopper {fancy_name}")
+                    # I'd like parts of the grasshopper to be in the "colour train" of the going train
                     if colour not in unique_grasshopper_colours:
                         unique_grasshopper_colours.append(colour)
                         arbor_colour_index += 1
+
+
+
 
         print("generated arbors for plate")
         # return

@@ -169,7 +169,10 @@ pendulum = Pendulum(bob_d=80, bob_thick=15)
 
 assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clock_name, key_angle_deg=360/12)
 print(f"dial support lengths: {dial.support_length}")
-assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True)
+
+assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
+                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.LIGHTGREEN, Colour.GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
+                    motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
 
 if export_stls:
     assembly.get_BOM().export()

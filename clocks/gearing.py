@@ -2318,6 +2318,23 @@ class ArborForPlate:
 
         return anchor_assembly_end_z
 
+    def get_pendulum_holder_in_situ(self):
+        pendulum_z = -self.pendulum_sticks_out
+
+        if self.pendulum_at_front:
+            pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
+        return self.pendulum_fixing.get_assembled().translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)).translate(self.bearing_position[:2])
+
+    def get_crutch_in_situ(self):
+        crutch = None
+        try:
+            crutch = self.pendulum_fixing.get_crutch_assembled()
+        except:
+            return None
+        if crutch is not None:
+            crutch = crutch.translate((0,0,self.back_plate_thick + 1 + self.endshake/2)).translate(self.bearing_position[:2])
+        return crutch
+
     def get_assembled(self, with_extras=True):
         '''
         with_extras - if true include: power mechanism (if detached from wheel), pendulum hanger
@@ -2362,33 +2379,10 @@ class ArborForPlate:
             assembly = assembly.translate((0,0,self.get_anchor_assembly_end_z()))
 
             if with_extras:
-                # if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR and self.escapement_on_front and not self.pendulum_at_front:
-                #     collet = shapes["collet"]
-                #     assembly = assembly.add(collet.translate((0, 0, -self.collet_thick - self.endshake/2)))
-                #TODO re-instate
-                # if self.pendulum_fixing in [PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, PendulumFixing.FRICTION_ROD] and with_extras:
-                pendulum_z = -self.pendulum_sticks_out
-
-                if self.pendulum_at_front:
-                    pendulum_z = self.total_plate_thickness + self.pendulum_sticks_out
-                #
-                #     #old non-beat adjustable holder. works, will keep it as part of the output STLs
-                #     # assembly = assembly.add(shapes["pendulum_holder"].rotate((0,0,0),(0,1,0),180).translate((0,0,pendulum_z + self.pendulum_holder_thick/2)))
-                #     #.rotate((0,0,0),(0,1,0),180)
-                #     if self.pendulum_fixing == PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS:
-
-                # if "pendulum_holder" in shapes:
-                #     assembly = assembly.add(self.pendulum_fixing.get_pendulum_holder_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
-
-                assembly = assembly.add(self.pendulum_fixing.get_assembled().translate((0,0,pendulum_z - self.pendulum_holder_thick/2)))
-
-                #TODO
+                assembly = assembly.add(self.get_pendulum_holder_in_situ())
                 if "crutch" in shapes:
-                    assembly = assembly.add(self.pendulum_fixing.get_crutch_assembled().translate((0,0,self.back_plate_thick + 1 + self.endshake/2)))
-                #     else:
-                #         assembly = assembly.add(self.friction_fit_bits.get_pendulum_holder().rotate((0,0,0),(0,1,0),180).translate((0,0,self.pendulum_holder_thick)).translate((0, 0, pendulum_z - self.pendulum_holder_thick / 2)))
-                # if self.pendulum_fixing == PendulumFixing.SUSPENSION_SPRING:
-                #     assembly = assembly.add(shapes["crutch"].rotate((0,0,0),(0,1,0),180).translate((0, 0, - self.endshake / 2 - self.crutch_holder_slack_space / 2 - self.arbor_bearing_standoff_length / 2)))
+                    assembly = assembly.add(self.get_crutch_in_situ())
+
             assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split not in [SplitArborType.NORMAL_ARBOR, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
