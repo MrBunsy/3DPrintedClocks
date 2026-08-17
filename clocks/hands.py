@@ -164,7 +164,7 @@ def diamond_hand(base_r, hand_width, length, thick, hollow_diamond=False, diamon
     return hand
 
 class HandGenerator:
-    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
+    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1, chunky=False):
         #radius of circle at base of hand
         self.base_r = base_r
         #total length of minute hand regardless of base_r
@@ -177,6 +177,7 @@ class HandGenerator:
         self.second_thick = second_thick
         if self.second_thick < 0:
             self.second_thick = self.thick
+        self.chunky = chunky
 
     def get_thick(self, thick_override=-1):
         thick = self.thick
@@ -867,8 +868,8 @@ class ArtDecoHands(HandGenerator):
     '''
     two teardrop hands, hour hand is hollow
     '''
-    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1):
-        super().__init__(base_r, length, thick, second_base_r, second_thick)
+    def __init__(self, base_r, length, thick, second_base_r=-1, second_thick=-1, chunky=False):
+        super().__init__(base_r, length, thick, second_base_r, second_thick, chunky = chunky)
         self.hour_length = length*0.8
         self.trunk_width = self.length * 0.075
 
@@ -914,6 +915,13 @@ class ArtDecoHands(HandGenerator):
         raise NotImplemented()
 
 class ArtDecoHands2(ArtDecoHands):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # looked good at previous sizes, but hard to see unless there's a vanity plate
+        if self.chunky:
+            self.hour_edge_thick*=1.25
+            self.tip_r*=1.25
+            self.minute_base_circle_r*=1.25
     def hour_hand(self, colour=None, thick_override=-1):
         thick = self.get_thick(thick_override)
         hand = get_stroke_line([(0,0), (0, self.hour_length)], wide=self.tip_r*2, thick=thick)
@@ -930,15 +938,28 @@ class ArtDecoHands2(ArtDecoHands):
         # hand = super().minute_hand(colour, thick_override)
         thick = self.get_thick(thick_override)
 
+        tip_length = 0#self.length*0.15
         teardrop_length = self.length * 0.6
 
-        teardrop = get_teardrop(self.minute_base_circle_r, self.tip_r, teardrop_length, thick).cut(get_teardrop(self.minute_base_circle_r - self.hour_edge_thick, self.tip_r - self.hour_edge_thick, teardrop_length, thick))
+        hand = get_stroke_line([(0,0), (0, self.length)], wide=self.tip_r*2, thick=thick)
 
-        hand = teardrop.translate((0, self.length - teardrop_length))
+        # tip_r =
+
+        teardrop = get_teardrop(self.minute_base_circle_r, self.tip_r/2, teardrop_length, thick)
+        # inner_teardrop = teardrop.cut(get_teardrop(self.minute_base_circle_r, self.tip_r / 2, teardrop_length, thick * 4).shell(-self.hour_edge_thick*2).translate((0, 0, -self.hour_edge_thick)).intersect(
+        #     cq.Workplane("XY").rect(self.length * 3, self.length * 3).extrude(thick)))
+
+        teardrop_y = self.length - teardrop_length - tip_length
+
+        hand = hand.union(teardrop.translate((0, teardrop_y)))
 
         gap_length = self.length - teardrop_length - self.minute_base_circle_r - self.tip_r
 
-        hand = hand.union(cq.Workplane("XY").rect(self.hour_edge_thick * 2.5, gap_length).extrude(thick).translate((0, gap_length / 2)))
+        # hand = hand.union(cq.Workplane("XY").rect(self.hour_edge_thick * 2.5, gap_length).extrude(thick).translate((0, gap_length / 2)))
+
+        #guesswork and judging by eye to make it shorter by the right length to look good
+        inner_teardrop = get_teardrop(self.minute_base_circle_r - self.hour_edge_thick, self.tip_r - self.hour_edge_thick, teardrop_length-self.tip_r*7, thick)#.translate((0, teardrop_y))
+        hand = hand.cut(inner_teardrop.translate((0, teardrop_y)))
 
         return hand
 
@@ -1270,7 +1291,7 @@ class Hands:
             self.generator = ArtDecoHands(base_r=self.length*0.1, thick = self.thick, length = self.length)
 
         if self.style == HandStyle.ART_DECO2:
-            self.generator = ArtDecoHands2(base_r=self.length*0.1, thick = self.thick, length = self.length)
+            self.generator = ArtDecoHands2(base_r=self.length*0.1, thick = self.thick, length = self.length, chunky=self.chunky)
 
 
 

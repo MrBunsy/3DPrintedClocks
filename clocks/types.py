@@ -247,6 +247,7 @@ class PillarStyle(Enum):
     SIMPLE = "simple"
     SIMPLE_HEX = "simple_hex"
     BARLEY_TWIST = "barley_twist"
+    DOUBLE_BARLEY_TWIST = "double_barley_twist"
     COLUMN = "column"
     #uh this didn't quite come out as planned
     BLOBS = "blobs"

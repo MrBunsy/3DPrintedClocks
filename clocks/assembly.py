@@ -1013,7 +1013,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             dial_colours = ["white", "black"]
         if hand_colours is None:
             #main hand, outline, second hand if different
-            hand_colours = ["white", "black"]
+            #usually want these to match the dial
+            hand_colours = dial_colours#["white", "black"]
         if hand_colours_overrides is None:
             #for hands with specific colours (as opposed to an outline) allow overriding the preview of those colours
             hand_colours_overrides = {}

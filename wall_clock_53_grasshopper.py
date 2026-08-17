@@ -36,7 +36,7 @@ if 'show_object' not in globals():
 clock_name= "wall_clock_53"
 clock_out_dir= "out"
 gear_style=GearStyle.BENT_ARMS5
-pillar_style=PillarStyle.CLASSIC
+pillar_style=PillarStyle.DOUBLE_BARLEY_TWIST
 
 
 #copied from clock 15, make sure there's space for the front anchor bearing holder to not clash with the arms
@@ -138,9 +138,14 @@ plaque = None
 dial_d=190
 dial_width = 30
 
-dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
-                font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
-                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)
+#the art deco style I like, but already have one of
+# dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
+#                 font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
+#                 dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)
+
+#got one of these in teh office, would like one at home
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED, inner_edge_style=None,
+                  outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, raised_detail=True, dial_width=dial_width, pillar_style=pillar_style)
 
 gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
@@ -148,6 +153,7 @@ motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi
 
 print(f"dial support lengths: {dial.support_length}")
 
+plaque = Plaque(text_lines=["W53#0 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
 
 
@@ -161,7 +167,7 @@ print(f"dial support lengths: {dial.support_length}")
 print(plates.bearing_positions)
 
 hands = Hands(style=HandStyle.ART_DECO2, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                  length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=False,
+                  length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                   outline_on_seconds=0, second_hand_centred=False, include_seconds_hand=False)
 
 pendulum = Pendulum(bob_d=80, bob_thick=15)
@@ -171,8 +177,12 @@ assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, nam
 print(f"dial support lengths: {dial.support_length}")
 
 assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
-                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.LIGHTGREEN, Colour.GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
-                    motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
+                    # gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.TEAL, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
+                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.DARKBLUE, Colour.PURPLE, Colour.DARK_PURPLE],
+                    # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
+                    motion_works_colours=[Colour.BLUE, Colour.BLUE, Colour.LIGHTBLUE],
+                    dial_colours = [Colour.WHITE, Colour.BRASS],
+                    plate_colours=[Colour.DARKGREY, Colour.BRASS])
 
 if export_stls:
     assembly.get_BOM().export()

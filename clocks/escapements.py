@@ -2506,7 +2506,7 @@ TODO add screw lengths to attach commutors and arms to frame
         # was 1.2, anchor's wheel tip is 1, but I think with a 0.3mm nozzle we can do better
         # we really want it as thin as possible to make the pallet ends as big as possible
         # tooth_tip_width=1.2
-        tooth_tip_width = 0.8
+        tooth_tip_width = 0.7
 
         #angles from O
         #tooth_base_angle=(math.pi*2/self.teeth)*0.3

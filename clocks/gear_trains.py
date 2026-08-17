@@ -1101,6 +1101,7 @@ class GoingTrain(GearTrainBase):
                 type = ArborType.ANCHOR
                 # "for the Anchor this means clockwise from front"
                 # anchor and escape wheel clockwiseness is together, so we only care about the clockwiseness of the escape wheel
+                #and this is absolute clockwise, there is no pinion to worry about
                 clockwise_from_pinion_side = (arbors_from_centre_wheel - 1) % 2 == 0
 
             #https://stackoverflow.com/a/11277439 - remove 'module' from dict, fail successfully. we've made use of module above and it's not an argument of Arbor below

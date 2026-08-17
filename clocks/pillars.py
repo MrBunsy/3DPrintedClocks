@@ -3,7 +3,7 @@ from .geometry import *
 from .utility import *
 import cadquery as cq
 
-#not sure where to put the pillars, maybe their own file?
+#TODO wrap these up in a class, then we can share code about the tops and bottoms and whatnot
 def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base_fillet_r=-1):
     '''
     base_fillet_r if +ve then the base is flat with rounded edges
@@ -28,8 +28,35 @@ def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base
             return fancy_pillar_column(r, length, clockwise, with_divots=False)
     elif style == PillarStyle.SIMPLE_HEX:
         return poly_cylinder(r, length, sides=6)
+    elif style == PillarStyle.DOUBLE_BARLEY_TWIST:
+        return double_barley_twist_pillar(r, length, clockwise=clockwise)
     else:
         raise NotImplementedError("Pillar style {} not yet implemented".format(style))
+
+def double_barley_twist_pillar(radius, length, clockwise=True):
+    circle = cq.Workplane("XY").circle(radius)
+    inner_r = radius * 0.85
+    base_bulge_thick = radius*0.36
+    base_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(radius, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_bulge_thick)], tangents=[(1, 1), (-1, 1)]).lineTo(0, base_bulge_thick).close())
+    base = base_outline.sweep(circle)
+    centre_length = length - 2 * base_bulge_thick
+
+    centre_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(inner_r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_bulge_thick)], tangents=[(1, 1), (-1, 1)]).lineTo(0, base_bulge_thick).close())
+    centre = centre_outline.sweep(circle)
+
+    centre_half_length = centre_length/2 - base_bulge_thick/2
+    twists_per_mm = 1 / 100
+
+    twists = twists_per_mm * (length - base_bulge_thick * 2)
+    angle = 360 * twists
+    if not clockwise:
+        angle *= -1
+    centre_base = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(centre_half_length, angle)
+    centre_top = cq.Workplane("XY").polygon(8, inner_r * 2).twistExtrude(centre_half_length, -angle)
+
+    pillar = base.union(centre_base.translate((0,0,base_bulge_thick))).union(centre.translate((0,0,base_bulge_thick + centre_half_length))).union(centre_top.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length-base_bulge_thick))).union(base.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length)))
+
+    return pillar
 
 def poly_cylinder(radius, length, sides=6):
     return cq.Workplane("XY").polygon(sides, radius*2).extrude(length)

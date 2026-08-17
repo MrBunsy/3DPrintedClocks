@@ -772,6 +772,7 @@ class Colour:
     BROWN = (66, 40, 14)  # (139,69,19)
     DARK_PURPLE = (12, 11, 17)
     ICE_BLUE = (0, 153, 255)#, 0.5)
+    TEAL = (64,224,208)
 
     RAINBOW = [RED,
                ORANGE,

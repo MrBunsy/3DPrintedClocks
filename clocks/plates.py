@@ -1636,8 +1636,6 @@ class SimpleClockPlates(BasePlates):
 
     def get_front_anchor_bearing_holder(self, held_from_pos=None, for_printing=True):
 
-
-
         holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
@@ -2603,7 +2601,6 @@ class SimpleClockPlates(BasePlates):
 
         bit messy since adding the option for screws_from_back to be different for each pillar (needed to make the moon clock assembleable and look neat)
         '''
-
 
 
         if self.fixing_screws_cutter is not None:
@@ -5450,9 +5447,6 @@ class RoundClockPlates(SimpleClockPlates):
         note assumes that anchor_holder_fixing_points are symetric
         '''
 
-
-
-
         holder = cq.Workplane("XY")
 
 
@@ -6011,6 +6005,8 @@ class GrasshopperRoundPlates(RoundClockPlates):
         bom.add_item(BillOfMaterials.Item(f"{self.anchor_holder_little_screw}{self.get_anchor_holder_little_screw_length()}", purpose="Holder anchor holder upright"))
 
         bom.add_printed_part(BillOfMaterials.PrintedPart("escape_wheel_holder", self.get_front_escape_wheel_holder(for_printing=True)))
+
+        return bom
 
 class ChildFriendlySimpleClockPlates(SimpleClockPlates):
     '''

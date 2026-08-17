@@ -14,8 +14,8 @@ if 'show_object' not in globals():
 
 length = 100
 x = 0
-for pillar in PillarStyle:
-
+# for pillar in PillarStyle:
+for pillar in [PillarStyle.DOUBLE_BARLEY_TWIST]:
     try:
         show_object(fancy_pillar(r=15,length=length, style=pillar).translate((x,0,0)))
         x += 45

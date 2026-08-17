@@ -2378,12 +2378,14 @@ class ArborForPlate:
 
             assembly = assembly.translate((0,0,self.get_anchor_assembly_end_z()))
 
+
+
+            assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
+
             if with_extras:
                 assembly = assembly.add(self.get_pendulum_holder_in_situ())
                 if "crutch" in shapes:
                     assembly = assembly.add(self.get_crutch_in_situ())
-
-            assembly = assembly.translate((self.bearing_position[0], self.bearing_position[1]))
         elif self.type == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split not in [SplitArborType.NORMAL_ARBOR, SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE]:
             pinion = self.get_standalone_pinion_with_arbor_extension(for_printing=False)
             pinion = pinion.translate(self.bearing_position).translate((0, 0, self.back_plate_thick + self.endshake / 2))
@@ -3447,7 +3449,8 @@ class Arbor:
             arbor_or_pivot_r = self.arbor_d
         # wheel = self.escapement.get_wheel_2d()
 
-        clockwise = True if standalone else self.clockwise_from_pinion_side
+        #think I want this to always be true so we can mirror it below
+        clockwise = True# if standalone else self.clockwise_from_pinion_side
 
 
         wheel = self.escapement.get_wheel()
