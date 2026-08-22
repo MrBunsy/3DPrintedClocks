@@ -49,7 +49,8 @@ escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thic
 #hoping that a slightly thicker spring and using more of its turns we can pull just enough extra power for the grasshopper
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=6, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=MAINSPRING_185045,
-                     ratchet_screws=MachineScrew(3, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, fraction_of_max_turns=0.6)
+                     ratchet_screws=MachineScrew(3, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, fraction_of_max_turns=0.6,
+                     key_bearing=BEARING_12x18x4_THIN)
 
 train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement,powered_wheels=2, runtime_hours=7.5 * 24, powered_wheel=power)
 

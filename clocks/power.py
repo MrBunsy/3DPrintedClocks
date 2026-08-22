@@ -1110,7 +1110,7 @@ class SpringBarrel:
 
         self.clockwise=clockwise
 
-        #called key_bearing in Cordwheel, so stick with that, even though we'll use one bearing for everything now (except a flanged bearing in the lid?)
+        #called key_bearing in Cordwheel, so stick with that. this is the bearing used in the front and back plates
         self.key_bearing = key_bearing
 
         if self.key_bearing is None:

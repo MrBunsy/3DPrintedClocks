@@ -2000,6 +2000,9 @@ class ArborForPlate:
             # self.bearing = self.arbor.powered_wheel.key_bearing
             try:
                 self.front_bearing = self.arbor.powered_wheel.key_bearing
+
+                if self.arbor.powered_wheel.type == PowerType.SPRING_BARREL:
+                    self.back_bearing = self.arbor.powered_wheel.key_bearing
             except:
                 print("no key bearing")
 
@@ -2418,7 +2421,7 @@ class ArborForPlate:
                     if shape in shapes:
                         assembly = assembly.add(shapes[shape].translate((0, 0, self.arbor.wheel_thick)))
 
-            if not self.arbor.combine_with_powered_wheel and with_extras:
+            if not self.arbor.combine_with_powered_wheel:# and with_extras:
                 assembly = assembly.add(self.arbor.powered_wheel.get_model().translate((0, 0, self.arbor.wheel_thick)))
 
             wheel = shapes["wheel"]

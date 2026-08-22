@@ -5537,7 +5537,128 @@ class RoundClockPlates(SimpleClockPlates):
             standoff = standoff.rotate((0,0,0),(1,0,0),180)
 
         return standoff
-    def get_back_cock(self, for_printing=True, override_top_y=-1):
+    # def get_back_cock(self, for_printing=True, override_top_y=-1):
+    #     '''
+    #     the bit that holds the pendulum at the top
+    #     '''
+    #
+    #     plate_thick = self.get_plate_thick(standoff=True)
+    #     if self.wall_mounted:
+    #         wall_fixing_pos = self.get_screwhole_positions()[0][:2]
+    #     distance_to_anchor = get_distance_between_two_points(self.bearing_positions[-1][:2], self.hands_position)
+    #
+    #     if distance_to_anchor > self.radius and not self.power_at_bottom:
+    #         #bit of a special case, anchor is at the bottom
+    #         cock = get_stroke_line(self.top_pillar_positions, wide=self.pillar_r*2, thick = plate_thick)
+    #         central_point = get_average_of_points(self.top_pillar_positions)
+    #         cock = cock.union(get_stroke_line([central_point, self.bearing_positions[-1][:2]], wide=self.pillar_r*2, thick = plate_thick))
+    #         cock = cock.union(get_stroke_arc(self.top_pillar_positions[0], self.top_pillar_positions[1], self.radius, wide=self.pillar_r*2, thick=plate_thick))
+    #
+    #     else:
+    #         #anchor is at the top or within the radius
+    #         width = self.pillar_r*2
+    #
+    #         anchor_holder_fixing_points = self.top_pillar_positions[:]
+    #
+    #         if anchor_holder_fixing_points[0][0] < anchor_holder_fixing_points[1][0]:
+    #             #swap pillars around to make arc work in right direction
+    #             anchor_holder_fixing_points = [anchor_holder_fixing_points[1], anchor_holder_fixing_points[0]]
+    #
+    #         # curve_ends = []
+    #         # for fixing_pos in anchor_holder_fixing_points:
+    #         #     line_up = Line(fixing_pos, direction=(0,1))
+    #         #     curve_ends += line_up.intersection_with_circle(circle_centre=self.hands_position, circle_r = anchor_distance)
+    #
+    #         # curve_ends = [np_to_set(np.add(self.hands_position, polar(math.pi/2 + i*self.anchor_holder_arc_angle/2, anchor_distance))) for i in [-1, 1]]
+    #
+    #         plate_thick = self.get_plate_thick(standoff=True)
+    #         #
+    #         # standoff = get_stroke_line([anchor_holder_fixing_points[0], curve_ends[0]], wide=width, thick=plate_thick)
+    #         # standoff = standoff.union(get_stroke_line([anchor_holder_fixing_points[1], curve_ends[1]], wide=width, thick=plate_thick))
+    #         # standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
+    #
+    #         #using sagitta to work out radius of curve that links all points
+    #         #note that if the anchor is much much higher up (eg grasshopper) this doesn't work
+    #         l = get_distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
+    #         s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
+    #         r_anchor_bearing = s/2 + (l**2)/(8*s)
+    #
+    #         use_extendy_arm = False
+    #         #TODO calculate actual distance that an arc isn't possible
+    #         if s > self.radius:
+    #             #don't try, just follow the radius of the rest of the plates and we'll send a little arm up instead
+    #             r_anchor_bearing = self.radius
+    #             use_extendy_arm = True
+    #
+    #         cock = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
+    #
+    #
+    #         if self.wall_mounted:
+    #             #TODO case where anchor is below pillars!
+    #             # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
+    #             # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
+    #             # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
+    #
+    #             screwhole_y = get_distance_between_two_points(wall_fixing_pos, self.hands_position)
+    #             bearing_y = self.bearing_positions[-1][1]
+    #             top_y = screwhole_y
+    #             if bearing_y > screwhole_y:
+    #                 top_y = bearing_y
+    #
+    #             if override_top_y > top_y:
+    #                 top_y = override_top_y
+    #
+    #             if top_y > self.radius +5:
+    #                 #the screwhole sticks out the top of the clock, just jut out a little bit
+    #                 holdy_bit_wide=self.plate_width*1.2
+    #
+    #                 top_pos = (0, top_y)
+    #
+    #                 if use_extendy_arm:
+    #                     holdy_bit_wide = self.plate_width
+    #                     base = (self.hands_position[0], self.hands_position[1] + self.radius)
+    #                     cock = cock.union(get_stroke_line([base, self.bearing_positions[-1][:2]], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
+    #
+    #
+    #                 cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], top_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
+    #                 cock = cock.union(cq.Workplane("XY").moveTo(top_pos[0],top_pos[1]).circle(holdy_bit_wide/2).extrude(plate_thick))
+    #
+    #             else:
+    #                 #arc to join up the screw hole
+    #                 # using sagitta to work out radius of curve that links all points (again)
+    #                 s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
+    #                 r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
+    #
+    #                 cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_wall_fixing, wide=width, thick=plate_thick))
+    #
+    #                 gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
+    #                 if gap_size < 2:
+    #                     #don't leave little gaps
+    #                     cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
+    #
+    #     if self.wall_mounted:
+    #
+    #         cock = self.cut_wall_fixing_hole(cock, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
+    #
+    #     if not self.standoff_pillars_separate:
+    #         cock = cock.union(self.get_standoff_pillars(top=True).translate((0,0,self.back_plate_from_wall)))
+    #     cock = self.cut_anchor_bearing_in_standoff(cock)
+    #
+    #
+    #
+    #     cock = cock.translate((0,0,-self.back_plate_from_wall))
+    #
+    #     if self.text_on_standoffs:
+    #         cock = cock.cut(self.get_text(top_standoff=True))
+    #
+    #     cock = cock.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
+    #
+    #
+    #     if for_printing and self.standoff_pillars_separate:
+    #         cock = cock.rotate((0,0,0),(1,0,0),180)
+    #
+    #     return cock
+    def get_back_cock(self, for_printing=True):
         '''
         the bit that holds the pendulum at the top
         '''
@@ -5548,20 +5669,20 @@ class RoundClockPlates(SimpleClockPlates):
         distance_to_anchor = get_distance_between_two_points(self.bearing_positions[-1][:2], self.hands_position)
 
         if distance_to_anchor > self.radius and not self.power_at_bottom:
-            #bit of a special case, anchor is at the bottom
-            cock = get_stroke_line(self.top_pillar_positions, wide=self.pillar_r*2, thick = plate_thick)
+            # bit of a special case, anchor is at the bottom
+            cock = get_stroke_line(self.top_pillar_positions, wide=self.pillar_r * 2, thick=plate_thick)
             central_point = get_average_of_points(self.top_pillar_positions)
-            cock = cock.union(get_stroke_line([central_point, self.bearing_positions[-1][:2]], wide=self.pillar_r*2, thick = plate_thick))
-            cock = cock.union(get_stroke_arc(self.top_pillar_positions[0], self.top_pillar_positions[1], self.radius, wide=self.pillar_r*2, thick=plate_thick))
+            cock = cock.union(get_stroke_line([central_point, self.bearing_positions[-1][:2]], wide=self.pillar_r * 2, thick=plate_thick))
+            cock = cock.union(get_stroke_arc(self.top_pillar_positions[0], self.top_pillar_positions[1], self.radius, wide=self.pillar_r * 2, thick=plate_thick))
 
         else:
-            #anchor is at the top or within the radius
-            width = self.pillar_r*2
+            # anchor is at the top or within the radius
+            width = self.pillar_r * 2
 
             anchor_holder_fixing_points = self.top_pillar_positions[:]
 
             if anchor_holder_fixing_points[0][0] < anchor_holder_fixing_points[1][0]:
-                #swap pillars around to make arc work in right direction
+                # swap pillars around to make arc work in right direction
                 anchor_holder_fixing_points = [anchor_holder_fixing_points[1], anchor_holder_fixing_points[0]]
 
             # curve_ends = []
@@ -5577,54 +5698,26 @@ class RoundClockPlates(SimpleClockPlates):
             # standoff = standoff.union(get_stroke_line([anchor_holder_fixing_points[1], curve_ends[1]], wide=width, thick=plate_thick))
             # standoff = standoff.union(get_stroke_arc(curve_ends[0], curve_ends[1], anchor_distance, wide=width, thick=plate_thick))
 
-            #using sagitta to work out radius of curve that links all points
-            #note that if the anchor is much much higher up (eg grasshopper) this doesn't work
+            # using sagitta to work out radius of curve that links all points
             l = get_distance_between_two_points(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1])
             s = abs(anchor_holder_fixing_points[0][1] - self.bearing_positions[-1][1])
-            r_anchor_bearing = s/2 + (l**2)/(8*s)
+            r_anchor_bearing = s / 2 + (l ** 2) / (8 * s)
 
-            use_extendy_arm = False
-            #TODO calculate actual distance that an arc isn't possible
-            if s > self.radius:
-                #don't try, just follow the radius of the rest of the plates and we'll send a little arm up instead
-                r_anchor_bearing = self.radius
-                use_extendy_arm = True
-
-            cock = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)#, fill_in=self.wall_mounted)
-
+            cock = get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], r_anchor_bearing, wide=width, thick=plate_thick)  # , fill_in=self.wall_mounted)
 
             if self.wall_mounted:
-                #TODO case where anchor is below pillars!
+                # TODO case where anchor is below pillars!
                 # standoff = standoff.union(get_stroke_line(anchor_holder_fixing_points, width, plate_thick))
                 # standoff = standoff.union(get_stroke_line([self.bearing_positions[-1][:2], (0, anchor_holder_fixing_points[0][1])], width*1.5, plate_thick, style=StrokeStyle.SQUARE))
                 # wall_fixing_pos = (0, anchor_holder_fixing_points[0][1] + s/2)
-
-                screwhole_y = get_distance_between_two_points(wall_fixing_pos, self.hands_position)
-                bearing_y = self.bearing_positions[-1][1]
-                top_y = screwhole_y
-                if bearing_y > screwhole_y:
-                    top_y = bearing_y
-
-                if override_top_y > top_y:
-                    top_y = override_top_y
-
-                if top_y > self.radius +5:
-                    #the screwhole sticks out the top of the clock, just jut out a little bit
-                    holdy_bit_wide=self.plate_width*1.2
-
-                    top_pos = (0, top_y)
-
-                    if use_extendy_arm:
-                        holdy_bit_wide = self.plate_width
-                        base = (self.hands_position[0], self.hands_position[1] + self.radius)
-                        cock = cock.union(get_stroke_line([base, self.bearing_positions[-1][:2]], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
-
-
-                    cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], top_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
-                    cock = cock.union(cq.Workplane("XY").moveTo(top_pos[0],top_pos[1]).circle(holdy_bit_wide/2).extrude(plate_thick))
+                if get_distance_between_two_points(wall_fixing_pos, self.hands_position) > self.radius + 5:
+                    # the screwhole sticks out the top of the clock, just jut out a little bit
+                    holdy_bit_wide = self.plate_width * 1.2
+                    cock = cock.union(get_stroke_line([self.bearing_positions[-1][:2], wall_fixing_pos], wide=holdy_bit_wide, thick=plate_thick, style=StrokeStyle.SQUARE))
+                    cock = cock.union(cq.Workplane("XY").moveTo(wall_fixing_pos[0], wall_fixing_pos[1]).circle(holdy_bit_wide / 2).extrude(plate_thick))
 
                 else:
-                    #arc to join up the screw hole
+                    # arc to join up the screw hole
                     # using sagitta to work out radius of curve that links all points (again)
                     s = abs(wall_fixing_pos[1] - anchor_holder_fixing_points[0][1])
                     r_wall_fixing = s / 2 + (l ** 2) / (8 * s)
@@ -5633,29 +5726,25 @@ class RoundClockPlates(SimpleClockPlates):
 
                     gap_size = abs(wall_fixing_pos[1] - self.bearing_positions[-1][1]) - width
                     if gap_size < 2:
-                        #don't leave little gaps
-                        cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing)/2, wide=width, thick=plate_thick))
+                        # don't leave little gaps
+                        cock = cock.union(get_stroke_arc(anchor_holder_fixing_points[0], anchor_holder_fixing_points[1], (r_anchor_bearing + r_wall_fixing) / 2, wide=width, thick=plate_thick))
 
         if self.wall_mounted:
-
             cock = self.cut_wall_fixing_hole(cock, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
 
         if not self.standoff_pillars_separate:
-            cock = cock.union(self.get_standoff_pillars(top=True).translate((0,0,self.back_plate_from_wall)))
+            cock = cock.union(self.get_standoff_pillars(top=True).translate((0, 0, self.back_plate_from_wall)))
         cock = self.cut_anchor_bearing_in_standoff(cock)
 
-
-
-        cock = cock.translate((0,0,-self.back_plate_from_wall))
+        cock = cock.translate((0, 0, -self.back_plate_from_wall))
 
         if self.text_on_standoffs:
             cock = cock.cut(self.get_text(top_standoff=True))
 
-        cock = cock.cut(self.get_fixing_screws_cutter())#.translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
-
+        cock = cock.cut(self.get_fixing_screws_cutter())  # .translate(np_to_set(np.multiply(-1, self.bearing_positions[-1][:2]))
 
         if for_printing and self.standoff_pillars_separate:
-            cock = cock.rotate((0,0,0),(1,0,0),180)
+            cock = cock.rotate((0, 0, 0), (1, 0, 0), 180)
 
         return cock
 
@@ -5961,9 +6050,31 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         return [(0, top_y, True), (0, self.bottom_pillar_positions[0][1], True)]
 
-    def get_back_cock(self, for_printing=True, override_top_y=-1):
-        #round clock plates don't know about toptop pillar
-        return super().get_back_cock(for_printing, override_top_y = self.top_top_pillar_pos[1])
+    def get_back_cock(self, for_printing=True):
+        plate_thick = self.get_plate_thick(standoff=True)
+        cock = get_stroke_arc(self.top_pillar_positions[0], self.top_pillar_positions[1], self.radius, wide=self.plate_width, thick=plate_thick)
+
+        base = (self.hands_position[0], self.hands_position[1] + self.radius)
+        cock = cock.union(get_stroke_line([base, self.top_top_pillar_pos], wide=self.plate_width, thick=plate_thick))
+
+        wall_fixing_pos = self.get_screwhole_positions()[0][:2]
+        cock = self.cut_wall_fixing_hole(cock, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True)
+
+        cock = self.cut_anchor_bearing_in_standoff(cock)
+
+        cock = cock.translate((0, 0, -self.back_plate_from_wall))
+
+        if self.text_on_standoffs:
+            cock = cock.cut(self.get_text(top_standoff=True))
+
+        cock = cock.cut(self.get_fixing_screws_cutter())
+
+
+
+        if for_printing and self.standoff_pillars_separate:
+            cock = cock.rotate((0, 0, 0), (1, 0, 0), 180)
+
+        return cock
 
 
     def get_top_top_pillar(self):

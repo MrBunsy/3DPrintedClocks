@@ -54,6 +54,9 @@ class Assembly:
         if self.plaque is not None:
             self.plaque_shape = self.plaque.get_plaque().rotate((0,0,0), (0,0,1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos).translate((0,0,-self.plaque.thick))
             self.plaque_text_shape = self.plaque.get_text().rotate((0,0,0),(1,0,0),180).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(plates.plaque_angle)).translate(plates.plaque_pos)
+            if plates.plaque_pos[0] > 0:
+                #rotate upright
+                self.plaque_text_shape = self.plaque_text_shape.rotate((plates.plaque_pos[0], plates.plaque_pos[1], 0), (plates.plaque_pos[0], plates.plaque_pos[1], 1),180)
 
         self.with_mat = with_mat
 
