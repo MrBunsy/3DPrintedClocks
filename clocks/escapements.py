@@ -202,7 +202,8 @@ class AnchorEscapement:
         returns a BOM which will be combined with the arbor BOM, instead of a subcomponent
         '''
         return BillOfMaterials("Anchor")
-    def get_BOM_for_subcomponent(self):
+    def get_BOM(self):
+        # for adding as a subcomponent
         return None
     def calc_geometry(self):
         '''
@@ -1268,8 +1269,8 @@ class EscapmentInterface:
 
 class GrasshopperEscapement:
 
-    @staticmethod
-    def get_harrison_compliant_grasshopper(**kwargs):
+    @classmethod
+    def get_harrison_compliant_grasshopper(cls, **kwargs):
         '''
         Return a grasshopper escapement which meets Harrison's stipulations as determined by David Heskin:
         9.75 escaping arc
@@ -1277,9 +1278,11 @@ class GrasshopperEscapement:
         mean torque arms 1% of pendulum length
         balanced escaping arcs
         '''
+        # if class_type is None:
+        #     class_type = GrasshopperEscapement
 
         #pre-calculated good values for a 9.75 escaping arc
-        return GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, **kwargs)
+        return cls(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, **kwargs)
 
 
     def __init__(self, pendulum_length_m=getPendulumLength(2), teeth=120, tooth_span=17.5, T=3/2, escaping_arc_deg=9.75,
@@ -1437,7 +1440,7 @@ class GrasshopperEscapement:
 
 
         return bom
-    def get_BOM_for_subcomponent(self):
+    def get_BOM(self):
         bom = BillOfMaterials("Grashopper Escapement")
 
         bom.add_printed_parts(self.get_printed_parts())
@@ -1449,9 +1452,22 @@ TODO add screw lengths to attach commutors and arms to frame
 
     def get_printed_parts(self):
         parts = []
-        parts_dict = self.get_parts_in_situ(leave_out_wheel_and_frame=True)
-        for part in parts:
-            parts.append(BillOfMaterials.PrintedPart(part, parts_dict[part]))
+        # parts_dict = self.get_parts_in_situ(leave_out_wheel_and_frame=True)
+        # for part in parts_dict:
+        #     parts.append(BillOfMaterials.PrintedPart(part, parts_dict[part]))
+
+        parts.append(BillOfMaterials.PrintedPart("entry_pallet_arm", self.getEntryPalletArm()))
+
+        parts.append(BillOfMaterials.PrintedPart("exit_pallet_arm", self.getExitPalletArm()))
+
+        parts.append(BillOfMaterials.PrintedPart("entry_composer", self.getEntryComposer()))
+
+        parts.append(BillOfMaterials.PrintedPart("exit_composer", self.getExitComposer()))
+
+        pivot_extenders = self.get_frame_pivot_arm_extenders()
+        if pivot_extenders is not None:
+            parts.append(BillOfMaterials.PrintedPart("pivot_extender", pivot_extenders))
+
         return parts
 
 
@@ -2099,25 +2115,26 @@ TODO add screw lengths to attach commutors and arms to frame
 
     def get_anchor(self):
         #comply with expected interface
-        return self.getFrame(leave_in_situ=False)
+        return self.get_frame(leave_in_situ=False)
 
-    def getFramePivotArmExtenders(self):
+    def get_frame_pivot_arm_extenders(self):
         '''
         if composer_z_distance_from_frame is larger than a few washers, print little arms to thread on to the screws to keep the composers and thus pallets in the right place on the z axis
         '''
 
         if self.composer_z_distance_from_frame > 0.8:
-            return cq.Workplane("XY").circle(self.frame_wide/2).circle(self.screws.metric_thread/2).extrude(self.composer_z_distance_from_frame - WASHER_THICK_M3)
+            return cq.Workplane("XY").circle(self.frame_wide/2).extrude(self.composer_z_distance_from_frame - WASHER_THICK_M3).cut(self.screws.get_cutter(ignore_head=True, self_tapping=True))
 
         return None
 
 
-    def getFrame(self, leave_in_situ=False, thick=-1):
+    def get_frame(self, leave_in_situ=False, thick=-1):
         '''
         Get the anchor-like part (fully 3D) which attaches to the arbour
-        rotated and translated so taht (0,0) is in the centre of its arbour
+        rotated and translated so taht (0,0) is in the centre of its arbor
         also rotated so that it lines up with the pendulum being vertical
         HACKY SIDE EFFECTS: sets self.entry_side_end, self.exit_side_end
+        (which are used precisely no-where outside this function?)
 
 
         '''
@@ -2138,14 +2155,14 @@ TODO add screw lengths to attach commutors and arms to frame
         line_ZP = Line(self.geometry["Z"], another_point=self.geometry["P"])
         dir_ZP_perpendicular = line_ZP.get_perpendicular_direction()
 
-        entry_composer_rest = self.getComposerRestScrewCentrePos(self.geometry["J"], self.geometry["P"])
+        entry_composer_rest = self.get_composer_rest_screw_centre_pos(self.geometry["J"], self.geometry["P"])
         entry_composer_rest_distance = np.dot(np.subtract(entry_composer_rest, self.geometry["Z"]), line_ZP.dir)
 
 
         entry_side_end = np.add(self.geometry["Z"], np.multiply(line_ZP.dir, entry_composer_rest_distance))#self.geometry["P"]#
         #hacky side effect, setting these values to aid with cosmetics
         Z_dir = np.multiply(self.geometry["Z"], 1/np.linalg.norm(self.geometry["Z"]))
-        self.entry_side_end = entry_side_end
+        # self.entry_side_end = entry_side_end
         entry_side_end_relative_in_situ = np.subtract(entry_side_end, self.geometry["Z"])
         entry_side_end_relative_x = np.dot(np.cross(Z_dir, (0, 0, 1))[:2], entry_side_end_relative_in_situ)
         entry_side_end_relative_y = np.dot(Z_dir, entry_side_end_relative_in_situ)
@@ -2168,15 +2185,15 @@ TODO add screw lengths to attach commutors and arms to frame
         # cut hole for entry pallet & composer pivot
         if thick < self.frame_screw_fixing_min_thick:
             frame = frame.union(cq.Workplane("XY").moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(arm_wide/2).extrude(self.frame_screw_fixing_min_thick).translate((0,0,-self.frame_screw_fixing_min_thick)))
-        frame = frame.faces(">Z").workplane().moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
+        # frame = frame.faces(">Z").workplane().moveTo(self.geometry["P"][0], self.geometry["P"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
+        frame = frame.cut(self.screws.get_cutter(self_tapping=True, ignore_head=True).translate(self.geometry["P"]).translate((0,0,-self.frame_screw_fixing_min_thick)))
 
         #exit side
         line_ZG = Line(self.geometry["Z"], another_point=self.geometry["G"])
         dir_ZG_perpendicular = line_ZG.get_perpendicular_direction()
 
-        #hacky side effect
-        self.exit_side_end = self.geometry["G"]
-        exit_side_end_relative_in_situ = np.subtract(self.exit_side_end, self.geometry["Z"])
+        exit_side_end = self.geometry["G"]
+        exit_side_end_relative_in_situ = np.subtract(exit_side_end, self.geometry["Z"])
         exit_side_end_relative_x = np.dot(np.cross(Z_dir,(0,0,1))[:2], exit_side_end_relative_in_situ)
         exit_side_end_relative_y = np.dot(Z_dir, exit_side_end_relative_in_situ)
         #for lining up cosmetics with the end
@@ -2188,7 +2205,7 @@ TODO add screw lengths to attach commutors and arms to frame
         frame = frame.close().extrude(thick)
 
         #exit composer rest
-        exit_composer_rest = self.getComposerRestScrewCentrePos(self.geometry["Cstar"], self.geometry["G"])
+        exit_composer_rest = self.get_composer_rest_screw_centre_pos(self.geometry["Cstar"], self.geometry["G"])
         #negatives here because line ZG goes in the opposite way. we could let them cancel out, but this is clearer in terms of what we want to happen
         exit_composer_rest_along_arm = -np.dot(np.subtract(exit_composer_rest, self.geometry["G"]), line_ZG.dir)
         exit_composer_rest_base = np.add(self.geometry["G"], np.multiply(line_ZG.dir, -exit_composer_rest_along_arm))
@@ -2209,7 +2226,8 @@ TODO add screw lengths to attach commutors and arms to frame
         if thick < self.frame_screw_fixing_min_thick:
             #make it chunkier first
             frame = frame.union(cq.Workplane("XY").moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(arm_wide/2).extrude(self.frame_screw_fixing_min_thick).translate((0,0,-self.frame_screw_fixing_min_thick)))
-        frame = frame.faces(">Z").workplane().moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
+        # frame = frame.faces(">Z").workplane().moveTo(self.geometry["G"][0], self.geometry["G"][1]).circle(self.screws.metric_thread / 2).cutThruAll()
+        frame = frame.cut(self.screws.get_cutter(self_tapping=True, ignore_head=True).translate(self.geometry["G"]).translate((0,0,-self.frame_screw_fixing_min_thick)))
             # frame = frame.add(star)
 
 
@@ -2266,7 +2284,7 @@ TODO add screw lengths to attach commutors and arms to frame
 
         return part
 
-    def getPalletArmBendStart(self, nib_pos, pivot_pos):
+    def get_pallet_arm_bend_start(self, nib_pos, pivot_pos):
         '''
         Get the position of where the arm bends. Assume arm is a straight line of width self.pallet_arm_wide from pivot_pos to
         arm_bend_start (returned)
@@ -2289,7 +2307,7 @@ TODO add screw lengths to attach commutors and arms to frame
         arm_bend_start = np.add(pivot_pos, np.multiply(line_along_arm.dir, distance_nib_bend_start))
         return arm_bend_start
 
-    def getComposerRestScrewCentrePos(self, nib_pos, pivot_pos):
+    def get_composer_rest_screw_centre_pos(self, nib_pos, pivot_pos):
         '''
         In the top left corner of the composer is a screw to add weight. this screw will extend out the back of the composer so it will come into contact with the frame arm
         This gets the position of the centre of that screw when the composer should be resting on that arm
@@ -2297,7 +2315,7 @@ TODO add screw lengths to attach commutors and arms to frame
         the screw centre is :
         (-composer_length, self.composer_height)
         '''
-        pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+        pallet_arm_bend_start = self.get_pallet_arm_bend_start(nib_pos=nib_pos, pivot_pos=pivot_pos)
 
         line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
 
@@ -2310,13 +2328,13 @@ TODO add screw lengths to attach commutors and arms to frame
 
         return rest_screw_pos
 
-    def getComposer(self, nib_pos, pivot_pos, for_printing=True, extra_length_fudge=0):
+    def get_composer(self, nib_pos, pivot_pos, for_printing=True, extra_length_fudge=0):
         '''
         like pallet arm, assumes wheel rotates clockwise and both arms have their nibs 'left' of the pivot point
         '''
 
 
-        pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+        pallet_arm_bend_start = self.get_pallet_arm_bend_start(nib_pos=nib_pos, pivot_pos=pivot_pos)
         line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
 
         #make a shape which has the pivot_pos at (0,0) and assumes pallet arm is horizontal facing left, then rotate and translate into position
@@ -2347,7 +2365,8 @@ TODO add screw lengths to attach commutors and arms to frame
         composer = composer.cut(cq.Workplane("XY").circle(self.screws.metric_thread/2 + self.loose_on_pivot/2).extrude(1000))
         #hole to hold screw for weight
         composer = composer.union(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(around_screw_r).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
-        composer = composer.cut(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(self.screws.metric_thread/2).extrude(1000))
+        # composer = composer.cut(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(self.screws.metric_thread/2).extrude(1000))
+        composer = composer.cut(self.screws.get_cutter(ignore_head=True, self_tapping=True).translate(screw_position))
 
         if not for_printing:
             #rotate and translate into place
@@ -2358,6 +2377,11 @@ TODO add screw lengths to attach commutors and arms to frame
             composer = composer.rotate((0,0,0),(1,0,0),-90)
 
         return composer
+
+    # def get_composer2(self, nib_pos, pivot_pos, for_printing=True, extra_length_fudge=0):
+    #     '''
+    #     Can I make one that's a bit less of a rectangle?
+    #     '''
 
     def get_pallet_arm(self, nib_pos, pivot_pos, for_printing=False, exit=False):
         '''
@@ -2394,7 +2418,7 @@ TODO add screw lengths to attach commutors and arms to frame
             nib_base_end_r = self.pallet_arm_wide*0.6#5
 
 
-        arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+        arm_bend_start = self.get_pallet_arm_bend_start(nib_pos=nib_pos, pivot_pos=pivot_pos)
 
         nib_bend_r = (distance_to_nib - get_distance_between_two_points(pivot_pos, arm_bend_start))
 
@@ -2436,7 +2460,7 @@ TODO add screw lengths to attach commutors and arms to frame
         arm = arm.close().extrude(self.pallet_thick)
 
         #from pivot to the counterweight
-        counteweight_pos = np.add(pivot_pos, np.multiply(line_along_arm.dir, -distance_to_counterweight))
+        counteweight_pos = np_to_set(np.add(pivot_pos, np.multiply(line_along_arm.dir, -distance_to_counterweight)))
         bottom_of_counterweight = np.add(counteweight_pos, polar(arm_angle + math.pi/2, self.pallet_arm_wide/2))
         top_of_counterweight = np.add(counteweight_pos, polar(arm_angle - math.pi / 2, self.pallet_arm_wide/2))
         arm = arm.workplaneFromTagged("base").moveTo(bottom_of_pivot[0], bottom_of_pivot[1]).lineTo(bottom_of_counterweight[0], bottom_of_counterweight[1])
@@ -2445,6 +2469,7 @@ TODO add screw lengths to attach commutors and arms to frame
 
         #counterweight screw hole holder
         arm = arm.moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread).extrude(self.pallet_thick)
+
 
         #
         # # pallet_angle = line_pivot_to_nib.getAngle() - nib_angle
@@ -2472,7 +2497,8 @@ TODO add screw lengths to attach commutors and arms to frame
 
 
         arm = arm.cut(cq.Workplane("XY").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread / 2 + self.loose_on_pivot/2).extrude(self.pallet_thick))
-        arm = arm.cut(cq.Workplane("XY").moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread / 2).extrude(self.pallet_thick))
+        # arm = arm.cut(cq.Workplane("XY").moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread / 2).extrude(self.pallet_thick))
+        arm = arm.cut(self.screws.get_cutter(self_tapping=True, ignore_head=True).translate(counteweight_pos))
 
         return arm
 
@@ -2480,13 +2506,13 @@ TODO add screw lengths to attach commutors and arms to frame
         return self.get_pallet_arm(self.geometry["Cstar"], self.geometry["G"], for_printing=for_printing, exit=True)
 
     def getExitComposer(self, for_printing=True):
-        return self.getComposer(self.geometry["Cstar"], self.geometry["G"], for_printing=for_printing, extra_length_fudge=self.exit_composer_extra_fudge)
+        return self.get_composer(self.geometry["Cstar"], self.geometry["G"], for_printing=for_printing, extra_length_fudge=self.exit_composer_extra_fudge)
 
     def getEntryPalletArm(self, for_printing=True):
         return self.get_pallet_arm(self.geometry["J"], self.geometry["P"], for_printing=for_printing)
 
     def getEntryComposer(self, for_printing=True):
-        return self.getComposer(self.geometry["J"], self.geometry["P"], for_printing=for_printing, extra_length_fudge=self.entry_composer_extra_fudge)
+        return self.get_composer(self.geometry["J"], self.geometry["P"], for_printing=for_printing, extra_length_fudge=self.entry_composer_extra_fudge)
 
 
     def get_wheel_thick(self):
@@ -2546,6 +2572,13 @@ TODO add screw lengths to attach commutors and arms to frame
         #I think this is just for models, so fudge the inner radius
         return Gear.cut_style(self.get_wheel_2d().extrude(self.wheel_thick), self.get_wheel_inner_r(), inner_radius=10, style=style)
 
+    def rotate_anchor_to_centre_swing(self, anchor_part):
+        # centre = (0, 0)
+        # if not centre_on_anchor:
+        # return anchor_part
+        centre = self.geometry["Z"]
+        anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), rad_to_deg(-self.escaping_arc / 2))
+        return anchor_part
     def get_parts_in_situ(self, style=GearStyle.HONEYCOMB, leave_out_wheel_and_frame=False, centre_on_anchor=False):
         #all parts in situ for pendulum vertical
 
@@ -2554,27 +2587,21 @@ TODO add screw lengths to attach commutors and arms to frame
         composer_z = self.frame_thick + self.composer_z_distance_from_frame
         pallet_arm_z = composer_z + self.composer_thick + self.composer_pivot_space / 2
 
-        def rotate_anchor(anchor_part):
-            # centre = (0, 0)
-            # if not centre_on_anchor:
-            # return anchor_part
-            centre = self.geometry["Z"]
-            anchor_part = anchor_part.rotate((centre[0], centre[1], 0), (centre[0], centre[1], 1), rad_to_deg(-self.escaping_arc / 2))
-            return anchor_part
+        
 
         if not leave_out_wheel_and_frame:
             parts["escape_wheel"]=self.get_wheel(style=style).translate((0, 0, pallet_arm_z + (self.pallet_thick - self.wheel_thick) / 2))
-            parts["anchor"]=self.rotateToUpright(rotate_anchor(self.getFrame(leave_in_situ=True)))
+            parts["anchor"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing(self.get_frame(leave_in_situ=True)))
 
-        pivot_extenders = self.getFramePivotArmExtenders()
+        pivot_extenders = self.get_frame_pivot_arm_extenders()
         if pivot_extenders is not None:
-            parts["pivot_extender_0"]=self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick))))
-            parts["pivot_extender_1"]=self.rotateToUpright(rotate_anchor(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick))))
+            parts["pivot_extender_0"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing(pivot_extenders.translate((self.geometry["G"][0], self.geometry["G"][1], self.frame_thick))))
+            parts["pivot_extender_1"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing(pivot_extenders.translate((self.geometry["P"][0], self.geometry["P"][1], self.frame_thick))))
 
-        parts["exit_pallet_arm"]=self.rotateToUpright(rotate_anchor((self.getExitPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z))))
-        parts["entry_pallet_arm"]=self.rotateToUpright(rotate_anchor((self.getEntryPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z))))
-        parts["entry_composer"]=self.rotateToUpright(rotate_anchor((self.getEntryComposer(for_printing=False)).translate((0, 0, composer_z))))
-        parts["exit_composer"]=self.rotateToUpright(rotate_anchor((self.getExitComposer(for_printing=False)).translate((0, 0, composer_z))))
+        parts["exit_pallet_arm"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing((self.getExitPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z))))
+        parts["entry_pallet_arm"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing((self.getEntryPalletArm(for_printing=False)).translate((0, 0, pallet_arm_z))))
+        parts["entry_composer"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing((self.getEntryComposer(for_printing=False)).translate((0, 0, composer_z))))
+        parts["exit_composer"]=self.rotateToUpright(self.rotate_anchor_to_centre_swing((self.getExitComposer(for_printing=False)).translate((0, 0, composer_z))))
 
         if centre_on_anchor:
             for part in parts:
@@ -2642,7 +2669,7 @@ TODO add screw lengths to attach commutors and arms to frame
 
         out = os.path.join(path, "{}_grasshopper_frame.stl".format(name))
         print("Outputting ", out)
-        exporters.export(self.getFrame(), out)
+        exporters.export(self.get_frame(), out)
 
         out = os.path.join(path, "{}_grasshopper_entry_pallet_arm.stl".format(name))
         print("Outputting ", out)
@@ -2660,11 +2687,83 @@ TODO add screw lengths to attach commutors and arms to frame
         print("Outputting ", out)
         exporters.export(self.getExitComposer(), out)
 
-        pivot_extenders = self.getFramePivotArmExtenders()
+        pivot_extenders = self.get_frame_pivot_arm_extenders()
         if pivot_extenders is not None:
             out = os.path.join(path, "{}_grasshopper_pivot_extender.stl".format(name))
             print("Outputting ", out)
             exporters.export(pivot_extenders, out)
+
+class GrashopperEscapementTidierComposers(GrasshopperEscapement):
+
+
+    def generate_geometry(self, **kwargs):
+        super().generate_geometry(**kwargs)
+
+        ''' then calculate everything for the arms and composers here so we don't have that logic distributed across
+        the various different get_* functions
+        The general idea is that the pivot point and nib point for each pallet is the only "fixed" information
+        we can choose where to place the frame arms, the composer shapes, the composer rests, everything
+        
+        so we can scrap functions like "get_composer_rest_screw_centre_pos"
+        '''
+
+        #the pallet arm bend starts from the original design seem worth keeping
+
+        self.frame_pivot = self.geometry["Z"]
+
+        self.exit_pivot_pos =  self.geometry["G"]
+        self.exit_nib_pos = self.geometry["Cstar"]
+        self.exit_arm_bend_start = self.get_pallet_arm_bend_start(nib_pos=self.exit_nib_pos, pivot_pos=self.exit_pivot_pos)
+
+        self.entry_pivot_pos =self.geometry["P"]
+        self.entry_nib_pos = self.geometry["J"]
+        self.entry_arm_bend_start = self.get_pallet_arm_bend_start(nib_pos=self.entry_nib_pos, pivot_pos=self.entry_pivot_pos)
+
+        # pivot point for exit pallet
+        self.frame_exit_side_end = self.exit_pivot_pos
+
+        line_ZP = Line(self.frame_pivot, another_point=self.entry_pivot_pos)
+        # entry_composer_rest = self.get_composer_rest_screw_centre_pos(self.geometry["J"], self.geometry["P"])
+        # entry_composer_rest_distance = np.dot(np.subtract(entry_composer_rest, self.geometry["Z"]), line_ZP.dir)
+        entry_arm_straight_length = get_distance_between_two_points(self.entry_pivot_pos, self.entry_arm_bend_start)
+        entry_arm_pivot_distance = get_distance_between_two_points(self.frame_pivot, self.entry_pivot_pos)
+
+        frame_entry_side_length = entry_arm_straight_length + entry_arm_pivot_distance + 1
+        #entry side is long enough that the composer could rest on top of it
+        self.frame_entry_side_end = np_to_set(np.add(self.frame_pivot, np.multiply(line_ZP.dir, frame_entry_side_length)))
+
+        #new decision: I will just specify where the composer_frame_rest_pos is and where the composer_arm_rest_pos is, then the composer can figure out how to build
+        #an arm which does that
+        #plan: I still like the idea of semi circular arms, so make the rest on that radius
+        #for printing upside down in one peice actually the old design was better.
+        # any other way will requireprinting on the side in two peices or with supports
+        frame_entry_arm_line = Line(self.frame_pivot, another_point=self.frame_entry_side_end)
+        frame_entry_arm_perpendicular_dir = frame_entry_arm_line.get_perpendicular_direction(clockwise=True)
+        self.frame_entry_arm_top_line = Line(np_to_set(np.add(self.frame_pivot, np.multiply(frame_entry_arm_perpendicular_dir, self.frame_wide / 2))), direction=frame_entry_arm_line.dir)
+        self.entry_composer_frame_rest_pos = self.frame_entry_arm_top_line.intersection_with_circle(self.entry_pivot_pos, entry_arm_straight_length, line_length=frame_entry_side_length)[0]
+
+
+
+    # def get_composer_rest_screw_centre_pos(self, nib_pos, pivot_pos):
+    #     '''
+    #     In the top left corner of the composer is a screw to add weight. this screw will extend out the back of the composer so it will come into contact with the frame arm
+    #     This gets the position of the centre of that screw when the composer should be resting on that arm
+    #
+    #     the screw centre is :
+    #     (-composer_length, self.composer_height)
+    #     '''
+    #     pallet_arm_bend_start = self.getPalletArmBendStart(nib_pos=nib_pos, pivot_pos=pivot_pos)
+    #
+    #     line_along_arm = Line(pivot_pos, another_point=pallet_arm_bend_start)
+    #
+    #     composer_length = get_distance_between_two_points(pivot_pos, pallet_arm_bend_start)
+    #
+    #     arm_angle = line_along_arm.get_angle()
+    #
+    #     rest_pos_base = np.add(pivot_pos, np.multiply(line_along_arm.dir, composer_length))
+    #     rest_screw_pos = np.add(rest_pos_base, polar(arm_angle - math.pi/2, self.composer_height))
+    #
+    #     return rest_screw_pos
 
 class Pendulum:
     '''

@@ -1649,7 +1649,8 @@ class SimpleClockPlates(BasePlates):
         holder = cq.Workplane("XY").moveTo(-self.top_pillar_r, held_from_pos[1]).radiusArc((self.top_pillar_r, held_from_pos[1]), self.top_pillar_r)\
             .lineTo(self.top_pillar_r, self.bearing_positions[-1][1]).radiusArc((-self.top_pillar_r, self.bearing_positions[-1][1]), self.top_pillar_r).close().extrude(holder_thick)
 
-        holder = holder.union(cq.Workplane("XY").moveTo(held_from_pos[0], held_from_pos[1]).circle(self.plate_width / 2 + 0.0001).extrude(pillar_tall + holder_thick))
+        # holder = holder.union(cq.Workplane("XY").moveTo(held_from_pos[0], held_from_pos[1]).circle(self.plate_width / 2 + 0.0001).extrude(pillar_tall + holder_thick))
+        holder = holder.union(fancy_pillar(self.plate_width/2, pillar_tall, self.pillar_style).translate((held_from_pos[0], held_from_pos[1], holder_thick)))
 
 
         holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=get_bearing_info(self.arbors_for_plate[-1].arbor.arbor_d)).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1])))
@@ -5887,7 +5888,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
         return holder
 
     def get_front_escape_wheel_holder_pillar_height(self):
-        pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness()+ WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
+        pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness()+ SMALL_WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
 
         return pillar_height
 

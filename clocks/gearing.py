@@ -3336,7 +3336,7 @@ class Arbor:
             bom.combine(self.powered_wheel.get_BOM_for_combining_with_arbor(wheel_thick=self.wheel_thick))
         elif self.type == ArborType.ANCHOR:
             bom.combine(self.escapement.get_BOM_for_combining_with_arbor())
-            bom.add_subcomponent(self.escapement.get_BOM_for_subcomponent())
+            bom.add_subcomponent(self.escapement.get_BOM())
 
         return bom
 

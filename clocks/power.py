@@ -2318,6 +2318,8 @@ class WindingKey(WindingKeyBase):
     '''
     A simple winding key with a grip, as usually used for winding a spring powered clock
     Printed sideways for strength
+
+    TODO use "self-tapping" screwholes so I can get away without needing the nuts and use screws which din't extend the whole way through
     '''
 
 

@@ -4,6 +4,7 @@ from .utility import *
 import cadquery as cq
 
 #TODO wrap these up in a class, then we can share code about the tops and bottoms and whatnot
+#make it like the dial, with choice of tops, bottoms, middles and the rest, so we can remix the little pillars to our little heart's content
 def fancy_pillar(r, length, clockwise=True, style=PillarStyle.BARLEY_TWIST, base_fillet_r=-1):
     '''
     base_fillet_r if +ve then the base is flat with rounded edges
@@ -41,18 +42,28 @@ def double_barley_twist_pillar(radius, length, clockwise=True):
     base = base_outline.sweep(circle)
     centre_length = length - 2 * base_bulge_thick
 
+
+
+
     centre_outline = (cq.Workplane("XZ").moveTo(0, 0).lineTo(inner_r, 0).spline(includeCurrent=True, listOfXYTuple=[(inner_r, base_bulge_thick)], tangents=[(1, 1), (-1, 1)]).lineTo(0, base_bulge_thick).close())
     centre = centre_outline.sweep(circle)
 
     centre_half_length = centre_length/2 - base_bulge_thick/2
-    twists_per_mm = 1 / 100
+    twists_per_mm = 1 / 80
 
-    twists = twists_per_mm * (length - base_bulge_thick * 2)
+    twists = twists_per_mm * (centre_half_length)
     angle = 360 * twists
     if not clockwise:
         angle *= -1
     centre_base = cq.Workplane("XY").polygon(8,inner_r*2).twistExtrude(centre_half_length, angle)
     centre_top = cq.Workplane("XY").polygon(8, inner_r * 2).twistExtrude(centre_half_length, -angle)
+
+    if length < base_bulge_thick * 3:
+        twists = twists_per_mm * length
+        angle = 360 * twists
+        if not clockwise:
+            angle *= -1
+        return cq.Workplane("XY").polygon(8, inner_r * 2).twistExtrude(length, angle)
 
     pillar = base.union(centre_base.translate((0,0,base_bulge_thick))).union(centre.translate((0,0,base_bulge_thick + centre_half_length))).union(centre_top.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length-base_bulge_thick))).union(base.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, length)))
 

@@ -15,8 +15,19 @@ if 'show_object' not in globals():
         pass
 
 
-escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper()#BrocotEscapment()
+# escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper()
+escapement = GrashopperEscapementTidierComposers.get_harrison_compliant_grasshopper()
+#GrasshopperEscapement(escaping_arc_deg=9.75, d= 12.40705997, ax_deg=90.26021004, diameter=130.34329361, **kwargs)
+# escapement = GrashopperEscapementTidierComposers(escaping_arc_deg = escapement.escaping_arc_deg, d = escapement.d)
 show_object(escapement.get_assembled())
+
+show_object(escapement.rotateToUpright(escapement.rotate_anchor_to_centre_swing(cq.Workplane("XY").circle(0.5).extrude(40).translate(escapement.entry_composer_frame_rest_pos))))
+show_object(escapement.rotateToUpright(escapement.rotate_anchor_to_centre_swing(cq.Workplane("XY").circle(0.5).extrude(40).translate(escapement.frame_entry_arm_top_line.start))))
+#frame_entry_side_end
+show_object(escapement.rotateToUpright(escapement.rotate_anchor_to_centre_swing(cq.Workplane("XY").circle(0.75).extrude(40).translate(escapement.frame_entry_side_end))))
+show_object(escapement.rotateToUpright(escapement.rotate_anchor_to_centre_swing(cq.Workplane("XY").circle(0.75).extrude(40).translate(escapement.frame_pivot))))
+show_object(escapement.rotateToUpright(escapement.rotate_anchor_to_centre_swing(cq.Workplane("XY").circle(0.75).extrude(40).translate(escapement.entry_pivot_pos))))
+
 
 diameter = 55
 #

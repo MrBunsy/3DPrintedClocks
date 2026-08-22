@@ -181,8 +181,9 @@ assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=Tr
                     gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.DARKBLUE, Colour.PURPLE, Colour.DARK_PURPLE],
                     # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
                     motion_works_colours=[Colour.BLUE, Colour.BLUE, Colour.LIGHTBLUE],
-                    dial_colours = [Colour.WHITE, Colour.BRASS],
-                    plate_colours=[Colour.DARKGREY, Colour.BRASS])
+                    dial_colours = [Colour.WHITE, Colour.BLACK],
+                    plate_colours=[Colour.DARKGREY, Colour.BLACK],
+                    ratchet_colour=Colour.PURPLE)
 
 if export_stls:
     assembly.get_BOM().export()
