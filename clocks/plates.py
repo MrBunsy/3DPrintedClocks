@@ -426,6 +426,9 @@ class BasePlates:
     '''
     def __init__(self, going_train, layer_thick=LAYER_THICK, days_complication=None):
         self.layer_thick = layer_thick
+        #a little holder that sits on top of the ratchet pawl to give it more strength. only actually used on one design, all other designs I instead
+        #beef up the thickness of the back plate
+        #probably worth deprecating
         self.little_plate_for_pawl=False
         self.going_train = going_train
 
@@ -507,14 +510,17 @@ class BasePlates:
                 positions += self.going_train.powered_wheel.ratchet.get_little_plate_for_pawl_screw_positions()
             for relative_pos in positions:
                 extra_z = 0
+                ignore_head = False
                 if relative_pos == self.going_train.powered_wheel.ratchet.get_pawl_screw_position():
                     extra_z = -self.beefed_up_pawl_thickness
+                    # if pawl_screwed_from_front the the countersunk head is on teh outside of the ratchet
+                    #but only for the pawl, keep click with countershunk heads
+                    ignore_head = self.going_train.powered_wheel.ratchet.pawl_screwed_from_front
                 pos = np_to_set(np.add(self.bearing_positions[0][:2], relative_pos))
                 pos = (pos[0], pos[1], extra_z)
                 #undecided if they need to be for tap die, they mgiht be enough without now there's a little plate for the pawl
 
-                # if pawl_screwed_from_front the the countersunk head is on teh outside of the ratchet
-                ignore_head = self.going_train.powered_wheel.ratchet.pawl_screwed_from_front
+
 
                 cutter = cutter.add(screw.get_cutter(with_bridging=True, self_tapping=True, ignore_head=ignore_head).translate(pos)) # for_tap_die=True,
 
@@ -771,6 +777,7 @@ class SimpleClockPlates(BasePlates):
         if self.fixing_screws is None:
             #PREVIOUSLY longest pozihead countersunk screws I can easily get are 25mm long. I have some 40mm flathead which could be deployed if really needed
             #now found supplies of pozihead countersunk screws up to 60mm, so planning to use two screws (each at top and bottom) to hold everything together
+            #note - all new designs use m4 threaded rod
             self.fixing_screws = MachineScrew(metric_thread=3, countersunk=True)#, length=25)
 
         self.motion_works_screws = MachineScrew(metric_thread=self.arbor_d, countersunk=True)
@@ -6095,7 +6102,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
         return self.get_plate_thick(back=False) + self.get_front_anchor_bearing_holder_total_length() - 1
 
     def get_anchor_holder_little_screw_pos(self):
-        pos = (self.top_top_pillar_pos[0], self.top_top_pillar_pos[1] - self.plate_width / 2 + self.anchor_holder_little_screw.metric_thread / 2 + 1)#, self.get_plate_thick(back=True) + self.plate_distance
+        pos = (self.top_top_pillar_pos[0], self.top_top_pillar_pos[1] - self.fixing_screws.metric_thread/2 -self.anchor_holder_little_screw.get_head_diameter()/2  - 0.6)# - self.plate_width / 2 + self.anchor_holder_little_screw.metric_thread / 2 + 1)
         return pos
         # cutter = self.anchor_holder_little_screw.get_cutter(length = self.get_anchor_holder_little_screw_length(), self_tapping=True, head_space_length=0).translate(pos)
         # return cutter
@@ -6117,6 +6124,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
         bom.add_item(BillOfMaterials.Item(f"{self.anchor_holder_little_screw}{self.get_anchor_holder_little_screw_length()}", purpose="Holder anchor holder upright"))
 
         bom.add_printed_part(BillOfMaterials.PrintedPart("escape_wheel_holder", self.get_front_escape_wheel_holder(for_printing=True)))
+        bom.add_printed_part(BillOfMaterials.PrintedPart("top_top_pillar", self.get_top_top_pillar()))
 
         return bom
 

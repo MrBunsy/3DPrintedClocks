@@ -2314,7 +2314,7 @@ class WindingKeyBase:
             BillOfMaterials.PrintedPart("handle", self.get_handle(for_printing=True)),
 
         ]
-class WindingKey(WindingKeyBase):
+class WindingKeyWithNuts(WindingKeyBase):
     '''
     A simple winding key with a grip, as usually used for winding a spring powered clock
     Printed sideways for strength
@@ -2349,6 +2349,7 @@ class WindingKey(WindingKeyBase):
         self.screw_hole_length = get_incircle_for_regular_polygon(key_containing_diameter/2 + wall_thick, key_sides)*2
         spare_space = (self.screw_hole_length) % 2
         print(f"Winding Key: With a wall_thick of {wall_thick}, needs screws of length {self.screw_hole_length-spare_space}, which leaves a gap of {spare_space}")
+        self.spare_space = spare_space
 
         super().__init__(key_containing_diameter, cylinder_length, key_hole_deep, key_sides, max_radius, key_wiggle_room, wall_thick, handle_thick)
 
@@ -2458,6 +2459,44 @@ class WindingKey(WindingKeyBase):
         out = os.path.join(path, "{}_let_down_adapter.stl".format(name))
         print("Outputting ", out)
         exporters.export(self.get_let_down_adapter(), out)
+
+class WindingKey(WindingKeyWithNuts):
+    '''
+    use self-tapping holes to skip needing nuts. fewer components and should look neater
+    '''
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # self.screw_hole_length-=1
+        self.spare_space += 1
+        # self.screw_hole_end_gap = self.spare_space + 2
+        self.actual_screw_length = get_nearest_machine_screw_length(self.screw_hole_length - self.spare_space, self.screw)
+        print(f"spare space: {self.spare_space}, full length: {self.screw_hole_length}, actual screw length: {self.actual_screw_length}")
+
+    def get_screw_cutter(self):
+        '''
+        two screws will hold in the handle
+        '''
+        screw = self.screw.get_cutter(self_tapping=True, length=self.screw_hole_length-self.spare_space).rotate((0,0,0),(1,0,0), -90).translate((0,-self.screw_hole_length/2, 0))
+        screw1 = screw.rotate((0,0,0), (0,0,1),rad_to_deg(math.pi*2/6)).translate((0,0, self.key_grip_tall/4))
+        screw2 = screw.rotate((0, 0, 0), (0, 0, 1), -rad_to_deg(math.pi*2/6)).translate((0, 0, self.key_grip_tall * 3 / 4))
+
+        # nut = self.screw.get_nut_cutter(half=True).rotate((0,0,0),(1,0,0), -90).translate((0,-self.screw_hole_length/2, 0))
+        # nut1 = nut.rotate((0, 0, 0), (0, 0, 1), rad_to_deg(math.pi * 2 / 6 + math.pi)).translate((0, 0, self.key_grip_tall / 4))
+        # nut2 = nut.rotate((0, 0, 0), (0, 0, 1), -rad_to_deg(math.pi * 2 / 6 + math.pi)).translate((0, 0, self.key_grip_tall * 3 / 4))
+
+        cutter = screw1.add(screw2)#.add(nut1).add(nut2)
+        # cutter = cutter.add(cq.Workplane("XY").circle(self.screw_hole_length/2).extrude(3))
+
+        return cutter
+
+    def get_BOM(self):
+        bom = BillOfMaterials("Winding key")
+        bom.add_item(BillOfMaterials.Item(f"{self.screw} {self.actual_screw_length}mm", quantity=2, purpose="Handle fixing screws", object=self.screw))
+        # bom.add_item(BillOfMaterials.Item(f"M{self.screw.metric_thread} half nut", quantity=2, purpose="Handle fixing nuts"))
+
+        bom.add_printed_parts(self.get_printed_parts())
+        bom.add_model(self.get_assembled())
+        return bom
 
 
 class WindingCrank(WindingKeyBase):
