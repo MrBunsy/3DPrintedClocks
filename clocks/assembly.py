@@ -764,7 +764,10 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
 
             elif arbor.type == ArborType.ESCAPE_WHEEL:
                 if self.plates.escapement_on_front:
-                    rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.get_bearing(front=True).inner_d)) + 1
+                    if arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE:
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.plates.get_front_escape_wheel_holder_pillar_height() + bearing_thick + spare_rod_length_rear
+                    else:
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.get_bearing(front=True).inner_d)) + 1
                 else:
                     #"normal" arbour
                     rod_length = simple_arbor_length
@@ -1294,6 +1297,12 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 rod = cq.Workplane("XY").circle(3/2).extrude(rod_info["length"]).translate((0,0,-rod_info["length"]/2)).rotate((0,0,0),(1,0,0),90)
 
                 show_object(rod.translate(rod_info["pos"]), options={"color": rod_colour}, name=f"Pendlum Rod {i}")
+
+            motion_works_rod = self.plates.get_motion_works_minute_wheel_screw_length()
+            show_object(self.plates.motion_works_screws.get_model(length=motion_works_rod)
+                        .translate(self.plates.hands_position)
+                        .translate(self.plates.motion_works_relative_pos)
+                        .translate((0,0,self.front_of_clock_z-self.plates.get_plate_thick(back=False))), options={"color": rod_colour}, name=f"Motion Works Minute Wheel Fixing Screw")
 
         if with_key:
             if self.key_model is not None:

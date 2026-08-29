@@ -1769,6 +1769,9 @@ class LanternPinion:
             #put upright
             holder_together = (holder_together.rotate((0, 0, 0), (0, 1, 0), -90)
                                .translate((inner_r - self.hex_fitting_cutoff_height, 0, 0)).rotate((0, 0, 0), (0, 0, 1), 360 / 12))
+            #if needs to be printed upside down
+            if for_cutting and self.hex_fixing_sunk_into_wheel < self.wheel_thick and not self.need_cap_behind_wheel():
+                holder_together = holder_together.union(get_hole_with_hole(hole_d, inner_r*2, 0, sides=self.slot_sides).rotate((0,0,0),(1,0,0),180))
 
         return holder_together
 
@@ -2639,7 +2642,8 @@ class ArborForPlate:
             bom.add_subcomponent(self.pendulum_fixing.get_BOM())
             if self.arbor.arbor_split != SplitArborType.NORMAL_ARBOR:
                 bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the flat part of the anchor and the bearing in the clock plate to prevent anything rubbing."))
-
+        if self.arbor.get_type() == ArborType.ESCAPE_WHEEL and self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE:
+            bom.add_item(BillOfMaterials.Item(f"M{self.arbor_d} split washer", purpose="Bend flat with pliers, this then goes between the escape wheel and the bearing in the extra plate to prevent anything rubbing."))
         bom.add_printed_parts(self.get_printed_parts())
         model = self.get_assembled(with_extras=False)
         bom.add_model(model)
@@ -3188,7 +3192,7 @@ class Arbor:
         self.clockwise_from_pinion_side = clockwise_from_pinion_side
         #if using hyugens maintaining power then the chain wheel is directly fixed to the wheel, without a ratchet.
         #update: this is now set in "no_ratchet" in the powered wheel itself
-        self.use_ratchet=use_ratchet
+        self.ratchet_on_wheel=use_ratchet
         #is this screwed (and optionally glued) to the threaded rod?
         self.loose_on_rod = False
         self.type = type
@@ -3237,19 +3241,20 @@ class Arbor:
         if self.get_type() == ArborType.POWERED_WHEEL:
             #chain/cord wheel specific bits:
             self.weight_driven = PowerType.is_weight(self.powered_wheel.type)
-            self.use_ratchet = not self.powered_wheel.no_ratchet
+            self.ratchet_on_wheel = not self.powered_wheel.no_ratchet
 
+            #think this may have made something easier for weight driven, but results in no exported click or pawl for spring power
             if not self.weight_driven:
                 # bodge, need to rethink this a bit
                 #ratchet isn't part of the spring barrel.
-                self.use_ratchet = False
+                self.ratchet_on_wheel = False
             #remove support for not bolt on ratchet and inset ratchet as they're never used anymore - the bolt on ratchet has proven to be a good design
             if self.weight_driven:
                 self.ratchet_screws = ratchet_screws
                 if self.ratchet_screws is None:
                     self.ratchet_screws = MachineScrew(2, countersunk=True)
 
-                if self.use_ratchet:
+                if self.ratchet_on_wheel:
                     #could do with not having to care about the innards of the ratchet here
                     if self.powered_wheel.ratchet_has_external_pawl:
                         self.bolt_positions = self.powered_wheel.ratchet.get_screw_positions()
@@ -3270,7 +3275,7 @@ class Arbor:
 
 
 
-                if not self.use_ratchet and self.powered_wheel.type == PowerType.ROPE:
+                if not self.ratchet_on_wheel and self.powered_wheel.type == PowerType.ROPE:
                     #this can be printed in one peice, so combine with the wheel and use a standard arbour extension
                     self.combine_with_powered_wheel = True
             else:
@@ -3675,7 +3680,8 @@ class Arbor:
             extras['back_collet'] = self.powered_wheel.get_inner_collet()
             # ratchet_has_external_pawl = True
 
-        if self.get_type() == ArborType.POWERED_WHEEL and self.use_ratchet and self.powered_wheel.ratchet_has_external_pawl:
+        #bodge here - logic around ratchets is getting tangled
+        if self.get_type() == ArborType.POWERED_WHEEL and (self.ratchet_on_wheel or self.powered_wheel.type == PowerType.SPRING_BARREL) and self.powered_wheel.ratchet_has_external_pawl:
             extras['ratchet_pawl'] = self.powered_wheel.ratchet.get_pawl()
             extras['ratchet_click'] = self.powered_wheel.ratchet.get_click()
             #not needed on all designs (note - not needed on any new designs? we beef up the plate for the pawl screw now)
@@ -3697,7 +3703,7 @@ class Arbor:
         Note: shape is returned translated into the position relative to the chain wheel
 
         '''
-        if not self.use_ratchet or self.powered_wheel.ratchet_has_external_pawl:
+        if not self.ratchet_on_wheel or self.powered_wheel.ratchet_has_external_pawl:
             return None
 
         if self.ratchet.thick <= 0:
@@ -3737,7 +3743,7 @@ class Arbor:
         style = self.style
         if PowerType.is_weight(self.powered_wheel.type):
 
-            if self.use_ratchet:
+            if self.ratchet_on_wheel:
                 inner_radius_for_style=self.ratchet.get_max_radius()
             else:
                 inner_radius_for_style = self.powered_wheel.diameter * 1.1 / 2
@@ -3802,7 +3808,7 @@ class Arbor:
 
             gear_wheel = gear_wheel.union(extended_arbor.rotate((0,0,0),(1,0,0),180))
 
-        if self.get_extra_ratchet() is not None or not self.use_ratchet and self.weight_driven:
+        if self.get_extra_ratchet() is not None or not self.ratchet_on_wheel and self.weight_driven:
             #old style wibble arms ratchet - deprecated
             #need screwholes to attach the rest of the ratchet or the chain wheel (the boltPositions have alreayd been adjusted accordingly)
             # either to hold on the outer part of the ratchet or the powered wheel itself
@@ -3813,7 +3819,7 @@ class Arbor:
                     cutter = self.ratchet_screws.get_nut_cutter(with_bridging=False, half=True).translate(hole_pos)
                 # else screwing straight into the wheel seemed surprisingly secure, and if the wheel is that thin it probably isn't holding much weight anyway
                 gear_wheel = gear_wheel.cut(cutter)
-        if self.use_ratchet and self.powered_wheel.ratchet_has_external_pawl:
+        if self.ratchet_on_wheel and self.powered_wheel.ratchet_has_external_pawl:
             for hole_pos in self.pawl_screw_positions:
                     #if self.powered_wheel.ratchet.pawl_screwed_from_frontjust a hole
                 gear_wheel = gear_wheel.cut(self.ratchet_screws.get_cutter(self_tapping=True,ignore_head = self.powered_wheel.ratchet.pawl_screwed_from_front).translate(hole_pos))

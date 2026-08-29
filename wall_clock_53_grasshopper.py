@@ -104,7 +104,9 @@ train.generate_arbors_dicts([
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "module": 1.2,
-        "pinion_thick": 7
+        "pinion_thick": 7,
+        # had already printed lots when I spotted and fixed the bug causing missing extensions, this means everything else remains dimensionally identical
+        "end_cap_thick": 0
     },
     {
         #escape wheel
@@ -114,7 +116,8 @@ train.generate_arbors_dicts([
         # "pinion_extension": 9,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
-        "pinion_thick": 7
+        "pinion_thick": 7,
+
     },
     {
         #anchor
@@ -171,17 +174,23 @@ hands = Hands(style=HandStyle.ART_DECO2, minute_fixing="square", minute_fixing_d
                   length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
                   outline_on_seconds=0, second_hand_centred=False, include_seconds_hand=False)
 
-pendulum = Pendulum(bob_d=80, bob_thick=15)
+pendulum = Pendulum(bob_d=80, bob_thick=10)
+# Plate distance 45.5
 
+extension = plates.arbors_for_plate[3].get_arbor_extension(front=False)
 
 assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, name=clock_name, key_angle_deg=360/12)
 print(f"dial support lengths: {dial.support_length}")
 
+# print(assembly.plates.arbors_for_plate[3].arbor.end_cap_thick)
+
+# show_object(assembly.plates.arbors_for_plate[1].get_assembled())#.arbor.lantern_pinion.get_hex_fixing(for_cutting=True, for_printing=False))#
+
 assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
                     # gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.TEAL, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
-                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.DARKBLUE, Colour.PURPLE, Colour.DARK_PURPLE],
+                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.DARK_GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE, Colour.DARK_PURPLE],
                     # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
-                    motion_works_colours=[Colour.BLUE, Colour.BLUE, Colour.LIGHTBLUE],
+                    motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE],
                     dial_colours = [Colour.WHITE, Colour.BLACK],
                     plate_colours=[Colour.DARKGREY, Colour.BRASS],
                     ratchet_colour=Colour.PURPLE)

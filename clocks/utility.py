@@ -372,6 +372,11 @@ class MachineScrew:
     def get_nearest_length(self, length, allow_longer=False, prefer_longer=False):
         return get_nearest_machine_screw_length(length, self, allow_longer=allow_longer, prefer_longer=prefer_longer)
 
+    def get_model(self, radius_fraction=0.75, length=-1):
+        if length < 0:
+            length = self.length
+        return self.get_cutter(length = length, extra_r=self.metric_thread/2 - self.metric_thread*0.5*radius_fraction, head_space_length=0)
+
     def get_nut_for_die_cutting(self):
         '''
         Not sure I ever really need this, just curious
@@ -412,7 +417,7 @@ class MachineScrew:
     def head_depth_not_included_in_screw_length(self):
         return self.type in [MachineScrewType.PAN_HEAD, MachineScrewType.HEX_HEAD]
 
-    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False, ignore_head=False, extra_r=0):
+    def get_cutter(self, length=-1, with_bridging=False, layer_thick=LAYER_THICK, head_space_length=1000, loose=False, self_tapping=False, sideways=False, space_for_pan_head=False, ignore_head=False, extra_r=0.0):
         '''
         Returns a (very long) model of a screw designed for cutting a hole in a shape
         Centred on (0,0,0), with the head flat on the xy plane and the threaded rod pointing 'up' (if facing up) along +ve z

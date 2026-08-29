@@ -1445,7 +1445,7 @@ class SpringBarrel:
             #offset so it doesn't coincide with the spring hook
             pos = polar((i+0.25 )* math.pi * 2 / self.lid_fixing_screws_count, self.barrel_diameter / 2 + self.wall_thick / 2)
 
-            cutter = cutter.add(self.lid_fixing_screws.get_cutter(self_tapping=True, loose=loose).rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
+            cutter = cutter.add(self.lid_fixing_screws.get_cutter(self_tapping=not loose, loose=loose).rotate((0, 0, 0), (1, 0, 0), 180).translate(pos).translate((0, 0, self.base_thick + self.barrel_height + self.lid_thick)))
 
         return cutter
 
@@ -1608,20 +1608,23 @@ class SpringBarrel:
         #screwhole for ratchet collet
         top_z = self.key_containing_diameter - self.cutoff_height*2
         ratchet_screwhole_x = []
+
         if self.ratchet_at_back:
             ratchet_x = -behind_spring_cylinder_length - self.ratchet.thick - self.ratchet_collet_thick / 2
             if self.ratchet_screws.grub:
                 #put the ratchet screw in the ratchet rather than a cylinder out the back
                 ratchet_x = -behind_spring_cylinder_length - self.ratchet.thick/2
             back_collet_screwhole_x = -behind_spring_cylinder_length + back_collet_from_back + self.back_bearing_standoff + (self.back_collet_thick - self.back_bearing_standoff) / 2
-            ratchet_screwhole_x = [ratchet_x, back_collet_screwhole_x]
+            ratchet_screwhole_x = [ratchet_x]#, back_collet_screwhole_x]
+            arbor = arbor.cut(cq.Workplane("XY").circle(self.collet_screws.metric_thread / 2).extrude(self.arbor_d / 2).translate((back_collet_screwhole_x, 0, top_z / 2)))
         else:
             ratchet_screwhole_x = [self.barrel_height + self.internal_endshake + self.lid_thick + self.front_bearing_standoff + extra_in_front + self.ratchet.thick + self.ratchet_collet_thick / 2]
 
-        collet_screwhole = cq.Workplane("XY")
+        ratchet_screwhole = cq.Workplane("XY")
         for x in ratchet_screwhole_x:
-            collet_screwhole = collet_screwhole.add(cq.Workplane("XY").circle(self.ratchet_screws.metric_thread/2).extrude(self.arbor_d/2).translate((x,0,top_z/2 )))
-        arbor = arbor.cut(collet_screwhole)
+            # collet_screwhole = collet_screwhole.add(cq.Workplane("XY").circle(self.ratchet_screws.metric_thread/2).extrude(self.arbor_d/2).translate((x,0,top_z/2 )))
+            ratchet_screwhole = ratchet_screwhole.add(self.ratchet_screws.get_cutter(self_tapping=True, length=self.arbor_d / 2).translate((x, 0, top_z / 2)))
+        arbor = arbor.cut(ratchet_screwhole)
 
         if self.stop_works:
             #the finger wheel collet

@@ -1130,10 +1130,30 @@ class SimpleClockPlates(BasePlates):
 
             hands_pos = [self.bearing_positions[seconds_arbor][0], self.bearing_positions[seconds_arbor][1]]
         return hands_pos
+
+    def get_motion_works_minute_wheel_screw_length(self):
+
+        base_z = self.motion_works.get_distance_from_front_plate()
+
+        if self.needs_motion_works_holder():
+            base_z = self.motion_works_holder_thick
+
+        #get furthest forwards of the top of the motion works
+        min_length = self.get_plate_thick(back=False) + base_z + self.motion_works.pinion_cap_thick + self.motion_works.pinion_thick*2
+        # old logic just returned max lengths, results in screws that can be much longer than needed
+        max_length = self.get_plate_thick(back=False) + self.bottom_of_hour_hand_z()
+
+        ideal_length = min_length + self.fixing_screws.get_nut_height()*2
+        length = get_nearest_machine_screw_length(ideal_length, self.motion_works_screws, allow_longer=True)
+        if length > max_length:
+            length = max_length
+
+        return get_nearest_machine_screw_length(length, self.motion_works_screws, allow_longer=False)
+
     def get_BOM(self):
         #TODO try and move as much as we can out of simple plates and into base plates
         bom = super().get_BOM()
-        motion_works_screw_length = get_nearest_machine_screw_length(self.get_plate_thick(back=False) + self.bottom_of_hour_hand_z(), self.motion_works_screws)
+        motion_works_screw_length = self.get_motion_works_minute_wheel_screw_length()
         bom.add_item(BillOfMaterials.Item(f"{self.motion_works_screws} {motion_works_screw_length:.0f}mm", purpose="Motion works fixing", object=self.motion_works_screws))
         bom.add_item(BillOfMaterials.Item(f"M{self.motion_works_screws.metric_thread} nut", purpose="Motion works backstop", quantity=2))
         #fixing screws + nuts
@@ -1530,7 +1550,9 @@ class SimpleClockPlates(BasePlates):
                 # could optimise to only add the minimum needed, but this feels like a really rare edgecase and will only gain at most 0.4mm
                 need_extra_front = True
 
-            if self.bearing_positions[i][2] == 0 and not can_ignore_back:
+            #this used to check if ==0, but with the bodgetastic bit above which reduces base_z of lantern pinions, the next pinion along is then often about 0.2 from the back
+            #which means it ends up without a tiny standoff
+            if self.bearing_positions[i][2] <= 0.4 and not can_ignore_back:
                 need_extra_back = True
 
         extra_front = 0
@@ -5285,7 +5307,7 @@ class RoundClockPlates(SimpleClockPlates):
                         line = Line(centre, another_point=pos)
                         start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
                         plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
-                    plate = plate.cut(self.small_fixing_screws.get_cutter().translate(pos))
+                    plate = plate.cut(self.small_fixing_screws.get_cutter(loose=True).translate(pos))
 
             plate = self.front_plate_additions(plate, moon=True)
 
