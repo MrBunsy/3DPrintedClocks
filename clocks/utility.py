@@ -375,7 +375,9 @@ class MachineScrew:
     def get_model(self, radius_fraction=0.75, length=-1):
         if length < 0:
             length = self.length
-        return self.get_cutter(length = length, extra_r=self.metric_thread/2 - self.metric_thread*0.5*radius_fraction, head_space_length=0)
+
+        #will include countershunk head (TODO pan heads), with reduced diamter of thread and the right length
+        return self.get_cutter(length = length, extra_r=-(self.metric_thread/2 - self.metric_thread*0.5*radius_fraction), head_space_length=0)
 
     def get_nut_for_die_cutting(self):
         '''
