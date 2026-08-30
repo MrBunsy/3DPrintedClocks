@@ -191,7 +191,8 @@ assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=Tr
                     gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.DARK_GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE, Colour.DARK_PURPLE],
                     # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
                     motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE],
-                    dial_colours = [Colour.WHITE, Colour.BLACK],
+                    dial_colours = [Colour.BLACK, Colour.WHITE],
+                    hand_colours = [Colour.WHITE, Colour.BLACK],
                     plate_colours=[Colour.DARKGREY, Colour.BRASS],
                     ratchet_colour=Colour.PURPLE)
 

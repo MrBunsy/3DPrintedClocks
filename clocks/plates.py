@@ -5293,21 +5293,25 @@ class RoundClockPlates(SimpleClockPlates):
         #
         # plate = plate.cut(self.get_fixing_screws_cutter().translate(fixing_screws_cutter_pos))
         plate = plate.cut(self.get_fixing_screws_cutter())
+        if self.need_front_anchor_bearing_holder():
+            for pos in self.escapement_holder_fixing_points:
+                if self.front_anchor_holder_part_of_dial and not back:
+                    # if not part of dial it should be alined with radius and not need any extensions
+                    # TODO review this
+                    line = Line(centre, another_point=pos)
+                    start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
+                    plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r * 2, thick=plate_thick))
+                if not back:
+                    plate = plate.cut(self.small_fixing_screws.get_cutter(loose=True).translate(pos))
+                else:
+                    #hole for screwdriver, makes it much much easier to assemble
+                    plate = plate.cut(cq.Workplane("XY").circle(self.small_fixing_screws.get_head_diameter()/2 + NUT_WIGGLE_ROOM/2).extrude(plate_thick).translate(pos))
+
         if back:
 
             plate = self.rear_additions_to_plate(plate)
 
         else:
-            if self.need_front_anchor_bearing_holder():
-
-                for pos in self.escapement_holder_fixing_points:
-                    if self.front_anchor_holder_part_of_dial:
-                        # if not part of dial it should be alined with radius and not need any extensions
-                        # TODO review this
-                        line = Line(centre, another_point=pos)
-                        start = np_to_set(np.add(centre, polar(line.get_angle(), self.radius)))
-                        plate = plate.union(get_stroke_line([start, pos], wide=self.pillar_r*2, thick=plate_thick))
-                    plate = plate.cut(self.small_fixing_screws.get_cutter(loose=True).translate(pos))
 
             plate = self.front_plate_additions(plate, moon=True)
 

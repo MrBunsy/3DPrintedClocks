@@ -1528,6 +1528,7 @@ class SpringBarrel:
         barrel = barrel.cut(self.get_lid_fixing_screws_cutter())
         #self.spring_hook_screws.getHeadHeight()
         #trying countersunk screw instead of pan head
+        #will also cut hole in other side, which is really a side effect but very useful for getting the screwdriver in the put the screw in
         barrel = barrel.cut(self.spring_hook_screws.get_cutter(self_tapping=True, sideways=True, length=self.barrel_diameter).rotate((0,0,0),(0,0,1),-360/12).rotate((0, 0, 0), (0, 1, 0), 90).translate((0, 0, self.base_thick + self.barrel_height / 2)))
 
 
