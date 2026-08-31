@@ -189,19 +189,21 @@ print(f"dial support lengths: {dial.support_length}")
 
 # show_object(assembly.plates.arbors_for_plate[1].get_assembled())#.arbor.lantern_pinion.get_hex_fixing(for_cutting=True, for_printing=False))#
 
-show_object(plates.get_plate(back=False, thick_override=20, just_basic_shape=True))
+# show_object(plates.get_plate(back=False, thick_override=20, just_basic_shape=True))
+# show_object(plates.get_plate_detail(back=False))
 
-# assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
-#                     # gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.TEAL, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
-#                     gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.DARK_GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE, Colour.DARK_PURPLE],
-#                     # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
-#                     motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE],
-#                     dial_colours = [Colour.BLACK, Colour.WHITE],
-#                     hand_colours = [Colour.WHITE, Colour.DARKER_GREY],
-#                     plate_colours=[Colour.DARKER_GREY, Colour.BRASS],
-#                     ratchet_colour=Colour.PURPLE,
-#                     bob_colours=[Colour.DARK_PURPLE],
-#                     key_colour=Colour.BRASS)
+
+assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
+                    # gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.TEAL, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
+                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.DARK_GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE, Colour.DARK_PURPLE],
+                    # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
+                    motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE],
+                    dial_colours = [Colour.BLACK, Colour.WHITE],
+                    hand_colours = [Colour.WHITE, Colour.DARKER_GREY],
+                    plate_colours=[Colour.DARKER_GREY, Colour.BRASS, Colour.BRASS],
+                    ratchet_colour=Colour.PURPLE,
+                    bob_colours=[Colour.DARK_PURPLE],
+                    key_colour=Colour.BRASS)
 
 if export_stls:
     assembly.get_BOM().export()

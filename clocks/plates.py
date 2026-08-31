@@ -2305,7 +2305,7 @@ class SimpleClockPlates(BasePlates):
 
         def raised_edge(edge_wide, plate):
             shell = plate.shell(-edge_wide)
-            tempedging = shell.translate((0, 0, -self.edging_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
+            tempedging = shell.translate((0, 0, -edge_wide)).intersect(cq.Workplane("XY").rect(500, 500).extrude(self.edging_thick))
             return tempedging
 
         #undecided - might be easier to just not put this on the back plate? it's going to be hard to see and makes it harder to print and work out how to do standoffs
@@ -2332,14 +2332,8 @@ class SimpleClockPlates(BasePlates):
             full_wide = self.edging_wide + 2
             strip_wide = full_wide/3
 
+            #can't remember why I did this. Is it still needed?
             edge_plate = cq.Workplane("XY").add(plate)
-
-            # if full_wide*2.5 < self.get_plate_thick(back=back):
-            #make it thicker so we can definitely make the shell in raised_edge
-            #TODO bit more sophisticated than just always double it up?
-            edge_plate = plate.union(plate.translate((0,0,-plate_thick)))
-
-
             edging = raised_edge(full_wide, edge_plate).cut(raised_edge(full_wide-strip_wide, edge_plate)).union(raised_edge(strip_wide, edge_plate))
 
         if edging is not None:
