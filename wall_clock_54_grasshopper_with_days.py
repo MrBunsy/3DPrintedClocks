@@ -20,8 +20,9 @@ source.
 from clocks import *
 
 '''
-second attempt at a grasshopper. Same as teh first attempt (clock 14) but with space to fit hands on properly and less drooping of the escape wheel and frame
-A regenerated clock 14 will benefit from the improvements to the plates, but this rejigged the gear train so there's more space
+Clock 53 looks to be successful - awaiting a few weeks of running to find out how many days it really does run for,
+then I can make a more informed decision on which spring and power ratio to use
+Until then, experimenting to see if I can get the days of week mechanism to fit
 
 '''
 export_stls=False
@@ -33,10 +34,10 @@ if 'show_object' not in globals():
         pass
 
 
-clock_name= "wall_clock_53"
+clock_name= "wall_clock_54"
 clock_out_dir= "out"
-gear_style=GearStyle.BENT_ARMS5
-pillar_style=PillarStyle.DOUBLE_BARLEY_TWIST
+gear_style=GearStyle.DIAMONDS
+pillar_style=PillarStyle.BARLEY_TWIST
 
 
 #copied from clock 15, make sure there's space for the front anchor bearing holder to not clash with the arms
@@ -107,7 +108,7 @@ train.generate_arbors_dicts([
         "rod_diameter": 3,
         "module": 1.2,
         "pinion_thick": 7,
-        # had already printed lots when I spotted and fixed the bug causing missing extensions, this means everything else remains dimensionally identical
+        # originally to retrofit after fixing a bug, but actually it's much easier to assemble without the endcaps
         "end_cap_thick": 0
     },
     {
@@ -127,11 +128,10 @@ train.generate_arbors_dicts([
         "arbor_split": SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE,
     }
 ])
-#would love to have this on the clock, but it really doesn't fit. Might still have another go later
-days = False
+days = True
 if days:
     #module=0.8
-    days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.1, angle_deg=-60, extra_z_height=0, cylinder_length=28)
+    days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.0, angle_deg=-45, extra_z_height=0, cylinder_length=10, shortened_days=True)
 else:
     days_complication = None
 
@@ -146,13 +146,13 @@ dial_d=190
 dial_width = 30
 
 #the art deco style I like, but already have one of
-# dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
-#                 font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
-#                 dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)
+dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
+                font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
+                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)
 
 #got one of these in teh office, would like one at home
-dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED, inner_edge_style=None,
-                  outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, raised_detail=True, dial_width=dial_width, pillar_style=pillar_style)
+# dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED, inner_edge_style=None,
+#                   outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, raised_detail=True, dial_width=dial_width, pillar_style=pillar_style)
 
 gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
@@ -160,14 +160,14 @@ motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi
 
 # print(f"dial support lengths: {dial.support_length}")
 
-plaque = Plaque(text_lines=["W53#0 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
+plaque = Plaque(text_lines=["W54#0 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
 
 
 
 
-plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 53#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=40,
-                                motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.SIMPLE, pillar_style=pillar_style,
+plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 54#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=40,
+                                motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.DOUBLE_RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
                                 days_complication = days_complication)
 print(f"dial support lengths: {dial.support_length}")
@@ -189,17 +189,19 @@ print(f"dial support lengths: {dial.support_length}")
 
 # show_object(assembly.plates.arbors_for_plate[1].get_assembled())#.arbor.lantern_pinion.get_hex_fixing(for_cutting=True, for_printing=False))#
 
-assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
-                    # gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.TEAL, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
-                    gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.DARK_GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE, Colour.DARK_PURPLE],
-                    # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
-                    motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE],
-                    dial_colours = [Colour.BLACK, Colour.WHITE],
-                    hand_colours = [Colour.WHITE, Colour.DARKER_GREY],
-                    plate_colours=[Colour.DARKER_GREY, Colour.BRASS],
-                    ratchet_colour=Colour.PURPLE,
-                    bob_colours=[Colour.DARK_PURPLE],
-                    key_colour=Colour.BRASS)
+show_object(plates.get_plate(back=False, thick_override=20, just_basic_shape=True))
+
+# assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=True,
+#                     # gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.TEAL, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE],
+#                     gear_colours=[Colour.RED, Colour.ORANGE, Colour.YELLOW, Colour.GREEN, Colour.DARK_GREEN, Colour.LIGHTBLUE, Colour.BLUE, Colour.PURPLE, Colour.DARK_PURPLE],
+#                     # motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE])
+#                     motion_works_colours=[Colour.LIGHTBLUE, Colour.LIGHTBLUE, Colour.BLUE],
+#                     dial_colours = [Colour.BLACK, Colour.WHITE],
+#                     hand_colours = [Colour.WHITE, Colour.DARKER_GREY],
+#                     plate_colours=[Colour.DARKER_GREY, Colour.BRASS],
+#                     ratchet_colour=Colour.PURPLE,
+#                     bob_colours=[Colour.DARK_PURPLE],
+#                     key_colour=Colour.BRASS)
 
 if export_stls:
     assembly.get_BOM().export()

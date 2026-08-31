@@ -4823,7 +4823,7 @@ class GenevaGearInlinePair:
 
 
 class DayOfWeekComplication:
-    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20, angle_deg=45, extra_z_height=0, cylinder_length=40):
+    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20, angle_deg=45, extra_z_height=0, cylinder_length=40, shortened_days=False):
         '''
         Based on MoonComplication3D
 
@@ -4853,6 +4853,9 @@ class DayOfWeekComplication:
         self.first_pair = WheelPinionPair(60, 30, module=self.module, reduced_jamming=True)
 
         self.days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+        if shortened_days:
+            self.days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 
