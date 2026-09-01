@@ -181,7 +181,7 @@ days_angle = 60
 if moon:
     days_angle = -60
 
-days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=days_angle, extra_z_height=0, cylinder_length=28)
+days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=days_angle, extra_z_height=0, cylinder_length=28, text_on_plaques=True)
 # days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=rad_to_deg(gear_layout.get_angle_between(2,5)), extra_z_height=0, cylinder_length=25)
 # days_complication = DayOfWeekComplication(module=0.6, style=gear_style, bevel_module=1.1, angle_deg=rad_to_deg(gear_layout.get_angle_between(2,1)), extra_z_height=0, cylinder_length=25)
 
@@ -201,7 +201,7 @@ if moon:
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=60, bob_thick=12.5)
 
-plaque = Plaque(text_lines=["W52#0 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
+plaque = Plaque(text_lines=["W52#1 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
 
 pillar_style=PillarStyle.CLASSIC

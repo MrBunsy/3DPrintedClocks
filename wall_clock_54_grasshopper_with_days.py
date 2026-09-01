@@ -131,11 +131,16 @@ train.generate_arbors_dicts([
 days = True
 if days:
     #module=0.8
-    days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.0, angle_deg=-45, extra_z_height=0, cylinder_length=10, shortened_days=True)
+    #fits in at the bottom, but bit squashed
+    days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.0, angle_deg=-45, extra_z_height=0, cylinder_length=10, shortened_days=True, text_on_plaques=True)
+    #with the motino works more inset_at_base, this should be able to fit at the top
+    #no, it wont' if we want to put a nut on the top to stop the first arbor slipping off into the escape wheel
+    # days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.0, angle_deg=60, extra_z_height=0, cylinder_length=20, shortened_days=True)
 else:
     days_complication = None
 
-motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-3, drives_complication=days_complication)
+motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True,
+                           inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1, drives_complication=days_complication)
 motion_works.calculate_size(30)
 
 if days_complication is not None:

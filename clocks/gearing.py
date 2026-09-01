@@ -4823,7 +4823,8 @@ class GenevaGearInlinePair:
 
 
 class DayOfWeekComplication:
-    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20, angle_deg=45, extra_z_height=0, cylinder_length=40, shortened_days=False):
+    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20,
+                 angle_deg=45, extra_z_height=0, cylinder_length=40, shortened_days=False, text_on_plaques=False):
         '''
         Based on MoonComplication3D
 
@@ -4841,6 +4842,7 @@ class DayOfWeekComplication:
         self.gear_thick = gear_thick
         self.geneva_gear_thick = geneva_gear_thick
         self.right_side = right_side
+        self.text_on_plaques = text_on_plaques
         self.module = module
         self.fixing_screws = MachineScrew(3, type=MachineScrewType.COUNTERSUNK)
         self.style = style
@@ -4946,48 +4948,61 @@ class DayOfWeekComplication:
         return pinion
 
 
-    def get_day_cylinder_parts(self):
+    def get_day_cylinder_parts(self, text_on_plaques=False, for_printing=True):
         #separate function for just the cylinder as the bevel takes longer to process the preview
+
+        # default, text is part of cylinder for future MMU
+        text_base_thick = 0
+        if text_on_plaques:
+            #otherwise, text is printed as a series of little thin plaques to be glued
+            text_base_thick = 0.4
         radius = self.bevel_pair.get_pinion_base_radius()
-        cylinder = cq.Workplane("XY").polygon(7, radius * 2).extrude(self.cylinder_length)
+        smaller_radius = radius - text_base_thick
+        cylinder = cq.Workplane("XY").polygon(7, smaller_radius * 2).extrude(self.cylinder_length)
         # as created, the flat side is on the left (-ve x axis)
         edge_distance = get_incircle_for_regular_polygon(radius, 7)
-        cone_height = radius - edge_distance
-        cone = cq.Solid.makeCone(radius1=edge_distance,radius2=radius, height=cone_height)
+        inner_edge_distance= get_incircle_for_regular_polygon(smaller_radius, 7)
+        cone_height = radius - inner_edge_distance
+        cone = cq.Solid.makeCone(radius1=inner_edge_distance,radius2=radius, height=cone_height)
 
+        #cone on top so there's no unprintable overhangs for the bevel gear
         cylinder = cylinder.union(cone.translate((0,0,self.cylinder_length - cone_height)))
 
-        wall_thick = 0.5
-        slot_depth = self.slides_thick + 0.4
-        slot_overhang_thick = 0.4
-        slot_wiggle = 0.3
-        slot_overhang = 0.6
+        # wall_thick = 0.5
+        # slot_depth = self.slides_thick + 0.4
+        # slot_overhang_thick = 0.4
+        # slot_wiggle = 0.3
+        # slot_overhang = 0.6
+        #
+        # # '''
+        # # not sure how to describe this one without the diagram.
+        # # '''
+        # # y = wall_thick/2
+        # alpha = math.pi / 7
+        # beta = math.pi/2 - alpha
+        #
+        # # a = math.cos(math.acos(slot_depth)/betadash)
+        # # # z = (math.acos(slot_depth)
+        # # #      *math.sin(betadash)/betadash)
+        # # z = a * math.sin(betadash)
+        #
+        # b = slot_depth*math.sin(beta)/math.sin(alpha)
+        #
+        # from_edge = wall_thick/2 + b
+        #
+        # #so at the outside, if we're z away from the corner, the end of the slot will still have the right wall thickness
+        polygon_side_length = 2 * radius * math.sin(math.pi/7)
+        polygon_inner_side_length = 2 * smaller_radius * math.sin(math.pi / 7)
 
-        # '''
-        # not sure how to describe this one without the diagram.
-        # '''
-        # y = wall_thick/2
-        alpha = math.pi / 7
-        beta = math.pi/2 - alpha
+        # polygon_inner_side_length = 2 * smaller_radius * math.sin(math.pi*0.5 / 7)
 
-        # a = math.cos(math.acos(slot_depth)/betadash)
-        # # z = (math.acos(slot_depth)
-        # #      *math.sin(betadash)/betadash)
-        # z = a * math.sin(betadash)
-
-        b = slot_depth*math.sin(beta)/math.sin(alpha)
-
-        from_edge = wall_thick/2 + b
-
-        #so at the outside, if we're z away from the corner, the end of the slot will still have the right wall thickness
-        polygon_side_length = 2 * radius * math.sin(math.pi*0.5/7)
-        slot_width = polygon_side_length - from_edge*2
-
-        slot_cutter = (cq.Workplane("XY").moveTo(0,-slot_depth).lineTo(slot_width/2, -slot_depth)
-                       .lineTo(slot_width/2,-slot_overhang_thick).lineTo(slot_width/2-slot_overhang, -slot_overhang_thick)
-                       .lineTo(slot_width/2-slot_overhang, 0).lineTo(0,0).close().extrude(self.cylinder_length))
-
-        slot_cutter = slot_cutter.union(slot_cutter.mirror("YZ"))
+        # slot_width = polygon_side_length - from_edge*2
+        #
+        # slot_cutter = (cq.Workplane("XY").moveTo(0,-slot_depth).lineTo(slot_width/2, -slot_depth)
+        #                .lineTo(slot_width/2,-slot_overhang_thick).lineTo(slot_width/2-slot_overhang, -slot_overhang_thick)
+        #                .lineTo(slot_width/2-slot_overhang, 0).lineTo(0,0).close().extrude(self.cylinder_length))
+        #
+        # slot_cutter = slot_cutter.union(slot_cutter.mirror("YZ"))
 
 
         #this is just too tiny. try a differetn idea?
@@ -5006,8 +5021,14 @@ class DayOfWeekComplication:
         '''
         # textspaces = [TextSpace(x=0,y=0, width = self.cylinder_length-1 - cone_height , height=polygon_side_length,
         #                         text=day, thick=LAYER_THICK*2, font="Gill Sans Medium", font_path="../fonts/GillSans/Gill Sans Medium.otf", inverted=False) for day in self.days]
-        textspaces = [TextSpace(x=0, y=0, width=self.cylinder_length - 1 - cone_height, height=polygon_side_length,
-                                text=day, thick=LAYER_THICK * 2, font="Gill Sans Bold", font_path="../fonts/GillSans/Gill Sans Bold.otf", inverted=False) for day in self.days]
+        slot_width = self.cylinder_length - 1 - cone_height
+        if self.text_on_plaques:
+            #0.25 layer thick
+            text_thick = 0.15
+        else:
+            text_thick = LAYER_THICK*2
+        textspaces = [TextSpace(x=0, y=0, width=slot_width, height=polygon_side_length,
+                                text=day, thick=text_thick, font="Gill Sans Bold", font_path="../fonts/GillSans/Gill Sans Bold.otf", inverted=False) for day in self.days]
 
         max_text_side = min([textspace.get_text_max_size() for textspace in textspaces])
 
@@ -5023,19 +5044,39 @@ class DayOfWeekComplication:
         #     cylinder = cylinder.add(text)
 
         text_rotation = 180 if self.right_side else 0
+        plaques=[]
         for side in range(len(self.days)):
             angle = -side * math.pi * 2 / 7
-            text = textspaces[side].get_text_shape().rotate((0,0,0),(0,0,1), text_rotation).rotate((0,0,0),(0,1,0),-90).translate((-edge_distance,0,self.cylinder_length/2-cone_height/2)).rotate((0,0,0),(0,0,1), rad_to_deg(angle))
+
             # return [text]
+            if text_on_plaques:
+                plaque = cq.Workplane("XY").rect(slot_width,polygon_inner_side_length).extrude(text_base_thick)
+                text = textspaces[side].get_text_shape().rotate((0,0,0),(0,0,1), text_rotation).translate((0,0,text_base_thick))
+                plaques.append(plaque)
+                if not for_printing:
+                    text = text.rotate((0, 0, 0), (0, 1, 0), -90).translate((-edge_distance, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle))
+
+                glue_hole_deep =0.4
+                glue_hole_positions = [(-slot_width*0.2,0),(slot_width*0.2,0)]
+                glue_hole_d =  polygon_side_length*0.75
+                if slot_width*0.2 + glue_hole_d > slot_width*0.75:
+                    glue_hole_positions = [(0,0)]
+                cylinder = cylinder.cut(cq.Workplane("XY").pushPoints(glue_hole_positions).polygon(6,glue_hole_d).extrude(glue_hole_deep*2).rotate((0, 0, 0), (0, 1, 0), -90).translate((-inner_edge_distance+glue_hole_deep, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle)))
+            else:
+                text = textspaces[side].get_text_shape().rotate((0, 0, 0), (0, 0, 1), text_rotation).rotate((0, 0, 0), (0, 1, 0), -90).translate((-edge_distance, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1),
+                                                                                                                                                                                                                         rad_to_deg(angle))
+                if not text_on_plaques:
+                    cylinder = cylinder.add(text)
+
             texts.append(text)
-            cylinder = cylinder.add(text)
+
 
         if self.right_side:
             #get flat side so it's at the front
             cylinder = cylinder.rotate((0, 0, 0), (0, 0, 1), 0.5 * 360 / 7)
 
-        return cylinder, texts
-    def get_day_cylinder(self):
+        return cylinder, texts, plaques
+    def get_day_cylinder(self, text_on_plaques=False, for_printing=True):
         '''constructed rotating along z axis and base of bevel gear is on X-Y plane
         #question - should the days be friction fitted so they can then be perfectly lined up and set independently?
         #might make both "loose" on rod and then use nuts on rod to provide friction
@@ -5046,13 +5087,14 @@ class DayOfWeekComplication:
         arbor = self.bevel_pair.get_pinion_with_tooth_at(math.pi)
 
 
-        cylinder, texts = self.get_day_cylinder_parts()
+        cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=text_on_plaques, for_printing=for_printing)
 
         arbor = arbor.union(cylinder.translate((0,0,-self.cylinder_length)))
 
 
 
-        arbor = arbor.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+        # arbor = arbor.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
+        arbor = arbor.cut(self.fixing_screws.get_cutter(loose=True, ignore_head=True, length=1000).translate((0,0,-500)))
 
         return arbor
 
@@ -5084,7 +5126,7 @@ class DayOfWeekComplication:
             x*=-1
 
         cylinder_rotation = -90 if self.right_side else 90
-        parts["arbor_2"] = (self.get_day_cylinder().rotate((0, 0, 0), (0, 1, 0), cylinder_rotation).translate(positions[1])
+        parts["arbor_2"] = (self.get_day_cylinder(text_on_plaques=self.text_on_plaques).rotate((0, 0, 0), (0, 1, 0), cylinder_rotation).translate(positions[1])
                             .translate((x*self.bevel_pair.get_centre_of_wheel_to_back_of_pinion(),
                                         0,
                                         #remove washer thick becuase adding it to all parts below
@@ -5092,6 +5134,12 @@ class DayOfWeekComplication:
         # for i in range(3):
         #     parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
 
+        if self.text_on_plaques:
+            cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=self.text_on_plaques, for_printing=True)
+            for i,text in enumerate(texts):
+
+                parts[f"day_{self.days[i]}_text"]=text
+                parts[f"day_{self.days[i]}_plaque"] = plaques[i]
         for part in parts:
             parts[part] = parts[part].translate((0,0, WASHER_THICK_M3))
 
