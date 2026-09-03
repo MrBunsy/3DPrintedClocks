@@ -765,7 +765,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             elif arbor.type == ArborType.ESCAPE_WHEEL:
                 if self.plates.escapement_on_front:
                     if arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT_WITH_PLATE:
-                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.plates.get_front_escape_wheel_holder_pillar_height() + bearing_thick + spare_rod_length_rear
+                        #might not be much space behind the dial so minimal out front
+                        rod_length = length_up_to_inside_front_plate + front_plate_thick + self.plates.get_front_escape_wheel_holder_pillar_height() + bearing_thick + self.plates.endshake#spare_rod_length_rear
                     else:
                         rod_length = length_up_to_inside_front_plate + front_plate_thick + arbor_for_plate.front_anchor_from_plate - arbor.escapement.get_wheel_base_to_anchor_base_z() + arbor.wheel_thick + get_nut_height(round(arbor_for_plate.get_bearing(front=True).inner_d)) + 1
                 else:

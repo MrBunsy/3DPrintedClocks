@@ -761,6 +761,7 @@ class SimpleClockPlates(BasePlates):
         self.standoff_plate_thick = standoff_plate_thick
         if self.standoff_plate_thick is None:
             self.standoff_plate_thick = plate_thick
+
         #default for anchor, overriden by most arbours
         self.arbor_d=default_arbor_d
         #how chunky to make the bearing holders
@@ -1662,19 +1663,16 @@ class SimpleClockPlates(BasePlates):
         if bearing is None:
             bearing = get_bearing_info(3)
         return bearing.height + 1
-
-    def get_front_anchor_bearing_holder(self, held_from_pos=None, for_printing=True):
+    def get_front_anchor_bearing_holder_position(self):
+        return self.top_pillar_positions[0]
+    def get_front_anchor_bearing_holder(self, for_printing=True):
 
         holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
         pillar_tall = self.get_front_anchor_bearing_holder_total_length() - holder_thick
-        if self.top_pillars > 1 and held_from_pos is None:
-            raise ValueError("front anchor bearing holder only supports one top pillar TODO")
 
+        held_from_pos = self.get_front_anchor_bearing_holder_position()
 
-        if held_from_pos is None:
-            # default for simple plates, but when re-using with different plates it might not be attached to a pillar
-            held_from_pos = self.top_pillar_positions[0]
         holder = cq.Workplane("XY").moveTo(-self.top_pillar_r, held_from_pos[1]).radiusArc((self.top_pillar_r, held_from_pos[1]), self.top_pillar_r)\
             .lineTo(self.top_pillar_r, self.bearing_positions[-1][1]).radiusArc((-self.top_pillar_r, self.bearing_positions[-1][1]), self.top_pillar_r).close().extrude(holder_thick)
 
@@ -1930,11 +1928,12 @@ class SimpleClockPlates(BasePlates):
     def get_plate_thick(self, back=True, standoff=False, escape_wheel_support=False):
         if standoff:
             return self.standoff_plate_thick
+        if escape_wheel_support:
+            #TODO make configurable?
+            return self.get_lone_anchor_bearing_holder_thick() + 1
         if back:
             return self.back_plate_thick
-        if escape_wheel_support:
-            #TODO
-            return self.standoff_plate_thick
+
         return self.plate_thick
 
     def get_plate_distance(self):
@@ -2337,22 +2336,43 @@ class SimpleClockPlates(BasePlates):
             edging = raised_edge(full_wide, edge_plate).cut(raised_edge(full_wide-strip_wide, edge_plate)).union(raised_edge(strip_wide, edge_plate))
 
         if edging is not None:
-            if self.moon_complication is not None:
-                #not for printing we actually want this in the position it will be when assembled
-                edging = edging.cut(self.moon_holder.get_moon_holder_parts(for_printing=False)[0])
-
-            if self.days_complication is not None:
-                edging = edging.cut(self.days_complication_holder.get_holder().translate(self.hands_position))
-                #cut out space for washers - the heights have to be precise for this for the days cylinder to be in the right place
-                for arbor_pos in self.days_complication.get_arbor_positions_relative_to_motion_works():
-                    absolute_pos = np_to_set(np.add(self.hands_position, arbor_pos))
-                    edging = edging.cut(cq.Workplane("XY").circle(get_washer_diameter(self.days_complication.fixing_screws.metric_thread)/2+1).extrude(self.edging_thick).translate(absolute_pos))
-
+            cutter = self.get_detail_trimming_cutter()
+            edging = edging.cut(cutter)
             # return edging.translate((0,0,self.get_plate_thick(back=back)))
         if for_printing and not back and edging is not None:
             edging = edging.translate((0,0,self.get_plate_thick(back=False)))
 
         return edging
+
+    def get_detail_trimming_cutter(self, back=False, thick = 1):
+        '''
+        cutter needs everything flat on the XY plane
+
+        minor problemo, fancy pillars are often curved at the base, so don't cleanly cut away the detail. going to have to place simple pillars manually
+        '''
+        cutter = cq.Workplane("XY")
+        if not back and self.moon_complication is not None:
+            # not for printing we actually want this in the position it will be when assembled
+            cutter = cutter.add(self.moon_holder.get_moon_holder_parts(for_printing=False)[0])
+
+        if not back and self.days_complication is not None:
+            cutter = cutter.add(self.days_complication_holder.get_holder().translate(self.hands_position))
+            # cut out space for washers - the heights have to be precise for this for the days cylinder to be in the right place
+            for arbor_pos in self.days_complication.get_arbor_positions_relative_to_motion_works():
+                absolute_pos = np_to_set(np.add(self.hands_position, arbor_pos))
+                cutter = cutter.add(cq.Workplane("XY").circle(get_washer_diameter(self.days_complication.fixing_screws.metric_thread) / 2 + 1).extrude(self.edging_thick).translate(absolute_pos))
+
+        if not back and self.dial is not None:
+            # dial_pillars = self.dial.get_supports().rotate((0, 0, 0), (0, 1, 0), 180).translate(self.hands_position).translate((0,0,self.dial.support_length))
+            # cutter = cutter.add(dial_pillars)
+            for pos in self.dial.get_support_positions():
+                cutter = cutter.add(cq.Workplane("XY").circle(self.dial.support_d / 2).extrude(thick).translate(pos[:2]).translate(self.hands_position[:2]))
+
+        if not back and self.need_front_anchor_bearing_holder():
+            # cutter = cutter.add(self.get_front_anchor_bearing_holder(for_printing=False).translate((0,0,-self.front_z)))
+            cutter = cutter.add(cq.Workplane("XY").circle(self.plate_width/2).extrude(thick).translate(self.get_front_anchor_bearing_holder_position()))
+        return cutter
+
         # return None
     def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
         '''
@@ -5980,9 +6000,12 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         return (lengths, zs)
 
+    def get_front_anchor_bearing_holder_position(self):
+        return self.top_top_pillar_pos
+
     def get_front_anchor_bearing_holder(self, for_printing=True):
         # we want the old grasshopper style version
-        holder = SimpleClockPlates.get_front_anchor_bearing_holder(self, for_printing=False, held_from_pos=self.top_top_pillar_pos)
+        holder = SimpleClockPlates.get_front_anchor_bearing_holder(self, for_printing=False)
         #got a little screw to keep it in the right place, as this clock plate is only held together with a single M4 rod in each pillar
 
         # pos = np_to_set(np.subtract(self.get_anchor_holder_little_screw_pos(), self.top_top_pillar_pos))
@@ -6007,7 +6030,13 @@ class GrasshopperRoundPlates(RoundClockPlates):
         pillar_height = self.bearing_positions[-2][2] + self.arbors_for_plate[-2].arbor.get_total_thickness()+ SMALL_WASHER_THICK_M3 + self.endshake - self.plate_distance - self.get_plate_thick(back=False)
 
         return pillar_height
-
+    def get_detail_trimming_cutter(self, back=False, thick=1):
+        cutter = super().get_detail_trimming_cutter(back=back, thick=thick)
+        if not back:
+            # cutter = cutter.add(self.get_front_escape_wheel_holder().translate((0,0,-self.front_z)))
+            for pos in self.escapement_holder_fixing_points:
+                cutter = cutter.add(cq.Workplane("XY").circle(self.plate_width/2).extrude(thick).translate(pos))
+        return cutter
     def get_front_escape_wheel_holder(self, for_printing=False):
         # mini plate out front to hold the bearing for the escape wheel
         #this assumes the plate radius is in the right place to hold the escape wheel without confirming
@@ -6021,10 +6050,12 @@ class GrasshopperRoundPlates(RoundClockPlates):
         if left[0] > 0:
             left = self.escapement_holder_fixing_points[1]
             right = self.escapement_holder_fixing_points[0]
-
+        bearing = self.arbors_for_plate[-2].get_bearing(front=True)
         plate = get_stroke_arc(right, left, self.radius, self.plate_width, thick)
+        #just in case bearing isn't exactly inline with the radius
+        plate = plate.union(get_stroke_line([(self.hands_position[0], self.radius + self.hands_position[1]), self.bearing_positions[-2][:2]], wide=bearing.outer_d + self.bearing_wall_thick*2, thick=thick))
 
-        plate = plate.cut(self.get_bearing_punch(plate_thick=thick, bearing = self.arbors_for_plate[-2].get_bearing(front=True), bearing_on_top=False).translate(self.bearing_positions[-2][:2]))
+        plate = plate.cut(self.get_bearing_punch(plate_thick=thick, bearing = bearing, bearing_on_top=False).translate(self.bearing_positions[-2][:2]))
 
         clockwise = True
         for pos in self.escapement_holder_fixing_points:
