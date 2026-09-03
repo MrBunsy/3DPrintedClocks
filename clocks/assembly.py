@@ -1029,7 +1029,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                    bob_colours=None, motion_works_colours=None, with_pendulum=True, ring_colour=None, huygens_colour=None, weight_colour=Colour.PURPLE,
                    text_colour=Colour.WHITE, with_rods=False, with_key=False, key_colour=Colour.PURPLE, pulley_colour=Colour.PURPLE, ratchet_colour=None,
                    moon_complication_colours=None, vanity_plate_colour=Colour.WHITE, plaque_colours=None, moon_angle_deg=45, hand_colours_overrides=None,
-                   day_complication_colours=None, grasshopper_parts_colours=None):
+                   day_complication_colours=None, grasshopper_parts_colours=None, day_complication_text_colours=None):
         '''
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
@@ -1068,6 +1068,8 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             moon_complication_colours = [Colour.BRASS]
         if day_complication_colours is None:
             day_complication_colours = Colour.RAINBOW
+        if day_complication_text_colours is None:
+            day_complication_text_colours = [Colour.WHITE, Colour.BLACK]
 
         if not isinstance(plate_colours, list):
             #backwards compatibility
@@ -1185,8 +1187,13 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             day_parts = self.days_complication.get_parts_in_situ()
             for i, day_part in enumerate(day_parts):
                 friendly_name = string.capwords(day_part.replace("_", " "))
+                colour = day_complication_colours[i % len(day_complication_colours)]
+                if "text" in day_part:
+                    colour = day_complication_text_colours[1]
+                if "plaque" in day_part:
+                     colour = day_complication_text_colours[0]
                 show_object(day_parts[day_part].translate((self.motion_works_pos[0], self.motion_works_pos[1], self.front_of_clock_z)), name=f"Day Complication {friendly_name}",
-                            options={"color": day_complication_colours[i % len(day_complication_colours)]})
+                            options={"color": colour})
 
             holder_parts = self.plates.days_complication_holder.get_parts_in_situ()
             for i, holder_part in enumerate(holder_parts):

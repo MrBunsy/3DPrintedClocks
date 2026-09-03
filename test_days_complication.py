@@ -31,21 +31,21 @@ if not right_side:
 
 motion_works_parts = motion_works.get_parts_in_situ(motion_works_relative_pos=polar(motion_works_angle, motion_works.get_arbor_distance()))
 
-# for part in motion_works_parts:
-#     show_object(motion_works_parts[part].translate((0,0,motion_works.get_distance_from_front_plate())))
-# #
-# #
-# for part in parts:
-#     show_object(parts[part])
+for part in motion_works_parts:
+    show_object(motion_works_parts[part].translate((0,0,motion_works.get_distance_from_front_plate())))
+#
+#
+for part in parts:
+    show_object(parts[part],  name=part)#options={"color": Colour.BRASS},
 
-cylinder, texts, plaques = days_complication.get_day_cylinder_parts(text_on_plaques=True)
-
-show_object(cylinder)
-
-for i,part in enumerate(texts):
-    y = 20*i
-    show_object(part.translate((0,y)))
-    show_object(plaques[i].translate((0, y)))
+# cylinder, texts, plaques = days_complication.get_day_cylinder_parts(text_on_plaques=True)
+#
+# show_object(cylinder)
+#
+# for i,part in enumerate(texts):
+#     y = 20*i
+#     show_object(part.translate((0,y)))
+#     show_object(plaques[i].translate((0, y)))
 
 # show_object(days_complication.get_arbor_shapes(0)[0])
 # show_object(days_complication.get_arbor_shapes(0)[1])

@@ -4950,6 +4950,8 @@ class DayOfWeekComplication:
 
     def get_day_cylinder_parts(self, text_on_plaques=False, for_printing=True):
         #separate function for just the cylinder as the bevel takes longer to process the preview
+        #cylinder will always be rotated into right place for in-situ so we can get the bevel gear lined up
+        #for_printing therefore only affects the text
 
         # default, text is part of cylinder for future MMU
         text_base_thick = 0
@@ -5045,6 +5047,10 @@ class DayOfWeekComplication:
 
         text_rotation = 180 if self.right_side else 0
         plaques=[]
+
+        def rotate_to_edge(shape, angle, edge_distance=edge_distance):
+            return shape.rotate((0, 0, 0), (0, 1, 0), -90).translate((-edge_distance, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle))
+
         for side in range(len(self.days)):
             angle = -side * math.pi * 2 / 7
 
@@ -5052,10 +5058,11 @@ class DayOfWeekComplication:
             if text_on_plaques:
                 plaque = cq.Workplane("XY").rect(slot_width,polygon_inner_side_length).extrude(text_base_thick)
                 text = textspaces[side].get_text_shape().rotate((0,0,0),(0,0,1), text_rotation).translate((0,0,text_base_thick))
-                plaques.append(plaque)
-                if not for_printing:
-                    text = text.rotate((0, 0, 0), (0, 1, 0), -90).translate((-edge_distance, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle))
 
+                if not for_printing:
+                    text = rotate_to_edge(text, angle, edge_distance=inner_edge_distance)
+                    plaque = rotate_to_edge(plaque, angle, edge_distance=inner_edge_distance)
+                plaques.append(plaque)
                 glue_hole_deep =0.4
                 glue_hole_positions = [(-slot_width*0.2,0),(slot_width*0.2,0)]
                 glue_hole_d =  polygon_side_length*0.75
@@ -5063,10 +5070,9 @@ class DayOfWeekComplication:
                     glue_hole_positions = [(0,0)]
                 cylinder = cylinder.cut(cq.Workplane("XY").pushPoints(glue_hole_positions).polygon(6,glue_hole_d).extrude(glue_hole_deep*2).rotate((0, 0, 0), (0, 1, 0), -90).translate((-inner_edge_distance+glue_hole_deep, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle)))
             else:
-                text = textspaces[side].get_text_shape().rotate((0, 0, 0), (0, 0, 1), text_rotation).rotate((0, 0, 0), (0, 1, 0), -90).translate((-edge_distance, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1),
-                                                                                                                                                                                                                         rad_to_deg(angle))
+                text = rotate_to_edge(textspaces[side].get_text_shape().rotate((0, 0, 0), (0, 0, 1), text_rotation), angle)#.rotate((0, 0, 0), (0, 1, 0), -90).translate((-edge_distance, 0, self.cylinder_length / 2 - cone_height / 2)).rotate((0, 0, 0), (0, 0, 1), rad_to_deg(angle))
                 if not text_on_plaques:
-                    cylinder = cylinder.add(text)
+                    cylinder = cylinder.union(text)
 
             texts.append(text)
 
@@ -5074,9 +5080,13 @@ class DayOfWeekComplication:
         if self.right_side:
             #get flat side so it's at the front
             cylinder = cylinder.rotate((0, 0, 0), (0, 0, 1), 0.5 * 360 / 7)
+            if not for_printing:
+                for i in range(len(texts)):
+                    texts[i] = texts[i].rotate((0, 0, 0), (0, 0, 1), 0.5 * 360 / 7)
+                    plaques[i] = plaques[i].rotate((0, 0, 0), (0, 0, 1), 0.5 * 360 / 7)
 
         return cylinder, texts, plaques
-    def get_day_cylinder(self, text_on_plaques=False, for_printing=True):
+    def get_day_cylinder(self, for_printing=True):
         '''constructed rotating along z axis and base of bevel gear is on X-Y plane
         #question - should the days be friction fitted so they can then be perfectly lined up and set independently?
         #might make both "loose" on rod and then use nuts on rod to provide friction
@@ -5087,7 +5097,7 @@ class DayOfWeekComplication:
         arbor = self.bevel_pair.get_pinion_with_tooth_at(math.pi)
 
 
-        cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=text_on_plaques, for_printing=for_printing)
+        cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=self.text_on_plaques, for_printing=for_printing)
 
         arbor = arbor.union(cylinder.translate((0,0,-self.cylinder_length)))
 
@@ -5126,20 +5136,24 @@ class DayOfWeekComplication:
             x*=-1
 
         cylinder_rotation = -90 if self.right_side else 90
-        parts["arbor_2"] = (self.get_day_cylinder(text_on_plaques=self.text_on_plaques).rotate((0, 0, 0), (0, 1, 0), cylinder_rotation).translate(positions[1])
-                            .translate((x*self.bevel_pair.get_centre_of_wheel_to_back_of_pinion(),
-                                        0,
-                                        #remove washer thick becuase adding it to all parts below
-                                        self.get_cylinder_z_from_plate() - WASHER_THICK_M3)))
+
+        def rotate_cylinder_bits(bit):
+            return bit.rotate((0, 0, 0), (0, 1, 0), cylinder_rotation).translate(positions[1]).translate(
+                (x * self.bevel_pair.get_centre_of_wheel_to_back_of_pinion(),
+                0,
+                # remove washer thick becuase adding it to all parts below
+                self.get_cylinder_z_from_plate() - WASHER_THICK_M3))
+
+        parts["arbor_2"] = rotate_cylinder_bits(self.get_day_cylinder(for_printing=False))
         # for i in range(3):
         #     parts[f"arbor_{i}"] = self.get_arbor_shape(i, for_printing=False).translate((positions[i][0], positions[i][1], positions[i][2]))
 
         if self.text_on_plaques:
-            cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=self.text_on_plaques, for_printing=True)
+            cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=self.text_on_plaques, for_printing=False)
             for i,text in enumerate(texts):
 
-                parts[f"day_{self.days[i]}_text"]=text
-                parts[f"day_{self.days[i]}_plaque"] = plaques[i]
+                parts[f"day_{self.days[i]}_text"]=rotate_cylinder_bits(text).translate((x*self.cylinder_length,0))
+                parts[f"day_{self.days[i]}_plaque"] = rotate_cylinder_bits(plaques[i]).translate((x*self.cylinder_length,0))
         for part in parts:
             parts[part] = parts[part].translate((0,0, WASHER_THICK_M3))
 
