@@ -2138,15 +2138,43 @@ class Dial:
         if self.days_complication is not None:
             #add a little inner bit to make it easier to read only today's day
             #we're upside down here
-            days_x_dir = -1 if self.days_complication.right_side else 1
+            # days_x_dir = -1 if self.days_complication.right_side else 1
+            days_x_dir = 1
             days_inner_x = days_x_dir * self.days_complication.get_end_of_cylinder_distance() -days_x_dir*(self.days_complication.cylinder_length - 2)
             gap_height = self.days_complication.get_text_height()+2
+            #
+            # # this works, but blocks off a lot more of the inner dial than I'd like
+            # keeping it to intersect the new design
             inner_bit_wide = r-days_inner_x
             inner_bit = cq.Workplane("XY").rect(inner_bit_wide, self.outside_d).extrude(self.thick).translate((days_inner_x + days_x_dir*inner_bit_wide/2,0))
             inner_bit = inner_bit.intersect(cq.Workplane("XY").circle(r).extrude(self.thick))
             inner_bit = inner_bit.cut(cq.Workplane("XY").rect(self.outside_d, gap_height).extrude(self.thick))
+            #
+            # dial = dial.union(inner_bit)
 
-            dial = dial.union(inner_bit)
+            #new idea, make on right hand side as that's easier to think about, then flip if needed
+
+            # lets try part of a circle?
+            days_inner_x = self.days_complication.get_end_of_cylinder_distance() - (self.days_complication.cylinder_length - 2)
+
+            circle_r = (self.inner_r + self.dial_width/2 - days_inner_x)/2
+            l = gap_height# = self.days_complication.get_text_height()+2
+            sagitta = circle_r - math.sqrt(circle_r**2 - 0.25*l**2)
+
+            circle_centre = (days_inner_x + (circle_r - sagitta), 0)
+
+            # round_inner_bit = cq.Workplane("XY").circle(circle_r).extrude(self.thick).translate(circle_centre)
+            # round_inner_bit = round_inner_bit.union(get_st)
+            round_inner_bit = get_stroke_line([circle_centre, (self.outside_d,0)], wide = circle_r*2, thick = self.thick)
+            round_inner_bit = round_inner_bit.intersect(inner_bit)
+
+            if self.days_complication.right_side:
+                #y no work?
+                # round_inner_bit = round_inner_bit.mirrorY()
+                #this'll do
+                round_inner_bit = round_inner_bit.rotate((0,0,0),(0,0,1),180)
+
+            dial = dial.union(round_inner_bit)
 
 
         #whut, how did this survive here?

@@ -50,7 +50,7 @@ escapement = GrasshopperEscapement.get_harrison_compliant_grasshopper(frame_thic
 #hoping that a slightly thicker spring and using more of its turns we can pull just enough extra power for the grasshopper
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=6, barrel_bearing=BEARING_12x18x4_FLANGED,
                      style=gear_style, wall_thick=8, ratchet_thick=8, spring=MAINSPRING_185045,
-                     ratchet_screws=MachineScrew(3, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, fraction_of_max_turns=0.6,
+                     ratchet_screws=MachineScrew(3, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True, fraction_of_max_turns=0.5,
                      key_bearing=BEARING_12x18x4_THIN)
 
 train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement,powered_wheels=2, runtime_hours=7.5 * 24, powered_wheel=power)
@@ -58,9 +58,10 @@ train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement,powered_
 # train.calculate_powered_wheel_ratios(prefer_large_second_wheel=False)
 # train.calculate_ratios()
 
-#the results of above, just to save processing time
-# train.set_powered_wheel_ratios([[58, 11], [55, 10]])
-train.set_powered_wheel_ratios([[59, 11], [55, 10]])
+
+#clock 53
+# train.set_powered_wheel_ratios([[59, 11], [55, 10]])
+train.set_powered_wheel_ratios([[54, 10], [64, 10]])
 train.set_ratios([[50, 13], [52, 10]])
 
 train.print_info()
@@ -75,7 +76,7 @@ train.generate_arbors_dicts([
         "pinion_extension": 3,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 11.9,
-        "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.6, leaves=train.chain_wheel_ratios[0][1]),
+        "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
     },
     {
         #intermediate wheel
@@ -139,7 +140,7 @@ if days:
 else:
     days_complication = None
 
-motion_works = MotionWorks(extra_height=20, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True,
+motion_works = MotionWorks(extra_height=20, style=gear_style, thick=2.5, compensate_loose_arbor=False, compact=True,
                            inset_at_base=TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT-1, drives_complication=days_complication)
 motion_works.calculate_size(30)
 
@@ -150,14 +151,9 @@ plaque = None
 dial_d=190
 dial_width = 30
 
-#the art deco style I like, but already have one of
 dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
                 font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
-                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)
-
-#got one of these in teh office, would like one at home
-# dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.ROMAN_NUMERALS, romain_numerals_style=RomanNumeralStyle.SIMPLE_ROUNDED, inner_edge_style=None,
-#                   outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, raised_detail=True, dial_width=dial_width, pillar_style=pillar_style)
+                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True, days_complication=days_complication)
 
 gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
@@ -208,7 +204,8 @@ assembly.show_clock(show_object, with_key=True, with_rods=True, with_pendulum=Tr
                     plate_colours=[Colour.DARKER_GREY, Colour.BRASS, Colour.BRASS],
                     ratchet_colour=Colour.PURPLE,
                     bob_colours=[Colour.DARK_PURPLE],
-                    key_colour=Colour.BRASS)
+                    key_colour=Colour.BRASS,
+                    day_complication_text_colours=[Colour.BLACK, Colour.WHITE])
 
 if export_stls:
     assembly.get_BOM().export()
