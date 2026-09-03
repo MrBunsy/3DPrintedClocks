@@ -1414,11 +1414,14 @@ class Dial:
     should really be created by the plates class
 
     using filament switching to change colours so the supports can be printed to the back of the dial
+    update: with raised_detail we now have the detailing printed on top in its own layers. Pritning within layers just isn't reliable enough
+    with bold colours and stringy PETG.
+    Means we have to glue the support pillars on the back. Not ideal, but does actually result in better looking dials, especially for the more complex designs
     '''
     def __init__(self, outside_d, style=DialStyle.LINES_ARC, outer_edge_style=None, inner_edge_style=None, seconds_style=None, fixing_screws=None, thick=2, top_fixing=True,
                  bottom_fixing=False, hand_hole_d=18, detail_thick=LAYER_THICK * 2, extras_thick=LAYER_THICK*2, font=None, font_scale=1, font_path=None, hours_only=False,
                  minutes_only=False, seconds_only=False, dial_width=-1, romain_numerals_style=None, pillar_style = PillarStyle.SIMPLE, hand_space_z=2, raised_detail=False,
-                 seconds_dial_width=-1, screwed_from_front=False):
+                 seconds_dial_width=-1, screwed_from_front=False, days_complication=None):
         '''
         Just style and fixing info, dimensions are set in configure_dimensions
 
@@ -1446,6 +1449,8 @@ class Dial:
         if self.fixing_screws is None:
             self.fixing_screws = MachineScrew(metric_thread=3, countersunk=True, length=25)
         self.thick = thick
+        #if set we will adjust to make only the current day visible
+        self.days_complication = days_complication
         #is there a pillar at the top?
         self.top_fixing = top_fixing
         #is there a pillar at the bottom?
@@ -2130,10 +2135,22 @@ class Dial:
 
         dial = cq.Workplane("XY").circle(r).circle(self.inner_r).extrude(self.thick)
 
+        if self.days_complication is not None:
+            #add a little inner bit to make it easier to read only today's day
+            #we're upside down here
+            days_x_dir = -1 if self.days_complication.right_side else 1
+            days_inner_x = days_x_dir * self.days_complication.get_end_of_cylinder_distance() -days_x_dir*(self.days_complication.cylinder_length - 2)
+            gap_height = self.days_complication.get_text_height()+2
+            inner_bit_wide = r-days_inner_x
+            inner_bit = cq.Workplane("XY").rect(inner_bit_wide, self.outside_d).extrude(self.thick).translate((days_inner_x + days_x_dir*inner_bit_wide/2,0))
+            inner_bit = inner_bit.intersect(cq.Workplane("XY").circle(r).extrude(self.thick))
+            inner_bit = inner_bit.cut(cq.Workplane("XY").rect(self.outside_d, gap_height).extrude(self.thick))
+
+            dial = dial.union(inner_bit)
 
 
-
-        self.inner_r = self.outside_d / 2 - self.dial_width
+        #whut, how did this survive here?
+        # self.inner_r = self.outside_d / 2 - self.dial_width
 
 
 

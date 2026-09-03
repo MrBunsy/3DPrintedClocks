@@ -4948,6 +4948,13 @@ class DayOfWeekComplication:
         return pinion
 
 
+    def get_text_height(self):
+        #copied out of get_day_cylinder_parts
+        #TODO bread up get_day_cylinder_parts and do all the maths elsewhere so it can be more reused
+        radius = self.bevel_pair.get_pinion_base_radius()
+        polygon_side_length = 2 * radius * math.sin(math.pi / 7)
+
+        return polygon_side_length
     def get_day_cylinder_parts(self, text_on_plaques=False, for_printing=True):
         #separate function for just the cylinder as the bevel takes longer to process the preview
         #cylinder will always be rotated into right place for in-situ so we can get the bevel gear lined up
