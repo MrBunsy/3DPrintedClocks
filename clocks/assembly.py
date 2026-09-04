@@ -1108,6 +1108,11 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         if "escape_wheel_holder" in plate_parts:
             show_object(plate_parts["escape_wheel_holder"], options={"color":plate_colours[0]}, name= "Escape Wheel Holder")
 
+        if "front_anchor_holder" in plate_parts:
+            show_object(plate_parts["front_anchor_holder"], options={"color": plate_colours[0]}, name="Front Anchor Holder")
+        if "front_anchor_holder_detail" in plate_parts:
+            show_object(plate_parts["front_anchor_holder_detail"], options={"color": plate_colours[2 % len(plate_colours)]}, name="Front Anchor Holder Detail")
+
         if self.plaque is not None:
             show_object(self.plaque_shape, options={"color": plaque_colours[0]}, name="Back Plaque")
             show_object(self.plaque_text_shape, options={"color": plaque_colours[1]}, name = "Back Plaque Text")

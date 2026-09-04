@@ -1663,9 +1663,22 @@ class SimpleClockPlates(BasePlates):
         if bearing is None:
             bearing = get_bearing_info(3)
         return bearing.height + 1
+
+    def get_front_anchor_bearing_holder_detail(self, for_printing=True):
+        holder = self.get_front_anchor_bearing_holder(basic_shape_for_detail=True)
+
+        detail = self.get_plate_detail(for_this_shape = holder)
+
+        if not for_printing:
+            #should already be centred on get_front_anchor_bearing_holder_position, but it isn't?!?
+            detail = detail.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.get_front_anchor_bearing_holder_total_length() + self.front_z))
+            # detail = detail.translate(self.get_front_anchor_bearing_holder_position())
+
+        return detail
+
     def get_front_anchor_bearing_holder_position(self):
         return self.top_pillar_positions[0]
-    def get_front_anchor_bearing_holder(self, for_printing=True):
+    def get_front_anchor_bearing_holder(self, for_printing=True, basic_shape_for_detail=False):
 
         holder_thick = self.get_lone_anchor_bearing_holder_thick(self.arbors_for_plate[-1].get_bearing(front=True))
 
@@ -1673,14 +1686,24 @@ class SimpleClockPlates(BasePlates):
 
         held_from_pos = self.get_front_anchor_bearing_holder_position()
 
+        if basic_shape_for_detail:
+            holder_thick*=5
+
+        #looks like this was from before stroke_line
         holder = cq.Workplane("XY").moveTo(-self.top_pillar_r, held_from_pos[1]).radiusArc((self.top_pillar_r, held_from_pos[1]), self.top_pillar_r)\
             .lineTo(self.top_pillar_r, self.bearing_positions[-1][1]).radiusArc((-self.top_pillar_r, self.bearing_positions[-1][1]), self.top_pillar_r).close().extrude(holder_thick)
-
+        if basic_shape_for_detail:
+            return holder
         # holder = holder.union(cq.Workplane("XY").moveTo(held_from_pos[0], held_from_pos[1]).circle(self.plate_width / 2 + 0.0001).extrude(pillar_tall + holder_thick))
         holder = holder.union(fancy_pillar(self.plate_width/2, pillar_tall, self.pillar_style).translate((held_from_pos[0], held_from_pos[1], holder_thick)))
 
 
         holder = holder.cut(self.get_bearing_punch(holder_thick, bearing=get_bearing_info(self.arbors_for_plate[-1].arbor.arbor_d)).translate((self.bearing_positions[-1][0], self.bearing_positions[-1][1])))
+
+        detail = self.get_front_anchor_bearing_holder_detail()
+        if detail is not None:
+            holder = holder.cut(detail)
+
         #rotate into position to cut fixing holes
         holder = holder.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, pillar_tall + holder_thick))
         holder= holder.cut(self.get_fixing_screws_cutter().translate((0,0,-self.front_z)))
@@ -1930,7 +1953,7 @@ class SimpleClockPlates(BasePlates):
             return self.standoff_plate_thick
         if escape_wheel_support:
             #TODO make configurable?
-            return self.get_lone_anchor_bearing_holder_thick() + 1
+            return self.get_lone_anchor_bearing_holder_thick() + self.endshake
         if back:
             return self.back_plate_thick
 
@@ -2290,7 +2313,7 @@ class SimpleClockPlates(BasePlates):
         self.plaque_pos = long_centre
         self.plaque_angle = long_angle
 
-    def get_plate_detail(self, back=True, for_printing=False, for_this_shape=None):
+    def get_plate_detail(self, back=False, for_printing=False, for_this_shape=None):
         '''
         For styles of clock plate which might have ornate detailing. Similar to dial detail or text, this is a separate 3d shape
         designed to be sliced as a multicolour object
@@ -2335,7 +2358,7 @@ class SimpleClockPlates(BasePlates):
             edge_plate = cq.Workplane("XY").add(plate)
             edging = raised_edge(full_wide, edge_plate).cut(raised_edge(full_wide-strip_wide, edge_plate)).union(raised_edge(strip_wide, edge_plate))
 
-        if edging is not None:
+        if edging is not None and for_this_shape is None:
             cutter = self.get_detail_trimming_cutter()
             edging = edging.cut(cutter)
             # return edging.translate((0,0,self.get_plate_thick(back=back)))
@@ -3615,8 +3638,11 @@ class SimpleClockPlates(BasePlates):
 
         if self.need_front_anchor_bearing_holder() and not self.front_anchor_holder_part_of_dial:
             front_bearing_holder = self.get_front_anchor_bearing_holder(for_printing=False)
-            plates = plates.add(front_bearing_holder)
+            # plates = plates.add(front_bearing_holder)
             shapes["front_anchor_holder"] = front_bearing_holder
+            front_anchor_bearing_holder_detail = self.get_front_anchor_bearing_holder_detail(for_printing=False)
+            if front_anchor_bearing_holder_detail is not None:
+                shapes["front_anchor_holder_detail"] = front_anchor_bearing_holder_detail
 
         if self.need_motion_works_holder:
             motion_works_holder = self.get_motion_works_holder().translate((0, 0, front_of_clock_z))
@@ -3628,6 +3654,8 @@ class SimpleClockPlates(BasePlates):
             detail = self.apply_style_to_plate(cq.Workplane("XY"), back=True, addition_allowed=True).add(self.apply_style_to_plate(cq.Workplane("XY"), back=False, addition_allowed=True)
                                                                                                          .translate((0, 0, self.get_plate_thick(back=True) + self.plate_distance)))
             shapes["detail"] = detail
+
+
 
         shapes["plates"] = plates
         return shapes
@@ -5484,7 +5512,7 @@ class RoundClockPlates(SimpleClockPlates):
 
         return [(0, top_y, True), (0, self.bottom_pillar_positions[0][1], True)]
 
-    def get_front_anchor_bearing_holder(self, for_printing=True):
+    def get_front_anchor_bearing_holder(self, for_printing=True, basic_shape_for_detail=False):
         '''
         Sufficiently different fron back holder to be a different function.
         This will be printed as part of the dial and it must be possible to attach after the rest of teh clock
@@ -5979,6 +6007,8 @@ class GrasshopperRoundPlates(RoundClockPlates):
         # this will keep any dimples on the back of the dial which can be used to glue it to the escape wheel holder
         #turn top ones into nubs
         self.dial.extra_nubs_positions = [poslist[0] for poslist in self.dial.fixing_positions if poslist[0][1] > self.hands_position[1]]
+        #also add one for a little bit of extra space for the escape wheel arbor - I'm worried about it bumping into the back of hte dial
+        self.dial.extra_nubs_positions.append(np_to_set(np.subtract(self.bearing_positions[-2][:2], self.hands_position[:2])))
         #keep only bottom ones
         self.dial.override_fixing_positions([poslist for poslist in self.dial.fixing_positions if poslist[0][1] < self.hands_position[1]])
         #do the same for our screwholes in the front plate
@@ -6003,11 +6033,16 @@ class GrasshopperRoundPlates(RoundClockPlates):
     def get_front_anchor_bearing_holder_position(self):
         return self.top_top_pillar_pos
 
-    def get_front_anchor_bearing_holder(self, for_printing=True):
-        # we want the old grasshopper style version
-        holder = SimpleClockPlates.get_front_anchor_bearing_holder(self, for_printing=False)
-        #got a little screw to keep it in the right place, as this clock plate is only held together with a single M4 rod in each pillar
 
+
+    def get_front_anchor_bearing_holder(self, for_printing=True, basic_shape_for_detail=False):
+        # we want the old grasshopper style version
+        holder = SimpleClockPlates.get_front_anchor_bearing_holder(self, for_printing=False, basic_shape_for_detail=basic_shape_for_detail)
+
+        if basic_shape_for_detail:
+            return holder
+
+        # got a little screw to keep it in the right place, as this clock plate is only held together with a single M4 rod in each pillar
         # pos = np_to_set(np.subtract(self.get_anchor_holder_little_screw_pos(), self.top_top_pillar_pos))
         screw_cutter = (self.anchor_holder_little_screw.get_cutter(length = self.get_anchor_holder_little_screw_length() - self.get_plate_thick(back=False), self_tapping=True, ignore_head=True)
                         .translate(self.get_anchor_holder_little_screw_pos()).translate((0,0,self.front_z)))
