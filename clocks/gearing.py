@@ -4823,7 +4823,7 @@ class GenevaGearInlinePair:
 
 
 class DayOfWeekComplication:
-    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20,
+    def __init__(self, gear_thick=2.5, geneva_gear_thick=4, module=1.5, geneva_scale=1.0, style=None, right_side=True, bevel_module=1.2, bevel_teeth=20,
                  angle_deg=45, extra_z_height=0, cylinder_length=40, shortened_days=False, text_on_plaques=False):
         '''
         Based on MoonComplication3D
@@ -4844,6 +4844,8 @@ class DayOfWeekComplication:
         self.right_side = right_side
         self.text_on_plaques = text_on_plaques
         self.module = module
+        # centre distance of geneva gear pair is geneva_scale*centre_distance_of_first_wheel_pinion_pair
+        self.geneva_scale = geneva_scale
         self.fixing_screws = MachineScrew(3, type=MachineScrewType.COUNTERSUNK)
         self.style = style
         #how far extra to raise up the centre of the day rotation cylinder
@@ -4863,7 +4865,7 @@ class DayOfWeekComplication:
 
         # distance =
 
-        self.geneva_pair = GenevaGearInlinePair(thick=self.geneva_gear_thick, distance=self.first_pair.centre_distance, teeth=7)
+        self.geneva_pair = GenevaGearInlinePair(thick=self.geneva_gear_thick, distance=self.first_pair.centre_distance*self.geneva_scale, teeth=7)
 
         self.extension_r = self.fixing_screws.metric_thread
         self.wiggle_room = 0.1
@@ -4899,17 +4901,29 @@ class DayOfWeekComplication:
         self.base_of_wheel_from_base_of_pinion = self.plate_to_top_of_hour_holder_wheel + self.hour_hand_pinion_thick / 2 - self.gear_thick / 2 - WASHER_THICK_M3
 
     def get_arbor_positions_relative_to_motion_works(self):
-        #could make more compact? just do 45 degrees for now and see how that comes out
 
         extra = 0
         if not self.right_side:
             extra = math.pi
 
         first_pos = polar(extra+self.angle, self.first_pair.centre_distance)
+
+        x = 1 if self.right_side else -1
+        dir = (x,0)
+
+        along_line = Line((0,0), direction=dir)
+
+        intersections = along_line.intersection_with_circle(first_pos, self.geneva_pair.distance)
+
+        second_pos = intersections[0]
+        #get position furthest away
+        if len(intersections) > 1 and  intersections[1][0]*x > intersections[0][0]*x:
+            second_pos = intersections[1][0]
+
         return [
-            first_pos
-            ,
-            np_to_set(np.add(first_pos, polar(extra-self.angle, self.geneva_pair.distance)))
+            first_pos, second_pos
+            # ,
+            # np_to_set(np.add(first_pos, polar(extra-self.angle, self.geneva_pair.distance)))
         ]
 
     def get_first_arbor(self):

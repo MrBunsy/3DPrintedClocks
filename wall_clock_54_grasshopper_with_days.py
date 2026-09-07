@@ -134,8 +134,8 @@ if days:
     #module=0.8
     #fits in at the bottom, but bit squashed
     #TODO support different finger and wheel modules so we can shrink the wheel but keep the finger large which might leave enough space for more z height
-    days_complication = DayOfWeekComplication(module=0.6, style=gear_style, bevel_module=0.9, angle_deg=-45, extra_z_height=4,
-                                              cylinder_length=10, shortened_days=True, text_on_plaques=True)
+    days_complication = DayOfWeekComplication(module=0.65, style=gear_style, bevel_module=0.9, angle_deg=-45, extra_z_height=6,
+                                              cylinder_length=11, shortened_days=True, text_on_plaques=True, geneva_scale=0.7 / 0.65)
     #with the motino works more inset_at_base, this should be able to fit at the top
     #no, it wont' if we want to put a nut on the top to stop the first arbor slipping off into the escape wheel
     # days_complication = DayOfWeekComplication(module=0.7, style=gear_style, bevel_module=1.0, angle_deg=60, extra_z_height=0, cylinder_length=20, shortened_days=True)

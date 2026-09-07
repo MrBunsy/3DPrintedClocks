@@ -62,6 +62,10 @@ train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement,powered_
 train.set_powered_wheel_ratios([[59, 11], [55, 10]])
 train.set_ratios([[50, 13], [52, 10]])
 
+#Over a runtime of 168.0hours the spring barrel (51.3mm diameter) will make 5.7 full rotations which is 54.9% of the maximum number of turns (10.4) and will take 11.4 key half turns to wind back up
+#first experiment (with a recycled 0.4mm thick spring) stopped a few hours short of a week and took 11 half key winds
+# so I think for the next clock, slightly less ratio and a thicker spring should result in longer runtime
+# could probably get away with keeping the smiths spring, but with both shorter ratio and more power should be able to get nearer to two weeks, giving moreheadroom for degredation over time
 train.print_info()
 
 train.generate_arbors_dicts([
