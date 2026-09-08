@@ -61,9 +61,40 @@ train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement,powered_
 
 #clock 53
 # train.set_powered_wheel_ratios([[59, 11], [55, 10]])
-train.set_powered_wheel_ratios([[54, 10], [64, 10]])
+# clock 53 (deadbeat): train.set_powered_wheel_ratios([[61, 10], [64, 10]])
+# train.set_powered_wheel_ratios([[54, 10], [64, 10]])
+train.set_powered_wheel_ratios([[55, 10], [65, 9]])
 train.set_ratios([[50, 13], [52, 10]])
 
+#clock 53: #Over a runtime of 168.0hours the spring barrel (51.3mm diameter) will make 5.7 full rotations which is 54.9% of the maximum number of turns (10.4) and will take 11.4 key half turns to wind back up
+
+#this clock: Over a runtime of 168.0hours the spring barrel (51.3mm diameter) will make 4.9 full rotations which is 46.8% of the maximum number of turns (10.4) and will take 9.7 key half turns to wind back up
+# clock 53, using a recycled old 0.4mm thick spring made it about 6 hours shy of a week.
+# power is proportional to the cube of spring thickness, but I want to use a higher ratio (draw less power)
+# so how does this spring ratio, but with a 0.5mm thickness spring compare?
+# answer: 1.66 times the power of clock 53. Given that was a recycled spring and this is a higher ratio it should run for longer than a week.
+# my bet is 11 days?
+# do I actually want to increase the ratio further? there's already plenty of spare power at the beginning of the week on a recycled spring
+# print(f"power ratio:{(46.8/54.9)*((0.5**3)/(0.4**3))}")
+old_ratio = (59/11)*(55/10)
+
+
+# new_ratio = (54/10)*(64/10)
+#new_ratio = (55/10)*(65/9)
+new_ratio = (54/10)*(65/10)
+#[61, 10], [64, 10]
+deadbeat_ratio = (61/10)*(64/10)
+
+# print(f"power ratio:{(45.3/54.9)*((0.5**3)/(0.4**3))}")
+
+#deadbeat ratio from clock 32 was 39.04, our new ratio is 39.72, but with a 0.5mm thick spring (which is 1.95 times more powerful) this results in 1.45 times the power of
+# clock 53, if it was using a brand new 0.4mm thick mainspring.
+#maybe I do actually want a slightly lower ratio?
+
+#so with a new ratio of 35.1, about halfway between deadbeat and previous grasshopper, we have 1.64 times the power
+
+#TODO calculate power after 6 days? then I can compare the power when it stops with potential new power after six days rather than just beginning power
+print(f"power ratio:{(old_ratio/new_ratio)*((0.5**3)/(0.4**3))}")
 train.print_info()
 
 train.generate_arbors_dicts([

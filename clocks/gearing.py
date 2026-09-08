@@ -4918,7 +4918,7 @@ class DayOfWeekComplication:
         second_pos = intersections[0]
         #get position furthest away
         if len(intersections) > 1 and  intersections[1][0]*x > intersections[0][0]*x:
-            second_pos = intersections[1][0]
+            second_pos = intersections[1]
 
         return [
             first_pos, second_pos

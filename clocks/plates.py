@@ -380,8 +380,9 @@ class DayOfWeekHolder:
 
         holder = holder.union(little_arm)
 
+        #tiny little bit extra distance seems to fix
         holder = (holder.cut(self.day_of_week_complication.fixing_screws.get_cutter(self_tapping=True, sideways=True).rotate((0,0,0),(0,1,0), rotate)
-                             .translate(polar(self.centre_angle, self.plates.radius + self.support_width/2)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate())))
+                             .translate(polar(self.centre_angle, self.plates.radius + self.support_width/2+0.001)).translate((0,0,self.day_of_week_complication.get_cylinder_z_from_plate())))
                   )
 
         for pos in screw_positions:
@@ -1669,7 +1670,7 @@ class SimpleClockPlates(BasePlates):
 
         detail = self.get_plate_detail(for_this_shape = holder)
 
-        if not for_printing:
+        if detail is not None and  not for_printing:
             #should already be centred on get_front_anchor_bearing_holder_position, but it isn't?!?
             detail = detail.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.get_front_anchor_bearing_holder_total_length() + self.front_z))
             # detail = detail.translate(self.get_front_anchor_bearing_holder_position())
