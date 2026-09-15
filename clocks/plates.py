@@ -838,17 +838,19 @@ class SimpleClockPlates(BasePlates):
 
         if self.centred_second_hand:
 
-            minute_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
+            centre_wheel_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
 
             #adjust motion works size
-            minute_wheel_to_hands = np_to_set(np.subtract(self.hands_position, minute_wheel_pos))
+            centre_wheel_to_hands = np_to_set(np.subtract(self.hands_position, centre_wheel_pos))
 
-            minute_wheel_to_hands_distance = np.linalg.norm(minute_wheel_to_hands)
-            minute_wheel_to_hands_angle = math.atan2(minute_wheel_to_hands[1], minute_wheel_to_hands[0])
+            centre_wheel_to_hands_distance = np.linalg.norm(centre_wheel_to_hands)
+            centre_wheel_to_hands_angle = math.atan2(centre_wheel_to_hands[1], centre_wheel_to_hands[0])
 
             # draw a line from the centre wheel to the hands position, then offset the motion works by motion_works_angle
-            arbor_distance = (minute_wheel_to_hands_distance / 2)/math.cos(self.motion_works_angle)
-            self.motion_works_relative_pos = polar(minute_wheel_to_hands_angle + math.pi + self.motion_works_angle, arbor_distance)
+            # eh? what was i drinking?
+            #TODO
+            arbor_distance = (centre_wheel_to_hands_distance / 2)#/math.cos(self.motion_works_angle)
+            self.motion_works_relative_pos = polar(centre_wheel_to_hands_angle + math.pi + self.motion_works_angle, arbor_distance)
 
 
 
@@ -1120,6 +1122,8 @@ class SimpleClockPlates(BasePlates):
             self.calc_plaque_config()
 
     def get_friction_clip_direction(self):
+        line = Line(self.motion_works_relative_pos, another_point=(0,0))
+        return line.dir
         return np.multiply(self.motion_works_relative_pos, -1/np.linalg.norm(self.motion_works_relative_pos))
     def get_hands_position(self):
         hands_pos = self.bearing_positions[self.going_train.powered_wheels][:2]
@@ -1671,9 +1675,7 @@ class SimpleClockPlates(BasePlates):
         detail = self.get_plate_detail(for_this_shape = holder)
 
         if detail is not None and  not for_printing:
-            #should already be centred on get_front_anchor_bearing_holder_position, but it isn't?!?
             detail = detail.rotate((0, 0, 0), (0, 1, 0), 180).translate((0, 0, self.get_front_anchor_bearing_holder_total_length() + self.front_z))
-            # detail = detail.translate(self.get_front_anchor_bearing_holder_position())
 
         return detail
 
@@ -1900,9 +1902,11 @@ class SimpleClockPlates(BasePlates):
 
         # holder = cq.Workplane("XY").rect(self.plate_width, (max_y - min_y)).extrude(holder_thick).translate((0, (min_y + max_y)/2)).edges("|Z").fillet(5)
         holder = get_stroke_line([bottom_pos, self.cannon_pinion_friction_clip_pos], wide=self.plate_width, thick=holder_thick)
+        # return holder
         for pos in bottom_screw_positions:
             #with countersunk head
             holder = holder.cut(self.motion_works_screws.get_cutter().rotate((0,0,0),(0,1,0),180).translate((pos[0],pos[1], holder_thick)))
+        #TODO work out why this was throwing an error and bring back
         for pos in top_screw_positions:
             #just plain hole as the "friction clip", now doubling up to hold motion works in place, will screw in from the top
             holder = holder.faces(">Z").moveTo(pos[0], pos[1]).circle(self.motion_works_screws.get_rod_cutter_r()).cutThruAll()
@@ -3231,7 +3235,7 @@ class SimpleClockPlates(BasePlates):
     def add_motion_works_arm(self, plate, plate_thick, cut_holes=False):
         mini_arm_width = self.motion_works_screws.get_nut_containing_diameter() * 2
 
-        if self.need_motion_works_holder and not self.centred_second_hand:
+        if self.need_motion_works_holder:# and not self.centred_second_hand: # why did I add logic for NOT centred second? that's the only time we have a motion works holder!
             # screw would be on top of a bearing, so there's a separate peice to hold it
             for pos in self.motion_works_fixings_relative_pos:
                 screw_pos = np_to_set(np.add(self.motion_works_pos, pos))
@@ -3243,7 +3247,7 @@ class SimpleClockPlates(BasePlates):
                 # extra material in case the motion works is at an angle off to one side
                 plate = plate.union(get_stroke_line([self.hands_position, self.motion_works_pos], wide=mini_arm_width, thick=plate_thick))
             # hole for screw to hold motion works arbour
-            if cut_holes:
+            if not self.need_motion_works_holder and cut_holes:
                 #this segfaults - if there isn't anything to cut through?
                 plate = plate.cut(self.motion_works_screws.get_cutter(self_tapping=True).translate(self.motion_works_pos))
         return plate
@@ -3780,6 +3784,9 @@ class SimpleClockPlates(BasePlates):
         if self.need_front_anchor_bearing_holder():
             parts.append(BillOfMaterials.PrintedPart("anchor_front_bearing_holder", self.get_front_anchor_bearing_holder(),
                                                      purpose="Screw to front plate to hold anchor for an exposed escapement"))
+            anchor_detail = self.get_front_anchor_bearing_holder_detail(for_printing=True)
+            if anchor_detail is not None:
+                parts.append(BillOfMaterials.PrintedPart("anchor_front_bearing_holder_detail", anchor_detail, purpose="print with anchor_front_bearing_holder as part of a multicolour print"))
 
         if self.motion_works.cannon_pinion_friction_ring:
             parts.append(BillOfMaterials.PrintedPart("friction_clip", self.get_cannon_pinion_friction_clip(), purpose="Hold cannon pinion in place and add friction to remove slack in minute hand"))

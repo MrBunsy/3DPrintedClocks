@@ -37,7 +37,7 @@ if 'show_object' not in globals():
         #     raise ValueError("invalid object to show")
         pass
 
-clockName="wall_clock_28b_refactor"
+clockName="wall_clock_28b_refactor2"
 clockOutDir="out"
 gearStyle=clock.GearStyle.DIAMONDS
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -81,7 +81,7 @@ print("powered wheel distance: {}".format(train.arbors[0].distance_to_next_arbor
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
 # motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
 #                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1)
-motionWorks = clock.MotionWorks(extra_height=10-3.5+3, style=clock.GearStyle.DIAMONDS, thick=3, compensate_loose_arbor=False, compact=True, module=1.5,
+motionWorks = clock.MotionWorks(extra_height=10-3.5+3, style=clock.GearStyle.DIAMONDS, thick=3, compensate_loose_arbor=False, compact=True, module=0.75,
                                 bearing=clock.get_bearing_info(3),
                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1, reduced_jamming=True)
 # motionWorks.calculate_size(35)#was 35, trying reducing size of motion works just a fraction to see
@@ -108,7 +108,7 @@ plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=9, back_plate_t
                                  heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
                                  back_plate_from_wall=pendulumSticksOut * 2, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
                                  chain_through_pillar_required=True, dial=dial, centred_second_hand=True, pillars_separate=True, top_pillar_holds_dial=True, endshake=2.25,
-                                 override_bottom_pillar_r=22.2125)
+                                 override_bottom_pillar_r=22.2125, motion_works_angle_deg=0)
 # plates.motion_works_position_bodge = (0,-0.5)
 plates.winding_key.crank=False
 
@@ -143,7 +143,8 @@ assembly.get_pendulum_rod_lengths()
 #
 dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS]
 assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.BRASS],
-                   motion_works_colours=[clock.Colour.BRASS],
+                   # motion_works_colours=[clock.Colour.BRASS],
+                    motion_works_colours=[clock.Colour.ORANGE,clock.Colour.ORANGE,clock.Colour.YELLOW,clock.Colour.GREEN],
                     hand_colours=[clock.Colour.WHITE, clock.Colour.BLACK, clock.Colour.RED], with_key=True, with_rods=True)
 
 # show_object(plates.arbors_for_plate[-2].get_escape_wheel())

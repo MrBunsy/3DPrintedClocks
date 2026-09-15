@@ -63,7 +63,7 @@ train = GoingTrain(pendulum_period=1.5, wheels=3, escapement=escapement,powered_
 # train.set_powered_wheel_ratios([[59, 11], [55, 10]])
 # clock 53 (deadbeat): train.set_powered_wheel_ratios([[61, 10], [64, 10]])
 # train.set_powered_wheel_ratios([[54, 10], [64, 10]])
-train.set_powered_wheel_ratios([[55, 10], [65, 9]])
+train.set_powered_wheel_ratios([[53, 10], [67, 9]])
 train.set_ratios([[50, 13], [52, 10]])
 
 #clock 53: #Over a runtime of 168.0hours the spring barrel (51.3mm diameter) will make 5.7 full rotations which is 54.9% of the maximum number of turns (10.4) and will take 11.4 key half turns to wind back up
@@ -81,7 +81,7 @@ old_ratio = (59/11)*(55/10)
 
 # new_ratio = (54/10)*(64/10)
 #new_ratio = (55/10)*(65/9)
-new_ratio = (54/10)*(65/10)
+new_ratio = (53/10)*(67/9)
 #[61, 10], [64, 10]
 deadbeat_ratio = (61/10)*(64/10)
 
