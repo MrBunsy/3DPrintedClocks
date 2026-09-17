@@ -4951,7 +4951,15 @@ class DayOfWeekComplication:
 
             wheel = wheel.faces(">Z").workplane().circle(self.bevel_pair.get_wheel_base_radius()).extrude(self.extra_z_height)
 
-        arbor = wheel.union(self.bevel_pair.get_wheel_with_gap_at(0).translate((0,0,self.geneva_gear_thick + self.extra_z_height))).cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(1000))
+        arbor = wheel.union(self.bevel_pair.get_wheel_with_gap_at(0).translate((0,0,self.geneva_gear_thick + self.extra_z_height)))
+
+        # line to help line up the bevel gears
+        line_long = self.bevel_pair.get_wheel_max_radius() * 0.35
+        side = 1 if self.right_side else -1
+        arbor = arbor.union(cq.Workplane("XY").rect(line_long, 0.4).extrude(LAYER_THICK).translate((side*line_long / 2, 0, +self.geneva_gear_thick + self.extra_z_height + self.bevel_pair.wheel_thick)))
+
+        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(1000))
+
         return arbor
 
     def get_first_arbor_pinion(self):
@@ -5116,6 +5124,11 @@ class DayOfWeekComplication:
         So I need to get the exact relationship between the bevel gear and the flat surface of the days correct
         '''
         arbor = self.bevel_pair.get_pinion_with_tooth_at(math.pi)
+
+        #line to help line up the bevel gears
+        line_long = self.bevel_pair.get_pinion_max_radius()*0.35
+        side = 1 if self.right_side else -1
+        arbor = arbor.union(cq.Workplane("XY").rect(line_long, 0.4).extrude(LAYER_THICK).translate((-side*line_long/2,0, self.bevel_pair.pinion_thick)))
 
 
         cylinder, texts, plaques = self.get_day_cylinder_parts(text_on_plaques=self.text_on_plaques, for_printing=for_printing)
