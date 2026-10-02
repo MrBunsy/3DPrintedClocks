@@ -44,6 +44,8 @@ thing which need fixing before re-printing:
  - consider cutting out more bits of the front plate detail for dial pillars and fixing washers?
  - there was no space for a washer between the day cylinder and its holder. It works fine without a washer - but what went wrong?
 
+
+#0 works fine and looks good, but for #1 I've re-arranged it a bit so the escapement is more visible
 '''
 outputSTL = False
 
@@ -55,7 +57,7 @@ if 'show_object' not in globals():
 
 art_deco = True
 
-clock_name= "wall_clock_52"
+clock_name= "wall_clock_52.1"
 clock_out_dir= "out"
 gear_style=GearStyle.ARCS
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -149,21 +151,21 @@ train.generate_arbors_dicts([
         #third wheel
         "wheel_thick": 2.5,
         "style": gear_style,
-        "pinion_at_front": False,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 9,
+        "pinion_extension": 2,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "module": 1.15,#1.14,
-        "pinion_thick": 7
+        "pinion_thick": 7,
+        "pinion_at_front": True
     },
     {
         #escape wheel
         "wheel_thick": 2.5,
         "style": gear_style,
-        "pinion_at_front": True,
+        "pinion_at_front": False,
         # "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 18,
+        "pinion_extension": 12,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "pinion_thick": 7
@@ -212,9 +214,10 @@ if moon:
 if art_deco:
     dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0.9,
                 font_path="../fonts/dutch_courage/CCDutchCourageLite/CCDutchCourageLite.ttf", outer_edge_style=DialStyle.LINES_RECT, inner_edge_style=None,
-                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True, days_complication=days_complication)
+                dial_width=dial_width, pillar_style=pillar_style, raised_detail=True)#, days_complication=days_complication)  - can add but I think it looks better without
 else:
-    dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style, days_complication=days_complication)
+    dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, style=DialStyle.LINES_INDUSTRIAL, dial_width=dial_width, pillar_style=pillar_style)#
+    #, days_complication=days_complication) - can add but I think it looks better without
 
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.DOUBLE_RAISED_EDGING, pillar_style=pillar_style,

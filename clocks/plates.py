@@ -1751,13 +1751,18 @@ class SimpleClockPlates(BasePlates):
         '''
         holds two "brake pads" - experimental sprung peice that can add a small amount of friction to the cannon pinion so the minute hand
         doesn't have too much slack when the second hand is centred. Without it the minute hand is about 30s fast on the half past and 30s slow on the half to.
+
+        update - I suspect this is part of the reason the motion works has been locking up. so instead I will abandon extra friction and this will
+        purely be to keen the cannon pinion from falling off
         '''
         # centre_z = TWO_HALF_M3S_AND_SPRING_WASHER_HEIGHT - self.motion_works.inset_at_base + self.endshake / 2 - self.motion_works.friction_ring_thick/2
 
         #thick here being height as printed
         clip_thick = self.motion_works.friction_ring_clip_thick
         #aim to have the clip in the centre of the ring, which is slightly thicker than the clip.
-        total_thick = self.motion_works.friction_ring_base_thick + (self.motion_works.friction_ring_thick - clip_thick)/2 + clip_thick
+        #total_thick = self.motion_works.friction_ring_base_thick + (self.motion_works.friction_ring_thick - clip_thick)/2 + clip_thick
+        #now there's no longer a plain ring and this is just a holder
+        total_thick = self.motion_works.friction_ring_base_thick + clip_thick + LAYER_THICK*2
 
         clip_holder_r = self.plate_width/2
 
@@ -1770,6 +1775,7 @@ class SimpleClockPlates(BasePlates):
         angle_to_cannon_pinion = from_holder_to_cannon_pinion.get_angle()
 
         arc = math.pi/4
+        arc = math.pi/2
         brake_angles = [angle_to_cannon_pinion+math.pi/2, angle_to_cannon_pinion - math.pi/2]
         angle_pairs = [[angle - arc/2, angle + arc/2, angle] for angle in brake_angles]
         brake_pads = cq.Workplane("XY")
@@ -1790,6 +1796,11 @@ class SimpleClockPlates(BasePlates):
         #trying 0.25 again
         #clock still has 0.2 at the moment and is not currently reliable, leaving this alone
         brake_pad_offset = 0.2
+
+        # now it's just here to hold the cannon pinion in place, try this:
+        brake_pad_offset = -0.5
+
+
         arm_thick = 2.4
 
         inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
@@ -1912,7 +1923,7 @@ class SimpleClockPlates(BasePlates):
             holder = holder.faces(">Z").moveTo(pos[0], pos[1]).circle(self.motion_works_screws.get_rod_cutter_r()).cutThruAll()
 
         #for screw to hold motion arbor
-        holder = holder.cut(self.motion_works_screws.get_cutter().translate(self.hands_position).translate(self.motion_works_relative_pos))
+        holder = holder.cut(self.motion_works_screws.get_cutter(self_tapping=True).translate(self.hands_position).translate(self.motion_works_relative_pos))
 
         outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].get_bearing(front=True).outer_d - self.motion_works.cannon_pinion_to_hour_holder_gap_size
         inner_diameter = outer_diameter - 2

@@ -1035,6 +1035,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
         use show_object with colours to display a clock, will only work in cq-editor, useful for playing about with colour schemes!
         hoping to re-use some of this to produce coloured SVGs
         '''
+        print(f"show clock")
         if gear_colours is None:
             gear_colours = Colour.RAINBOW
         if dial_colours is None:
@@ -1291,7 +1292,7 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
             show_object(mat.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[0]}, name="Mat")
             if mat_detail is not None:
                 show_object(mat_detail.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.plates.mat_thick, 0)).translate(self.base_of_clock), options={"color": plate_colours[2 % len(plate_colours)]}, name="Mat Detail")
-
+        # return
         if with_rods:
             #show with diameter slightly smaller so it's clearer on the render what's rod and what's hole
             rod_colour = Colour.SILVER
@@ -1312,11 +1313,14 @@ Thread an M{hand_metric_size} dome nut on top and use two spanners to lock this 
                 show_object(rod.translate(rod_info["pos"]), options={"color": rod_colour}, name=f"Pendlum Rod {i}")
 
             motion_works_rod = self.plates.get_motion_works_minute_wheel_screw_length()
+            extra_z = 0
+            if self.plates.needs_motion_works_holder():
+                extra_z += self.plates.get_plate_thick(back=False)
             show_object(self.plates.motion_works_screws.get_model(length=motion_works_rod)
                         .translate(self.plates.hands_position)
                         .translate(self.plates.motion_works_relative_pos)
-                        .translate((0,0,self.front_of_clock_z-self.plates.get_plate_thick(back=False))), options={"color": rod_colour}, name=f"Motion Works Minute Wheel Fixing Screw")
-
+                        .translate((0,0,self.front_of_clock_z + extra_z -self.plates.get_plate_thick(back=False))), options={"color": rod_colour}, name=f"Motion Works Minute Wheel Fixing Screw")
+        # return
         if with_key:
             if self.key_model is not None:
                 show_object(self.key_model, options={"color": key_colour}, name="Key")

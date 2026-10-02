@@ -81,7 +81,7 @@ print("powered wheel distance: {}".format(train.arbors[0].distance_to_next_arbor
 # but if I re-printed the motion works, the hands would be properly in front of the dial (currently hour hand is in-line with dial)
 # motionWorks = clock.MotionWorks(extra_height=10, style=gearStyle, thick=3, compensate_loose_arbour=False, compact=True, module=1.2, bearing=clock.get_bearing_info(3),
 #                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1)
-motionWorks = clock.MotionWorks(extra_height=10-3.5+3, style=clock.GearStyle.DIAMONDS, thick=3, compensate_loose_arbor=False, compact=True, module=0.75,
+motionWorks = clock.MotionWorks(extra_height=10-3.5+3-3, style=clock.GearStyle.DIAMONDS, thick=3, pinion_thick=9, compensate_loose_arbor=False, compact=True, module=0.75,
                                 bearing=clock.get_bearing_info(3),
                                 minute_hand_thick=2, cannon_pinion_friction_ring=True, lone_pinion_inset_at_base=1, reduced_jamming=True)
 # motionWorks.calculate_size(35)#was 35, trying reducing size of motion works just a fraction to see
@@ -155,14 +155,15 @@ assembly.show_clock(show_object, dial_colours=[clock.Colour.WHITE, clock.Colour.
 if outputSTL:
     #
     #
+    assembly.get_BOM().export()
     # train.output_STLs(clockName, clockOutDir)
-    motionWorks.output_STLs(clockName,clockOutDir)
-    # motionWorks2.output_STLs(clockName+"motion_works_tweak", clockOutDir)
-    pendulum.output_STLs(clockName, clockOutDir)
-    dial.output_STLs(clockName, clockOutDir)
-    plates.output_STLs(clockName, clockOutDir)
-    hands.output_STLs(clockName, clockOutDir)
-    pulley.output_STLs(clockName, clockOutDir)
-    assembly.output_STLs(clockName, clockOutDir)
+    # motionWorks.output_STLs(clockName,clockOutDir)
+    # # motionWorks2.output_STLs(clockName+"motion_works_tweak", clockOutDir)
+    # pendulum.output_STLs(clockName, clockOutDir)
+    # dial.output_STLs(clockName, clockOutDir)
+    # plates.output_STLs(clockName, clockOutDir)
+    # hands.output_STLs(clockName, clockOutDir)
+    # pulley.output_STLs(clockName, clockOutDir)
+    # assembly.output_STLs(clockName, clockOutDir)
 
     # clock.outputSTLMultithreaded([train, motionWorks,pendulum,dial,plates,hands,pulley,assembly], clockName, clockOutDir)

@@ -3897,7 +3897,9 @@ class MotionWorks:
 
         '''
         self.arbor_d = arbor_d
-        self.hole_d= arbor_d + 0.4
+        #self.hole_d= arbor_d + 0.4
+        self.hole_d = arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS_EVEN_LESS_WOBBLY
+        self.cannon_pinion_hole_d = self.hole_d
         #thickness of gears
         self.thick = thick
         self.pinion_thick = pinion_thick
@@ -3908,7 +3910,8 @@ class MotionWorks:
 
         #experimental, have an extra round bit at the bottom that can have a small amount of friction applied to remove the slack on centred-seconds-hands clocks
         self.cannon_pinion_friction_ring = cannon_pinion_friction_ring
-        self.friction_ring_thick = self.thick
+        # I think this adds *too* much friction and can eb the cause of paul's clock locking up?
+        self.friction_ring_thick = 0#self.thick
         self.friction_ring_clip_thick = self.thick-0.5
         self.friction_ring_wall_thick=2
         self.friction_ring_base_thick = 1
@@ -3967,7 +3970,7 @@ class MotionWorks:
         if self.bearing is not None:
             self.minute_hand_holder_d = self.bearing.outer_d + 4
             self.inset_at_base_r = 0#self.bearing.outer_d / 2
-            self.hole_d = self.bearing.outer_d
+            self.cannon_pinion_hole_d = self.bearing.outer_d
             self.minute_hand_holder_size = self.bearing.outer_d + 3
             # if there is a bearing then there's a rod through the centre for the second hand and the minute hand is friction fit like the hour hand
             self.minute_hand_holder_is_square = False
@@ -4263,7 +4266,7 @@ class MotionWorks:
         if standalone:
 
             #add hand-grippy thing to allow setting the time easily
-            inner_r = pinion_max_r
+            inner_r = pinion_max_r + 2
             outer_r = inner_r*1.5
 
             knob = get_smooth_knob_2d(inner_r, outer_r, knobs=6).extrude(self.knob_thick)
@@ -4271,7 +4274,7 @@ class MotionWorks:
             pinion = pinion.union(knob.translate((0, 0, self.pinion_cap_thick + self.cannon_pinion_pinion_thick)))
 
             # cut hole to slot onto arbour
-            pinion = pinion.cut(cq.Workplane("XY").circle((self.arbor_d + LOOSE_FIT_ON_ROD) / 2).extrude(10000))
+            pinion = pinion.cut(cq.Workplane("XY").circle(self.hole_d / 2).extrude(10000))
 
             if self.lone_pinion_inset_at_base > 0:
                 #hack, copy-pasted from initial setting of inset_at_base_r before that was hijacked for the bearing slot
@@ -4292,7 +4295,7 @@ class MotionWorks:
 
         pinion_max_r = self.pairs[0].pinion.get_max_radius()
         if hole_d < 0:
-            hole_d = self.hole_d
+            hole_d = self.cannon_pinion_hole_d
 
         # base = cq.Workplane("XY")
         #
@@ -4317,7 +4320,8 @@ class MotionWorks:
         if self.cannon_pinion_friction_ring:
             #need a round bit at the base, but there isn't one from the bearing
             friction_ring = cq.Workplane("XY").circle(self.friction_ring_base_r).circle(self.hole_d/2).extrude(self.friction_ring_base_thick)
-            friction_ring = friction_ring.faces(">Z").workplane().circle(self.friction_ring_r).circle(self.hole_d/2).extrude(self.friction_ring_thick)
+            if self.friction_ring_thick > 0:
+                friction_ring = friction_ring.faces(">Z").workplane().circle(self.friction_ring_r).circle(self.hole_d/2).extrude(self.friction_ring_thick)
 
             pinion = pinion.translate((0,0, self.friction_ring_base_thick + self.friction_ring_thick)).union(friction_ring)
 
@@ -4358,7 +4362,7 @@ class MotionWorks:
         if self.inset_at_base > 0:
             # cut out space for the nuts/bearing to go further into the cannon pinion, so it can be closer to the front plate
             # pinion = pinion.cut(cq.Workplane("XY").circle(self.inset_at_base_r).extrude(self.inset_at_base))
-            pinion = pinion.cut(get_hole_with_hole(inner_d=self.hole_d, outer_d=self.inset_at_base_r * 2, deep=self.inset_at_base))
+            pinion = pinion.cut(get_hole_with_hole(inner_d=hole_d, outer_d=self.inset_at_base_r * 2, deep=self.inset_at_base))
 
         return pinion
 
@@ -4372,7 +4376,7 @@ class MotionWorks:
         pinion = self.pairs[1].pinion
 
         #add pinioncap thick so that both wheels are roughly centred on both pinion (look at the assembled preview)
-        return Arbor(wheel=wheel, pinion=pinion, rod_diameter=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS, wheel_thick=self.thick,
+        return Arbor(wheel=wheel, pinion=pinion, rod_diameter=self.hole_d, wheel_thick=self.thick,
                      pinion_thick=self.pinion_thick + self.pinion_cap_thick, end_cap_thick=self.pinion_cap_thick, style=self.style,
                      clockwise_from_pinion_side=False, type=ArborType.WHEEL_AND_PINION)
 
@@ -4381,7 +4385,7 @@ class MotionWorks:
 
     def get_minute_arbor_shape(self):
         #mini arbour that sits between the cannon pinion and the hour wheel
-        return self.get_minute_arbor().get_shape(hole_d=self.arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS)
+        return self.get_minute_arbor().get_shape(hole_d=self.hole_d)
 
     def get_widest_radius(self):
         '''
