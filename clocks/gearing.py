@@ -3851,6 +3851,11 @@ class Arbor:
 
 
 class MotionWorks:
+    '''
+    longer term aspiration: make the centred second hands motion works a sub class, rather than all the myriad of options that exist in this class
+    not sure it's worth doing until it becomes too much of a mess to modifiy.
+
+    '''
 
     #enough for two half height nuts, a washer and a slightly compressed spring washer to be contained in the base of the cannon pinion
     STANDARD_INSET_DEPTH = 4.5
@@ -3898,7 +3903,9 @@ class MotionWorks:
         '''
         self.arbor_d = arbor_d
         #self.hole_d= arbor_d + 0.4
-        self.hole_d = arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS_EVEN_LESS_WOBBLY
+        # self.hole_d = arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS_EVEN_LESS_WOBBLY
+        #experiment, use a 3mm drill. hopefully low friction and less wobble
+        self.hole_d = arbor_d
         self.cannon_pinion_hole_d = self.hole_d
         #thickness of gears
         self.thick = thick

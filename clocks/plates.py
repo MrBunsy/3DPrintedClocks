@@ -966,7 +966,7 @@ class SimpleClockPlates(BasePlates):
             friction_clip_distance = self.motion_works.friction_ring_r*2.5
             # print("friction_clip_distance", friction_clip_distance)
             #HACK for retrofitted print to clock 28
-            # friction_clip_distance = 30.998806423611125
+            friction_clip_distance = 30.998806423611125
             self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
             screw_distance = math.sqrt(2*(self.plate_width / 5)**2)
             friction_clip_angle = math.atan2(friction_clip_dir[1], friction_clip_dir[0])
@@ -1762,7 +1762,7 @@ class SimpleClockPlates(BasePlates):
         #aim to have the clip in the centre of the ring, which is slightly thicker than the clip.
         #total_thick = self.motion_works.friction_ring_base_thick + (self.motion_works.friction_ring_thick - clip_thick)/2 + clip_thick
         #now there's no longer a plain ring and this is just a holder
-        total_thick = self.motion_works.friction_ring_base_thick + clip_thick + LAYER_THICK*2
+        total_thick = self.motion_works.friction_ring_base_thick + clip_thick + LAYER_THICK*3
 
         clip_holder_r = self.plate_width/2
 
@@ -1771,112 +1771,142 @@ class SimpleClockPlates(BasePlates):
 
 
         cannon_pinion_relative_pos = np_to_set(np.subtract(self.hands_position, self.cannon_pinion_friction_clip_pos))
-        from_holder_to_cannon_pinion = Line(self.cannon_pinion_friction_clip_pos, another_point=self.hands_position)
-        angle_to_cannon_pinion = from_holder_to_cannon_pinion.get_angle()
+        # from_holder_to_cannon_pinion = Line(self.cannon_pinion_friction_clip_pos, another_point=self.hands_position)
+        # angle_to_cannon_pinion = from_holder_to_cannon_pinion.get_angle()
 
-        arc = math.pi/4
-        arc = math.pi/2
-        brake_angles = [angle_to_cannon_pinion+math.pi/2, angle_to_cannon_pinion - math.pi/2]
-        angle_pairs = [[angle - arc/2, angle + arc/2, angle] for angle in brake_angles]
-        brake_pads = cq.Workplane("XY")
+        ring_outer_r = self.motion_works.friction_ring_r + 4
+        ring_inner_r = self.motion_works.friction_ring_r+1
+        arm_thick = 2
 
-        #needs to be thicker than arm
-        brake_pad_thick = 3
-        #not sure what to name this - this is how far "inside" the cannon pinion the brake pads want to be
-        # brake_pad_offset = 1.5
-        # #thick here being width of arm (strength of spring)
-        # arm_thick = 1.5 #0.8 seemed a bit weedy
-        #with the new tube mounted motino works this (1) seems a bit strong
-        #with the new tube mount, even 0.5 seems a bit strong!
-        # 0.25 was a bit too weak - I've seen the minute hand suddenly drop a few times on clock 29
-        #0.4 is way way too strong on the new design with the shorter clip! (but is running fine on clock 29)
-        #might need to make this configurable for bodge purposes
-        #okay, but was it only too strong because of the seam?
-        #no, at 0.4 the hand just doens't turn, the clock only runs because the clutch slips.
-        #trying 0.25 again
-        #clock still has 0.2 at the moment and is not currently reliable, leaving this alone
-        brake_pad_offset = 0.2
+        ring = cq.Workplane("XY").circle(ring_outer_r).circle(ring_inner_r).extrude(clip_thick).translate((0,0,total_thick-clip_thick)).translate(cannon_pinion_relative_pos)
 
-        # now it's just here to hold the cannon pinion in place, try this:
-        brake_pad_offset = -0.5
+        ring_arms = cq.Workplane("XY").sketch().arc((cannon_pinion_relative_pos[0], cannon_pinion_relative_pos[1]), ring_outer_r, 0., 360.)\
+            .arc((0,0), clip_holder_r, 0., 360.) \
+            .hull().finalize().extrude(clip_thick).cut(cq.Workplane("XY").sketch().arc((cannon_pinion_relative_pos[0], cannon_pinion_relative_pos[1]), ring_outer_r-arm_thick, 0., 360.)\
+            .arc((0,0), clip_holder_r - arm_thick, 0., 360.) \
+            .hull().finalize().extrude(clip_thick)).translate((0,0,total_thick-clip_thick))
+        ring = ring.union(ring_arms)
 
+        #split the ring in half, I suspect it will be handy to be able to bend it to replace the cannon pinion?
+        line = Line((0,0), another_point=cannon_pinion_relative_pos)
+        far_point = polar(line.get_angle(), 1000)
+        ring = ring.cut(get_stroke_line([(0,0), far_point], wide=0.5, thick=total_thick))
 
-        arm_thick = 2.4
+        # downside of a full ring is there's not much vertical space for the minute wheel, so chop out a gap!
+        minute_arbor_relative_pos = np_to_set(np.subtract(self.motion_works_pos, self.cannon_pinion_friction_clip_pos))
 
-        inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
-        outer_r = inner_r + brake_pad_thick
+        ring = ring.cut(cq.Workplane("XY").circle(self.motion_works.get_minute_arbor().wheel.get_max_radius()+2).extrude(total_thick).translate(minute_arbor_relative_pos))
+        fillet_r = (ring_outer_r - ring_inner_r) * 0.3
+        ring = ring.edges("|Z").fillet(fillet_r)
 
-        for i,angles in enumerate(angle_pairs):
+        # for x in [1,-1]:
+        #     ring = ring.union(get_stroke_line())
 
-            '''
-            new plan:
-            build brake pad in the post-bend position, then rotate it into the pre-bend position by rotating around the mid point of the arm
-            
-            then when printed and bent into position the brake pad should line up properly - ideally want it to just be clamping the 
-            cannon pinion, not pushing it downwards
-            '''
+        #
+        # arc = math.pi/4
+        # arc = math.pi/2
+        # brake_angles = [angle_to_cannon_pinion+math.pi/2, angle_to_cannon_pinion - math.pi/2]
+        # angle_pairs = [[angle - arc/2, angle + arc/2, angle] for angle in brake_angles]
+        # brake_pads = cq.Workplane("XY")
+        #
+        # #needs to be thicker than arm
+        # brake_pad_thick = 3
+        # #not sure what to name this - this is how far "inside" the cannon pinion the brake pads want to be
+        # # brake_pad_offset = 1.5
+        # # #thick here being width of arm (strength of spring)
+        # # arm_thick = 1.5 #0.8 seemed a bit weedy
+        # #with the new tube mounted motino works this (1) seems a bit strong
+        # #with the new tube mount, even 0.5 seems a bit strong!
+        # # 0.25 was a bit too weak - I've seen the minute hand suddenly drop a few times on clock 29
+        # #0.4 is way way too strong on the new design with the shorter clip! (but is running fine on clock 29)
+        # #might need to make this configurable for bodge purposes
+        # #okay, but was it only too strong because of the seam?
+        # #no, at 0.4 the hand just doens't turn, the clock only runs because the clutch slips.
+        # #trying 0.25 again
+        # #clock still has 0.2 at the moment and is not currently reliable, leaving this alone
+        # brake_pad_offset = 0.2
+        #
+        # # now it's just here to hold the cannon pinion in place, try this:
+        # brake_pad_offset = -0.5
+        #
+        #
+        # arm_thick = 2.4
+        #
+        # inner_r = self.motion_works.friction_ring_r# - brake_pad_offset
+        # outer_r = inner_r + brake_pad_thick
+        #
+        # for i,angles in enumerate(angle_pairs):
+        #
+        #     '''
+        #     new plan:
+        #     build brake pad in the post-bend position, then rotate it into the pre-bend position by rotating around the mid point of the arm
+        #
+        #     then when printed and bent into position the brake pad should line up properly - ideally want it to just be clamping the
+        #     cannon pinion, not pushing it downwards
+        #     '''
+        #
+        #     start_inner = polar(angles[0], inner_r)
+        #     start_outer = polar(angles[0], outer_r)
+        #     end_inner = polar(angles[1], inner_r)
+        #     end_outer = polar(angles[1], outer_r)
+        #
+        #     outer_radius_arc = (self.motion_works.friction_ring_r + brake_pad_thick)
+        #     #sagitta - the outside arc isn't the outside radius as the brake pads are built, only once bent into place
+        #     l = get_distance_between_two_points(start_outer, end_outer)
+        #     r = (self.motion_works.friction_ring_r + brake_pad_thick)
+        #     sagitta_1 = r - math.sqrt(r**2 - 0.25*l**2)
+        #     sagitta_2 = outer_r - math.sqrt(outer_r**2 - 0.25*l**2)
+        #
+        #     #the arm is at an angle, so taking this isn't account doesn't make it perfectly line up with the tangent of the outside the brake pad anyway, but it looks
+        #     #better than not doing it.
+        #     arm_start = polar(angles[2], outer_r - arm_thick/2 - abs(sagitta_2 - sagitta_1))
+        #     arm_finish = np_to_set(np.add(np.multiply(cannon_pinion_relative_pos, -1), polar(angles[2], clip_holder_r - arm_thick/2)))
+        #
+        #     arm_centre = average_of_two_points(arm_start, arm_finish)
+        #
+        #     brake_pad = (cq.Workplane("XY").moveTo(start_inner[0], start_inner[1]).radiusArc(end_inner, -self.motion_works.friction_ring_r).lineTo(end_outer[0], end_outer[1])
+        #              .radiusArc(start_outer, outer_radius_arc).close().extrude(clip_thick))
+        #
+        #     #round the edges to see if it helps with the seam (even after filing it)
+        #     fillet_r = (outer_r - inner_r)*0.3
+        #     brake_pad = brake_pad.edges("|Z").fillet(fillet_r)
+        #
+        #     half_arm_length = np.linalg.norm(np.subtract(arm_centre, arm_start))
+        #
+        #
+        #     # relative_angle = rationalise_angle(angles[2]) - rationalise_angle(angle_to_cannon_pinion)
+        #     # to_pad = Line(start=self.cannon_pinion_friction_clip_pos, anotherPoint=arm_start).dir
+        #     # to_cannon_pinion = from_holder_to_cannon_pinion.dir
+        #     # pad_to_cannon_pinion = Line(arm_start, anotherPoint=self.)
+        #     # quad = get_quadrant(relative_angle)
+        #
+        #     bend_angle = brake_pad_offset/half_arm_length
+        #
+        #     # if quad[0] > 0:
+        #     #np.cross(to_pad, to_cannon_pinion) >
+        #     if i== 0:
+        #         #which direction to rotate?
+        #         #crude version - just rely on which of the brake pads we are
+        #         #*should* get vector from pad to cannon pinion location and then cross that with fixing to cannon pinion to find out which side it is
+        #         bend_angle *= -1
+        #
+        #     arm_start_bent = np_to_set(np.add(arm_start, polar(angles[2]+math.pi, brake_pad_offset)))
+        #
+        #     brake_pad = brake_pad.rotate((arm_centre[0], arm_centre[1], 0), (arm_centre[0], arm_centre[1], 1), rad_to_deg(bend_angle))
+        #
+        #     arm = get_stroke_line([arm_start_bent, arm_finish], wide=arm_thick, thick=clip_thick)
+        #     brake_pad = brake_pad.union(arm)
+        #
+        #     brake_pads = brake_pads.union(brake_pad.translate(cannon_pinion_relative_pos).translate((0,0,total_thick-clip_thick)))
+        #
+        # # arms = cq.Workplane("XY")
+        # # for x in [-1,1]:
+        # #     arms = arms.union(get_stroke_line([(x*(outer_r -arm_thick/2), ),]))
+        #
+        #
+        # clip = clip.union(brake_pads)
 
-            start_inner = polar(angles[0], inner_r)
-            start_outer = polar(angles[0], outer_r)
-            end_inner = polar(angles[1], inner_r)
-            end_outer = polar(angles[1], outer_r)
-
-            outer_radius_arc = (self.motion_works.friction_ring_r + brake_pad_thick)
-            #sagitta - the outside arc isn't the outside radius as the brake pads are built, only once bent into place
-            l = get_distance_between_two_points(start_outer, end_outer)
-            r = (self.motion_works.friction_ring_r + brake_pad_thick)
-            sagitta_1 = r - math.sqrt(r**2 - 0.25*l**2)
-            sagitta_2 = outer_r - math.sqrt(outer_r**2 - 0.25*l**2)
-
-            #the arm is at an angle, so taking this isn't account doesn't make it perfectly line up with the tangent of the outside the brake pad anyway, but it looks
-            #better than not doing it.
-            arm_start = polar(angles[2], outer_r - arm_thick/2 - abs(sagitta_2 - sagitta_1))
-            arm_finish = np_to_set(np.add(np.multiply(cannon_pinion_relative_pos, -1), polar(angles[2], clip_holder_r - arm_thick/2)))
-
-            arm_centre = average_of_two_points(arm_start, arm_finish)
-
-            brake_pad = (cq.Workplane("XY").moveTo(start_inner[0], start_inner[1]).radiusArc(end_inner, -self.motion_works.friction_ring_r).lineTo(end_outer[0], end_outer[1])
-                     .radiusArc(start_outer, outer_radius_arc).close().extrude(clip_thick))
-
-            #round the edges to see if it helps with the seam (even after filing it)
-            fillet_r = (outer_r - inner_r)*0.3
-            brake_pad = brake_pad.edges("|Z").fillet(fillet_r)
-
-            half_arm_length = np.linalg.norm(np.subtract(arm_centre, arm_start))
-
-
-            # relative_angle = rationalise_angle(angles[2]) - rationalise_angle(angle_to_cannon_pinion)
-            # to_pad = Line(start=self.cannon_pinion_friction_clip_pos, anotherPoint=arm_start).dir
-            # to_cannon_pinion = from_holder_to_cannon_pinion.dir
-            # pad_to_cannon_pinion = Line(arm_start, anotherPoint=self.)
-            # quad = get_quadrant(relative_angle)
-
-            bend_angle = brake_pad_offset/half_arm_length
-
-            # if quad[0] > 0:
-            #np.cross(to_pad, to_cannon_pinion) >
-            if i== 0:
-                #which direction to rotate?
-                #crude version - just rely on which of the brake pads we are
-                #*should* get vector from pad to cannon pinion location and then cross that with fixing to cannon pinion to find out which side it is
-                bend_angle *= -1
-
-            arm_start_bent = np_to_set(np.add(arm_start, polar(angles[2]+math.pi, brake_pad_offset)))
-
-            brake_pad = brake_pad.rotate((arm_centre[0], arm_centre[1], 0), (arm_centre[0], arm_centre[1], 1), rad_to_deg(bend_angle))
-
-            arm = get_stroke_line([arm_start_bent, arm_finish], wide=arm_thick, thick=clip_thick)
-            brake_pad = brake_pad.union(arm)
-
-            brake_pads = brake_pads.union(brake_pad.translate(cannon_pinion_relative_pos).translate((0,0,total_thick-clip_thick)))
-
-        # arms = cq.Workplane("XY")
-        # for x in [-1,1]:
-        #     arms = arms.union(get_stroke_line([(x*(outer_r -arm_thick/2), ),]))
-
-
-        clip = clip.union(brake_pads)
-
+        clip = clip.union(ring)
         #cutting out screws afterwards so they don't overlap with the arms
         for pos in self.cannon_pinion_friction_clip_fixings_pos:
             relative_pos = np_to_set(np.subtract(pos, self.cannon_pinion_friction_clip_pos))
@@ -1922,8 +1952,14 @@ class SimpleClockPlates(BasePlates):
             #just plain hole as the "friction clip", now doubling up to hold motion works in place, will screw in from the top
             holder = holder.faces(">Z").moveTo(pos[0], pos[1]).circle(self.motion_works_screws.get_rod_cutter_r()).cutThruAll()
 
-        #for screw to hold motion arbor
+
+        #small standoff for minute wheel, guessing a bit at a good height. I think the wheel will lean forwards? so it's not in too much risk of crashing into the btottom of the cannon pinion
+        # just had a closer look at clock 12, it does lean backwards so bump up the height a bit
+        holder = holder.union(cq.Workplane("XY").circle(self.motion_works_screws.metric_thread).extrude(holder_thick + self.motion_works.friction_ring_base_thick*3).translate(self.hands_position).translate(self.motion_works_relative_pos))
+        # for screw to hold minute wheel
         holder = holder.cut(self.motion_works_screws.get_cutter(self_tapping=True).translate(self.hands_position).translate(self.motion_works_relative_pos))
+
+
 
         outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].get_bearing(front=True).outer_d - self.motion_works.cannon_pinion_to_hour_holder_gap_size
         inner_diameter = outer_diameter - 2
