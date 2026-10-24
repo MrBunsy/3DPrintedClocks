@@ -966,7 +966,7 @@ class SimpleClockPlates(BasePlates):
             friction_clip_distance = self.motion_works.friction_ring_r*2.5
             # print("friction_clip_distance", friction_clip_distance)
             #HACK for retrofitted print to clock 28
-            friction_clip_distance = 30.998806423611125
+            # friction_clip_distance = 30.998806423611125
             self.cannon_pinion_friction_clip_pos = np_to_set(np.add(self.hands_position, np.multiply(friction_clip_dir, friction_clip_distance)))
             screw_distance = math.sqrt(2*(self.plate_width / 5)**2)
             friction_clip_angle = math.atan2(friction_clip_dir[1], friction_clip_dir[0])
