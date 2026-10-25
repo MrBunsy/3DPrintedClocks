@@ -144,7 +144,7 @@ train.print_info(weight_kg=6)
 
 
 
-motionWorks = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, reduced_jamming=True, cannon_pinion_to_hour_holder_gap_size=0.75)
+motionWorks = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, reduced_jamming=True, cannon_pinion_to_hour_holder_gap_radius=0.75)
 motionWorks.calculate_size(arbor_distance=30)
 
 pendulum = Pendulum(hand_avoider_inner_d=100, bob_d=100, bob_thick=15)

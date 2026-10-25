@@ -15,7 +15,7 @@ days_complication = DayOfWeekComplication(module=0.6, style=gear_style, bevel_mo
                                           cylinder_length=10, shortened_days=True, text_on_plaques=True, right_side=right_side, geneva_scale=0.7 / 0.6)
 # days_complication = DayOfWeekComplication(module=0.8, style=gear_style, bevel_module=1.1, angle_deg=60, extra_z_height=0, cylinder_length=28, text_on_plaques=True)
 motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True,
-                           cannon_pinion_to_hour_holder_gap_size=0.6, drives_complication=days_complication)
+                           cannon_pinion_to_hour_holder_gap_radius=0.6, drives_complication=days_complication)
 
 
 days_complication.set_motion_works_sizes(motion_works)

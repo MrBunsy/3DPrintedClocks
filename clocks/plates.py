@@ -1961,7 +1961,7 @@ class SimpleClockPlates(BasePlates):
 
 
 
-        outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].get_bearing(front=True).outer_d - self.motion_works.cannon_pinion_to_hour_holder_gap_size
+        outer_diameter = self.arbors_for_plate[self.going_train.powered_wheels].get_bearing(front=True).outer_d - self.motion_works.centre_second_to_cannon_pinion_gap_radius*2
         inner_diameter = outer_diameter - 2
 
         holder = holder.faces(">Z").workplane().moveTo(self.hands_position[0], self.hands_position[1]).circle(inner_diameter/2).cutThruAll()

@@ -3862,8 +3862,8 @@ class MotionWorks:
 
     def __init__(self, arbor_d=3, thick=3, pinion_thick=-1, module=1, minute_hand_thick=3, extra_height=0,
                  style=GearStyle.ARCS, compensate_loose_arbor=True, snail=None, strike_trigger=None, strike_hour_angle_deg=45, compact=False, bearing=None, inset_at_base=0,
-                 drives_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_size=0.5, reduce_cannon_pinion_size=0,
-                 distance_between_hands=2, reduced_jamming=False):
+                 drives_complication=None, cannon_pinion_friction_ring=False, lone_pinion_inset_at_base=0, cannon_pinion_to_hour_holder_gap_radius=0.5, reduce_cannon_pinion_size=0,
+                 distance_between_hands=2, reduced_jamming=False, centre_second_to_cannon_pinion_gap_radius=0.125):
         '''
 
         cannon_pinion_to_hour_holder_gap_size - in mm, how much extra diameter to add to the hour holder to slot over the cannon pinion. Can be a bit filament specific to what works well
@@ -3993,7 +3993,8 @@ class MotionWorks:
 
         #vertical space
         self.space = 0.5
-        self.cannon_pinion_to_hour_holder_gap_size = cannon_pinion_to_hour_holder_gap_size
+        self.cannon_pinion_to_hour_holder_gap_radius = cannon_pinion_to_hour_holder_gap_radius
+        self.centre_second_to_cannon_pinion_gap_radius = centre_second_to_cannon_pinion_gap_radius
         #old size of space so I can reprint without reprinting the hands (for the non-bearing version)
         self.hour_hand_holder_d = self.minute_hand_holder_d + 1 + self.wallThick * 2
 
@@ -4441,7 +4442,7 @@ class MotionWorks:
             #because CQ won't let you make shapes of zero height
             hand_holder_start_z = 0.0001
 
-        hole_r = self.minute_hand_holder_d / 2 + self.cannon_pinion_to_hour_holder_gap_size / 2
+        hole_r = self.minute_hand_holder_d / 2 + self.cannon_pinion_to_hour_holder_gap_radius / 2
 
         # return hour
         circle = cq.Workplane("XY").circle(bottom_r)
