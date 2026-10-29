@@ -431,10 +431,12 @@ class MachineScrew:
 
         self_tapping: using an idea from a youtube video, add three nubs so the thread has something to bite and form a strong join without being too hard to screw
 
-        sideways: DEPRECATED. no longer does anything
+        sideways: DEPRECATED. no longer does anything since self_tapping works so well
 
         ignore_head - this is just a cutter for the rod
         space_for_pan_head: include a sunken space for the pan head
+
+        Note if not loose or self tapping will produce a hole that fits perfectly once cleaned up with a 3mm drillbit
         '''
 
         if self.type in [MachineScrewType.GRUB]:

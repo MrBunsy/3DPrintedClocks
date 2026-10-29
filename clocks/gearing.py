@@ -3905,6 +3905,7 @@ class MotionWorks:
         #self.hole_d= arbor_d + 0.4
         # self.hole_d = arbor_d + LOOSE_FIT_ON_ROD_MOTION_WORKS_EVEN_LESS_WOBBLY
         #experiment, use a 3mm drill. hopefully low friction and less wobble
+        # worked wonders. Will use this everywhere possible - 3mm hole cleaned up with 3mm drill bit results in almost no wobble and spins freely
         self.hole_d = arbor_d
         self.cannon_pinion_hole_d = self.hole_d
         #thickness of gears
@@ -4214,7 +4215,7 @@ class MotionWorks:
     def get_hour_holder_max_radius(self):
         return self.pairs[1].wheel.get_max_radius()
 
-    def get_arbour_max_radius(self):
+    def get_arbor_max_radius(self):
         return self.pairs[0].wheel.get_max_radius()
 
     def get_hand_holder_height(self):
@@ -4945,7 +4946,8 @@ class DayOfWeekComplication:
         arbor = wheel.translate((0, 0, self.base_of_wheel_from_base_of_pinion))
         arbor = arbor.union(cq.Workplane("XY").circle(self.extension_r).extrude(self.base_of_wheel_from_base_of_pinion - self.geneva_gear_thick).translate((0, 0, self.geneva_gear_thick)))
         arbor = arbor.union(cq.Workplane("XY").polygon(6, self.extension_r * 2).extrude(self.geneva_gear_thick))
-        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(self.base_of_wheel_from_base_of_pinion + self.gear_thick))
+        # will need cleaning up with 3mm drill bit, but then will have next to no wobble
+        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(self.base_of_wheel_from_base_of_pinion + self.gear_thick))
 
         return arbor
 
@@ -4970,7 +4972,7 @@ class DayOfWeekComplication:
         side = 1 if self.right_side else -1
         arbor = arbor.union(cq.Workplane("XY").rect(line_long, 0.4).extrude(LAYER_THICK).translate((side*line_long / 2, 0, +self.geneva_gear_thick + self.extra_z_height + self.bevel_pair.wheel_thick)))
 
-        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(loose=True)).extrude(1000))
+        arbor = arbor.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r()).extrude(1000))
 
         return arbor
 
@@ -5150,7 +5152,7 @@ class DayOfWeekComplication:
 
 
         # arbor = arbor.faces(">Z").workplane().circle(self.fixing_screws.get_rod_cutter_r(loose=True)).cutThruAll()
-        arbor = arbor.cut(self.fixing_screws.get_cutter(loose=True, ignore_head=True, length=1000).translate((0,0,-500)))
+        arbor = arbor.cut(self.fixing_screws.get_cutter(ignore_head=True, length=1000).translate((0,0,-500)))
 
         return arbor
 

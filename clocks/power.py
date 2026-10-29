@@ -906,6 +906,9 @@ MAINSPRING_184545 = MainSpring(height=18, thick=0.45, barrel_diameter=45, arbor_
 MAINSPRING_185045 = MainSpring(height=18, thick=0.50, barrel_diameter=45, arbor_d=9, length=1600)
 MAINSPRING_183535 = MainSpring(height=18, thick=0.35, barrel_diameter=35, length=1400)
 MAINSPRING_102525 = MainSpring(height=10, thick=0.25, barrel_diameter=25, length=950)
+# can I reduce the size of a spring driven clock with a smaller, but still fairly powerful, spring?
+MAINSPRING_144040 = MainSpring(height=14, thick=0.40, barrel_diameter=40, length=1500)
+
 class SpringArbour:
     '''
     This was intended to work with a loop end mainspring like an alarm clock.

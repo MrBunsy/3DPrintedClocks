@@ -963,7 +963,7 @@ class SimpleClockPlates(BasePlates):
 
             #calculate position even if it's not applicable to this clock
             friction_clip_dir = self.get_friction_clip_direction()
-            friction_clip_distance = self.motion_works.friction_ring_r*2.5
+            friction_clip_distance = self.motion_works.friction_ring_r*3
             # print("friction_clip_distance", friction_clip_distance)
             #HACK for retrofitted print to clock 28
             # friction_clip_distance = 30.998806423611125
@@ -4726,7 +4726,7 @@ class RoundClockPlates(SimpleClockPlates):
     This was based on a copy of MantelClockPlates - I think it's going to be similar, but not similar enough to warrant extending or being a set of options
     '''
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
-                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK,  vanity_plate_radius=-1, motion_works_angle_deg=-1,
+                 moon_complication=None, second_hand=True, layer_thick=LAYER_THICK,  vanity_plate_radius=-1, motion_works_angle_deg=None,
                  leg_height=150, endshake=1.5, fully_round=False, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE, standoff_pillars_separate=True, plaque=None,
                  front_anchor_holder_part_of_dial = False, split_detailed_plate=False, power_at_bottom=True,
                  gear_train_layout = GearTrainLayout.COMPACT, fewer_arms=False,back_plate_from_wall=-1,pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, **kwargs):
@@ -5063,9 +5063,13 @@ class RoundClockPlates(SimpleClockPlates):
                     direction = 1
                     if self.bearing_positions[1][0] < self.bearing_positions[0][0]:
                         direction = -1
-                    bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
+                    try:
+                        bottom_pillar_pos = get_point_two_circles_intersect(self.bearing_positions[0][:2], self.arbors_for_plate[0].get_max_radius() + self.pillar_r + 1,
                                                                  self.bearing_positions[1][:2], self.arbors_for_plate[1].get_max_radius() + self.pillar_r + 1,
                                                                  in_direction=(direction,0))
+                    except:
+                        print("unable to find position for bottom pillar TODO")
+                        bottom_pillar_pos = (200,200)
                     self.radius = get_distance_between_two_points(bottom_pillar_pos, self.bearing_positions[self.going_train.powered_wheels][:2])
                     self.bottom_pillar_positions = [
                         bottom_pillar_pos,

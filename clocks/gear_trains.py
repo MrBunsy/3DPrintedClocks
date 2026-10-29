@@ -519,6 +519,8 @@ class GoingTrain(GearTrainBase):
 
         now favours a low standard deviation of number of teeth on the wheels - this should stop situations where we get a giant first wheel and tiny final wheels (and tiny escape wheel)
         This is slow, but seems to work well
+
+        can use large max_error to find the smallest gear train if exact pendulum period isn't an issue
         '''
 
         pinion_min = min_pinion_teeth

@@ -68,8 +68,6 @@ train.set_ratios([[80, 9], [81, 12]])
 train.gen_cord_wheels(ratchet_thick=6.25, rod_metric_thread=4, cord_thick=1, cord_coil_thick=16, style=gearStyle, use_key=True, prefered_diameter=25,
                       loose_on_rod=False, prefer_small=True, ratchet_has_external_pawl=True)#, ratchet_diameter=29 + 27.5)
 
-# train.set_chain_wheel_ratio([67, 11])
-
 pendulumSticksOut=20
 
 #1.1725786449236986 module size for the pwoered wheel is waht the old logic calculated to get it to fit. Hardcoding as I intend to change that logic
