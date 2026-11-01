@@ -82,8 +82,8 @@ motion_works = MotionWorks(compact=True)
 # hands = Hands(style=HandStyle.ART_DECO2, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
 #                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False)
 
-hands = Hands(style=HandStyle.ART_DECO2, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
-                    length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, include_seconds_hand=False)
+# hands = Hands(style=HandStyle.ART_DECO2, chunky=True, second_length=25, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+#                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, include_seconds_hand=False)
 
 # hands = Hands(style=HandStyle.SIMPLE_POINTED, minute_fixing="circle", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
 #                     length=dial.get_hand_length(), thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, second_hand_centred=True, chunky=True, outline_on_seconds=0,
@@ -95,4 +95,18 @@ hands = Hands(style=HandStyle.ART_DECO2, chunky=True, second_length=25, minute_f
 
 
 
-hands.show_hands(show_object=show_object, hand_colours=[Colour.WHITE, Colour.BRASS], show_second_hand=False)#, hand_colours=[Colour.BLACK, Colour.BRASS, Colour.RED], hand_colours_overrides={"black":Colour.DARKGREY}, show_second_hand=False)
+#
+
+dial_d = 152
+dial_width=20
+
+dial = Dial(outside_d=dial_d, bottom_fixing=False, top_fixing=False, romain_numerals_style=RomanNumeralStyle.SIMPLE_SQUARE, style=DialStyle.ROMAN_NUMERALS,
+                        outer_edge_style=DialStyle.CONCENTRIC_CIRCLES, seconds_style=DialStyle.CONCENTRIC_CIRCLES, dial_width=dial_width, raised_detail=True)
+
+hand_style = HandStyle.SPADE
+hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
+                  length=dial.outside_d * 0.45, thick=motion_works.minute_hand_slot_height, outline=1, outline_same_as_body=False, chunky=True,
+                   seconds_hand_thick=1.5, outline_on_seconds=1, include_seconds_hand=True)
+hands.show_hands(show_object=show_object, hand_colours=[Colour.WHITE, Colour.BLACK], show_second_hand=False)#, hand_colours=[Colour.BLACK, Colour.BRASS, Colour.RED], hand_colours_overrides={"black":Colour.DARKGREY}, show_second_hand=False)
+show_object(dial.get_dial().rotate((0,0,0), (0,1,0), 180), options={"color": Colour.WHITE}, name="Dial")
+show_object(dial.get_all_detail().rotate((0,0,0), (0,1,0), 180), options={"color": Colour.DARKGREY}, name="Detail")

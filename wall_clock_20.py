@@ -102,11 +102,11 @@ gear_train_layout = clock.GearLayout2D.get_compact_vertical_layout(train, start_
 
 
 #dial diameter of 250 (printed in two parts) looks promising for second hand, 205 without
-plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", gear_train_layout=gear_train_layout,
-                                 heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
-                                 back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=40,
-                                 allow_bottom_pillar_height_reduction=False, endshake=1.5)
+plates = clock.SimpleWallClockPlates(train, motionWorks, plate_thick=9, back_plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="Wall 20", gear_train_layout=gear_train_layout,
+                                     heavy=True, extra_heavy=True, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+                                     back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
+                                     chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, motion_works_angle_deg=40,
+                                     allow_bottom_pillar_height_reduction=False, endshake=1.5)
 
 
 # hands = clock.Hands(style=clock.HandStyle.SPADE, minuteFixing="square", minuteFixing_d1=motionWorks.getMinuteHandSquareSize(), hourfixing_d=motionWorks.getHourHandHoleD(),

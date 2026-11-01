@@ -84,12 +84,12 @@ dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clo
 
 
 #now have to force_escapement_above_hands to reproduce something more like the original printing
-plates = clock.SimpleClockPlates(train, motion_works,plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.VERTICAL_COMPACT,
-                                 heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
-                                 back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
-                                 chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
-                                 second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225
-                                 , endshake=1.75)#, screws_from_back=[True, False])
+plates = clock.SimpleWallClockPlates(train, motion_works, plate_thick=9, back_plate_thick=11, pendulum_sticks_out=pendulumSticksOut, name="Wall 23", gear_train_layout=clock.GearTrainLayout.VERTICAL_COMPACT,
+                                     heavy=True, extra_heavy=False, pendulum_fixing=pendulumFixing, pendulum_at_front=False,
+                                     back_plate_from_wall=backPlateFromWall, fixing_screws=clock.MachineScrew(metric_thread=4, countersunk=True),
+                                     chain_through_pillar_required=True, pillars_separate=True, dial=dial, bottom_pillars=1, moon_complication=moon_complication,
+                                     second_hand=second_hand_centred, centred_second_hand=second_hand_centred, motion_works_angle_deg = 225
+                                     , endshake=1.75)#, screws_from_back=[True, False])
 
 pulley = clock.BearingPulley(diameter=train.powered_wheel.diameter, bearing=clock.get_bearing_info(4), wheel_screws=clock.MachineScrew(2, countersunk=True, length=8))
 print("pulley needs screws {} {}mm and {} {}mm".format(pulley.screws, pulley.get_total_thick(), pulley.hook_screws, pulley.get_hook_total_thick()))

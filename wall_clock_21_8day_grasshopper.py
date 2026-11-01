@@ -41,7 +41,7 @@ clockOutDir="out"
 gearStyle = clock.GearStyle.CURVES
 pendulumFixing=clock.PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
-need_space = clock.SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
+need_space = clock.SimpleWallClockPlates.get_lone_anchor_bearing_holder_thick() + clock.WASHER_THICK_M3
 
 #pre-calculated good values for a 9.75 escaping arc
 #also -1 from frame_thick because I've reduced front_anchor_from_plate by one
@@ -81,9 +81,9 @@ pendulum = clock.Pendulum(hand_avoider_inner_d=100, bob_d=80, bob_thick=10)
 # dial = clock.Dial(outside_d=200, bottom_fixing=True, top_fixing=False, style=clock.DialStyle.LINES_ARC)
 dial = None
 
-plates = clock.SimpleClockPlates(train, motionWorks, plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="clk 21", gear_train_layout=clock.GearTrainLayout.VERTICAL, pendulum_at_front=False,
-                                 back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, heavy=True, extra_heavy=True, dial=dial, pillars_separate=True,
-                                 chain_through_pillar_required=True, huygens_wheel_min_d=30, fixing_screws=clock.MachineScrew(4, countersunk=True), allow_bottom_pillar_height_reduction=True)
+plates = clock.SimpleWallClockPlates(train, motionWorks, plate_thick=10, pendulum_sticks_out=pendulumSticksOut, name="clk 21", gear_train_layout=clock.GearTrainLayout.VERTICAL, pendulum_at_front=False,
+                                     back_plate_from_wall=40, escapement_on_front=True, pendulum_fixing=pendulumFixing, heavy=True, extra_heavy=True, dial=dial, pillars_separate=True,
+                                     chain_through_pillar_required=True, huygens_wheel_min_d=30, fixing_screws=clock.MachineScrew(4, countersunk=True), allow_bottom_pillar_height_reduction=True)
 pulley = clock.LightweightPulley(diameter=plates.get_diameter_for_pulley())
 print("Pulley thick = {}mm".format(pulley.get_total_thickness()))
 

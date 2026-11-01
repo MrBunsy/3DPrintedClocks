@@ -57,7 +57,7 @@ pendulum = clock.Pendulum(train.escapement, train.pendulum_length, anchorHoleD=3
 pendulum.output_STLs(clockName, clockOutDir)
 
 
-plates = clock.SimpleClockPlates(train, motionWorks, pendulum)
+plates = clock.SimpleWallClockPlates(train, motionWorks, pendulum)
 plates.output_STLs(clockName, clockOutDir)
 
 hands = clock.Hands(minute_fixing="square", minute_fixing_d1=motionWorks.get_minute_hand_square_size(), hourfixing_d=motionWorks.get_hour_hand_hole_d(), length=50, thick=motionWorks.minute_hand_slot_height)

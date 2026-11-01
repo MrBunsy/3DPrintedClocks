@@ -41,7 +41,7 @@ pillar_style=PillarStyle.BARLEY_TWIST
 
 
 #copied from clock 15, make sure there's space for the front anchor bearing holder to not clash with the arms
-need_space = SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + WASHER_THICK_M3
+need_space = SimpleWallClockPlates.get_lone_anchor_bearing_holder_thick() + WASHER_THICK_M3
 #also -1 from frame_thick because I've reduced front_anchor_from_plate by one
 
 #although we're planning to stick this on a shorter pendulum, so it won't meet harrison's stipulations, but should work fine. I'm not going for mega accuracy

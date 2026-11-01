@@ -40,7 +40,7 @@ gearStyle = GearStyle.HONEYCOMB
 
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
 
-need_space = SimpleClockPlates.get_lone_anchor_bearing_holder_thick() + WASHER_THICK_M3
+need_space = SimpleWallClockPlates.get_lone_anchor_bearing_holder_thick() + WASHER_THICK_M3
 
 #pre-calculated good values for a 9.75 escaping arc
 #also -1 from frame_thick because I've reduced front_anchor_from_plate by one
@@ -124,8 +124,8 @@ motionWorks = MotionWorks(extra_height=40, style=gearStyle, compact=True, thick=
 
 pendulum = Pendulum(bob_d=80, bob_thick=10, hand_avoider_inner_d=100)
 
-plates = SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", gear_train_layout=GearTrainLayout.VERTICAL, pendulum_at_front=False,
-                                 back_plate_from_wall=40, pendulum_fixing=pendulumFixing, direct_arbor_d=6) #  escapement_on_front is deprecated
+plates = SimpleWallClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="wall clock 15", gear_train_layout=GearTrainLayout.VERTICAL, pendulum_at_front=False,
+                               back_plate_from_wall=40, pendulum_fixing=pendulumFixing, direct_arbor_d=6) #  escapement_on_front is deprecated
 if retrofit_chain_wheels:
     #retrofitting the original design
     # what size to make it? bigger is better for the ratchet, smaller is better for the sprocket

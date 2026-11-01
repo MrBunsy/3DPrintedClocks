@@ -563,23 +563,18 @@ class BasePlates:
         return bom
 
 
-class SimpleClockPlates(BasePlates):
+class SimpleWallClockPlates(BasePlates):
     '''
-    This took a while to settle - clocks before wall_clock_4 will be unlikely to work anymore.
-
     This produces viable simple wall clocks and also supports being extended for other types of clock plate
 
     This has become a monster of a class. I think it's better to try and simplify this class and extend it for new types of clock plate, rather than adding yet more options
     to this class.
 
-    TODO in future abstract out just all the useful re-usable bits into a ClockPlatesBase?
+    TODO:
 
-    I've been thinking about this - and the only bits we really want are the plate shape, back cock and wall standoffs and pillars.
-    What other funky odd bits need doing?
-    could we abstract out all the stuff done to the plate after getting the shape? Should we split get_basic_plate_shape out from get_plate?
+     - Move as much as possible that's shared between all kinds of plates into BasePlates
+     - Turn this class into a good base for all wall clock plates
 
-    Really all the myriad of options on simple plates should all be extended classes and the base class should provide lots of helper functions.
-    how many special cases will I discover?
 
     '''
 
@@ -591,7 +586,7 @@ class SimpleClockPlates(BasePlates):
                  bottom_pillars=1, top_pillars=1, centre_weight=False, screws_from_back=None, moon_complication=None, second_hand=True, motion_works_angle_deg=None, endshake=1.0,
                  embed_nuts_in_plate=False, layer_thick=LAYER_THICK_EXTRATHICK, top_pillar_holds_dial=False,
                  override_bottom_pillar_r=-1, vanity_plate_radius=-1, small_fixing_screws=None, style=PlateStyle.SIMPLE, pillar_style=PillarStyle.SIMPLE,
-                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True, **kwargs):
+                 standoff_pillars_separate=False, texts=None, plaque=None, split_detailed_plate=False,  power_at_bottom=True, wall_fixings_nearest=25, wall_fixings_distance_force=-1 ,**kwargs):
         '''
         escapement_on_front=None, escapement_on_back=None,
 
@@ -607,6 +602,9 @@ class SimpleClockPlates(BasePlates):
         split_detailed_plate - if the detail is raised on the front plate we'd have to print using hole-in-hole supports for the bearing holes. Some filaments this isn't as clean as others
         so with this option instead the plate is printed in two halves without needing the hole-in-hole supports and relies upon being bolted together.
         off_centre_escape_wheel - if true, permit escape wheel off centre where default settings wouldn't assume this
+
+        wall_fixings_nearest: if > 0, round (whichever way makes most sense for the plates) to the nearest wall_fixings_nearest mm
+        wall_fixings_distance_force: if negative, old behaviour of wahtever is easiest for that plate design. If positive, force this distance for wall fixing positions
         '''
 
         super().__init__(going_train, layer_thick=layer_thick, **kwargs)
@@ -619,6 +617,10 @@ class SimpleClockPlates(BasePlates):
         self.export_tolerance = 0.1
 
         self.motion_works_position_bodge = (0,0)
+
+        # not everyting respects these settings yet
+        self.wall_fixings_nearest = wall_fixings_nearest
+        self.wall_fixings_distance_force = wall_fixings_distance_force
 
         self.split_detailed_plate = split_detailed_plate and style != PlateStyle.SIMPLE
 
@@ -3938,7 +3940,7 @@ class SimpleClockPlates(BasePlates):
         #             print("Outputting ", out)
         #             exporters.export(extensionShape, out)
 
-class MantelClockPlates(SimpleClockPlates):
+class MantelClockPlates(SimpleWallClockPlates):
     '''
     Skeleton mantel clock
     '''
@@ -4709,7 +4711,7 @@ class RoundMantelClockPlates(MantelClockPlates):
                                                                  in_direction=(dir,0))
         return positions_relative
 
-class RoundClockPlates(SimpleClockPlates):
+class RoundClockPlates(SimpleWallClockPlates):
     '''
     IDEA - specify wall fixing screws distance, or have a few pre-set distances and choose nearest.
     Shouldn't be too hard to make the bottom wall plate vary its shape, can use curves like the top one
@@ -5546,7 +5548,7 @@ class RoundClockPlates(SimpleClockPlates):
         '''
         if not self.wall_mounted:
             return []
-
+        # top screwhole on the round clock plates is fixed, but we can adjust the bottom
         top_y = self.hands_position[1] + self.radius
         #HACK TODO tidy up screwhole cutting and calculate size in the same place (use newish WoodScrew?)
         screwhole_length =  self.wall_fixing_screw_head_d/2 + 7# + 6/2
@@ -5567,9 +5569,29 @@ class RoundClockPlates(SimpleClockPlates):
         #     top_y = self.top_pillar_positions[0][1]
         # else:
         #     #halway between top pillar y and anchor bearing
-        #     top_y = (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2
+        #     top_y = (self.bearing_positions[-1][1] + self.top_pillar_positions[0][1]) / 2#
 
-        return [(0, top_y, True), (0, self.bottom_pillar_positions[0][1], True)]
+
+        bottom_y = self.bottom_pillar_positions[0][1]
+
+        if self.wall_fixings_distance_force > 0:
+            bottom_y = top_y - self.wall_fixings_distance_force
+        elif self.wall_fixings_nearest > 0:
+            distance = top_y - bottom_y
+
+            missing_distance = (distance % self.wall_fixings_nearest)
+
+            potential_extra = self.wall_fixings_nearest - missing_distance
+            if potential_extra < self.wall_fixings_nearest/4:
+                #make it further away if it's only a little bit (-nve y is further DOWN)
+                bottom_y -= potential_extra
+            else:
+                #reducing distance is fine for round clock plates (+ve y is further UP)
+                bottom_y += missing_distance
+                # rounded_distance = distance - (distance % self.wall_fixings_nearest)
+                # bottom_y = top_y - rounded_distance
+
+        return [(0, top_y, True), (0, bottom_y, True)]
 
     def get_front_anchor_bearing_holder(self, for_printing=True, basic_shape_for_detail=False):
         '''
@@ -5654,6 +5676,14 @@ class RoundClockPlates(SimpleClockPlates):
         # l = distance_between_two_points(self.bottom_pillar_positions[1], self.bottom_pillar_positions[0])
         # s = self.radius - math.sqrt(self.radius ** 2 - 0.25 * l ** 2)
         # wall_fixing_pos = (0, self.bottom_pillar_positions[0][1] - s / 2)
+
+        centre = get_average_of_points(self.bottom_pillar_positions)
+
+        try:
+            #line to wall fixing
+            standoff = standoff.union(get_stroke_line([centre, wall_fixing_pos], wide=self.pillar_r*2, thick = plate_thick))
+        except:
+            print("Wouldn't add line from bottom standoff to wall fixing position")
 
         standoff = self.cut_wall_fixing_hole(standoff, wall_fixing_pos, screw_head_d=self.wall_fixing_screw_head_d, add_extra_support=True, plate_thick=plate_thick)
 
@@ -6096,7 +6126,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
     def get_front_anchor_bearing_holder(self, for_printing=True, basic_shape_for_detail=False):
         # we want the old grasshopper style version
-        holder = SimpleClockPlates.get_front_anchor_bearing_holder(self, for_printing=False, basic_shape_for_detail=basic_shape_for_detail)
+        holder = SimpleWallClockPlates.get_front_anchor_bearing_holder(self, for_printing=False, basic_shape_for_detail=basic_shape_for_detail)
 
         if basic_shape_for_detail:
             return holder
@@ -6273,7 +6303,7 @@ class GrasshopperRoundPlates(RoundClockPlates):
 
         return bom
 
-class ChildFriendlySimpleClockPlates(SimpleClockPlates):
+class ChildFriendlySimpleClockPlates(SimpleWallClockPlates):
     '''
     Basically teh same, but designed to be held together with large nylon nuts and bolts
 
@@ -6627,7 +6657,7 @@ class RectangularWallClockPlates(RoundClockPlates):
                                   .translate((0,0,-self.back_plate_from_wall + 1)))
         return cutter
 
-class RollingBallClockPlates(SimpleClockPlates):
+class RollingBallClockPlates(SimpleWallClockPlates):
     '''
     Grand Plan:
 
@@ -6901,7 +6931,7 @@ class RollingBallClockPlates(SimpleClockPlates):
     def get_bottom_pillar(self):
         return self.get_pillar()
 
-class StrikingClockPlates(SimpleClockPlates):
+class StrikingClockPlates(SimpleWallClockPlates):
     '''
     Striking clock plates, undecided yet if they'll be shelf mounted or wall mounted. I'll see how large they end up being first
     '''

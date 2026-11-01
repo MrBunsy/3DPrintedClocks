@@ -113,7 +113,7 @@ pendulum = Pendulum(bob_d=70, bob_thick=10, hand_avoider_inner_d=80)
 dial = Dial(120)
 
 
-plates = SimpleClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Granny", gear_train_layout=GearTrainLayout.VERTICAL)
+plates = SimpleWallClockPlates(train, motionWorks, plate_thick=6, pendulum_sticks_out=pendulumSticksOut, name="Granny", gear_train_layout=GearTrainLayout.VERTICAL)
 
 #old Plate distance 31.07
 #Plate distance 31.069999999999997
