@@ -2362,7 +2362,8 @@ TODO add screw lengths to attach commutors and arms to frame
             line(self.composer_thick, 0).lineTo(screw_position[0] + self.composer_thick/2, screw_position[1]).close().extrude(composer_total_thick)
 
         #hole to rotate around pivot
-        composer = composer.cut(cq.Workplane("XY").circle(self.screws.metric_thread/2 + self.loose_on_pivot/2).extrude(1000))
+        #experimental - try removing + self.loose_on_pivot/2 and using a 3mm drill. Not sure how well this will work given the holes are printed within the layer lines
+        composer = composer.cut(cq.Workplane("XY").circle(self.screws.metric_thread/2 ).extrude(1000))
         #hole to hold screw for weight
         composer = composer.union(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(around_screw_r).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
         # composer = composer.cut(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(self.screws.metric_thread/2).extrude(1000))
@@ -2495,8 +2496,8 @@ TODO add screw lengths to attach commutors and arms to frame
         # start_of_bend_to_nib = Line(start_of_bend, anotherPoint=nib_pos)
 
 
-
-        arm = arm.cut(cq.Workplane("XY").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread / 2 + self.loose_on_pivot/2).extrude(self.pallet_thick))
+        # hole for arm to pivot aroudn is NOT loose - drill it out with a 3mm drill bit for a much less wobbly and lower friction fit
+        arm = arm.cut(cq.Workplane("XY").moveTo(pivot_pos[0], pivot_pos[1]).circle(self.screws.metric_thread / 2).extrude(self.pallet_thick))
         # arm = arm.cut(cq.Workplane("XY").moveTo(counteweight_pos[0], counteweight_pos[1]).circle(self.screws.metric_thread / 2).extrude(self.pallet_thick))
         arm = arm.cut(self.screws.get_cutter(self_tapping=True, ignore_head=True).translate(counteweight_pos))
 

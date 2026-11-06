@@ -20,7 +20,7 @@ if 'show_object' not in globals():
         pass
 
 
-clock_name = "Wall_45_silent"
+clock_name = "Wall_45_silentb"
 
 random.seed(clock_name)
 
@@ -31,7 +31,9 @@ plate_thick=8
 teeth = 24#36
 escapement_info = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=5)
 #nylon wire only 0.15, but need a hole big enough to print well
-escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.4)
+# escapement = SilentPinPalletAnchorEscapement(teeth=teeth, drop=escapement_info.drop_deg, lift=escapement_info.lift_deg, run=escapement_info.run_deg, lock=escapement_info.lock_deg, pin_diameter=1.4)
+#silent worked but seems to have issues? tempted to try replacing wth conventional, as it's just as loud with the thick "gut" anyway.
+escapement = AnchorEscapement.get_with_optimal_pallets(teeth=teeth, drop_deg=2)
 barrel_gear_thick = 5
 
 # this looks plausible, but not sure I want to push my luck
@@ -39,7 +41,7 @@ power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base
                      style=GearStyle.SNOWFLAKE_06_NOZZLE, wall_thick=8, ratchet_thick=8, spring=SMITHS_EIGHT_DAY_MAINSPRING,
                      ratchet_screws=MachineScrew(2, grub=True), seed_for_gear_styles=clock_name+"barrel", ratchet_pawl_screwed_from_front=True)#, key_bearing=PlainBushing(12, fake_height=plate_thick))
 
-#idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth
+#idea - try thicker cord/artifical gut so will need escape wheel with fewer teeth (worked but was loud)
 
 train = GoingTrain(pendulum_period=2 / 3, wheels=4, escapement=escapement, powered_wheels=2, runtime_hours=8 * 24, support_second_hand=True, powered_wheel=power)
 
@@ -152,12 +154,15 @@ TODO:
  - pinion extensions for lantern pinions could just have a solid extension if above a certain amount? like normal pinion extensions.
 '''
 
-plates = RoundClockPlates(train, motion_works, name="Wall 45", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
+plates = RoundClockPlates(train, motion_works, name="Wall 45b", dial=dial, plate_thick=plate_thick, layer_thick=0.2, pendulum_sticks_out=pendulum_sticks_out,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=plate_style, pillar_style=pillar_style,
                                 second_hand=True, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=False,
-                                gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=back_plate_from_wall)
+                                gear_train_layout=gear_train_layout, fewer_arms=True, back_plate_from_wall=back_plate_from_wall,
+                          wall_fixings_nearest=-1)
 
 print(f"Bearing pos for anchor: {plates.bearing_positions[-1]}")
+fixings = plates.get_screwhole_positions()
+print(f"Wall fixings distance: {fixings[0][1] - fixings[1][1]}") # 171.55964883983762
 #Bearing pos for anchor: [0, 138.60650591482255, 5.156000000000004]
 
 hand_style = HandStyle.FANCY_FRENCH

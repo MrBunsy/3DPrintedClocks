@@ -76,7 +76,7 @@ train.set_ratios([[50, 13], [52, 10]])
 # # my bet is 11 days?
 # # do I actually want to increase the ratio further? there's already plenty of spare power at the beginning of the week on a recycled spring
 # # print(f"power ratio:{(46.8/54.9)*((0.5**3)/(0.4**3))}")
-# old_ratio = (59/11)*(55/10)
+old_ratio = (59/11)*(55/10)
 #
 #
 # # new_ratio = (54/10)*(64/10)
@@ -96,8 +96,23 @@ train.set_ratios([[50, 13], [52, 10]])
 # #TODO calculate power after 6 days? then I can compare the power when it stops with potential new power after six days rather than just beginning power
 # print(f"power ratio:{(old_ratio/new_ratio)*((0.5**3)/(0.4**3))}")
 
+
 #after all that, clock 53 can actually run for a week (just) when it's in beat. If a recycled 0.4mm thick mainspring can do that, I'm hoping a 0.45mm thick (~1.45x more power) should be fine.
-train.set_powered_wheel_ratios([[59, 11], [55, 10]])
+
+
+# after yet more thinking - can I adjust the ratio so that the power on day 1 is the same, but it tails off slower?
+
+new_power_train = [[55, 10], [63, 10]]
+new_ratio = (new_power_train[0][0]/new_power_train[0][1]) * (new_power_train[1][0]/new_power_train[1][1])
+
+#let's just call the energy in the old 0.4 spring '1'
+old_start_power = 1/old_ratio
+
+new_start_power = ((0.45**3)/(0.4**3))/new_ratio
+
+print(f"old ratio: {old_ratio}, old start: {old_start_power}, new ratio: {new_ratio}, new start: {new_start_power}")
+
+train.set_powered_wheel_ratios(new_power_train)
 
 train.print_info()
 
@@ -111,7 +126,7 @@ train.generate_arbors_dicts([
         "pinion_extension": 3,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 11.9,
-        "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.6, leaves=train.chain_wheel_ratios[0][1]),
+        "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.5, leaves=train.chain_wheel_ratios[0][1]),
     },
     {
         #intermediate wheel
@@ -131,7 +146,7 @@ train.generate_arbors_dicts([
         "pinion_extension": 1,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 3,
-        "module": 1.2,
+        "module": 1.35,
         "pinion_thick": 7,
     },
     {
@@ -142,7 +157,7 @@ train.generate_arbors_dicts([
         "pinion_extension": 20,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
-        "module": 1.2,
+        "module": 1.3,
         "pinion_thick": 7,
         # originally to retrofit after fixing a bug, but actually it's much easier to assemble without the endcaps
         "end_cap_thick": 0
@@ -195,8 +210,6 @@ dial = Dial(dial_d, DialStyle.ARABIC_NUMBERS, font="Dutch Courage", font_scale=0
 gear_layout =  GearLayout2D.get_eight_day_grasshopper(train)
 
 motion_works_angle = math.pi*1.5 - (gear_layout.get_angle_between(2,1) - math.pi*1.5)
-
-# print(f"dial support lengths: {dial.support_length}")
 
 plaque = Plaque(text_lines=["W54#0 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 

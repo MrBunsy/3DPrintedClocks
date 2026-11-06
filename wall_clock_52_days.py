@@ -57,7 +57,7 @@ if 'show_object' not in globals():
 
 art_deco = True
 
-clock_name= "wall_clock_52.1"
+clock_name= "wall_clock_52.2"
 clock_out_dir= "out"
 gear_style=GearStyle.ARCS
 pendulumFixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS
@@ -222,7 +222,7 @@ else:
 plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, style=PlateStyle.DOUBLE_RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
-                          days_complication = days_complication, moon_complication=moon_complication)
+                          days_complication = days_complication, moon_complication=moon_complication,wall_fixings_distance_force = 171.55964883983762 + (191.13 - 195.56)) # fit on fixings originally for clock 45 silent while I fix it
 print(f"Plate distance: {plates.plate_distance}")#50.5
 if art_deco:
     hands = Hands(style=HandStyle.ART_DECO, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),
