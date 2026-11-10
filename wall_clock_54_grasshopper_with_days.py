@@ -217,7 +217,7 @@ plaque = Plaque(text_lines=["W54#0 {:.1f}cm L.Wallin 2026".format(train.pendulum
 
 
 
-plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 54#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=40,
+plates = GrasshopperRoundPlates(train, motion_works, name="Wall Clock 54#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=30,
                                 motion_works_angle_deg=rad_to_deg(motion_works_angle), leg_height=0, fully_round=True, style=PlateStyle.DOUBLE_RAISED_EDGING, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque, split_detailed_plate=True, fewer_arms=True, gear_train_layout=gear_layout, endshake=1,
                                 days_complication = days_complication)

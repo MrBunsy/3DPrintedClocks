@@ -50,7 +50,7 @@ escapement = AnchorEscapement.get_with_optimal_pallets(teeth=30, drop_deg=2, whe
 power = SpringBarrel(pawl_angle=-math.pi * 3/4, click_angle=-math.pi * 1/4, base_thick=barrel_gear_thick,
                          style=gear_style, wall_thick=8, ratchet_thick=8, spring=MAINSPRING_144040,
                      key_bearing=BEARING_10x15x4, lid_bearing=BEARING_10x15x4_FLANGED, barrel_bearing=BEARING_10x15x4,
-                     fraction_of_max_turns=0.55)
+                     fraction_of_max_turns=0.55, ratchet_screws=MachineScrew(3, grub=True))
 
 
 
@@ -85,7 +85,7 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 3,
+        # "pinion_extension": 3,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 11.9,
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.2, leaves=train.chain_wheel_ratios[0][1]),
@@ -96,8 +96,8 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 5,
-        "pinion_type": PinionType.LANTERN,
+        # "pinion_extension": 5,
+        "pinion_type": PinionType.LANTERN_THIN,
         "rod_diameter": 3,
         "module": WheelPinionPair.module_size_for_lantern_pinion_trundle_diameter(1.0),
         "pinion_thick": 9
@@ -108,7 +108,7 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": True,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 1,
+        # "pinion_extension": 1,
         "pinion_type": PinionType.LANTERN,
         "rod_diameter": 3,
         "module": 0.9,
@@ -122,7 +122,7 @@ train.generate_arbors_dicts([
         "style": gear_style,
         "pinion_at_front": False,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 20,
+        "pinion_extension": 15,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "module": 0.9,#1.14,
@@ -134,20 +134,20 @@ train.generate_arbors_dicts([
         "wheel_thick": 2.5,
         "style": gear_style,
         "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 2,
+        "pinion_extension": 0,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "module": 0.85,#1.14,
         "pinion_thick": 7,
-        "pinion_at_front": True
+        "pinion_at_front": False
     },
     {
         #escape wheel
         "wheel_thick": 2.5,
         "style": gear_style,
-        "pinion_at_front": False,
+        "pinion_at_front": True,
         # "arbor_split": SplitArborType.NORMAL_ARBOR,
-        "pinion_extension": 12,
+        "pinion_extension": 8,
         "pinion_type": PinionType.PLASTIC,
         "rod_diameter": 3,
         "pinion_thick": 7
@@ -156,7 +156,7 @@ train.generate_arbors_dicts([
 
 
 
-motion_works = MotionWorks(extra_height=14, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True)
+motion_works = MotionWorks(extra_height=10, style=gear_style, thick=3, compensate_loose_arbor=False, compact=True, inset_at_base=MotionWorks.STANDARD_INSET_DEPTH)
 
 motion_works.calculate_size(arbor_distance=30)
 
@@ -176,9 +176,13 @@ gear_train_layout = GearLayout2D.get_old_gear_train_layout(train, GearTrainLayou
 
 motion_works_angle_deg = rad_to_deg(math.pi*1.5 - (gear_train_layout.get_angle_between(2,1) - math.pi*1.5))
 
-plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=8, layer_thick=0.2, pendulum_sticks_out=17.5,back_plate_from_wall=35,
+
+pendulum_fixing = ColletFixingPendulumWithBeatSettingThinner()
+
+plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=27,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, pillar_style=pillar_style,
-                                second_hand=False, standoff_pillars_separate=True, plaque=plaque,  fewer_arms=True, endshake=1, gear_train_layout=gear_train_layout,style=PlateStyle.RAISED_EDGING)
+                                second_hand=False, standoff_pillars_separate=True, plaque=plaque,  fewer_arms=True, endshake=1,
+                          gear_train_layout=gear_train_layout,style=PlateStyle.RAISED_EDGING, pendulum_fixing=pendulum_fixing)
 
 hand_style = HandStyle.SWORD
 hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_works.get_minute_hand_square_size(), hourfixing_d=motion_works.get_hour_hand_hole_d(),

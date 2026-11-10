@@ -2367,7 +2367,7 @@ TODO add screw lengths to attach commutors and arms to frame
         #hole to hold screw for weight
         composer = composer.union(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(around_screw_r).extrude(self.composer_thick*2 + self.pallet_thick + self.composer_pivot_space))
         # composer = composer.cut(cq.Workplane("XY").moveTo(screw_position[0], screw_position[1]).circle(self.screws.metric_thread/2).extrude(1000))
-        composer = composer.cut(self.screws.get_cutter(ignore_head=True, self_tapping=True).translate(screw_position))
+        composer = composer.cut(self.screws.get_cutter(ignore_head=True, self_tapping=True).rotate((0,0,0),(0,0,1),360/6).translate(screw_position))
 
         if not for_printing:
             #rotate and translate into place

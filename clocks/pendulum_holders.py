@@ -47,6 +47,9 @@ class PendulumHolder:
     def get_top_of_pendulum_holder_hole_y(self):
         raise NotImplementedError()
 
+    def get_pendulum_holder_thick(self):
+        raise NotImplementedError()
+
     def needs_square_arbor_section(self):
         '''
         part of teh arbor must be square for a collet and/or pendulum holder to slot over
@@ -317,9 +320,13 @@ class ColletFixingPendulumWithBeatSetting(PendulumHolder):
         self.collet_radius = collet_square_size
         if self.collet_radius < self.arm_width / 2:
             self.collet_radius = self.arm_width / 2
+        # y pos of the centre with the adjusting nut
         self.length = length
         self.width = length * 0.55
         self.pendulum_holder_thick = pendulum_holder_thick
+        #used to be pendulum_holder_thick/4 and I don't remember why
+        self.collet_screw_z = self.pendulum_holder_thick / 2
+        self.beatsetter_screw_z = self.pendulum_holder_thick/4
         self.threadholder_arm_width = self.arm_width * 0.75
 
         nearest_screw = get_nearest_machine_screw_length(self.get_thread_screw_length(), self.fixing_screws, prefer_longer=True)
@@ -334,12 +341,15 @@ class ColletFixingPendulumWithBeatSetting(PendulumHolder):
         self.arm_end_point = (0, -self.length + self.width / 2 + self.threadholder_arm_width / 2)
 
         # plus extra because we'll be at an angle
+        # this is the hole with the thumb nut
         self.nut_hole_height = self.fixing_screws.get_nut_containing_diameter(thumb=True) + 3
 
         self.top_of_pendulum_holder_hole_y = -self.length - self.nut_hole_height / 2 - 1.5
 
         print("beat setter needs {} of length {:.1f}".format(self.fixing_screws, self.get_thread_screw_length()))
 
+    def get_pendulum_holder_thick(self):
+        return self.pendulum_holder_thick
     def get_top_of_pendulum_holder_hole_y(self):
         return self.top_of_pendulum_holder_hole_y
 
@@ -383,9 +393,8 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         return bom
 
     def get_thread_cutter(self):
-        thick = self.pendulum_holder_thick
-        thread_cutter = self.fixing_screws.get_cutter(sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.width / 2 - self.threadholder_arm_width, -self.length, thick / 4))
-        thread_cutter = thread_cutter.union(self.fixing_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.width / 2, -self.length, thick / 4)))
+        thread_cutter = self.fixing_screws.get_cutter(sideways=True).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.width / 2 - self.threadholder_arm_width, -self.length, self.beatsetter_screw_z))
+        thread_cutter = thread_cutter.union(self.fixing_screws.get_nut_cutter().rotate((0, 0, 0), (0, 0, 1), 360 / 12).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.width / 2, -self.length, self.beatsetter_screw_z)))
         return thread_cutter
 
     def get_thread_screw_length(self):
@@ -413,10 +422,23 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         # arms that curve down to the threaded rod holders
         arms = cq.Workplane("XY").moveTo(0, -self.length).circle(curve_outer_r).circle(curve_outer_r - self.threadholder_arm_width).extrude(half_thick).translate((0, 0, half_thick)).cut(
             cq.Workplane("XY").moveTo(0, -self.length - curve_outer_r).rect(curve_outer_r * 2, curve_outer_r * 2).extrude(thick))
+
+        arm_distance_from_collet_end = self.arm_end_point[1] - (-self.length)
+        if arm_distance_from_collet_end > curve_outer_r - self.threadholder_arm_width/2:
+            # move the little arms up and lengthen their ends
+            curve_r = (curve_outer_r - self.threadholder_arm_width/2)
+            extra_distance = arm_distance_from_collet_end - curve_r
+            arms = arms.translate((0, extra_distance))
+            for x_dir in [-1, 1]:
+                x = x_dir * curve_r
+                arms = arms.union(get_stroke_line([(x, self.arm_end_point[1] - curve_r), (x, -self.length)], wide=self.threadholder_arm_width, thick=half_thick).translate((0, 0, half_thick)))
+
         for x_dir in [-1, 1]:
             x = x_dir * (self.width / 2 + self.threadholder_arm_width / 2)
             # arms = arms.union(get_stroke_line([(x, self.hinge_point[1]), (x, -self.length - self.fixing_screws.get_nut_containing_diameter()/2)], wide=self.threadholder_arm_width, thick=thick))#arms.union(cq.Workplane.moveTo(x*self.width/2+self.threadholder_arm_width/2,-(self.length + self.)))
             arms = arms.union(cq.Workplane("XY").moveTo(x, -self.length).circle(self.threadholder_arm_width / 2).extrude(thick))
+
+
         collet = collet.union(arms)
         #
         # #sideways arm for the adjustment
@@ -433,6 +455,8 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         # was considering using a pan head with the head outside, so this is as strong as possible, but then it can struggle to fit when the back_plate_from_wall isn't large enough
         # might put countersunk head in teh pendulum holder arm instead
         collet = collet.cut(cq.Workplane("XY").circle(self.fixing_screws.get_rod_cutter_r(for_tap_die=True)).extrude(thick).rotate((0, 0, 0), (1, 0, 0), 180).translate((self.hinge_point[0], self.hinge_point[1], self.pendulum_holder_thick)))
+        # above is pretty much perfect, not sure I want to mess with it, even though I use the self tapping cutter for everything else now
+        # collet = collet.cut(self.fixing_screws.get_cutter(self_tapping=True, ignore_head=True).rotate((0, 0, 0), (1, 0, 0), 180).translate((self.hinge_point[0], self.hinge_point[1], self.pendulum_holder_thick)))
         # cut out square bit that slots over arbour
         wiggle = 0.2
         collet = collet.cut(cq.Workplane("XY").rect(self.collet_square_size + wiggle, self.collet_square_size + wiggle).extrude(thick))
@@ -448,8 +472,8 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         nut_thick = self.collet_screws.get_nut_height(half=True) + extra_deep
         # collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (1, 0, 0), -90).translate((0, -self.collet_size/2 - screw_length, self.pendulum_holder_thick/4)))
         # collet = collet.cut(self.collet_screws.get_nut_cutter(half=True).rotate((0, 0, 0), (1, 0, 0), 90).translate((0, -self.collet_size / 2, self.pendulum_holder_thick/4)))
-        collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.collet_square_size / 2 - screw_length, 0, self.pendulum_holder_thick / 4)))
-        collet = collet.cut(self.collet_screws.get_nut_cutter(height=nut_thick).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.collet_square_size / 2, 0, self.pendulum_holder_thick / 4)))
+        collet = collet.cut(self.collet_screws.get_cutter(length=screw_length, head_space_length=10).rotate((0, 0, 0), (0, 1, 0), 90).translate((-self.collet_square_size / 2 - screw_length, 0, self.collet_screw_z)))
+        collet = collet.cut(self.collet_screws.get_nut_cutter(height=nut_thick).rotate((0, 0, 0), (0, 1, 0), -90).translate((-self.collet_square_size / 2, 0, self.collet_screw_z)))
 
         if for_printing:
             collet = collet.rotate((0,0,0), (0,1,0), 180)
@@ -468,16 +492,30 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
 
         half_thick = self.pendulum_holder_thick / 2
 
+        nut_hole_section_thick = half_thick
+
+
+
         # bit longer to give pendulum holder more length and therefore less wobble
         bottom = (self.hinge_point[0], self.hinge_point[1] - self.length - 15)
 
         holder = get_stroke_line([self.hinge_point, bottom], wide=self.arm_width, thick=self.pendulum_holder_thick)
 
+
         nut_hole_height = self.nut_hole_height
 
         end_of_half_thick = self.top_of_pendulum_holder_hole_y + 1.5
 
-        holder = holder.cut(cq.Workplane("XY").moveTo(0, end_of_half_thick / 2).rect(self.arm_width * 2, abs(end_of_half_thick)).extrude(half_thick).translate((0, 0, half_thick)))
+        make_thinner_cutter = cq.Workplane("XY").moveTo(0, end_of_half_thick / 2).rect(self.arm_width * 2, abs(end_of_half_thick)).extrude(half_thick).translate((0, 0, half_thick))
+
+        if self.beatsetter_screw_z > self.pendulum_holder_thick/4:
+            # this won't be in the right place anymore
+            nut_hole_section_thick = self.pendulum_holder_thick
+            make_thinner_cutter = make_thinner_cutter.cut(get_stroke_line([(0, -self.length + nut_hole_centre_height/2 + self.arm_width/2), bottom], wide=self.arm_width, thick=self.pendulum_holder_thick))
+
+        holder = holder.cut(make_thinner_cutter)
+
+
 
         # holder = holder.cut(cq.Workplane("XY").circle(self.arm_width/2 + 0.25).extrude(self.pendulum_holder_thick/2).translate((self.hinge_point[0], self.hinge_point[1], half_thick/2)))
         # hinge point hole for screw
@@ -509,7 +547,7 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         hole_wide = self.fixing_screws.get_rod_cutter_r(loose=True, sideways=True) * 2 + 0.5
         # get_stroke_line([(0, -nut_hole_centre_height/2), (0, nut_hole_centre_height/2)], wide=self.fixing_screws.get_rod_cutter_r(loose=True, sideways=True)*2 + 0.5, thick=self.width*3)
         threaded_hole_cutter = (cq.Workplane("XY").rect(hole_wide, nut_hole_centre_height * 2.5).extrude(self.width * 3)
-                                .rotate((0, 0, half_thick / 2), (0, 1, half_thick / 2), 90).translate((-self.width, -self.length, 0)))
+                                .rotate((0, 0, self.beatsetter_screw_z), (0, 1, self.beatsetter_screw_z), 90).translate((-self.width, -self.length, 0)))
         holder = holder.cut(threaded_hole_cutter)
 
         # holder = holder.rotate((0,-self.hinge_distance,0),(0,-self.hinge_distance,1),12)
@@ -547,6 +585,18 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
     #
     #     return diagram
 
+class ColletFixingPendulumWithBeatSettingThinner(ColletFixingPendulumWithBeatSetting):
+    '''
+    Exactly the same idea as ColletFixingPendulumWithBeatSetting but slightly tweaked to be as thin as possible - on  some clocks the
+    limiting factor in making them thinner was the pendulum holder itself
+    '''
+
+    def __init__(self, *args,pendulum_holder_thick=8, length=30, **kwargs):
+        if "collet_square_size" not in kwargs:
+            kwargs["collet_square_size"] = PendulumHolder.get_default_collet_square_size()
+        super().__init__(*args, pendulum_holder_thick=pendulum_holder_thick, length=length, **kwargs)
+        self.arm_end_point = self.hinge_point
+        self.beatsetter_screw_z = self.pendulum_holder_thick/2
 
 class SuspensionSpringPendulumBits(PendulumHolder):
     '''

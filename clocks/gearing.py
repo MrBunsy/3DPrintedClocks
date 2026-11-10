@@ -1879,7 +1879,7 @@ To keep this assembly together, use a small amount of superglue between the whee
 class ArborForPlate:
 
     def __init__(self, arbor, plates, arbor_extension_max_radius, pendulum_sticks_out=0, pendulum_at_front=True, bearing=None,
-                 back_from_wall=0, endshake = 1, pendulum_fixing = PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
+                 back_from_wall=0, endshake = 1, pendulum_fixing = None, bearing_position=None, direct_arbor_d = DIRECT_ARBOR_D, crutch_space=10,
                  previous_bearing_position=None, front_anchor_from_plate=-1, pendulum_length=-1):
         '''
         Given a basic Arbour and a specific plate class do the following:
@@ -1936,7 +1936,10 @@ class ArborForPlate:
 
         self.distance_from_front = (self.plate_distance - self.endshake) - self.total_thickness - self.distance_from_back
 
+        #used to be the enum for what held the anchor arbor, now is the mechanism for holding the pendulum on the anchor arbor
         self.pendulum_fixing = pendulum_fixing
+        if self.pendulum_fixing is None:
+            raise ValueError("Must provide pendulum fixing")
 
         #now fully part of arbor.arbor_split
         # self.escapement_on_front = escapement_on_front
@@ -1957,7 +1960,7 @@ class ArborForPlate:
         #for direct pendulum arbour with esacpement on the front there's a collet to hold it in place for endshape
         self.collet_thick = 6
         self.collet_screws = MachineScrew(2,countersunk=True)
-        self.pendulum_holder_thick = 15
+        self.pendulum_holder_thick = self.pendulum_fixing.get_pendulum_holder_thick()
         self.pendulum_fixing_extra_space = 0.2
         #diameter of the bit taht links anchor and pendulum holder
         self.direct_arbor_d = direct_arbor_d
@@ -2854,7 +2857,7 @@ class ArborForPlate:
         if self.arbor.get_type() == ArborType.ANCHOR and self.arbor.arbor_split == SplitArborType.WHEEL_OUT_BACK:
             return False
 
-        if self.arbor.get_type() == ArborType.ANCHOR and self.pendulum_fixing != PendulumFixing.FRICTION_ROD:
+        if self.arbor.get_type() == ArborType.ANCHOR:# and self.pendulum_fixing != PendulumFixing.FRICTION_ROD:
             if self.arbor.arbor_split == SplitArborType.WHEEL_OUT_FRONT:
                 return False
             return self.pendulum_at_front != front
