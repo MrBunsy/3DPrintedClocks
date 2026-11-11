@@ -38,7 +38,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "wall_clock_55"
+clock_name= "wall_clock_56"
 clock_out_dir= "out"
 gear_style=GearStyle.ROUNDED_ARMS5
 
@@ -162,7 +162,7 @@ motion_works.calculate_size(arbor_distance=30)
 
 pendulum = FancyPendulum()#Pendulum(hand_avoider_inner_d=100, bob_d=50, bob_thick=15)
 
-plaque = Plaque(text_lines=["W55#1 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
+plaque = Plaque(text_lines=["W56#1 {:.1f}cm L.Wallin 2026".format(train.pendulum_length_m * 100), "3DPrintedClocks.co.uk"])
 
 pillar_style = PillarStyle.CLASSIC
 dial_d = 152

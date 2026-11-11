@@ -49,7 +49,7 @@ if 'show_object' not in globals():
     def show_object(*args, **kwargs):
         pass
 
-clock_name= "mantel_clock_33.2"
+clock_name= "mantel_clock_33.3"
 # clock_name= "mantel_clock_33_retrofit"
 clock_out_dir= "out"
 gear_style=GearStyle.ARCS
@@ -287,11 +287,11 @@ if moon:
     moon_complication.set_motion_works_sizes(motion_works)
 
 plaque = Plaque(text_lines=["M33#2 {:.1f}cm L.Wallin 2024".format(train.pendulum_length_m * 100), "github.com/MrBunsy/3DPrintedClocks"])
-
+pendulum_fixing = ColletFixingPendulumWithBeatSettingThinner()
 plates = MantelClockPlates(train, motion_works, name="Mantel 33", dial=dial, plate_thick=7, back_plate_thick=6, style=PlateStyle.RAISED_EDGING,
                                  pillar_style=pillar_style, moon_complication=moon_complication, second_hand=not moon, symetrical=moon, pendulum_sticks_out=21,
                                  standoff_pillars_separate=True, fixing_screws=MachineScrew(4, countersunk=False), motion_works_angle_deg=motion_works_angle_deg,
-                                 plaque=plaque, split_detailed_plate=True)
+                                 plaque=plaque, split_detailed_plate=True, pendulum_fixing=pendulum_fixing)
 print("plate pillar y", plates.bottom_pillar_positions[0][1])
 
 hand_style = HandStyle.MOON if moon else HandStyle.SPADE
@@ -300,7 +300,7 @@ hands = Hands(style=hand_style, minute_fixing="square", minute_fixing_d1=motion_
                     second_length=dial.second_hand_mini_dial_d * 0.45 if not moon else 1, seconds_hand_thick=1.5, outline_on_seconds=0.5)
 
 
-assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True, name="Mantel Clock 33")
+assembly = Assembly(plates, hands=hands, time_seconds=30, pendulum=pendulum, with_mat=True, name="Mantel Clock 33.3")
 dial_colours =  [Colour.WHITE, Colour.BLACK]
 if moon:
     dial_colours =  [Colour.BLUE, Colour.WHITE]

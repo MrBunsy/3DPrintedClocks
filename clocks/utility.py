@@ -1057,9 +1057,9 @@ class Line:
         '''
         https://stackoverflow.com/a/39840218
         '''
-        p1 = np.asarray(self.start)
-        p2 = np.asarray((self.start[0] + self.dir[0], self.start[1] + self.dir[1]))
-        p3 = np.asarray(point)
+        p1 = np.asarray((self.start[0], self.start[1], 0))
+        p2 = np.asarray((self.start[0] + self.dir[0], self.start[1] + self.dir[1], 0))
+        p3 = np.asarray((point[0], point[1], 0))
         d = np.linalg.norm(np.cross(p2 - p1, p1 - p3)) / np.linalg.norm(p2 - p1)
 
         return d

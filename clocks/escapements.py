@@ -3035,8 +3035,8 @@ At the top of the threaded pendulum rod first thread a nyloc nut, then thread th
 
         #add a little S <--> F text
         textSize = self.gap_height
-        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, cut=False, halign='center', valign='center', kind="bold").translate((-self.gap_width / 2 - textSize * 0.75, 0, self.bob_thick)))
-        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").translate((self.gap_width / 2 + textSize * 0.75, 0, self.bob_thick)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", textSize, LAYER_THICK*2, combine="cut", halign='center', valign='center', kind="bold").translate((-self.gap_width / 2 - textSize * 0.75, 0, self.bob_thick)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", textSize, LAYER_THICK * 2, combine="cut", halign='center', valign='center', kind="bold").translate((self.gap_width / 2 + textSize * 0.75, 0, self.bob_thick)))
 
         text = self.get_bob_text()
 

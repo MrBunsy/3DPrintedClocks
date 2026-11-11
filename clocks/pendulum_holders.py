@@ -303,8 +303,10 @@ class ColletFixingPendulumWithBeatSetting(PendulumHolder):
     so then I can use a 14mm screw without it sticking out the end or looking like it's too short
     '''
 
-    def __init__(self, collet_square_size, fixing_screws=None, pendulum_fixing_extra_space=0.2, pendulum_holder_thick=14.5, length=35, collet_screws=None):
+    def __init__(self, collet_square_size=None, fixing_screws=None, pendulum_fixing_extra_space=0.2, pendulum_holder_thick=14.5, length=35, collet_screws=None, arm_width=-1):
         self.collet_square_size = collet_square_size
+        if self.collet_square_size is None:
+            self.collet_square_size = PendulumHolder.get_default_collet_square_size()
         self.fixing_screws = fixing_screws
         if self.fixing_screws is None:
             self.fixing_screws = MachineScrew(3, countersunk=True)
@@ -313,11 +315,14 @@ class ColletFixingPendulumWithBeatSetting(PendulumHolder):
         self.collet_screws = collet_screws
         if self.collet_screws is None:
             self.collet_screws = MachineScrew(2, countersunk=False)
+        if arm_width < 0:
+            self.arm_width = self.collet_square_size * 1.5
+            if self.arm_width < 12:
+                self.arm_width = 12
+        else:
+            self.arm_width = arm_width
 
-        self.arm_width = collet_square_size * 1.5
-        if self.arm_width < 12:
-            self.arm_width = 12
-        self.collet_radius = collet_square_size
+        self.collet_radius = self.collet_square_size
         if self.collet_radius < self.arm_width / 2:
             self.collet_radius = self.arm_width / 2
         # y pos of the centre with the adjusting nut
@@ -511,7 +516,7 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         if self.beatsetter_screw_z > self.pendulum_holder_thick/4:
             # this won't be in the right place anymore
             nut_hole_section_thick = self.pendulum_holder_thick
-            make_thinner_cutter = make_thinner_cutter.cut(get_stroke_line([(0, -self.length + nut_hole_centre_height/2 + self.arm_width/2), bottom], wide=self.arm_width, thick=self.pendulum_holder_thick))
+            make_thinner_cutter = make_thinner_cutter.cut(get_stroke_line([(0, -self.length + nut_hole_centre_height/8 + self.arm_width/2), bottom], wide=self.arm_width, thick=self.pendulum_holder_thick))
 
         holder = holder.cut(make_thinner_cutter)
 
@@ -536,7 +541,11 @@ Finally, in the collet there is a hole for a nut on the inside of the square hol
         # 0.4 works, but feels sliiightly too loose
         # 0.3 works but is still a bit tight, not sure end-users would be able to easily put pendulum in, going back to 0.4 but with reduced space for rod
         # tryin reducing sideways space too, default was 0.1
-        holder = holder.cut(get_pendulum_holder_cutter(z=z, extra_nut_space=0.4, extra_space_for_rod=0.0).translate((0, self.top_of_pendulum_holder_hole_y)).rotate((0, 0, z), (0, 1, z), 180))
+        cutter = get_pendulum_holder_cutter(z=z, extra_nut_space=0.4, extra_space_for_rod=0.0).translate((0, self.top_of_pendulum_holder_hole_y)).rotate((0, 0, z), (0, 1, z), 180)
+        #undecided, it will need bridging so might not come out great, but it is only a tiny hole
+        #I'm hoping it adds a bit of strength if needed
+        cutter = cutter.cut(cq.Workplane("XY").moveTo(0, self.top_of_pendulum_holder_hole_y).rect(50,50).extrude(LAYER_THICK*2).translate((0,0,self.pendulum_holder_thick - LAYER_THICK*2)))
+        holder = holder.cut(cutter)
 
         thumb_nut_d = self.fixing_screws.get_nut_containing_diameter(thumb=True)
 
@@ -594,7 +603,7 @@ class ColletFixingPendulumWithBeatSettingThinner(ColletFixingPendulumWithBeatSet
     def __init__(self, *args,pendulum_holder_thick=8, length=30, **kwargs):
         if "collet_square_size" not in kwargs:
             kwargs["collet_square_size"] = PendulumHolder.get_default_collet_square_size()
-        super().__init__(*args, pendulum_holder_thick=pendulum_holder_thick, length=length, **kwargs)
+        super().__init__(*args, pendulum_holder_thick=pendulum_holder_thick, length=length, arm_width=11, **kwargs)
         self.arm_end_point = self.hinge_point
         self.beatsetter_screw_z = self.pendulum_holder_thick/2
 

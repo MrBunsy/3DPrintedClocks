@@ -17,7 +17,7 @@ source, You must where practicable maintain the Source Location visible
 on the external case of the clock or other products you make using this
 source.
 '''
-import numpy.linalg.linalg
+# import numpy.linalg.linalg
 
 from .gear_trains import GearLayout2D
 from .utility import *
@@ -3947,7 +3947,7 @@ class MantelClockPlates(SimpleWallClockPlates):
     def __init__(self, going_train, motion_works, plate_thick=8, back_plate_thick=None, pendulum_sticks_out=15, name="", centred_second_hand=False, dial=None,
                  moon_complication=None, second_hand=True, motion_works_angle_deg=-1, screws_from_back=None, layer_thick=LAYER_THICK,
                  symetrical=False, style=PlateStyle.SIMPLE, pillar_style = PillarStyle.SIMPLE, standoff_pillars_separate=True, fixing_screws=None, embed_nuts_in_plate=True,
-                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, gears_start_on_right=True, feet_extension=0):
+                 plaque = None, vanity_plate_radius=-1, prefer_tall = False, split_detailed_plate=False, gears_start_on_right=True, feet_extension=0, **kwargs):
         self.symetrical = symetrical
         # bit of a bodge, if we're symetric but the pillars aren't symetric, which one is in the "wrong" place?
         self.relocated_top_pillar = -1
@@ -3965,13 +3965,13 @@ class MantelClockPlates(SimpleWallClockPlates):
         # enshake smaller because there's no weight dangling to warp the plates! (hopefully)
         #ended up having the escape wheel getting stuck, endshake larger again (errors from plate and pillar thickness printed with large layer heights?)
         super().__init__(going_train, motion_works, gear_train_layout=gear_train_layout, pendulum_at_top=True, plate_thick=plate_thick, back_plate_thick=back_plate_thick,
-                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True, pendulum_fixing=PendulumFixing.DIRECT_ARBOR_SMALL_BEARINGS,
+                         pendulum_sticks_out=pendulum_sticks_out, name=name, heavy=True,
                          pendulum_at_front=False, back_plate_from_wall=pendulum_sticks_out + 10 + plate_thick, fixing_screws=fixing_screws,
                          centred_second_hand=centred_second_hand, pillars_separate=True, dial=dial, bottom_pillars=2, moon_complication=moon_complication,
                          second_hand=second_hand, motion_works_angle_deg=motion_works_angle_deg, endshake=1.5, screws_from_back=screws_from_back,
                          layer_thick=layer_thick, style=style, pillar_style= pillar_style,
                          standoff_pillars_separate = standoff_pillars_separate, embed_nuts_in_plate=embed_nuts_in_plate, plaque = plaque, vanity_plate_radius=vanity_plate_radius,
-                         split_detailed_plate=split_detailed_plate)
+                         split_detailed_plate=split_detailed_plate, **kwargs)
         self.narrow_bottom_pillar = False
         self.foot_fillet_r = 2
         # self.moon_holder_y = -1

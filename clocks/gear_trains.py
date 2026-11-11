@@ -1,4 +1,4 @@
-import numpy.linalg.linalg
+# import numpy.linalg.linalg
 
 from .utility import *
 from .power import *

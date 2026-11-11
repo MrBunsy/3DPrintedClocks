@@ -4564,13 +4564,15 @@ class TraditionalRatchet:
         # work out if the angle we want to keep is >180deg, then either cut or include a segment of a circle
         dot_product = np.dot(from_dir, to_dir)
         small_angle = math.acos(dot_product)
-        cross_product = np.cross(from_dir, to_dir)
+        # numpy deprecated 2d cross product
+        # cross_product = np.cross(from_dir, to_dir)
+        cross_product = np.cross(list(from_dir) + [0], list(to_dir) + [0])
         # if cross_product
 
         if self.blocks_clockwise:
-            want_small_angle = cross_product > 0
+            want_small_angle = cross_product[2] > 0
         else:
-            want_small_angle = cross_product < 0
+            want_small_angle = cross_product[2] < 0
 
         # print("want the SMALL ANGLE", want_small_angle)
 

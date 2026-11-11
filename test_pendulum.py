@@ -26,6 +26,6 @@ if 'show_object' not in globals():
 # show_object(get_pendulum_holder_cutter(z=50, extra_nut_space=0.4, extra_space_for_rod=0.0))
 
 holder = ColletFixingPendulumWithBeatSettingThinner()
-
+# holder = ColletFixingPendulumWithBeatSetting()
 show_object(holder.get_assembled())
 
