@@ -179,7 +179,7 @@ motion_works_angle_deg = rad_to_deg(math.pi*1.5 - (gear_train_layout.get_angle_b
 
 pendulum_fixing = ColletFixingPendulumWithBeatSettingThinner()
 
-plates = RoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=27,
+plates = ThinnerRoundClockPlates(train, motion_works, name="Wall Clock 52#0", dial=dial, plate_thick=6, layer_thick=0.2, pendulum_sticks_out=12,back_plate_from_wall=27,
                                 motion_works_angle_deg=motion_works_angle_deg, leg_height=0, fully_round=True, pillar_style=pillar_style,
                                 second_hand=False, standoff_pillars_separate=True, plaque=plaque,  fewer_arms=True, endshake=1,
                           gear_train_layout=gear_train_layout,style=PlateStyle.RAISED_EDGING, pendulum_fixing=pendulum_fixing)

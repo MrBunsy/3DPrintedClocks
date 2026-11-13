@@ -3273,8 +3273,8 @@ class FancyPendulum(Pendulum):
         text_width = self.bob_r - self.front_chamfer - self.cone_start_r
         text_x = self.centre_r
         text_height = text_width
-        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", text_height, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((text_x, 0, 0)))
-        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", text_height, LAYER_THICK * 2, cut=False, halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((-text_x, 0, 0)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("S", text_height, LAYER_THICK * 2, combine="cut", halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((text_x, 0, 0)))
+        bob = bob.union(cq.Workplane("XY").moveTo(0, 0).text("F", text_height, LAYER_THICK * 2, combine="cut", halign='center', valign='center', kind="bold").rotate((0,0,0),(0,1,0), 180).translate((-text_x, 0, 0)))
 
         if for_printing:
             bob = bob.rotate((0,0,0), (0,1,0),180).translate((0,0,self.bob_thick))

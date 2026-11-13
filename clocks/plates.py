@@ -4904,18 +4904,20 @@ class RoundClockPlates(SimpleWallClockPlates):
         #         longest_arm=arm_length
         #         longest_arm_index = i
 
+        arm_wide = self.get_small_arm_wide()
+
         if self.going_train.powered_wheels == 1:
             second_point = self.bearing_positions[2][:2]
             long_line = Line(self.hands_position, another_point=second_point)
-            edge = np_to_set(np.add(self.hands_position, polar(long_line.get_angle(), self.radius-self.plate_width/2)))
+            edge = np_to_set(np.add(self.hands_position, polar(long_line.get_angle(), self.radius-arm_wide/2)))
         elif self.going_train.powered_wheels == 2:
             second_point = self.bearing_positions[1][:2]
             long_line = Line(self.hands_position, another_point=second_point)
 
 
         long_space_length = self.radius
-        long_line_length = long_space_length - self.plate_width
-        text_height = self.plate_width * 0.9
+        long_line_length = long_space_length - arm_wide
+        text_height = arm_wide * 0.9
         long_centre = np_to_set(np.add(long_line.start, np.multiply(long_line.dir, long_space_length / 2)))
         long_angle = long_line.get_angle()
         if long_line_length < 0 or text_height < 0:
@@ -4982,6 +4984,9 @@ class RoundClockPlates(SimpleWallClockPlates):
 
         return pillar
 
+    def get_plate_width(self):
+        bearing_info = get_bearing_info(self.arbor_d)
+        return bearing_info.outer_d + self.bearing_wall_thick * 2
 
     def calc_pillar_info(self, override_bottom_pillar_r=-1):
         '''
@@ -4998,7 +5003,7 @@ class RoundClockPlates(SimpleWallClockPlates):
 
 
         bearing_info = get_bearing_info(self.arbor_d)
-        self.plate_width = bearing_info.outer_d + self.bearing_wall_thick * 2
+        self.plate_width = self.get_plate_width()
         self.min_plate_width = self.plate_width
         barrel_distance = get_distance_between_two_points(self.bearing_positions[self.going_train.powered_wheels][:2], self.bearing_positions[0][:2])
 
@@ -5254,6 +5259,12 @@ class RoundClockPlates(SimpleWallClockPlates):
 
         return plate
 
+    def get_medium_arm_wide(self):
+        return get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
+
+    def get_small_arm_wide(self):
+        return get_bearing_info(3).outer_d + self.bearing_wall_thick * 2 - 1
+
     def get_plate(self, back=True, for_printing=True, just_basic_shape=False, thick_override=-1):
 
         plate_thick = self.get_plate_thick(back=back)
@@ -5262,10 +5273,9 @@ class RoundClockPlates(SimpleWallClockPlates):
 
         centre = self.hands_position
 
-        main_arm_wide = self.plate_width
-        medium_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2
-        # small_arm_wide = get_bearing_info(2).outer_d + self.bearing_wall_thick * 2
-        small_arm_wide = get_bearing_info(3).outer_d + self.bearing_wall_thick * 2 - 1
+        main_arm_wide = self.get_plate_width()
+        medium_arm_wide = self.get_medium_arm_wide()
+        small_arm_wide = self.get_small_arm_wide()
 
         # plate = cq.Workplane("XY").moveTo(self.hands_position[0], self.hands_position[1]).circle(self.radius+main_arm_wide/2).circle(self.radius-main_arm_wide/2).extrude(plate_thick)
 
@@ -6063,6 +6073,20 @@ Firmly push all bearings into their slots, a bench vice can help with this. Alte
         if self.has_vanity_plate:
             export_STL(self.get_vanity_plate(), "vanity_plate", name, path)
 
+class ThinnerRoundClockPlates(RoundClockPlates):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bearing_wall_thick=2
+
+    def get_plate_width(self):
+        return get_bearing_info(3).outer_d + 4# self.bearing_wall_thick not set yet, this can be called from constructor
+
+    def get_medium_arm_wide(self):
+        return self.get_plate_width()
+        return get_bearing_info(3).outer_d + 3
+
+    def get_small_arm_wide(self):
+        return get_bearing_info(3).outer_d +3
 
 class GrasshopperRoundPlates(RoundClockPlates):
     '''
